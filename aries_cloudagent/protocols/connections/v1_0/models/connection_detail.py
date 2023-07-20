@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, fields
 from pydid.did import DID_PATTERN
 from peerdid.dids import resolve_peer_did, DIDDocument
-from .....connections.models.diddoc import SovDIDDoc, PeerDIDDoc
+from .....connections.models.diddoc import LegacyDIDDoc, PeerDIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import ANY_DID
 
@@ -19,14 +19,14 @@ class DIDDocWrapper(fields.Field):
             value: The value to serialize
 
         Returns:
-            The serialized SovDIDDoc
+            The serialized LegacyDIDDoc
 
         """
         return value.serialize()
 
     def _deserialize(self, value, attr=None, data=None, **kwargs):
         """
-        Deserialize a value into a SovDIDDoc.
+        Deserialize a value into a LegacyDIDDoc.
 
         Args:
             value: The value to deserialize
@@ -38,7 +38,7 @@ class DIDDocWrapper(fields.Field):
         if value["id"].startswith("did:peer:2"):
             dd = PeerDIDDoc.deserialize(value)
         else:  # if sov
-            dd = SovDIDDoc.deserialize(value)
+            dd = LegacyDIDDoc.deserialize(value)
         return dd
 
 
@@ -75,7 +75,7 @@ class ConnectionDetail(BaseModel):
         return self._did
 
     @property
-    def did_doc(self) -> SovDIDDoc:
+    def did_doc(self) -> LegacyDIDDoc:
         """
         Accessor for the connection DID Document.
 

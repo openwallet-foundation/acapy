@@ -59,10 +59,6 @@ def canon_did(uri: str) -> str:
         rv = uri[8:]
         if ok_did(rv):
             return rv
-    # JS .... need this to accept did:peer:2, not sure exactly how to do this.
-    if uri.startswith("did:peer:2"):
-        d = DID(uri)
-        return d
     raise ValueError(
         "Bad specification {} does not correspond to a sovrin DID".format(uri)
     )

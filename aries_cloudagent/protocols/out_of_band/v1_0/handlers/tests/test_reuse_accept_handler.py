@@ -5,7 +5,7 @@ from asynctest import mock as async_mock
 
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
-from ......connections.models.diddoc import SovDIDDoc, PublicKey, PublicKeyType, Service
+from ......connections.models.diddoc import LegacyDIDDoc, PublicKey, PublicKeyType, Service
 from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder

@@ -10,7 +10,7 @@ from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
 from ..conn_record import ConnRecord
-from ..diddoc.diddoc import SovDIDDoc
+from ..diddoc.diddoc import LegacyDIDDoc
 
 
 class TestConnRecord(AsyncTestCase):
@@ -318,7 +318,7 @@ class TestConnRecord(AsyncTestCase):
 
         req = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_did, did_doc=SovDIDDoc(self.test_did)
+                did=self.test_did, did_doc=LegacyDIDDoc(self.test_did)
             ),
             label="abc123",
         )
@@ -335,7 +335,7 @@ class TestConnRecord(AsyncTestCase):
 
         req = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_did, did_doc=SovDIDDoc(self.test_did)
+                did=self.test_did, did_doc=LegacyDIDDoc(self.test_did)
             ),
             label="abc123",
         )

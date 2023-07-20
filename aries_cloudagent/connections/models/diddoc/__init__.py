@@ -16,8 +16,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from .diddoc import SovDIDDoc, PeerDIDDoc
+from .diddoc import LegacyDIDDoc, PeerDIDDoc
 from .publickey import LinkedDataKeySpec, PublicKey, PublicKeyType
 from .service import Service
 
-__all__ = ["SovDIDDoc", "PeerDIDDoc", "LinkedDataKeySpec", "PublicKey", "PublicKeyType", "Service"]
+__all__ = ["LegacyDIDDoc", "PeerDIDDoc", "LinkedDataKeySpec", "PublicKey", "PublicKeyType", "Service"]

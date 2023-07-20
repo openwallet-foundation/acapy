@@ -7,7 +7,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import ANY_DID
+from .....messaging.valid import ANYDID_OR_UNQUALIFIED
 
 from ..message_types import DIDX_REQUEST, PROTOCOL_PACKAGE
 
@@ -71,7 +71,7 @@ class DIDXRequestSchema(AgentMessageSchema):
         description="Label for DID exchange request",
         example="Request to connect with Bob",
     )
-    did = fields.Str(description="DID of exchange", **ANY_DID)
+    did = fields.Str(description="DID of exchange", **ANYDID_OR_UNQUALIFIED)
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,

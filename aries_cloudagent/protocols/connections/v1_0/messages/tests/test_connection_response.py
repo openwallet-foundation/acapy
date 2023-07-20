@@ -4,7 +4,7 @@ from asynctest import TestCase as AsyncTestCase
 
 from ......wallet.key_type import ED25519
 from ......connections.models.diddoc import (
-    SovDIDDoc,
+    LegacyDIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
@@ -25,7 +25,7 @@ class TestConfig:
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        doc = SovDIDDoc(id=self.test_did)
+        doc = LegacyDIDDoc(id=self.test_did)
         controller = self.test_did
         ident = "1"
         pk_value = self.test_verkey

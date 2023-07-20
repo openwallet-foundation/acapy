@@ -8,7 +8,7 @@ from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
 from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
-from ...connections.models.diddoc import SovDIDDoc, PublicKey, PublicKeyType, Service
+from ...connections.models.diddoc import LegacyDIDDoc, PublicKey, PublicKeyType, Service
 from ...core.event_bus import EventBus, MockEventBus
 from ...core.in_memory import InMemoryProfileManager
 from ...core.profile import ProfileManager
@@ -60,7 +60,7 @@ class TestDIDs:
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
     def make_did_doc(self, did, verkey):
-        doc = SovDIDDoc(id=did)
+        doc = LegacyDIDDoc(id=did)
         controller = did
         ident = "1"
         pk_value = verkey

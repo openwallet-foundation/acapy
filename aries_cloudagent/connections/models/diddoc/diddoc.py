@@ -32,11 +32,7 @@ from .util import canon_did, canon_ref, ok_did, resource
 LOGGER = logging.getLogger(__name__)
 
 
-class DIDDoc:
-    pass
-
-
-class SovDIDDoc(DIDDocument):
+class UnqualifiedDIDDoc(DIDDocument):
     """
     DID document, grouping a DID with verification keys and services.
 
@@ -44,16 +40,18 @@ class SovDIDDoc(DIDDocument):
     everything else as URIs (oriented toward W3C-facing operations).
     """
 
+
+    # ACAPY USED UNQUALIFIED DIDS, allow them in DIDDoc's for now....
+    id: Union[DID, str] = ""
+    controller: Optional[List[Union[DID, str]]] = None
+
+
+class LegacyDIDDoc(UnqualifiedDIDDoc):
+    
     _pubkey: dict = {}
     _service: dict = {}
 
-    def __init__(self, **kwargs):
-        print("SovDIDDoc.__init__")
-        if "id" in kwargs and not str(kwargs["id"]).startswith("did:"):
-            kwargs["id"] = "did:sov:0" + kwargs["id"]
-        print(kwargs["id"])
-        super().__init__(**kwargs)
-
+    
     @property
     def did(self) -> str:
         """Accessor for DID."""
@@ -206,7 +204,7 @@ class SovDIDDoc(DIDDocument):
         return rv
 
     @classmethod
-    def deserialize(cls, did_doc: dict) -> "SovDIDDoc":
+    def deserialize(cls, did_doc: dict) -> "LegacyDIDDoc":
         """
         Construct DIDDoc object from dict representation.
 
@@ -222,9 +220,9 @@ class SovDIDDoc(DIDDocument):
 
         rv = None
         if "id" in did_doc:
-            print("SovDIDDoc:deserialize")
+            print("LegacyDIDDoc:deserialize")
             print(did_doc["id"])
-            rv = SovDIDDoc(id=did_doc["id"])
+            rv = LegacyDIDDoc(id=did_doc["id"])
         else:
             # heuristic: get DID to serve as DID document identifier from
             # the first OK-looking public key
@@ -234,7 +232,7 @@ class SovDIDDoc(DIDDocument):
                         try:
                             pubkey_did = canon_did(resource(key_spec.get("id", "")))
                             if ok_did(pubkey_did):
-                                rv = SovDIDDoc(pubkey_did)
+                                rv = LegacyDIDDoc(pubkey_did)
                                 break
                         except ValueError:  # no identifier here, move on to next
                             break
@@ -298,7 +296,7 @@ class SovDIDDoc(DIDDocument):
         return rv
 
     @classmethod
-    def from_json(cls, did_doc_json: str) -> "SovDIDDoc":
+    def from_json(cls, did_doc_json: str) -> "LegacyDIDDoc":
         """
         Construct DIDDoc object from json representation.
 

@@ -38,7 +38,7 @@ from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from .models.diddoc import SovDIDDoc, PublicKey, PublicKeyType, Service
+from .models.diddoc import LegacyDIDDoc, PublicKey, PublicKeyType, Service
 from ..wallet.util import bytes_to_b58, b64_to_bytes
 
 
@@ -72,7 +72,7 @@ class BaseConnectionManager:
         inbound_connection_id: str = None,
         svc_endpoints: Sequence[str] = None,
         mediation_records: List[MediationRecord] = None,
-    ) -> SovDIDDoc:
+    ) -> LegacyDIDDoc:
         """Create our DID doc for a given DID.
 
         Args:
@@ -87,7 +87,7 @@ class BaseConnectionManager:
 
         """
 
-        did_doc = SovDIDDoc(id=did_info.did)
+        did_doc = LegacyDIDDoc(id=did_info.did)
         did_controller = did_info.did
         did_key = did_info.verkey
         pk = PublicKey(
@@ -172,7 +172,7 @@ class BaseConnectionManager:
         """Store a DID document.
 
         Args:
-            did_doc: The `SovDIDDoc` instance to persist
+            did_doc: The `LegacyDIDDoc` instance to persist
         """
         assert did_doc.id
 
@@ -442,10 +442,10 @@ class BaseConnectionManager:
         """
         if not doc:
             raise BaseConnectionManagerError(
-                "No SovDIDDoc provided for connection target"
+                "No LegacyDIDDoc provided for connection target"
             )
         if not doc.id:
-            raise BaseConnectionManagerError("SovDIDDoc has no DID")
+            raise BaseConnectionManagerError("LegacyDIDDoc has no DID")
         if not doc.service:
             raise BaseConnectionManagerError("No services defined in DIDDocument")
 

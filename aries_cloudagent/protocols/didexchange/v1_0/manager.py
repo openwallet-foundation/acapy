@@ -15,7 +15,7 @@ from ....wallet.askar import _create_keypair
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.diddoc import PublicKey, PublicKeyType, PeerDIDDoc  # JS
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.diddoc import SovDIDDoc
+from ....connections.models.diddoc import LegacyDIDDoc
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
@@ -296,29 +296,33 @@ class DIDXManager(BaseConnectionManager):
                 my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
             # Create new DID for connection
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
+            if self.profile.settings.get("debug.send_peer_did_2", False):
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
 
-                # for peer did, create did_doc first then save did after.
-                keypair = _create_keypair(ED25519, None)
-                verkey_bytes = keypair.get_public_bytes()
+                    # for peer did, create did_doc first then save did after.
+                    keypair = _create_keypair(ED25519, None)
+                    verkey_bytes = keypair.get_public_bytes()
 
-                # JS START  library did_doc construction
-                # use library did_doc construction
-                service = {
-                    "type": "DIDCommMessaging",
-                    "serviceEndpoint": self.profile.settings.get("default_endpoint"),
-                    "recipient_keys":[]
-                }
+                    # JS START  library did_doc construction
+                    # use library did_doc construction
+                    service = {
+                        "type": "DIDCommMessaging",
+                        "serviceEndpoint": self.profile.settings.get("default_endpoint"),
+                        "recipient_keys":[]
+                    }
+                    peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
+                        bytes_to_b58(verkey_bytes), service=service
+                    )
 
-                peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
-                    bytes_to_b58(verkey_bytes), service=service
-                )
-
-                my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=peer_did)
-
-                self._logger.warning("DIDXMan.create_request")
-                self._logger.warning(my_info.did)
+                    my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=peer_did)
+            else: #use old unqualified dids
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    my_info = await wallet.create_local_did(
+                        method=SOV,
+                        key_type=ED25519,
+                    )
             conn_rec.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -494,13 +498,16 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
             if request.did != conn_did_doc.did:
-                raise DIDXManagerError(
-                    (
-                        f"Connection DID {request.did} does not match "
-                        f"DID Doc id {conn_did_doc.did}"
-                    ),
-                    error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
-                )
+                if str("did:sov:"+request.did) == str(conn_did_doc.did):
+                    self._logger.warning("legacy behaviour: Connection DID is unqualified, but did doc did has did:sov")
+                else:
+                    raise DIDXManagerError(
+                        (
+                            f"Connection DID {request.did} does not match "
+                            f"DID Doc id {conn_did_doc.did}"
+                        ),
+                        error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                    )
       
         await self.store_did_document(conn_did_doc)
 
@@ -619,29 +626,35 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
+            if self.profile.settings.get("debug.send_peer_did_2", False):
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
 
-                # for peer did, create did_doc first then save did after.
-                keypair = _create_keypair(ED25519, None)
-                verkey_bytes = keypair.get_public_bytes()
+                    # for peer did, create did_doc first then save did after.
+                    keypair = _create_keypair(ED25519, None)
+                    verkey_bytes = keypair.get_public_bytes()
 
-                # JS START  library did_doc construction
-                # use library did_doc construction
-                service = {
-                    "type": "DIDCommMessaging",
-                    "serviceEndpoint": self.profile.settings.get("default_endpoint"),
-                    "recipient_keys":[]
-                }
+                    # JS START  library did_doc construction
+                    # use library did_doc construction
+                    service = {
+                        "type": "DIDCommMessaging",
+                        "serviceEndpoint": self.profile.settings.get("default_endpoint"),
+                        "recipient_keys":[]
+                    }
 
-                peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
-                    bytes_to_b58(verkey_bytes), service=service
-                )
-
-                my_info = await wallet.create_local_did(PEER, ED25519, keypair=keypair, did=peer_did)
-
-
-            conn_rec.my_did = my_info.did
+                    peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
+                        bytes_to_b58(verkey_bytes), service=service
+                    )
+                    my_info = await wallet.create_local_did(PEER, ED25519, keypair=keypair, did=peer_did)
+            else: #use old unqualified dids
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    my_info = await wallet.create_local_did(
+                        method=SOV,
+                        key_type=ED25519,
+                    )
+        
+        conn_rec.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
@@ -670,10 +683,12 @@ class DIDXManager(BaseConnectionManager):
                     filter(None, [base_mediation_record, mediation_record])
                 ),
             )
+        #should not send DIDDoc is did is `did:peer:2`
         attach = AttachDecorator.data_base64(did_doc.serialize())
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             await attach.data.sign(conn_rec.invitation_key, wallet)
+        
         response = DIDXResponse(did=my_info.did, did_doc_attach=attach)
         # Assign thread information
         response.assign_thread_from(request)
@@ -897,7 +912,7 @@ class DIDXManager(BaseConnectionManager):
         wallet: BaseWallet,
         attached: AttachDecorator,
         invi_key: str = None,
-    ) -> SovDIDDoc:
+    ) -> LegacyDIDDoc:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
         if not signed_diddoc_bytes:
@@ -905,7 +920,7 @@ class DIDXManager(BaseConnectionManager):
         if not await attached.data.verify(wallet, invi_key):
             raise DIDXManagerError("DID doc attachment signature failed verification")
         
-        return SovDIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
+        return LegacyDIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
 
     async def get_resolved_did_document(self, qualified_did: str) -> ResolvedDocument:
         """Return resolved DID document."""

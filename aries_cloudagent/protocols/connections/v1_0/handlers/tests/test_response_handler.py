@@ -3,7 +3,7 @@ from asynctest import mock as async_mock
 
 from ......connections.models import connection_target
 from ......connections.models.diddoc import (
-    SovDIDDoc,
+    LegacyDIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
@@ -38,7 +38,7 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 @pytest.fixture()
 def did_doc():
-    doc = SovDIDDoc(id=TEST_DID)
+    doc = LegacyDIDDoc(id=TEST_DID)
     controller = TEST_DID
     ident = "1"
     pk_value = TEST_VERKEY

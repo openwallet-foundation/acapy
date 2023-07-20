@@ -20,7 +20,7 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from .. import SovDIDDoc, PublicKey, PublicKeyType, Service
+from .. import LegacyDIDDoc, PublicKey, PublicKeyType, Service
 from ..util import canon_did, canon_ref
 
 
@@ -65,8 +65,8 @@ class TestDIDDoc(AsyncTestCase):
             ],
         }
 
-        dd = SovDIDDoc.deserialize(dd_in)
-        assert str(dd) == f"SovDIDDoc({canon_did(dd_in['id'])})"
+        dd = LegacyDIDDoc.deserialize(dd_in)
+        assert str(dd) == f"LegacyDIDDoc({canon_did(dd_in['id'])})"
         assert len(dd.pubkey) == len(dd_in["publicKey"])
         assert len(dd.authnkey) == len(dd_in["authentication"])
 
@@ -142,7 +142,7 @@ class TestDIDDoc(AsyncTestCase):
             ],
         }
 
-        dd = SovDIDDoc.deserialize(dd_in)
+        dd = LegacyDIDDoc.deserialize(dd_in)
         assert len(dd.pubkey) == len(dd_in["publicKey"]) + 1
         assert len(dd.authnkey) == len(dd_in["authentication"])
 
@@ -189,7 +189,7 @@ class TestDIDDoc(AsyncTestCase):
             ],
         }
 
-        dd = SovDIDDoc.deserialize(dd_in)
+        dd = LegacyDIDDoc.deserialize(dd_in)
         assert len(dd.pubkey) == len(dd_in["publicKey"]) + 1
         assert len(dd.authnkey) == len(dd_in["authentication"])
 
@@ -217,7 +217,7 @@ class TestDIDDoc(AsyncTestCase):
             ],
         }
 
-        dd = SovDIDDoc.deserialize(dd_in)
+        dd = LegacyDIDDoc.deserialize(dd_in)
         assert len(dd.pubkey) == len(dd_in["publicKey"])
         assert len(dd.authnkey) == 0
 
@@ -249,7 +249,7 @@ class TestDIDDoc(AsyncTestCase):
             ],
         }
 
-        dd = SovDIDDoc.deserialize(dd_in)
+        dd = LegacyDIDDoc.deserialize(dd_in)
         assert len(dd.pubkey) == 1 + len(dd_in["publicKey"])
         assert len(dd.authnkey) == 0
 
@@ -321,7 +321,7 @@ class TestDIDDoc(AsyncTestCase):
             ],
         }
 
-        dd = SovDIDDoc.deserialize(dd_in)
+        dd = LegacyDIDDoc.deserialize(dd_in)
         assert len(dd.pubkey) == 1 + len(dd_in["publicKey"])
         assert len(dd.authnkey) == 0
         assert {s.priority for s in dd.service.values()} == {0, 1, 2}
@@ -391,7 +391,7 @@ class TestDIDDoc(AsyncTestCase):
         }
 
         with self.assertRaises(ValueError):
-            dd = SovDIDDoc.deserialize(dd_in)
+            dd = LegacyDIDDoc.deserialize(dd_in)
         # print('\n\n== 10 == DID Doc on underspecified service key fails as expected')
 
     def test_w3c_minimal(self):
@@ -415,7 +415,7 @@ class TestDIDDoc(AsyncTestCase):
             ],
         }
 
-        dd = SovDIDDoc.deserialize(dd_in)
+        dd = LegacyDIDDoc.deserialize(dd_in)
         assert len(dd.pubkey) == 1
         assert len(dd.authnkey) == 1
         assert len(dd.service) == 1
@@ -444,7 +444,7 @@ class TestDIDDoc(AsyncTestCase):
         }
 
         with self.assertRaises(ValueError):
-            dd = SovDIDDoc.deserialize(dd_in)
+            dd = LegacyDIDDoc.deserialize(dd_in)
         # print('\n\n== 12 == DID Doc without identifier rejected as expected')
 
     def test_canon_did(self):
@@ -483,14 +483,14 @@ class TestDIDDoc(AsyncTestCase):
             ],
         }
 
-        dd = SovDIDDoc.deserialize(dd_in)
+        dd = LegacyDIDDoc.deserialize(dd_in)
 
         assert PublicKeyType.get("no-such-type") is None
         pubkey0 = dd.pubkey[[k for k in dd.pubkey][0]]
         was_authn = pubkey0.authn
         pubkey0.authn = not was_authn
         assert pubkey0.authn != was_authn
-        # print('\n\n== 14 == Changed authentication setting for SovDIDDoc {} in public key {}, now {}'.format(
+        # print('\n\n== 14 == Changed authentication setting for LegacyDIDDoc {} in public key {}, now {}'.format(
         #    pubkey0.did,
         #    pubkey0.id,
         #    repr(pubkey0)))
