@@ -2,26 +2,24 @@
 
 import asyncio
 import logging
-
 from typing import Any, Mapping
+import warnings
 from weakref import finalize, ref
 
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
-from ...core.profile import Profile, ProfileManager, ProfileSession
 from ...core.error import ProfileError
+from ...core.profile import Profile, ProfileManager, ProfileSession
 from ...ledger.base import BaseLedger
 from ...ledger.indy import IndySdkLedger, IndySdkLedgerPool
 from ...storage.base import BaseStorage, BaseStorageSearch
 from ...storage.vc_holder.base import VCHolder
 from ...wallet.base import BaseWallet
 from ...wallet.indy import IndySdkWallet
-
 from ..holder import IndyHolder
 from ..issuer import IndyIssuer
 from ..verifier import IndyVerifier
-
-from .wallet_setup import IndyWalletConfig, IndyOpenWallet
+from .wallet_setup import IndyOpenWallet, IndyWalletConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -191,6 +189,16 @@ class IndySdkProfileManager(ProfileManager):
         self, context: InjectionContext, config: Mapping[str, Any] = None
     ) -> Profile:
         """Open an instance of an existing profile."""
+        warnings.warn(
+            "Indy wallet type is deprecated, use Askar instead; see: "
+            "https://github.com/hyperledger/aries-cloudagent-python/issues/2330",
+            DeprecationWarning,
+        )
+        LOGGER.warning(
+            "Indy wallet type is deprecated, use Askar instead; see: "
+            "https://github.com/hyperledger/aries-cloudagent-python/issues/2330",
+        )
+
         indy_config = IndyWalletConfig(config)
         opened = await indy_config.open_wallet()
         return IndySdkProfile(opened, context)

@@ -1,25 +1,25 @@
 """Utilities related to logging."""
 import asyncio
-import logging
-import os
-import pkg_resources
-import sys
-from random import randint
-import re
-import time as mod_time
-
 from datetime import datetime, timedelta
 from io import TextIOWrapper
-from logging.handlers import BaseRotatingHandler
+import logging
 from logging.config import fileConfig
-from portalocker import lock, unlock, LOCK_EX
-from pythonjsonlogger import jsonlogger
+from logging.handlers import BaseRotatingHandler
+import os
+from random import randint
+import re
+import sys
+import time as mod_time
 from typing import Optional, TextIO
 
+import pkg_resources
+from portalocker import LOCK_EX, lock, unlock
+from pythonjsonlogger import jsonlogger
+
+from ..config.settings import Settings
 from ..core.profile import Profile
 from ..version import __version__
 from ..wallet.base import BaseWallet, DIDInfo
-
 from .banner import Banner
 from .base import BaseSettings
 
@@ -198,6 +198,18 @@ class LoggingConfigurator:
         print()
         print("Listening...")
         print()
+
+    @classmethod
+    def print_notices(cls, settings: Settings):
+        """Print notices and warnings."""
+        if settings.get("wallet.type", "in_memory").lower() == "indy":
+            print("DEPRECATTION NOTICE:", file=sys.stderr)
+            print(
+                "\tThe Indy wallet type is deprecated, use Askar instead; see: "
+                "https://github.com/hyperledger/aries-cloudagent-python/issues/2330",
+                file=sys.stderr,
+            )
+            print()
 
 
 ######################################################################
