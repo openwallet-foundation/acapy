@@ -443,14 +443,19 @@ async def main(args):
             "    (4) Create New Invitation\n"
         )
         if faber_agent.revocation:
-            options += "    (5) Revoke Credential\n" "    (6) Publish Revocations\n"
+            options += (
+                "    (5) Revoke Credential\n"
+                "    (6) Publish Revocations\n"
+                "    (7) Rotate Revocation Registry\n"
+                "    (8) List Revocation Registries\n"
+            )
         if faber_agent.endorser_role and faber_agent.endorser_role == "author":
             options += "    (D) Set Endorser's DID\n"
         if faber_agent.multitenant:
             options += "    (W) Create and/or Enable Wallet\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
         options += "    (X) Exit?\n[1/2/3/4/{}{}T/X] ".format(
-            "5/6/" if faber_agent.revocation else "",
+            "5/6/7/8/" if faber_agent.revocation else "",
             "W/" if faber_agent.multitenant else "",
         )
         async for option in prompt_loop(options):
@@ -729,6 +734,50 @@ async def main(args):
                             len(resp["rrid2crid"]),
                             "y" if len(resp["rrid2crid"]) == 1 else "ies",
                             json.dumps([k for k in resp["rrid2crid"]], indent=4),
+                        )
+                    )
+                except ClientError:
+                    pass
+            elif option == "7" and faber_agent.revocation:
+                try:
+                    resp = await faber_agent.agent.admin_POST(
+                        f"/revocation/active-registry/{faber_agent.cred_def_id}/rotate",
+                        {},
+                    )
+                    faber_agent.agent.log(
+                        "Rotated registries for {}. Decommissioned Registries: {}".format(
+                            faber_agent.cred_def_id,
+                            json.dumps([r for r in resp["rev_reg_ids"]], indent=4),
+                        )
+                    )
+                except ClientError:
+                    pass
+            elif option == "8" and faber_agent.revocation:
+                states = [
+                    "init",
+                    "generated",
+                    "posted",
+                    "active",
+                    "full",
+                    "decommissioned",
+                ]
+                state = (
+                    await prompt(
+                        f"Filter by state: {states}: ",
+                        default="active",
+                    )
+                ).strip()
+                if state not in states:
+                    state = "active"
+                try:
+                    resp = await faber_agent.agent.admin_GET(
+                        "/revocation/registries/created",
+                        params={"state": state},
+                    )
+                    faber_agent.agent.log(
+                        "Registries (state = '{}'): {}".format(
+                            state,
+                            json.dumps([r for r in resp["rev_reg_ids"]], indent=4),
                         )
                     )
                 except ClientError:
