@@ -124,15 +124,15 @@ class IndyRevocation:
             filter(lambda r: r.state != IssuerRevRegRecord.STATE_INIT, registries)
         )
 
-        init = True
         for rec in recs:
             LOGGER.debug(f"decommission {rec.state} rev. reg.")
             LOGGER.debug(f"revoc_reg_id: {rec.revoc_reg_id}")
             LOGGER.debug(f"cred_def_id: {cred_def_id}")
+            # decommission active registry, we need to init a replacement
+            init = IssuerRevRegRecord.STATE_ACTIVE == rec.state
             await self._set_registry_status(
                 rec.revoc_reg_id, IssuerRevRegRecord.STATE_DECOMMISSIONED, init
             )
-            init = False  # only call init once.
 
         return recs
 
