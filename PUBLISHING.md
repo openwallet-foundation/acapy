@@ -28,8 +28,26 @@ Once ready to do a release, create a local branch that includes the following up
     closed issues in the Change Log.
 
 In some cases, the approach above fails because of too many API calls. An
-alternate approach to getting the list of PRs in the right format is to use this
-scary `sed` pipeline process to get the same output.¥
+alternate approach to getting the list of PRs in the right format is to use [OpenAI ChatGPT].
+
+Prepare the following ChatGPT request. Don't hit enter yet--you have to add the data.
+
+`Generate from this the github pull request number, the github id of the author and the title of the pull request in a tab-delimited list`
+
+Get a list of the merged PRs since the last release by displaying the PR list in
+the GitHub UI, highlighting/copying the PRs and pasting them below the ChatGPT
+request, one page after another. Hit `<Enter>`, let the AI magic work, and you
+should have a list of the PRs in a nice table with a `Copy` link that you should click.
+
+Once you have that, open this [Google Sheet] and highlight the `A1` cell and
+paste in the ChatGPT data. A formula in column `E` will have the properly
+formatted changelog entries. Double check the list with the GitHub UI to make
+sure that ChatGPT isn't messing with you and you have the needed data.
+
+[OpenAI ChatGPT]: https://chat.openai.com
+[Google Sheet]: https://docs.google.com/spreadsheets/d/1gIjPirZ42g5eM-JBtVt8xN5Jm0PQuEv91a8woRAuDEg/edit?usp=sharing
+
+If using ChatGPT doesn't appeal to you, try this scary `sed`/command line approach:
 
 - Put the following commands into a file called `changelog.sed`
 
@@ -70,7 +88,7 @@ s/^/- /
 
 Once you have the list of PRs:
 
-- Organize the list into suitable categories, update (if necessary) the PR description and add notes to clarify the changes. See previous release entries to understand the style -- a format should help developers.
+- Organize the list into suitable categories, update (if necessary) the PR description and add notes to clarify the changes. See previous release entries to understand the style -- a format that should help developers.
 - Add a narrative about the release above the PR that highlights what has gone into the release.
 
 4. Update the ReadTheDocs in the `/docs` folder by following the instructions in
