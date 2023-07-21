@@ -26,7 +26,7 @@ The second big change in this release is that we have upgraded the primary
 Python version from 3.6 to 3.9 (PR [\#2247]). In this case, primary means that
 Python 3.9 is used to run the unit and integration tests on all Pull Requests.
 We also do nightly runs of the main branch using Python 3.10. As
-of this release we have **dropped** Python 3.6, 3.7 and 3.7 and introduced new
+of this release we have **dropped** Python 3.6, 3.7 and 3.8, and introduced new
 dependencies that are not supported in those versions of Python. For those that
 use the published ACA-Py container images, the upgrade should be easily handled.
 If you are pulling ACA-Py into your own image, or a non-containerized
