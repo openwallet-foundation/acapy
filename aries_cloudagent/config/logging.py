@@ -1,25 +1,25 @@
 """Utilities related to logging."""
 import asyncio
-import logging
-import os
-import pkg_resources
-import sys
-from random import randint
-import re
-import time as mod_time
-
 from datetime import datetime, timedelta
 from io import TextIOWrapper
-from logging.handlers import BaseRotatingHandler
+import logging
 from logging.config import fileConfig
-from portalocker import lock, unlock, LOCK_EX
-from pythonjsonlogger import jsonlogger
+from logging.handlers import BaseRotatingHandler
+import os
+from random import randint
+import re
+import sys
+import time as mod_time
 from typing import Optional, TextIO
 
+import pkg_resources
+from portalocker import LOCK_EX, lock, unlock
+from pythonjsonlogger import jsonlogger
+
+from ..config.settings import Settings
 from ..core.profile import Profile
 from ..version import __version__
 from ..wallet.base import BaseWallet, DIDInfo
-
 from .banner import Banner
 from .base import BaseSettings
 
@@ -115,89 +115,81 @@ class LoggingConfigurator:
             border
         """
         print()
-        banner = Banner(border=border_character, length=banner_length)
-        banner.print_border()
-
-        # Title
-        banner.print_title(agent_label or "ACA")
-
-        banner.print_spacer()
-        banner.print_spacer()
-
-        # Inbound transports
-        banner.print_subtitle("Inbound Transports")
-        internal_in_transports = [
-            f"{transport.scheme}://{transport.host}:{transport.port}"
-            for transport in inbound_transports.values()
-            if not transport.is_external
-        ]
-        if internal_in_transports:
-            banner.print_spacer()
-            banner.print_list(internal_in_transports)
-            banner.print_spacer()
-        external_in_transports = [
-            f"{transport.scheme}://{transport.host}:{transport.port}"
-            for transport in inbound_transports.values()
-            if transport.is_external
-        ]
-        if external_in_transports:
-            banner.print_spacer()
-            banner.print_subtitle("  External Plugin")
-            banner.print_spacer()
-            banner.print_list(external_in_transports)
-            banner.print_spacer()
-
-        # Outbound transports
-        banner.print_subtitle("Outbound Transports")
-        internal_schemes = set().union(
-            *(
-                transport.schemes
-                for transport in outbound_transports.values()
+        with Banner(border=border_character, length=banner_length) as banner:
+            # Title
+            banner.title(agent_label or "ACA")
+            # Inbound transports
+            banner.subtitle("Inbound Transports")
+            internal_in_transports = [
+                f"{transport.scheme}://{transport.host}:{transport.port}"
+                for transport in inbound_transports.values()
                 if not transport.is_external
-            )
-        )
-        if internal_schemes:
-            banner.print_spacer()
-            banner.print_list([f"{scheme}" for scheme in sorted(internal_schemes)])
-            banner.print_spacer()
-
-        external_schemes = set().union(
-            *(
-                transport.schemes
-                for transport in outbound_transports.values()
+            ]
+            if internal_in_transports:
+                banner.list(internal_in_transports)
+            external_in_transports = [
+                f"{transport.scheme}://{transport.host}:{transport.port}"
+                for transport in inbound_transports.values()
                 if transport.is_external
+            ]
+            if external_in_transports:
+                banner.subtitle("  External Plugin")
+                banner.list(external_in_transports)
+
+            # Outbound transports
+            banner.subtitle("Outbound Transports")
+            internal_schemes = set().union(
+                *(
+                    transport.schemes
+                    for transport in outbound_transports.values()
+                    if not transport.is_external
+                )
             )
-        )
-        if external_schemes:
-            banner.print_spacer()
-            banner.print_subtitle("  External Plugin")
-            banner.print_spacer()
-            banner.print_list([f"{scheme}" for scheme in sorted(external_schemes)])
-            banner.print_spacer()
+            if internal_schemes:
+                banner.list([f"{scheme}" for scheme in sorted(internal_schemes)])
 
-        # DID info
-        if public_did:
-            banner.print_subtitle("Public DID Information")
-            banner.print_spacer()
-            banner.print_list([f"DID: {public_did}"])
-            banner.print_spacer()
+            external_schemes = set().union(
+                *(
+                    transport.schemes
+                    for transport in outbound_transports.values()
+                    if transport.is_external
+                )
+            )
+            if external_schemes:
+                banner.subtitle("  External Plugin")
+                banner.list([f"{scheme}" for scheme in sorted(external_schemes)])
 
-        # Admin server info
-        banner.print_subtitle("Administration API")
-        banner.print_spacer()
-        banner.print_list(
-            [f"http://{admin_server.host}:{admin_server.port}"]
-            if admin_server
-            else ["not enabled"]
-        )
-        banner.print_spacer()
+            # DID info
+            if public_did:
+                banner.subtitle("Public DID Information")
+                banner.list([f"DID: {public_did}"])
 
-        banner.print_version(__version__)
+            # Admin server info
+            banner.subtitle("Administration API")
+            banner.list(
+                [f"http://{admin_server.host}:{admin_server.port}"]
+                if admin_server
+                else ["not enabled"]
+            )
 
-        banner.print_border()
+            banner.version(__version__)
+
         print()
         print("Listening...")
         print()
+
+    @classmethod
+    def print_notices(cls, settings: Settings):
+        """Print notices and warnings."""
+        if settings.get("wallet.type", "in_memory").lower() == "indy":
+            with Banner(border=":", length=80, file=sys.stderr) as banner:
+                banner.centered("⚠ DEPRECATION NOTICE: ⚠")
+                banner.hr()
+                banner.print(
+                    "The Indy wallet type is deprecated, use Askar instead; see: "
+                    "https://aca-py.org/main/deploying/IndySDKtoAskarMigration/",
+                )
+            print()
 
 
 ######################################################################
