@@ -318,6 +318,7 @@ class Conductor:
             self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
+        LoggingConfigurator.print_notices(context.settings)
 
         # record ACA-Py version in Wallet, if needed
         from_version_storage = None
