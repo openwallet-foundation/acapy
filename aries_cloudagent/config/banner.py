@@ -10,6 +10,7 @@ from typing import Optional, TextIO
 
 @contextmanager
 def Banner(border: str, length: int, file: Optional[TextIO] = None):
+    """Context manager to generate a banner for ACA-py."""
     banner = _Banner(border, length, file)
     banner.print_border()
     yield banner
