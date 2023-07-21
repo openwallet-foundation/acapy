@@ -187,7 +187,7 @@ class LoggingConfigurator:
                 banner.hr()
                 banner.print(
                     "The Indy wallet type is deprecated, use Askar instead; see: "
-                    "https://github.com/hyperledger/aries-cloudagent-python/issues/2330",
+                    "https://aca-py.org/main/deploying/IndySDKtoAskarMigration/",
                 )
             print()
 

@@ -191,12 +191,12 @@ class IndySdkProfileManager(ProfileManager):
         """Open an instance of an existing profile."""
         warnings.warn(
             "Indy wallet type is deprecated, use Askar instead; see: "
-            "https://github.com/hyperledger/aries-cloudagent-python/issues/2330",
+            "https://aca-py.org/main/deploying/IndySDKtoAskarMigration/",
             DeprecationWarning,
         )
         LOGGER.warning(
             "Indy wallet type is deprecated, use Askar instead; see: "
-            "https://github.com/hyperledger/aries-cloudagent-python/issues/2330",
+            "https://aca-py.org/main/deploying/IndySDKtoAskarMigration/",
         )
 
         indy_config = IndyWalletConfig(config)
