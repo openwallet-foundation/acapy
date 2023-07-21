@@ -203,12 +203,15 @@ class BaseConnectionManager:
             for key in did_doc.pubkey.values():
                 if key.controller == did_doc.id:
                     await self.add_key_for_did(did_doc.id, key.value)
-        for vm in did_doc.verification_method or []:
-            if vm.controller == did_doc.id: 
-                if vm.public_key_base58:
-                    await self.add_key_for_did(did_doc.id, vm.public_key_base58)
-                elif vm.material:
-                    self._logger.error("VerificationMethod material exists, but no in base58, not saving key")
+        if hasattr(did_doc, "verification_method"):            
+            for vm in did_doc.verification_method or []:
+                if vm.controller == did_doc.id: 
+                    if vm.public_key_base58:
+                        await self.add_key_for_did(did_doc.id, vm.public_key_base58)
+                    elif vm.material:
+                        self._logger.error("VerificationMethod material exists, but no in base58, not saving key")
+
+
     async def add_key_for_did(self, did: str, key: str):
         """Store a verkey for lookup against a DID.
 

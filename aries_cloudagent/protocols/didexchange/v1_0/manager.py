@@ -339,15 +339,19 @@ class DIDXManager(BaseConnectionManager):
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
-
-        did_doc = await self.create_did_document(
-            my_info,
-            conn_rec.inbound_connection_id,
-            my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
-        )
+       
+        # request DID doc describes requester DID
+        if my_info.did.startswith("did:peer:2"):
+            did_doc = resolve_peer_did(request.did)
+        else: 
+            did_doc = await self.create_did_document(
+                my_info,
+                conn_rec.inbound_connection_id,
+                my_endpoints,
+                mediation_records=list(
+                    filter(None, [base_mediation_record, mediation_record])
+                ),
+            )
         if conn_rec.their_public_did is not None:
             qualified_did = conn_rec.their_public_did
             did_document = await self.get_resolved_did_document(qualified_did)
