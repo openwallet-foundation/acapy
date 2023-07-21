@@ -220,9 +220,7 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
 
         rv = None
         if "id" in did_doc:
-            print("LegacyDIDDoc:deserialize")
-            print(did_doc["id"])
-            rv = LegacyDIDDoc(id=did_doc["id"])
+            rv = LegacyDIDDoc(id=canon_did(did_doc["id"]))
         else:
             # heuristic: get DID to serve as DID document identifier from
             # the first OK-looking public key

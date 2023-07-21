@@ -4,7 +4,7 @@ Class to provide some common utilities.
 For Connection, DIDExchange and OutOfBand Manager.
 """
 
-import logging
+import logging, json
 from typing import Optional, List, Sequence, Tuple, Text
 
 from multiformats import multibase, multicodec
@@ -498,5 +498,5 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        print(record)
+        print(json.loads(record.value))
         return DIDDocument.from_json(record.value), record
