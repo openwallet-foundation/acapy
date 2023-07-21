@@ -115,21 +115,23 @@ Once you have the list of PRs:
    course), finding a way to not need them is best, but if they are needed,
    please update this document to note where the tag can be found.
 
-7. Double check all of these steps above, and then submit a PR from the branch.
+7. Check to see if there are any other PRs that should be included in the release.
+
+8. Double check all of these steps above, and then submit a PR from the branch.
    Add this new PR to CHANGELOG.md so that all the PRs are included.
    If there are still further changes to be merged, mark the PR as "Draft",
    repeat **ALL** of the steps again, and then mark this PR as ready and then
    wait until it is merged. It's embarrassing when you have to do a whole new
    release just because you missed something silly...I know!
 
-8. Immediately after it is merged, create a new GitHub tag representing the
+9. Immediately after it is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
    version in [aries_cloudagent/version.py](aries_cloudagent/version.py). Use
    the "Generate Release Notes" capability to get a sequential listing of the
    PRs in the release, to complement the manually curated Changelog. Verify on
    PyPi that the version is published.
 
-9. New images for the release are automatically published by the GitHubAction
+10. New images for the release are automatically published by the GitHubAction
    Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered
    when a release is tagged, so no manual action is needed. The images are
    published in the [Hyperledger Package Repository under
@@ -144,11 +146,11 @@ Once you have the list of PRs:
 [publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
 [Container Images and Github Actions]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/ContainerImagesAndGithubActions.md
 
-10. Update the ACA-Py Read The Docs site by building the new "latest" (main
+11. Update the ACA-Py Read The Docs site by building the new "latest" (main
     branch) and activating and building the new release. Appropriate permissions
     are required to publish the new documentation version.
 
-11. Update the [https://aca-py.org] website with the latest documentation by
+12. Update the [https://aca-py.org] website with the latest documentation by
     creating a PR and tag of the latest documentation from this site. Details
     are provided in the [aries-acapy-docs] repository.
 

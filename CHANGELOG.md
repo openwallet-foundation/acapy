@@ -11,13 +11,16 @@ repository]. The update is **NOT** available to those that are using the [Indy
 SDK]. All new deployments of ACA-Py SHOULD use [Aries Askar]. Further, we
 **strongly** recommend that all deployments using the [Indy SDK] with ACA-Py
 upgrade their installation to use [Aries Askar] and the related components using
-the migration scripts available. **A document for this upgrade will be available
-before the final 0.9.0 release is available.**
+the migration scripts available. An [Indy SDK to Askar migration document] added
+to the [aca-py.org] documentation site, and a deprecation warning added to the
+ACA-Py startup.
 
 [AnonCreds CL-Signatures]: https://github.com/hyperledger/anoncreds-rs
 [Aries Askar]: https://github.com/hyperledger/aries-askar
 [CredX from the indy-shared-rs repository]: https://github.com/hyperledger/indy-shared-rs
 [Indy SDK]: https://github.com/hyperledger/indy-sdk
+[Indy SDK to Askar migration document]: https://aca-py.org/main/deploying/IndySDKtoAskarMigration/
+[aca-py.org]: https://aca-py.org
 
 The second big change in this release is that we have upgraded the primary
 Python version from 3.6 to 3.9 (PR [\#2247]). In this case, primary means that
@@ -79,6 +82,7 @@ about changes you might need to make to your deployment.
   - Fix: Track endorser and author roles in per-tenant settings [\#2331](https://github.com/hyperledger/aries-cloudagent-python/pull/2331) [shaangill025](https://github.com/shaangill025)
   - Added base wallet provisioning details to Multitenancy.md [\#2328](https://github.com/hyperledger/aries-cloudagent-python/pull/2328) [esune](https://github.com/esune)
 - Other Fixes, Demo, and Documentation Fixes
+  - chore: add indy deprecation warnings [\#2332](https://github.com/hyperledger/aries-cloudagent-python/pull/2332) [dbluhm](https://github.com/dbluhm)
   - Fix alice/faber demo execution [\#2305](https://github.com/hyperledger/aries-cloudagent-python/pull/2305) [andrewwhitehead](https://github.com/andrewwhitehead)
   - Add .indy_client folder to Askar only image. [\#2308](https://github.com/hyperledger/aries-cloudagent-python/pull/2308) [WadeBarnes](https://github.com/WadeBarnes)
   - Add build step for indy-base image in run_demo [\#2299](https://github.com/hyperledger/aries-cloudagent-python/pull/2299) [usingtechnology](https://github.com/usingtechnology)
@@ -88,6 +92,8 @@ about changes you might need to make to your deployment.
 - Plugin Handling Updates
   - Feature: Add the ability to deny specific plugins from loading  0.7.4 [\#1737](https://github.com/hyperledger/aries-cloudagent-python/pull/1737) [frostyfrog](https://github.com/frostyfrog)
 - Dependencies and Internal Updates
+  - upgrade requests to latest [\#2336](https://github.com/hyperledger/aries-cloudagent-python/pull/2336) [ff137](https://github.com/ff137)
+  - upgrade packaging to latest [\#2334](https://github.com/hyperledger/aries-cloudagent-python/pull/2334) [ff137](https://github.com/ff137)
   - chore: update PyYAML [\#2329](https://github.com/hyperledger/aries-cloudagent-python/pull/2329) [dbluhm](https://github.com/dbluhm)
   - chore(deps): Bump aiohttp from 3.8.4 to 3.8.5 in /demo/playground/scripts dependencies [\#2325](https://github.com/hyperledger/aries-cloudagent-python/pull/2325) [dependabot bot](https://github.com/dependabot bot)
   - ⬆️ upgrade marshmallow to latest [\#2322](https://github.com/hyperledger/aries-cloudagent-python/pull/2322) [ff137](https://github.com/ff137)
@@ -103,7 +109,7 @@ about changes you might need to make to your deployment.
   - Docker images and GHA for publishing images  help wanted [\#2076](https://github.com/hyperledger/aries-cloudagent-python/pull/2076) [dbluhm](https://github.com/dbluhm)
   - ci: test additional versions of python nightly [\#2059](https://github.com/hyperledger/aries-cloudagent-python/pull/2059) [dbluhm](https://github.com/dbluhm)
 - Release management pull requests
-  - 0.9.0-rc0 [\#2332](https://github.com/hyperledger/aries-cloudagent-python/pull/2332) [swcurran](https://github.com/swcurran)
+  - 0.9.0-rc0 [\#2338](https://github.com/hyperledger/aries-cloudagent-python/pull/2338) [swcurran](https://github.com/swcurran)
 
 # 0.8.2
 
