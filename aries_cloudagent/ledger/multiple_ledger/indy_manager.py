@@ -5,7 +5,7 @@ import logging
 import json
 
 from collections import OrderedDict
-from typing import Optional, Tuple, Mapping
+from typing import Optional, Tuple, Mapping, List
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
@@ -33,7 +33,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         profile: Profile,
         production_ledgers: OrderedDict = OrderedDict(),
         non_production_ledgers: OrderedDict = OrderedDict(),
-        write_ledger_info: Tuple[str, IndySdkLedger] = None,
+        writable_ledgers: set = set(),
         cache_ttl: int = None,
     ):
         """Initialize MultiIndyLedgerManager.
@@ -48,17 +48,13 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         self.profile = profile
         self.production_ledgers = production_ledgers
         self.non_production_ledgers = non_production_ledgers
-        self.write_ledger_info = write_ledger_info
+        self.writable_ledgers = writable_ledgers
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
 
-    async def get_write_ledger(self) -> Optional[Tuple[str, IndySdkLedger]]:
+    async def get_write_ledgers(self) -> List[str]:
         """Return the write IndySdkLedger instance."""
-        # return self.write_ledger_info
-        if self.write_ledger_info:
-            return (self.write_ledger_info[0], self.profile.inject_or(BaseLedger))
-        else:
-            return None
+        return list(self.writable_ledgers)
 
     async def get_ledger_inst_by_id(self, ledger_id: str) -> Optional[BaseLedger]:
         """Return BaseLedger instance."""
@@ -73,6 +69,39 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
     async def get_nonprod_ledgers(self) -> Mapping:
         """Return non_production ledgers mapping."""
         return self.non_production_ledgers
+
+    async def get_ledger_id_by_ledger_pool_name(self, pool_name: str) -> str:
+        """Return ledger_id by ledger pool name."""
+        for ledger_id, indy_vdr_ledger in self.production_ledgers.items():
+            if indy_vdr_ledger.pool_name == pool_name:
+                return ledger_id
+        for ledger_id, indy_vdr_ledger in self.non_production_ledgers.items():
+            if indy_vdr_ledger.pool_name == pool_name:
+                return ledger_id
+        raise MultipleLedgerManagerError(
+            f"Provided Ledger pool name {pool_name} not found "
+            "in either production_ledgers or non_production_ledgers"
+        )
+
+    async def set_profile_write_ledger(self, ledger_id: str, profile: Profile) -> str:
+        """Set the write ledger for the profile."""
+        if ledger_id not in self.writable_ledgers:
+            raise MultipleLedgerManagerError(
+                f"Provided Ledger identifier {ledger_id} is not " "write configurable."
+            )
+        if ledger_id in self.production_ledgers:
+            profile.context.injector.bind_instance(
+                BaseLedger, self.production_ledgers.get(ledger_id)
+            )
+            return ledger_id
+        if ledger_id in self.non_production_ledgers:
+            profile.context.injector.bind_instance(
+                BaseLedger, self.non_production_ledgers.get(ledger_id)
+            )
+            return ledger_id
+        raise MultipleLedgerManagerError(
+            f"No ledger info found for {ledger_id} is not."
+        )
 
     async def _get_ledger_by_did(
         self,
@@ -94,11 +123,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         """
         try:
             indy_sdk_ledger = None
-            if self.write_ledger_info and ledger_id == self.write_ledger_info[0]:
-                indy_sdk_ledger = await self.get_write_ledger()
-                if indy_sdk_ledger:
-                    indy_sdk_ledger = indy_sdk_ledger[1]
-            elif ledger_id in self.production_ledgers:
+            if ledger_id in self.production_ledgers:
                 indy_sdk_ledger = self.production_ledgers.get(ledger_id)
             else:
                 indy_sdk_ledger = self.non_production_ledgers.get(ledger_id)
@@ -149,9 +174,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         cache_key = f"did_ledger_id_resolver::{did}"
         if bool(cache_did and self.cache and await self.cache.get(cache_key)):
             cached_ledger_id = await self.cache.get(cache_key)
-            if self.write_ledger_info and cached_ledger_id == self.write_ledger_info[0]:
-                return self.get_write_ledger()
-            elif cached_ledger_id in self.production_ledgers:
+            if cached_ledger_id in self.production_ledgers:
                 return (cached_ledger_id, self.production_ledgers.get(cached_ledger_id))
             elif cached_ledger_id in self.non_production_ledgers:
                 return (

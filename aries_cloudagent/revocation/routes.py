@@ -825,9 +825,11 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
         genesis_transactions = context.settings.get("ledger.genesis_transactions")
         if not genesis_transactions:
             ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
-            write_ledgers = await ledger_manager.get_write_ledger()
-            LOGGER.debug(f"write_ledgers = {write_ledgers}")
-            pool = write_ledgers[1].pool
+            write_ledger = context.injector.inject(BaseLedger)
+            available_write_ledgers = await ledger_manager.get_write_ledgers()
+            LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
+            LOGGER.debug(f"write_ledger = {write_ledger}")
+            pool = write_ledger[1].pool
             LOGGER.debug(f"write_ledger pool = {pool}")
 
             genesis_transactions = pool.genesis_txns

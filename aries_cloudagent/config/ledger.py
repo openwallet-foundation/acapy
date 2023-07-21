@@ -89,9 +89,7 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings):
             False if config.get("is_write") is None else config.get("is_write")
         )
         ledger_id = config.get("id") or str(uuid.uuid4())
-        if is_write_ledger and write_ledger_set:
-            raise ConfigError("Only a single ledger can be is_write")
-        elif is_write_ledger:
+        if is_write_ledger:
             write_ledger_set = True
         ledger_txns_list.append(
             {

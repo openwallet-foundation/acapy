@@ -73,7 +73,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                     indy_sdk_production_ledgers = OrderedDict()
                     indy_sdk_non_production_ledgers = OrderedDict()
                     ledger_config_list = settings.get_value("ledger.ledger_config_list")
-                    write_ledger_info = None
+                    write_ledgers = set()
                     for config in ledger_config_list:
                         keepalive = config.get("keepalive")
                         read_only = config.get("read_only")
@@ -85,7 +85,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                         ledger_is_production = config.get("is_production")
                         ledger_is_write = config.get("is_write")
                         if ledger_is_write:
-                            write_ledger_info = (ledger_id, None)
+                            write_ledgers.add(ledger_id)
                         else:
                             ledger_pool = pool_class(
                                 pool_name,
@@ -107,24 +107,21 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                                 ] = ledger_instance
                     if settings.get_value("ledger.genesis_transactions"):
                         ledger_instance = self.root_profile.inject_or(BaseLedger)
-                        ledger_id = "startup::" + ledger_instance.pool.name
+                        ledger_id = ledger_instance.pool.name
                         indy_sdk_production_ledgers[ledger_id] = ledger_instance
-                        if not write_ledger_info:
-                            write_ledger_info = (ledger_id, ledger_instance)
-                            indy_sdk_production_ledgers.move_to_end(
-                                ledger_id, last=False
-                            )
+                        write_ledgers.add(ledger_id)
+                        indy_sdk_production_ledgers.move_to_end(ledger_id, last=False)
                     self._inst[manager_type] = manager_class(
                         self.root_profile,
                         production_ledgers=indy_sdk_production_ledgers,
                         non_production_ledgers=indy_sdk_non_production_ledgers,
-                        write_ledger_info=write_ledger_info,
+                        writable_ledgers=write_ledgers,
                     )
                 else:
                     indy_vdr_production_ledgers = OrderedDict()
                     indy_vdr_non_production_ledgers = OrderedDict()
                     ledger_config_list = settings.get_value("ledger.ledger_config_list")
-                    write_ledger_info = None
+                    write_ledgers = set()
                     for config in ledger_config_list:
                         keepalive = config.get("keepalive")
                         read_only = config.get("read_only")
@@ -148,25 +145,22 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             profile=self.root_profile,
                         )
                         if ledger_is_write:
-                            write_ledger_info = (ledger_id, ledger_instance)
+                            write_ledgers.add(ledger_id)
                         if ledger_is_production:
                             indy_vdr_production_ledgers[ledger_id] = ledger_instance
                         else:
                             indy_vdr_non_production_ledgers[ledger_id] = ledger_instance
                     if settings.get_value("ledger.genesis_transactions"):
                         ledger_instance = self.root_profile.inject_or(BaseLedger)
-                        ledger_id = "startup::" + ledger_instance.pool.name
+                        ledger_id = ledger_instance.pool.name
                         indy_vdr_production_ledgers[ledger_id] = ledger_instance
-                        if not write_ledger_info:
-                            write_ledger_info = (ledger_id, ledger_instance)
-                            indy_vdr_production_ledgers.move_to_end(
-                                ledger_id, last=False
-                            )
+                        write_ledgers.add(ledger_id)
+                        indy_vdr_production_ledgers.move_to_end(ledger_id, last=False)
                     self._inst[manager_type] = manager_class(
                         self.root_profile,
                         production_ledgers=indy_vdr_production_ledgers,
                         non_production_ledgers=indy_vdr_non_production_ledgers,
-                        write_ledger_info=write_ledger_info,
+                        writable_ledgers=write_ledgers,
                     )
             except ClassNotFoundError as err:
                 raise InjectionError(
