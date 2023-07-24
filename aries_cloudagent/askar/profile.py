@@ -120,8 +120,49 @@ class AskarProfile(Profile):
                 ref(self),
             ),
         )
-
-        if self.ledger_pool:
+        if (
+            self.settings.get("ledger.ledger_config_list")
+            and len(self.settings.get("ledger.ledger_config_list")) >= 1
+        ):
+            write_ledger_config = None
+            prod_write_ledger_pool = []
+            non_prod_write_ledger_pool = []
+            for ledger_config in self.settings.get("ledger.ledger_config_list"):
+                if ledger_config.get("is_production") and ledger_config.get("is_write"):
+                    prod_write_ledger_pool.append(ledger_config)
+                elif not ledger_config.get("is_production") and ledger_config.get(
+                    "is_write"
+                ):
+                    non_prod_write_ledger_pool.append(ledger_config)
+            cache = self.context.injector.inject_or(BaseCache)
+            if len(prod_write_ledger_pool) >= 1:
+                write_ledger_config = prod_write_ledger_pool[0]
+            elif len(non_prod_write_ledger_pool) >= 1:
+                write_ledger_config = non_prod_write_ledger_pool[0]
+            else:
+                raise ProfileError(
+                    "No write ledger configuration found in ledger_config_list which "
+                    "was provided with --genesis-transactions-list"
+                )
+            injector.bind_provider(
+                BaseLedger,
+                ClassProvider(
+                    IndyVdrLedger,
+                    IndyVdrLedgerPool(
+                        write_ledger_config.get("pool_name")
+                        or write_ledger_config.get("id"),
+                        keepalive=write_ledger_config.get("keepalive"),
+                        cache=cache,
+                        genesis_transactions=write_ledger_config.get(
+                            "genesis_transactions"
+                        ),
+                        read_only=write_ledger_config.get("read_only"),
+                        socks_proxy=write_ledger_config.get("socks_proxy"),
+                    ),
+                    ref(self),
+                ),
+            )
+        elif self.ledger_pool:
             injector.bind_provider(
                 BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))
             )

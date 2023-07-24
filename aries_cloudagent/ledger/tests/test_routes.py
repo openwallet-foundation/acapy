@@ -777,8 +777,8 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             async_mock.MagicMock(
-                get_write_ledger=async_mock.AsyncMock(
-                    return_value=("test_ledger_id", self.ledger)
+                get_ledger_id_by_ledger_pool_name=async_mock.AsyncMock(
+                    return_value="test_ledger_id"
                 )
             ),
         )

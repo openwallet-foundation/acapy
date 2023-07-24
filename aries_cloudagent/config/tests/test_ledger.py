@@ -516,7 +516,7 @@ class TestLedgerConfig(AsyncTestCase):
                 )
             assert "No is_write ledger set" in str(cm.exception)
 
-    async def test_load_multiple_genesis_transactions_config_error_b(self):
+    async def test_load_multiple_genesis_transactions_multiple_write(self):
         TEST_GENESIS_TXNS = {
             "reqSignature": {},
             "txn": {
@@ -561,8 +561,7 @@ class TestLedgerConfig(AsyncTestCase):
                     "is_production": True,
                     "genesis_url": "http://localhost:9001/genesis",
                 },
-            ],
-            "ledger.genesis_url": "http://localhost:9000/genesis",
+            ]
         }
         with async_mock.patch.object(
             test_module,
@@ -578,11 +577,7 @@ class TestLedgerConfig(AsyncTestCase):
                     )
                 )
             )
-            with self.assertRaises(test_module.ConfigError) as cm:
-                await test_module.load_multiple_genesis_transactions_from_config(
-                    settings
-                )
-            assert "Only a single ledger can be" in str(cm.exception)
+            await test_module.load_multiple_genesis_transactions_from_config(settings)
 
     async def test_load_multiple_genesis_transactions_from_config_io_x(self):
         TEST_GENESIS_TXNS = {

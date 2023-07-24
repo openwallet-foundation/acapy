@@ -9,7 +9,6 @@ from ...config.provider import BaseProvider
 from ...config.settings import BaseSettings
 from ...config.injector import BaseInjector, InjectionError
 from ...core.profile import Profile
-from ...ledger.base import BaseLedger
 from ...utils.classloader import ClassNotFoundError, DeferLoad
 
 from .base_manager import MultipleLedgerManagerError
@@ -105,12 +104,6 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                                 indy_sdk_non_production_ledgers[
                                     ledger_id
                                 ] = ledger_instance
-                    if settings.get_value("ledger.genesis_transactions"):
-                        ledger_instance = self.root_profile.inject_or(BaseLedger)
-                        ledger_id = ledger_instance.pool.name
-                        indy_sdk_production_ledgers[ledger_id] = ledger_instance
-                        write_ledgers.add(ledger_id)
-                        indy_sdk_production_ledgers.move_to_end(ledger_id, last=False)
                     self._inst[manager_type] = manager_class(
                         self.root_profile,
                         production_ledgers=indy_sdk_production_ledgers,
@@ -150,12 +143,6 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             indy_vdr_production_ledgers[ledger_id] = ledger_instance
                         else:
                             indy_vdr_non_production_ledgers[ledger_id] = ledger_instance
-                    if settings.get_value("ledger.genesis_transactions"):
-                        ledger_instance = self.root_profile.inject_or(BaseLedger)
-                        ledger_id = ledger_instance.pool.name
-                        indy_vdr_production_ledgers[ledger_id] = ledger_instance
-                        write_ledgers.add(ledger_id)
-                        indy_vdr_production_ledgers.move_to_end(ledger_id, last=False)
                     self._inst[manager_type] = manager_class(
                         self.root_profile,
                         production_ledgers=indy_vdr_production_ledgers,

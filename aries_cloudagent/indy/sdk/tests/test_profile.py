@@ -64,7 +64,14 @@ def test_settings_genesis_transactions(open_wallet):
 
 
 def test_settings_ledger_config(open_wallet):
-    context = InjectionContext(settings={"ledger.ledger_config_list": True})
+    context = InjectionContext(
+        settings={
+            "ledger.ledger_config_list": [
+                async_mock.MagicMock(),
+                async_mock.MagicMock(),
+            ]
+        }
+    )
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
     profile = IndySdkProfile(open_wallet, context)
 

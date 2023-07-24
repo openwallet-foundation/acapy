@@ -68,21 +68,15 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         """Set the write ledger for the profile."""
         if ledger_id not in self.writable_ledgers:
             raise MultipleLedgerManagerError(
-                f"Provided Ledger identifier {ledger_id} is not " "write configurable."
+                f"Provided Ledger identifier {ledger_id} is not write configurable."
             )
-        if ledger_id in self.production_ledgers:
+        multi_ledgers = self.production_ledgers | self.non_production_ledgers
+        if ledger_id in multi_ledgers:
             profile.context.injector.bind_instance(
-                BaseLedger, self.production_ledgers.get(ledger_id)
+                BaseLedger, multi_ledgers.get(ledger_id)
             )
             return ledger_id
-        if ledger_id in self.non_production_ledgers:
-            profile.context.injector.bind_instance(
-                BaseLedger, self.non_production_ledgers.get(ledger_id)
-            )
-            return ledger_id
-        raise MultipleLedgerManagerError(
-            f"No ledger info found for {ledger_id} is not."
-        )
+        raise MultipleLedgerManagerError(f"No ledger info found for {ledger_id}.")
 
     async def get_ledger_inst_by_id(self, ledger_id: str) -> Optional[BaseLedger]:
         """Return BaseLedger instance."""
@@ -92,10 +86,8 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
 
     async def get_ledger_id_by_ledger_pool_name(self, pool_name: str) -> str:
         """Return ledger_id by ledger pool name."""
-        for ledger_id, indy_vdr_ledger in self.production_ledgers.items():
-            if indy_vdr_ledger.pool_name == pool_name:
-                return ledger_id
-        for ledger_id, indy_vdr_ledger in self.non_production_ledgers.items():
+        multi_ledgers = self.production_ledgers | self.non_production_ledgers
+        for ledger_id, indy_vdr_ledger in multi_ledgers.items():
             if indy_vdr_ledger.pool_name == pool_name:
                 return ledger_id
         raise MultipleLedgerManagerError(

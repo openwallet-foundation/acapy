@@ -11,6 +11,7 @@ from collections import OrderedDict
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
 from ....core.in_memory import InMemoryProfile
+from ....ledger.base import BaseLedger
 from ....messaging.responder import BaseResponder
 
 from ...error import LedgerError
@@ -65,7 +66,7 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
         self.production_ledger = OrderedDict()
         self.non_production_ledger = OrderedDict()
         test_prod_ledger = IndyVdrLedger(IndyVdrLedgerPool("test_prod_1"), self.profile)
-        test_write_ledger = ("test_prod_1", test_prod_ledger)
+        writable_ledgers = set()
         self.production_ledger["test_prod_1"] = test_prod_ledger
         self.production_ledger["test_prod_2"] = IndyVdrLedger(
             IndyVdrLedgerPool("test_prod_2"), self.profile
@@ -76,17 +77,42 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
         self.non_production_ledger["test_non_prod_2"] = IndyVdrLedger(
             IndyVdrLedgerPool("test_non_prod_2"), self.profile
         )
+        writable_ledgers.add("test_prod_1")
+        writable_ledgers.add("test_prod_2")
         self.manager = MultiIndyVDRLedgerManager(
             self.profile,
             production_ledgers=self.production_ledger,
             non_production_ledgers=self.non_production_ledger,
-            write_ledger_info=test_write_ledger,
+            writable_ledgers=writable_ledgers,
         )
 
-    async def test_get_write_ledger(self):
-        ledger_id, ledger_inst = await self.manager.get_write_ledger()
+    async def test_get_write_ledgers(self):
+        ledger_ids = await self.manager.get_write_ledgers()
+        assert "test_prod_1" in ledger_ids
+        assert "test_prod_2" in ledger_ids
+
+    async def test_get_write_ledger_from_base_ledger(self):
+        ledger_id = await self.manager.get_ledger_id_by_ledger_pool_name("test_prod_1")
         assert ledger_id == "test_prod_1"
-        assert ledger_inst.pool.name == "test_prod_1"
+
+    async def test_set_profile_write_ledger(self):
+        profile = InMemoryProfile.test_profile()
+        assert not profile.inject_or(BaseLedger)
+        assert "test_prod_2" in self.manager.writable_ledgers
+        new_write_ledger_id = await self.manager.set_profile_write_ledger(
+            profile=profile, ledger_id="test_prod_2"
+        )
+        assert new_write_ledger_id == "test_prod_2"
+        new_write_ledger = profile.inject_or(BaseLedger)
+        assert new_write_ledger.pool_name == "test_prod_2"
+
+    async def test_set_profile_write_ledger_x(self):
+        profile = InMemoryProfile.test_profile()
+        with self.assertRaises(MultipleLedgerManagerError) as cm:
+            new_write_ledger_id = await self.manager.set_profile_write_ledger(
+                profile=profile, ledger_id="test_non_prod_1"
+            )
+        assert "is not write configurable" in str(cm.exception.message)
 
     async def test_get_ledger_inst_by_id(self):
         ledger_inst = await self.manager.get_ledger_inst_by_id("test_prod_2")
