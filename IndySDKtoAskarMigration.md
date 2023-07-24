@@ -105,6 +105,8 @@ to use it. The following is a summary of the steps you will have to perform. Of
 course, all deployments are a little (or a lot!) different, and your exact steps
 will be dependent on where and how you have deployed ACA-Py.
 
+[aries-acapy-tools]: https://github.com/hyperledger/aries-acapy-tools
+
 Note that in these steps you will have to take your ACA-Py instance offline, so
 scheduling the maintenance must be a part of your migration plan. You will also
 want to script the entire process so that downtime and risk of manual mistakes
