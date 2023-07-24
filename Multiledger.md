@@ -36,6 +36,37 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
 ```
 
+```
+- id: localVON
+  is_production: false
+  genesis_url: 'http://host.docker.internal:9000/genesis'
+- id: bcorvinTest
+  is_production: true
+  is_write: true
+  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+- id: greenlightDev
+  is_production: true
+  is_write: true
+  genesis_url: 'http://dev.greenlight.bcovrin.vonx.io/genesis'
+```
+
+Note: `is_write` property means that the ledger is write configurable. With reference to the above config example, both `bcorvinTest` and `greenlightDev` ledgers are write configurable. By default, on startup `bcorvinTest` will be the write ledger as it is the topmost write configurable production ledger, [more details](#write-requests) regarding the selection rule. Using `PUT /ledger/{ledger_id}/set-write-ledger` endpoint, either `greenlightDev` and `bcorvinTest` can be set as the write ledger.
+
+```
+- id: localVON
+  is_production: false
+  is_write: true
+  genesis_url: 'http://host.docker.internal:9000/genesis'
+- id: bcorvinTest
+  is_production: true
+  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+- id: greenlightDev
+  is_production: true
+  genesis_url: 'http://dev.greenlight.bcovrin.vonx.io/genesis'
+```
+
+Note: For instance with regards to example config above, `localVON` will be the write ledger, as there are no production ledgers which are configurable it will choose the topmost write configurable non production ledger.
+
 ### Config properties
 For each ledger, the required properties are as following:
 
@@ -52,20 +83,20 @@ Optional properties:
 - `pool_name`: name of the indy pool to be opened
 - `keepalive`: how many seconds to keep the ledger open
 - `socks_proxy`
-- `is_write`: Whether this ledger is writable/can be write configurable. Multiple write ledgers can be specified in config.
+- `is_write`: Whether this ledger is writable. It requires atleast one write ledger specified. Multiple write ledgers can be specified in config.
 
 
 ## Multi-ledger Admin API
 
-Multi-ledger related actions are grouped under the `ledger` topic in the SwaggerUI or under `/ledger/multiple` path.
+Multi-ledger related actions are grouped under the `ledger` topic in the SwaggerUI.
 
-- `/ledger/multiple/config`:
+- GET `/ledger/config`:
 Returns the multiple ledger configuration currently in use
-- `/ledger/multiple/get-write-ledger`:
+- GET `/ledger/get-write-ledger`:
 Returns the current active/set `write_ledger's` `ledger_id`
-- `/ledger/multiple/get-write-ledgers`:
+- GET `/ledger/get-write-ledgers`:
 Returns list of available `write_ledger's` `ledger_id`
-- `/ledger/multiple/{ledger_id}/set-write-ledger`:
+- PUT `/ledger/{ledger_id}/set-write-ledger`:
 Set active `write_ledger's` `ledger_id`
 
 ## Ledger Selection

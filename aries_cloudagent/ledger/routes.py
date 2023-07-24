@@ -683,8 +683,7 @@ async def get_write_ledgers(request: web.BaseRequest):
     async with context.profile.session() as session:
         multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
     if not multiledger_mgr:
-        reason = "Multiple ledger support not enabled"
-        raise web.HTTPForbidden(reason=reason)
+        return web.json_response(["default"])
     available_write_ledgers = await multiledger_mgr.get_write_ledgers()
     return web.json_response(available_write_ledgers)
 
@@ -707,8 +706,7 @@ async def get_write_ledger(request: web.BaseRequest):
         multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
         write_ledger = session.inject(BaseLedger)
     if not multiledger_mgr:
-        reason = "Multiple ledger support not enabled"
-        raise web.HTTPForbidden(reason=reason)
+        return web.json_response({"ledger_id": "default"})
     ledger_id = await multiledger_mgr.get_ledger_id_by_ledger_pool_name(
         write_ledger.pool_name
     )
@@ -733,8 +731,7 @@ async def set_write_ledger(request: web.BaseRequest):
     async with context.profile.session() as session:
         multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
     if not multiledger_mgr:
-        reason = "Multiple ledger support not enabled"
-        raise web.HTTPForbidden(reason=reason)
+        return web.json_response({"write_ledger": "default"})
     req_ledger_id = request.match_info.get("ledger_id")
     try:
         set_ledger_id = await multiledger_mgr.set_profile_write_ledger(
@@ -808,16 +805,14 @@ async def register(app: web.Application):
             web.get("/ledger/did-endpoint", get_did_endpoint, allow_head=False),
             web.get("/ledger/taa", ledger_get_taa, allow_head=False),
             web.post("/ledger/taa/accept", ledger_accept_taa),
+            web.get("/ledger/get-write-ledger", get_write_ledger, allow_head=False),
+            web.put("/ledger/{ledger_id}/set-write-ledger", set_write_ledger),
             web.get(
-                "/ledger/multiple/get-write-ledger", get_write_ledger, allow_head=False
-            ),
-            web.put("/ledger/multiple/{ledger_id}/set-write-ledger", set_write_ledger),
-            web.get(
-                "/ledger/multiple/get-write-ledgers",
+                "/ledger/get-write-ledgers",
                 get_write_ledgers,
                 allow_head=False,
             ),
-            web.get("/ledger/multiple/config", get_ledger_config, allow_head=False),
+            web.get("/ledger/config", get_ledger_config, allow_head=False),
         ]
     )
 
