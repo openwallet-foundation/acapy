@@ -321,7 +321,7 @@ class BaseMultitenantManager(ABC):
     def get_wallet_details_from_token(self, token: str) -> Tuple[str, str]:
         """Get the wallet_id and wallet_key from provided token."""
         jwt_secret = self._profile.context.settings.get("multitenant.jwt_secret")
-        token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"])
+        token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"], leeway=5)
         wallet_id = token_body.get("wallet_id")
         wallet_key = token_body.get("wallet_key")
         return wallet_id, wallet_key
@@ -360,7 +360,7 @@ class BaseMultitenantManager(ABC):
         jwt_secret = self._profile.context.settings.get("multitenant.jwt_secret")
         extra_settings = {}
 
-        token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"])
+        token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"], leeway=5)
 
         wallet_id = token_body.get("wallet_id")
         wallet_key = token_body.get("wallet_key")
