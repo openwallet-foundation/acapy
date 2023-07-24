@@ -95,6 +95,7 @@ about changes you might need to make to your deployment.
 - Plugin Handling Updates
   - Feature: Add the ability to deny specific plugins from loading  0.7.4 [\#1737](https://github.com/hyperledger/aries-cloudagent-python/pull/1737) [frostyfrog](https://github.com/frostyfrog)
 - Dependencies and Internal Updates
+  - upgrade pyjwt to latest; introduce leeway to jwt.decodet [\#2335](https://github.com/hyperledger/aries-cloudagent-python/pull/2335) [ff137](https://github.com/ff137)
   - upgrade requests to latest [\#2336](https://github.com/hyperledger/aries-cloudagent-python/pull/2336) [ff137](https://github.com/ff137)
   - upgrade packaging to latest [\#2334](https://github.com/hyperledger/aries-cloudagent-python/pull/2334) [ff137](https://github.com/ff137)
   - chore: update PyYAML [\#2329](https://github.com/hyperledger/aries-cloudagent-python/pull/2329) [dbluhm](https://github.com/dbluhm)
@@ -112,7 +113,7 @@ about changes you might need to make to your deployment.
   - Docker images and GHA for publishing images  help wanted [\#2076](https://github.com/hyperledger/aries-cloudagent-python/pull/2076) [dbluhm](https://github.com/dbluhm)
   - ci: test additional versions of python nightly [\#2059](https://github.com/hyperledger/aries-cloudagent-python/pull/2059) [dbluhm](https://github.com/dbluhm)
 - Release management pull requests
-  - 0.9.0 [\#2343](https://github.com/hyperledger/aries-cloudagent-python/pull/2343) [swcurran](https://github.com/swcurran)
+  - 0.9.0 [\#2344](https://github.com/hyperledger/aries-cloudagent-python/pull/2344) [swcurran](https://github.com/swcurran)
   - 0.9.0-rc0 [\#2338](https://github.com/hyperledger/aries-cloudagent-python/pull/2338) [swcurran](https://github.com/swcurran)
 
 # 0.8.2
