@@ -50,6 +50,7 @@ from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
 from ...models.detail.ld_proof import V20CredExRecordLDProof
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
+from .models.cred_detail_options import LDProofVCDetailOptions
 from .models.cred_detail import LDProofVCDetail, LDProofVCDetailSchema
 
 LOGGER = logging.getLogger(__name__)
@@ -361,6 +362,8 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         self, detail: LDProofVCDetail, holder_did: str = None
     ) -> LDProofVCDetail:
         # Add BBS context if not present yet
+        assert detail.options and isinstance(detail.options, LDProofVCDetailOptions)
+        assert detail.credential and isinstance(detail.credential, VerifiableCredential)
         if (
             detail.options.proof_type == BbsBlsSignature2020.signature_type
             and SECURITY_CONTEXT_BBS_URL not in detail.credential.context_urls
@@ -373,9 +376,21 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         ):
             detail.credential.add_context(SECURITY_CONTEXT_ED25519_2020_URL)
 
-        # add holder_did as credentialSubject.id (if provided)
-        if holder_did and holder_did.startswith("did:key"):
-            detail.credential.credential_subject["id"] = holder_did
+        # Permit late binding of credential subject:
+        # IFF credential subject doesn't already have an id, add holder_did as
+        # credentialSubject.id (if provided)
+        subject = detail.credential.credential_subject
+
+        # TODO if credential subject is a list, we're only binding the first...
+        # How should this be handled?
+        if isinstance(subject, list):
+            subject = subject[0]
+
+        if not subject:
+            raise V20CredFormatError("Credential subject is required")
+
+        if holder_did and holder_did.startswith("did:key") and "id" not in subject:
+            subject["id"] = holder_did
 
         return detail
 
@@ -462,6 +477,34 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
         """Receive linked data proof request."""
+        # Check that request hasn't substantially changed from offer, if offer sent
+        if cred_ex_record.cred_offer:
+            offer_detail_dict = cred_ex_record.cred_offer.attachment(
+                LDProofCredFormatHandler.format
+            )
+            req_detail_dict = cred_request_message.attachment(
+                LDProofCredFormatHandler.format
+            )
+
+            # If credentialSubject.id in offer, it should be the same in request
+            offer_id = (
+                offer_detail_dict["credential"].get("credentialSubject", {}).get("id")
+            )
+            request_id = (
+                req_detail_dict["credential"].get("credentialSubject", {}).get("id")
+            )
+            if offer_id and offer_id != request_id:
+                raise V20CredFormatError(
+                    "Request credentialSubject.id must match offer credentialSubject.id"
+                )
+
+            # Nothing else should be different about the request
+            if request_id:
+                offer_detail_dict["credential"].setdefault("credentialSubject", {})[
+                    "id"
+                ] = request_id
+            if offer_detail_dict != req_detail_dict:
+                raise V20CredFormatError("Request must match offer if offer is sent")
 
     async def issue_credential(
         self,
