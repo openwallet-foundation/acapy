@@ -498,5 +498,5 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        print(json.loads(record.value))
-        return DIDDocument.from_json(record.value), record
+            #JSload into LegacyDIDDoc, and populate both inherited and custom members
+        return DIDDoc.from_json(record.value), record
