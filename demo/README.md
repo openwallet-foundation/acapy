@@ -229,6 +229,8 @@ Faber will setup support for revocation automatically, and you will see an extra
     (4) Create New Invitation
     (5) Revoke Credential
     (6) Publish Revocations
+    (7) Rotate Revocation Registry
+    (8) List Revocation Registries
     (T) Toggle tracing on credential/proof exchange
     (X) Exit?
   ```
@@ -243,14 +245,18 @@ Faber      | Credential revocation ID: 1
 When you revoke a credential you will need to provide those values:
 
 ```
-[1/2/3/4/5/6/T/X] 5
+[1/2/3/4/5/6/7/8/T/X] 5
 
 Enter revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
 Enter credential revocation ID: 1
 Publish now? [Y/N]: y
 ```
 
-Note that you need to Publish the revocation information to the ledger.  Once you've revoked a credential any proof which uses this credential will fail to verify.
+Note that you need to Publish the revocation information to the ledger.  Once you've revoked a credential any proof which uses this credential will fail to verify.  
+
+Rotating the revocation registry will decommission any "ready" registry records and create 2 new registry records. You can view in the logs as the records are created and transition to 'active'. There should always be 2 'active' revocation registries - one working and one for hot-swap. Note that revocation information can still be published from decommissioned registries.
+
+You can also list the created registries, filtering by current state: 'init', 'generated', 'posted', 'active', 'full', 'decommissioned'.
 
 ### DID Exchange
 
