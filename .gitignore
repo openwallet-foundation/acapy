@@ -194,4 +194,3 @@ open-api/.build
 # poetry
 poetry.lock
 pyproject.toml
-.devcontainer/devcontainer.json
