@@ -9,9 +9,7 @@ from .messages.problem_report import (
 )
 
 
-def problem_report_for_record(
-        record: ConnRecord, desc_en: str
-) -> OOBProblemReport:
+def problem_report_for_record(record: ConnRecord, desc_en: str) -> OOBProblemReport:
     """
     Create problem report for record.
 
@@ -32,11 +30,11 @@ def problem_report_for_record(
 
 
 async def report_problem(
-        err: BaseError,
-        desc_en: str,
-        http_error_class,
-        record: ConnRecord,
-        outbound_handler: Coroutine,
+    err: BaseError,
+    desc_en: str,
+    http_error_class,
+    record: ConnRecord,
+    outbound_handler: Coroutine,
 ):
     """
     Send problem report response and raise corresponding HTTP error.

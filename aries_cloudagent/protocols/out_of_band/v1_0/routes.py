@@ -4,7 +4,13 @@ import json
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema, match_info_schema
+from aiohttp_apispec import (
+    docs,
+    querystring_schema,
+    request_schema,
+    response_schema,
+    match_info_schema,
+)
 from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
@@ -279,9 +285,9 @@ async def invitation_receive(request: web.BaseRequest):
 @match_info_schema(ConnIdMatchInfoSchema())
 async def connection_id_problem_report(request: web.BaseRequest):
     """
-        Request handler for sending problem report.
-        Args:
-        request: aiohttp request object
+    Request handler for sending problem report.
+    Args:
+    request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["connection_id"]
@@ -310,7 +316,10 @@ async def register(app: web.Application):
         [
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
-            web.post("/out-of-band/{connection_id}/problem-report", connection_id_problem_report),
+            web.post(
+                "/out-of-band/{connection_id}/problem-report",
+                connection_id_problem_report,
+            ),
         ]
     )
 
