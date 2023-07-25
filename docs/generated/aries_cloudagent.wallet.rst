@@ -113,6 +113,14 @@ aries\_cloudagent.wallet.indy module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.wallet.jwt module
+-----------------------------------
+
+.. automodule:: aries_cloudagent.wallet.jwt
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.wallet.key\_pair module
 -----------------------------------------
 
