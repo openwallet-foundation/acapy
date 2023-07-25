@@ -20,7 +20,7 @@ packaging~=23.1
 portalocker~=2.7.0
 prompt_toolkit~=2.0.9
 pydid~=0.3.6
-pyjwt~=2.4.0
+pyjwt~=2.8.0
 pyld~=2.0.3
 pynacl~=1.5.0
 pydid @ git+https://github.com/Indicio-tech/pydid@main
