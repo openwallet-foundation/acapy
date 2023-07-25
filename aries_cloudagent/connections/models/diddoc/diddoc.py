@@ -196,7 +196,6 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
         """
 
         rv = None
-        print(did_doc)
         verification_key_id = None
         did_doc["id"] = did_doc["id"]
 
@@ -206,7 +205,6 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
                 #replace publicKeys with VerificationMethod
                 vm_id = "#" + pk.get("id","").split("#")[1]
                 pk["id"] = vm_id or f"#{i}"
-
                 did_doc["verificationMethod"].append(pk)
                 if pk["type"] == "Ed25519VerificationKey2018":
                     verification_key_id = pk["id"]
@@ -220,21 +218,19 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
                 service["type"] = "DIDCommMessaging"
             sid = service["id"]
             if ";" in sid:
+                #legacy DIDDoc behaviour
                 service["id"] = sid.replace(";","#")
             if "recipientKeys" in service:
+                #must be referenced, not directly embedded 
                 service["recipient_keys"] = [did_doc["verificationMethod"][0]["id"]]
                 service.pop("recipientKeys")
 
 
-        print("after legacy did_doc handling")
-        print(did_doc)
         rv = super().deserialize(did_doc)
 
-        print("after deserialization")
         for s in rv.service:
             #if s is not a DIDCommService, errors will arise later... after serde it will become an UnknownService
             assert isinstance(s, DIDCommService)
-        print(rv.dict())
         return rv
 
     @classmethod
