@@ -219,78 +219,8 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
         """
 
         rv = None
-        if "id" in did_doc:
-            rv = LegacyDIDDoc(id=canon_did(did_doc["id"]))
-        else:
-            # heuristic: get DID to serve as DID document identifier from
-            # the first OK-looking public key
-            for section in ("publicKey", "authentication"):
-                if rv is None and section in did_doc:
-                    for key_spec in did_doc[section]:
-                        try:
-                            pubkey_did = canon_did(resource(key_spec.get("id", "")))
-                            if ok_did(pubkey_did):
-                                rv = LegacyDIDDoc(pubkey_did)
-                                break
-                        except ValueError:  # no identifier here, move on to next
-                            break
-            if rv is None:
-                LOGGER.debug("no identifier in DID document")
-                raise ValueError("No identifier in DID document")
-
-        for pubkey in did_doc.get(
-            "publicKey", {}
-        ):  # include all public keys, authentication pubkeys by reference
-            pubkey_type = PublicKeyType.get(pubkey["type"])
-            authn = any(
-                canon_ref(rv.id, ak.get("publicKey", ""))
-                == canon_ref(rv.id, pubkey["id"])
-                for ak in did_doc.get("authentication", {})
-                if isinstance(ak.get("publicKey", None), str)
-            )
-            key = PublicKey(  # initialization canonicalizes id
-                rv.id,
-                pubkey["id"],
-                pubkey[pubkey_type.specifier],
-                pubkey_type,
-                canon_did(pubkey["controller"]),
-                authn,
-            )
-            rv._pubkey[key.id] = key
-
-        for akey in did_doc.get(
-            "authentication", {}
-        ):  # include embedded authentication keys
-            if "publicKey" not in akey:  # not yet got it with public keys
-                pubkey_type = PublicKeyType.get(akey["type"])
-                key = PublicKey(  # initialization canonicalized id
-                    rv.id,
-                    akey["id"],
-                    akey[pubkey_type.specifier],
-                    pubkey_type,
-                    canon_did(akey["controller"]),
-                    True,
-                )
-                rv._pubkey[key.id] = key
-
-        for service in did_doc.get("service", {}):
-            endpoint = service["serviceEndpoint"]
-            svc = Service(  # initialization canonicalizes id
-                rv.id,
-                service.get(
-                    "id",
-                    canon_ref(
-                        rv.id, "assigned-service-{}".format(len(rv._service)), ";"
-                    ),
-                ),
-                service["type"],
-                rv.add_service_pubkeys(service, "recipientKeys"),
-                rv.add_service_pubkeys(service, ["mediatorKeys", "routingKeys"]),
-                canon_ref(rv.id, endpoint, ";") if ";" in endpoint else endpoint,
-                service.get("priority", None),
-            )
-            rv._service[svc.id] = svc
-
+        rv = super().deserialize(did_doc)
+        print(rv)
         return rv
 
     @classmethod
