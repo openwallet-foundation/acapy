@@ -674,11 +674,3 @@ class IndyPresSpecSchema(AdminAPIMessageTracingSchema):
         required=False,
         example=False,
     )
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the presentation exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-        default=False,
-    )

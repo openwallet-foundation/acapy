@@ -97,6 +97,19 @@ class V10PresentationExchangeListSchema(OpenAPISchema):
     )
 
 
+class V10PresentationSendRequestSchema(IndyPresSpecSchema):
+    """Request schema for sending a presentation."""
+
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the presentation exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+        default=False,
+    )
+
+
 class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
@@ -743,7 +756,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
 @docs(tags=["present-proof v1.0"], summary="Sends a proof presentation")
 @match_info_schema(V10PresExIdMatchInfoSchema())
-@request_schema(IndyPresSpecSchema())
+@request_schema(V10PresentationSendRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), description="")
 async def presentation_exchange_send_presentation(request: web.BaseRequest):
     """
