@@ -5,7 +5,7 @@ import logging
 from abc import ABC, ABCMeta, abstractmethod
 from enum import Enum
 from time import time
-from typing import Mapping
+from typing import Mapping, Tuple
 
 from ..core.profile import Profile
 from ..ledger.multiple_ledger.ledger_requests_executor import (
@@ -397,7 +397,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         credential_definitions,
         rev_reg_defs,
         rev_reg_entries,
-    ) -> (bool, list):
+    ) -> Tuple[bool, list]:
         """
         Verify a presentation.
 

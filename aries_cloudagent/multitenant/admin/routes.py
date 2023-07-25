@@ -88,7 +88,7 @@ def get_extra_settings_dict_per_tenant(tenant_settings: dict) -> dict:
 
     endorser_role_flag = tenant_settings.get(
         "ACAPY_ENDORSER_ROLE"
-    ) or tenant_settings.get("endorser_protocol_role")
+    ) or tenant_settings.get("endorser-protocol-role")
     extra_settings = {}
     if endorser_role_flag and endorser_role_flag == "author":
         extra_settings["endorser.author"] = True
@@ -102,7 +102,7 @@ def get_extra_settings_dict_per_tenant(tenant_settings: dict) -> dict:
             # These flags require endorser role as author, if not set as author then
             # this setting will be ignored.
             continue
-        if flag != "ACAPY_ENDORSER_ROLE":
+        if flag != "ACAPY_ENDORSER_ROLE" and flag != "endorser-protocol-role":
             map_flag = ACAPY_LIFECYCLE_CONFIG_FLAG_MAP.get(
                 flag
             ) or ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP.get(flag)

@@ -7,13 +7,18 @@ For Connection, DIDExchange and OutOfBand Manager.
 import logging
 from typing import Optional, List, Sequence, Tuple, Text
 
+from multiformats import multibase, multicodec
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
     DIDCommService,
     VerificationMethod,
 )
 import pydid
-from pydid.verification_method import Ed25519VerificationKey2018, JsonWebKey2020
+from pydid.verification_method import (
+    Ed25519VerificationKey2018,
+    JsonWebKey2020,
+    Ed25519VerificationKey2020,
+)
 
 from ..config.logging import get_logger_inst
 from ..core.error import BaseError
@@ -294,12 +299,26 @@ class BaseConnectionManager:
     def _extract_key_material_in_base58_format(method: VerificationMethod) -> str:
         if isinstance(method, Ed25519VerificationKey2018):
             return method.material
+        elif isinstance(method, Ed25519VerificationKey2020):
+            raw_data = multibase.decode(method.material)
+            if len(raw_data) == 32:  # No multicodec prefix
+                return bytes_to_b58(raw_data)
+            else:
+                codec, key = multicodec.unwrap(raw_data)
+                if codec == multicodec.multicodec("ed25519-pub"):
+                    return bytes_to_b58(key)
+                else:
+                    raise BaseConnectionManagerError(
+                        f"Key type {type(method).__name__} "
+                        f"with multicodec value {codec} is not supported"
+                    )
+
         elif isinstance(method, JsonWebKey2020):
             if method.public_key_jwk.get("kty") == "OKP":
                 return bytes_to_b58(b64_to_bytes(method.public_key_jwk.get("x"), True))
             else:
                 raise BaseConnectionManagerError(
-                    f"Key type {type(method).__name__}"
+                    f"Key type {type(method).__name__} "
                     f"with kty {method.public_key_jwk.get('kty')} is not supported"
                 )
         else:

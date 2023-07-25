@@ -1,25 +1,25 @@
 """Utilities related to logging."""
 import asyncio
-import logging
-import os
-import pkg_resources
-import sys
-from random import randint
-import re
-import time as mod_time
-
 from datetime import datetime, timedelta
 from io import TextIOWrapper
-from logging.handlers import BaseRotatingHandler
+import logging
 from logging.config import fileConfig
-from portalocker import lock, unlock, LOCK_EX
-from pythonjsonlogger import jsonlogger
+from logging.handlers import BaseRotatingHandler
+import os
+from random import randint
+import re
+import sys
+import time as mod_time
 from typing import Optional, TextIO
 
+import pkg_resources
+from portalocker import LOCK_EX, lock, unlock
+from pythonjsonlogger import jsonlogger
+
+from ..config.settings import Settings
 from ..core.profile import Profile
 from ..version import __version__
 from ..wallet.base import BaseWallet, DIDInfo
-
 from .banner import Banner
 from .base import BaseSettings
 
@@ -115,89 +115,81 @@ class LoggingConfigurator:
             border
         """
         print()
-        banner = Banner(border=border_character, length=banner_length)
-        banner.print_border()
-
-        # Title
-        banner.print_title(agent_label or "ACA")
-
-        banner.print_spacer()
-        banner.print_spacer()
-
-        # Inbound transports
-        banner.print_subtitle("Inbound Transports")
-        internal_in_transports = [
-            f"{transport.scheme}://{transport.host}:{transport.port}"
-            for transport in inbound_transports.values()
-            if not transport.is_external
-        ]
-        if internal_in_transports:
-            banner.print_spacer()
-            banner.print_list(internal_in_transports)
-            banner.print_spacer()
-        external_in_transports = [
-            f"{transport.scheme}://{transport.host}:{transport.port}"
-            for transport in inbound_transports.values()
-            if transport.is_external
-        ]
-        if external_in_transports:
-            banner.print_spacer()
-            banner.print_subtitle("  External Plugin")
-            banner.print_spacer()
-            banner.print_list(external_in_transports)
-            banner.print_spacer()
-
-        # Outbound transports
-        banner.print_subtitle("Outbound Transports")
-        internal_schemes = set().union(
-            *(
-                transport.schemes
-                for transport in outbound_transports.values()
+        with Banner(border=border_character, length=banner_length) as banner:
+            # Title
+            banner.title(agent_label or "ACA")
+            # Inbound transports
+            banner.subtitle("Inbound Transports")
+            internal_in_transports = [
+                f"{transport.scheme}://{transport.host}:{transport.port}"
+                for transport in inbound_transports.values()
                 if not transport.is_external
-            )
-        )
-        if internal_schemes:
-            banner.print_spacer()
-            banner.print_list([f"{scheme}" for scheme in sorted(internal_schemes)])
-            banner.print_spacer()
-
-        external_schemes = set().union(
-            *(
-                transport.schemes
-                for transport in outbound_transports.values()
+            ]
+            if internal_in_transports:
+                banner.list(internal_in_transports)
+            external_in_transports = [
+                f"{transport.scheme}://{transport.host}:{transport.port}"
+                for transport in inbound_transports.values()
                 if transport.is_external
+            ]
+            if external_in_transports:
+                banner.subtitle("  External Plugin")
+                banner.list(external_in_transports)
+
+            # Outbound transports
+            banner.subtitle("Outbound Transports")
+            internal_schemes = set().union(
+                *(
+                    transport.schemes
+                    for transport in outbound_transports.values()
+                    if not transport.is_external
+                )
             )
-        )
-        if external_schemes:
-            banner.print_spacer()
-            banner.print_subtitle("  External Plugin")
-            banner.print_spacer()
-            banner.print_list([f"{scheme}" for scheme in sorted(external_schemes)])
-            banner.print_spacer()
+            if internal_schemes:
+                banner.list([f"{scheme}" for scheme in sorted(internal_schemes)])
 
-        # DID info
-        if public_did:
-            banner.print_subtitle("Public DID Information")
-            banner.print_spacer()
-            banner.print_list([f"DID: {public_did}"])
-            banner.print_spacer()
+            external_schemes = set().union(
+                *(
+                    transport.schemes
+                    for transport in outbound_transports.values()
+                    if transport.is_external
+                )
+            )
+            if external_schemes:
+                banner.subtitle("  External Plugin")
+                banner.list([f"{scheme}" for scheme in sorted(external_schemes)])
 
-        # Admin server info
-        banner.print_subtitle("Administration API")
-        banner.print_spacer()
-        banner.print_list(
-            [f"http://{admin_server.host}:{admin_server.port}"]
-            if admin_server
-            else ["not enabled"]
-        )
-        banner.print_spacer()
+            # DID info
+            if public_did:
+                banner.subtitle("Public DID Information")
+                banner.list([f"DID: {public_did}"])
 
-        banner.print_version(__version__)
+            # Admin server info
+            banner.subtitle("Administration API")
+            banner.list(
+                [f"http://{admin_server.host}:{admin_server.port}"]
+                if admin_server
+                else ["not enabled"]
+            )
 
-        banner.print_border()
+            banner.version(__version__)
+
         print()
         print("Listening...")
         print()
+
+    @classmethod
+    def print_notices(cls, settings: Settings):
+        """Print notices and warnings."""
+        if settings.get("wallet.type", "in_memory").lower() == "indy":
+            with Banner(border=":", length=80, file=sys.stderr) as banner:
+                banner.centered("⚠ DEPRECATION NOTICE: ⚠")
+                banner.hr()
+                banner.print(
+                    "The Indy wallet type is deprecated, use Askar instead; see: "
+                    "https://aca-py.org/main/deploying/IndySDKtoAskarMigration/",
+                )
+            print()
 
 
 ######################################################################
@@ -536,43 +528,37 @@ def clear_prev_handlers(logger: logging.Logger) -> logging.Logger:
 
 def get_logger_inst(profile: Profile, logger_name) -> logging.Logger:
     """Return a logger instance with provided name and handlers."""
-    logger = None
-    loop = asyncio.get_event_loop()
-    did_ident = loop.run_until_complete(get_did_ident(profile))
+    did_ident = get_did_ident(profile)
     if did_ident:
-        logger = get_logger_with_handlers(
-            settings=profile.settings,
-            logger=logging.getLogger(f"{logger_name}_{did_ident}"),
-            did_ident=did_ident,
-            interval=profile.settings.get("log.handler_interval") or 7,
-            backup_count=profile.settings.get("log.handler_bakcount") or 1,
-            at_when=profile.settings.get("log.handler_when") or "d",
-        )
-    else:
-        logger = get_logger_with_handlers(
-            settings=profile.settings,
-            logger=logging.getLogger(logger_name),
-            interval=profile.settings.get("log.handler_interval") or 7,
-            backup_count=profile.settings.get("log.handler_bakcount") or 1,
-            at_when=profile.settings.get("log.handler_when") or "d",
-        )
-    return logger
+        logger_name = f"{logger_name}_{did_ident}"
+    return get_logger_with_handlers(
+        settings=profile.settings,
+        logger=logging.getLogger(logger_name),
+        did_ident=did_ident,
+        interval=profile.settings.get("log.handler_interval") or 7,
+        backup_count=profile.settings.get("log.handler_bakcount") or 1,
+        at_when=profile.settings.get("log.handler_when") or "d",
+    )
 
 
-async def get_did_ident(profile: Profile) -> Optional[str]:
+def get_did_ident(profile: Profile) -> Optional[str]:
     """Get public did identifier for logging, if applicable."""
     did_ident = None
     if profile.settings.get("log.file"):
-        async with profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            req_did_info: DIDInfo = await wallet.get_public_did()
-            if not req_did_info:
-                req_did_info: DIDInfo = (await wallet.get_local_dids())[0]
-            if req_did_info:
-                did_ident = req_did_info.did
-            return did_ident
-    else:
-        return did_ident
+
+        async def _fetch_did() -> Optional[str]:
+            async with profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                req_did_info: DIDInfo = await wallet.get_public_did()
+                if not req_did_info:
+                    req_did_info: DIDInfo = (await wallet.get_local_dids())[0]
+                if req_did_info:
+                    did_ident = req_did_info.did
+                return did_ident
+
+        loop = asyncio.get_event_loop()
+        did_ident = loop.run_until_complete(_fetch_did())
+    return did_ident
 
 
 def get_logger_with_handlers(
