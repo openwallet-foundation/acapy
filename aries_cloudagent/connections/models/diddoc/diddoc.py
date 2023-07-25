@@ -310,12 +310,12 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
     def __str__(self) -> str:
         """Return string representation for abbreviated display."""
 
-        return f"DIDDoc({self.did})"
+        return f"LegacyDIDDoc({self.did})"
 
     def __repr__(self) -> str:
-        """Format DIDDoc for logging."""
+        """Format LegacyDIDDoc for logging."""
 
-        return f"<DIDDoc did={self.did}>"
+        return f"<LegacyDIDDoc did={self.did}>"
 
 
 class PeerDIDDoc(DIDDocument):
@@ -619,7 +619,7 @@ class DIDDoc:
                 service.get("priority", None),
             )
             rv.service[svc.id] = svc
-
+        print(rv)
         return rv
 
     @classmethod

@@ -43,7 +43,7 @@ from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from .models.diddoc import LegacyDIDDoc, PublicKey, PublicKeyType, Service
+from .models.diddoc import LegacyDIDDoc, PublicKey, PublicKeyType, Service, diddoc
 from ..wallet.util import bytes_to_b58, b64_to_bytes
 
 
@@ -499,4 +499,4 @@ class BaseConnectionManager:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
             #JSload into LegacyDIDDoc, and populate both inherited and custom members
-        return DIDDoc.from_json(record.value), record
+        return LegacyDIDDoc.from_json(record.value), record

@@ -296,7 +296,7 @@ class DIDXManager(BaseConnectionManager):
                 my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
             # Create new DID for connection
-            if self.profile.settings.get("debug.send_peer_did_2", False):
+            if self.profile.settings.get("debug.send_peer_did_2", True):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
 
@@ -342,7 +342,7 @@ class DIDXManager(BaseConnectionManager):
        
         # request DID doc describes requester DID
         if my_info.did.startswith("did:peer:2"):
-            did_doc = resolve_peer_did(request.did)
+            did_doc = resolve_peer_did(my_info.did)
         else: 
             did_doc = await self.create_did_document(
                 my_info,
@@ -630,7 +630,7 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
-            if self.profile.settings.get("debug.send_peer_did_2", False):
+            if self.profile.settings.get("debug.send_peer_did_2", True):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
 
@@ -649,6 +649,8 @@ class DIDXManager(BaseConnectionManager):
                     peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
                         bytes_to_b58(verkey_bytes), service=service
                     )
+                    self._logger.warning(peer_did)
+                    
                     my_info = await wallet.create_local_did(PEER, ED25519, keypair=keypair, did=peer_did)
             else: #use old unqualified dids
                 async with self.profile.session() as session:
