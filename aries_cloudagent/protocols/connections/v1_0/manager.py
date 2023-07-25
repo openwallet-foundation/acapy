@@ -2,18 +2,12 @@
 
 import logging
 from typing import Coroutine, Optional, Sequence, Tuple, cast
-from peerdid.dids import (
-    DIDDocumentBuilder,
-    DIDDocument,
-)
-from pydid import DIDCommService
-from peerdid.keys import Ed25519VerificationKey2018, Ed25519VerificationKey
+
 
 from ....core.oob_processor import OobMessageProcessor
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
-from ....connections.models.diddoc import PublicKey, PublicKeyType, PeerDIDDoc  # JS
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
@@ -24,10 +18,9 @@ from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.askar import _create_keypair
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.did_info import DIDInfo
-from ....wallet.did_method import SOV, PEER
+from ....wallet.did_method import SOV
 from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import ED25519
 from ....wallet.util import bytes_to_b58
@@ -244,6 +237,7 @@ class ConnectionManager(BaseConnectionManager):
                 endpoint=my_endpoint,
                 image_url=image_url,
             )
+
         async with self.profile.session() as session:
             await connection.attach_invitation(session, invitation)
 
@@ -355,6 +349,7 @@ class ConnectionManager(BaseConnectionManager):
             A new `ConnectionRequest` message to send to the other agent
 
         """
+
         mediation_record = await self._route_manager.mediation_record_for_connection(
             self.profile,
             connection,
@@ -374,43 +369,11 @@ class ConnectionManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(connection.my_did)
         else:
-            # create peer:did:2
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 # Create new DID for connection
-
-                # for peer did, create did_doc first then save did after.
-                keypair = _create_keypair(ED25519, None)
-                verkey_bytes = keypair.get_public_bytes()
-
-                # JS START  library did_doc construction
-                # use library did_doc construction
-                service = {
-                    "type": "DIDCommMessaging",
-                    "serviceEndpoint": self.profile.settings.get("default_endpoint"),
-                    "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
-                }
-
-                peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
-                    bytes_to_b58(verkey_bytes), service=service
-                )
-                connection.my_did = peer_did
-
-                vm = Ed25519VerificationKey2018.make(
-                    id="#reqv",
-                    controller=peer_did,
-                    public_key_base58=bytes_to_b58(verkey_bytes),
-                )
-
-                dc_service = DIDCommService.make(
-                    id="#reqs",
-                    service_endpoint=self.profile.settings.get("default_endpoint"),
-                    recipient_keys=["#reqv"]
-                )
-                dd = DIDDocument.make(id=peer_did,verification_method=[vm],service=[dc_service])
-
-                my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=dd.id,  did_doc=dd)
-                connection.my_did = my_info.did
+                my_info = await wallet.create_local_did(SOV, ED25519)
+            connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
@@ -426,24 +389,21 @@ class ConnectionManager(BaseConnectionManager):
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
-        if my_info.method == SOV:
-            # legacy custom code
-            did_doc = await self.create_did_document(
-                my_info,
-                connection.inbound_connection_id,
-                my_endpoints,
-                mediation_records=list(
-                    filter(None, [base_mediation_record, mediation_record])
-                ),
-            )
-        elif my_info.method == PEER:
-            pass
+
+        did_doc = await self.create_did_document(
+            my_info,
+            connection.inbound_connection_id,
+            my_endpoints,
+            mediation_records=list(
+                filter(None, [base_mediation_record, mediation_record])
+            ),
+        )
 
         if not my_label:
             my_label = self.profile.settings.get("default_label")
         request = ConnectionRequest(
             label=my_label,
-            connection=ConnectionDetail(did=connection.my_did, did_doc=dd),
+            connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
             image_url=self.profile.settings.get("image_url"),
         )
         request.assign_thread_id(thid=request._id, pthid=connection.invitation_msg_id)
@@ -454,6 +414,7 @@ class ConnectionManager(BaseConnectionManager):
 
         async with self.profile.session() as session:
             await connection.save(session, reason="Created connection request")
+
         return request
 
     async def receive_request(
@@ -477,6 +438,7 @@ class ConnectionManager(BaseConnectionManager):
             {"request": request},
             settings=self.profile.settings,
         )
+
         connection = None
         connection_key = None
         my_info = None
@@ -502,7 +464,7 @@ class ConnectionManager(BaseConnectionManager):
                     f"in state {ConnRecord.State.INVITATION.rfc160}: "
                     "a prior connection request may have updated the connection state"
                 )
-        # JS RECIEVER NEEDS TO RESOLVE THE ANCHOR to the actual reciepient key
+
         invitation = None
         if connection:
             async with self.profile.session() as session:
@@ -551,7 +513,7 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if request.connection.did != conn_did_doc.id:
+        if request.connection.did != conn_did_doc.did:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDoc id",
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
@@ -636,6 +598,7 @@ class ConnectionManager(BaseConnectionManager):
             {"connection_id": connection.connection_id},
             settings=self.profile.settings,
         )
+
         mediation_record = await self._route_manager.mediation_record_for_connection(
             self.profile, connection, mediation_id
         )
@@ -665,31 +628,8 @@ class ConnectionManager(BaseConnectionManager):
                 my_info = await wallet.get_local_did(connection.my_did)
         else:
             async with self.profile.session() as session:
-                # create peer:did:2
                 wallet = session.inject(BaseWallet)
-                # Create new DID for connection
-
-                # for peer did, create did_doc first then save did after.
-                keypair = _create_keypair(ED25519, None)
-                verkey_bytes = keypair.get_public_bytes()
-
-                # JS START  library did_doc construction
-                # use library did_doc construction
-                service = {
-                    "type": "DIDCommMessaging",
-                    "serviceEndpoint": self.profile.settings.get("default_endpoint"),
-                    "recipient_keys":[]
-                }
-
-                peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
-                    bytes_to_b58(verkey_bytes), service=service
-                )
-                connection.my_did = peer_did
-
-                my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=peer_did)
-                connection.my_did = my_info.did
-                # my_info = await wallet.create_local_did(SOV, ED25519)
-
+                my_info = await wallet.create_local_did(SOV, ED25519)
             connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -707,20 +647,17 @@ class ConnectionManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        if my_info.method == SOV:
-            did_doc = await self.create_did_document(
-                my_info,
-                connection.inbound_connection_id,
-                my_endpoints,
-                mediation_records=list(
-                    filter(None, [base_mediation_record, mediation_record])
-                ),
-            )
-        elif my_info.method == PEER:
-            pass
+        did_doc = await self.create_did_document(
+            my_info,
+            connection.inbound_connection_id,
+            my_endpoints,
+            mediation_records=list(
+                filter(None, [base_mediation_record, mediation_record])
+            ),
+        )
 
         response = ConnectionResponse(
-            connection=ConnectionDetail(did=my_info.did, did_doc=dd)
+            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
         )
 
         # Assign thread information
@@ -821,7 +758,7 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if their_did != conn_did_doc.id:
+        if their_did != conn_did_doc.did:
             raise ConnectionManagerError("Connection DID does not match DIDDoc id")
         # Verify connection response using connection field
         async with self.profile.session() as session:
