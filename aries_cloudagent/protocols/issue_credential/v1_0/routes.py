@@ -295,6 +295,19 @@ class CredExIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+class V10CredentialExchangeAutoRemoveRequestSchema(OpenAPISchema):
+    """Request Schema for overriding default preserve exchange records setting."""
+
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the credential exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+        default=False,
+    )
+
+
 @docs(
     tags=["issue-credential v1.0"],
     summary="Fetch all credential exchange records",
@@ -955,6 +968,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     summary="Send issuer a credential request",
 )
 @match_info_schema(CredExIdMatchInfoSchema())
+@request_schema(V10CredentialExchangeAutoRemoveRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_request(request: web.BaseRequest):
     """
@@ -974,6 +988,14 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
+
+    try:
+        body = await request.json() or {}
+        auto_remove = body.get(
+            "auto_remove", not profile.settings.get("preserve_exchange_records")
+        )
+    except JSONDecodeError:
+        auto_remove = not profile.settings.get("preserve_exchange_records")
 
     cred_ex_record = None
     connection_record = None
@@ -1012,6 +1034,9 @@ async def credential_exchange_send_request(request: web.BaseRequest):
             )
             # Transform recipient key into did
             holder_did = default_did_from_verkey(oob_record.our_recipient_key)
+
+    # assign the auto_remove flag from above...
+    cred_ex_record.auto_remove = auto_remove
 
     try:
         credential_manager = CredentialManager(profile)

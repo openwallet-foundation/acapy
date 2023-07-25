@@ -167,6 +167,14 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         default=False,
     )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the presentation exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+        default=False,
+    )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
@@ -216,6 +224,14 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         example=False,
     )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the presentation exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+        default=False,
+    )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
@@ -239,6 +255,14 @@ class V20PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
         required=False,
         example=False,
     )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the presentation exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+        default=False,
+    )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
@@ -261,6 +285,14 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
             "Optional Presentation specification for DIF, "
             "overrides the PresentionExchange record's PresRequest"
         ),
+    )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the presentation exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+        default=False,
     )
 
     @validates_schema
@@ -777,6 +809,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     auto_present = body.get(
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
+    auto_remove = body.get("auto_remove")
 
     pres_manager = V20PresManager(profile)
     pres_ex_record = None
@@ -785,6 +818,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
             connection_id=connection_id,
             pres_proposal_message=pres_proposal_message,
             auto_present=auto_present,
+            auto_remove=auto_remove,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -847,6 +881,7 @@ async def present_proof_create_request(request: web.BaseRequest):
     auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
+    auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
         context.settings,
@@ -860,6 +895,7 @@ async def present_proof_create_request(request: web.BaseRequest):
             connection_id=None,
             pres_request_message=pres_request_message,
             auto_verify=auto_verify,
+            auto_remove=auto_remove,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -928,6 +964,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
     auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
+    auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
         context.settings,
@@ -941,6 +978,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
             connection_id=connection_id,
             pres_request_message=pres_request_message,
             auto_verify=auto_verify,
+            auto_remove=auto_remove,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -1018,6 +1056,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
     pres_ex_record.auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
+    pres_ex_record.auto_remove = body.get("auto_remove")
     pres_manager = V20PresManager(profile)
     try:
         (
@@ -1103,6 +1142,12 @@ async def present_proof_send_presentation(request: web.BaseRequest):
                 f"(must be {V20PresExRecord.STATE_REQUEST_RECEIVED})"
             )
         )
+
+    auto_remove = body.get("auto_remove")
+    if auto_remove is None:
+        auto_remove = not profile.settings.get("preserve_exchange_records")
+
+    pres_ex_record.auto_remove = auto_remove
 
     # Fetch connection if exchange has record
     conn_record = None
