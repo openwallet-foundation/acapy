@@ -13,9 +13,9 @@ from peerdid.dids import DIDDocument, resolve_peer_did
 from ....wallet.askar import _create_keypair
 
 from ....connections.base_manager import BaseConnectionManager
-from ....connections.models.diddoc import PublicKey, PublicKeyType, PeerDIDDoc  # JS
+from ....connections.models.diddoc import LegacyDIDDoc  # JS
+from ....connections.models.diddoc.util import create_peer_did_2_from_verkey
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.diddoc import LegacyDIDDoc
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
@@ -311,7 +311,7 @@ class DIDXManager(BaseConnectionManager):
                         "serviceEndpoint": self.profile.settings.get("default_endpoint"),
                         "recipient_keys":[]
                     }
-                    peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
+                    peer_did = create_peer_did_2_from_verkey(
                         bytes_to_b58(verkey_bytes), service=service
                     )
 
@@ -646,7 +646,7 @@ class DIDXManager(BaseConnectionManager):
                         "recipient_keys":[]
                     }
 
-                    peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
+                    peer_did = create_peer_did_2_from_verkey(
                         bytes_to_b58(verkey_bytes), service=service
                     )
                     self._logger.warning(peer_did)

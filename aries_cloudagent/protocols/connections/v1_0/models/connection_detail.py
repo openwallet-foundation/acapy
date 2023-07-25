@@ -1,9 +1,8 @@
 """An object for containing the connection request/response DID information."""
 
 from marshmallow import EXCLUDE, fields
-from pydid.did import DID_PATTERN
-from peerdid.dids import resolve_peer_did, DIDDocument
-from .....connections.models.diddoc import LegacyDIDDoc, PeerDIDDoc
+from peerdid.dids import DIDDocument
+from .....connections.models.diddoc import LegacyDIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import ANY_DID
 
@@ -36,7 +35,7 @@ class DIDDocWrapper(fields.Field):
         """
         dd = None
         if value["id"].startswith("did:peer:2"):
-            dd = PeerDIDDoc.deserialize(value)
+            dd = DIDDocument.deserialize(value)
         else:  # if sov
             dd = LegacyDIDDoc.deserialize(value)
         return dd

@@ -4,7 +4,7 @@ Class to provide some common utilities.
 For Connection, DIDExchange and OutOfBand Manager.
 """
 
-import logging, json
+import logging
 from typing import Optional, List, Sequence, Tuple, Text
 
 from multiformats import multibase, multicodec
@@ -45,7 +45,7 @@ from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from .models.diddoc import LegacyDIDDoc, PublicKey, PublicKeyType, Service, diddoc
+from .models.diddoc import LegacyDIDDoc, PublicKey, PublicKeyType, Service, DIDDoc
 from ..wallet.util import bytes_to_b58, b64_to_bytes
 
 
@@ -79,7 +79,7 @@ class BaseConnectionManager:
         inbound_connection_id: str = None,
         svc_endpoints: Sequence[str] = None,
         mediation_records: List[MediationRecord] = None,
-    ) -> diddoc.DIDDoc:
+    ) -> DIDDoc:
         """Create our DID doc for a given DID.
 
         Args:
@@ -94,7 +94,7 @@ class BaseConnectionManager:
 
         """
 
-        did_doc = diddoc.DIDDoc(id=did_info.did)
+        did_doc = DIDDoc(id=did_info.did)
         did_controller = did_info.did
         did_key = did_info.verkey
         pk = PublicKey(
@@ -211,6 +211,7 @@ class BaseConnectionManager:
                     if vm.public_key_base58:
                         await self.add_key_for_did(did_doc.id, vm.public_key_base58)
                     elif vm.material:
+                        #TODO: accept/decode multibase
                         self._logger.error("VerificationMethod material exists, but no in base58, not saving key")
 
 
@@ -275,7 +276,6 @@ class BaseConnectionManager:
                 "Cannot connect via public DID that has no associated services"
             )
 
-        # JS this detects DIDCommService
         didcomm_services = sorted(
             [service for service in doc.service if isinstance(service, DIDCommService)],
             key=lambda service: service.priority,
@@ -431,7 +431,7 @@ class BaseConnectionManager:
                 did_doc, _ = await self.fetch_did_document(connection.their_did)
 
             except StorageNotFoundError:
-                self._logger.warning("did_documnet not found, checking with did:sov: prefix")
+                self._logger.warning("did_document not found, checking with did:sov: prefix to manage legacy behaviour")
                 did_doc, _ = await self.fetch_did_document("did:sov:"+connection.their_did)
 
             finally:
@@ -455,7 +455,7 @@ class BaseConnectionManager:
             if DIDUrl.is_valid(vor):
                 resource = did_doc.dereference(vor)
             else:
-                #add if no a reference
+                #add if not a reference
                 result.append(vor)  
 
             if issubclass(resource.__class__, VerificationMethod):
@@ -513,5 +513,5 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-            #JSload into LegacyDIDDoc, and populate both inherited and custom members
+            #JSload into LegacyDIDDoc, converting old DIDDoc classes into DIDDocument compliant objects
         return LegacyDIDDoc.from_json(record.value), record

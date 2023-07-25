@@ -20,8 +20,10 @@ limitations under the License.
 
 from base58 import b58decode
 from urllib.parse import urlparse
-from peerdid.dids import DID
 from pydid.did import DID_PATTERN
+from peerdid.dids import DID, DIDDocument, create_peer_did_numalgo_2
+from peerdid.keys import X25519KeyAgreementKey, Ed25519VerificationKey
+
 
 
 def resource(ref: str, delimiter: str = None) -> str:
@@ -117,3 +119,19 @@ def ok_did(token: str) -> bool:
         return len(b58decode(token)) == 16 if token else False
     except ValueError:
         return False
+    
+
+def create_peer_did_2_from_verkey(
+    cls, verkey: str, service: dict = None
+) -> DID:
+    """verkey must by base58"""
+
+    enc_keys = [X25519KeyAgreementKey.from_base58(verkey)]
+    sign_keys = [Ed25519VerificationKey.from_base58(verkey)]
+
+    var = create_peer_did_numalgo_2(
+        enc_keys, sign_keys, service
+    )
+    return var
+
+

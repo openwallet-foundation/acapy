@@ -23,8 +23,7 @@ import logging
 
 from typing import List, Sequence, Union, Any, Optional
 from pydid import DIDCommService
-from peerdid import dids, keys
-from peerdid.dids import DID, DIDDocument, create_peer_did_numalgo_0, resolve_peer_did
+from peerdid.dids import DID, DIDDocument
 from .publickey import PublicKey, PublicKeyType
 from .service import Service
 from .util import canon_did, canon_ref, ok_did, resource
@@ -47,7 +46,7 @@ class UnqualifiedDIDDoc(DIDDocument):
 
 
 class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
-    
+    #TODO How much of this class can be destroyed....
     _pubkey: dict = {}
     _service: dict = {}
 
@@ -257,30 +256,6 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
 
         return f"<LegacyDIDDoc did={self.did}>"
 
-
-class PeerDIDDoc(DIDDocument):
-    """
-    did:peer:2 following the Method 2 of
-    https://identity.foundation/peer-did-method-spec/#generation-method
-    """
-
-    @classmethod
-    def create_peer_did_2_from_verkey(
-        cls, verkey: str, service: dict = None
-    ) -> dids.DID:
-        """verkey must by base58"""
-
-        enc_keys = [keys.X25519KeyAgreementKey.from_base58(verkey)]
-        sign_keys = [keys.Ed25519VerificationKey.from_base58(verkey)]
-
-        var = dids.create_peer_did_numalgo_2(
-            enc_keys, sign_keys, service
-        )
-        return var
-
-    @classmethod
-    def resolve_peer_did(self, did:DID) -> DIDDocument:
-        return resolve_peer_did(did)
 
 
 class DIDDoc:

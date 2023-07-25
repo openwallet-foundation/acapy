@@ -15,8 +15,6 @@ from aries_cloudagent.wallet.error import WalletError
 from aries_cloudagent.wallet.key_type import KeyType
 from aries_cloudagent.wallet.util import bytes_to_b58
 
-from aries_cloudagent.connections.models.diddoc.diddoc import PeerDIDDoc
-
 
 class DIDParametersValidation:
     """A utility class to check compatibility of provided DID creation parameters."""
