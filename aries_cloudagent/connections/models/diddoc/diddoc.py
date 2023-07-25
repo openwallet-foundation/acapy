@@ -112,29 +112,6 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
                 "Cannot add item {} to DIDDoc on DID {}".format(item, self.did)
             )
 
-    def serialize(self) -> dict:
-        """
-        Dump current object to a JSON-compatible dictionary.
-
-        Returns:
-            dict representation of current DIDDoc
-
-        """
-
-        return {
-            "@context": self.context,
-            "id": canon_ref(self.did, self.did),
-            "publicKey": [pubkey.to_dict() for pubkey in self._pubkey.values()],
-            "authentication": [
-                {
-                    "type": pubkey.type.authn_type,
-                    "publicKey": canon_ref(self.did, pubkey.id),
-                }
-                for pubkey in self.pubkey.values()
-                if pubkey.authn
-            ],
-            "service": [service.to_dict() for service in self._service.values()],
-        }
 
     def to_json(self) -> str:
         """
@@ -219,8 +196,45 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
         """
 
         rv = None
+        print(did_doc)
+        verification_key_id = None
+        did_doc["id"] = did_doc["id"]
+
+        if "publicKey" in did_doc:
+            did_doc["verificationMethod"] = []
+            for i, pk in enumerate(did_doc.pop("publicKey")):
+                #replace publicKeys with VerificationMethod
+                vm_id = "#" + pk.get("id","").split("#")[1]
+                pk["id"] = vm_id or f"#{i}"
+
+                did_doc["verificationMethod"].append(pk)
+                if pk["type"] == "Ed25519VerificationKey2018":
+                    verification_key_id = pk["id"]
+                
+        
+        if verification_key_id and "authentication" in did_doc:
+            did_doc["authentication"] = [verification_key_id]
+
+        for service in did_doc["service"]:
+            if service["type"] == "IndyAgent":
+                service["type"] = "DIDCommMessaging"
+            sid = service["id"]
+            if ";" in sid:
+                service["id"] = sid.replace(";","#")
+            if "recipientKeys" in service:
+                service["recipient_keys"] = [did_doc["verificationMethod"][0]["id"]]
+                service.pop("recipientKeys")
+
+
+        print("after legacy did_doc handling")
+        print(did_doc)
         rv = super().deserialize(did_doc)
-        print(rv)
+
+        print("after deserialization")
+        for s in rv.service:
+            #if s is not a DIDCommService, errors will arise later... after serde it will become an UnknownService
+            assert isinstance(s, DIDCommService)
+        print(rv.dict())
         return rv
 
     @classmethod

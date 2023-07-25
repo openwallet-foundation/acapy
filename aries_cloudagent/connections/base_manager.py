@@ -13,6 +13,7 @@ from pydid import (
     DIDDocument,
     DIDCommService,
     VerificationMethod,
+    
 )
 import pydid
 from pydid.verification_method import (
@@ -20,6 +21,7 @@ from pydid.verification_method import (
     JsonWebKey2020,
     Ed25519VerificationKey2020,
 )
+from pydid.did_url import DIDUrl
 
 from ..config.logging import get_logger_inst
 from ..core.error import BaseError
@@ -77,7 +79,7 @@ class BaseConnectionManager:
         inbound_connection_id: str = None,
         svc_endpoints: Sequence[str] = None,
         mediation_records: List[MediationRecord] = None,
-    ) -> LegacyDIDDoc:
+    ) -> diddoc.DIDDoc:
         """Create our DID doc for a given DID.
 
         Args:
@@ -92,7 +94,7 @@ class BaseConnectionManager:
 
         """
 
-        did_doc = LegacyDIDDoc(id=did_info.did)
+        did_doc = diddoc.DIDDoc(id=did_info.did)
         did_controller = did_info.did
         did_key = did_info.verkey
         pk = PublicKey(
@@ -425,9 +427,17 @@ class BaseConnectionManager:
             if not connection.their_did:
                 self._logger.debug("No target DID associated with connection")
                 return None
+            try: 
+                did_doc, _ = await self.fetch_did_document(connection.their_did)
 
-            did_doc, _ = await self.fetch_did_document(connection.their_did)
+            except StorageNotFoundError:
+                self._logger.warning("did_documnet not found, checking with did:sov: prefix")
+                did_doc, _ = await self.fetch_did_document("did:sov:"+connection.their_did)
 
+            finally:
+                if not did_doc:
+                    raise StorageNotFoundError(f"did_document not found with did {connection.their_did}")
+                
             async with self._profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(connection.my_did)
@@ -440,14 +450,19 @@ class BaseConnectionManager:
 
     def resolve_verkey_references(self, did_doc:DIDDocument, values_or_refs = List[str]) -> List[str]:
         result = []
+        resource = None
         for vor in values_or_refs:
-            resource = did_doc.dereference(vor)
-            if not resource:
+            if DIDUrl.is_valid(vor):
+                resource = did_doc.dereference(vor)
+            else:
+                #add if no a reference
                 result.append(vor)  
+
             if issubclass(resource.__class__, VerificationMethod):
-            #insert original object for now
+                #insert material of verificationmethod
                 result.append(resource.material)
             else:
+                #if the reference is to another type of object, log an error
                 self._logger.error(f"do not know the desired value to object of type {resource.__class__}.")
         return result
 

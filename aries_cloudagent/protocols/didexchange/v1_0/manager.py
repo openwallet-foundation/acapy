@@ -296,7 +296,7 @@ class DIDXManager(BaseConnectionManager):
                 my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
             # Create new DID for connection
-            if self.profile.settings.get("debug.send_peer_did_2", True):
+            if self.profile.settings.get("debug.send_peer_did_2", False):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
 
