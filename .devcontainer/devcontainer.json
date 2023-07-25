@@ -43,7 +43,7 @@
     "remoteUser": "vscode",
     
     "remoteEnv": {
-        //"PATH": "${containerEnv:PATH}:${workspaceRoot}/.venv/bin"
+        "RUST_LOG":"aries-askar::log::target=error"
     },
     
     "mounts": [],

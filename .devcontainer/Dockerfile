@@ -3,4 +3,3 @@ ARG VARIANT="3.9"
 FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
 
 # if we need to enhance this image we can do it in this dockerfile or the post-install.sh script
-ARG RUST_LOG=aries-askar::log::target=error
