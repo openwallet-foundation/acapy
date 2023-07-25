@@ -279,8 +279,8 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             "_assert_can_issue_with_id_and_proof_type",
             async_mock.CoroutineMock(),
         ) as mock_can_issue, async_mock.patch.object(
-            LDProofCredFormatHandler,
-            "_did_info_for_did",
+            DefaultVerificationKeyStrategy,
+            "get_verification_key_for_did",
             async_mock.CoroutineMock(),
         ) as mock_did_info:
             suite = await self.handler._get_suite_for_detail(detail)
@@ -295,7 +295,11 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             mock_can_issue.assert_called_once_with(
                 detail.credential.issuer_id, detail.options.proof_type
             )
-            mock_did_info.assert_called_once_with(detail.credential.issuer_id)
+            mock_did_info.assert_called_once_with(
+                detail.credential.issuer_id,
+                self.profile,
+                verification_method=suite.verification_method,
+            )
 
     async def test_get_suite(self):
         proof = async_mock.MagicMock()
