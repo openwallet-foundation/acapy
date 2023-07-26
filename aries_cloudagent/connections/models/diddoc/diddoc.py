@@ -39,18 +39,16 @@ class UnqualifiedDIDDoc(DIDDocument):
     everything else as URIs (oriented toward W3C-facing operations).
     """
 
-
     # ACAPY USED UNQUALIFIED DIDS, allow them in DIDDoc's for now....
     id: Union[DID, str] = ""
     controller: Optional[List[Union[DID, str]]] = None
 
 
 class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
-    #TODO How much of this class can be destroyed....
+    # TODO How much of this class can be destroyed....
     _pubkey: dict = {}
     _service: dict = {}
 
-    
     @property
     def did(self) -> str:
         """Accessor for DID."""
@@ -110,7 +108,6 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
             raise ValueError(
                 "Cannot add item {} to DIDDoc on DID {}".format(item, self.did)
             )
-
 
     def to_json(self) -> str:
         """
@@ -196,39 +193,35 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
 
         rv = None
         verification_key_id = None
-        did_doc["id"] = did_doc["id"]
-
         if "publicKey" in did_doc:
             did_doc["verificationMethod"] = []
             for i, pk in enumerate(did_doc.pop("publicKey")):
-                #replace publicKeys with VerificationMethod
-                vm_id = "#" + pk.get("id","").split("#")[1]
+                # replace publicKeys with VerificationMethod
+                vm_id = "#" + pk.get("id", "").split("#")[1]
                 pk["id"] = vm_id or f"#{i}"
                 did_doc["verificationMethod"].append(pk)
                 if pk["type"] == "Ed25519VerificationKey2018":
                     verification_key_id = pk["id"]
-                
-        
+
         if verification_key_id and "authentication" in did_doc:
             did_doc["authentication"] = [verification_key_id]
 
-        for service in did_doc["service"]:
+        for service in did_doc.get("service", []):
             if service["type"] == "IndyAgent":
                 service["type"] = "DIDCommMessaging"
             sid = service["id"]
             if ";" in sid:
-                #legacy DIDDoc behaviour
-                service["id"] = sid.replace(";","#")
-            if "recipientKeys" in service:
-                #must be referenced, not directly embedded 
+                # legacy DIDDoc behaviour
+                service["id"] = sid.replace(";", "#")
+            if "recipientKeys" in service and did_doc["verificationMethod"]:
+                # must be referenced, not directly embedded
                 service["recipient_keys"] = [did_doc["verificationMethod"][0]["id"]]
                 service.pop("recipientKeys")
-
 
         rv = super().deserialize(did_doc)
 
         for s in rv.service:
-            #if s is not a DIDCommService, errors will arise later... after serde it will become an UnknownService
+            # if s is not a DIDCommService, errors will arise later... after serde it will become an UnknownService
             assert isinstance(s, DIDCommService)
         return rv
 
@@ -255,7 +248,6 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
         """Format LegacyDIDDoc for logging."""
 
         return f"<LegacyDIDDoc did={self.did}>"
-
 
 
 class DIDDoc:
@@ -293,13 +285,12 @@ class DIDDoc:
 
         return self._did
 
-
     @property
     def id(self) -> str:
         """Accessor for DID."""
 
         return self._did
-    
+
     @did.setter
     def did(self, value: str) -> None:
         """
@@ -560,7 +551,6 @@ class DIDDoc:
         """Format DIDDoc for logging."""
 
         return f"<DIDDoc did={self.did}>"
-
 
 
 LegacyDIDDoc = LegacyTESTDIDDoc

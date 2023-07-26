@@ -32,19 +32,19 @@ class TestDIDDoc(AsyncTestCase):
             "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
             "publicKey": [
                 {
-                    "id": "3",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#3",
                     "type": "RsaVerificationKey2018",
                     "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
                     "publicKeyPem": "-----BEGIN PUBLIC X...",
                 },
                 {
-                    "id": "4",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#4",
                     "type": "RsaVerificationKey2018",
                     "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
                     "publicKeyPem": "-----BEGIN PUBLIC 9...",
                 },
                 {
-                    "id": "6",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#6",
                     "type": "RsaVerificationKey2018",
                     "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
                     "publicKeyPem": "-----BEGIN PUBLIC A...",

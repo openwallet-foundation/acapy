@@ -153,7 +153,7 @@ class AskarWallet(BaseWallet):
         seed: str = None,
         did: str = None,
         metadata: dict = None,
-        keypair: Key = None
+        keypair: Key = None,
     ) -> DIDInfo:
         """
         Create and store a new local DID.

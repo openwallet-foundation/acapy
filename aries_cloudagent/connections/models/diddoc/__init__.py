@@ -20,4 +20,11 @@ from .diddoc import LegacyDIDDoc, DIDDoc
 from .publickey import LinkedDataKeySpec, PublicKey, PublicKeyType
 from .service import Service
 
-__all__ = ["DIDDoc", "LegacyDIDDoc", "LinkedDataKeySpec", "PublicKey", "PublicKeyType", "Service"]
+__all__ = [
+    "DIDDoc",
+    "LegacyDIDDoc",
+    "LinkedDataKeySpec",
+    "PublicKey",
+    "PublicKeyType",
+    "Service",
+]

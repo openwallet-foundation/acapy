@@ -18,8 +18,9 @@ class PeerDidNumAlgo(Enum):
 
 
 def get_did_from_did_doc(did_doc: Union[LegacyDIDDoc, DIDPeerDoc]) -> str:
-    #use lib functions
+    # use lib functions
     pass
+
 
 def is_valid_peer_did(did: str) -> bool:
     return bool(PeerDID.PATTERN.match(did))
@@ -35,11 +36,9 @@ def get_num_algo_from_peer_did(did: str) -> Optional[PeerDidNumAlgo]:
         return PeerDidNumAlgo.MULTIPLE_INCEPTION_KEY_WITHOUT_DOC
     else:
         return None
-    
-    
+
 
 def create_peer_did_2(verkey: bytes, service: dict) -> "DIDPeerDoc":
-
     enc_keys = [keys.X25519KeyAgreementKey(verkey)]
     sign_keys = [keys.Ed25519VerificationKey(verkey)]
 
@@ -50,6 +49,5 @@ def create_peer_did_2(verkey: bytes, service: dict) -> "DIDPeerDoc":
         "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
     }
 
-    var = dids.create_peer_did_numalgo_2(enc_keys, sign_keys,service)
+    var = dids.create_peer_did_numalgo_2(enc_keys, sign_keys, service)
     print(var)
-

@@ -71,7 +71,7 @@ KEY = DIDMethod(
     rotation=False,
 )
 
-#https://identity.foundation/peer-did-method-spec/
+# https://identity.foundation/peer-did-method-spec/
 PEER = DIDMethod(
     name="peer",
     key_types=[ED25519],

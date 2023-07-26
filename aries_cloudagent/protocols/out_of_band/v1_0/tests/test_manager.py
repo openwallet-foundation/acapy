@@ -10,7 +10,12 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
-from .....connections.models.diddoc import LegacyDIDDoc, PublicKey, PublicKeyType, Service
+from .....connections.models.diddoc import (
+    LegacyDIDDoc,
+    PublicKey,
+    PublicKeyType,
+    Service,
+)
 from .....core.event_bus import EventBus
 from .....core.in_memory import InMemoryProfile
 from .....core.util import get_version_from_message

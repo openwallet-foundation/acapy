@@ -46,7 +46,7 @@ class DIDParametersValidation:
         If no DID was provided, automatically derive one for methods that support it.
         """
         if method == PEER and did:
-            #assume numalgo 2
+            # assume numalgo 2
             return did
         if method.holder_defined_did() == HolderDefinedDid.NO and did:
             raise WalletError(

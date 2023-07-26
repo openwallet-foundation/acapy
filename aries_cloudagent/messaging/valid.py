@@ -293,13 +293,14 @@ class IndyDID(Regexp):
 class DIDOrUnqualified(Regexp):
     EXAMPLE = IndyDID.EXAMPLE
     PATTERN = re.compile(IndyDID.PATTERN.pattern + "|" + AnyDID.PATTERN.pattern)
-   
+
     def __init__(self):
         super().__init__(
             DIDOrUnqualified.PATTERN,
             error="Value {input} is not a valid DID",
         )
-    
+
+
 class DIDValidation(Regexp):
     """Validate value against any valid DID spec."""
 
@@ -818,7 +819,10 @@ DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
 ROUTING_KEY = {"validate": RoutingKey(), "example": RoutingKey.EXAMPLE}
 ANY_DID = {"validate": AnyDID(), "example": AnyDID.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
-ANYDID_OR_UNQUALIFIED = {"validate": DIDOrUnqualified(), "example": DIDOrUnqualified.EXAMPLE}
+ANYDID_OR_UNQUALIFIED = {
+    "validate": DIDOrUnqualified(),
+    "example": DIDOrUnqualified.EXAMPLE,
+}
 GENERIC_DID = {"validate": MaybeIndyDID(), "example": MaybeIndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {
     "validate": IndyRawPublicKey(),

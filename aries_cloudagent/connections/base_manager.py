@@ -13,7 +13,6 @@ from pydid import (
     DIDDocument,
     DIDCommService,
     VerificationMethod,
-    
 )
 import pydid
 from pydid.verification_method import (
@@ -205,15 +204,16 @@ class BaseConnectionManager:
             for key in did_doc.pubkey.values():
                 if key.controller == did_doc.id:
                     await self.add_key_for_did(did_doc.id, key.value)
-        if hasattr(did_doc, "verification_method"):            
+        if hasattr(did_doc, "verification_method"):
             for vm in did_doc.verification_method or []:
-                if vm.controller == did_doc.id: 
+                if vm.controller == did_doc.id:
                     if vm.public_key_base58:
                         await self.add_key_for_did(did_doc.id, vm.public_key_base58)
                     elif vm.material:
-                        #TODO: accept/decode multibase
-                        self._logger.error("VerificationMethod material exists, but no in base58, not saving key")
-
+                        # TODO: accept/decode multibase
+                        self._logger.error(
+                            "VerificationMethod material exists, but no in base58, not saving key"
+                        )
 
     async def add_key_for_did(self, did: str, key: str):
         """Store a verkey for lookup against a DID.
@@ -427,17 +427,23 @@ class BaseConnectionManager:
             if not connection.their_did:
                 self._logger.debug("No target DID associated with connection")
                 return None
-            try: 
+            try:
                 did_doc, _ = await self.fetch_did_document(connection.their_did)
 
             except StorageNotFoundError:
-                self._logger.warning("did_document not found, checking with did:sov: prefix to manage legacy behaviour")
-                did_doc, _ = await self.fetch_did_document("did:sov:"+connection.their_did)
+                self._logger.warning(
+                    "did_document not found, checking with did:sov: prefix to manage legacy behaviour"
+                )
+                did_doc, _ = await self.fetch_did_document(
+                    "did:sov:" + connection.their_did
+                )
 
             finally:
                 if not did_doc:
-                    raise StorageNotFoundError(f"did_document not found with did {connection.their_did}")
-                
+                    raise StorageNotFoundError(
+                        f"did_document not found with did {connection.their_did}"
+                    )
+
             async with self._profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(connection.my_did)
@@ -448,24 +454,27 @@ class BaseConnectionManager:
 
         return results
 
-    def resolve_verkey_references(self, did_doc:DIDDocument, values_or_refs = List[str]) -> List[str]:
+    def resolve_verkey_references(
+        self, did_doc: DIDDocument, values_or_refs=List[str]
+    ) -> List[str]:
         result = []
         resource = None
         for vor in values_or_refs:
             if DIDUrl.is_valid(vor):
                 resource = did_doc.dereference(vor)
             else:
-                #add if not a reference
-                result.append(vor)  
+                # add if not a reference
+                result.append(vor)
 
             if issubclass(resource.__class__, VerificationMethod):
-                #insert material of verificationmethod
+                # insert material of verificationmethod
                 result.append(resource.material)
             else:
-                #if the reference is to another type of object, log an error
-                self._logger.error(f"do not know the desired value to object of type {resource.__class__}.")
+                # if the reference is to another type of object, log an error
+                self._logger.error(
+                    f"do not know the desired value to object of type {resource.__class__}."
+                )
         return result
-
 
     def diddoc_connection_targets(
         self, doc: DIDDocument, sender_verkey: str, their_label: str = None
@@ -488,21 +497,20 @@ class BaseConnectionManager:
 
         targets = []
         for service in doc.service:
-            recipient_verkeys = self.resolve_verkey_references(doc,service.recipient_keys)
+            recipient_verkeys = self.resolve_verkey_references(
+                doc, service.recipient_keys
+            )
             targets.append(
                 ConnectionTarget(
                     did=doc.id,
                     endpoint=service.service_endpoint,
                     label=their_label,
                     recipient_keys=recipient_verkeys,
-                    routing_keys=[
-                        key.value for key in (service.routing_keys or ())
-                    ],
+                    routing_keys=[key.value for key in (service.routing_keys or ())],
                     sender_key=sender_verkey,
                 )
             )
         return targets
-    
 
     async def fetch_did_document(self, did: str) -> Tuple[DIDDocument, StorageRecord]:
         """Retrieve a DID Document for a given DID.
@@ -513,5 +521,5 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-            #JSload into LegacyDIDDoc, converting old DIDDoc classes into DIDDocument compliant objects
+            # JSload into LegacyDIDDoc, converting old DIDDoc classes into DIDDocument compliant objects
         return LegacyDIDDoc.from_json(record.value), record
