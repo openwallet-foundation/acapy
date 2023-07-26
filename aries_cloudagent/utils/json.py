@@ -29,8 +29,8 @@ class JsonUtil:
         Returns:
             Formatted json string with a space added after each colon and comma where appropriate.
         """
-        json_str = re.sub(r'":(["\d\{])', r'": \1', json_str)  # add space after colon
-        json_str = re.sub(r',(["\d\{])', r", \1", json_str)  # add space after comma
+        json_str = re.sub(r',(["\d\{tfn])', r", \1", json_str)  # add space after comma
+        json_str = re.sub(r'":(["\d\{tfn])', r'": \1', json_str)  # space after colon
         return json_str
 
     @staticmethod
