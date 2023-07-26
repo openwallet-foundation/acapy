@@ -73,13 +73,14 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
     def pubkey(self) -> dict:
         """Accessor for public keys by identifier."""
 
-        return self._pubkey
+        return {vm.id:vm for vm in self.verification_method}
 
     @property
     def authnkey(self) -> dict:
         """Accessor for public keys marked as authentication keys, by identifier."""
 
-        return {k: self._pubkey[k] for k in self._pubkey if self._pubkey[k].authn}
+        return {vm.id:vm for vm in self.verification_method}
+
 
     @property
     def service(self) -> dict:
@@ -192,33 +193,37 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
         """
 
         rv = None
-        verification_key_id = None
-        if "publicKey" in did_doc:
-            did_doc["verificationMethod"] = []
-            for i, pk in enumerate(did_doc.pop("publicKey")):
+        new_did_doc = did_doc.copy()
+
+        key_dict = {}
+        if "publicKey" in new_did_doc:
+            key_dict = {pk["id"]:pk for pk in new_did_doc["publicKey"]}
+            new_did_doc["verificationMethod"] = []
+            for i, pk in enumerate(new_did_doc.pop("publicKey")):
                 # replace publicKeys with VerificationMethod
                 vm_id = "#" + pk.get("id", "").split("#")[1]
                 pk["id"] = vm_id or f"#{i}"
-                did_doc["verificationMethod"].append(pk)
-                if pk["type"] == "Ed25519VerificationKey2018":
-                    verification_key_id = pk["id"]
+                new_did_doc["verificationMethod"].append(pk)
 
-        if verification_key_id and "authentication" in did_doc:
-            did_doc["authentication"] = [verification_key_id]
+        new_auth_list = []
+        for auth in new_did_doc["authentication"]:
+            new_auth_list.append(key_dict[auth["publicKey"]]["id"])
+        
+        new_did_doc["authentication"]=new_auth_list
 
-        for service in did_doc.get("service", []):
+        for service in new_did_doc.get("service", []):
             if service["type"] == "IndyAgent":
                 service["type"] = "DIDCommMessaging"
-            sid = service["id"]
-            if ";" in sid:
+            sid = service.get("id")
+            if sid and ";" in sid:
                 # legacy DIDDoc behaviour
                 service["id"] = sid.replace(";", "#")
-            if "recipientKeys" in service and did_doc["verificationMethod"]:
+            if "recipientKeys" in service and new_did_doc["verificationMethod"]:
                 # must be referenced, not directly embedded
-                service["recipient_keys"] = [did_doc["verificationMethod"][0]["id"]]
+                service["recipient_keys"] = [new_did_doc["verificationMethod"][0]["id"]]
                 service.pop("recipientKeys")
 
-        rv = super().deserialize(did_doc)
+        rv = super().deserialize(new_did_doc)
 
         for s in rv.service:
             # if s is not a DIDCommService, errors will arise later... after serde it will become an UnknownService
