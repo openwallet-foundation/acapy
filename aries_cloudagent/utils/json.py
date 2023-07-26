@@ -9,22 +9,25 @@ class JsonUtil:
     @staticmethod
     def format_json(json_str):
         """
-        Post-process json string to match json.dumps default formatting.
+        Post-processes a json string to conform to json.dumps default formatting.
 
-        `orjson` does not add whitespace between keys and values, or after commas,
-        which json does by default. This format method adds this whitespace again for compatibility.
-        Naturally this adds some overhead again, but still proves faster than standard `json.dumps`
+        The `orjson` library does not introduce whitespace between keys and values, nor after commas.
+        The default behavior of `json.dumps`, however, does include this whitespace. For compatibility
+        purposes, this method reintroduces such whitespace. Although this introduces some overhead, the
+        overall process remains faster than using standard `json.dumps`.
 
-        A capture group is used to handle cases where the value is either a digit or a string (starting with ").
-        This is used to prevent incorrectly replacing all `:` with `: `.
-        So we refine by replacing `":"` with `": "`, `":\d` with `": \d`, and `":{` with `": {`
-        This assumes all keys are strings, wrapped in " quotes, which is the case for or/json.dumps results
+        A capture group in a regular expression is used to cater to the cases where the value following a
+        colon (:) in a JSON string is either a string (starting with "), a digit, a JSON object (starting
+        with {), or a boolean value or null (starting with "t", "f", or "n" respectively).
+
+        This regular expression only operates under the assumption that all keys in the JSON string are
+        strings enclosed in quotes (") which is the default behavior for `json.dumps` and `orjson.dumps`.
 
         Args:
-            json_str: compact json string
+            json_str: The compact json string to be formatted.
 
         Returns:
-            Formatted json string with space after colon and comma
+            Formatted json string with a space added after each colon and comma where appropriate.
         """
         json_str = re.sub(r'":(["\d\{])', r'": \1', json_str)  # add space after colon
         json_str = re.sub(r',(["\d\{])', r", \1", json_str)  # add space after comma
