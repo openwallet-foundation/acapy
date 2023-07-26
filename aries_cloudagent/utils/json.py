@@ -12,7 +12,7 @@ class JsonUtil:
         Post-process json string to match json.dumps default formatting.
 
         `orjson` does not add whitespace between keys and values, or after commas,
-        which json does by default. This format method adds this whitespace again for compatability.
+        which json does by default. This format method adds this whitespace again for compatibility.
         Naturally this adds some overhead again, but still proves faster than standard `json.dumps`
 
         A capture group is used to handle cases where the value is either a digit or a string (starting with ").
