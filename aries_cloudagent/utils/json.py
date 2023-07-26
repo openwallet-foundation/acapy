@@ -14,9 +14,9 @@ class JsonUtil:
         `orjson` does not add whitespace between keys and values, or after commas,
         which json does by default. This format method adds this whitespace again for compatability.
         Naturally this adds some overhead again, but still proves faster than standard `json.dumps`
-        
+
         A capture group is used to handle cases where the value is either a digit or a string (starting with ").
-        This is used to prevent incorrectly replacing all `:` with `: `. 
+        This is used to prevent incorrectly replacing all `:` with `: `.
         So we refine by replacing `":"` with `": "`, `":\d` with `": \d`, and `":{` with `": {`
         This assumes all keys are strings, wrapped in " quotes, which is the case for or/json.dumps results
 
