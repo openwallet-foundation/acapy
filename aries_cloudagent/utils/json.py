@@ -1,10 +1,30 @@
 import json
+import re
 from typing import Any
 
 import orjson
 
 
 class JsonUtil:
+    @staticmethod
+    def format_json(json_str):
+        """
+        Post-process json string to match json.dumps default formatting.
+
+        `orjson` does not add whitespace between keys and values, or after commas,
+        which json does by default. This format method adds this whitespace again for compatability.
+        Naturally this adds some overhead again, but still proves faster than standard `json.dumps`
+
+        Args:
+            json_str: compact json string
+
+        Returns:
+            Formatted json string with space after colon and comma
+        """
+        json_str = re.sub(r'":"', '": "', json_str)  # add space after colon
+        json_str = re.sub(r',"', ', "', json_str)  # add space after comma
+        return json_str
+
     @staticmethod
     def dumps(obj, *args, **kwargs) -> str:
         """
@@ -18,7 +38,7 @@ class JsonUtil:
         Returns:
             The json string representation of obj
         """
-        return orjson.dumps(obj, *args, **kwargs).decode()
+        return JsonUtil.format_json(orjson.dumps(obj, *args, **kwargs).decode())
 
     @staticmethod
     def loads(s: str, *args, **kwargs) -> Any:
