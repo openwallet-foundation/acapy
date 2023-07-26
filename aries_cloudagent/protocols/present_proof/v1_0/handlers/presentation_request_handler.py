@@ -96,6 +96,7 @@ class PresentationRequestHandler(BaseHandler):
                     "debug.auto_respond_presentation_request"
                 ),
                 trace=(context.message._trace is not None),
+                auto_remove=not profile.settings.get("preserve_exchange_records"),
             )
 
         presentation_exchange_record = await presentation_manager.receive_request(

@@ -1200,7 +1200,8 @@ class ProtocolGroup(ArgumentGroup):
             "--preserve-exchange-records",
             action="store_true",
             env_var="ACAPY_PRESERVE_EXCHANGE_RECORDS",
-            help="Keep credential exchange records after exchange has completed.",
+            help="Keep credential and presentation exchange records after "
+            "exchange has completed.",
         )
         parser.add_argument(
             "--emit-new-didcomm-prefix",
