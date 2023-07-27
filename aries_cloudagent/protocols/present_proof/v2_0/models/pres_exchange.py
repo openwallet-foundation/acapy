@@ -69,6 +69,7 @@ class V20PresExRecord(BaseExchangeRecord):
         error_msg: str = None,
         trace: bool = False,  # backward compat: BaseRecord.FromStorage()
         by_format: Mapping = None,  # backward compat: BaseRecord.FromStorage()
+        auto_remove: bool = False,
         **kwargs,
     ):
         """Initialize a new PresExRecord."""
@@ -86,6 +87,7 @@ class V20PresExRecord(BaseExchangeRecord):
         self.auto_present = auto_present
         self.auto_verify = auto_verify
         self.error_msg = error_msg
+        self.auto_remove = auto_remove
 
     @property
     def pres_ex_id(self) -> str:
@@ -226,6 +228,7 @@ class V20PresExRecord(BaseExchangeRecord):
                     "auto_verify",
                     "error_msg",
                     "trace",
+                    "auto_remove",
                 )
             },
             **{
@@ -343,4 +346,12 @@ class V20PresExRecordSchema(BaseExchangeSchema):
     )
     error_msg = fields.Str(
         required=False, description="Error message", example="Invalid structure"
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        default=True,
+        description=(
+            "Verifier choice to remove this presentation exchange record when complete"
+        ),
+        example=False,
     )
