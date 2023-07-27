@@ -1,4 +1,4 @@
-"A module providing a utility class for handling JSON-related operations."
+"""A module providing a utility class for handling JSON-related operations."""
 
 import json
 import re
