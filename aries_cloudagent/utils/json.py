@@ -1,6 +1,4 @@
-"""
-A module providing a utility class for handling JSON-related operations.
-"""
+"A module providing a utility class for handling JSON-related operations."
 
 import json
 import re
@@ -45,6 +43,7 @@ class JsonUtil:
 
         Returns:
             Formatted json string with a space added where appropriate.
+
         """
 
         json_str = re.sub(r',([tfn"\d\{\[])', r", \1", json_str)  # space after comma
@@ -63,6 +62,7 @@ class JsonUtil:
 
         Returns:
             The json string representation of obj
+
         """
 
         if "indent" in kwargs:  # not supported in orjson, and only used in demo logs
@@ -82,6 +82,7 @@ class JsonUtil:
 
         Returns:
             The Python representation of s
+
         """
 
         return orjson.loads(s, *args, **kwargs)
@@ -98,6 +99,7 @@ class JsonUtil:
 
         Returns:
             The Python representation of fp
+
         """
 
         return json.load(fp, *args, **kwargs)
