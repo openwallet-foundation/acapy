@@ -1,3 +1,7 @@
+"""
+A module providing a utility class for handling JSON-related operations.
+"""
+
 import json
 import re
 from typing import Any
@@ -6,6 +10,16 @@ import orjson
 
 
 class JsonUtil:
+    """
+    A utility class for handling JSON-related operations.
+
+    This class provides static methods for formatting JSON strings, and
+    for converting between Python objects and JSON strings/files. It uses
+    the `orjson` library where possible for its speed advantages, but reverts
+    to the standard `json` library where `orjson` does not support the required
+    functionality.
+    """
+
     @staticmethod
     def format_json(json_str):
         """
