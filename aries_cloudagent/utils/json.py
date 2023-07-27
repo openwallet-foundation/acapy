@@ -46,7 +46,10 @@ class JsonUtil:
         Returns:
             The json string representation of obj
         """
-        return JsonUtil.format_json(orjson.dumps(obj, *args, **kwargs).decode())
+        if "indent" in kwargs:  # not supported in orjson, and only used in demo logs
+            return json.dumps(obj, *args, **kwargs)
+        else:
+            return JsonUtil.format_json(orjson.dumps(obj, *args, **kwargs).decode())
 
     @staticmethod
     def loads(s: str, *args, **kwargs) -> Any:
