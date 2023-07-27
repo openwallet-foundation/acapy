@@ -11,23 +11,26 @@ class JsonUtil:
         """
         Post-processes a json string to conform to json.dumps default formatting.
 
-        The `orjson` library does not introduce whitespace between keys and values, nor after commas.
-        The default behavior of `json.dumps`, however, does include this whitespace. For compatibility
-        purposes, this method reintroduces such whitespace. Although this introduces some overhead, the
-        overall process remains faster than using standard `json.dumps`.
+        The `orjson` library does not introduce whitespace between keys and values,
+        nor after commas. The default behavior of `json.dumps`, however, does include
+        this whitespace. For compatibility purposes, this method reintroduces such
+        whitespace. Although this introduces some overhead, the overall process
+        remains faster than using standard `json.dumps`.
 
-        A capture group in a regular expression is used to cater to the cases where the value following a
-        colon (:) in a JSON string is either a string (starting with "), a digit, a JSON object (starting
-        with {), or a boolean value or null (starting with "t", "f", or "n" respectively).
+        A capture group in a regular expression is used to cater to the cases where
+        the value following a colon (:) in a JSON string is either a string
+        (starting  with "), a digit, a JSON object (starting with {), or a boolean
+        value or null (starting with "t", "f", or "n" respectively).
 
-        This regular expression only operates under the assumption that all keys in the JSON string are
-        strings enclosed in quotes (") which is the default behavior for `json.dumps` and `orjson.dumps`.
+        This regular expression only operates under the assumption that all keys in
+        the JSON string are strings enclosed in quotes (") which is the default
+        behavior for `json.dumps` and `orjson.dumps`.
 
         Args:
             json_str: The compact json string to be formatted.
 
         Returns:
-            Formatted json string with a space added after each colon and comma where appropriate.
+            Formatted json string with a space added where appropriate.
         """
         json_str = re.sub(r',([tfn"\d\{\[])', r", \1", json_str)  # space after comma
         json_str = re.sub(r'":([tfn"\d\{\[])', r'": \1', json_str)  # space after colon
