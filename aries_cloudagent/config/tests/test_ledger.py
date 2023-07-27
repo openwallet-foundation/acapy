@@ -293,6 +293,8 @@ class TestLedgerConfig(AsyncTestCase):
                 "read_only": False,
                 "socks_proxy": None,
                 "pool_name": "sovrinMain",
+                "endorser_did": "9QPa6tHvBHttLg6U4xvviv",
+                "endorser_alias": "endorser_main",
             },
             {
                 "id": "sovrinStaging",
@@ -322,6 +324,8 @@ class TestLedgerConfig(AsyncTestCase):
                     "is_production": True,
                     "is_write": True,
                     "genesis_transactions": TEST_GENESIS_TXNS,
+                    "endorser_did": "9QPa6tHvBHttLg6U4xvviv",
+                    "endorser_alias": "endorser_main",
                 },
                 {
                     "id": "sovrinStaging",

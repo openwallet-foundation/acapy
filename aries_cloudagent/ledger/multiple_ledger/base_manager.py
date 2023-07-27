@@ -20,6 +20,10 @@ class BaseMultipleLedgerManager(ABC):
         """Initialize Multiple Ledger Manager."""
 
     @abstractmethod
+    def get_endorser_info_for_ledger(self, ledger_id: str) -> Optional[Tuple[str, str]]:
+        """Return endorser alias, did tuple for provided ledger, if available."""
+
+    @abstractmethod
     async def get_write_ledgers(self) -> List[str]:
         """Return write ledger."""
 

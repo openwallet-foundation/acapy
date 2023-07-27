@@ -162,6 +162,16 @@ class AskarProfile(Profile):
                     ref(self),
                 ),
             )
+            if (
+                "endorser_alias" in write_ledger_config
+                and "endorser_did" in write_ledger_config
+            ):
+                self.settings["endorser.endorser_alias"] = write_ledger_config.get(
+                    "endorser_alias"
+                )
+                self.settings["endorser.endorser_public_did"] = write_ledger_config.get(
+                    "endorser_did"
+                )
         elif self.ledger_pool:
             injector.bind_provider(
                 BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))

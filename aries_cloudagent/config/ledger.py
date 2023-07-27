@@ -91,22 +91,25 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings):
         ledger_id = config.get("id") or str(uuid.uuid4())
         if is_write_ledger:
             write_ledger_set = True
-        ledger_txns_list.append(
-            {
-                "id": ledger_id,
-                "is_production": (
-                    True
-                    if config.get("is_production") is None
-                    else config.get("is_production")
-                ),
-                "is_write": is_write_ledger,
-                "genesis_transactions": txns,
-                "keepalive": int(config.get("keepalive", 5)),
-                "read_only": bool(config.get("read_only", False)),
-                "socks_proxy": config.get("socks_proxy"),
-                "pool_name": config.get("pool_name", ledger_id),
-            }
-        )
+        config_item = {
+            "id": ledger_id,
+            "is_production": (
+                True
+                if config.get("is_production") is None
+                else config.get("is_production")
+            ),
+            "is_write": is_write_ledger,
+            "genesis_transactions": txns,
+            "keepalive": int(config.get("keepalive", 5)),
+            "read_only": bool(config.get("read_only", False)),
+            "socks_proxy": config.get("socks_proxy"),
+            "pool_name": config.get("pool_name", ledger_id),
+        }
+        if "endorser_alias" in config:
+            config_item["endorser_alias"] = config.get("endorser_alias")
+        if "endorser_did" in config:
+            config_item["endorser_did"] = config.get("endorser_did")
+        ledger_txns_list.append(config_item)
     if not write_ledger_set and not (
         settings.get("ledger.genesis_transactions")
         or settings.get("ledger.genesis_file")

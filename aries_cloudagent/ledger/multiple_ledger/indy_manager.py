@@ -34,6 +34,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         production_ledgers: OrderedDict = OrderedDict(),
         non_production_ledgers: OrderedDict = OrderedDict(),
         writable_ledgers: set = set(),
+        endorser_map: dict = {},
         cache_ttl: int = None,
     ):
         """Initialize MultiIndyLedgerManager.
@@ -49,12 +50,20 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         self.production_ledgers = production_ledgers
         self.non_production_ledgers = non_production_ledgers
         self.writable_ledgers = writable_ledgers
+        self.endorser_map = endorser_map
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
 
     async def get_write_ledgers(self) -> List[str]:
         """Return the write IndySdkLedger instance."""
         return list(self.writable_ledgers)
+
+    def get_endorser_info_for_ledger(self, ledger_id: str) -> Optional[Tuple[str, str]]:
+        """Return endorser alias, did tuple for provided ledger, if available."""
+        endorser_info = self.endorser_map.get(ledger_id)
+        if not endorser_info:
+            return None
+        return (endorser_info["endorser_alias"], endorser_info["endorser_did"])
 
     async def get_ledger_inst_by_id(self, ledger_id: str) -> Optional[BaseLedger]:
         """Return BaseLedger instance."""
@@ -92,6 +101,11 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
             profile.context.injector.bind_instance(
                 BaseLedger, multi_ledgers.get(ledger_id)
             )
+            endorser_info = self.get_endorser_info_for_ledger(ledger_id)
+            if endorser_info:
+                endorser_alias, endorser_did = endorser_info
+                profile.context.settings["endorser.endorser_alias"] = endorser_alias
+                profile.context.settings["endorser.endorser_public_did"] = endorser_did
             return ledger_id
         raise MultipleLedgerManagerError(f"No ledger info found for {ledger_id}.")
 

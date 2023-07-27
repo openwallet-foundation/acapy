@@ -57,6 +57,34 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
             writable_ledgers=writable_ledgers,
         )
 
+    def test_get_endorser_info_for_ledger(self):
+        writable_ledgers = set()
+        writable_ledgers.add("test_prod_1")
+        writable_ledgers.add("test_prod_2")
+
+        endorser_info_map = {}
+        endorser_info_map["test_prod_1"] = {
+            "endorser_did": "test_public_did_1",
+            "endorser_alias": "endorser_1",
+        }
+        endorser_info_map["test_prod_2"] = {
+            "endorser_did": "test_public_did_2",
+            "endorser_alias": "endorser_2",
+        }
+        manager = MultiIndyLedgerManager(
+            self.profile,
+            production_ledgers=self.production_ledger,
+            non_production_ledgers=self.non_production_ledger,
+            writable_ledgers=writable_ledgers,
+            endorser_map=endorser_info_map,
+        )
+        assert (
+            "endorser_1"
+        ), "test_public_did_1" == manager.get_endorser_info_for_ledger("test_prod_1")
+        assert (
+            "endorser_2"
+        ), "test_public_did_2" == manager.get_endorser_info_for_ledger("test_prod_2")
+
     async def test_get_write_ledgers(self):
         ledger_ids = await self.manager.get_write_ledgers()
         assert "test_prod_1" in ledger_ids
@@ -67,10 +95,25 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
         assert ledger_id == "test_prod_1"
 
     async def test_set_profile_write_ledger(self):
+        writable_ledgers = set()
+        writable_ledgers.add("test_prod_1")
+        writable_ledgers.add("test_prod_2")
+        endorser_info_map = {}
+        endorser_info_map["test_prod_2"] = {
+            "endorser_did": "test_public_did_2",
+            "endorser_alias": "endorser_2",
+        }
+        manager = MultiIndyLedgerManager(
+            self.profile,
+            production_ledgers=self.production_ledger,
+            non_production_ledgers=self.non_production_ledger,
+            writable_ledgers=writable_ledgers,
+            endorser_map=endorser_info_map,
+        )
         profile = InMemoryProfile.test_profile()
         assert not profile.inject_or(BaseLedger)
-        assert "test_prod_2" in self.manager.writable_ledgers
-        new_write_ledger_id = await self.manager.set_profile_write_ledger(
+        assert "test_prod_2" in manager.writable_ledgers
+        new_write_ledger_id = await manager.set_profile_write_ledger(
             profile=profile, ledger_id="test_prod_2"
         )
         assert new_write_ledger_id == "test_prod_2"
