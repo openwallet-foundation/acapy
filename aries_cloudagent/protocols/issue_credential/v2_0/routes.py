@@ -358,6 +358,14 @@ class V20CredRequestRequestSchema(OpenAPISchema):
         allow_none=True,
         example="did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
     )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the credential exchange record on completion "
+            "(overrides --preserve-exchange-records configuration setting)"
+        ),
+        required=False,
+        default=False,
+    )
 
 
 class V20CredIssueRequestSchema(OpenAPISchema):
@@ -1258,8 +1266,12 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
     try:
         body = await request.json() or {}
         holder_did = body.get("holder_did")
+        auto_remove = body.get(
+            "auto_remove", not profile.settings.get("preserve_exchange_records")
+        )
     except JSONDecodeError:
         holder_did = None
+        auto_remove = not profile.settings.get("preserve_exchange_records")
 
     cred_ex_id = request.match_info["cred_ex_id"]
 
@@ -1300,6 +1312,9 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
                 )
                 # Transform recipient key into did
                 holder_did = default_did_from_verkey(oob_record.our_recipient_key)
+
+        # assign the auto_remove flag from above...
+        cred_ex_record.auto_remove = auto_remove
 
         cred_manager = V20CredManager(profile)
         cred_ex_record, cred_request_message = await cred_manager.create_request(

@@ -89,6 +89,7 @@ class V20PresRequestHandler(BaseHandler):
                     "debug.auto_respond_presentation_request"
                 ),
                 trace=(context.message._trace is not None),
+                auto_remove=not profile.settings.get("preserve_exchange_records"),
             )
 
         pres_ex_record = await pres_manager.receive_pres_request(
