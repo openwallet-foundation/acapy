@@ -44,6 +44,8 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
   is_production: true
   is_write: true
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+  endorser_did: '9QPa6tHvBHttLg6U4xvviv'
+  endorser_alias: 'endorser_test'
 - id: greenlightDev
   is_production: true
   is_write: true
@@ -84,6 +86,10 @@ Optional properties:
 - `keepalive`: how many seconds to keep the ledger open
 - `socks_proxy`
 - `is_write`: Whether this ledger is writable. It requires atleast one write ledger specified. Multiple write ledgers can be specified in config.
+- `endorser_did`: Endorser public DID registered on the ledger, needed for supporting Endorser protocol at multi-ledger level.
+- `endorser_alias`: Endorser alias for this ledger, needed for supporting Endorser protocol at multi-ledger level.
+
+Note: Both `endorser_did` and `endorser_alias` are part of the endorser info. Whenever a write ledger is selected using `PUT /ledger/{ledger_id}/set-write-ledger`, the endorser info associated with that ledger in the config updates the `endorser.endorser_public_did` and `endorser.endorser_alias` profile setting respectively.
 
 
 ## Multi-ledger Admin API
