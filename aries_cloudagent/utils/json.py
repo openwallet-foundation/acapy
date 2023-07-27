@@ -46,6 +46,7 @@ class JsonUtil:
         Returns:
             Formatted json string with a space added where appropriate.
         """
+
         json_str = re.sub(r',([tfn"\d\{\[])', r", \1", json_str)  # space after comma
         json_str = re.sub(r'":([tfn"\d\{\[])', r'": \1', json_str)  # space after colon
         return json_str
@@ -63,6 +64,7 @@ class JsonUtil:
         Returns:
             The json string representation of obj
         """
+
         if "indent" in kwargs:  # not supported in orjson, and only used in demo logs
             return json.dumps(obj, *args, **kwargs)
         else:
@@ -81,6 +83,7 @@ class JsonUtil:
         Returns:
             The Python representation of s
         """
+
         return orjson.loads(s, *args, **kwargs)
 
     @staticmethod
@@ -96,4 +99,5 @@ class JsonUtil:
         Returns:
             The Python representation of fp
         """
+
         return json.load(fp, *args, **kwargs)
