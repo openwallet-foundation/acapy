@@ -30,7 +30,7 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
 - id: localVON
   is_production: false
   genesis_url: 'http://host.docker.internal:9000/genesis'
-- id: bcorvinTest
+- id: bcovrinTest
   is_production: true
   is_write: true
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
@@ -40,7 +40,7 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
 - id: localVON
   is_production: false
   genesis_url: 'http://host.docker.internal:9000/genesis'
-- id: bcorvinTest
+- id: bcovrinTest
   is_production: true
   is_write: true
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
@@ -52,14 +52,14 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
   genesis_url: 'http://dev.greenlight.bcovrin.vonx.io/genesis'
 ```
 
-Note: `is_write` property means that the ledger is write configurable. With reference to the above config example, both `bcorvinTest` and `greenlightDev` ledgers are write configurable. By default, on startup `bcorvinTest` will be the write ledger as it is the topmost write configurable production ledger, [more details](#write-requests) regarding the selection rule. Using `PUT /ledger/{ledger_id}/set-write-ledger` endpoint, either `greenlightDev` and `bcorvinTest` can be set as the write ledger.
+Note: `is_write` property means that the ledger is write configurable. With reference to the above config example, both `bcovrinTest` and `greenlightDev` ledgers are write configurable. By default, on startup `bcovrinTest` will be the write ledger as it is the topmost write configurable production ledger, [more details](#write-requests) regarding the selection rule. Using `PUT /ledger/{ledger_id}/set-write-ledger` endpoint, either `greenlightDev` and `bcovrinTest` can be set as the write ledger.
 
 ```
 - id: localVON
   is_production: false
   is_write: true
   genesis_url: 'http://host.docker.internal:9000/genesis'
-- id: bcorvinTest
+- id: bcovrinTest
   is_production: true
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
 - id: greenlightDev
@@ -144,7 +144,7 @@ If multiple ledgers are configured then `IndyLedgerRequestsExecutor` service ext
 
 ### Write Requests
 
-On startup, the first configured applicable ledger is assigned as the `write_ledger` [`BaseLedger`], the selection is dependant on the order (top-down) and whether it is `production` or `non_production`. For instance, considering this [example configuration](#example-config-file), ledger `bcorvinTest` will be set as `write_ledger` as it is the topmost `production` ledger. If no `production` ledgers are included in configuration then the topmost `non_production` ledger is selected.
+On startup, the first configured applicable ledger is assigned as the `write_ledger` [`BaseLedger`], the selection is dependant on the order (top-down) and whether it is `production` or `non_production`. For instance, considering this [example configuration](#example-config-file), ledger `bcovrinTest` will be set as `write_ledger` as it is the topmost `production` ledger. If no `production` ledgers are included in configuration then the topmost `non_production` ledger is selected.
 
 ## A Special Warning for TAA Acceptance
 
