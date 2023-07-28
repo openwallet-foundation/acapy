@@ -598,6 +598,9 @@ class OutOfBandManager(BaseConnectionManager):
                 routing_keys,
             ) = await self.resolve_invitation(service)
 
+            if not endpoint:
+                return None
+
             return ServiceDecorator(
                 endpoint=endpoint,
                 recipient_keys=recipient_keys,
@@ -605,6 +608,10 @@ class OutOfBandManager(BaseConnectionManager):
             )
         elif isinstance(service, Service):
             endpoint = service.service_endpoint
+
+            if not endpoint:
+                return None
+
             recipient_keys = [
                 DIDKey.from_did(did_key).public_key_b58
                 for did_key in service.recipient_keys
