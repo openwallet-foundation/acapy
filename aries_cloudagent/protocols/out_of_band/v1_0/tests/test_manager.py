@@ -1774,6 +1774,14 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         service = await self.manager._service_decorator_from_service(oob_service)
 
         assert service is None
+
+    async def test_service_decorator_from_service_invalid_type(self):
+        invalid_type = 123  # integer, for example
+
+        service = await self.manager._service_decorator_from_service(invalid_type)
+
+        assert service is None
+
     async def test_delete_stale_connection_by_invitation(self):
         current_datetime = datetime_now()
         older_datetime = current_datetime - timedelta(hours=4)
