@@ -603,8 +603,7 @@ class OutOfBandManager(BaseConnectionManager):
                 recipient_keys=recipient_keys,
                 routing_keys=routing_keys,
             )
-        else:
-            # Create ~service decorator from the oob service
+        elif isinstance(service, Service):
             recipient_keys = [
                 DIDKey.from_did(did_key).public_key_b58
                 for did_key in service.recipient_keys
@@ -619,6 +618,8 @@ class OutOfBandManager(BaseConnectionManager):
                 recipient_keys=recipient_keys,
                 routing_keys=routing_keys,
             )
+        else:
+            return None
 
     async def _wait_for_reuse_response(
         self, oob_id: str, timeout: int = 15
