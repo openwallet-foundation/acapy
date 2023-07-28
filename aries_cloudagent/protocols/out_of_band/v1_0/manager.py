@@ -590,7 +590,7 @@ class OutOfBandManager(BaseConnectionManager):
 
     async def _service_decorator_from_service(
         self, service: Union[Service, str]
-    ) -> ServiceDecorator:
+    ) -> Optional[ServiceDecorator]:
         if isinstance(service, str):
             (
                 endpoint,
