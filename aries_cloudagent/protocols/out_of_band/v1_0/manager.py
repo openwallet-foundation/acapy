@@ -627,6 +627,10 @@ class OutOfBandManager(BaseConnectionManager):
                 routing_keys=routing_keys,
             )
         else:
+            LOGGER.warning(
+                "Unexpected type `%s` passed to `_service_decorator_from_service`",
+                type(service),
+            )
             return None
 
     async def _wait_for_reuse_response(
