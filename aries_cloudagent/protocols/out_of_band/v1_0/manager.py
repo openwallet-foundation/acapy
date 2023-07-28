@@ -582,7 +582,10 @@ class OutOfBandManager(BaseConnectionManager):
         if not oob_record.connection_id:
             service = oob_record.invitation.services[0]
             their_service = await self._service_decorator_from_service(service)
-            LOGGER.debug("Found service for oob record %s", their_service)
+            if their_service:
+                LOGGER.debug("Found service for oob record %s", their_service)
+            else:
+                LOGGER.debug("No service decorator obtained from %s", service)
 
         await message_processor.handle_message(
             self.profile, messages, oob_record=oob_record, their_service=their_service
