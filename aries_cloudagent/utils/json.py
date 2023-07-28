@@ -31,8 +31,8 @@ class JsonUtil:
 
         A capture group in a regular expression is used to cater to the cases where
         the value following a colon (:) in a JSON string is either a string
-        (starting  with "), a digit, a JSON object (starting with {), or a boolean
-        value or null (starting with "t", "f", or "n" respectively).
+        (starting  with "), a digit, a JSON or a List object (starting with { or [), 
+        or a boolean value or null (starting with "t", "f", or "n" respectively).
 
         This regular expression only operates under the assumption that all keys in
         the JSON string are strings enclosed in quotes (") which is the default
