@@ -1717,6 +1717,63 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert service.recipient_keys == [TestConfig.test_verkey]
         assert service.routing_keys == self.test_mediator_routing_keys
 
+    async def test_service_decorator_from_service_str_empty_endpoint(self):
+        did = "did:sov:something"
+
+        self.manager.resolve_invitation = async_mock.CoroutineMock()
+        self.manager.resolve_invitation.return_value = (
+            "",  # empty endpoint
+            [TestConfig.test_verkey],
+            self.test_mediator_routing_keys,
+        )
+
+        service = await self.manager._service_decorator_from_service(did)
+
+        assert service is None
+
+    async def test_service_decorator_from_service_str_none_endpoint(self):
+        did = "did:sov:something"
+
+        self.manager.resolve_invitation = async_mock.CoroutineMock()
+        self.manager.resolve_invitation.return_value = (
+            None,  # None endpoint
+            [TestConfig.test_verkey],
+            self.test_mediator_routing_keys,
+        )
+
+        service = await self.manager._service_decorator_from_service(did)
+
+        assert service is None
+
+    async def test_service_decorator_from_service_object_empty_endpoint(self):
+        oob_service = OobService(
+            service_endpoint="",  # empty endpoint
+            recipient_keys=[
+                DIDKey.from_public_key_b58(TestConfig.test_verkey, ED25519).did
+            ],
+            routing_keys=[
+                DIDKey.from_public_key_b58(verkey, ED25519).did
+                for verkey in self.test_mediator_routing_keys
+            ],
+        )
+        service = await self.manager._service_decorator_from_service(oob_service)
+
+        assert service is None
+
+    async def test_service_decorator_from_service_object_none_endpoint(self):
+        oob_service = OobService(
+            service_endpoint=None,  # None endpoint
+            recipient_keys=[
+                DIDKey.from_public_key_b58(TestConfig.test_verkey, ED25519).did
+            ],
+            routing_keys=[
+                DIDKey.from_public_key_b58(verkey, ED25519).did
+                for verkey in self.test_mediator_routing_keys
+            ],
+        )
+        service = await self.manager._service_decorator_from_service(oob_service)
+
+        assert service is None
     async def test_delete_stale_connection_by_invitation(self):
         current_datetime = datetime_now()
         older_datetime = current_datetime - timedelta(hours=4)
