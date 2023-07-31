@@ -424,6 +424,7 @@ class BaseConnectionManager:
                 )
             ]
         else:
+            did_doc = None
             if not connection.their_did:
                 self._logger.debug("No target DID associated with connection")
                 return None

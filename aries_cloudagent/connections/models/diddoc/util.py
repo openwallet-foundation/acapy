@@ -120,7 +120,7 @@ def ok_did(token: str) -> bool:
         return False
 
 
-def create_peer_did_2_from_verkey(cls, verkey: str, service: dict = None) -> DID:
+def create_peer_did_2_from_verkey(verkey: str, service: dict = None) -> DID:
     """verkey must by base58"""
 
     enc_keys = [X25519KeyAgreementKey.from_base58(verkey)]

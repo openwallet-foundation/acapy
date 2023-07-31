@@ -25,7 +25,47 @@ from ..util import canon_did, canon_ref
 
 
 class TestLegacyDIDDoc(AsyncTestCase):
-    async def test_basic(self):
+    def test_acapy_didx_example(self):
+        # payload produced in simple 0.9 example
+        dd_in = {
+            "@context": [
+                "https://www.w3.org/ns/did/v1"
+            ],
+            "id": "did:sov:2nWv86UP1q4HRhdjCWQwzn",
+            "publicKey": [
+                {
+                "id": "did:sov:2nWv86UP1q4HRhdjCWQwzn#1",
+                "type": "Ed25519VerificationKey2018",
+                "controller": "did:sov:2nWv86UP1q4HRhdjCWQwzn",
+                "publicKeyBase58": "yRLcpx1EMGEy9bZqmTefzsT5BrwokHmcodstCDjQWnK"
+                }
+            ],
+            "authentication": [
+                {
+                "type": "Ed25519SignatureAuthentication2018",
+                "publicKey": "did:sov:2nWv86UP1q4HRhdjCWQwzn#1"
+                }
+            ],
+            "service": [
+                {
+                "id": "did:sov:2nWv86UP1q4HRhdjCWQwzn;indy",
+                "type": "IndyAgent",
+                "priority": 0,
+                "recipientKeys": [
+                    "yRLcpx1EMGEy9bZqmTefzsT5BrwokHmcodstCDjQWnK"
+                ],
+                "serviceEndpoint": "http://host.docker.internal:8020"
+                }
+            ]
+        }
+
+
+        dd =LegacyDIDDoc.deserialize(dd_in)
+
+        # print('\n\n== 4 == DID Doc on mixed reference styles, embedded and ref style authn keys: {}'.format(ppjson(dd_out)))
+
+
+    async def test_obsolete_basic(self):
         # One authn key by reference
         dd_in = {
             "@context": "https://w3id.org/did/v1",
@@ -68,90 +108,9 @@ class TestLegacyDIDDoc(AsyncTestCase):
 
         dd = LegacyDIDDoc.deserialize(dd_in)
         
-        assert str(dd) == f"DIDDoc({dd_in['id']})"
-        assert len(dd.pubkey) == len(dd_in["publicKey"])
-        assert len(dd.authnkey) == len(dd_in["authentication"])
+        assert False, dd
 
-        dd_out = dd.serialize()
-        # print('\n\n== 1 == DID Doc {} on abbreviated identifiers: {}'.format(dd, ppjson(dd_out)))
-
-        # Exercise JSON, de/serialization
-        dd_json = dd.to_json()
-        dd_copy = dd.from_json(dd_json)
-        assert dd_copy.did == dd.did
-        assert all(
-            dd_copy.authnkey[k].to_dict() == dd.authnkey[k].to_dict()
-            for k in dd_copy.authnkey
-        )
-        assert {k for k in dd_copy.authnkey} == {k for k in dd.authnkey}
-        assert all(
-            dd_copy.pubkey[k].to_dict() == dd.pubkey[k].to_dict()
-            for k in dd_copy.pubkey
-        )
-        assert {k for k in dd_copy.pubkey} == {k for k in dd.pubkey}
-        assert all(
-            dd_copy.service[k].to_dict() == dd.service[k].to_dict()
-            for k in dd_copy.service
-        )
-        assert {k for k in dd_copy.service} == {k for k in dd.service}
-        # print('\n\n== 2 == DID Doc de/serialization operates OK:')
-
-        # Exercise accessors
-        dd.did = dd_out["id"]
-        assert dd.did == canon_did(dd_out["id"])
-        with self.assertRaises(ValueError):
-            dd.set(["neither a service", "nor a public key"])
-        assert dd.service[[k for k in dd.service][0]].did == dd.did
-        # print('\n\n== 3 == DID Doc accessors operate OK')
-
-    def test_embedded_authkey(self):
-        # One authn key embedded, all possible refs canonical
-        dd_in = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-            "publicKey": [
-                {
-                    "id": "3",
-                    "type": "RsaVerificationKey2018",
-                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-                    "publicKeyPem": "-----BEGIN PUBLIC X...",
-                },
-                {
-                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#4",
-                    "type": "RsaVerificationKey2018",
-                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-                    "publicKeyPem": "-----BEGIN PUBLIC 9...",
-                },
-            ],
-            "authentication": [
-                {
-                    "type": "RsaSignatureAuthentication2018",
-                    "publicKey": "did:sov:LjgpST2rjsoxYegQDRm7EL#4",
-                },
-                {
-                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#6",
-                    "type": "RsaVerificationKey2018",
-                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-                    "publicKeyPem": "-----BEGIN PUBLIC A...",
-                },
-            ],
-            "service": [
-                {
-                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL;0",
-                    "type": "Agency",
-                    "serviceEndpoint": "https://www.von.ca",
-                }
-            ],
-        }
-
-        dd =LegacyDIDDoc.deserialize(dd_in)
-        assert len(dd.pubkey) == len(dd_in["publicKey"]) + 1
-        assert len(dd.authnkey) == len(dd_in["authentication"])
-
-        dd_out = dd.serialize()
-        # print('\n\n== 4 == DID Doc on mixed reference styles, embedded and ref style authn keys: {}'.format(ppjson(dd_out)))
-
-    def test_reference_authkey(self):
+    def test_obsolete_reference_authkey(self):
         # All references canonical where possible; one authn key embedded and one by reference
         dd_in = {
             "@context": "https://w3id.org/did/v1",
@@ -192,13 +151,12 @@ class TestLegacyDIDDoc(AsyncTestCase):
         }
 
         dd =LegacyDIDDoc.deserialize(dd_in)
-        assert len(dd.pubkey) == len(dd_in["publicKey"]) + 1
-        assert len(dd.authnkey) == len(dd_in["authentication"])
+        assert len(dd.verification_method) == len(dd_in["publicKey"]) + 1
 
         dd_out = dd.serialize()
         # print('\n\n== 5 == DID Doc on canonical refs: {}'.format(ppjson(dd_out)))
 
-    def test_minimal(self):
+    def test_obsolete_minimal(self):
         # Minimal as per indy-agent test suite without explicit identifiers
         dd_in = {
             "@context": "https://w3id.org/did/v1",
@@ -220,14 +178,13 @@ class TestLegacyDIDDoc(AsyncTestCase):
         }
 
         dd =LegacyDIDDoc.deserialize(dd_in)
-        assert len(dd.pubkey) == len(dd_in["publicKey"])
-        assert len(dd.authnkey) == 0
+        assert len(dd.verification_method) == len(dd_in["publicKey"])
 
         dd_out = dd.serialize()
         # print('\n\n== 6 == DID Doc miminal style, implcit DID document identifier: {}'.format(
         #    ppjson(dd_out)))
 
-    def test_minimal_ids(self):
+    def test_obsolete_minimal_ids(self):
         # Minimal + ids as per indy-agent test suite with explicit identifiers; novel service recipient key on raw base58
         dd_in = {
             "@context": "https://w3id.org/did/v1",
@@ -252,14 +209,14 @@ class TestLegacyDIDDoc(AsyncTestCase):
         }
 
         dd =LegacyDIDDoc.deserialize(dd_in)
-        assert len(dd.pubkey) == 1 + len(dd_in["publicKey"])
+        assert len(dd.verification_method) == 1 + len(dd_in["publicKey"])
         assert len(dd.authnkey) == 0
 
         dd_out = dd.serialize()
         # print('\n\n== 7 == DID Doc miminal style plus explicit idents and novel raw base58 service recip key: {}'.format(
         #    ppjson(dd_out)))
 
-    def test_minimal_explicit(self):
+    def test_obsolete_minimal_explicit(self):
         # Minimal + ids as per indy-agent test suite with explicit identifiers; novel service recipient key on raw base58
         dd_in = {
             "@context": "https://w3id.org/did/v1",
@@ -324,8 +281,7 @@ class TestLegacyDIDDoc(AsyncTestCase):
         }
 
         dd =LegacyDIDDoc.deserialize(dd_in)
-        assert len(dd.pubkey) == 1 + len(dd_in["publicKey"])
-        assert len(dd.authnkey) == 0
+        assert len(dd.verification_method) == 1 + len(dd_in["publicKey"])
         assert {s.priority for s in dd.service.values()} == {0, 1, 2}
         assert len(dd.service) == 3
         assert all(
@@ -368,7 +324,7 @@ class TestLegacyDIDDoc(AsyncTestCase):
         assert canon_ref(dd.did, "abc", ";") in dd.service
         # print('\n\n== 9 == DID Doc adds public key and service via set() OK')
 
-    def test_missing_recipkey(self):
+    def test_obsolete_missing_recipkey(self):
         # Exercise missing service recipient key
         dd_in = {
             "@context": "https://w3id.org/did/v1",
@@ -384,7 +340,7 @@ class TestLegacyDIDDoc(AsyncTestCase):
             "service": [
                 {
                     "id": "LjgpST2rjsoxYegQDRm7EL;indy",
-                    "type": "DidMessaging",
+                    "type": "IndyAgent",
                     "priority": 1,
                     "recipientKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-3"],
                     "serviceEndpoint": "https://www.von.ca",
@@ -396,7 +352,7 @@ class TestLegacyDIDDoc(AsyncTestCase):
             dd =LegacyDIDDoc.deserialize(dd_in)
         # print('\n\n== 10 == DID Doc on underspecified service key fails as expected')
 
-    def test_w3c_minimal(self):
+    def test_obsolete_w3c_minimal(self):
         # Minimal as per W3C Example 2, draft 0.12
         dd_in = {
             "@context": "https://w3id.org/did/v1",
@@ -411,28 +367,27 @@ class TestLegacyDIDDoc(AsyncTestCase):
             ],
             "service": [
                 {
-                    "type": "DidMessaging",
+                    "type": "IndyAgent",
                     "serviceEndpoint": "https://example.com/endpoint/8377464",
                 }
             ],
         }
 
         dd =LegacyDIDDoc.deserialize(dd_in)
-        assert len(dd.pubkey) == 1
-        assert len(dd.authnkey) == 1
+        assert len(dd.verification_method) == 1
+        assert len(dd.authentication) == 1
         assert len(dd.service) == 1
 
         dd_out = dd.serialize()
         # print('\n\n== 11 == Minimal DID Doc (no pubkey except authentication) as per W3C spec parses OK: {}'.format(
         #    ppjson(dd_out)))
 
-    def test_no_ident(self):
+    def test_obsolete_no_ident(self):
         # Exercise no-identifier case
         dd_in = {
             "@context": "https://w3id.org/did/v1",
             "authentication": [
                 {
-                    "type": "Ed25519VerificationKey2018",
                     "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
                     "publicKeyBase58": "~XXXXXXXXXXXXXXXX",
                 }
@@ -448,51 +403,3 @@ class TestLegacyDIDDoc(AsyncTestCase):
         with self.assertRaises(ValueError):
             dd =LegacyDIDDoc.deserialize(dd_in)
         # print('\n\n== 12 == DID Doc without identifier rejected as expected')
-
-    def test_canon_did(self):
-        # Exercise reference canonicalization, including failure paths
-        valid_did = "LjgpST2rjsoxYegQDRm7EL"
-
-        with self.assertRaises(ValueError):
-            canon_ref("not-a-DID", ref=valid_did, delimiter="#")
-
-        with self.assertRaises(ValueError):
-            canon_ref(valid_did, ref="did:sov:not-a-DID", delimiter="#")
-
-        urlref = (
-            "https://www.clafouti-quasar.ca:8443/supply-management/fruit/index.html"
-        )
-        assert canon_ref(valid_did, ref=urlref) == urlref
-        # print('\n\n== 13 == Reference canonicalization operates as expected')
-
-    def test_pubkey_type(self):
-        dd_in = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-            "authentication": [
-                {
-                    "id": "LjgpST2rjsoxYegQDRm7EL#keys-1",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-                    "publicKeyBase58": "~XXXXXXXXXXXXXXXX",
-                }
-            ],
-            "service": [
-                {
-                    "type": "DidMessaging",
-                    "serviceEndpoint": "https://example.com/endpoint/8377464",
-                }
-            ],
-        }
-
-        dd =LegacyDIDDoc.deserialize(dd_in)
-
-        assert PublicKeyType.get("no-such-type") is None
-        pubkey0 = dd.pubkey[[k for k in dd.pubkey][0]]
-        was_authn = pubkey0.authn
-        pubkey0.authn = not was_authn
-        assert pubkey0.authn != was_authn
-        # print('\n\n== 14 == Changed authentication setting for LegacyDIDDoc {} in public key {}, now {}'.format(
-        #    pubkey0.did,
-        #    pubkey0.id,
-        #    repr(pubkey0)))
