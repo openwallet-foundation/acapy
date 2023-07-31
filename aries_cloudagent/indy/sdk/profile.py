@@ -115,6 +115,7 @@ class IndySdkProfile(Profile):
                     ref(self),
                 ),
             )
+            self.settings["ledger.write_ledger"] = write_ledger_config.get("id")
             if (
                 "endorser_alias" in write_ledger_config
                 and "endorser_did" in write_ledger_config
