@@ -297,6 +297,8 @@ class DIDXManager(BaseConnectionManager):
                     key_type=ED25519,
                 )
                 conn_rec.my_did = my_info.did
+                # We must save to correlate routing key sent to mediator back
+                # to a connection.
                 await conn_rec.save(
                     session, reason="New DID associated with connection."
                 )
