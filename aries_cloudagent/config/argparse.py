@@ -419,6 +419,16 @@ class DebugGroup(ArgumentGroup):
             ),
         )
 
+        # Feature flagging
+        parser.add_argument(
+            "--send-peer-did",
+            action="store_true",
+            env_var="ACAPY_SEND_PEER_DID",
+            help=(
+                "Send did:peer:2 did's for connections instead of legacy unqualified dids"
+            ),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract debug settings."""
         settings = {}
@@ -469,6 +479,10 @@ class DebugGroup(ArgumentGroup):
             settings["debug.auto_accept_requests"] = True
         if args.auto_respond_messages:
             settings["debug.auto_respond_messages"] = True
+
+        # feature flagging
+        if args.send_peer_did:
+            settings["debug.send_peer_did"] = True
         return settings
 
 
