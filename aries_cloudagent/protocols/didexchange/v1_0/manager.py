@@ -296,7 +296,10 @@ class DIDXManager(BaseConnectionManager):
                     method=SOV,
                     key_type=ED25519,
                 )
-            conn_rec.my_did = my_info.did
+                conn_rec.my_did = my_info.did
+                await conn_rec.save(
+                    session, reason="New DID associated with connection."
+                )
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
