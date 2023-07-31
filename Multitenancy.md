@@ -115,7 +115,7 @@ In multi-tenant mode, ACA-Py still exposes a single endpoint for each transport.
 ACA-Py allows messages to be routed through a mediator, and multi-tenancy can be used in combination with external mediators. The following scenarios are possible:
 
 1. The base wallet has a default mediator set that will be used by sub wallets.
-   - Use `--mediation-invitation` to connect to the mediator, request mediation, and set it as the default mediator
+   - Use `--mediator-invitation` to connect to the mediator, request mediation, and set it as the default mediator
    - Use `default-mediator-id` if you're already connected to the mediator and mediation is granted (e.g. after restart).
    - When a sub wallet creates a connection or key it will be registered at the mediator via the base wallet connection. The base wallet will still act as a relay and route the messages to the correct sub wallets.
    - Pro: Not every wallet needs to create a connection with the mediator
