@@ -582,7 +582,10 @@ class OutOfBandManager(BaseConnectionManager):
         if not oob_record.connection_id:
             service = oob_record.invitation.services[0]
             their_service = await self._service_decorator_from_service(service)
-            LOGGER.debug("Found service for oob record %s", their_service)
+            if their_service:
+                LOGGER.debug("Found service for oob record %s", their_service)
+            else:
+                LOGGER.debug("No service decorator obtained from %s", service)
 
         await message_processor.handle_message(
             self.profile, messages, oob_record=oob_record, their_service=their_service
@@ -590,7 +593,7 @@ class OutOfBandManager(BaseConnectionManager):
 
     async def _service_decorator_from_service(
         self, service: Union[Service, str]
-    ) -> ServiceDecorator:
+    ) -> Optional[ServiceDecorator]:
         if isinstance(service, str):
             (
                 endpoint,
@@ -598,13 +601,20 @@ class OutOfBandManager(BaseConnectionManager):
                 routing_keys,
             ) = await self.resolve_invitation(service)
 
+            if not endpoint:
+                return None
+
             return ServiceDecorator(
                 endpoint=endpoint,
                 recipient_keys=recipient_keys,
                 routing_keys=routing_keys,
             )
-        else:
-            # Create ~service decorator from the oob service
+        elif isinstance(service, Service):
+            endpoint = service.service_endpoint
+
+            if not endpoint:
+                return None
+
             recipient_keys = [
                 DIDKey.from_did(did_key).public_key_b58
                 for did_key in service.recipient_keys
@@ -615,10 +625,16 @@ class OutOfBandManager(BaseConnectionManager):
             ]
 
             return ServiceDecorator(
-                endpoint=service.service_endpoint,
+                endpoint=endpoint,
                 recipient_keys=recipient_keys,
                 routing_keys=routing_keys,
             )
+        else:
+            LOGGER.warning(
+                "Unexpected type `%s` passed to `_service_decorator_from_service`",
+                type(service),
+            )
+            return None
 
     async def _wait_for_reuse_response(
         self, oob_id: str, timeout: int = 15
