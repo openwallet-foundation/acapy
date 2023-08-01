@@ -624,7 +624,7 @@ class TestRevocationRoutes(AsyncTestCase):
             )
 
             result = await test_module.send_rev_reg_def(self.request)
-            mock_json_response.assert_called_once_with({"result": "dummy"})
+            mock_json_response.assert_called_once_with({"sent": "dummy"})
             assert result is mock_json_response.return_value
 
     async def test_send_rev_reg_def_not_found(self):
