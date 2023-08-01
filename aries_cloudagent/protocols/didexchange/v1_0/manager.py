@@ -231,6 +231,7 @@ class DIDXManager(BaseConnectionManager):
             mediation_id=mediation_id,
             goal_code=goal_code,
             goal=goal,
+            public_did=bool(my_public_info),
         )
         conn_rec.request_id = request._id
         conn_rec.state = ConnRecord.State.REQUEST.rfc23
@@ -245,11 +246,12 @@ class DIDXManager(BaseConnectionManager):
     async def create_request(
         self,
         conn_rec: ConnRecord,
-        my_label: str = None,
-        my_endpoint: str = None,
-        mediation_id: str = None,
-        goal_code: str = None,
-        goal: str = None,
+        my_label: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        mediation_id: Optional[str] = None,
+        goal_code: Optional[str] = None,
+        goal: Optional[str] = None,
+        public_did: bool = False,
     ) -> DIDXRequest:
         """
         Create a new connection request for a previously-received invitation.
@@ -313,25 +315,36 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        did_doc = await self.create_did_document(
-            my_info,
-            conn_rec.inbound_connection_id,
-            my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
-        )
+        if public_did:
+            # Omit DID Doc attachment if we're using a public DID
+            did_doc = None
+            attach = None
+        else:
+            did_doc = await self.create_did_document(
+                my_info,
+                conn_rec.inbound_connection_id,
+                my_endpoints,
+                mediation_records=list(
+                    filter(None, [base_mediation_record, mediation_record])
+                ),
+            )
+            attach = AttachDecorator.data_base64(did_doc.serialize())
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                await attach.data.sign(my_info.verkey, wallet)
+
         if conn_rec.their_public_did is not None:
             qualified_did = conn_rec.their_public_did
             did_document = await self.get_resolved_did_document(qualified_did)
             did_url = await self.get_first_applicable_didcomm_service(did_document)
+        else:
+            did_url = None
+
         pthid = conn_rec.invitation_msg_id or did_url
-        attach = AttachDecorator.data_base64(did_doc.serialize())
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            await attach.data.sign(my_info.verkey, wallet)
+
         if not my_label:
             my_label = self.profile.settings.get("default_label")
+
         request = DIDXRequest(
             label=my_label,
             did=conn_rec.my_did,
