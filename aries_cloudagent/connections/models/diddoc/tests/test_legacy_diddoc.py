@@ -108,7 +108,8 @@ class TestLegacyDIDDoc(AsyncTestCase):
 
         dd = LegacyDIDDoc.deserialize(dd_in)
         
-        assert False, dd
+        assert len(dd.verification_method) == len(dd_in["publicKey"]) + len(dd_in["authentication"])
+        assert len(dd.service) == 1
 
     def test_obsolete_reference_authkey(self):
         # All references canonical where possible; one authn key embedded and one by reference
@@ -144,14 +145,14 @@ class TestLegacyDIDDoc(AsyncTestCase):
             "service": [
                 {
                     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL;0",
-                    "type": "DidMessaging",
+                    "type": "DIDCommMessaging",
                     "serviceEndpoint": "https://www.von.ca",
                 }
             ],
         }
 
         dd =LegacyDIDDoc.deserialize(dd_in)
-        assert len(dd.verification_method) == len(dd_in["publicKey"]) + 1
+        assert len(dd.verification_method) == len(dd_in["publicKey"]) + len(dd_in["authentication"])
 
         dd_out = dd.serialize()
         # print('\n\n== 5 == DID Doc on canonical refs: {}'.format(ppjson(dd_out)))
@@ -162,15 +163,15 @@ class TestLegacyDIDDoc(AsyncTestCase):
             "@context": "https://w3id.org/did/v1",
             "publicKey": [
                 {
-                    "id": "LjgpST2rjsoxYegQDRm7EL#keys-1",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1",
                     "type": "Ed25519VerificationKey2018",
-                    "controller": "LjgpST2rjsoxYegQDRm7EL",
+                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
                     "publicKeyBase58": "~XXXXXXXXXXXXXXXX",
                 }
             ],
             "service": [
                 {
-                    "type": "DidMessaging",
+                    "type": "DIDCommMessaging",
                     "recipientKeys": ["~XXXXXXXXXXXXXXXX"],
                     "serviceEndpoint": "https://www.von.ca",
                 }
@@ -188,19 +189,19 @@ class TestLegacyDIDDoc(AsyncTestCase):
         # Minimal + ids as per indy-agent test suite with explicit identifiers; novel service recipient key on raw base58
         dd_in = {
             "@context": "https://w3id.org/did/v1",
-            "id": "LjgpST2rjsoxYegQDRm7EL",
+            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
             "publicKey": [
                 {
-                    "id": "LjgpST2rjsoxYegQDRm7EL#keys-1",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1",
                     "type": "Ed25519VerificationKey2018",
-                    "controller": "LjgpST2rjsoxYegQDRm7EL",
+                    "controller": "did:sov:",
                     "publicKeyBase58": "~XXXXXXXXXXXXXXXX",
                 }
             ],
             "service": [
                 {
-                    "id": "LjgpST2rjsoxYegQDRm7EL;indy",
-                    "type": "DidMessaging",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL;indy",
+                    "type": "DIDCommMessaging",
                     "priority": 1,
                     "recipientKeys": ["~YYYYYYYYYYYYYYYY"],
                     "serviceEndpoint": "https://www.von.ca",
@@ -210,7 +211,6 @@ class TestLegacyDIDDoc(AsyncTestCase):
 
         dd =LegacyDIDDoc.deserialize(dd_in)
         assert len(dd.verification_method) == 1 + len(dd_in["publicKey"])
-        assert len(dd.authnkey) == 0
 
         dd_out = dd.serialize()
         # print('\n\n== 7 == DID Doc miminal style plus explicit idents and novel raw base58 service recip key: {}'.format(
@@ -220,37 +220,37 @@ class TestLegacyDIDDoc(AsyncTestCase):
         # Minimal + ids as per indy-agent test suite with explicit identifiers; novel service recipient key on raw base58
         dd_in = {
             "@context": "https://w3id.org/did/v1",
-            "id": "LjgpST2rjsoxYegQDRm7EL",
+            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
             "publicKey": [
                 {
-                    "id": "LjgpST2rjsoxYegQDRm7EL#keys-1",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1",
                     "type": "Ed25519VerificationKey2018",
-                    "controller": "LjgpST2rjsoxYegQDRm7EL",
+                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
                     "publicKeyBase58": "~XXXXXXXXXXXXXXXX",
                 },
                 {
-                    "id": "LjgpST2rjsoxYegQDRm7EL#keys-2",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-2",
                     "type": "Ed25519VerificationKey2018",
-                    "controller": "LjgpST2rjsoxYegQDRm7EL",
+                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
                     "publicKeyBase58": "~YYYYYYYYYYYYYYYY",
                 },
                 {
-                    "id": "LjgpST2rjsoxYegQDRm7EL#keys-3",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-3",
                     "type": "Secp256k1VerificationKey2018",
-                    "controller": "LjgpST2rjsoxYegQDRm7EL",
+                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
                     "publicKeyHex": "02b97c30de767f084ce3080168ee293053ba33b235d7116a3263d29f1450936b71",
                 },
                 {
                     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4",
                     "type": "RsaVerificationKey2018",
-                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+                    "controller": "did:sov:did:sov:LjgpST2rjsoxYegQDRm7EL",
                     "publicKeyPem": "-----BEGIN PUBLIC A...",
                 },
             ],
             "service": [
                 {
                     "id": "LjgpST2rjsoxYegQDRm7EL;indy",
-                    "type": "DidMessaging",
+                    "type": "DIDCommMessaging",
                     "priority": 0,
                     "recipientKeys": ["~ZZZZZZZZZZZZZZZZ"],
                     "serviceEndpoint": "did:sov:LjgpST2rjsoxYegQDRm7EL;1",
@@ -394,7 +394,7 @@ class TestLegacyDIDDoc(AsyncTestCase):
             ],
             "service": [
                 {
-                    "type": "DidMessaging",
+                    "type": "DIDCommMessaging",
                     "serviceEndpoint": "https://example.com/endpoint/8377464",
                 }
             ],
