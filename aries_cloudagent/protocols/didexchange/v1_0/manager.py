@@ -820,10 +820,18 @@ class DIDXManager(BaseConnectionManager):
                     wallet, response.did_doc_attach, conn_rec.invitation_key
                 )
             if their_did != conn_did_doc.did:
-                raise DIDXManagerError(
-                    f"Connection DID {their_did} "
-                    f"does not match DID doc id {conn_did_doc.did}"
-                )
+                if str("did:sov:" + their_did) == str(conn_did_doc.did):
+                    self._logger.warning(
+                        f"legacy behaviour: Connection DID is unqualified {their_did}, but did doc did has did:sov {conn_did_doc.did}"
+                    )
+                else:
+                    raise DIDXManagerError(
+                        (
+                            f"Connection DID {their_did} does not match "
+                            f"DID Doc id {conn_did_doc.did}"
+                        ),
+                    )
+
         await self.store_did_document(conn_did_doc)
 
         conn_rec.their_did = their_did

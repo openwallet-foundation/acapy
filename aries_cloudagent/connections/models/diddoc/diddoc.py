@@ -186,7 +186,7 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
         if "verificationMethod" not in new_did_doc:
             new_did_doc["verificationMethod"] = []
 
-        for i, auth in enumerate(new_did_doc["authentication"]):
+        for i, auth in enumerate(new_did_doc.get("authentication",[])):
             if isinstance(auth,dict):
                 id = make_didurl(auth.get("id"),f"#vma-{i}")
 
