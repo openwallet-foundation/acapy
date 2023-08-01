@@ -209,8 +209,9 @@ class BaseConnectionManager:
                 if vm.controller == did_doc.id:
                     if vm.public_key_base58:
                         await self.add_key_for_did(did_doc.id, vm.public_key_base58)
+                    if vm.public_key_multibase:
+                        await self.add_key_for_did(did_doc.id, bytes_to_b58(multibase.decode(vm.public_key_multibase)))
                     elif vm.material:
-                        # TODO: accept/decode multibase
                         self._logger.error(
                             "VerificationMethod material exists, but no in base58, not saving key"
                         )
