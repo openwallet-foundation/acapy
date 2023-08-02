@@ -5,6 +5,7 @@ import logging
 from typing import Tuple
 
 from ..config.injection_context import InjectionContext
+from ..ledger.base import BaseLedger
 from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..utils.http import put_file, PutError
 
@@ -42,9 +43,11 @@ class IndyTailsServer(BaseTailsServer):
 
         if not genesis_transactions:
             ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
-            write_ledgers = await ledger_manager.get_write_ledger()
-            LOGGER.debug(f"write_ledgers = {write_ledgers}")
-            pool = write_ledgers[1].pool
+            write_ledger = context.injector.inject(BaseLedger)
+            available_write_ledgers = await ledger_manager.get_write_ledgers()
+            LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
+            LOGGER.debug(f"write_ledger = {write_ledger}")
+            pool = write_ledger[1].pool
             LOGGER.debug(f"write_ledger pool = {pool}")
 
             genesis_transactions = pool.genesis_txns

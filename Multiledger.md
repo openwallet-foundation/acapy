@@ -1,6 +1,6 @@
 # Multi-ledger in ACA-Py <!-- omit in toc -->
 
-Ability to use multiple Indy ledgers (both IndySdk and IndyVdr) for resolving a `DID` by the ACA-Py agent. For read requests, checking of multiple ledgers in parallel is done dynamically according to logic detailed in [Read Requests Ledger Selection](#read-requests). For write requests, dynamic allocation of `write_ledger` is not supported. Write ledger can be assigned using `is_write` in the [configuration](#config-properties) or using any of the `--genesis-url`, `--genesis-file`, and `--genesis-transactions` startup (ACA-Py) arguments. If no write ledger is assigned then a `ConfigError` is raised.
+Ability to use multiple Indy ledgers (both IndySdk and IndyVdr) for resolving a `DID` by the ACA-Py agent. For read requests, checking of multiple ledgers in parallel is done dynamically according to logic detailed in [Read Requests Ledger Selection](#read-requests). For write requests, dynamic allocation of `write_ledger` is supported. Configurable write ledgers can be assigned using `is_write` in the [configuration](#config-properties) or using any of the `--genesis-url`, `--genesis-file`, and `--genesis-transactions` startup (ACA-Py) arguments. If no write ledger is assigned then a `ConfigError` is raised.
 
 More background information including problem statement, design (algorithm) and more can be found [here](https://docs.google.com/document/d/109C_eMsuZnTnYe2OAd02jAts1vC4axwEKIq7_4dnNVA).
 
@@ -30,11 +30,44 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
 - id: localVON
   is_production: false
   genesis_url: 'http://host.docker.internal:9000/genesis'
-- id: bcorvinTest
+- id: bcovrinTest
   is_production: true
   is_write: true
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
 ```
+
+```
+- id: localVON
+  is_production: false
+  genesis_url: 'http://host.docker.internal:9000/genesis'
+- id: bcovrinTest
+  is_production: true
+  is_write: true
+  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+  endorser_did: '9QPa6tHvBHttLg6U4xvviv'
+  endorser_alias: 'endorser_test'
+- id: greenlightDev
+  is_production: true
+  is_write: true
+  genesis_url: 'http://dev.greenlight.bcovrin.vonx.io/genesis'
+```
+
+Note: `is_write` property means that the ledger is write configurable. With reference to the above config example, both `bcovrinTest` and `greenlightDev` ledgers are write configurable. By default, on startup `bcovrinTest` will be the write ledger as it is the topmost write configurable production ledger, [more details](#write-requests) regarding the selection rule. Using `PUT /ledger/{ledger_id}/set-write-ledger` endpoint, either `greenlightDev` and `bcovrinTest` can be set as the write ledger.
+
+```
+- id: localVON
+  is_production: false
+  is_write: true
+  genesis_url: 'http://host.docker.internal:9000/genesis'
+- id: bcovrinTest
+  is_production: true
+  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+- id: greenlightDev
+  is_production: true
+  genesis_url: 'http://dev.greenlight.bcovrin.vonx.io/genesis'
+```
+
+Note: For instance with regards to example config above, `localVON` will be the write ledger, as there are no production ledgers which are configurable it will choose the topmost write configurable non production ledger.
 
 ### Config properties
 For each ledger, the required properties are as following:
@@ -52,17 +85,25 @@ Optional properties:
 - `pool_name`: name of the indy pool to be opened
 - `keepalive`: how many seconds to keep the ledger open
 - `socks_proxy`
-- `is_write`: Whether the ledger is the write ledger. Only one ledger can be assigned, otherwise a `ConfigError` is raised.
+- `is_write`: Whether this ledger is writable. It requires atleast one write ledger specified. Multiple write ledgers can be specified in config.
+- `endorser_did`: Endorser public DID registered on the ledger, needed for supporting Endorser protocol at multi-ledger level.
+- `endorser_alias`: Endorser alias for this ledger, needed for supporting Endorser protocol at multi-ledger level.
+
+Note: Both `endorser_did` and `endorser_alias` are part of the endorser info. Whenever a write ledger is selected using `PUT /ledger/{ledger_id}/set-write-ledger`, the endorser info associated with that ledger in the config updates the `endorser.endorser_public_did` and `endorser.endorser_alias` profile setting respectively.
 
 
 ## Multi-ledger Admin API
 
-Multi-ledger related actions are grouped under the `ledger` topic in the SwaggerUI or under `/ledger/multiple` path.
+Multi-ledger related actions are grouped under the `ledger` topic in the SwaggerUI.
 
-- `/ledger/multiple/config`:
+- GET `/ledger/config`:
 Returns the multiple ledger configuration currently in use
-- `/ledger/multiple/get-write-ledger`:
+- GET `/ledger/get-write-ledger`:
 Returns the current active/set `write_ledger's` `ledger_id`
+- GET `/ledger/get-write-ledgers`:
+Returns list of available `write_ledger's` `ledger_id`
+- PUT `/ledger/{ledger_id}/set-write-ledger`:
+Set active `write_ledger's` `ledger_id`
 
 ## Ledger Selection
 
@@ -103,7 +144,7 @@ If multiple ledgers are configured then `IndyLedgerRequestsExecutor` service ext
 
 ### Write Requests
 
-On startup, the first configured applicable ledger is assigned as the `write_ledger` [`BaseLedger`], the selection is dependant on the order (top-down) and whether it is `production` or `non_production`. For instance, considering this [example configuration](#example-config-file), ledger `bcorvinTest` will be set as `write_ledger` as it is the topmost `production` ledger. If no `production` ledgers are included in configuration then the topmost `non_production` ledger is selected.
+On startup, the first configured applicable ledger is assigned as the `write_ledger` [`BaseLedger`], the selection is dependant on the order (top-down) and whether it is `production` or `non_production`. For instance, considering this [example configuration](#example-config-file), ledger `bcovrinTest` will be set as `write_ledger` as it is the topmost `production` ledger. If no `production` ledgers are included in configuration then the topmost `non_production` ledger is selected.
 
 ## A Special Warning for TAA Acceptance
 

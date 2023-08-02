@@ -2,6 +2,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.injection_context import InjectionContext
 from ...core.in_memory import InMemoryProfile
+from ...ledger.base import BaseLedger
 from ...ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 
 from .. import indy_tails_server as test_module
@@ -48,16 +49,15 @@ class TestIndyTailsServer(AsyncTestCase):
         profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             async_mock.MagicMock(
-                get_write_ledger=async_mock.CoroutineMock(
-                    return_value=(
-                        "test_ledger_id",
-                        async_mock.MagicMock(
-                            pool=async_mock.MagicMock(genesis_transactions="dummy")
-                        ),
-                    )
+                get_write_ledgers=async_mock.CoroutineMock(
+                    return_value=[
+                        "test_ledger_id_1",
+                        "test_ledger_id_2",
+                    ]
                 )
             ),
         )
+        profile.context.injector.bind_instance(BaseLedger, async_mock.MagicMock())
         indy_tails = test_module.IndyTailsServer()
 
         with async_mock.patch.object(
@@ -80,16 +80,15 @@ class TestIndyTailsServer(AsyncTestCase):
         profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             async_mock.MagicMock(
-                get_write_ledger=async_mock.CoroutineMock(
-                    return_value=(
-                        "test_ledger_id",
-                        async_mock.MagicMock(
-                            pool=async_mock.MagicMock(genesis_txns_cache="dummy")
-                        ),
-                    )
+                get_write_ledgers=async_mock.CoroutineMock(
+                    return_value=[
+                        "test_ledger_id_1",
+                        "test_ledger_id_2",
+                    ]
                 )
             ),
         )
+        profile.context.injector.bind_instance(BaseLedger, async_mock.MagicMock())
         indy_tails = test_module.IndyTailsServer()
 
         with async_mock.patch.object(

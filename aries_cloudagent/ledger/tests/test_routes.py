@@ -777,8 +777,8 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             async_mock.MagicMock(
-                get_write_ledger=async_mock.AsyncMock(
-                    return_value=("test_ledger_id", self.ledger)
+                get_ledger_id_by_ledger_pool_name=async_mock.AsyncMock(
+                    return_value="test_ledger_id"
                 )
             ),
         )
@@ -793,10 +793,17 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
             )
             assert result is json_response.return_value
 
-    async def test_get_write_ledger_x(self):
-        with self.assertRaises(test_module.web.HTTPForbidden) as cm:
-            await test_module.get_write_ledger(self.request)
-            assert "No instance provided for BaseMultipleLedgerManager" in cm
+    async def test_get_write_ledger_single_ledger(self):
+        with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            result = await test_module.get_write_ledger(self.request)
+            json_response.assert_called_once_with(
+                {
+                    "ledger_id": "default",
+                }
+            )
+            assert result is json_response.return_value
 
     async def test_get_ledger_config(self):
         self.profile.context.injector.bind_instance(

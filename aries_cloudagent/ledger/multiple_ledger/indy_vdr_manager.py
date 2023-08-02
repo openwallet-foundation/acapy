@@ -5,12 +5,13 @@ import logging
 import json
 
 from collections import OrderedDict
-from typing import Optional, Tuple, Mapping
+from typing import Optional, Tuple, Mapping, List
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
+from ...multitenant.manager import BaseMultitenantManager
 from ...wallet.crypto import did_is_self_certified
 
 from ..indy_vdr import IndyVdrLedger
@@ -33,7 +34,8 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         profile: Profile,
         production_ledgers: OrderedDict = OrderedDict(),
         non_production_ledgers: OrderedDict = OrderedDict(),
-        write_ledger_info: Tuple[str, IndyVdrLedger] = None,
+        writable_ledgers: set = set(),
+        endorser_map: dict = {},
         cache_ttl: int = None,
     ):
         """Initialize MultiIndyLedgerManager.
@@ -48,13 +50,21 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         self.profile = profile
         self.production_ledgers = production_ledgers
         self.non_production_ledgers = non_production_ledgers
-        self.write_ledger_info = write_ledger_info
+        self.writable_ledgers = writable_ledgers
+        self.endorser_map = endorser_map
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
 
-    async def get_write_ledger(self) -> Optional[Tuple[str, IndyVdrLedger]]:
+    async def get_write_ledgers(self) -> List[str]:
         """Return the write IndyVdrLedger instance."""
-        return self.write_ledger_info
+        return list(self.writable_ledgers)
+
+    def get_endorser_info_for_ledger(self, ledger_id: str) -> Optional[Tuple[str, str]]:
+        """Return endorser alias, did tuple for provided ledger, if available."""
+        endorser_info = self.endorser_map.get(ledger_id)
+        if not endorser_info:
+            return None
+        return (endorser_info["endorser_alias"], endorser_info["endorser_did"])
 
     async def get_prod_ledgers(self) -> Mapping:
         """Return production ledgers mapping."""
@@ -64,11 +74,54 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         """Return non_production ledgers mapping."""
         return self.non_production_ledgers
 
+    async def set_profile_write_ledger(self, ledger_id: str, profile: Profile) -> str:
+        """Set the write ledger for the profile."""
+        if ledger_id not in self.writable_ledgers:
+            raise MultipleLedgerManagerError(
+                f"Provided Ledger identifier {ledger_id} is not write configurable."
+            )
+        extra_settings = {}
+        multi_tenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        multi_ledgers = self.production_ledgers | self.non_production_ledgers
+        if ledger_id in multi_ledgers:
+            profile.context.injector.bind_instance(
+                BaseLedger, multi_ledgers.get(ledger_id)
+            )
+            endorser_info = self.get_endorser_info_for_ledger(ledger_id)
+            if endorser_info:
+                endorser_alias, endorser_did = endorser_info
+                profile.context.settings["endorser.endorser_alias"] = endorser_alias
+                profile.context.settings["endorser.endorser_public_did"] = endorser_did
+            profile.context.settings["ledger.write_ledger"] = ledger_id
+            if multi_tenant_mgr:
+                extra_settings = {
+                    "endorser.endorser_alias": endorser_alias,
+                    "endorser.endorser_public_did": endorser_did,
+                    "ledger.write_ledger": ledger_id,
+                }
+                await multi_tenant_mgr.update_wallet(
+                    profile.context.settings["wallet.id"],
+                    extra_settings,
+                )
+            return ledger_id
+        raise MultipleLedgerManagerError(f"No ledger info found for {ledger_id}.")
+
     async def get_ledger_inst_by_id(self, ledger_id: str) -> Optional[BaseLedger]:
         """Return BaseLedger instance."""
         return self.production_ledgers.get(
             ledger_id
         ) or self.non_production_ledgers.get(ledger_id)
+
+    async def get_ledger_id_by_ledger_pool_name(self, pool_name: str) -> str:
+        """Return ledger_id by ledger pool name."""
+        multi_ledgers = self.production_ledgers | self.non_production_ledgers
+        for ledger_id, indy_vdr_ledger in multi_ledgers.items():
+            if indy_vdr_ledger.pool_name == pool_name:
+                return ledger_id
+        raise MultipleLedgerManagerError(
+            f"Provided Ledger pool name {pool_name} not found "
+            "in either production_ledgers or non_production_ledgers"
+        )
 
     async def _get_ledger_by_did(
         self,
