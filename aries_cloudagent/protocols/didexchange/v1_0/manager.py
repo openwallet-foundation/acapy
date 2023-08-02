@@ -300,12 +300,7 @@ class DIDXManager(BaseConnectionManager):
                     method=SOV,
                     key_type=ED25519,
                 )
-            conn_rec.my_did = my_info.did
-
-        # Idempotent; if routing has already been set up, no action taken
-        await self._route_manager.route_connection_as_invitee(
-            self.profile, conn_rec, mediation_record
-        )
+                conn_rec.my_did = my_info.did
 
         # Create connection request message
         if my_endpoint:
@@ -361,6 +356,11 @@ class DIDXManager(BaseConnectionManager):
         conn_rec.state = ConnRecord.State.REQUEST.rfc23
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Created connection request")
+
+        # Idempotent; if routing has already been set up, no action taken
+        await self._route_manager.route_connection_as_invitee(
+            self.profile, conn_rec, mediation_record
+        )
 
         return request
 
