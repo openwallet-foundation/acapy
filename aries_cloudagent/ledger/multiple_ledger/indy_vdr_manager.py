@@ -94,11 +94,12 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                 profile.context.settings["endorser.endorser_public_did"] = endorser_did
             profile.context.settings["ledger.write_ledger"] = ledger_id
             if multi_tenant_mgr:
-                extra_settings = {
-                    "endorser.endorser_alias": endorser_alias,
-                    "endorser.endorser_public_did": endorser_did,
-                    "ledger.write_ledger": ledger_id,
-                }
+                # may not use an endorser, so check first...
+                if endorser_info:
+                    extra_settings["endorser.endorser_alias"] = endorser_alias
+                    extra_settings["endorser.endorser_public_did"] = endorser_did
+                # persist the write ledger...
+                extra_settings["ledger.write_ledger"] = ledger_id
                 await multi_tenant_mgr.update_wallet(
                     profile.context.settings["wallet.id"],
                     extra_settings,
