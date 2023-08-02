@@ -7,6 +7,7 @@ from ...core.error import BaseError
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
 from ...messaging.valid import IndyDID
+from ...multitenant.manager import BaseMultitenantManager
 
 
 class MultipleLedgerManagerError(BaseError):
@@ -30,10 +31,6 @@ class BaseMultipleLedgerManager(ABC):
     @abstractmethod
     async def get_ledger_id_by_ledger_pool_name(self, pool_name: str) -> str:
         """Return ledger_id by ledger pool name."""
-
-    @abstractmethod
-    async def set_profile_write_ledger(self, ledger_id: str, profile: Profile) -> str:
-        """Set the write ledger for the profile."""
 
     @abstractmethod
     async def get_prod_ledgers(self) -> Mapping:
@@ -65,3 +62,36 @@ class BaseMultipleLedgerManager(ABC):
             return identifier.split(":")[-1]
         else:
             return identifier.split(":")[0]
+
+    async def set_profile_write_ledger(self, ledger_id: str, profile: Profile) -> str:
+        """Set the write ledger for the profile."""
+        if ledger_id not in self.writable_ledgers:
+            raise MultipleLedgerManagerError(
+                f"Provided Ledger identifier {ledger_id} is not write configurable."
+            )
+        extra_settings = {}
+        multi_tenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        multi_ledgers = self.production_ledgers | self.non_production_ledgers
+        if ledger_id in multi_ledgers:
+            profile.context.injector.bind_instance(
+                BaseLedger, multi_ledgers.get(ledger_id)
+            )
+            self._update_settings(profile.context.settings, ledger_id)
+            self._update_settings(extra_settings, ledger_id)
+            if multi_tenant_mgr:
+                await multi_tenant_mgr.update_wallet(
+                    profile.context.settings["wallet.id"],
+                    extra_settings,
+                )
+            return ledger_id
+        raise MultipleLedgerManagerError(f"No ledger info found for {ledger_id}.")
+
+    def _update_settings(self, settings, ledger_id: str):
+        endorser_info = self.get_endorser_info_for_ledger(ledger_id)
+        if endorser_info:
+            endorser_alias, endorser_did = endorser_info
+            settings["endorser.endorser_alias"] = endorser_alias
+            settings["endorser.endorser_public_did"] = endorser_did
+        else:
+            settings["endorser.none"] = "true"
+        settings["ledger.write_ledger"] = ledger_id
