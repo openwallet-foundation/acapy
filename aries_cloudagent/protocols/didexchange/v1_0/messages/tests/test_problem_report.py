@@ -32,5 +32,8 @@ def test_missing_code():
 
 
 def test_unrecognized_code(caplog):
-    DIDXProblemReport.deserialize({"description": {"code": "unknown", "en": "test"}})
+    with caplog.at_level("DEBUG"):
+        DIDXProblemReport.deserialize(
+            {"description": {"code": "unknown", "en": "test"}}
+        )
     assert "Unexpected error code received" in caplog.text
