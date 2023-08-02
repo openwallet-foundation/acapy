@@ -174,6 +174,16 @@ class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+class DIDXRejectRequestSchema(OpenAPISchema):
+    """Parameters and validators for reject-request request  string."""
+
+    reason = fields.Str(
+        description="Reason for rejecting the DID Exchange",
+        required=False,
+        example="Request rejected",
+    )
+
+
 @docs(
     tags=["did-exchange"],
     summary="Accept a stored connection invitation",
@@ -362,6 +372,35 @@ async def didx_accept_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
+@docs(
+    tags=["did-exchange"],
+    summary="Abandon or reject a DID Exchange",
+)
+@match_info_schema(DIDXConnIdMatchInfoSchema())
+@request_schema(DIDXRejectRequestSchema())
+@response_schema(ConnRecordSchema(), 200, description="")
+async def didx_reject(request: web.BaseRequest):
+    context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
+
+    connection_id = request.match_info["conn_id"]
+
+    profile = context.profile
+    didx_mgr = DIDXManager(profile)
+    try:
+        async with profile.session() as session:
+            conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
+        report = await didx_mgr.abandon_exchange(conn_rec=conn_rec)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    await outbound_handler(report, connection_id=conn_rec.connection_id)
+    result = conn_rec.serialize()
+    return web.json_response(result)
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -374,6 +413,7 @@ async def register(app: web.Application):
             web.post("/didexchange/create-request", didx_create_request_implicit),
             web.post("/didexchange/receive-request", didx_receive_request_implicit),
             web.post("/didexchange/{conn_id}/accept-request", didx_accept_request),
+            web.post("/didexchange/{conn_id}/reject", didx_reject),
         ]
     )
 

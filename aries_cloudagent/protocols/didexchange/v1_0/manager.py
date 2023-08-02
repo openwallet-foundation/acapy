@@ -368,10 +368,10 @@ class DIDXManager(BaseConnectionManager):
         self,
         request: DIDXRequest,
         recipient_did: str,
-        recipient_verkey: str = None,
-        my_endpoint: str = None,
-        alias: str = None,
-        auto_accept_implicit: bool = None,
+        recipient_verkey: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        alias: Optional[str] = None,
+        auto_accept_implicit: Optional[bool] = None,
     ) -> ConnRecord:
         """
         Receive and store a connection request.
@@ -561,8 +561,8 @@ class DIDXManager(BaseConnectionManager):
     async def create_response(
         self,
         conn_rec: ConnRecord,
-        my_endpoint: str = None,
-        mediation_id: str = None,
+        my_endpoint: Optional[str] = None,
+        mediation_id: Optional[str] = None,
     ) -> DIDXResponse:
         """
         Create a connection response for a received connection request.
@@ -855,6 +855,26 @@ class DIDXManager(BaseConnectionManager):
                 )
 
         return conn_rec
+
+    async def abandon_exchange(
+        self,
+        conn_rec: ConnRecord,
+        *,
+        reason: Optional[str] = None,
+    ) -> DIDXProblemReport:
+        """Abandon an existing DID exchange."""
+        async with self.profile.session() as session:
+            await conn_rec.abandon(session, reason=reason)
+
+        report = DIDXProblemReport(
+            description={
+                "code": ProblemReportReason.ABANDONED.value,
+                "en": reason or "Connection abandoned",
+            },
+        )
+
+        # TODO Delete the record?
+        return report
 
     async def verify_diddoc(
         self,
