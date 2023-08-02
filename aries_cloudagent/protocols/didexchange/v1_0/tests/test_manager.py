@@ -490,7 +490,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             save=async_mock.CoroutineMock(),
         )
 
-        request = await self.manager.create_request(mock_conn_rec, public_did=True)
+        request = await self.manager.create_request(mock_conn_rec, use_public_did=True)
         assert request.did_doc_attach is None
 
     async def test_receive_request_explicit_public_did(self):

@@ -231,7 +231,7 @@ class DIDXManager(BaseConnectionManager):
             mediation_id=mediation_id,
             goal_code=goal_code,
             goal=goal,
-            public_did=bool(my_public_info),
+            use_public_did=bool(my_public_info),
         )
         conn_rec.request_id = request._id
         conn_rec.state = ConnRecord.State.REQUEST.rfc23
@@ -251,7 +251,7 @@ class DIDXManager(BaseConnectionManager):
         mediation_id: Optional[str] = None,
         goal_code: Optional[str] = None,
         goal: Optional[str] = None,
-        public_did: bool = False,
+        use_public_did: bool = False,
     ) -> DIDXRequest:
         """
         Create a new connection request for a previously-received invitation.
@@ -264,6 +264,8 @@ class DIDXManager(BaseConnectionManager):
                 service endpoint
             goal_code: Optional self-attested code for sharing intent of connection
             goal: Optional self-attested string for sharing intent of connection
+            use_public_did: Flag whether to use public DID and omit DID Doc
+                attachment on request
         Returns:
             A new `DIDXRequest` message to send to the other agent
 
@@ -315,7 +317,7 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        if public_did:
+        if use_public_did:
             # Omit DID Doc attachment if we're using a public DID
             did_doc = None
             attach = None
