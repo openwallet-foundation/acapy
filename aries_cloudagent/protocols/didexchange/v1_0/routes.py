@@ -385,13 +385,15 @@ async def didx_reject(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
 
     connection_id = request.match_info["conn_id"]
+    body = await request.json()
+    reason = body.get("reason")
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
     try:
         async with profile.session() as session:
             conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
-        report = await didx_mgr.reject(conn_rec=conn_rec)
+        report = await didx_mgr.reject(conn_rec=conn_rec, reason=reason)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
