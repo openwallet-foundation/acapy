@@ -5,10 +5,9 @@ from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 
 from .....out_of_band.v1_0.messages.invitation import InvitationMessage
-from .....problem_report.v1_0.message import ProblemReport
 
 from ...handlers.invitation_handler import InvitationHandler
-from ...messages.problem_report import ProblemReportReason
+from ...messages.problem_report import DIDXProblemReport, ProblemReportReason
 from ......wallet.did_method import DIDMethods
 
 
@@ -30,8 +29,12 @@ class TestDIDXInvitationHandler:
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert isinstance(result, ProblemReport) and (
-            result.description["code"]
-            == ProblemReportReason.INVITATION_NOT_ACCEPTED.value
+        assert (
+            isinstance(result, DIDXProblemReport)
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.INVITATION_NOT_ACCEPTED.value
+            )
         )
         assert not target

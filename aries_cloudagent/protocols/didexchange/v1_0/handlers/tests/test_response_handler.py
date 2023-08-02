@@ -16,13 +16,12 @@ from ......transport.inbound.receipt import MessageReceipt
 from ......wallet.did_method import SOV, DIDMethods
 from ......wallet.key_type import ED25519
 
-from .....problem_report.v1_0.message import ProblemReport
 from .....trustping.v1_0.messages.ping import Ping
 
 from ...handlers import response_handler as test_module
 from ...manager import DIDXManagerError
 from ...messages.response import DIDXResponse
-from ...messages.problem_report import ProblemReportReason
+from ...messages.problem_report import DIDXProblemReport, ProblemReportReason
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -125,9 +124,13 @@ class TestDIDXResponseHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert isinstance(result, ProblemReport) and (
-            result.description["code"]
-            == ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
+        assert (
+            isinstance(result, DIDXProblemReport)
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": None}
 
@@ -157,9 +160,13 @@ class TestDIDXResponseHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert isinstance(result, ProblemReport) and (
-            result.description["code"]
-            == ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
+        assert (
+            isinstance(result, DIDXProblemReport)
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": [mock_conn_target]}
 
@@ -189,8 +196,12 @@ class TestDIDXResponseHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert isinstance(result, ProblemReport) and (
-            result.description["code"]
-            == ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
+        assert (
+            isinstance(result, DIDXProblemReport)
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": None}
