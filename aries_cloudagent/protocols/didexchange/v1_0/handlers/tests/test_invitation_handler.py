@@ -8,7 +8,7 @@ from .....out_of_band.v1_0.messages.invitation import InvitationMessage
 from .....problem_report.v1_0.message import ProblemReport
 
 from ...handlers.invitation_handler import InvitationHandler
-from ...messages.problem_report_reason import ProblemReportReason
+from ...messages.problem_report import ProblemReportReason
 from ......wallet.did_method import DIDMethods
 
 

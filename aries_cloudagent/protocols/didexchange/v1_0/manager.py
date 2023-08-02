@@ -35,7 +35,7 @@ from ...out_of_band.v1_0.messages.invitation import (
 from ...out_of_band.v1_0.messages.service import Service as OOBService
 from .message_types import ARIES_PROTOCOL as DIDX_PROTO
 from .messages.complete import DIDXComplete
-from .messages.problem_report_reason import ProblemReportReason
+from .messages.problem_report import ProblemReportReason
 from .messages.request import DIDXRequest
 from .messages.response import DIDXResponse
 

@@ -9,7 +9,7 @@ from .....messaging.base_handler import (
 from ....out_of_band.v1_0.messages.invitation import InvitationMessage
 from ....problem_report.v1_0.message import ProblemReport
 
-from ..messages.problem_report_reason import ProblemReportReason
+from ..messages.problem_report import ProblemReportReason
 
 
 class InvitationHandler(BaseHandler):

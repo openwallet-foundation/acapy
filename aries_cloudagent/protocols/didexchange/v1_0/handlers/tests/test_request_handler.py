@@ -21,7 +21,7 @@ from .....problem_report.v1_0.message import ProblemReport
 from ...handlers import request_handler as test_module
 from ...manager import DIDXManagerError
 from ...messages.request import DIDXRequest
-from ...messages.problem_report_reason import ProblemReportReason
+from ...messages.problem_report import ProblemReportReason
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"

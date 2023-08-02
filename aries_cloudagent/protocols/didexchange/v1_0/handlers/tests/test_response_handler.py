@@ -22,7 +22,7 @@ from .....trustping.v1_0.messages.ping import Ping
 from ...handlers import response_handler as test_module
 from ...manager import DIDXManagerError
 from ...messages.response import DIDXResponse
-from ...messages.problem_report_reason import ProblemReportReason
+from ...messages.problem_report import ProblemReportReason
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
