@@ -1094,7 +1094,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not create_transaction_for_endorser:
-        return web.json_response({"result": rev_reg.serialize()})
+        return web.json_response({"sent": rev_reg.serialize()})
 
     else:
         transaction_mgr = TransactionManager(profile)
