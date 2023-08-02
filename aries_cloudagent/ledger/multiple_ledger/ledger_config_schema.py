@@ -76,10 +76,19 @@ class LedgerConfigListSchema(OpenAPISchema):
     )
 
 
-class WriteLedgerRequestSchema(OpenAPISchema):
-    """Schema for setting/getting ledger_id for the write ledger."""
+class WriteLedgerSchema(OpenAPISchema):
+    """Schema for getting ledger_id for the write ledger."""
 
     ledger_id = fields.Str()
+
+
+class ConfigurableWriteLedgersSchema(OpenAPISchema):
+    """Schema for list of configurable write ledger."""
+
+    write_ledgers = fields.List(
+        fields.Str(description="Ledgers identifiers"),
+        description="List of configurable write ledgers identifiers",
+    )
 
 
 class MultipleLedgerModuleResultSchema(OpenAPISchema):

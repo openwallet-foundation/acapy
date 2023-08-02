@@ -1,7 +1,7 @@
 """Manager for multiple ledger."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple, Mapping
+from typing import Optional, Tuple, Mapping, List
 
 from ...core.error import BaseError
 from ...core.profile import Profile
@@ -20,8 +20,20 @@ class BaseMultipleLedgerManager(ABC):
         """Initialize Multiple Ledger Manager."""
 
     @abstractmethod
-    async def get_write_ledger(self) -> Tuple[str, BaseLedger]:
+    def get_endorser_info_for_ledger(self, ledger_id: str) -> Optional[Tuple[str, str]]:
+        """Return endorser alias, did tuple for provided ledger, if available."""
+
+    @abstractmethod
+    async def get_write_ledgers(self) -> List[str]:
         """Return write ledger."""
+
+    @abstractmethod
+    async def get_ledger_id_by_ledger_pool_name(self, pool_name: str) -> str:
+        """Return ledger_id by ledger pool name."""
+
+    @abstractmethod
+    async def set_profile_write_ledger(self, ledger_id: str, profile: Profile) -> str:
+        """Set the write ledger for the profile."""
 
     @abstractmethod
     async def get_prod_ledgers(self) -> Mapping:

@@ -35,7 +35,7 @@ from ..commands.upgrade import (
 )
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
-
+from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
@@ -145,11 +145,7 @@ class Conductor:
                 MultiIndyLedgerManagerProvider(self.root_profile),
             )
             if not (context.settings.get("ledger.genesis_transactions")):
-                ledger = (
-                    await context.injector.inject(
-                        BaseMultipleLedgerManager
-                    ).get_write_ledger()
-                )[1]
+                ledger = context.injector.inject(BaseLedger)
                 if (
                     self.root_profile.BACKEND_NAME == "askar"
                     and ledger.BACKEND_NAME == "indy-vdr"

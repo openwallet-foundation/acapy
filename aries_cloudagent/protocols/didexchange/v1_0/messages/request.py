@@ -1,5 +1,6 @@
 """Represents a DID exchange request message under RFC 23."""
 
+from typing import Optional
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -27,11 +28,11 @@ class DIDXRequest(AgentMessage):
     def __init__(
         self,
         *,
-        label: str = None,
-        did: str = None,
-        did_doc_attach: AttachDecorator = None,
-        goal_code: str = None,
-        goal: str = None,
+        label: Optional[str] = None,
+        did: Optional[str] = None,
+        did_doc_attach: Optional[AttachDecorator] = None,
+        goal_code: Optional[str] = None,
+        goal: Optional[str] = None,
         **kwargs,
     ):
         """
