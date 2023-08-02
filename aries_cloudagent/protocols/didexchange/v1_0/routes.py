@@ -380,6 +380,7 @@ async def didx_accept_request(request: web.BaseRequest):
 @request_schema(DIDXRejectRequestSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_reject(request: web.BaseRequest):
+    """Abandon or reject a DID Exchange."""
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
 
