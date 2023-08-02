@@ -863,18 +863,20 @@ class DIDXManager(BaseConnectionManager):
         reason: Optional[str] = None,
     ) -> DIDXProblemReport:
         """Abandon an existing DID exchange."""
-        async with self.profile.session() as session:
-            await conn_rec.abandon(session, reason=reason)
-
         state_to_reject_code = {
-            "invitation-received": ProblemReportReason.INVITATION_NOT_ACCEPTED,
-            "request-received": ProblemReportReason.REQUEST_NOT_ACCEPTED,
+            ConnRecord.State.INVITATION.rfc23
+            + "-received": ProblemReportReason.INVITATION_NOT_ACCEPTED,
+            ConnRecord.State.REQUEST.rfc23
+            + "-received": ProblemReportReason.REQUEST_NOT_ACCEPTED,
         }
         code = state_to_reject_code.get(conn_rec.rfc23_state)
         if not code:
             raise DIDXManagerError(
-                f"Cannot reject connection in state: {conn_rec.state}"
+                f"Cannot reject connection in state: {conn_rec.rfc23_state}"
             )
+
+        async with self.profile.session() as session:
+            await conn_rec.abandon(session, reason=reason)
 
         report = DIDXProblemReport(
             description={
@@ -906,7 +908,7 @@ class DIDXManager(BaseConnectionManager):
                 )
         else:
             raise DIDXManagerError(
-                "Received unrecognized problem report: %s", report.serialize()
+                f"Received unrecognized problem report: {report.description}"
             )
 
     async def verify_diddoc(
