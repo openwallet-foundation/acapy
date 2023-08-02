@@ -309,6 +309,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             assert info_public.did == conn_rec.my_did
+            assert self.responder.messages
+            request, kwargs = self.responder.messages[0]
+            assert isinstance(request, test_module.DIDXRequest)
+            assert request.did_doc_attach is None
 
     async def test_create_request_implicit_no_public_did(self):
         with self.assertRaises(WalletError) as context:
@@ -470,6 +474,24 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 my_endpoint="http://testendpoint.com/endpoint",
             )
             assert didx_req
+
+    async def test_create_request_public_did(self):
+        mock_conn_rec = async_mock.MagicMock(
+            connection_id="dummy",
+            my_did=self.did_info.did,
+            their_did=TestConfig.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.REQUEST.rfc23,
+            retrieve_invitation=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    services=[TestConfig.test_target_did],
+                )
+            ),
+            save=async_mock.CoroutineMock(),
+        )
+
+        request = await self.manager.create_request(mock_conn_rec, use_public_did=True)
+        assert request.did_doc_attach is None
 
     async def test_receive_request_explicit_public_did(self):
         async with self.profile.session() as session:
