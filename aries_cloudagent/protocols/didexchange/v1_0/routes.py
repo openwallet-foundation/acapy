@@ -390,7 +390,7 @@ async def didx_reject(request: web.BaseRequest):
     try:
         async with profile.session() as session:
             conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
-        report = await didx_mgr.abandon_exchange(conn_rec=conn_rec)
+        report = await didx_mgr.reject(conn_rec=conn_rec)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:

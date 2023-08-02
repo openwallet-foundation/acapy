@@ -856,7 +856,7 @@ class DIDXManager(BaseConnectionManager):
 
         return conn_rec
 
-    async def abandon_exchange(
+    async def reject(
         self,
         conn_rec: ConnRecord,
         *,
@@ -866,10 +866,20 @@ class DIDXManager(BaseConnectionManager):
         async with self.profile.session() as session:
             await conn_rec.abandon(session, reason=reason)
 
+        state_to_reject_code = {
+            "invitation-received": ProblemReportReason.INVITATION_NOT_ACCEPTED,
+            "request-received": ProblemReportReason.REQUEST_NOT_ACCEPTED,
+        }
+        code = state_to_reject_code.get(conn_rec.rfc23_state)
+        if not code:
+            raise DIDXManagerError(
+                f"Cannot reject connection in state: {conn_rec.state}"
+            )
+
         report = DIDXProblemReport(
             description={
-                "code": ProblemReportReason.ABANDONED.value,
-                "en": reason or "Connection abandoned",
+                "code": code.value,
+                "en": reason or "DID exchange rejected",
             },
         )
 

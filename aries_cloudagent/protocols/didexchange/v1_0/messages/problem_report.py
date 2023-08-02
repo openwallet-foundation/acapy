@@ -27,7 +27,6 @@ class ProblemReportReason(Enum):
     RESPONSE_NOT_ACCEPTED = "response_not_accepted"
     RESPONSE_PROCESSING_ERROR = "response_processing_error"
     COMPLETE_NOT_ACCEPTED = "complete_not_accepted"
-    ABANDONED = "abandoned"
 
 
 class DIDXProblemReport(ProblemReport):
