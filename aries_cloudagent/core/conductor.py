@@ -11,6 +11,7 @@ wallet.
 import hashlib
 import json
 import logging
+from typing import Optional
 
 from packaging import version as package_version
 from qrcode import QRCode
@@ -681,7 +682,7 @@ class Conductor:
         self,
         profile: Profile,
         outbound: OutboundMessage,
-        inbound: InboundMessage = None,
+        inbound: Optional[InboundMessage] = None,
     ) -> OutboundSendStatus:
         """
         Queue an outbound message for transport.
@@ -704,7 +705,7 @@ class Conductor:
                 )
             except ConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
-                return
+                return OutboundSendStatus.UNDELIVERABLE
             except (LedgerConfigError, LedgerTransactionError) as e:
                 LOGGER.error("Shutdown on ledger error %s", str(e))
                 if self.admin_server:
