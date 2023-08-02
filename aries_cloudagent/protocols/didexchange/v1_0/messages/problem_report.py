@@ -9,10 +9,9 @@ from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 from ..message_types import PROBLEM_REPORT
 
 
-# TODO this should be handled by a didx specific handler to mark the connection
-# as abandoned.
 HANDLER_CLASS = (
-    "aries_cloudagent.protocols.problem_report.v1_0.handler.ProblemReportHandler"
+    "aries_cloudagent.protocols.didexchange.v1_0.handlers."
+    "problem_report_handler.ProblemReportHandler"
 )
 
 LOGGER = logging.getLogger(__name__)

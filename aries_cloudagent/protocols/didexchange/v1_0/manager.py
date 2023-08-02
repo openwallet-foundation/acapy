@@ -886,6 +886,29 @@ class DIDXManager(BaseConnectionManager):
         # TODO Delete the record?
         return report
 
+    async def receive_problem_report(
+        self,
+        conn_rec: ConnRecord,
+        report: DIDXProblemReport,
+    ):
+        """Receive problem report."""
+        if not report.description:
+            raise DIDXManagerError("Missing description in problem report")
+
+        if report.description.get("code") in set(
+            reason.value for reason in ProblemReportReason
+        ):
+            self._logger.info("Problem report indicates connection is abandoned")
+            async with self.profile.session() as session:
+                await conn_rec.abandon(
+                    session,
+                    reason=report.description.get("en"),
+                )
+        else:
+            raise DIDXManagerError(
+                "Received unrecognized problem report: %s", report.serialize()
+            )
+
     async def verify_diddoc(
         self,
         wallet: BaseWallet,
