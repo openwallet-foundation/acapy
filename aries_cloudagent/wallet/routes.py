@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List
+from typing import List, Optional, Tuple
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -187,7 +187,7 @@ class DIDListQueryStringSchema(OpenAPISchema):
 class DIDQueryStringSchema(OpenAPISchema):
     """Parameters and validators for set public DID request query string."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(description="DID of interest", required=True, **GENERIC_DID)
 
 
 class DIDCreateOptionsSchema(OpenAPISchema):
@@ -601,7 +601,7 @@ async def promote_wallet_public_did(
     connection_id: str = None,
     routing_keys: List[str] = None,
     mediator_endpoint: str = None,
-) -> DIDInfo:
+) -> Tuple[DIDInfo, Optional[dict]]:
     """Promote supplied DID to the wallet public DID."""
     info: DIDInfo = None
     endorser_did = None
