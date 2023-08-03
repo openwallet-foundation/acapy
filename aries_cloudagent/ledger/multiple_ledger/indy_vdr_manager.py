@@ -11,7 +11,6 @@ from ...cache.base import BaseCache
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
-from ...multitenant.manager import BaseMultitenantManager
 from ...wallet.crypto import did_is_self_certified
 
 from ..indy_vdr import IndyVdrLedger
@@ -73,38 +72,6 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
     async def get_nonprod_ledgers(self) -> Mapping:
         """Return non_production ledgers mapping."""
         return self.non_production_ledgers
-
-    async def set_profile_write_ledger(self, ledger_id: str, profile: Profile) -> str:
-        """Set the write ledger for the profile."""
-        if ledger_id not in self.writable_ledgers:
-            raise MultipleLedgerManagerError(
-                f"Provided Ledger identifier {ledger_id} is not write configurable."
-            )
-        extra_settings = {}
-        multi_tenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        multi_ledgers = self.production_ledgers | self.non_production_ledgers
-        if ledger_id in multi_ledgers:
-            profile.context.injector.bind_instance(
-                BaseLedger, multi_ledgers.get(ledger_id)
-            )
-            endorser_info = self.get_endorser_info_for_ledger(ledger_id)
-            if endorser_info:
-                endorser_alias, endorser_did = endorser_info
-                profile.context.settings["endorser.endorser_alias"] = endorser_alias
-                profile.context.settings["endorser.endorser_public_did"] = endorser_did
-            profile.context.settings["ledger.write_ledger"] = ledger_id
-            if multi_tenant_mgr:
-                extra_settings = {
-                    "endorser.endorser_alias": endorser_alias,
-                    "endorser.endorser_public_did": endorser_did,
-                    "ledger.write_ledger": ledger_id,
-                }
-                await multi_tenant_mgr.update_wallet(
-                    profile.context.settings["wallet.id"],
-                    extra_settings,
-                )
-            return ledger_id
-        raise MultipleLedgerManagerError(f"No ledger info found for {ledger_id}.")
 
     async def get_ledger_inst_by_id(self, ledger_id: str) -> Optional[BaseLedger]:
         """Return BaseLedger instance."""
