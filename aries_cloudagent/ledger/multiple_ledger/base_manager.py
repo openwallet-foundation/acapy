@@ -92,6 +92,4 @@ class BaseMultipleLedgerManager(ABC):
             endorser_alias, endorser_did = endorser_info
             settings["endorser.endorser_alias"] = endorser_alias
             settings["endorser.endorser_public_did"] = endorser_did
-        else:
-            settings["endorser.none"] = "true"
         settings["ledger.write_ledger"] = ledger_id
