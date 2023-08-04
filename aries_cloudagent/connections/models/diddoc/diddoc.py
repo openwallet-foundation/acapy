@@ -173,6 +173,10 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
         new_did_doc = did_doc.copy()
 
         key_dict = {}
+
+        if not DIDUrl.is_valid(new_did_doc["id"]):
+            new_did_doc["id"] = "did:sov:"+new_did_doc["id"]
+
         if "publicKey" in new_did_doc:
             key_dict = {pk["id"]:pk for pk in new_did_doc["publicKey"]}
             new_did_doc["verificationMethod"] = []

@@ -69,7 +69,7 @@ class TestLegacyDIDDoc(AsyncTestCase):
         # One authn key by reference
         dd_in = {
             "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+            "id": "LjgpST2rjsoxYegQDRm7EL",
             "publicKey": [
                 {
                     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#3",
@@ -115,7 +115,7 @@ class TestLegacyDIDDoc(AsyncTestCase):
         # All references canonical where possible; one authn key embedded and one by reference
         dd_in = {
             "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+            "id": "LjgpST2rjsoxYegQDRm7EL",
             "publicKey": [
                 {
                     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#3",
@@ -193,7 +193,7 @@ class TestLegacyDIDDoc(AsyncTestCase):
         # Minimal + ids as per indy-agent test suite with explicit identifiers; novel service recipient key on raw base58
         dd_in = {
             "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:LjgpST2rjsoxYegQDRm7EL",
+            "id": "LjgpST2rjsoxYegQDRm7EL",
             "publicKey": [
                 {
                     "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1",
