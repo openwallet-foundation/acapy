@@ -1,13 +1,8 @@
 from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
+from peerdid.dids import resolve_peer_did
 
 from ......connections.models import connection_target, conn_record
-from ......connections.models.diddoc import (
-    LegacyDIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
 from ......core.in_memory import InMemoryProfile
 from ......wallet.did_method import SOV, DIDMethods
 from ......wallet.key_type import ED25519
@@ -34,31 +29,8 @@ class TestDIDXRequestHandler(AsyncTestCase):
     """Class unit testing request handler."""
 
     def did_doc(self):
-        doc = LegacyDIDDoc(id=TEST_DID)
-        controller = TEST_DID
-        ident = "1"
-        pk_value = TEST_VERKEY
-        pk = PublicKey(
-            TEST_DID,
-            ident,
-            pk_value,
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            False,
-        )
-        doc.set(pk)
-        recip_keys = [pk]
-        router_keys = []
-        service = Service(
-            TEST_DID,
-            "indy",
-            "IndyAgent",
-            recip_keys,
-            router_keys,
-            TEST_ENDPOINT,
-        )
-        doc.set(service)
-        return doc
+        did_peer_2 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"       
+        return resolve_peer_did(did_peer_2)
 
     async def setUp(self):
         self.ctx = RequestContext.test_context()

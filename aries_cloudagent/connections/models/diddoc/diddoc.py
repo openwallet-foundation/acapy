@@ -22,7 +22,7 @@ import json
 import logging
 
 from typing import List, Sequence, Union, Any, Optional
-from pydid import DIDCommService
+from pydid import DIDCommService, DIDUrl
 from peerdid.dids import DID, DIDDocument, encode_service, resolve_peer_did
 from multiformats import multibase
 from .publickey import PublicKey, PublicKeyType
@@ -206,9 +206,9 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
         new_did_doc["authentication"]=new_auth_list
 
         for i, service in enumerate(new_did_doc.get("service", [])):
-            if ";" in service.get("id",[]):
+            if ";" in service.get("id",""):
                 # legacy DIDDoc behaviour
-                service["id"].replace(";", "#")
+                service["id"] = service["id"].replace(";", "#")
             
             service["id"] = make_didurl(service.get("id"), f"#service{i}")
 
@@ -218,6 +218,11 @@ class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
                 service.pop("recipientKeys")
             else:
                 service["recipient_keys"] = service.get("recipient_keys",[])
+
+            if ";" in service.get("serviceEndpoint",""):
+                # this is trying to be a didUrl
+                service["serviceEndpoint"] = service["serviceEndpoint"].replace(";", "#")
+
 
         rv = super().deserialize(new_did_doc)
 

@@ -13,7 +13,7 @@ from peerdid.dids import DIDDocument, resolve_peer_did
 from ....wallet.askar import _create_keypair
 
 from ....connections.base_manager import BaseConnectionManager
-from ....connections.models.diddoc import LegacyDIDDoc  # JS
+from ....connections.models.diddoc import LegacyDIDDoc # JS
 from ....connections.models.diddoc.util import create_peer_did_2_from_verkey
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError

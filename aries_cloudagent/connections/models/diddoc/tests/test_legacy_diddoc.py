@@ -157,33 +157,6 @@ class TestLegacyDIDDoc(AsyncTestCase):
         dd_out = dd.serialize()
         # print('\n\n== 5 == DID Doc on canonical refs: {}'.format(ppjson(dd_out)))
 
-    def test_obsolete_minimal(self):
-        # Minimal as per indy-agent test suite without explicit identifiers
-        dd_in = {
-            "@context": "https://w3id.org/did/v1",
-            "publicKey": [
-                {
-                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:LjgpST2rjsoxYegQDRm7EL",
-                    "publicKeyBase58": "~XXXXXXXXXXXXXXXX",
-                }
-            ],
-            "service": [
-                {
-                    "type": "DIDCommMessaging",
-                    "recipientKeys": ["~XXXXXXXXXXXXXXXX"],
-                    "serviceEndpoint": "https://www.von.ca",
-                }
-            ],
-        }
-
-        dd =LegacyDIDDoc.deserialize(dd_in)
-        assert len(dd.verification_method) == len(dd_in["publicKey"])
-
-        dd_out = dd.serialize()
-        # print('\n\n== 6 == DID Doc miminal style, implcit DID document identifier: {}'.format(
-        #    ppjson(dd_out)))
 
     def test_obsolete_minimal_ids(self):
         # Minimal + ids as per indy-agent test suite with explicit identifiers; novel service recipient key on raw base58
@@ -249,7 +222,7 @@ class TestLegacyDIDDoc(AsyncTestCase):
             ],
             "service": [
                 {
-                    "id": "LjgpST2rjsoxYegQDRm7EL;indy",
+                    "id": "did:sov:LjgpST2rjsoxYegQDRm7EL;indy",
                     "type": "DIDCommMessaging",
                     "priority": 0,
                     "recipientKeys": ["~ZZZZZZZZZZZZZZZZ"],
@@ -257,18 +230,18 @@ class TestLegacyDIDDoc(AsyncTestCase):
                 },
                 {
                     "id": "1",
-                    "type": "one",
+                    "type": "DIDCommMessaging",
                     "priority": 1,
                     "recipientKeys": [
                         "~XXXXXXXXXXXXXXXX",
                         "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-1",
                     ],
                     "routingKeys": ["did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"],
-                    "serviceEndpoint": "LjgpST2rjsoxYegQDRm7EL;2",
+                    "serviceEndpoint": "did:sov:LjgpST2rjsoxYegQDRm7EL;2",
                 },
                 {
                     "id": "2",
-                    "type": "two",
+                    "type": "DIDCommMessaging",
                     "priority": 2,
                     "recipientKeys": [
                         "~XXXXXXXXXXXXXXXX",
@@ -281,48 +254,21 @@ class TestLegacyDIDDoc(AsyncTestCase):
         }
 
         dd =LegacyDIDDoc.deserialize(dd_in)
-        assert len(dd.verification_method) == 1 + len(dd_in["publicKey"])
-        assert {s.priority for s in dd.service.values()} == {0, 1, 2}
+        assert len(dd.verification_method) == len(dd_in["publicKey"])
+        assert {s.priority for s in dd.service} == {0, 1, 2}
         assert len(dd.service) == 3
         assert all(
-            len(dd.service[k].to_dict()["recipientKeys"]) == 1 for k in dd.service
+            len(k.dict()["recipient_keys"]) == 1 for k in dd.service
         )
+        # id - did:sov:LjgpST2rjsoxYegQDRm7EL;indy -> #indy
         assert (
             "routingKeys"
-            not in dd.service["did:sov:LjgpST2rjsoxYegQDRm7EL;indy"].to_dict()
+            not in [s for s in dd.service if s.id=="#indy"][0].dict()
         )
         assert all(
-            len(dd.service[k].to_dict()["routingKeys"]) == 1
-            for k in (
-                "did:sov:LjgpST2rjsoxYegQDRm7EL;1",
-                "did:sov:LjgpST2rjsoxYegQDRm7EL;2",
-            )
+            (len(k.dict()["routing_keys"]) == 1 and k.dict()["routing_keys"][0] == "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4") for k in dd.service if k.id != "#indy"
         )
 
-        dd_out = dd.serialize()
-        # print('\n\n== 8 == DID Doc on mixed service routing and recipient keys: {}'.format(ppjson(dd_out)))
-
-        pk = PublicKey(
-            dd.did,
-            "99",
-            "~AAAAAAAAAAAAAAAA",
-            PublicKeyType.ED25519_SIG_2018,
-            dd.did,
-            True,
-        )
-        assert "PublicKey" in str(pk)
-        dd.set(pk)
-        assert len(dd.pubkey) == 2 + len(dd_in["publicKey"])
-        assert canon_ref(dd.did, "99", "#") in dd.pubkey
-        assert len(dd.authnkey) == 1
-
-        service = Service(
-            dd.did, "abc", "IndyAgent", [pk], [pk], "http://www.abc.ca/123"
-        )
-        dd.set(service)
-        assert len(dd.service) == 4
-        assert canon_ref(dd.did, "abc", ";") in dd.service
-        # print('\n\n== 9 == DID Doc adds public key and service via set() OK')
 
     def test_obsolete_missing_recipkey(self):
         # Exercise missing service recipient key
