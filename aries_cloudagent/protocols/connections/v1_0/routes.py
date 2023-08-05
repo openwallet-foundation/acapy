@@ -26,7 +26,8 @@ from ....messaging.valid import (
     INDY_DID_VALIDATE,
     INDY_RAW_PUBLIC_KEY_EXAMPLE,
     INDY_RAW_PUBLIC_KEY_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
@@ -82,12 +83,6 @@ class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
         """Bypass middleware field validation: marshmallow has no data yet."""
 
 
-MEDIATION_ID_SCHEMA = {
-    "validate": UUIDFour(),
-    "example": UUIDFour.EXAMPLE,
-}
-
-
 class CreateInvitationRequestSchema(OpenAPISchema):
     """Request schema for invitation connection target."""
 
@@ -138,8 +133,11 @@ class CreateInvitationRequestSchema(OpenAPISchema):
     )
     mediation_id = fields.Str(
         required=False,
-        **MEDIATION_ID_SCHEMA,
-        metadata={"description": "Identifier for active mediation record to be used"},
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Identifier for active mediation record to be used",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
 
@@ -331,8 +329,11 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
     )
     mediation_id = fields.Str(
         required=False,
-        **MEDIATION_ID_SCHEMA,
-        metadata={"description": "Identifier for active mediation record to be used"},
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Identifier for active mediation record to be used",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
 
@@ -350,8 +351,11 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     )
     mediation_id = fields.Str(
         required=False,
-        **MEDIATION_ID_SCHEMA,
-        metadata={"description": "Identifier for active mediation record to be used"},
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Identifier for active mediation record to be used",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
 
