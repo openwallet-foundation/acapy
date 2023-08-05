@@ -61,17 +61,42 @@ class RefusedTransactionResponseSchema(AgentMessageSchema):
         model_class = RefusedTransactionResponse
         unknown = EXCLUDE
 
-    transaction_id = fields.Str(required=False, metadata={'description':
-        'The transaction id of the agent who this response is sent to',
-        'example': UUIDFour.EXAMPLE})
-    thread_id = fields.Str(required=False, metadata={'description':
-        'The transaction id of the agent who this response is sent from',
-        'example': UUIDFour.EXAMPLE})
-    signature_response = fields.Dict(required=False, metadata={'example': {
-        'message_id': '143c458d-1b1c-40c7-ab85-4d16808ddf0a', 'context':
-        'did:sov', 'method': 'add-signature', 'signer_goal_code':
-        'transaction.refuse'}})
-    state = fields.Str(required=False, metadata={'description':
-        'The State of the transaction Record', 'example': 'refused'})
-    endorser_did = fields.Str(required=False, metadata={'description':
-        'The public did of the endorser', 'example': 'V4SGRU86Z58d6TV7PBUe6f'})
+    transaction_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "The transaction id of the agent who this response is sent to",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    thread_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "The transaction id of the agent who this response is sent from",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    signature_response = fields.Dict(
+        required=False,
+        metadata={
+            "example": {
+                "message_id": "143c458d-1b1c-40c7-ab85-4d16808ddf0a",
+                "context": "did:sov",
+                "method": "add-signature",
+                "signer_goal_code": "transaction.refuse",
+            }
+        },
+    )
+    state = fields.Str(
+        required=False,
+        metadata={
+            "description": "The State of the transaction Record",
+            "example": "refused",
+        },
+    )
+    endorser_did = fields.Str(
+        required=False,
+        metadata={
+            "description": "The public did of the endorser",
+            "example": "V4SGRU86Z58d6TV7PBUe6f",
+        },
+    )

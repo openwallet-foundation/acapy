@@ -45,5 +45,6 @@ class KeylistKeySchema(BaseModelSchema):
         model_class = KeylistKey
         unknown = EXCLUDE
 
-    recipient_key = fields.Str(required=True, validate=DID_KEY_VALIDATE,
-        metadata={'example': DID_KEY_EXAMPLE})
+    recipient_key = fields.Str(
+        required=True, validate=DID_KEY_VALIDATE, metadata={"example": DID_KEY_EXAMPLE}
+    )

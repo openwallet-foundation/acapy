@@ -40,6 +40,11 @@ class V20PresAckSchema(V10AckSchema):
         model_class = V20PresAck
         unknown = EXCLUDE
 
-    verification_result = fields.Str(required=False, validate=validate.OneOf([
-        'true', 'false']), metadata={'description':
-        'Whether presentation is verified: true or false', 'example': 'true'})
+    verification_result = fields.Str(
+        required=False,
+        validate=validate.OneOf(["true", "false"]),
+        metadata={
+            "description": "Whether presentation is verified: true or false",
+            "example": "true",
+        },
+    )

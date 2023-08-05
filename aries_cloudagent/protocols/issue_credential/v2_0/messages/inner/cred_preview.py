@@ -77,14 +77,26 @@ class V20CredAttrSpecSchema(BaseModelSchema):
         model_class = V20CredAttrSpec
         unknown = EXCLUDE
 
-    name = fields.Str(required=True, metadata={'description': 'Attribute name',
-        'example': 'favourite_drink'})
-    mime_type = fields.Str(required=False, data_key='mime-type', allow_none=
-        True, metadata={'description': 'MIME type: omit for (null) default',
-        'example': 'image/jpeg'})
-    value = fields.Str(required=True, metadata={'description':
-        'Attribute value: base64-encode if MIME type is present', 'example':
-        'martini'})
+    name = fields.Str(
+        required=True,
+        metadata={"description": "Attribute name", "example": "favourite_drink"},
+    )
+    mime_type = fields.Str(
+        required=False,
+        data_key="mime-type",
+        allow_none=True,
+        metadata={
+            "description": "MIME type: omit for (null) default",
+            "example": "image/jpeg",
+        },
+    )
+    value = fields.Str(
+        required=True,
+        metadata={
+            "description": "Attribute value: base64-encode if MIME type is present",
+            "example": "martini",
+        },
+    )
 
 
 class V20CredPreview(BaseModel):
@@ -164,7 +176,11 @@ class V20CredPreviewSchema(BaseModelSchema):
         model_class = V20CredPreview
         unknown = EXCLUDE
 
-    _type = fields.Str(required=False, data_key='@type', metadata={
-        'description': 'Message type identifier', 'example': CRED_20_PREVIEW})
-    attributes = fields.Nested(V20CredAttrSpecSchema, many=True, required=True,
-        data_key='attributes')
+    _type = fields.Str(
+        required=False,
+        data_key="@type",
+        metadata={"description": "Message type identifier", "example": CRED_20_PREVIEW},
+    )
+    attributes = fields.Nested(
+        V20CredAttrSpecSchema, many=True, required=True, data_key="attributes"
+    )

@@ -79,8 +79,12 @@ class CredentialOfferSchema(AgentMessageSchema):
         model_class = CredentialOffer
         unknown = EXCLUDE
 
-    comment = fields.Str(required=False, allow_none=True, metadata={
-        'description': 'Human-readable comment'})
+    comment = fields.Str(
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
+    )
     credential_preview = fields.Nested(CredentialPreviewSchema, required=False)
-    offers_attach = fields.Nested(AttachDecoratorSchema, required=True, many=
-        True, data_key='offers~attach')
+    offers_attach = fields.Nested(
+        AttachDecoratorSchema, required=True, many=True, data_key="offers~attach"
+    )

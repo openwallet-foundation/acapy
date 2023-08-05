@@ -239,28 +239,63 @@ class OobRecordSchema(BaseExchangeSchema):
 
         model_class = OobRecord
 
-    oob_id = fields.Str(required=True, metadata={'description':
-        'Oob record identifier', 'example': UUIDFour.EXAMPLE})
-    state = fields.Str(required=True, validate=validate.OneOf(OobRecord.
-        get_attributes_by_prefix('STATE_', walk_mro=True)), metadata={
-        'description': 'Out of band message exchange state', 'example':
-        OobRecord.STATE_AWAIT_RESPONSE})
-    invi_msg_id = fields.Str(required=True, metadata={'description':
-        'Invitation message identifier', 'example': UUIDFour.EXAMPLE})
-    invitation = fields.Nested(InvitationMessageSchema(), required=True,
-        metadata={'description': 'Out of band invitation message'})
+    oob_id = fields.Str(
+        required=True,
+        metadata={"description": "Oob record identifier", "example": UUIDFour.EXAMPLE},
+    )
+    state = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            OobRecord.get_attributes_by_prefix("STATE_", walk_mro=True)
+        ),
+        metadata={
+            "description": "Out of band message exchange state",
+            "example": OobRecord.STATE_AWAIT_RESPONSE,
+        },
+    )
+    invi_msg_id = fields.Str(
+        required=True,
+        metadata={
+            "description": "Invitation message identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    invitation = fields.Nested(
+        InvitationMessageSchema(),
+        required=True,
+        metadata={"description": "Out of band invitation message"},
+    )
 
     their_service = fields.Nested(ServiceDecoratorSchema(), required=False)
 
-    connection_id = fields.Str(required=False, metadata={'description':
-        'Connection record identifier', 'example': UUIDFour.EXAMPLE})
+    connection_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Connection record identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
 
-    attach_thread_id = fields.Str(required=False, metadata={'description':
-        'Connection record identifier', 'example': UUIDFour.EXAMPLE})
+    attach_thread_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Connection record identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
 
-    our_recipient_key = fields.Str(required=False, metadata={'description':
-        'Recipient key used for oob invitation', 'example': UUIDFour.EXAMPLE})
+    our_recipient_key = fields.Str(
+        required=False,
+        metadata={
+            "description": "Recipient key used for oob invitation",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
 
-    role = fields.Str(required=False, validate=validate.OneOf(OobRecord.
-        get_attributes_by_prefix('ROLE_', walk_mro=False)), metadata={
-        'description': 'OOB Role', 'example': OobRecord.ROLE_RECEIVER})
+    role = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            OobRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
+        ),
+        metadata={"description": "OOB Role", "example": OobRecord.ROLE_RECEIVER},
+    )

@@ -37,8 +37,12 @@ class IndyRevRegDefValuePublicKeysAccumKeySchema(BaseModelSchema):
         model_class = IndyRevRegDefValuePublicKeysAccumKey
         unknown = EXCLUDE
 
-    z = fields.Str(metadata={'description': 'Value for z', 'example':
-        '1 120F522F81E6B7 1 09F7A59005C4939854'})
+    z = fields.Str(
+        metadata={
+            "description": "Value for z",
+            "example": "1 120F522F81E6B7 1 09F7A59005C4939854",
+        }
+    )
 
 
 class IndyRevRegDefValuePublicKeys(BaseModel):
@@ -64,8 +68,9 @@ class IndyRevRegDefValuePublicKeysSchema(BaseModelSchema):
         model_class = IndyRevRegDefValuePublicKeys
         unknown = EXCLUDE
 
-    accum_key = fields.Nested(IndyRevRegDefValuePublicKeysAccumKeySchema(),
-        data_key='accumKey')
+    accum_key = fields.Nested(
+        IndyRevRegDefValuePublicKeysAccumKeySchema(), data_key="accumKey"
+    )
 
 
 class IndyRevRegDefValue(BaseModel):
@@ -101,20 +106,36 @@ class IndyRevRegDefValueSchema(BaseModelSchema):
         model_class = IndyRevRegDefValue
         unknown = EXCLUDE
 
-    issuance_type = fields.Str(validate=validate.OneOf(['ISSUANCE_ON_DEMAND',
-        'ISSUANCE_BY_DEFAULT']), data_key='issuanceType', metadata={
-        'description': 'Issuance type'})
-    max_cred_num = fields.Int(data_key='maxCredNum', validate=
-        NATURAL_NUM_VALIDATE, metadata={'description':
-        'Maximum number of credentials; registry size', 'strict': True,
-        'example': NATURAL_NUM_EXAMPLE})
-    public_keys = fields.Nested(IndyRevRegDefValuePublicKeysSchema(), data_key=
-        'publicKeys', metadata={'description': 'Public keys'})
-    tails_hash = fields.Str(data_key='tailsHash', validate=
-        BASE58_SHA256_HASH_VALIDATE, metadata={'description':
-        'Tails hash value', 'example': BASE58_SHA256_HASH_EXAMPLE})
-    tails_location = fields.Str(data_key='tailsLocation', metadata={
-        'description': 'Tails file location'})
+    issuance_type = fields.Str(
+        validate=validate.OneOf(["ISSUANCE_ON_DEMAND", "ISSUANCE_BY_DEFAULT"]),
+        data_key="issuanceType",
+        metadata={"description": "Issuance type"},
+    )
+    max_cred_num = fields.Int(
+        data_key="maxCredNum",
+        validate=NATURAL_NUM_VALIDATE,
+        metadata={
+            "description": "Maximum number of credentials; registry size",
+            "strict": True,
+            "example": NATURAL_NUM_EXAMPLE,
+        },
+    )
+    public_keys = fields.Nested(
+        IndyRevRegDefValuePublicKeysSchema(),
+        data_key="publicKeys",
+        metadata={"description": "Public keys"},
+    )
+    tails_hash = fields.Str(
+        data_key="tailsHash",
+        validate=BASE58_SHA256_HASH_VALIDATE,
+        metadata={
+            "description": "Tails hash value",
+            "example": BASE58_SHA256_HASH_EXAMPLE,
+        },
+    )
+    tails_location = fields.Str(
+        data_key="tailsLocation", metadata={"description": "Tails file location"}
+    )
 
 
 class IndyRevRegDef(BaseModel):
@@ -153,21 +174,42 @@ class IndyRevRegDefSchema(BaseModelSchema):
         model_class = IndyRevRegDef
         unknown = EXCLUDE
 
-    ver = fields.Str(validate=INDY_VERSION_VALIDATE, metadata={'description':
-        'Version of revocation registry definition', 'example':
-        INDY_VERSION_EXAMPLE})
-    id_ = fields.Str(data_key='id', validate=INDY_REV_REG_ID_VALIDATE, metadata
-        ={'description': 'Indy revocation registry identifier', 'example':
-        INDY_REV_REG_ID_EXAMPLE})
-    revoc_def_type = fields.Str(data_key='revocDefType', validate=validate.
-        Equal('CL_ACCUM'), metadata={'description':
-        'Revocation registry type (specify CL_ACCUM)', 'example': 'CL_ACCUM'})
-    tag = fields.Str(metadata={'description': 'Revocation registry tag'})
-    cred_def_id = fields.Str(data_key='credDefId', validate=
-        INDY_CRED_DEF_ID_VALIDATE, metadata={'description':
-        'Credential definition identifier', 'example': INDY_CRED_DEF_ID_EXAMPLE})
-    value = fields.Nested(IndyRevRegDefValueSchema(), metadata={'description':
-        'Revocation registry definition value'})
+    ver = fields.Str(
+        validate=INDY_VERSION_VALIDATE,
+        metadata={
+            "description": "Version of revocation registry definition",
+            "example": INDY_VERSION_EXAMPLE,
+        },
+    )
+    id_ = fields.Str(
+        data_key="id",
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Indy revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
+    )
+    revoc_def_type = fields.Str(
+        data_key="revocDefType",
+        validate=validate.Equal("CL_ACCUM"),
+        metadata={
+            "description": "Revocation registry type (specify CL_ACCUM)",
+            "example": "CL_ACCUM",
+        },
+    )
+    tag = fields.Str(metadata={"description": "Revocation registry tag"})
+    cred_def_id = fields.Str(
+        data_key="credDefId",
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
+    )
+    value = fields.Nested(
+        IndyRevRegDefValueSchema(),
+        metadata={"description": "Revocation registry definition value"},
+    )
 
 
 class IndyRevRegEntryValue(BaseModel):
@@ -199,13 +241,25 @@ class IndyRevRegEntryValueSchema(BaseModelSchema):
         model_class = "IndyRevRegEntryValue"
         unknown = EXCLUDE
 
-    prev_accum = fields.Str(data_key='prevAccum', required=False, metadata={
-        'description': 'Previous accumulator value', 'example':
-        '21 137AC810975E4 6 76F0384B6F23'})
-    accum = fields.Str(metadata={'description': 'Accumulator value', 'example':
-        '21 11792B036AED0AAA12A4 4 298B2571FFC63A737'})
-    revoked = fields.List(fields.Int(metadata={'strict': True}), required=False,
-        metadata={'description': 'Revoked credential revocation identifiers'})
+    prev_accum = fields.Str(
+        data_key="prevAccum",
+        required=False,
+        metadata={
+            "description": "Previous accumulator value",
+            "example": "21 137AC810975E4 6 76F0384B6F23",
+        },
+    )
+    accum = fields.Str(
+        metadata={
+            "description": "Accumulator value",
+            "example": "21 11792B036AED0AAA12A4 4 298B2571FFC63A737",
+        }
+    )
+    revoked = fields.List(
+        fields.Int(metadata={"strict": True}),
+        required=False,
+        metadata={"description": "Revoked credential revocation identifiers"},
+    )
 
 
 class IndyRevRegEntry(BaseModel):
@@ -232,7 +286,14 @@ class IndyRevRegEntrySchema(BaseModelSchema):
         model_class = IndyRevRegEntry
         unknown = EXCLUDE
 
-    ver = fields.Str(validate=INDY_VERSION_VALIDATE, metadata={'description':
-        'Version of revocation registry entry', 'example': INDY_VERSION_EXAMPLE})
-    value = fields.Nested(IndyRevRegEntryValueSchema(), metadata={'description':
-        'Revocation registry entry value'})
+    ver = fields.Str(
+        validate=INDY_VERSION_VALIDATE,
+        metadata={
+            "description": "Version of revocation registry entry",
+            "example": INDY_VERSION_EXAMPLE,
+        },
+    )
+    value = fields.Nested(
+        IndyRevRegEntryValueSchema(),
+        metadata={"description": "Revocation registry entry value"},
+    )

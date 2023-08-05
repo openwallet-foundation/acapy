@@ -36,9 +36,17 @@ class ProtocolDescriptorSchema(Schema):
     """Schema for an entry in the protocols list."""
 
     pid = fields.Str(required=True)
-    roles = fields.List(fields.Str(metadata={'description':
-        'Role: requester or responder', 'example': 'requester'}), required=
-        False, allow_none=True, metadata={'description': 'List of roles'})
+    roles = fields.List(
+        fields.Str(
+            metadata={
+                "description": "Role: requester or responder",
+                "example": "requester",
+            }
+        ),
+        required=False,
+        allow_none=True,
+        metadata={"description": "List of roles"},
+    )
 
 
 class DiscloseSchema(AgentMessageSchema):
@@ -50,5 +58,8 @@ class DiscloseSchema(AgentMessageSchema):
         model_class = Disclose
         unknown = EXCLUDE
 
-    protocols = fields.List(fields.Nested(ProtocolDescriptorSchema()), required
-        =True, metadata={'description': 'List of protocol descriptors'})
+    protocols = fields.List(
+        fields.Nested(ProtocolDescriptorSchema()),
+        required=True,
+        metadata={"description": "List of protocol descriptors"},
+    )

@@ -42,8 +42,10 @@ LOGGER = logging.getLogger(__name__)
 class TransactionListSchema(OpenAPISchema):
     """Result schema for transaction list."""
 
-    results = fields.List(fields.Nested(TransactionRecordSchema()), metadata={
-        'description': 'List of transaction records'})
+    results = fields.List(
+        fields.Nested(TransactionRecordSchema()),
+        metadata={"description": "List of transaction records"},
+    )
 
 
 class TransactionsListQueryStringSchema(OpenAPISchema):
@@ -53,65 +55,86 @@ class TransactionsListQueryStringSchema(OpenAPISchema):
 class TranIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking transaction id."""
 
-    tran_id = fields.Str(required=True, metadata={'description':
-        'Transaction identifier', 'example': UUIDFour.EXAMPLE})
+    tran_id = fields.Str(
+        required=True,
+        metadata={"description": "Transaction identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 class EndorserDIDInfoSchema(OpenAPISchema):
     """Path parameters and validators for request Endorser DID."""
 
-    endorser_did = fields.Str(required=False, metadata={'description':
-        'Endorser DID'})
+    endorser_did = fields.Str(required=False, metadata={"description": "Endorser DID"})
 
 
 class AssignTransactionJobsSchema(OpenAPISchema):
     """Assign transaction related jobs to connection record."""
 
-    transaction_my_job = fields.Str(required=False, validate=validate.OneOf([r.
-        name for r in TransactionJob if isinstance(r.value[0], int)] + ['reset'
-        ]), metadata={'description': 'Transaction related jobs'})
+    transaction_my_job = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
+        ),
+        metadata={"description": "Transaction related jobs"},
+    )
 
 
 class TransactionJobsSchema(OpenAPISchema):
     """Transaction jobs metadata on connection record."""
 
-    transaction_my_job = fields.Str(required=False, validate=validate.OneOf([r.
-        name for r in TransactionJob if isinstance(r.value[0], int)] + ['reset'
-        ]), metadata={'description': 'My transaction related job'})
-    transaction_their_job = fields.Str(required=False, validate=validate.OneOf(
-        [r.name for r in TransactionJob if isinstance(r.value[0], int)] + [
-        'reset']), metadata={'description': 'Their transaction related job'})
+    transaction_my_job = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
+        ),
+        metadata={"description": "My transaction related job"},
+    )
+    transaction_their_job = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
+        ),
+        metadata={"description": "Their transaction related job"},
+    )
 
 
 class TransactionConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(required=True, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    conn_id = fields.Str(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 class DateSchema(OpenAPISchema):
     """Sets Expiry date, till when the transaction should be endorsed."""
 
-    expires_time = fields.DateTime(required=True, metadata={'description':
-        'Expiry Date', 'example': '2021-03-29T05:22:19Z'})
+    expires_time = fields.DateTime(
+        required=True,
+        metadata={"description": "Expiry Date", "example": "2021-03-29T05:22:19Z"},
+    )
 
 
 class EndorserWriteLedgerTransactionSchema(OpenAPISchema):
     """Sets endorser_write_txn. Option for the endorser to write the transaction."""
 
-    endorser_write_txn = fields.Boolean(required=False, metadata={'description':
-        'Endorser will write the transaction after endorsing it'})
+    endorser_write_txn = fields.Boolean(
+        required=False,
+        metadata={
+            "description": "Endorser will write the transaction after endorsing it"
+        },
+    )
 
 
 class EndorserInfoSchema(OpenAPISchema):
     """Class for user to input the DID associated with the requested endorser."""
 
-    endorser_did = fields.Str(required=True, metadata={'description':
-        'Endorser DID'})
+    endorser_did = fields.Str(required=True, metadata={"description": "Endorser DID"})
 
-    endorser_name = fields.Str(required=False, metadata={'description':
-        'Endorser Name'})
+    endorser_name = fields.Str(
+        required=False, metadata={"description": "Endorser Name"}
+    )
 
 
 @docs(

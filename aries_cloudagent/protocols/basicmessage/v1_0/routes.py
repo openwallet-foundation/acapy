@@ -22,15 +22,18 @@ class BasicMessageModuleResponseSchema(OpenAPISchema):
 class SendMessageSchema(OpenAPISchema):
     """Request schema for sending a message."""
 
-    content = fields.Str(metadata={'description': 'Message content', 'example':
-        'Hello'})
+    content = fields.Str(
+        metadata={"description": "Message content", "example": "Hello"}
+    )
 
 
 class BasicConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(required=True, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    conn_id = fields.Str(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 @docs(tags=["basicmessage"], summary="Send a basic message to a connection")

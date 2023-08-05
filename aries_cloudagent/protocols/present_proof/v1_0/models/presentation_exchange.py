@@ -271,47 +271,101 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
 
         model_class = V10PresentationExchange
 
-    presentation_exchange_id = fields.Str(required=False, metadata={
-        'description': 'Presentation exchange identifier', 'example': UUIDFour.
-        EXAMPLE})
-    connection_id = fields.Str(required=False, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
-    thread_id = fields.Str(required=False, metadata={'description':
-        'Thread identifier', 'example': UUIDFour.EXAMPLE})
-    initiator = fields.Str(required=False, validate=validate.OneOf(['self',
-        'external']), metadata={'description':
-        'Present-proof exchange initiator: self or external', 'example':
-        V10PresentationExchange.INITIATOR_SELF})
-    role = fields.Str(required=False, validate=validate.OneOf(['prover',
-        'verifier']), metadata={'description':
-        'Present-proof exchange role: prover or verifier', 'example':
-        V10PresentationExchange.ROLE_PROVER})
-    state = fields.Str(required=False, metadata={'description':
-        'Present-proof exchange state', 'example': V10PresentationExchange.
-        STATE_VERIFIED})
-    presentation_proposal_dict = fields.Nested(PresentationProposalSchema(),
-        required=False, metadata={'description': 'Presentation proposal message'})
-    presentation_request = fields.Nested(IndyProofRequestSchema(), required=
-        False, metadata={'description':
-        '(Indy) presentation request (also known as proof request)'})
-    presentation_request_dict = fields.Nested(PresentationRequestSchema(),
-        required=False, metadata={'description': 'Presentation request message'})
-    presentation = fields.Nested(IndyProofSchema(), required=False, metadata={
-        'description': '(Indy) presentation (also known as proof)'})
-    verified = fields.Str(required=False, validate=validate.OneOf(['true',
-        'false']), metadata={'description':
-        'Whether presentation is verified: true or false', 'example': 'true'})
-    verified_msgs = fields.List(fields.Str(required=False, metadata={
-        'description': 'Proof verification warning or error information'}),
-        required=False)
-    auto_present = fields.Bool(required=False, metadata={'description':
-        'Prover choice to auto-present proof as verifier requests', 'example': 
-        False})
-    auto_verify = fields.Bool(required=False, metadata={'description':
-        'Verifier choice to auto-verify proof presentation'})
-    error_msg = fields.Str(required=False, metadata={'description':
-        'Error message', 'example': 'Invalid structure'})
-    auto_remove = fields.Bool(required=False, dump_default=True, metadata={
-        'description':
-        'Verifier choice to remove this presentation exchange record when complete'
-        , 'example': False})
+    presentation_exchange_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Presentation exchange identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    connection_id = fields.Str(
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
+    thread_id = fields.Str(
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+    )
+    initiator = fields.Str(
+        required=False,
+        validate=validate.OneOf(["self", "external"]),
+        metadata={
+            "description": "Present-proof exchange initiator: self or external",
+            "example": V10PresentationExchange.INITIATOR_SELF,
+        },
+    )
+    role = fields.Str(
+        required=False,
+        validate=validate.OneOf(["prover", "verifier"]),
+        metadata={
+            "description": "Present-proof exchange role: prover or verifier",
+            "example": V10PresentationExchange.ROLE_PROVER,
+        },
+    )
+    state = fields.Str(
+        required=False,
+        metadata={
+            "description": "Present-proof exchange state",
+            "example": V10PresentationExchange.STATE_VERIFIED,
+        },
+    )
+    presentation_proposal_dict = fields.Nested(
+        PresentationProposalSchema(),
+        required=False,
+        metadata={"description": "Presentation proposal message"},
+    )
+    presentation_request = fields.Nested(
+        IndyProofRequestSchema(),
+        required=False,
+        metadata={
+            "description": "(Indy) presentation request (also known as proof request)"
+        },
+    )
+    presentation_request_dict = fields.Nested(
+        PresentationRequestSchema(),
+        required=False,
+        metadata={"description": "Presentation request message"},
+    )
+    presentation = fields.Nested(
+        IndyProofSchema(),
+        required=False,
+        metadata={"description": "(Indy) presentation (also known as proof)"},
+    )
+    verified = fields.Str(
+        required=False,
+        validate=validate.OneOf(["true", "false"]),
+        metadata={
+            "description": "Whether presentation is verified: true or false",
+            "example": "true",
+        },
+    )
+    verified_msgs = fields.List(
+        fields.Str(
+            required=False,
+            metadata={"description": "Proof verification warning or error information"},
+        ),
+        required=False,
+    )
+    auto_present = fields.Bool(
+        required=False,
+        metadata={
+            "description": "Prover choice to auto-present proof as verifier requests",
+            "example": False,
+        },
+    )
+    auto_verify = fields.Bool(
+        required=False,
+        metadata={"description": "Verifier choice to auto-verify proof presentation"},
+    )
+    error_msg = fields.Str(
+        required=False,
+        metadata={"description": "Error message", "example": "Invalid structure"},
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=True,
+        metadata={
+            "description": "Verifier choice to remove this presentation exchange record when complete",
+            "example": False,
+        },
+    )

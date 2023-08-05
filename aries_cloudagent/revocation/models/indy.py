@@ -54,10 +54,22 @@ class NonRevocationIntervalSchema(BaseModelSchema):
 
         model_class = NonRevocationInterval
 
-    fro = fields.Int(required=False, data_key='from', validate=
-        INT_EPOCH_VALIDATE, metadata={'description':
-        'Earliest time of interest in non-revocation interval', 'strict': True,
-        'example': INT_EPOCH_EXAMPLE})
-    to = fields.Int(required=False, validate=INT_EPOCH_VALIDATE, metadata={
-        'description': 'Latest time of interest in non-revocation interval',
-        'strict': True, 'example': INT_EPOCH_EXAMPLE})
+    fro = fields.Int(
+        required=False,
+        data_key="from",
+        validate=INT_EPOCH_VALIDATE,
+        metadata={
+            "description": "Earliest time of interest in non-revocation interval",
+            "strict": True,
+            "example": INT_EPOCH_EXAMPLE,
+        },
+    )
+    to = fields.Int(
+        required=False,
+        validate=INT_EPOCH_VALIDATE,
+        metadata={
+            "description": "Latest time of interest in non-revocation interval",
+            "strict": True,
+            "example": INT_EPOCH_EXAMPLE,
+        },
+    )

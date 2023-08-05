@@ -575,42 +575,93 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
 
         model_class = IssuerRevRegRecord
 
-    record_id = fields.Str(required=False, metadata={'description':
-        'Issuer revocation registry record identifier', 'example': UUIDFour.
-        EXAMPLE})
-    state = fields.Str(required=False, metadata={'description':
-        'Issue revocation registry record state', 'example': IssuerRevRegRecord
-        .STATE_ACTIVE})
-    cred_def_id = fields.Str(required=False, validate=INDY_CRED_DEF_ID_VALIDATE,
-        metadata={'description': 'Credential definition identifier', 'example':
-        INDY_CRED_DEF_ID_EXAMPLE})
-    error_msg = fields.Str(required=False, metadata={'description':
-        'Error message', 'example': 'Revocation registry undefined'})
-    issuer_did = fields.Str(required=False, validate=INDY_DID_VALIDATE,
-        metadata={'description': 'Issuer DID', 'example': INDY_DID_EXAMPLE})
-    max_cred_num = fields.Int(required=False, metadata={'description':
-        'Maximum number of credentials for revocation registry', 'strict': True,
-        'example': 1000})
-    revoc_def_type = fields.Str(required=False, validate=validate.Equal(
-        'CL_ACCUM'), metadata={'description':
-        'Revocation registry type (specify CL_ACCUM)', 'example': 'CL_ACCUM'})
-    revoc_reg_id = fields.Str(required=False, validate=INDY_REV_REG_ID_VALIDATE,
-        metadata={'description': 'Revocation registry identifier', 'example':
-        INDY_REV_REG_ID_EXAMPLE})
-    revoc_reg_def = fields.Nested(IndyRevRegDefSchema(), required=False,
-        metadata={'description': 'Revocation registry definition'})
-    revoc_reg_entry = fields.Nested(IndyRevRegEntrySchema(), required=False,
-        metadata={'description': 'Revocation registry entry'})
-    tag = fields.Str(required=False, metadata={'description':
-        'Tag within issuer revocation registry identifier'})
-    tails_hash = fields.Str(required=False, validate=
-        BASE58_SHA256_HASH_VALIDATE, metadata={'description': 'Tails hash',
-        'example': BASE58_SHA256_HASH_EXAMPLE})
-    tails_public_uri = fields.Str(required=False, metadata={'description':
-        'Public URI for tails file'})
-    tails_local_path = fields.Str(required=False, metadata={'description':
-        'Local path to tails file'})
-    pending_pub = fields.List(fields.Str(metadata={'example': '23'}), required=
-        False, metadata={'description':
-        'Credential revocation identifier for credential revoked and pending publication to ledger'
-        })
+    record_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Issuer revocation registry record identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    state = fields.Str(
+        required=False,
+        metadata={
+            "description": "Issue revocation registry record state",
+            "example": IssuerRevRegRecord.STATE_ACTIVE,
+        },
+    )
+    cred_def_id = fields.Str(
+        required=False,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
+    )
+    error_msg = fields.Str(
+        required=False,
+        metadata={
+            "description": "Error message",
+            "example": "Revocation registry undefined",
+        },
+    )
+    issuer_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Issuer DID", "example": INDY_DID_EXAMPLE},
+    )
+    max_cred_num = fields.Int(
+        required=False,
+        metadata={
+            "description": "Maximum number of credentials for revocation registry",
+            "strict": True,
+            "example": 1000,
+        },
+    )
+    revoc_def_type = fields.Str(
+        required=False,
+        validate=validate.Equal("CL_ACCUM"),
+        metadata={
+            "description": "Revocation registry type (specify CL_ACCUM)",
+            "example": "CL_ACCUM",
+        },
+    )
+    revoc_reg_id = fields.Str(
+        required=False,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
+    )
+    revoc_reg_def = fields.Nested(
+        IndyRevRegDefSchema(),
+        required=False,
+        metadata={"description": "Revocation registry definition"},
+    )
+    revoc_reg_entry = fields.Nested(
+        IndyRevRegEntrySchema(),
+        required=False,
+        metadata={"description": "Revocation registry entry"},
+    )
+    tag = fields.Str(
+        required=False,
+        metadata={"description": "Tag within issuer revocation registry identifier"},
+    )
+    tails_hash = fields.Str(
+        required=False,
+        validate=BASE58_SHA256_HASH_VALIDATE,
+        metadata={"description": "Tails hash", "example": BASE58_SHA256_HASH_EXAMPLE},
+    )
+    tails_public_uri = fields.Str(
+        required=False, metadata={"description": "Public URI for tails file"}
+    )
+    tails_local_path = fields.Str(
+        required=False, metadata={"description": "Local path to tails file"}
+    )
+    pending_pub = fields.List(
+        fields.Str(metadata={"example": "23"}),
+        required=False,
+        metadata={
+            "description": "Credential revocation identifier for credential revoked and pending publication to ledger"
+        },
+    )

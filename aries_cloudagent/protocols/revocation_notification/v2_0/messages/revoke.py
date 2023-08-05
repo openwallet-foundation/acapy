@@ -46,14 +46,32 @@ class RevokeSchema(AgentMessageSchema):
 
         model_class = Revoke
 
-    revocation_format = fields.Str(required=True, validate=validate.OneOf([
-        'indy-anoncreds']), metadata={'description':
-        'The format of the credential revocation ID', 'example': 'indy-anoncreds'})
-    credential_id = fields.Str(required=True, metadata={'description':
-        'Credential ID of the issued credential to be revoked', 'example':
-        UUIDFour.EXAMPLE})
-    please_ack = fields.Nested(PleaseAckDecoratorSchema, required=False,
-        data_key='~please_ack', metadata={'description':
-        'Whether or not the holder should acknowledge receipt'})
-    comment = fields.Str(required=False, metadata={'description':
-        'Human readable information about revocation notification'})
+    revocation_format = fields.Str(
+        required=True,
+        validate=validate.OneOf(["indy-anoncreds"]),
+        metadata={
+            "description": "The format of the credential revocation ID",
+            "example": "indy-anoncreds",
+        },
+    )
+    credential_id = fields.Str(
+        required=True,
+        metadata={
+            "description": "Credential ID of the issued credential to be revoked",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    please_ack = fields.Nested(
+        PleaseAckDecoratorSchema,
+        required=False,
+        data_key="~please_ack",
+        metadata={
+            "description": "Whether or not the holder should acknowledge receipt"
+        },
+    )
+    comment = fields.Str(
+        required=False,
+        metadata={
+            "description": "Human readable information about revocation notification"
+        },
+    )

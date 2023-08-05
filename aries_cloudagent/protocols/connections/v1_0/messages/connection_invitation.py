@@ -103,26 +103,62 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         model_class = ConnectionInvitation
         unknown = EXCLUDE
 
-    label = fields.Str(required=False, metadata={'description':
-        'Optional label for connection invitation', 'example': 'Bob'})
-    did = fields.Str(required=False, validate=GENERIC_DID_VALIDATE, metadata={
-        'description': 'DID for connection invitation', 'example':
-        GENERIC_DID_EXAMPLE})
-    recipient_keys = fields.List(fields.Str(validate=
-        INDY_RAW_PUBLIC_KEY_VALIDATE, metadata={'description':
-        'Recipient public key', 'example': INDY_RAW_PUBLIC_KEY_EXAMPLE}),
-        data_key='recipientKeys', required=False, metadata={'description':
-        'List of recipient keys'})
-    endpoint = fields.Str(data_key='serviceEndpoint', required=False, metadata=
-        {'description': 'Service endpoint at which to reach this agent',
-        'example': 'http://192.168.56.101:8020'})
-    routing_keys = fields.List(fields.Str(validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
-        metadata={'description': 'Routing key', 'example':
-        INDY_RAW_PUBLIC_KEY_EXAMPLE}), data_key='routingKeys', required=False,
-        metadata={'description': 'List of routing keys'})
-    image_url = fields.URL(data_key='imageUrl', required=False, allow_none=True,
-        metadata={'description': 'Optional image URL for connection invitation',
-        'example': 'http://192.168.56.101/img/logo.jpg'})
+    label = fields.Str(
+        required=False,
+        metadata={
+            "description": "Optional label for connection invitation",
+            "example": "Bob",
+        },
+    )
+    did = fields.Str(
+        required=False,
+        validate=GENERIC_DID_VALIDATE,
+        metadata={
+            "description": "DID for connection invitation",
+            "example": GENERIC_DID_EXAMPLE,
+        },
+    )
+    recipient_keys = fields.List(
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Recipient public key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
+        data_key="recipientKeys",
+        required=False,
+        metadata={"description": "List of recipient keys"},
+    )
+    endpoint = fields.Str(
+        data_key="serviceEndpoint",
+        required=False,
+        metadata={
+            "description": "Service endpoint at which to reach this agent",
+            "example": "http://192.168.56.101:8020",
+        },
+    )
+    routing_keys = fields.List(
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Routing key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
+        data_key="routingKeys",
+        required=False,
+        metadata={"description": "List of routing keys"},
+    )
+    image_url = fields.URL(
+        data_key="imageUrl",
+        required=False,
+        allow_none=True,
+        metadata={
+            "description": "Optional image URL for connection invitation",
+            "example": "http://192.168.56.101/img/logo.jpg",
+        },
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

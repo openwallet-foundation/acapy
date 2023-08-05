@@ -30,46 +30,65 @@ class ActionMenuModulesResultSchema(OpenAPISchema):
 class PerformRequestSchema(OpenAPISchema):
     """Request schema for performing a menu action."""
 
-    name = fields.Str(metadata={'description': 'Menu option name', 'example':
-        'Query'})
-    params = fields.Dict(required=False, keys=fields.Str(metadata={'example':
-        'parameter'}), values=fields.Str(metadata={'example': UUIDFour.EXAMPLE}
-        ), metadata={'description': 'Input parameter values'})
+    name = fields.Str(metadata={"description": "Menu option name", "example": "Query"})
+    params = fields.Dict(
+        required=False,
+        keys=fields.Str(metadata={"example": "parameter"}),
+        values=fields.Str(metadata={"example": UUIDFour.EXAMPLE}),
+        metadata={"description": "Input parameter values"},
+    )
 
 
 class MenuJsonSchema(OpenAPISchema):
     """Matches MenuSchema but without the inherited AgentMessage properties."""
 
-    title = fields.Str(required=False, metadata={'description': 'Menu title',
-        'example': 'My Menu'})
-    description = fields.Str(required=False, metadata={'description':
-        'Introductory text for the menu', 'example':
-        'User preferences for window settings'})
-    errormsg = fields.Str(required=False, metadata={'description':
-        'Optional error message to display in menu header', 'example':
-        'Error: item not present'})
-    options = fields.List(fields.Nested(MenuOptionSchema), required=True,
-        metadata={'description': 'List of menu options'})
+    title = fields.Str(
+        required=False, metadata={"description": "Menu title", "example": "My Menu"}
+    )
+    description = fields.Str(
+        required=False,
+        metadata={
+            "description": "Introductory text for the menu",
+            "example": "User preferences for window settings",
+        },
+    )
+    errormsg = fields.Str(
+        required=False,
+        metadata={
+            "description": "Optional error message to display in menu header",
+            "example": "Error: item not present",
+        },
+    )
+    options = fields.List(
+        fields.Nested(MenuOptionSchema),
+        required=True,
+        metadata={"description": "List of menu options"},
+    )
 
 
 class SendMenuSchema(OpenAPISchema):
     """Request schema for sending a menu to a connection."""
 
-    menu = fields.Nested(MenuJsonSchema(), required=True, metadata={
-        'description': 'Menu to send to connection'})
+    menu = fields.Nested(
+        MenuJsonSchema(),
+        required=True,
+        metadata={"description": "Menu to send to connection"},
+    )
 
 
 class MenuConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(required=True, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    conn_id = fields.Str(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 class ActionMenuFetchResultSchema(OpenAPISchema):
     """Result schema for action-menu fetch."""
 
-    result = fields.Nested(MenuSchema, metadata={'description': 'Action menu'})
+    result = fields.Nested(MenuSchema, metadata={"description": "Action menu"})
 
 
 @docs(

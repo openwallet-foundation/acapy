@@ -38,9 +38,11 @@ class HolderModuleResponseSchema(OpenAPISchema):
 class AttributeMimeTypesResultSchema(OpenAPISchema):
     """Result schema for credential attribute MIME type."""
 
-    results = fields.Dict(keys=fields.Str(metadata={'description':
-        'Attribute name'}), values=fields.Str(metadata={'description':
-        'MIME type'}), allow_none=True)
+    results = fields.Dict(
+        keys=fields.Str(metadata={"description": "Attribute name"}),
+        values=fields.Str(metadata={"description": "MIME type"}),
+        allow_none=True,
+    )
 
 
 class CredInfoListSchema(OpenAPISchema):
@@ -52,42 +54,90 @@ class CredInfoListSchema(OpenAPISchema):
 class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
-    start = fields.Str(required=False, validate=NUM_STR_WHOLE_VALIDATE,
-        metadata={'description': 'Start index', 'example': NUM_STR_WHOLE_EXAMPLE})
-    count = fields.Str(required=False, validate=NUM_STR_NATURAL_VALIDATE,
-        metadata={'description': 'Maximum number to retrieve', 'example':
-        NUM_STR_NATURAL_EXAMPLE})
-    wql = fields.Str(required=False, validate=INDY_WQL_VALIDATE, metadata={
-        'description': '(JSON) WQL query', 'example': INDY_WQL_EXAMPLE})
+    start = fields.Str(
+        required=False,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={"description": "Start index", "example": NUM_STR_WHOLE_EXAMPLE},
+    )
+    count = fields.Str(
+        required=False,
+        validate=NUM_STR_NATURAL_VALIDATE,
+        metadata={
+            "description": "Maximum number to retrieve",
+            "example": NUM_STR_NATURAL_EXAMPLE,
+        },
+    )
+    wql = fields.Str(
+        required=False,
+        validate=INDY_WQL_VALIDATE,
+        metadata={"description": "(JSON) WQL query", "example": INDY_WQL_EXAMPLE},
+    )
 
 
 class W3CCredentialsListRequestSchema(OpenAPISchema):
     """Parameters and validators for W3C credentials request."""
 
-    contexts = fields.List(fields.Str(validate=ENDPOINT_VALIDATE, metadata={
-        'description': 'Credential context to match', 'example':
-        ENDPOINT_EXAMPLE}), required=False)
-    types = fields.List(fields.Str(validate=ENDPOINT_VALIDATE, metadata={
-        'description': 'Credential type to match', 'example': ENDPOINT_EXAMPLE}
-        ), required=False)
-    schema_ids = fields.List(fields.Str(validate=ENDPOINT_VALIDATE, metadata={
-        'description': 'Credential schema identifier', 'example':
-        ENDPOINT_EXAMPLE}), required=False, metadata={'description':
-        'Schema identifiers, all of which to match'})
-    issuer_id = fields.Str(required=False, metadata={'description':
-        'Credential issuer identifier to match'})
-    subject_ids = fields.List(fields.Str(metadata={'description':
-        'Subject identifier'}), required=False, metadata={'description':
-        'Subject identifiers, all of which to match'})
-    proof_types = fields.List(fields.Str(metadata={'description':
-        'Signature suite used for proof', 'example': 'Ed25519Signature2018'}))
-    given_id = fields.Str(required=False, metadata={'description':
-        'Given credential id to match'})
-    tag_query = fields.Dict(keys=fields.Str(metadata={'description': 'Tag name'
-        }), values=fields.Str(metadata={'description': 'Tag value'}), required=
-        False, metadata={'description': 'Tag filter'})
-    max_results = fields.Int(required=False, metadata={'strict': True,
-        'description': 'Maximum number of results to return'})
+    contexts = fields.List(
+        fields.Str(
+            validate=ENDPOINT_VALIDATE,
+            metadata={
+                "description": "Credential context to match",
+                "example": ENDPOINT_EXAMPLE,
+            },
+        ),
+        required=False,
+    )
+    types = fields.List(
+        fields.Str(
+            validate=ENDPOINT_VALIDATE,
+            metadata={
+                "description": "Credential type to match",
+                "example": ENDPOINT_EXAMPLE,
+            },
+        ),
+        required=False,
+    )
+    schema_ids = fields.List(
+        fields.Str(
+            validate=ENDPOINT_VALIDATE,
+            metadata={
+                "description": "Credential schema identifier",
+                "example": ENDPOINT_EXAMPLE,
+            },
+        ),
+        required=False,
+        metadata={"description": "Schema identifiers, all of which to match"},
+    )
+    issuer_id = fields.Str(
+        required=False,
+        metadata={"description": "Credential issuer identifier to match"},
+    )
+    subject_ids = fields.List(
+        fields.Str(metadata={"description": "Subject identifier"}),
+        required=False,
+        metadata={"description": "Subject identifiers, all of which to match"},
+    )
+    proof_types = fields.List(
+        fields.Str(
+            metadata={
+                "description": "Signature suite used for proof",
+                "example": "Ed25519Signature2018",
+            }
+        )
+    )
+    given_id = fields.Str(
+        required=False, metadata={"description": "Given credential id to match"}
+    )
+    tag_query = fields.Dict(
+        keys=fields.Str(metadata={"description": "Tag name"}),
+        values=fields.Str(metadata={"description": "Tag value"}),
+        required=False,
+        metadata={"description": "Tag filter"},
+    )
+    max_results = fields.Int(
+        required=False,
+        metadata={"strict": True, "description": "Maximum number of results to return"},
+    )
 
 
 class VCRecordListSchema(OpenAPISchema):
@@ -99,27 +149,40 @@ class VCRecordListSchema(OpenAPISchema):
 class HolderCredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
-    credential_id = fields.Str(required=True, metadata={'description':
-        'Credential identifier', 'example': UUIDFour.EXAMPLE})
+    credential_id = fields.Str(
+        required=True,
+        metadata={"description": "Credential identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 class CredRevokedQueryStringSchema(OpenAPISchema):
     """Path parameters and validators for request seeking cred revocation status."""
 
-    fro = fields.Str(data_key='from', required=False, validate=
-        NUM_STR_WHOLE_VALIDATE, metadata={'description':
-        'Earliest epoch of revocation status interval of interest', 'example':
-        NUM_STR_WHOLE_EXAMPLE})
-    to = fields.Str(required=False, validate=NUM_STR_WHOLE_VALIDATE, metadata={
-        'description': 'Latest epoch of revocation status interval of interest',
-        'example': NUM_STR_WHOLE_EXAMPLE})
+    fro = fields.Str(
+        data_key="from",
+        required=False,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Earliest epoch of revocation status interval of interest",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
+    )
+    to = fields.Str(
+        required=False,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Latest epoch of revocation status interval of interest",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
+    )
 
 
 class CredRevokedResultSchema(OpenAPISchema):
     """Result schema for credential revoked request."""
 
-    revoked = fields.Bool(metadata={'description':
-        'Whether credential is revoked on the ledger'})
+    revoked = fields.Bool(
+        metadata={"description": "Whether credential is revoked on the ledger"}
+    )
 
 
 @docs(tags=["credentials"], summary="Fetch credential from wallet by id")

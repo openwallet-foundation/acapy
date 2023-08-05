@@ -67,17 +67,34 @@ class DIDXRequestSchema(AgentMessageSchema):
         model_class = DIDXRequest
         unknown = EXCLUDE
 
-    label = fields.Str(required=True, metadata={'description':
-        'Label for DID exchange request', 'example': 'Request to connect with Bob'}
-        )
-    did = fields.Str(validate=INDY_DID_VALIDATE, metadata={'description':
-        'DID of exchange', 'example': INDY_DID_EXAMPLE})
-    did_doc_attach = fields.Nested(AttachDecoratorSchema, required=False,
-        data_key='did_doc~attach', metadata={'description':
-        'As signed attachment, DID Doc associated with DID'})
-    goal_code = fields.Str(required=False, metadata={'description':
-        'A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message'
-        , 'example': 'issue-vc'})
-    goal = fields.Str(required=False, metadata={'description':
-        'A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message'
-        , 'example': 'To issue a Faber College Graduate credential'})
+    label = fields.Str(
+        required=True,
+        metadata={
+            "description": "Label for DID exchange request",
+            "example": "Request to connect with Bob",
+        },
+    )
+    did = fields.Str(
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "DID of exchange", "example": INDY_DID_EXAMPLE},
+    )
+    did_doc_attach = fields.Nested(
+        AttachDecoratorSchema,
+        required=False,
+        data_key="did_doc~attach",
+        metadata={"description": "As signed attachment, DID Doc associated with DID"},
+    )
+    goal_code = fields.Str(
+        required=False,
+        metadata={
+            "description": "A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message",
+            "example": "issue-vc",
+        },
+    )
+    goal = fields.Str(
+        required=False,
+        metadata={
+            "description": "A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message",
+            "example": "To issue a Faber College Graduate credential",
+        },
+    )

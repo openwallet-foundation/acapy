@@ -90,8 +90,10 @@ class TAAAcceptanceSchema(OpenAPISchema):
     """TAA acceptance record."""
 
     mechanism = fields.Str()
-    time = fields.Int(validate=INT_EPOCH_VALIDATE, metadata={'strict': True,
-        'example': INT_EPOCH_EXAMPLE})
+    time = fields.Int(
+        validate=INT_EPOCH_VALIDATE,
+        metadata={"strict": True, "example": INT_EPOCH_EXAMPLE},
+    )
 
 
 class TAAInfoSchema(OpenAPISchema):
@@ -120,81 +122,124 @@ class TAAAcceptSchema(OpenAPISchema):
 class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for register ledger nym request."""
 
-    did = fields.Str(required=True, validate=INDY_DID_VALIDATE, metadata={
-        'description': 'DID to register', 'example': INDY_DID_EXAMPLE})
-    verkey = fields.Str(required=True, validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
-        metadata={'description': 'Verification key', 'example':
-        INDY_RAW_PUBLIC_KEY_EXAMPLE})
-    alias = fields.Str(required=False, metadata={'description': 'Alias',
-        'example': 'Barry'})
-    role = fields.Str(required=False, validate=validate.OneOf([r.name for r in
-        LedgerRole if isinstance(r.value[0], int)] + ['reset']), metadata={
-        'description': 'Role'})
+    did = fields.Str(
+        required=True,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "DID to register", "example": INDY_DID_EXAMPLE},
+    )
+    verkey = fields.Str(
+        required=True,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Verification key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
+    )
+    alias = fields.Str(
+        required=False, metadata={"description": "Alias", "example": "Barry"}
+    )
+    role = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            [r.name for r in LedgerRole if isinstance(r.value[0], int)] + ["reset"]
+        ),
+        metadata={"description": "Role"},
+    )
 
 
 class CreateDidTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
-    create_transaction_for_endorser = fields.Boolean(required=False, metadata={
-        'description': "Create Transaction For Endorser's signature"})
+    create_transaction_for_endorser = fields.Boolean(
+        required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
+    )
 
 
 class SchemaConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(required=False, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    conn_id = fields.Str(
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
-    did = fields.Str(required=True, validate=INDY_DID_VALIDATE, metadata={
-        'description': 'DID of interest', 'example': INDY_DID_EXAMPLE})
+    did = fields.Str(
+        required=True,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "DID of interest", "example": INDY_DID_EXAMPLE},
+    )
 
 
 class QueryStringEndpointSchema(OpenAPISchema):
     """Parameters and validators for query string with DID and endpoint type."""
 
-    did = fields.Str(required=True, validate=INDY_DID_VALIDATE, metadata={
-        'description': 'DID of interest', 'example': INDY_DID_EXAMPLE})
-    endpoint_type = fields.Str(required=False, validate=ENDPOINT_VALIDATE,
-        metadata={'description':
-        f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')",
-        'example': ENDPOINT_EXAMPLE_TYPE})
+    did = fields.Str(
+        required=True,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "DID of interest", "example": INDY_DID_EXAMPLE},
+    )
+    endpoint_type = fields.Str(
+        required=False,
+        validate=ENDPOINT_VALIDATE,
+        metadata={
+            "description": f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')",
+            "example": ENDPOINT_EXAMPLE_TYPE,
+        },
+    )
 
 
 class TxnOrRegisterLedgerNymResponseSchema(OpenAPISchema):
     """Response schema for ledger nym registration."""
 
-    success = fields.Bool(metadata={'description':
-        'Success of nym registration operation', 'example': True})
+    success = fields.Bool(
+        metadata={
+            "description": "Success of nym registration operation",
+            "example": True,
+        }
+    )
 
-    txn = fields.Nested(TransactionRecordSchema(), required=False, metadata={
-        'description': 'DID transaction to endorse'})
+    txn = fields.Nested(
+        TransactionRecordSchema(),
+        required=False,
+        metadata={"description": "DID transaction to endorse"},
+    )
 
 
 class GetNymRoleResponseSchema(OpenAPISchema):
     """Response schema to get nym role operation."""
 
-    role = fields.Str(validate=validate.OneOf([r.name for r in LedgerRole]),
-        metadata={'description': 'Ledger role', 'example': LedgerRole.ENDORSER.
-        name})
+    role = fields.Str(
+        validate=validate.OneOf([r.name for r in LedgerRole]),
+        metadata={"description": "Ledger role", "example": LedgerRole.ENDORSER.name},
+    )
 
 
 class GetDIDVerkeyResponseSchema(OpenAPISchema):
     """Response schema to get DID verkey."""
 
-    verkey = fields.Str(allow_none=True, validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
-        metadata={'description': 'Full verification key', 'example':
-        INDY_RAW_PUBLIC_KEY_EXAMPLE})
+    verkey = fields.Str(
+        allow_none=True,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Full verification key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
+    )
 
 
 class GetDIDEndpointResponseSchema(OpenAPISchema):
     """Response schema to get DID endpoint."""
 
-    endpoint = fields.Str(allow_none=True, validate=ENDPOINT_VALIDATE, metadata
-        ={'description': 'Full verification key', 'example': ENDPOINT_EXAMPLE})
+    endpoint = fields.Str(
+        allow_none=True,
+        validate=ENDPOINT_VALIDATE,
+        metadata={"description": "Full verification key", "example": ENDPOINT_EXAMPLE},
+    )
 
 
 class WriteLedgerRequestSchema(OpenAPISchema):

@@ -50,10 +50,20 @@ class MediationRequestSchema(AgentMessageSchema):
 
         model_class = MediationRequest
 
-    mediator_terms = fields.List(fields.Str(metadata={'description':
-        'Indicate terms that the mediator requires the recipient to agree to'}),
-        required=False, metadata={'description':
-        'List of mediator rules for recipient'})
-    recipient_terms = fields.List(fields.Str(metadata={'description':
-        'Indicate terms that the recipient requires the mediator to agree to'}),
-        required=False)
+    mediator_terms = fields.List(
+        fields.Str(
+            metadata={
+                "description": "Indicate terms that the mediator requires the recipient to agree to"
+            }
+        ),
+        required=False,
+        metadata={"description": "List of mediator rules for recipient"},
+    )
+    recipient_terms = fields.List(
+        fields.Str(
+            metadata={
+                "description": "Indicate terms that the recipient requires the mediator to agree to"
+            }
+        ),
+        required=False,
+    )

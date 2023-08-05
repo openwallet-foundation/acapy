@@ -131,13 +131,26 @@ class V20DiscoveryRecordSchema(BaseExchangeSchema):
 
         model_class = V20DiscoveryExchangeRecord
 
-    discovery_exchange_id = fields.Str(required=False, metadata={'description':
-        'Credential exchange identifier', 'example': UUIDFour.EXAMPLE})
-    connection_id = fields.Str(required=False, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
-    thread_id = fields.Str(required=False, metadata={'description':
-        'Thread identifier', 'example': UUIDFour.EXAMPLE})
-    queries_msg = fields.Nested(QueriesSchema(), required=False, metadata={
-        'description': 'Queries message'})
-    disclosures = fields.Nested(DisclosuresSchema(), required=False, metadata={
-        'description': 'Disclosures message'})
+    discovery_exchange_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    connection_id = fields.Str(
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
+    thread_id = fields.Str(
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+    )
+    queries_msg = fields.Nested(
+        QueriesSchema(), required=False, metadata={"description": "Queries message"}
+    )
+    disclosures = fields.Nested(
+        DisclosuresSchema(),
+        required=False,
+        metadata={"description": "Disclosures message"},
+    )

@@ -46,11 +46,21 @@ class LocalizationDecoratorSchema(BaseModelSchema):
         model_class = LocalizationDecorator
         unknown = EXCLUDE
 
-    locale = fields.Str(required=True, metadata={'description':
-        'Locale specifier', 'example': 'en-CA'})
-    localizable = fields.List(fields.Str(metadata={'description':
-        'Localizable field', 'example': 'note'}), required=False, metadata={
-        'description': 'List of localizable fields'})
-    catalogs = fields.List(fields.Str(metadata={'description': '', 'example':
-        'https://192.168.56.111/my-project/catalog.json'}), required=False,
-        metadata={'description': 'List of message catalog URIs'})
+    locale = fields.Str(
+        required=True, metadata={"description": "Locale specifier", "example": "en-CA"}
+    )
+    localizable = fields.List(
+        fields.Str(metadata={"description": "Localizable field", "example": "note"}),
+        required=False,
+        metadata={"description": "List of localizable fields"},
+    )
+    catalogs = fields.List(
+        fields.Str(
+            metadata={
+                "description": "",
+                "example": "https://192.168.56.111/my-project/catalog.json",
+            }
+        ),
+        required=False,
+        metadata={"description": "List of message catalog URIs"},
+    )

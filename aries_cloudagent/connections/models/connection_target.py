@@ -58,20 +58,49 @@ class ConnectionTargetSchema(BaseModelSchema):
         model_class = ConnectionTarget
         unknown = EXCLUDE
 
-    did = fields.Str(required=False, validate=GENERIC_DID_VALIDATE, metadata={
-        'description': '', 'example': GENERIC_DID_EXAMPLE})
-    endpoint = fields.Str(required=False, metadata={'description':
-        'Connection endpoint', 'example': 'http://192.168.56.102:8020'})
-    label = fields.Str(required=False, metadata={'description':
-        'Connection label', 'example': 'Bob'})
-    recipient_keys = fields.List(fields.Str(validate=
-        INDY_RAW_PUBLIC_KEY_VALIDATE, metadata={'description':
-        'Recipient public key', 'example': INDY_RAW_PUBLIC_KEY_EXAMPLE}),
-        required=False, metadata={'description': 'List of recipient keys'})
-    routing_keys = fields.List(fields.Str(validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
-        metadata={'description': 'Routing key', 'example':
-        INDY_RAW_PUBLIC_KEY_EXAMPLE}), data_key='routingKeys', required=False,
-        metadata={'description': 'List of routing keys'})
-    sender_key = fields.Str(required=False, validate=
-        INDY_RAW_PUBLIC_KEY_VALIDATE, metadata={'description':
-        'Sender public key', 'example': INDY_RAW_PUBLIC_KEY_EXAMPLE})
+    did = fields.Str(
+        required=False,
+        validate=GENERIC_DID_VALIDATE,
+        metadata={"description": "", "example": GENERIC_DID_EXAMPLE},
+    )
+    endpoint = fields.Str(
+        required=False,
+        metadata={
+            "description": "Connection endpoint",
+            "example": "http://192.168.56.102:8020",
+        },
+    )
+    label = fields.Str(
+        required=False, metadata={"description": "Connection label", "example": "Bob"}
+    )
+    recipient_keys = fields.List(
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Recipient public key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
+        required=False,
+        metadata={"description": "List of recipient keys"},
+    )
+    routing_keys = fields.List(
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Routing key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
+        data_key="routingKeys",
+        required=False,
+        metadata={"description": "List of routing keys"},
+    )
+    sender_key = fields.Str(
+        required=False,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Sender public key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
+    )

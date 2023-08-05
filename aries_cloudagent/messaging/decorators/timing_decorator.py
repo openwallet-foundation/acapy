@@ -62,24 +62,51 @@ class TimingDecoratorSchema(BaseModelSchema):
         model_class = TimingDecorator
         unknown = EXCLUDE
 
-    in_time = fields.Str(required=False, validate=
-        INDY_ISO8601_DATETIME_VALIDATE, metadata={'description':
-        'Time of message receipt', 'example': INDY_ISO8601_DATETIME_EXAMPLE})
-    out_time = fields.Str(required=False, validate=
-        INDY_ISO8601_DATETIME_VALIDATE, metadata={'description':
-        'Time of message dispatch', 'example': INDY_ISO8601_DATETIME_EXAMPLE})
-    stale_time = fields.Str(required=False, validate=
-        INDY_ISO8601_DATETIME_VALIDATE, metadata={'description':
-        'Time when message should be considered stale', 'example':
-        INDY_ISO8601_DATETIME_EXAMPLE})
-    expires_time = fields.Str(required=False, validate=
-        INDY_ISO8601_DATETIME_VALIDATE, metadata={'description':
-        'Time when message should be considered expired', 'example':
-        INDY_ISO8601_DATETIME_EXAMPLE})
-    delay_milli = fields.Int(required=False, metadata={'description':
-        'Number of milliseconds to delay processing', 'example': 1000, 'strict':
-        True})
-    wait_until_time = fields.Str(required=False, validate=
-        INDY_ISO8601_DATETIME_VALIDATE, metadata={'description':
-        'Earliest time at which to perform processing', 'example':
-        INDY_ISO8601_DATETIME_EXAMPLE})
+    in_time = fields.Str(
+        required=False,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time of message receipt",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
+    )
+    out_time = fields.Str(
+        required=False,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time of message dispatch",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
+    )
+    stale_time = fields.Str(
+        required=False,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time when message should be considered stale",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
+    )
+    expires_time = fields.Str(
+        required=False,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time when message should be considered expired",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
+    )
+    delay_milli = fields.Int(
+        required=False,
+        metadata={
+            "description": "Number of milliseconds to delay processing",
+            "example": 1000,
+            "strict": True,
+        },
+    )
+    wait_until_time = fields.Str(
+        required=False,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Earliest time at which to perform processing",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
+    )

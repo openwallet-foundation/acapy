@@ -48,5 +48,7 @@ class KeylistUpdateSchema(AgentMessageSchema):
 
         model_class = KeylistUpdate
 
-    updates = fields.List(fields.Nested(KeylistUpdateRuleSchema()), metadata={
-        'description': 'List of update rules'})
+    updates = fields.List(
+        fields.Nested(KeylistUpdateRuleSchema()),
+        metadata={"description": "List of update rules"},
+    )

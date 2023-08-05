@@ -59,27 +59,49 @@ class ServiceSchema(BaseModelSchema):
         model_class = Service
         unknown = EXCLUDE
 
-    _id = fields.Str(required=True, data_key='id', metadata={'description':
-        'Service identifier'})
-    _type = fields.Str(required=True, data_key='type', metadata={'description':
-        'Service type'})
-    did = fields.Str(required=False, validate=INDY_DID_VALIDATE, metadata={
-        'description': 'Service DID', 'example': INDY_DID_EXAMPLE})
+    _id = fields.Str(
+        required=True, data_key="id", metadata={"description": "Service identifier"}
+    )
+    _type = fields.Str(
+        required=True, data_key="type", metadata={"description": "Service type"}
+    )
+    did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Service DID", "example": INDY_DID_EXAMPLE},
+    )
 
-    recipient_keys = fields.List(fields.Str(validate=DID_KEY_VALIDATE, metadata
-        ={'description': 'Recipient public key', 'example': DID_KEY_EXAMPLE}),
-        data_key='recipientKeys', required=False, metadata={'description':
-        'List of recipient keys'})
+    recipient_keys = fields.List(
+        fields.Str(
+            validate=DID_KEY_VALIDATE,
+            metadata={
+                "description": "Recipient public key",
+                "example": DID_KEY_EXAMPLE,
+            },
+        ),
+        data_key="recipientKeys",
+        required=False,
+        metadata={"description": "List of recipient keys"},
+    )
 
-    routing_keys = fields.List(fields.Str(validate=DID_KEY_VALIDATE, metadata={
-        'description': 'Routing key', 'example': DID_KEY_EXAMPLE}), data_key=
-        'routingKeys', required=False, metadata={'description':
-        'List of routing keys'})
+    routing_keys = fields.List(
+        fields.Str(
+            validate=DID_KEY_VALIDATE,
+            metadata={"description": "Routing key", "example": DID_KEY_EXAMPLE},
+        ),
+        data_key="routingKeys",
+        required=False,
+        metadata={"description": "List of routing keys"},
+    )
 
-    service_endpoint = fields.Str(data_key='serviceEndpoint', required=False,
-        metadata={'description':
-        'Service endpoint at which to reach this agent', 'example':
-        'http://192.168.56.101:8020'})
+    service_endpoint = fields.Str(
+        data_key="serviceEndpoint",
+        required=False,
+        metadata={
+            "description": "Service endpoint at which to reach this agent",
+            "example": "http://192.168.56.101:8020",
+        },
+    )
 
     @post_dump
     def post_dump(self, data, **kwargs):

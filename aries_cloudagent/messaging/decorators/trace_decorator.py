@@ -236,24 +236,59 @@ class TraceReportSchema(BaseModelSchema):
         model_class = TraceReport
         unknown = EXCLUDE
 
-    msg_id = fields.Str(required=True, allow_none=False, metadata={
-        'description': 'Message Id', 'example': UUIDFour.EXAMPLE})
-    thread_id = fields.Str(required=True, allow_none=False, metadata={
-        'description': 'Message Id', 'example': UUIDFour.EXAMPLE})
-    traced_type = fields.Str(required=False, allow_none=True, metadata={
-        'description': 'Type of traced message', 'example': 'TODO'})
-    timestamp = fields.Str(required=True, allow_none=False, metadata={
-        'description': 'Timestamp of traced event', 'example': '123456789.123456'})
-    str_time = fields.Str(required=True, allow_none=False, metadata={
-        'description': 'Formatted timestamp of traced event', 'example':
-        '2018-03-27 18:23:45.123Z'})
-    handler = fields.Str(required=False, allow_none=True, metadata={
-        'description': 'Description of the message handler', 'example': 'TODO'})
-    ellapsed_milli = fields.Int(required=False, allow_none=True, metadata={
-        'description': 'Elapsed milliseconds processing time', 'example': 27,
-        'strict': True})
-    outcome = fields.Str(required=False, allow_none=True, metadata={
-        'description': 'Outcome description', 'example': 'TODO'})
+    msg_id = fields.Str(
+        required=True,
+        allow_none=False,
+        metadata={"description": "Message Id", "example": UUIDFour.EXAMPLE},
+    )
+    thread_id = fields.Str(
+        required=True,
+        allow_none=False,
+        metadata={"description": "Message Id", "example": UUIDFour.EXAMPLE},
+    )
+    traced_type = fields.Str(
+        required=False,
+        allow_none=True,
+        metadata={"description": "Type of traced message", "example": "TODO"},
+    )
+    timestamp = fields.Str(
+        required=True,
+        allow_none=False,
+        metadata={
+            "description": "Timestamp of traced event",
+            "example": "123456789.123456",
+        },
+    )
+    str_time = fields.Str(
+        required=True,
+        allow_none=False,
+        metadata={
+            "description": "Formatted timestamp of traced event",
+            "example": "2018-03-27 18:23:45.123Z",
+        },
+    )
+    handler = fields.Str(
+        required=False,
+        allow_none=True,
+        metadata={
+            "description": "Description of the message handler",
+            "example": "TODO",
+        },
+    )
+    ellapsed_milli = fields.Int(
+        required=False,
+        allow_none=True,
+        metadata={
+            "description": "Elapsed milliseconds processing time",
+            "example": 27,
+            "strict": True,
+        },
+    )
+    outcome = fields.Str(
+        required=False,
+        allow_none=True,
+        metadata={"description": "Outcome description", "example": "TODO"},
+    )
 
 
 class TraceDecoratorSchema(BaseModelSchema):
@@ -265,11 +300,24 @@ class TraceDecoratorSchema(BaseModelSchema):
         model_class = TraceDecorator
         unknown = EXCLUDE
 
-    target = fields.Str(required=True, allow_none=False, metadata={
-        'description': 'Trace report target', 'example':
-        "'http://example.com/tracer', or 'message'"})
-    full_thread = fields.Boolean(required=False, allow_none=True, metadata={
-        'description': 'Parent thread identifier', 'example': 'True'})
-    trace_reports = fields.List(fields.Nested(TraceReportSchema), required=
-        False, allow_none=True, metadata={'description':
-        'The set of reports collected so far for this message or thread'})
+    target = fields.Str(
+        required=True,
+        allow_none=False,
+        metadata={
+            "description": "Trace report target",
+            "example": "'http://example.com/tracer', or 'message'",
+        },
+    )
+    full_thread = fields.Boolean(
+        required=False,
+        allow_none=True,
+        metadata={"description": "Parent thread identifier", "example": "True"},
+    )
+    trace_reports = fields.List(
+        fields.Nested(TraceReportSchema),
+        required=False,
+        allow_none=True,
+        metadata={
+            "description": "The set of reports collected so far for this message or thread"
+        },
+    )

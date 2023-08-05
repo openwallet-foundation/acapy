@@ -48,7 +48,7 @@ class PaginatedSchema(BaseModelSchema):
         model_class = Paginated
         unknown = EXCLUDE
 
-    start = fields.Int(required=False, metadata={'strict': True})
-    end = fields.Int(required=False, metadata={'strict': True})
-    limit = fields.Int(required=False, metadata={'strict': True})
-    total = fields.Int(required=False, metadata={'strict': True})
+    start = fields.Int(required=False, metadata={"strict": True})
+    end = fields.Int(required=False, metadata={"strict": True})
+    limit = fields.Int(required=False, metadata={"strict": True})
+    total = fields.Int(required=False, metadata={"strict": True})

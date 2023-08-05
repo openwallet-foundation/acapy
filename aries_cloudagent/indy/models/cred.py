@@ -37,11 +37,15 @@ class IndyAttrValueSchema(BaseModelSchema):
         model_class = IndyAttrValue
         unknown = EXCLUDE
 
-    raw = fields.Str(required=True, metadata={'description': 'Attribute raw value'}
-        )
-    encoded = fields.Str(required=True, validate=NUM_STR_ANY_VALIDATE, metadata
-        ={'description': 'Attribute encoded value', 'example': NUM_STR_ANY_EXAMPLE}
-        )
+    raw = fields.Str(required=True, metadata={"description": "Attribute raw value"})
+    encoded = fields.Str(
+        required=True,
+        validate=NUM_STR_ANY_VALIDATE,
+        metadata={
+            "description": "Attribute encoded value",
+            "example": NUM_STR_ANY_EXAMPLE,
+        },
+    )
 
 
 class IndyCredential(BaseModel):
@@ -83,24 +87,48 @@ class IndyCredentialSchema(BaseModelSchema):
         model_class = IndyCredential
         unknown = EXCLUDE
 
-    schema_id = fields.Str(required=True, validate=INDY_SCHEMA_ID_VALIDATE,
-        metadata={'description': 'Schema identifier', 'example':
-        INDY_SCHEMA_ID_EXAMPLE})
-    cred_def_id = fields.Str(required=True, validate=INDY_CRED_DEF_ID_VALIDATE,
-        metadata={'description': 'Credential definition identifier', 'example':
-        INDY_CRED_DEF_ID_EXAMPLE})
-    rev_reg_id = fields.Str(allow_none=True, validate=INDY_REV_REG_ID_VALIDATE,
-        metadata={'description': 'Revocation registry identifier', 'example':
-        INDY_REV_REG_ID_EXAMPLE})
-    values = fields.Dict(keys=fields.Str(metadata={'description':
-        'Attribute name'}), values=fields.Nested(IndyAttrValueSchema(),
-        metadata={'description': 'Attribute value'}), required=True, metadata={
-        'description': 'Credential attributes'})
-    signature = fields.Dict(required=True, metadata={'description':
-        'Credential signature'})
-    signature_correctness_proof = fields.Dict(required=True, metadata={
-        'description': 'Credential signature correctness proof'})
-    rev_reg = fields.Dict(allow_none=True, metadata={'description':
-        'Revocation registry state'})
-    witness = fields.Dict(allow_none=True, metadata={'description':
-        'Witness for revocation proof'})
+    schema_id = fields.Str(
+        required=True,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
+    )
+    cred_def_id = fields.Str(
+        required=True,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
+    )
+    rev_reg_id = fields.Str(
+        allow_none=True,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
+    )
+    values = fields.Dict(
+        keys=fields.Str(metadata={"description": "Attribute name"}),
+        values=fields.Nested(
+            IndyAttrValueSchema(), metadata={"description": "Attribute value"}
+        ),
+        required=True,
+        metadata={"description": "Credential attributes"},
+    )
+    signature = fields.Dict(
+        required=True, metadata={"description": "Credential signature"}
+    )
+    signature_correctness_proof = fields.Dict(
+        required=True,
+        metadata={"description": "Credential signature correctness proof"},
+    )
+    rev_reg = fields.Dict(
+        allow_none=True, metadata={"description": "Revocation registry state"}
+    )
+    witness = fields.Dict(
+        allow_none=True, metadata={"description": "Witness for revocation proof"}
+    )

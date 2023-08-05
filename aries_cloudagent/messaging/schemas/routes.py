@@ -64,33 +64,50 @@ from ..models.base import BaseModelError
 class SchemaSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
-    schema_name = fields.Str(required=True, metadata={'description':
-        'Schema name', 'example': 'prefs'})
-    schema_version = fields.Str(required=True, validate=INDY_VERSION_VALIDATE,
-        metadata={'description': 'Schema version', 'example': INDY_VERSION_EXAMPLE}
-        )
-    attributes = fields.List(fields.Str(metadata={'description':
-        'attribute name', 'example': 'score'}), required=True, metadata={
-        'description': 'List of schema attributes'})
+    schema_name = fields.Str(
+        required=True, metadata={"description": "Schema name", "example": "prefs"}
+    )
+    schema_version = fields.Str(
+        required=True,
+        validate=INDY_VERSION_VALIDATE,
+        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
+    )
+    attributes = fields.List(
+        fields.Str(metadata={"description": "attribute name", "example": "score"}),
+        required=True,
+        metadata={"description": "List of schema attributes"},
+    )
 
 
 class SchemaSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
-    schema_id = fields.Str(required=True, validate=INDY_SCHEMA_ID_VALIDATE,
-        metadata={'description': 'Schema identifier', 'example':
-        INDY_SCHEMA_ID_EXAMPLE})
-    schema = fields.Nested(SchemaSchema(), metadata={'description':
-        'Schema definition'})
+    schema_id = fields.Str(
+        required=True,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
+    )
+    schema = fields.Nested(
+        SchemaSchema(), metadata={"description": "Schema definition"}
+    )
 
 
 class TxnOrSchemaSendResultSchema(OpenAPISchema):
     """Result schema for schema send request."""
 
-    sent = fields.Nested(SchemaSendResultSchema(), required=False, metadata={
-        'description': 'Content sent'})
-    txn = fields.Nested(TransactionRecordSchema(), required=False, metadata={
-        'description': 'Schema transaction to endorse'})
+    sent = fields.Nested(
+        SchemaSendResultSchema(),
+        required=False,
+        metadata={"description": "Content sent"},
+    )
+    txn = fields.Nested(
+        TransactionRecordSchema(),
+        required=False,
+        metadata={"description": "Schema transaction to endorse"},
+    )
 
 
 class SchemaGetResultSchema(OpenAPISchema):
@@ -102,31 +119,46 @@ class SchemaGetResultSchema(OpenAPISchema):
 class SchemasCreatedResultSchema(OpenAPISchema):
     """Result schema for a schemas-created request."""
 
-    schema_ids = fields.List(fields.Str(validate=INDY_SCHEMA_ID_VALIDATE,
-        metadata={'description': 'Schema identifiers', 'example':
-        INDY_SCHEMA_ID_EXAMPLE}))
+    schema_ids = fields.List(
+        fields.Str(
+            validate=INDY_SCHEMA_ID_VALIDATE,
+            metadata={
+                "description": "Schema identifiers",
+                "example": INDY_SCHEMA_ID_EXAMPLE,
+            },
+        )
+    )
 
 
 class SchemaIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""
 
-    schema_id = fields.Str(required=True, validate=Regexp(
-        f'^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$'), metadata={
-        'description': 'Schema identifier', 'example': INDY_SCHEMA_ID['example']})
+    schema_id = fields.Str(
+        required=True,
+        validate=Regexp(f"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID["example"],
+        },
+    )
 
 
 class CreateSchemaTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
-    create_transaction_for_endorser = fields.Boolean(required=False, metadata={
-        'description': "Create Transaction For Endorser's signature"})
+    create_transaction_for_endorser = fields.Boolean(
+        required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
+    )
 
 
 class SchemaConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(required=False, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    conn_id = fields.Str(
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 @docs(tags=["schema"], summary="Sends a schema to the ledger")

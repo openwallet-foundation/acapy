@@ -89,17 +89,32 @@ class V20CredIssueSchema(AgentMessageSchema):
         model_class = V20CredIssue
         unknown = EXCLUDE
 
-    replacement_id = fields.Str(required=False, allow_none=False, metadata={
-        'description':
-        'Issuer-unique identifier to coordinate credential replacement',
-        'example': UUIDFour.EXAMPLE})
-    comment = fields.Str(required=False, allow_none=True, metadata={
-        'description': 'Human-readable comment'})
-    formats = fields.Nested(V20CredFormatSchema, many=True, required=True,
-        metadata={'description': 'Acceptable attachment formats'})
-    credentials_attach = fields.Nested(AttachDecoratorSchema, many=True,
-        required=True, data_key='credentials~attach', metadata={'description':
-        'Credential attachments'})
+    replacement_id = fields.Str(
+        required=False,
+        allow_none=False,
+        metadata={
+            "description": "Issuer-unique identifier to coordinate credential replacement",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    comment = fields.Str(
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
+    )
+    formats = fields.Nested(
+        V20CredFormatSchema,
+        many=True,
+        required=True,
+        metadata={"description": "Acceptable attachment formats"},
+    )
+    credentials_attach = fields.Nested(
+        AttachDecoratorSchema,
+        many=True,
+        required=True,
+        data_key="credentials~attach",
+        metadata={"description": "Credential attachments"},
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

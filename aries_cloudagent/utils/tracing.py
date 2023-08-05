@@ -32,8 +32,13 @@ class AdminAPIMessageTracingSchema(OpenAPISchema):
     messages that need to support tracing.
     """
 
-    trace = fields.Boolean(required=False, dump_default=False, metadata={
-        'description': 'Record trace information, based on agent configuration'})
+    trace = fields.Boolean(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": "Record trace information, based on agent configuration"
+        },
+    )
 
 
 def get_timer() -> float:

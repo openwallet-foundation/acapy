@@ -60,25 +60,27 @@ EVENT_WEBHOOK_MAPPING = {
 class AdminModulesSchema(OpenAPISchema):
     """Schema for the modules endpoint."""
 
-    result = fields.List(fields.Str(metadata={'description': 'admin module'}),
-        metadata={'description': 'List of admin modules'})
+    result = fields.List(
+        fields.Str(metadata={"description": "admin module"}),
+        metadata={"description": "List of admin modules"},
+    )
 
 
 class AdminConfigSchema(OpenAPISchema):
     """Schema for the config endpoint."""
 
-    config = fields.Dict(metadata={'description': 'Configuration settings'})
+    config = fields.Dict(metadata={"description": "Configuration settings"})
 
 
 class AdminStatusSchema(OpenAPISchema):
     """Schema for the status endpoint."""
 
-    version = fields.Str(metadata={'description': 'Version code'})
-    label = fields.Str(allow_none=True, metadata={'description': 'Default label'})
-    timing = fields.Dict(required=False, metadata={'description': 'Timing results'}
-        )
-    conductor = fields.Dict(required=False, metadata={'description':
-        'Conductor statistics'})
+    version = fields.Str(metadata={"description": "Version code"})
+    label = fields.Str(allow_none=True, metadata={"description": "Default label"})
+    timing = fields.Dict(required=False, metadata={"description": "Timing results"})
+    conductor = fields.Dict(
+        required=False, metadata={"description": "Conductor statistics"}
+    )
 
 
 class AdminResetSchema(OpenAPISchema):
@@ -88,15 +90,17 @@ class AdminResetSchema(OpenAPISchema):
 class AdminStatusLivelinessSchema(OpenAPISchema):
     """Schema for the liveliness endpoint."""
 
-    alive = fields.Boolean(metadata={'description': 'Liveliness status',
-        'example': True})
+    alive = fields.Boolean(
+        metadata={"description": "Liveliness status", "example": True}
+    )
 
 
 class AdminStatusReadinessSchema(OpenAPISchema):
     """Schema for the readiness endpoint."""
 
-    ready = fields.Boolean(metadata={'description': 'Readiness status',
-        'example': True})
+    ready = fields.Boolean(
+        metadata={"description": "Readiness status", "example": True}
+    )
 
 
 class AdminShutdownSchema(OpenAPISchema):

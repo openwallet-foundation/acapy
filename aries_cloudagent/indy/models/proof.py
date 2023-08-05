@@ -59,18 +59,27 @@ class IndyEQProofSchema(BaseModelSchema):
         model_class = IndyEQProof
         unknown = EXCLUDE
 
-    revealed_attrs = fields.Dict(keys=fields.Str(metadata={'example':
-        'preference'}), values=fields.Str(validate=NUM_STR_ANY_VALIDATE,
-        metadata={'example': NUM_STR_ANY_EXAMPLE}))
-    a_prime = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, metadata={'example':
-        NUM_STR_WHOLE_EXAMPLE})
-    e = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, metadata={'example':
-        NUM_STR_WHOLE_EXAMPLE})
-    v = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, metadata={'example':
-        NUM_STR_WHOLE_EXAMPLE})
-    m = fields.Dict(keys=fields.Str(metadata={'example': 'master_secret'}),
-        values=fields.Str(validate=NUM_STR_WHOLE_VALIDATE, metadata={'example':
-        NUM_STR_WHOLE_EXAMPLE}))
+    revealed_attrs = fields.Dict(
+        keys=fields.Str(metadata={"example": "preference"}),
+        values=fields.Str(
+            validate=NUM_STR_ANY_VALIDATE, metadata={"example": NUM_STR_ANY_EXAMPLE}
+        ),
+    )
+    a_prime = fields.Str(
+        validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+    )
+    e = fields.Str(
+        validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+    )
+    v = fields.Str(
+        validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+    )
+    m = fields.Dict(
+        keys=fields.Str(metadata={"example": "master_secret"}),
+        values=fields.Str(
+            validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+        ),
+    )
     m2 = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
 
 
@@ -105,12 +114,16 @@ class IndyGEProofPredSchema(BaseModelSchema):
         model_class = IndyGEProofPred
         unknown = EXCLUDE
 
-    attr_name = fields.Str(metadata={'description':
-        'Attribute name, indy-canonicalized'})
-    p_type = fields.Str(validate=validate.OneOf([p.fortran for p in Predicate]),
-        metadata={'description': 'Predicate type'})
-    value = fields.Integer(metadata={'strict': True, 'description':
-        'Predicate threshold value'})
+    attr_name = fields.Str(
+        metadata={"description": "Attribute name, indy-canonicalized"}
+    )
+    p_type = fields.Str(
+        validate=validate.OneOf([p.fortran for p in Predicate]),
+        metadata={"description": "Predicate type"},
+    )
+    value = fields.Integer(
+        metadata={"strict": True, "description": "Predicate threshold value"}
+    )
 
 
 class IndyGEProof(BaseModel):
@@ -150,16 +163,30 @@ class IndyGEProofSchema(BaseModelSchema):
         model_class = IndyGEProof
         unknown = EXCLUDE
 
-    u = fields.Dict(keys=fields.Str(), values=fields.Str(validate=
-        NUM_STR_WHOLE_VALIDATE, metadata={'example': NUM_STR_WHOLE_EXAMPLE}))
-    r = fields.Dict(keys=fields.Str(), values=fields.Str(validate=
-        NUM_STR_WHOLE_VALIDATE, metadata={'example': NUM_STR_WHOLE_EXAMPLE}))
-    mj = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, metadata={'example':
-        NUM_STR_WHOLE_EXAMPLE})
-    alpha = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, metadata={'example':
-        NUM_STR_WHOLE_EXAMPLE})
-    t = fields.Dict(keys=fields.Str(), values=fields.Str(validate=
-        NUM_STR_WHOLE_VALIDATE, metadata={'example': NUM_STR_WHOLE_EXAMPLE}))
+    u = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Str(
+            validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+        ),
+    )
+    r = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Str(
+            validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+        ),
+    )
+    mj = fields.Str(
+        validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+    )
+    alpha = fields.Str(
+        validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+    )
+    t = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Str(
+            validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+        ),
+    )
     predicate = fields.Nested(IndyGEProofPredSchema)
 
 
@@ -192,10 +219,17 @@ class IndyPrimaryProofSchema(BaseModelSchema):
         model_class = IndyPrimaryProof
         unknown = EXCLUDE
 
-    eq_proof = fields.Nested(IndyEQProofSchema, allow_none=True, metadata={
-        'description': 'Indy equality proof'})
-    ge_proofs = fields.Nested(IndyGEProofSchema, many=True, allow_none=True,
-        metadata={'description': 'Indy GE proofs'})
+    eq_proof = fields.Nested(
+        IndyEQProofSchema,
+        allow_none=True,
+        metadata={"description": "Indy equality proof"},
+    )
+    ge_proofs = fields.Nested(
+        IndyGEProofSchema,
+        many=True,
+        allow_none=True,
+        metadata={"description": "Indy GE proofs"},
+    )
 
 
 class IndyNonRevocProof(BaseModel):
@@ -260,10 +294,14 @@ class IndyProofProofProofsProofSchema(BaseModelSchema):
         model_class = IndyProofProofProofsProof
         unknown = EXCLUDE
 
-    primary_proof = fields.Nested(IndyPrimaryProofSchema, metadata={
-        'description': 'Indy primary proof'})
-    non_revoc_proof = fields.Nested(IndyNonRevocProofSchema, allow_none=True,
-        metadata={'description': 'Indy non-revocation proof'})
+    primary_proof = fields.Nested(
+        IndyPrimaryProofSchema, metadata={"description": "Indy primary proof"}
+    )
+    non_revoc_proof = fields.Nested(
+        IndyNonRevocProofSchema,
+        allow_none=True,
+        metadata={"description": "Indy non-revocation proof"},
+    )
 
 
 class IndyProofProofAggregatedProof(BaseModel):
@@ -295,9 +333,11 @@ class IndyProofProofAggregatedProofSchema(BaseModelSchema):
         model_class = IndyProofProofAggregatedProof
         unknown = EXCLUDE
 
-    c_hash = fields.Str(metadata={'description': 'c_hash value'})
-    c_list = fields.List(fields.List(fields.Int(metadata={'strict': True})),
-        metadata={'description': 'c_list value'})
+    c_hash = fields.Str(metadata={"description": "c_hash value"})
+    c_list = fields.List(
+        fields.List(fields.Int(metadata={"strict": True})),
+        metadata={"description": "c_list value"},
+    )
 
 
 class IndyProofProof(BaseModel):
@@ -329,10 +369,15 @@ class IndyProofProofSchema(BaseModelSchema):
         model_class = IndyProofProof
         unknown = EXCLUDE
 
-    proofs = fields.Nested(IndyProofProofProofsProofSchema, many=True, metadata
-        ={'description': 'Indy proof proofs'})
-    aggregated_proof = fields.Nested(IndyProofProofAggregatedProofSchema,
-        metadata={'description': 'Indy proof aggregated proof'})
+    proofs = fields.Nested(
+        IndyProofProofProofsProofSchema,
+        many=True,
+        metadata={"description": "Indy proof proofs"},
+    )
+    aggregated_proof = fields.Nested(
+        IndyProofProofAggregatedProofSchema,
+        metadata={"description": "Indy proof aggregated proof"},
+    )
 
 
 class RawEncoded(BaseModel):
@@ -364,9 +409,11 @@ class RawEncodedSchema(BaseModelSchema):
         model_class = RawEncoded
         unknown = EXCLUDE
 
-    raw = fields.Str(metadata={'description': 'Raw value'})
-    encoded = fields.Str(validate=NUM_STR_ANY_VALIDATE, metadata={'description':
-        'Encoded value', 'example': NUM_STR_ANY_EXAMPLE})
+    raw = fields.Str(metadata={"description": "Raw value"})
+    encoded = fields.Str(
+        validate=NUM_STR_ANY_VALIDATE,
+        metadata={"description": "Encoded value", "example": NUM_STR_ANY_EXAMPLE},
+    )
 
 
 class IndyProofRequestedProofRevealedAttr(RawEncoded):
@@ -396,8 +443,9 @@ class IndyProofRequestedProofRevealedAttrSchema(RawEncodedSchema):
         model_class = IndyProofRequestedProofRevealedAttr
         unknown = EXCLUDE
 
-    sub_proof_index = fields.Int(metadata={'strict': True, 'description':
-        'Sub-proof index'})
+    sub_proof_index = fields.Int(
+        metadata={"strict": True, "description": "Sub-proof index"}
+    )
 
 
 class IndyProofRequestedProofRevealedAttrGroup(BaseModel):
@@ -429,11 +477,16 @@ class IndyProofRequestedProofRevealedAttrGroupSchema(BaseModelSchema):
         model_class = IndyProofRequestedProofRevealedAttrGroup
         unknown = EXCLUDE
 
-    sub_proof_index = fields.Int(metadata={'strict': True, 'description':
-        'Sub-proof index'})
-    values = fields.Dict(keys=fields.Str(), values=fields.Nested(
-        RawEncodedSchema), metadata={'description':
-        'Indy proof requested proof revealed attr groups group value'})
+    sub_proof_index = fields.Int(
+        metadata={"strict": True, "description": "Sub-proof index"}
+    )
+    values = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Nested(RawEncodedSchema),
+        metadata={
+            "description": "Indy proof requested proof revealed attr groups group value"
+        },
+    )
 
 
 class IndyProofRequestedProofPredicate(BaseModel):
@@ -463,8 +516,9 @@ class IndyProofRequestedProofPredicateSchema(BaseModelSchema):
         model_class = IndyProofRequestedProofPredicate
         unknown = EXCLUDE
 
-    sub_proof_index = fields.Int(metadata={'strict': True, 'description':
-        'Sub-proof index'})
+    sub_proof_index = fields.Int(
+        metadata={"strict": True, "description": "Sub-proof index"}
+    )
 
 
 class IndyProofRequestedProof(BaseModel):
@@ -505,20 +559,27 @@ class IndyProofRequestedProofSchema(BaseModelSchema):
         model_class = IndyProofRequestedProof
         unknown = EXCLUDE
 
-    revealed_attrs = fields.Dict(keys=fields.Str(), values=fields.Nested(
-        IndyProofRequestedProofRevealedAttrSchema), allow_none=True, metadata={
-        'description': 'Proof requested proof revealed attributes'})
-    revealed_attr_groups = fields.Dict(keys=fields.Str(), values=fields.Nested(
-        IndyProofRequestedProofRevealedAttrGroupSchema), allow_none=True,
-        metadata={'description': 'Proof requested proof revealed attribute groups'}
-        )
-    self_attested_attrs = fields.Dict(metadata={'description':
-        'Proof requested proof self-attested attributes'})
-    unrevealed_attrs = fields.Dict(metadata={'description':
-        'Unrevealed attributes'})
-    predicates = fields.Dict(keys=fields.Str(), values=fields.Nested(
-        IndyProofRequestedProofPredicateSchema), metadata={'description':
-        'Proof requested proof predicates.'})
+    revealed_attrs = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Nested(IndyProofRequestedProofRevealedAttrSchema),
+        allow_none=True,
+        metadata={"description": "Proof requested proof revealed attributes"},
+    )
+    revealed_attr_groups = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Nested(IndyProofRequestedProofRevealedAttrGroupSchema),
+        allow_none=True,
+        metadata={"description": "Proof requested proof revealed attribute groups"},
+    )
+    self_attested_attrs = fields.Dict(
+        metadata={"description": "Proof requested proof self-attested attributes"}
+    )
+    unrevealed_attrs = fields.Dict(metadata={"description": "Unrevealed attributes"})
+    predicates = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Nested(IndyProofRequestedProofPredicateSchema),
+        metadata={"description": "Proof requested proof predicates."},
+    )
 
 
 class IndyProofIdentifier(BaseModel):
@@ -554,17 +615,37 @@ class IndyProofIdentifierSchema(BaseModelSchema):
         model_class = IndyProofIdentifier
         unknown = EXCLUDE
 
-    schema_id = fields.Str(validate=INDY_SCHEMA_ID_VALIDATE, metadata={
-        'description': 'Schema identifier', 'example': INDY_SCHEMA_ID_EXAMPLE})
-    cred_def_id = fields.Str(validate=INDY_CRED_DEF_ID_VALIDATE, metadata={
-        'description': 'Credential definition identifier', 'example':
-        INDY_CRED_DEF_ID_EXAMPLE})
-    rev_reg_id = fields.Str(allow_none=True, validate=INDY_REV_REG_ID_VALIDATE,
-        metadata={'description': 'Revocation registry identifier', 'example':
-        INDY_REV_REG_ID_EXAMPLE})
-    timestamp = fields.Int(allow_none=True, validate=INT_EPOCH_VALIDATE,
-        metadata={'strict': True, 'description': 'Timestamp epoch', 'example':
-        INT_EPOCH_EXAMPLE})
+    schema_id = fields.Str(
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
+    )
+    cred_def_id = fields.Str(
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
+    )
+    rev_reg_id = fields.Str(
+        allow_none=True,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
+    )
+    timestamp = fields.Int(
+        allow_none=True,
+        validate=INT_EPOCH_VALIDATE,
+        metadata={
+            "strict": True,
+            "description": "Timestamp epoch",
+            "example": INT_EPOCH_EXAMPLE,
+        },
+    )
 
 
 class IndyProof(BaseModel):
@@ -598,32 +679,54 @@ class IndyProofSchema(BaseModelSchema):
         model_class = IndyProof
         unknown = EXCLUDE
 
-    proof = fields.Nested(IndyProofProofSchema, metadata={'description':
-        'Indy proof.proof content'})
-    requested_proof = fields.Nested(IndyProofRequestedProofSchema, metadata={
-        'description': 'Indy proof.requested_proof content'})
-    identifiers = fields.Nested(IndyProofIdentifierSchema, many=True, metadata=
-        {'description': 'Indy proof.identifiers content'})
+    proof = fields.Nested(
+        IndyProofProofSchema, metadata={"description": "Indy proof.proof content"}
+    )
+    requested_proof = fields.Nested(
+        IndyProofRequestedProofSchema,
+        metadata={"description": "Indy proof.requested_proof content"},
+    )
+    identifiers = fields.Nested(
+        IndyProofIdentifierSchema,
+        many=True,
+        metadata={"description": "Indy proof.identifiers content"},
+    )
 
 
 class IndyPresSpecSchema(AdminAPIMessageTracingSchema):
     """Request schema for indy proof specification to send as presentation."""
 
-    self_attested_attributes = fields.Dict(required=True, keys=fields.Str(
-        metadata={'example': 'attr_name'}), values=fields.Str(metadata={
-        'example': 'self_attested_value', 'description':
-        'Self-attested attribute values to use in requested-credentials structure for proof construction'
-        }), metadata={'description':
-        'Self-attested attributes to build into proof'})
-    requested_attributes = fields.Dict(required=True, keys=fields.Str(metadata=
-        {'example': 'attr_referent'}), values=fields.Nested(
-        IndyRequestedCredsRequestedAttrSchema), metadata={'description':
-        'Nested object mapping proof request attribute referents to requested-attribute specifiers'
-        })
-    requested_predicates = fields.Dict(required=True, keys=fields.Str(metadata=
-        {'example': 'pred_referent'}), values=fields.Nested(
-        IndyRequestedCredsRequestedPredSchema), metadata={'description':
-        'Nested object mapping proof request predicate referents to requested-predicate specifiers'
-        })
-    trace = fields.Bool(required=False, metadata={'description':
-        'Whether to trace event (default false)', 'example': False})
+    self_attested_attributes = fields.Dict(
+        required=True,
+        keys=fields.Str(metadata={"example": "attr_name"}),
+        values=fields.Str(
+            metadata={
+                "example": "self_attested_value",
+                "description": "Self-attested attribute values to use in requested-credentials structure for proof construction",
+            }
+        ),
+        metadata={"description": "Self-attested attributes to build into proof"},
+    )
+    requested_attributes = fields.Dict(
+        required=True,
+        keys=fields.Str(metadata={"example": "attr_referent"}),
+        values=fields.Nested(IndyRequestedCredsRequestedAttrSchema),
+        metadata={
+            "description": "Nested object mapping proof request attribute referents to requested-attribute specifiers"
+        },
+    )
+    requested_predicates = fields.Dict(
+        required=True,
+        keys=fields.Str(metadata={"example": "pred_referent"}),
+        values=fields.Nested(IndyRequestedCredsRequestedPredSchema),
+        metadata={
+            "description": "Nested object mapping proof request predicate referents to requested-predicate specifiers"
+        },
+    )
+    trace = fields.Bool(
+        required=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
+    )

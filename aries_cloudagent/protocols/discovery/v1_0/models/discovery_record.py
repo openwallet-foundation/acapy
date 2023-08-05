@@ -131,13 +131,24 @@ class V10DiscoveryRecordSchema(BaseExchangeSchema):
 
         model_class = V10DiscoveryExchangeRecord
 
-    discovery_exchange_id = fields.Str(required=False, metadata={'description':
-        'Credential exchange identifier', 'example': UUIDFour.EXAMPLE})
-    connection_id = fields.Str(required=False, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
-    thread_id = fields.Str(required=False, metadata={'description':
-        'Thread identifier', 'example': UUIDFour.EXAMPLE})
-    query_msg = fields.Nested(QuerySchema(), required=False, metadata={
-        'description': 'Query message'})
-    disclose = fields.Nested(DiscloseSchema(), required=False, metadata={
-        'description': 'Disclose message'})
+    discovery_exchange_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    connection_id = fields.Str(
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
+    thread_id = fields.Str(
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+    )
+    query_msg = fields.Nested(
+        QuerySchema(), required=False, metadata={"description": "Query message"}
+    )
+    disclose = fields.Nested(
+        DiscloseSchema(), required=False, metadata={"description": "Disclose message"}
+    )

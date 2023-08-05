@@ -57,8 +57,15 @@ class MediationGrantSchema(AgentMessageSchema):
 
         model_class = MediationGrant
 
-    endpoint = fields.Str(metadata={'description':
-        'endpoint on which messages destined for the recipient are received.',
-        'example': 'http://192.168.56.102:8020/'})
-    routing_keys = fields.List(fields.Str(metadata={'description':
-        'Keys to use for forward message packaging'}), required=False)
+    endpoint = fields.Str(
+        metadata={
+            "description": "endpoint on which messages destined for the recipient are received.",
+            "example": "http://192.168.56.102:8020/",
+        }
+    )
+    routing_keys = fields.List(
+        fields.Str(
+            metadata={"description": "Keys to use for forward message packaging"}
+        ),
+        required=False,
+    )

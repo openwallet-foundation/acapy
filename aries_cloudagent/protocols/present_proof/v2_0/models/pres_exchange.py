@@ -255,49 +255,113 @@ class V20PresExRecordSchema(BaseExchangeSchema):
 
         model_class = V20PresExRecord
 
-    pres_ex_id = fields.Str(required=False, metadata={'description':
-        'Presentation exchange identifier', 'example': UUIDFour.EXAMPLE})
-    connection_id = fields.Str(required=False, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
-    thread_id = fields.Str(required=False, metadata={'description':
-        'Thread identifier', 'example': UUIDFour.EXAMPLE})
-    initiator = fields.Str(required=False, validate=validate.OneOf(
-        V20PresExRecord.get_attributes_by_prefix('INITIATOR_', walk_mro=False)),
-        metadata={'description':
-        'Present-proof exchange initiator: self or external', 'example':
-        V20PresExRecord.INITIATOR_SELF})
-    role = fields.Str(required=False, validate=validate.OneOf(V20PresExRecord.
-        get_attributes_by_prefix('ROLE_', walk_mro=False)), metadata={
-        'description': 'Present-proof exchange role: prover or verifier',
-        'example': V20PresExRecord.ROLE_PROVER})
-    state = fields.Str(required=False, validate=validate.OneOf(V20PresExRecord.
-        get_attributes_by_prefix('STATE_', walk_mro=True)), metadata={
-        'description': 'Present-proof exchange state'})
-    pres_proposal = fields.Nested(V20PresProposalSchema(), required=False,
-        metadata={'description': 'Presentation proposal message'})
-    pres_request = fields.Nested(V20PresRequestSchema(), required=False,
-        metadata={'description': 'Presentation request message'})
-    pres = fields.Nested(V20PresSchema(), required=False, metadata={
-        'description': 'Presentation message'})
-    by_format = fields.Nested(Schema.from_dict({'pres_proposal': fields.Dict(
-        required=False), 'pres_request': fields.Dict(required=False), 'pres':
-        fields.Dict(required=False)}, name='V20PresExRecordByFormatSchema'),
-        required=False, dump_only=True, metadata={'description':
-        'Attachment content by format for proposal, request, and presentation'})
-    verified = fields.Str(required=False, validate=validate.OneOf(['true',
-        'false']), metadata={'description':
-        "Whether presentation is verified: 'true' or 'false'", 'example': 'true'})
-    verified_msgs = fields.List(fields.Str(required=False, metadata={
-        'description': 'Proof verification warning or error information'}),
-        required=False)
-    auto_present = fields.Bool(required=False, metadata={'description':
-        'Prover choice to auto-present proof as verifier requests', 'example': 
-        False})
-    auto_verify = fields.Bool(required=False, metadata={'description':
-        'Verifier choice to auto-verify proof presentation'})
-    error_msg = fields.Str(required=False, metadata={'description':
-        'Error message', 'example': 'Invalid structure'})
-    auto_remove = fields.Bool(required=False, dump_default=True, metadata={
-        'description':
-        'Verifier choice to remove this presentation exchange record when complete'
-        , 'example': False})
+    pres_ex_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Presentation exchange identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    connection_id = fields.Str(
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
+    thread_id = fields.Str(
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+    )
+    initiator = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            V20PresExRecord.get_attributes_by_prefix("INITIATOR_", walk_mro=False)
+        ),
+        metadata={
+            "description": "Present-proof exchange initiator: self or external",
+            "example": V20PresExRecord.INITIATOR_SELF,
+        },
+    )
+    role = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            V20PresExRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
+        ),
+        metadata={
+            "description": "Present-proof exchange role: prover or verifier",
+            "example": V20PresExRecord.ROLE_PROVER,
+        },
+    )
+    state = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            V20PresExRecord.get_attributes_by_prefix("STATE_", walk_mro=True)
+        ),
+        metadata={"description": "Present-proof exchange state"},
+    )
+    pres_proposal = fields.Nested(
+        V20PresProposalSchema(),
+        required=False,
+        metadata={"description": "Presentation proposal message"},
+    )
+    pres_request = fields.Nested(
+        V20PresRequestSchema(),
+        required=False,
+        metadata={"description": "Presentation request message"},
+    )
+    pres = fields.Nested(
+        V20PresSchema(),
+        required=False,
+        metadata={"description": "Presentation message"},
+    )
+    by_format = fields.Nested(
+        Schema.from_dict(
+            {
+                "pres_proposal": fields.Dict(required=False),
+                "pres_request": fields.Dict(required=False),
+                "pres": fields.Dict(required=False),
+            },
+            name="V20PresExRecordByFormatSchema",
+        ),
+        required=False,
+        dump_only=True,
+        metadata={
+            "description": "Attachment content by format for proposal, request, and presentation"
+        },
+    )
+    verified = fields.Str(
+        required=False,
+        validate=validate.OneOf(["true", "false"]),
+        metadata={
+            "description": "Whether presentation is verified: 'true' or 'false'",
+            "example": "true",
+        },
+    )
+    verified_msgs = fields.List(
+        fields.Str(
+            required=False,
+            metadata={"description": "Proof verification warning or error information"},
+        ),
+        required=False,
+    )
+    auto_present = fields.Bool(
+        required=False,
+        metadata={
+            "description": "Prover choice to auto-present proof as verifier requests",
+            "example": False,
+        },
+    )
+    auto_verify = fields.Bool(
+        required=False,
+        metadata={"description": "Verifier choice to auto-verify proof presentation"},
+    )
+    error_msg = fields.Str(
+        required=False,
+        metadata={"description": "Error message", "example": "Invalid structure"},
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=True,
+        metadata={
+            "description": "Verifier choice to remove this presentation exchange record when complete",
+            "example": False,
+        },
+    )

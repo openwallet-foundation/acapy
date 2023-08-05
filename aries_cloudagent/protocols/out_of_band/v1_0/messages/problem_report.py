@@ -62,9 +62,14 @@ class OOBProblemReportSchema(ProblemReportSchema):
         model_class = OOBProblemReport
         unknown = EXCLUDE
 
-    _type = fields.Str(data_key='@type', required=False, metadata={
-        'description': 'Message type', 'example':
-        'https://didcomm.org/my-family/1.0/my-message-type'})
+    _type = fields.Str(
+        data_key="@type",
+        required=False,
+        metadata={
+            "description": "Message type",
+            "example": "https://didcomm.org/my-family/1.0/my-message-type",
+        },
+    )
 
     @pre_dump
     def check_thread_deco(self, obj, **kwargs):

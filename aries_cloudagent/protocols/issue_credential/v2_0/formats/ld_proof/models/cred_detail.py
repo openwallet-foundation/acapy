@@ -44,19 +44,37 @@ class LDProofVCDetailSchema(BaseModelSchema):
         unknown = INCLUDE
         model_class = LDProofVCDetail
 
-    credential = fields.Nested(CredentialSchema(), required=True, metadata={
-        'description': 'Detail of the JSON-LD Credential to be issued',
-        'example': {'@context': ['https://www.w3.org/2018/credentials/v1',
-        'https://w3id.org/citizenship/v1'], 'type': ['VerifiableCredential',
-        'PermanentResidentCard'], 'issuer':
-        'did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th',
-        'identifier': '83627465', 'name': 'Permanent Resident Card',
-        'description': 'Government of Example Permanent Resident Card.',
-        'issuanceDate': '2019-12-03T12:19:52Z', 'credentialSubject': {'type': [
-        'PermanentResident', 'Person'], 'givenName': 'JOHN', 'familyName':
-        'SMITH', 'gender': 'Male'}}})
+    credential = fields.Nested(
+        CredentialSchema(),
+        required=True,
+        metadata={
+            "description": "Detail of the JSON-LD Credential to be issued",
+            "example": {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://w3id.org/citizenship/v1",
+                ],
+                "type": ["VerifiableCredential", "PermanentResidentCard"],
+                "issuer": "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th",
+                "identifier": "83627465",
+                "name": "Permanent Resident Card",
+                "description": "Government of Example Permanent Resident Card.",
+                "issuanceDate": "2019-12-03T12:19:52Z",
+                "credentialSubject": {
+                    "type": ["PermanentResident", "Person"],
+                    "givenName": "JOHN",
+                    "familyName": "SMITH",
+                    "gender": "Male",
+                },
+            },
+        },
+    )
 
-    options = fields.Nested(LDProofVCDetailOptionsSchema(), required=True,
-        metadata={'description':
-        'Options for specifying how the linked data proof is created.',
-        'example': {'proofType': 'Ed25519Signature2018'}})
+    options = fields.Nested(
+        LDProofVCDetailOptionsSchema(),
+        required=True,
+        metadata={
+            "description": "Options for specifying how the linked data proof is created.",
+            "example": {"proofType": "Ed25519Signature2018"},
+        },
+    )

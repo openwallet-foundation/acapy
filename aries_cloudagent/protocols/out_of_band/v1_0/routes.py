@@ -32,10 +32,14 @@ class OutOfBandModuleResponseSchema(OpenAPISchema):
 class InvitationCreateQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
-    auto_accept = fields.Boolean(required=False, metadata={'description':
-        'Auto-accept connection (defaults to configuration)'})
-    multi_use = fields.Boolean(required=False, metadata={'description':
-        'Create invitation for multiple use (default false)'})
+    auto_accept = fields.Boolean(
+        required=False,
+        metadata={"description": "Auto-accept connection (defaults to configuration)"},
+    )
+    multi_use = fields.Boolean(
+        required=False,
+        metadata={"description": "Create invitation for multiple use (default false)"},
+    )
 
 
 class InvitationCreateRequestSchema(OpenAPISchema):
@@ -44,55 +48,119 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     class AttachmentDefSchema(OpenAPISchema):
         """Attachment Schema."""
 
-        _id = fields.Str(data_key='id', metadata={'description':
-            'Attachment identifier', 'example': 'attachment-0'})
-        _type = fields.Str(data_key='type', validate=validate.OneOf([
-            'credential-offer', 'present-proof']), metadata={'description':
-            'Attachment type', 'example': 'present-proof'})
+        _id = fields.Str(
+            data_key="id",
+            metadata={
+                "description": "Attachment identifier",
+                "example": "attachment-0",
+            },
+        )
+        _type = fields.Str(
+            data_key="type",
+            validate=validate.OneOf(["credential-offer", "present-proof"]),
+            metadata={"description": "Attachment type", "example": "present-proof"},
+        )
 
-    attachments = fields.Nested(AttachmentDefSchema, many=True, required=False,
-        metadata={'description': 'Optional invitation attachments'})
-    handshake_protocols = fields.List(fields.Str(validate=lambda hsp: HSProto.
-        get(hsp) is not None, metadata={'description':
-        'Handshake protocol to specify in invitation', 'example': DIDCommPrefix
-        .qualify_current(HSProto.RFC23.name)}), required=False)
-    accept = fields.List(fields.Str(), required=False, metadata={'description':
-        'List of mime type in order of preference that should be use in responding to the message'
-        , 'example': ['didcomm/aip1', 'didcomm/aip2;env=rfc19']})
-    use_public_did = fields.Boolean(dump_default=False, metadata={'description':
-        'Whether to use public DID in invitation', 'example': False})
-    metadata = fields.Dict(required=False, metadata={'description':
-        'Optional metadata to attach to the connection created with the invitation'
-        })
-    my_label = fields.Str(required=False, metadata={'description':
-        'Label for connection invitation', 'example': 'Invitation to Barry'})
-    protocol_version = fields.Str(required=False, metadata={'description':
-        'OOB protocol version', 'example': '1.1'})
-    alias = fields.Str(required=False, metadata={'description':
-        'Alias for connection', 'example': 'Barry'})
-    mediation_id = fields.Str(required=False, validate=UUID4_VALIDATE, metadata
-        ={'description': 'Identifier for active mediation record to be used',
-        'example': UUID4_EXAMPLE})
-    goal_code = fields.Str(required=False, metadata={'description':
-        'A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message'
-        , 'example': 'issue-vc'})
-    goal = fields.Str(required=False, metadata={'description':
-        'A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message'
-        , 'example': 'To issue a Faber College Graduate credential'})
+    attachments = fields.Nested(
+        AttachmentDefSchema,
+        many=True,
+        required=False,
+        metadata={"description": "Optional invitation attachments"},
+    )
+    handshake_protocols = fields.List(
+        fields.Str(
+            validate=lambda hsp: HSProto.get(hsp) is not None,
+            metadata={
+                "description": "Handshake protocol to specify in invitation",
+                "example": DIDCommPrefix.qualify_current(HSProto.RFC23.name),
+            },
+        ),
+        required=False,
+    )
+    accept = fields.List(
+        fields.Str(),
+        required=False,
+        metadata={
+            "description": "List of mime type in order of preference that should be use in responding to the message",
+            "example": ["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+        },
+    )
+    use_public_did = fields.Boolean(
+        dump_default=False,
+        metadata={
+            "description": "Whether to use public DID in invitation",
+            "example": False,
+        },
+    )
+    metadata = fields.Dict(
+        required=False,
+        metadata={
+            "description": "Optional metadata to attach to the connection created with the invitation"
+        },
+    )
+    my_label = fields.Str(
+        required=False,
+        metadata={
+            "description": "Label for connection invitation",
+            "example": "Invitation to Barry",
+        },
+    )
+    protocol_version = fields.Str(
+        required=False,
+        metadata={"description": "OOB protocol version", "example": "1.1"},
+    )
+    alias = fields.Str(
+        required=False,
+        metadata={"description": "Alias for connection", "example": "Barry"},
+    )
+    mediation_id = fields.Str(
+        required=False,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Identifier for active mediation record to be used",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+    goal_code = fields.Str(
+        required=False,
+        metadata={
+            "description": "A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message",
+            "example": "issue-vc",
+        },
+    )
+    goal = fields.Str(
+        required=False,
+        metadata={
+            "description": "A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message",
+            "example": "To issue a Faber College Graduate credential",
+        },
+    )
 
 
 class InvitationReceiveQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
-    alias = fields.Str(required=False, metadata={'description':
-        'Alias for connection', 'example': 'Barry'})
-    auto_accept = fields.Boolean(required=False, metadata={'description':
-        'Auto-accept connection (defaults to configuration)'})
-    use_existing_connection = fields.Boolean(required=False, dump_default=True,
-        metadata={'description': 'Use an existing connection, if possible'})
-    mediation_id = fields.Str(required=False, validate=UUID4_VALIDATE, metadata
-        ={'description': 'Identifier for active mediation record to be used',
-        'example': UUID4_EXAMPLE})
+    alias = fields.Str(
+        required=False,
+        metadata={"description": "Alias for connection", "example": "Barry"},
+    )
+    auto_accept = fields.Boolean(
+        required=False,
+        metadata={"description": "Auto-accept connection (defaults to configuration)"},
+    )
+    use_existing_connection = fields.Boolean(
+        required=False,
+        dump_default=True,
+        metadata={"description": "Use an existing connection, if possible"},
+    )
+    mediation_id = fields.Str(
+        required=False,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Identifier for active mediation record to be used",
+            "example": UUID4_EXAMPLE,
+        },
+    )
 
 
 @docs(

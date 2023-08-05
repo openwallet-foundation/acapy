@@ -271,43 +271,85 @@ class CredentialSchema(BaseModelSchema):
         unknown = INCLUDE
         model_class = VerifiableCredential
 
-    context = fields.List(UriOrDictField(required=True), data_key='@context',
-        required=True, validate=CREDENTIAL_CONTEXT_VALIDATE, metadata={
-        'description': 'The JSON-LD context of the credential', 'example':
-        CREDENTIAL_CONTEXT_EXAMPLE})
+    context = fields.List(
+        UriOrDictField(required=True),
+        data_key="@context",
+        required=True,
+        validate=CREDENTIAL_CONTEXT_VALIDATE,
+        metadata={
+            "description": "The JSON-LD context of the credential",
+            "example": CREDENTIAL_CONTEXT_EXAMPLE,
+        },
+    )
 
-    id = fields.Str(required=False, validate=Uri(), metadata={'desscription':
-        'The ID of the credential', 'example':
-        'http://example.edu/credentials/1872'})
+    id = fields.Str(
+        required=False,
+        validate=Uri(),
+        metadata={
+            "desscription": "The ID of the credential",
+            "example": "http://example.edu/credentials/1872",
+        },
+    )
 
-    type = fields.List(fields.Str(required=True), required=True, validate=
-        CREDENTIAL_TYPE_VALIDATE, metadata={'description':
-        'The JSON-LD type of the credential', 'example': CREDENTIAL_TYPE_EXAMPLE})
+    type = fields.List(
+        fields.Str(required=True),
+        required=True,
+        validate=CREDENTIAL_TYPE_VALIDATE,
+        metadata={
+            "description": "The JSON-LD type of the credential",
+            "example": CREDENTIAL_TYPE_EXAMPLE,
+        },
+    )
 
-    issuer = StrOrDictField(required=True, metadata={'description':
-        'The JSON-LD Verifiable Credential Issuer. Either string of object with id field.'
-        , 'example': DIDKey.EXAMPLE})
+    issuer = StrOrDictField(
+        required=True,
+        metadata={
+            "description": "The JSON-LD Verifiable Credential Issuer. Either string of object with id field.",
+            "example": DIDKey.EXAMPLE,
+        },
+    )
 
-    issuance_date = fields.Str(data_key='issuanceDate', required=True, validate
-        =RFC3339_DATETIME_VALIDATE, metadata={'description':
-        'The issuance date', 'example': RFC3339_DATETIME_EXAMPLE})
+    issuance_date = fields.Str(
+        data_key="issuanceDate",
+        required=True,
+        validate=RFC3339_DATETIME_VALIDATE,
+        metadata={
+            "description": "The issuance date",
+            "example": RFC3339_DATETIME_EXAMPLE,
+        },
+    )
 
-    expiration_date = fields.Str(data_key='expirationDate', required=False,
-        validate=RFC3339_DATETIME_VALIDATE, metadata={'description':
-        'The expiration date', 'example': RFC3339_DATETIME_EXAMPLE})
+    expiration_date = fields.Str(
+        data_key="expirationDate",
+        required=False,
+        validate=RFC3339_DATETIME_VALIDATE,
+        metadata={
+            "description": "The expiration date",
+            "example": RFC3339_DATETIME_EXAMPLE,
+        },
+    )
 
-    credential_subject = DictOrDictListField(required=True, data_key=
-        'credentialSubject', validate=CREDENTIAL_SUBJECT_VALIDATE, metadata={
-        'example': CREDENTIAL_SUBJECT_EXAMPLE})
+    credential_subject = DictOrDictListField(
+        required=True,
+        data_key="credentialSubject",
+        validate=CREDENTIAL_SUBJECT_VALIDATE,
+        metadata={"example": CREDENTIAL_SUBJECT_EXAMPLE},
+    )
 
-    proof = fields.Nested(LinkedDataProofSchema(), required=False, metadata={
-        'description': 'The proof of the credential', 'example': {'type':
-        'Ed25519Signature2018', 'verificationMethod':
-        'did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL'
-        , 'created': '2019-12-11T03:50:55', 'proofPurpose': 'assertionMethod',
-        'jws':
-        'eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ'
-        }})
+    proof = fields.Nested(
+        LinkedDataProofSchema(),
+        required=False,
+        metadata={
+            "description": "The proof of the credential",
+            "example": {
+                "type": "Ed25519Signature2018",
+                "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ",
+            },
+        },
+    )
 
     @post_dump(pass_original=True)
     def add_unknown_properties(self, data: dict, original, **kwargs):
@@ -325,11 +367,17 @@ class VerifiableCredentialSchema(CredentialSchema):
 
     """
 
-    proof = fields.Nested(LinkedDataProofSchema(), required=True, metadata={
-        'description': 'The proof of the credential', 'example': {'type':
-        'Ed25519Signature2018', 'verificationMethod':
-        'did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL'
-        , 'created': '2019-12-11T03:50:55', 'proofPurpose': 'assertionMethod',
-        'jws':
-        'eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ'
-        }})
+    proof = fields.Nested(
+        LinkedDataProofSchema(),
+        required=True,
+        metadata={
+            "description": "The proof of the credential",
+            "example": {
+                "type": "Ed25519Signature2018",
+                "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ",
+            },
+        },
+    )

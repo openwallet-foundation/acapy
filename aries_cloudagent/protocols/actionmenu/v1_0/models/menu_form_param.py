@@ -52,16 +52,31 @@ class MenuFormParamSchema(BaseModelSchema):
         model_class = MenuFormParam
         unknown = EXCLUDE
 
-    name = fields.Str(required=True, metadata={'description':
-        'Menu parameter name', 'example': 'delay'})
-    title = fields.Str(required=True, metadata={'description':
-        'Menu parameter title', 'example': 'Delay in seconds'})
-    default = fields.Str(required=False, metadata={'description':
-        'Default parameter value', 'example': '0'})
-    description = fields.Str(required=False, metadata={'description':
-        'Additional descriptive text for menu form parameter', 'example':
-        'Delay in seconds before starting'})
-    input_type = fields.Str(required=False, data_key='type', metadata={
-        'description': 'Menu form parameter input type', 'example': 'int'})
-    required = fields.Bool(required=False, metadata={'description':
-        'Whether parameter is required', 'example': 'False'})
+    name = fields.Str(
+        required=True,
+        metadata={"description": "Menu parameter name", "example": "delay"},
+    )
+    title = fields.Str(
+        required=True,
+        metadata={"description": "Menu parameter title", "example": "Delay in seconds"},
+    )
+    default = fields.Str(
+        required=False,
+        metadata={"description": "Default parameter value", "example": "0"},
+    )
+    description = fields.Str(
+        required=False,
+        metadata={
+            "description": "Additional descriptive text for menu form parameter",
+            "example": "Delay in seconds before starting",
+        },
+    )
+    input_type = fields.Str(
+        required=False,
+        data_key="type",
+        metadata={"description": "Menu form parameter input type", "example": "int"},
+    )
+    required = fields.Bool(
+        required=False,
+        metadata={"description": "Whether parameter is required", "example": "False"},
+    )

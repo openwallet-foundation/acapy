@@ -74,10 +74,21 @@ class V20CredExRecordLDProofSchema(BaseRecordSchema):
         model_class = V20CredExRecordLDProof
         unknown = EXCLUDE
 
-    cred_ex_ld_proof_id = fields.Str(required=False, metadata={'description':
-        'Record identifier', 'example': UUIDFour.EXAMPLE})
-    cred_ex_id = fields.Str(required=False, metadata={'description':
-        'Corresponding v2.0 credential exchange record identifier', 'example':
-        UUIDFour.EXAMPLE})
-    cred_id_stored = fields.Str(required=False, metadata={'description':
-        'Credential identifier stored in wallet', 'example': UUIDFour.EXAMPLE})
+    cred_ex_ld_proof_id = fields.Str(
+        required=False,
+        metadata={"description": "Record identifier", "example": UUIDFour.EXAMPLE},
+    )
+    cred_ex_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Corresponding v2.0 credential exchange record identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
+    cred_id_stored = fields.Str(
+        required=False,
+        metadata={
+            "description": "Credential identifier stored in wallet",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )

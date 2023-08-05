@@ -50,6 +50,11 @@ class InvitationSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
-    message = fields.Str(required=False, allow_none=True, metadata={
-        'description': 'Comments on the introduction', 'example':
-        "Hello Bob, it's Charlie as Alice mentioned"})
+    message = fields.Str(
+        required=False,
+        allow_none=True,
+        metadata={
+            "description": "Comments on the introduction",
+            "example": "Hello Bob, it's Charlie as Alice mentioned",
+        },
+    )

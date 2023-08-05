@@ -43,8 +43,15 @@ class PleaseAckDecoratorSchema(BaseModelSchema):
         model_class = PleaseAckDecorator
         unknown = EXCLUDE
 
-    message_id = fields.Str(required=False, allow_none=False, metadata={
-        'description': 'Message identifier', 'example': UUIDFour.EXAMPLE})
-    on = fields.List(fields.Str(metadata={'example': 'OUTCOME'}), required=
-        False, metadata={'description':
-        'List of tokens describing circumstances for acknowledgement'})
+    message_id = fields.Str(
+        required=False,
+        allow_none=False,
+        metadata={"description": "Message identifier", "example": UUIDFour.EXAMPLE},
+    )
+    on = fields.List(
+        fields.Str(metadata={"example": "OUTCOME"}),
+        required=False,
+        metadata={
+            "description": "List of tokens describing circumstances for acknowledgement"
+        },
+    )

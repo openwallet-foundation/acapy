@@ -52,6 +52,11 @@ class CancelTransactionSchema(AgentMessageSchema):
         model_class = CancelTransaction
         unknown = EXCLUDE
 
-    state = fields.Str(required=False, metadata={'description':
-        'The State of the transaction Record', 'example': 'cancelled'})
-    thread_id = fields.Str(required=False, metadata={'example': UUIDFour.EXAMPLE})
+    state = fields.Str(
+        required=False,
+        metadata={
+            "description": "The State of the transaction Record",
+            "example": "cancelled",
+        },
+    )
+    thread_id = fields.Str(required=False, metadata={"example": UUIDFour.EXAMPLE})

@@ -92,16 +92,28 @@ class V20PresRequestSchema(AgentMessageSchema):
         model_class = V20PresRequest
         unknown = EXCLUDE
 
-    comment = fields.Str(required=False, metadata={'description':
-        'Human-readable comment'})
-    will_confirm = fields.Bool(required=False, metadata={'description':
-        'Whether verifier will send confirmation ack'})
-    formats = fields.Nested(V20PresFormatSchema, many=True, required=True,
-        metadata={'descrption': 'Acceptable attachment formats'})
-    request_presentations_attach = fields.Nested(AttachDecoratorSchema, many=
-        True, required=True, data_key='request_presentations~attach', metadata=
-        {'description':
-        'Attachment per acceptable format on corresponding identifier'})
+    comment = fields.Str(
+        required=False, metadata={"description": "Human-readable comment"}
+    )
+    will_confirm = fields.Bool(
+        required=False,
+        metadata={"description": "Whether verifier will send confirmation ack"},
+    )
+    formats = fields.Nested(
+        V20PresFormatSchema,
+        many=True,
+        required=True,
+        metadata={"descrption": "Acceptable attachment formats"},
+    )
+    request_presentations_attach = fields.Nested(
+        AttachDecoratorSchema,
+        many=True,
+        required=True,
+        data_key="request_presentations~attach",
+        metadata={
+            "description": "Attachment per acceptable format on corresponding identifier"
+        },
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

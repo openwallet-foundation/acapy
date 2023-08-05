@@ -71,33 +71,60 @@ class V20PresentProofModuleResponseSchema(OpenAPISchema):
 class V20PresExRecordListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for presentation exchange list query."""
 
-    connection_id = fields.UUID(required=False, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
-    thread_id = fields.UUID(required=False, metadata={'description':
-        'Thread identifier', 'example': UUIDFour.EXAMPLE})
-    role = fields.Str(required=False, validate=validate.OneOf([getattr(
-        V20PresExRecord, m) for m in vars(V20PresExRecord) if m.startswith(
-        'ROLE_')]), metadata={'description':
-        'Role assigned in presentation exchange'})
-    state = fields.Str(required=False, validate=validate.OneOf([getattr(
-        V20PresExRecord, m) for m in vars(V20PresExRecord) if m.startswith(
-        'STATE_')]), metadata={'description': 'Presentation exchange state'})
+    connection_id = fields.UUID(
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
+    thread_id = fields.UUID(
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+    )
+    role = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(V20PresExRecord, m)
+                for m in vars(V20PresExRecord)
+                if m.startswith("ROLE_")
+            ]
+        ),
+        metadata={"description": "Role assigned in presentation exchange"},
+    )
+    state = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            [
+                getattr(V20PresExRecord, m)
+                for m in vars(V20PresExRecord)
+                if m.startswith("STATE_")
+            ]
+        ),
+        metadata={"description": "Presentation exchange state"},
+    )
 
 
 class V20PresExRecordListSchema(OpenAPISchema):
     """Result schema for a presentation exchange query."""
 
-    results = fields.List(fields.Nested(V20PresExRecordSchema()), metadata={
-        'description': 'Presentation exchange records'})
+    results = fields.List(
+        fields.Nested(V20PresExRecordSchema()),
+        metadata={"description": "Presentation exchange records"},
+    )
 
 
 class V20PresProposalByFormatSchema(OpenAPISchema):
     """Schema for presentation proposal per format."""
 
-    indy = fields.Nested(IndyProofRequestSchema, required=False, metadata={
-        'description': 'Presentation proposal for indy'})
-    dif = fields.Nested(DIFProofProposalSchema, required=False, metadata={
-        'description': 'Presentation proposal for DIF'})
+    indy = fields.Nested(
+        IndyProofRequestSchema,
+        required=False,
+        metadata={"description": "Presentation proposal for indy"},
+    )
+    dif = fields.Nested(
+        DIFProofProposalSchema,
+        required=False,
+        metadata={"description": "Presentation proposal for DIF"},
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
@@ -120,31 +147,54 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
 class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
-    connection_id = fields.UUID(required=True, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
-    comment = fields.Str(required=False, allow_none=True, metadata={
-        'description': 'Human-readable comment'})
-    presentation_proposal = fields.Nested(V20PresProposalByFormatSchema(),
-        required=True)
-    auto_present = fields.Boolean(required=False, dump_default=False, metadata=
-        {'description':
-        'Whether to respond automatically to presentation requests, building and presenting requested proof'
-        })
-    auto_remove = fields.Bool(required=False, dump_default=False, metadata={
-        'description':
-        'Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)'
-        })
-    trace = fields.Bool(required=False, metadata={'description':
-        'Whether to trace event (default false)', 'example': False})
+    connection_id = fields.UUID(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
+    comment = fields.Str(
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
+    )
+    presentation_proposal = fields.Nested(
+        V20PresProposalByFormatSchema(), required=True
+    )
+    auto_present = fields.Boolean(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": "Whether to respond automatically to presentation requests, building and presenting requested proof"
+        },
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
+    )
+    trace = fields.Bool(
+        required=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
+    )
 
 
 class V20PresRequestByFormatSchema(OpenAPISchema):
     """Presentation request per format."""
 
-    indy = fields.Nested(IndyProofRequestSchema, required=False, metadata={
-        'description': 'Presentation request for indy'})
-    dif = fields.Nested(DIFProofRequestSchema, required=False, metadata={
-        'description': 'Presentation request for DIF'})
+    indy = fields.Nested(
+        IndyProofRequestSchema,
+        required=False,
+        metadata={"description": "Presentation request for indy"},
+    )
+    dif = fields.Nested(
+        DIFProofRequestSchema,
+        required=False,
+        metadata={"description": "Presentation request for DIF"},
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
@@ -167,52 +217,88 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
 class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for creating a proof request free of any connection."""
 
-    presentation_request = fields.Nested(V20PresRequestByFormatSchema(),
-        required=True)
+    presentation_request = fields.Nested(V20PresRequestByFormatSchema(), required=True)
     comment = fields.Str(required=False, allow_none=True)
-    auto_verify = fields.Bool(required=False, metadata={'description':
-        'Verifier choice to auto-verify proof presentation', 'example': False})
-    auto_remove = fields.Bool(required=False, dump_default=False, metadata={
-        'description':
-        'Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)'
-        })
-    trace = fields.Bool(required=False, metadata={'description':
-        'Whether to trace event (default false)', 'example': False})
+    auto_verify = fields.Bool(
+        required=False,
+        metadata={
+            "description": "Verifier choice to auto-verify proof presentation",
+            "example": False,
+        },
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
+    )
+    trace = fields.Bool(
+        required=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
+    )
 
 
 class V20PresSendRequestRequestSchema(V20PresCreateRequestRequestSchema):
     """Request schema for sending a proof request on a connection."""
 
-    connection_id = fields.UUID(required=True, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    connection_id = fields.UUID(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 class V20PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a proof request bound to a proposal."""
 
-    auto_verify = fields.Bool(required=False, metadata={'description':
-        'Verifier choice to auto-verify proof presentation', 'example': False})
-    auto_remove = fields.Bool(required=False, dump_default=False, metadata={
-        'description':
-        'Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)'
-        })
-    trace = fields.Bool(required=False, metadata={'description':
-        'Whether to trace event (default false)', 'example': False})
+    auto_verify = fields.Bool(
+        required=False,
+        metadata={
+            "description": "Verifier choice to auto-verify proof presentation",
+            "example": False,
+        },
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
+    )
+    trace = fields.Bool(
+        required=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
+    )
 
 
 class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
     """Presentation specification schema by format, for send-presentation request."""
 
-    indy = fields.Nested(IndyPresSpecSchema, required=False, metadata={
-        'description': 'Presentation specification for indy'})
-    dif = fields.Nested(DIFPresSpecSchema, required=False, metadata={
-        'description':
-        "Optional Presentation specification for DIF, overrides the PresentionExchange record's PresRequest"
-        })
-    auto_remove = fields.Bool(required=False, dump_default=False, metadata={
-        'description':
-        'Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)'
-        })
+    indy = fields.Nested(
+        IndyPresSpecSchema,
+        required=False,
+        metadata={"description": "Presentation specification for indy"},
+    )
+    dif = fields.Nested(
+        DIFPresSpecSchema,
+        required=False,
+        metadata={
+            "description": "Optional Presentation specification for DIF, overrides the PresentionExchange record's PresRequest"
+        },
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
@@ -236,19 +322,38 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
 class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credentials fetch request query string."""
 
-    referent = fields.Str(required=False, metadata={'description':
-        'Proof request referents of interest, comma-separated', 'example':
-        '1_name_uuid,2_score_uuid'})
-    start = fields.Str(required=False, validate=NUM_STR_WHOLE_VALIDATE,
-        metadata={'description': 'Start index', 'strict': True, 'example':
-        NUM_STR_WHOLE_EXAMPLE})
-    count = fields.Str(required=False, validate=NUM_STR_NATURAL_VALIDATE,
-        metadata={'description': 'Maximum number to retrieve', 'example':
-        NUM_STR_NATURAL_EXAMPLE})
-    extra_query = fields.Str(required=False, validate=INDY_EXTRA_WQL_VALIDATE,
-        metadata={'description':
-        '(JSON) object mapping referents to extra WQL queries', 'example':
-        INDY_EXTRA_WQL_EXAMPLE})
+    referent = fields.Str(
+        required=False,
+        metadata={
+            "description": "Proof request referents of interest, comma-separated",
+            "example": "1_name_uuid,2_score_uuid",
+        },
+    )
+    start = fields.Str(
+        required=False,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Start index",
+            "strict": True,
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
+    )
+    count = fields.Str(
+        required=False,
+        validate=NUM_STR_NATURAL_VALIDATE,
+        metadata={
+            "description": "Maximum number to retrieve",
+            "example": NUM_STR_NATURAL_EXAMPLE,
+        },
+    )
+    extra_query = fields.Str(
+        required=False,
+        validate=INDY_EXTRA_WQL_VALIDATE,
+        metadata={
+            "description": "(JSON) object mapping referents to extra WQL queries",
+            "example": INDY_EXTRA_WQL_EXAMPLE,
+        },
+    )
 
 
 class V20PresProblemReportRequestSchema(OpenAPISchema):
@@ -260,9 +365,14 @@ class V20PresProblemReportRequestSchema(OpenAPISchema):
 class V20PresExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters for request taking presentation exchange id."""
 
-    pres_ex_id = fields.Str(required=True, validate=UUID4_VALIDATE, metadata={
-        'description': 'Presentation exchange identifier', 'example':
-        UUID4_EXAMPLE})
+    pres_ex_id = fields.Str(
+        required=True,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Presentation exchange identifier",
+            "example": UUID4_EXAMPLE,
+        },
+    )
 
 
 async def _add_nonce(indy_proof_request: Mapping) -> Mapping:

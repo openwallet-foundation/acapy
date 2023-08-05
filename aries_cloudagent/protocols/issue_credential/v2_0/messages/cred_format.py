@@ -129,8 +129,17 @@ class V20CredFormatSchema(BaseModelSchema):
         model_class = V20CredFormat
         unknown = EXCLUDE
 
-    attach_id = fields.Str(required=True, allow_none=False, metadata={
-        'description': 'Attachment identifier', 'example': UUIDFour.EXAMPLE})
-    format_ = fields.Str(required=True, allow_none=False, data_key='format',
-        metadata={'description': 'Attachment format specifier', 'example':
-        'aries/ld-proof-vc-detail@v1.0'})
+    attach_id = fields.Str(
+        required=True,
+        allow_none=False,
+        metadata={"description": "Attachment identifier", "example": UUIDFour.EXAMPLE},
+    )
+    format_ = fields.Str(
+        required=True,
+        allow_none=False,
+        data_key="format",
+        metadata={
+            "description": "Attachment format specifier",
+            "example": "aries/ld-proof-vc-detail@v1.0",
+        },
+    )

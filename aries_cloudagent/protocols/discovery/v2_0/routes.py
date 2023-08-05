@@ -21,34 +21,50 @@ from .models.discovery_record import (
 class V20DiscoveryExchangeResultSchema(OpenAPISchema):
     """Result schema for Discover Features v2.0 exchange record."""
 
-    results = fields.Nested(V20DiscoveryRecordSchema, metadata={'description':
-        'Discover Features v2.0 exchange record'})
+    results = fields.Nested(
+        V20DiscoveryRecordSchema,
+        metadata={"description": "Discover Features v2.0 exchange record"},
+    )
 
 
 class V20DiscoveryExchangeListResultSchema(OpenAPISchema):
     """Result schema for Discover Features v2.0 exchange records."""
 
-    results = fields.List(fields.Nested(V20DiscoveryRecordSchema, metadata={
-        'description': 'Discover Features v2.0 exchange record'}))
+    results = fields.List(
+        fields.Nested(
+            V20DiscoveryRecordSchema,
+            metadata={"description": "Discover Features v2.0 exchange record"},
+        )
+    )
 
 
 class QueryFeaturesQueryStringSchema(OpenAPISchema):
     """Query string parameters for feature query."""
 
-    query_protocol = fields.Str(required=False, metadata={'description':
-        'Protocol feature-type query', 'example': '*'})
-    query_goal_code = fields.Str(required=False, metadata={'description':
-        'Goal-code feature-type query', 'example': '*'})
-    connection_id = fields.Str(required=False, metadata={'description':
-        'Connection identifier, if none specified, then the query will provide features for this agent.'
-        , 'example': UUIDFour.EXAMPLE})
+    query_protocol = fields.Str(
+        required=False,
+        metadata={"description": "Protocol feature-type query", "example": "*"},
+    )
+    query_goal_code = fields.Str(
+        required=False,
+        metadata={"description": "Goal-code feature-type query", "example": "*"},
+    )
+    connection_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Connection identifier, if none specified, then the query will provide features for this agent.",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
 
 
 class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
     """Query string parameter for Discover Features v2.0 exchange record."""
 
-    connection_id = fields.Str(required=False, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    connection_id = fields.Str(
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 @docs(

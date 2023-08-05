@@ -70,41 +70,87 @@ class ProblemReportSchema(AgentMessageSchema):
         model_class = ProblemReport
         unknown = EXCLUDE
 
-    description = fields.Dict(keys=fields.Str(metadata={'description':
-        "Locale or 'code'", 'example': 'en-US'}), values=fields.Str(metadata={
-        'description': 'Problem description or error code'}), required=False,
-        metadata={'description': 'Human-readable localized problem descriptions'})
-    problem_items = fields.List(fields.Dict(keys=fields.Str(metadata={
-        'description': 'Problematic parameter or item'}), values=fields.Str(
-        metadata={'description': 'Problem text/number/value'}), metadata={
-        'description': 'Problem item'}), data_key='problem-items', required=
-        False, metadata={'description': 'List of problem items'})
-    who_retries = fields.Str(data_key='who-retries', required=False, validate=
-        validate.OneOf(['you', 'me', 'both', 'none']), metadata={'description':
-        'Party to retry: you, me, both, none', 'example': 'you'})
-    fix_hint = fields.Dict(keys=fields.Str(metadata={'description': 'Locale',
-        'example': 'en-US'}), values=fields.Str(metadata={'description':
-        'Localized message', 'example': 'Synchronize time to NTP'}), required=
-        False, metadata={'description':
-        'Human-readable localized suggestions how to fix problem'})
-    impact = fields.Str(required=False, validate=validate.OneOf(['message',
-        'thread', 'connection']), metadata={'description':
-        'Breadth of impact of problem: message, thread, or connection',
-        'example': 'thread'})
-    where = fields.Str(required=False, validate=validate.Regexp(
-        '(you)|(me)|(other) - .+'), metadata={'description':
-        'Where the error occurred, from reporter perspective', 'example':
-        'you - agency'})
-    time_noticed = fields.Str(data_key='time-noticed', required=False, validate
-        =RFC3339_DATETIME_VALIDATE, metadata={'description':
-        'Problem detection time, precision at least day up to millisecond',
-        'example': RFC3339_DATETIME_EXAMPLE})
-    tracking_uri = fields.Str(required=False, metadata={'description':
-        'URI allowing recipient to track error status', 'example':
-        'http://myservice.com/status'})
-    escalation_uri = fields.Str(required=False, metadata={'description':
-        'URI to supply additional help', 'example':
-        'mailto://help.desk@myservice.com'})
+    description = fields.Dict(
+        keys=fields.Str(
+            metadata={"description": "Locale or 'code'", "example": "en-US"}
+        ),
+        values=fields.Str(
+            metadata={"description": "Problem description or error code"}
+        ),
+        required=False,
+        metadata={"description": "Human-readable localized problem descriptions"},
+    )
+    problem_items = fields.List(
+        fields.Dict(
+            keys=fields.Str(metadata={"description": "Problematic parameter or item"}),
+            values=fields.Str(metadata={"description": "Problem text/number/value"}),
+            metadata={"description": "Problem item"},
+        ),
+        data_key="problem-items",
+        required=False,
+        metadata={"description": "List of problem items"},
+    )
+    who_retries = fields.Str(
+        data_key="who-retries",
+        required=False,
+        validate=validate.OneOf(["you", "me", "both", "none"]),
+        metadata={
+            "description": "Party to retry: you, me, both, none",
+            "example": "you",
+        },
+    )
+    fix_hint = fields.Dict(
+        keys=fields.Str(metadata={"description": "Locale", "example": "en-US"}),
+        values=fields.Str(
+            metadata={
+                "description": "Localized message",
+                "example": "Synchronize time to NTP",
+            }
+        ),
+        required=False,
+        metadata={
+            "description": "Human-readable localized suggestions how to fix problem"
+        },
+    )
+    impact = fields.Str(
+        required=False,
+        validate=validate.OneOf(["message", "thread", "connection"]),
+        metadata={
+            "description": "Breadth of impact of problem: message, thread, or connection",
+            "example": "thread",
+        },
+    )
+    where = fields.Str(
+        required=False,
+        validate=validate.Regexp("(you)|(me)|(other) - .+"),
+        metadata={
+            "description": "Where the error occurred, from reporter perspective",
+            "example": "you - agency",
+        },
+    )
+    time_noticed = fields.Str(
+        data_key="time-noticed",
+        required=False,
+        validate=RFC3339_DATETIME_VALIDATE,
+        metadata={
+            "description": "Problem detection time, precision at least day up to millisecond",
+            "example": RFC3339_DATETIME_EXAMPLE,
+        },
+    )
+    tracking_uri = fields.Str(
+        required=False,
+        metadata={
+            "description": "URI allowing recipient to track error status",
+            "example": "http://myservice.com/status",
+        },
+    )
+    escalation_uri = fields.Str(
+        required=False,
+        metadata={
+            "description": "URI to supply additional help",
+            "example": "mailto://help.desk@myservice.com",
+        },
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

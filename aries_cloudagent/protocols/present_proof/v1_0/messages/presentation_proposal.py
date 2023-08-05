@@ -52,6 +52,9 @@ class PresentationProposalSchema(AgentMessageSchema):
         model_class = PresentationProposal
         unknown = EXCLUDE
 
-    comment = fields.Str(required=False, allow_none=True, metadata={
-        'description': 'Human-readable comment'})
+    comment = fields.Str(
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
+    )
     presentation_proposal = fields.Nested(IndyPresPreviewSchema, required=True)

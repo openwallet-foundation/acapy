@@ -42,28 +42,33 @@ class ConnectionModuleResponseSchema(OpenAPISchema):
 class ConnectionListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
-    results = fields.List(fields.Nested(ConnRecordSchema()), metadata={
-        'description': 'List of connection records'})
+    results = fields.List(
+        fields.Nested(ConnRecordSchema()),
+        metadata={"description": "List of connection records"},
+    )
 
 
 class ConnectionMetadataSchema(OpenAPISchema):
     """Result schema for connection metadata."""
 
-    results = fields.Dict(metadata={'description':
-        'Dictionary of metadata associated with connection.'})
+    results = fields.Dict(
+        metadata={"description": "Dictionary of metadata associated with connection."}
+    )
 
 
 class ConnectionMetadataSetRequestSchema(OpenAPISchema):
     """Request Schema for set metadata."""
 
-    metadata = fields.Dict(required=True, metadata={'description':
-        'Dictionary of metadata to set for connection.'})
+    metadata = fields.Dict(
+        required=True,
+        metadata={"description": "Dictionary of metadata to set for connection."},
+    )
 
 
 class ConnectionMetadataQuerySchema(OpenAPISchema):
     """Query schema for metadata."""
 
-    key = fields.Str(required=False, metadata={'description': 'Key to retrieve.'})
+    key = fields.Str(required=False, metadata={"description": "Key to retrieve."})
 
 
 class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
@@ -83,171 +88,314 @@ MEDIATION_ID_SCHEMA = {
 class CreateInvitationRequestSchema(OpenAPISchema):
     """Request schema for invitation connection target."""
 
-    recipient_keys = fields.List(fields.Str(validate=
-        INDY_RAW_PUBLIC_KEY_VALIDATE, metadata={'description':
-        'Recipient public key', 'example': INDY_RAW_PUBLIC_KEY_EXAMPLE}),
-        required=False, metadata={'description': 'List of recipient keys'})
-    service_endpoint = fields.Str(required=False, metadata={'description':
-        'Connection endpoint', 'example': 'http://192.168.56.102:8020'})
-    routing_keys = fields.List(fields.Str(validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
-        metadata={'description': 'Routing key', 'example':
-        INDY_RAW_PUBLIC_KEY_EXAMPLE}), required=False, metadata={'description':
-        'List of routing keys'})
-    my_label = fields.Str(required=False, metadata={'description':
-        'Optional label for connection invitation', 'example': 'Bob'})
-    metadata = fields.Dict(required=False, metadata={'description':
-        'Optional metadata to attach to the connection created with the invitation'
-        })
-    mediation_id = fields.Str(required=False, **MEDIATION_ID_SCHEMA, metadata={
-        'description': 'Identifier for active mediation record to be used'})
+    recipient_keys = fields.List(
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Recipient public key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
+        required=False,
+        metadata={"description": "List of recipient keys"},
+    )
+    service_endpoint = fields.Str(
+        required=False,
+        metadata={
+            "description": "Connection endpoint",
+            "example": "http://192.168.56.102:8020",
+        },
+    )
+    routing_keys = fields.List(
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Routing key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
+        required=False,
+        metadata={"description": "List of routing keys"},
+    )
+    my_label = fields.Str(
+        required=False,
+        metadata={
+            "description": "Optional label for connection invitation",
+            "example": "Bob",
+        },
+    )
+    metadata = fields.Dict(
+        required=False,
+        metadata={
+            "description": "Optional metadata to attach to the connection created with the invitation"
+        },
+    )
+    mediation_id = fields.Str(
+        required=False,
+        **MEDIATION_ID_SCHEMA,
+        metadata={"description": "Identifier for active mediation record to be used"},
+    )
 
 
 class InvitationResultSchema(OpenAPISchema):
     """Result schema for a new connection invitation."""
 
-    connection_id = fields.Str(metadata={'description': 'Connection identifier',
-        'example': UUIDFour.EXAMPLE})
+    connection_id = fields.Str(
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE}
+    )
     invitation = fields.Nested(ConnectionInvitationSchema())
-    invitation_url = fields.Str(metadata={'description': 'Invitation URL',
-        'example': 'http://192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ=='})
+    invitation_url = fields.Str(
+        metadata={
+            "description": "Invitation URL",
+            "example": "http://192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ==",
+        }
+    )
 
 
 class ConnectionStaticRequestSchema(OpenAPISchema):
     """Request schema for a new static connection."""
 
-    my_seed = fields.Str(required=False, metadata={'description':
-        'Seed to use for the local DID'})
-    my_did = fields.Str(required=False, validate=INDY_DID_VALIDATE, metadata={
-        'description': 'Local DID', 'example': INDY_DID_EXAMPLE})
-    their_seed = fields.Str(required=False, metadata={'description':
-        'Seed to use for the remote DID'})
-    their_did = fields.Str(required=False, validate=INDY_DID_VALIDATE, metadata
-        ={'description': 'Remote DID', 'example': INDY_DID_EXAMPLE})
-    their_verkey = fields.Str(required=False, metadata={'description':
-        'Remote verification key'})
-    their_endpoint = fields.Str(required=False, validate=ENDPOINT_VALIDATE,
-        metadata={'description': 'URL endpoint for other party', 'example':
-        ENDPOINT_EXAMPLE})
-    their_label = fields.Str(required=False, metadata={'description':
-        "Other party's label for this connection"})
-    alias = fields.Str(required=False, metadata={'description':
-        'Alias to assign to this connection'})
+    my_seed = fields.Str(
+        required=False, metadata={"description": "Seed to use for the local DID"}
+    )
+    my_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Local DID", "example": INDY_DID_EXAMPLE},
+    )
+    their_seed = fields.Str(
+        required=False, metadata={"description": "Seed to use for the remote DID"}
+    )
+    their_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Remote DID", "example": INDY_DID_EXAMPLE},
+    )
+    their_verkey = fields.Str(
+        required=False, metadata={"description": "Remote verification key"}
+    )
+    their_endpoint = fields.Str(
+        required=False,
+        validate=ENDPOINT_VALIDATE,
+        metadata={
+            "description": "URL endpoint for other party",
+            "example": ENDPOINT_EXAMPLE,
+        },
+    )
+    their_label = fields.Str(
+        required=False,
+        metadata={"description": "Other party's label for this connection"},
+    )
+    alias = fields.Str(
+        required=False, metadata={"description": "Alias to assign to this connection"}
+    )
 
 
 class ConnectionStaticResultSchema(OpenAPISchema):
     """Result schema for new static connection."""
 
-    my_did = fields.Str(required=True, validate=INDY_DID_VALIDATE, metadata={
-        'description': 'Local DID', 'example': INDY_DID_EXAMPLE})
-    my_verkey = fields.Str(required=True, validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
-        metadata={'description': 'My verification key', 'example':
-        INDY_RAW_PUBLIC_KEY_EXAMPLE})
-    my_endpoint = fields.Str(required=True, validate=ENDPOINT_VALIDATE,
-        metadata={'description': 'My URL endpoint', 'example': ENDPOINT_EXAMPLE})
-    their_did = fields.Str(required=True, validate=INDY_DID_VALIDATE, metadata=
-        {'description': 'Remote DID', 'example': INDY_DID_EXAMPLE})
-    their_verkey = fields.Str(required=True, validate=
-        INDY_RAW_PUBLIC_KEY_VALIDATE, metadata={'description':
-        'Remote verification key', 'example': INDY_RAW_PUBLIC_KEY_EXAMPLE})
+    my_did = fields.Str(
+        required=True,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Local DID", "example": INDY_DID_EXAMPLE},
+    )
+    my_verkey = fields.Str(
+        required=True,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "My verification key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
+    )
+    my_endpoint = fields.Str(
+        required=True,
+        validate=ENDPOINT_VALIDATE,
+        metadata={"description": "My URL endpoint", "example": ENDPOINT_EXAMPLE},
+    )
+    their_did = fields.Str(
+        required=True,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Remote DID", "example": INDY_DID_EXAMPLE},
+    )
+    their_verkey = fields.Str(
+        required=True,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Remote verification key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
+    )
     record = fields.Nested(ConnRecordSchema, required=True)
 
 
 class ConnectionsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for connections list request query string."""
 
-    alias = fields.Str(required=False, metadata={'description': 'Alias',
-        'example': 'Barry'})
-    invitation_key = fields.Str(required=False, validate=
-        INDY_RAW_PUBLIC_KEY_VALIDATE, metadata={'description': 'invitation key',
-        'example': INDY_RAW_PUBLIC_KEY_EXAMPLE})
-    my_did = fields.Str(required=False, validate=INDY_DID_VALIDATE, metadata={
-        'description': 'My DID', 'example': INDY_DID_EXAMPLE})
-    state = fields.Str(required=False, validate=validate.OneOf({label for state in
-        ConnRecord.State for label in state.value}), metadata={'description':
-        'Connection state'})
-    their_did = fields.Str(required=False, validate=INDY_DID_VALIDATE, metadata
-        ={'description': 'Their DID', 'example': INDY_DID_EXAMPLE})
-    their_public_did = fields.Str(required=False, validate=INDY_DID_VALIDATE,
-        metadata={'description': 'Their Public DID', 'example': INDY_DID_EXAMPLE})
-    their_role = fields.Str(required=False, validate=validate.OneOf([label for
-        role in ConnRecord.Role for label in role.value]), metadata={
-        'description': 'Their role in the connection protocol', 'example':
-        ConnRecord.Role.REQUESTER.rfc160})
-    connection_protocol = fields.Str(required=False, validate=validate.OneOf([
-        proto.aries_protocol for proto in ConnRecord.Protocol]), metadata={
-        'description': 'Connection protocol used', 'example': ConnRecord.
-        Protocol.RFC_0160.aries_protocol})
-    invitation_msg_id = fields.UUID(required=False, metadata={'description':
-        'Identifier of the associated Invitation Mesage', 'example': UUIDFour.
-        EXAMPLE})
+    alias = fields.Str(
+        required=False, metadata={"description": "Alias", "example": "Barry"}
+    )
+    invitation_key = fields.Str(
+        required=False,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "invitation key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
+    )
+    my_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "My DID", "example": INDY_DID_EXAMPLE},
+    )
+    state = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            {label for state in ConnRecord.State for label in state.value}
+        ),
+        metadata={"description": "Connection state"},
+    )
+    their_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Their DID", "example": INDY_DID_EXAMPLE},
+    )
+    their_public_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Their Public DID", "example": INDY_DID_EXAMPLE},
+    )
+    their_role = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            [label for role in ConnRecord.Role for label in role.value]
+        ),
+        metadata={
+            "description": "Their role in the connection protocol",
+            "example": ConnRecord.Role.REQUESTER.rfc160,
+        },
+    )
+    connection_protocol = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            [proto.aries_protocol for proto in ConnRecord.Protocol]
+        ),
+        metadata={
+            "description": "Connection protocol used",
+            "example": ConnRecord.Protocol.RFC_0160.aries_protocol,
+        },
+    )
+    invitation_msg_id = fields.UUID(
+        required=False,
+        metadata={
+            "description": "Identifier of the associated Invitation Mesage",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
 
 
 class CreateInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
-    alias = fields.Str(required=False, metadata={'description': 'Alias',
-        'example': 'Barry'})
-    auto_accept = fields.Boolean(required=False, metadata={'description':
-        'Auto-accept connection (defaults to configuration)'})
-    public = fields.Boolean(required=False, metadata={'description':
-        'Create invitation from public DID (default false)'})
-    multi_use = fields.Boolean(required=False, metadata={'description':
-        'Create invitation for multiple use (default false)'})
+    alias = fields.Str(
+        required=False, metadata={"description": "Alias", "example": "Barry"}
+    )
+    auto_accept = fields.Boolean(
+        required=False,
+        metadata={"description": "Auto-accept connection (defaults to configuration)"},
+    )
+    public = fields.Boolean(
+        required=False,
+        metadata={"description": "Create invitation from public DID (default false)"},
+    )
+    multi_use = fields.Boolean(
+        required=False,
+        metadata={"description": "Create invitation for multiple use (default false)"},
+    )
 
 
 class ReceiveInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
-    alias = fields.Str(required=False, metadata={'description': 'Alias',
-        'example': 'Barry'})
-    auto_accept = fields.Boolean(required=False, metadata={'description':
-        'Auto-accept connection (defaults to configuration)'})
-    mediation_id = fields.Str(required=False, **MEDIATION_ID_SCHEMA, metadata={
-        'description': 'Identifier for active mediation record to be used'})
+    alias = fields.Str(
+        required=False, metadata={"description": "Alias", "example": "Barry"}
+    )
+    auto_accept = fields.Boolean(
+        required=False,
+        metadata={"description": "Auto-accept connection (defaults to configuration)"},
+    )
+    mediation_id = fields.Str(
+        required=False,
+        **MEDIATION_ID_SCHEMA,
+        metadata={"description": "Identifier for active mediation record to be used"},
+    )
 
 
 class AcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
 
-    my_endpoint = fields.Str(required=False, validate=ENDPOINT_VALIDATE,
-        metadata={'description': 'My URL endpoint', 'example': ENDPOINT_EXAMPLE})
-    my_label = fields.Str(required=False, metadata={'description':
-        'Label for connection', 'example': 'Broker'})
-    mediation_id = fields.Str(required=False, **MEDIATION_ID_SCHEMA, metadata={
-        'description': 'Identifier for active mediation record to be used'})
+    my_endpoint = fields.Str(
+        required=False,
+        validate=ENDPOINT_VALIDATE,
+        metadata={"description": "My URL endpoint", "example": ENDPOINT_EXAMPLE},
+    )
+    my_label = fields.Str(
+        required=False,
+        metadata={"description": "Label for connection", "example": "Broker"},
+    )
+    mediation_id = fields.Str(
+        required=False,
+        **MEDIATION_ID_SCHEMA,
+        metadata={"description": "Identifier for active mediation record to be used"},
+    )
 
 
 class AcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept conn-request web-request query string."""
 
-    my_endpoint = fields.Str(required=False, validate=ENDPOINT_VALIDATE,
-        metadata={'description': 'My URL endpoint', 'example': ENDPOINT_EXAMPLE})
+    my_endpoint = fields.Str(
+        required=False,
+        validate=ENDPOINT_VALIDATE,
+        metadata={"description": "My URL endpoint", "example": ENDPOINT_EXAMPLE},
+    )
 
 
 class ConnectionsConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(required=True, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    conn_id = fields.Str(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
 
 
 class ConnIdRefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection and ref ids."""
 
-    conn_id = fields.Str(required=True, metadata={'description':
-        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    conn_id = fields.Str(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+    )
 
-    ref_id = fields.Str(required=True, metadata={'description':
-        'Inbound connection identifier', 'example': UUIDFour.EXAMPLE})
+    ref_id = fields.Str(
+        required=True,
+        metadata={
+            "description": "Inbound connection identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
+    )
 
 
 class EndpointsResultSchema(OpenAPISchema):
     """Result schema for connection endpoints."""
 
-    my_endpoint = fields.Str(validate=ENDPOINT_VALIDATE, metadata={
-        'description': 'My endpoint', 'example': ENDPOINT_EXAMPLE})
-    their_endpoint = fields.Str(validate=ENDPOINT_VALIDATE, metadata={
-        'description': 'Their endpoint', 'example': ENDPOINT_EXAMPLE})
+    my_endpoint = fields.Str(
+        validate=ENDPOINT_VALIDATE,
+        metadata={"description": "My endpoint", "example": ENDPOINT_EXAMPLE},
+    )
+    their_endpoint = fields.Str(
+        validate=ENDPOINT_VALIDATE,
+        metadata={"description": "Their endpoint", "example": ENDPOINT_EXAMPLE},
+    )
 
 
 def connection_sort_key(conn):

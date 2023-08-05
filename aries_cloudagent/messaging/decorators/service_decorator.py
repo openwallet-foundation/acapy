@@ -85,15 +85,35 @@ class ServiceDecoratorSchema(BaseModelSchema):
         model_class = ServiceDecorator
         unknown = EXCLUDE
 
-    recipient_keys = fields.List(fields.Str(validate=
-        INDY_RAW_PUBLIC_KEY_VALIDATE, metadata={'description':
-        'Recipient public key', 'example': INDY_RAW_PUBLIC_KEY_EXAMPLE}),
-        data_key='recipientKeys', required=True, metadata={'description':
-        'List of recipient keys'})
-    endpoint = fields.Str(data_key='serviceEndpoint', required=True, metadata={
-        'description': 'Service endpoint at which to reach this agent',
-        'example': 'http://192.168.56.101:8020'})
-    routing_keys = fields.List(fields.Str(validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
-        metadata={'description': 'Routing key', 'example':
-        INDY_RAW_PUBLIC_KEY_EXAMPLE}), data_key='routingKeys', required=False,
-        metadata={'description': 'List of routing keys'})
+    recipient_keys = fields.List(
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Recipient public key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
+        data_key="recipientKeys",
+        required=True,
+        metadata={"description": "List of recipient keys"},
+    )
+    endpoint = fields.Str(
+        data_key="serviceEndpoint",
+        required=True,
+        metadata={
+            "description": "Service endpoint at which to reach this agent",
+            "example": "http://192.168.56.101:8020",
+        },
+    )
+    routing_keys = fields.List(
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Routing key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
+        data_key="routingKeys",
+        required=False,
+        metadata={"description": "List of routing keys"},
+    )
