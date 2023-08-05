@@ -33,9 +33,11 @@ from .route_manager import RouteManager
 
 
 CONNECTION_ID_SCHEMA = fields.UUID(
-    description="Connection identifier (optional)",
     required=False,
+    metadata={
+        "description": "Connection identifier (optional)",
         "example": UUID4_EXAMPLE,
+    },
 )
 
 
@@ -45,7 +47,6 @@ MEDIATION_ID_SCHEMA = fields.UUID(
 
 
 MEDIATION_STATE_SCHEMA = fields.Str(
-    description="Mediation state (optional)",
     required=False,
     validate=validate.OneOf(
         [
@@ -54,29 +55,36 @@ MEDIATION_STATE_SCHEMA = fields.Str(
             if m.startswith("STATE_")
         ]
     ),
-    example=MediationRecord.STATE_GRANTED,
+    metadata={
+        "description": "Mediation state (optional)",
+        "example": MediationRecord.STATE_GRANTED,
+    },
 )
 
 
 MEDIATOR_TERMS_SCHEMA = fields.List(
     fields.Str(
-        description=(
-            "Indicate terms to which the mediator requires the recipient to agree"
-        )
+        metadata={
+            "description": (
+                "Indicate terms to which the mediator requires the recipient to agree"
+            )
+        }
     ),
     required=False,
-    description="List of mediator rules for recipient",
+    metadata={"description": "List of mediator rules for recipient"},
 )
 
 
 RECIPIENT_TERMS_SCHEMA = fields.List(
     fields.Str(
-        description=(
-            "Indicate terms to which the recipient requires the mediator to agree"
-        )
+        metadata={
+            "description": (
+                "Indicate terms to which the recipient requires the mediator to agree"
+            )
+        }
     ),
     required=False,
-    description="List of recipient rules for mediation",
+    metadata={"description": "List of recipient rules for mediation"},
 )
 
 

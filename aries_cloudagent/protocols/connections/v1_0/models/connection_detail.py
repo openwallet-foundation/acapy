@@ -102,5 +102,7 @@ class ConnectionDetailSchema(BaseModelSchema):
     did_doc = DIDDocWrapper(
         data_key="DIDDoc",
         required=False,
-        description="DID document for connection detail",
+        metadata={
+            "description": "DID document for connection detail",
+        },
     )

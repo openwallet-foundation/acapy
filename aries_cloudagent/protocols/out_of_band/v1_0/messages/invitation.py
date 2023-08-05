@@ -258,9 +258,12 @@ class InvitationMessageSchema(AgentMessageSchema):
     services = fields.List(
         ServiceOrDIDField(
             required=True,
-            description=(
-                "Either a DIDComm service object (as per RFC0067) or a DID string."
-            ),
+            metadata={
+                "description": (
+                    "Either a DIDComm service object (as per RFC0067) or a DID"
+                    " string."
+                )
+            },
         ),
         metadata={
             "example": [
