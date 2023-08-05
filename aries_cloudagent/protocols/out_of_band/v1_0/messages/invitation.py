@@ -251,8 +251,7 @@ class InvitationMessageSchema(AgentMessageSchema):
             required=True,
             metadata={
                 "description": (
-                    "Either a DIDComm service object (as per RFC0067) or a DID"
-                    " string."
+                    "Either a DIDComm service object (as per RFC0067) or a DID string."
                 )
             },
         ),
