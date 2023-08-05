@@ -130,7 +130,11 @@ class GetKeylistQuerySchema(OpenAPISchema):
         load_default=MediationRecord.ROLE_SERVER,
         required=False,
         metadata={
-            "description": f"Filer on role, '{MediationRecord.ROLE_CLIENT}' for keys     mediated by other agents, '{MediationRecord.ROLE_SERVER}' for keys     mediated by this agent"
+            "description": (
+                f"Filer on role, '{MediationRecord.ROLE_CLIENT}' for keys     mediated"
+                f" by other agents, '{MediationRecord.ROLE_SERVER}' for keys    "
+                " mediated by this agent"
+            )
         },
     )
 
@@ -461,7 +465,7 @@ async def send_keylist_update(request: web.BaseRequest):
         async with profile.session() as session:
             record = await MediationRecord.retrieve_by_id(session, mediation_id)
         if record.state != MediationRecord.STATE_GRANTED:
-            raise web.HTTPBadRequest(reason=("mediation is not granted."))
+            raise web.HTTPBadRequest(reason="mediation is not granted.")
         results = keylist_updates.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

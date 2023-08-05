@@ -106,7 +106,10 @@ class V10PresentationSendRequestSchema(IndyPresSpecSchema):
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
 
@@ -128,14 +131,20 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to respond automatically to presentation requests, building and presenting requested proof"
+            "description": (
+                "Whether to respond automatically to presentation requests, building"
+                " and presenting requested proof"
+            )
         },
     )
     auto_remove = fields.Bool(
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     trace = fields.Bool(
@@ -163,7 +172,10 @@ class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     trace = fields.Bool(
@@ -200,7 +212,10 @@ class V10PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     trace = fields.Bool(

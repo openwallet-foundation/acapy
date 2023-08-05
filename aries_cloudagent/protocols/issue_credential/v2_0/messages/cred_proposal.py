@@ -114,7 +114,9 @@ class V20CredProposalSchema(AgentMessageSchema):
         required=True,
         many=True,
         metadata={
-            "description": "Credential filter per acceptable format on corresponding identifier"
+            "description": (
+                "Credential filter per acceptable format on corresponding identifier"
+            )
         },
     )
 

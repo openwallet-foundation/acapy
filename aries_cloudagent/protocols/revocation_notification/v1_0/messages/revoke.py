@@ -38,7 +38,9 @@ class RevokeSchema(AgentMessageSchema):
     thread_id = fields.Str(
         required=True,
         metadata={
-            "description": "Thread ID of credential exchange resulting in this issued credential",
+            "description": (
+                "Thread ID of credential exchange resulting in this issued credential"
+            ),
             "example": UUIDFour.EXAMPLE,
         },
     )

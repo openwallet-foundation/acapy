@@ -97,7 +97,9 @@ class V20CredOfferSchema(AgentMessageSchema):
         required=False,
         allow_none=False,
         metadata={
-            "description": "Issuer-unique identifier to coordinate credential replacement",
+            "description": (
+                "Issuer-unique identifier to coordinate credential replacement"
+            ),
             "example": UUIDFour.EXAMPLE,
         },
     )

@@ -96,7 +96,7 @@ class MediationRecord(BaseRecord):
         ]:
             raise ValueError(
                 f"{state} is not a valid state, "
-                f"must be one of ("
+                "must be one of ("
                 f"{MediationRecord.STATE_DENIED}, "
                 f"{MediationRecord.STATE_GRANTED}, "
                 f"{MediationRecord.STATE_REQUEST}"

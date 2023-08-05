@@ -59,7 +59,9 @@ class MediationGrantSchema(AgentMessageSchema):
 
     endpoint = fields.Str(
         metadata={
-            "description": "endpoint on which messages destined for the recipient are received.",
+            "description": (
+                "endpoint on which messages destined for the recipient are received."
+            ),
             "example": "http://192.168.56.102:8020/",
         }
     )

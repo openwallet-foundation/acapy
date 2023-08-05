@@ -235,9 +235,7 @@ class ConnRecord(BaseRecord):
         self.their_role = (
             ConnRecord.Role.get(their_role).rfc160
             if isinstance(their_role, str)
-            else None
-            if their_role is None
-            else their_role.rfc160
+            else None if their_role is None else their_role.rfc160
         )
         self.invitation_key = invitation_key
         self.invitation_msg_id = invitation_msg_id
@@ -252,9 +250,11 @@ class ConnRecord(BaseRecord):
         self.connection_protocol = (
             ConnRecord.Protocol.get(connection_protocol).aries_protocol
             if isinstance(connection_protocol, str)
-            else None
-            if connection_protocol is None
-            else connection_protocol.aries_protocol
+            else (
+                None
+                if connection_protocol is None
+                else connection_protocol.aries_protocol
+            )
         )
 
     @property

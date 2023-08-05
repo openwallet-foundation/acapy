@@ -153,6 +153,8 @@ class ThreadDecoratorSchema(BaseModelSchema):
         required=False,
         allow_none=True,
         metadata={
-            "description": "Highest sender_order value that sender has seen from others on thread"
+            "description": (
+                "Highest sender_order value that sender has seen from others on thread"
+            )
         },
     )

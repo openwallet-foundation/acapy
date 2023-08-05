@@ -42,7 +42,10 @@ class QueryFeaturesQueryStringSchema(OpenAPISchema):
     connection_id = fields.Str(
         required=False,
         metadata={
-            "description": "Connection identifier, if none specified, then the query will provide features for this agent.",
+            "description": (
+                "Connection identifier, if none specified, then the query will provide"
+                " features for this agent."
+            ),
             "example": UUIDFour.EXAMPLE,
         },
     )

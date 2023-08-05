@@ -65,7 +65,9 @@ class BasicMessageSchema(AgentMessageSchema):
         required=False,
         validate=INDY_ISO8601_DATETIME_VALIDATE,
         metadata={
-            "description": "Time message was sent, ISO8601 with space date/time separator",
+            "description": (
+                "Time message was sent, ISO8601 with space date/time separator"
+            ),
             "example": INDY_ISO8601_DATETIME_EXAMPLE,
         },
     )

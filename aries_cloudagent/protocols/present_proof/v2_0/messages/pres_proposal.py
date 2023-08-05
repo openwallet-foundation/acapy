@@ -100,7 +100,9 @@ class V20PresProposalSchema(AgentMessageSchema):
         required=True,
         data_key="proposals~attach",
         metadata={
-            "description": "Attachment per acceptable format on corresponding identifier"
+            "description": (
+                "Attachment per acceptable format on corresponding identifier"
+            )
         },
     )
 

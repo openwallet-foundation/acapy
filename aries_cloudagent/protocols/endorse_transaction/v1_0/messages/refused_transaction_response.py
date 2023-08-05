@@ -64,14 +64,18 @@ class RefusedTransactionResponseSchema(AgentMessageSchema):
     transaction_id = fields.Str(
         required=False,
         metadata={
-            "description": "The transaction id of the agent who this response is sent to",
+            "description": (
+                "The transaction id of the agent who this response is sent to"
+            ),
             "example": UUIDFour.EXAMPLE,
         },
     )
     thread_id = fields.Str(
         required=False,
         metadata={
-            "description": "The transaction id of the agent who this response is sent from",
+            "description": (
+                "The transaction id of the agent who this response is sent from"
+            ),
             "example": UUIDFour.EXAMPLE,
         },
     )

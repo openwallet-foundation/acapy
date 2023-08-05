@@ -159,14 +159,20 @@ class RevNotificationRecordSchema(BaseRecordSchema):
         required=False,
         validate=UUID4_VALIDATE,
         metadata={
-            "description": "Connection ID to which the revocation notification will be sent; required if notify is true",
+            "description": (
+                "Connection ID to which the revocation notification will be sent;"
+                " required if notify is true"
+            ),
             "example": UUID4_EXAMPLE,
         },
     )
     thread_id = fields.Str(
         required=False,
         metadata={
-            "description": "Thread ID of the credential exchange message thread resulting in the credential now being revoked; required if notify is true"
+            "description": (
+                "Thread ID of the credential exchange message thread resulting in the"
+                " credential now being revoked; required if notify is true"
+            )
         },
     )
     comment = fields.Str(

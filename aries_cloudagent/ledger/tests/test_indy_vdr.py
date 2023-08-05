@@ -217,7 +217,10 @@ class TestIndyVdrLedger:
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
-            r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
+            (
+                r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name":'
+                r' "schema_name", "version": "9.1", "attrNames": ["a", "b"]}'
+            ),
         )
 
         async with ledger:
@@ -278,7 +281,10 @@ class TestIndyVdrLedger:
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
-            r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
+            (
+                r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name":'
+                r' "schema_name", "version": "9.1", "attrNames": ["a", "b"]}'
+            ),
         )
 
         async with ledger:
@@ -308,7 +314,10 @@ class TestIndyVdrLedger:
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
-            r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
+            (
+                r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name":'
+                r' "schema_name", "version": "9.1", "attrNames": ["a", "b"]}'
+            ),
         )
 
         async with ledger:
@@ -337,7 +346,10 @@ class TestIndyVdrLedger:
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
-            r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
+            (
+                r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name":'
+                r' "schema_name", "version": "9.1", "attrNames": ["a", "b"]}'
+            ),
         )
 
         async with ledger:

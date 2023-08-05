@@ -111,7 +111,9 @@ class V20PresRequestSchema(AgentMessageSchema):
         required=True,
         data_key="request_presentations~attach",
         metadata={
-            "description": "Attachment per acceptable format on corresponding identifier"
+            "description": (
+                "Attachment per acceptable format on corresponding identifier"
+            )
         },
     )
 

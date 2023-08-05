@@ -66,14 +66,18 @@ class EndorsedTransactionResponseSchema(AgentMessageSchema):
     transaction_id = fields.Str(
         required=False,
         metadata={
-            "description": "The transaction id of the agent who this response is sent to",
+            "description": (
+                "The transaction id of the agent who this response is sent to"
+            ),
             "example": UUIDFour.EXAMPLE,
         },
     )
     thread_id = fields.Str(
         required=False,
         metadata={
-            "description": "The transaction id of the agent who this response is sent from",
+            "description": (
+                "The transaction id of the agent who this response is sent from"
+            ),
             "example": UUIDFour.EXAMPLE,
         },
     )
@@ -87,7 +91,9 @@ class EndorsedTransactionResponseSchema(AgentMessageSchema):
                 "signer_goal_code": "transaction.endorse",
                 "signature_type": "<requested signature type>",
                 "signature": {
-                    "4cU41vWW82ArfxJxHkzXPG": "2yAeV5ftuasWNgQwVYzeHeTuM7LwwNtPR3Zg9N4JiDgF"
+                    "4cU41vWW82ArfxJxHkzXPG": (
+                        "2yAeV5ftuasWNgQwVYzeHeTuM7LwwNtPR3Zg9N4JiDgF"
+                    )
                 },
             }
         },

@@ -649,9 +649,11 @@ class AdminServer(BaseAdminServer):
 
         """
         config = {
-            k: self.context.settings[k]
-            if (isinstance(self.context.settings[k], (str, int)))
-            else self.context.settings[k].copy()
+            k: (
+                self.context.settings[k]
+                if (isinstance(self.context.settings[k], (str, int)))
+                else self.context.settings[k].copy()
+            )
             for k in self.context.settings
             if k
             not in [

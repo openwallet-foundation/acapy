@@ -13,7 +13,9 @@ class IndyRequestedCredsRequestedAttrSchema(OpenAPISchema):
         required=True,
         metadata={
             "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "description": "Wallet credential identifier (typically but not necessarily a UUID)",
+            "description": (
+                "Wallet credential identifier (typically but not necessarily a UUID)"
+            ),
         },
     )
     revealed = fields.Bool(
@@ -28,7 +30,9 @@ class IndyRequestedCredsRequestedPredSchema(OpenAPISchema):
     cred_id = fields.Str(
         required=True,
         metadata={
-            "description": "Wallet credential identifier (typically but not necessarily a UUID)",
+            "description": (
+                "Wallet credential identifier (typically but not necessarily a UUID)"
+            ),
             "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         },
     )

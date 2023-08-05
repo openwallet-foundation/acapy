@@ -18,8 +18,7 @@ from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE, DEFAULT_VERSION
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".problem_report_handler.OOBProblemReportMessageHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.problem_report_handler.OOBProblemReportMessageHandler"
 )
 
 LOGGER = logging.getLogger(__name__)

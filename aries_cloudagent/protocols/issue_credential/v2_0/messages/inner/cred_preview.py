@@ -151,9 +151,9 @@ class V20CredPreview(BaseModel):
         """
 
         return {
-            attr.name: b64_to_str(attr.value)
-            if attr.mime_type and decode
-            else attr.value
+            attr.name: (
+                b64_to_str(attr.value) if attr.mime_type and decode else attr.value
+            )
             for attr in self.attributes
         }
 

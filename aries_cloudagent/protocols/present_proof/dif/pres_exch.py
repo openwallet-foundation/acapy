@@ -602,7 +602,10 @@ class InputDescriptorsSchema(BaseModelSchema):
         required=False,
         data_key="schema",
         metadata={
-            "description": "Accepts a list of schema or a dict containing filters like oneof_filter.",
+            "description": (
+                "Accepts a list of schema or a dict containing filters like"
+                " oneof_filter."
+            ),
             "example": {
                 "oneof_filter": [
                     [
@@ -726,13 +729,19 @@ class PresentationDefinitionSchema(BaseModelSchema):
     name = fields.Str(
         required=False,
         metadata={
-            "description": "Human-friendly name that describes what the presentation definition pertains to"
+            "description": (
+                "Human-friendly name that describes what the presentation definition"
+                " pertains to"
+            )
         },
     )
     purpose = fields.Str(
         required=False,
         metadata={
-            "description": "Describes the purpose for which the Presentation Definition's inputs are being requested"
+            "description": (
+                "Describes the purpose for which the Presentation Definition's inputs"
+                " are being requested"
+            )
         },
     )
     fmt = fields.Nested(ClaimFormatSchema, required=False, data_key="format")

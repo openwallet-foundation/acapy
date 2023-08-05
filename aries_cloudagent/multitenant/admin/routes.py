@@ -161,7 +161,12 @@ class CreateWalletRequestSchema(OpenAPISchema):
         dump_default="default",
         validate=validate.OneOf(["default", "both", "base"]),
         metadata={
-            "description": "Webhook target dispatch type for this wallet.         default - Dispatch only to webhooks associated with this wallet.         base - Dispatch only to webhooks associated with the base wallet.         both - Dispatch to both webhook targets.",
+            "description": (
+                "Webhook target dispatch type for this wallet.         default -"
+                " Dispatch only to webhooks associated with this wallet.         base -"
+                " Dispatch only to webhooks associated with the base wallet.        "
+                " both - Dispatch to both webhook targets."
+            ),
             "example": "default",
         },
     )
@@ -179,14 +184,20 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
     label = fields.Str(
         metadata={
-            "description": "Label for this wallet. This label is publicized        (self-attested) to other agents as part of forming a connection.",
+            "description": (
+                "Label for this wallet. This label is publicized        (self-attested)"
+                " to other agents as part of forming a connection."
+            ),
             "example": "Alice",
         }
     )
 
     image_url = fields.Str(
         metadata={
-            "description": "Image url for this wallet. This image url is publicized        (self-attested) to other agents as part of forming a connection.",
+            "description": (
+                "Image url for this wallet. This image url is publicized       "
+                " (self-attested) to other agents as part of forming a connection."
+            ),
             "example": "https://aries.ca/images/sample.png",
         }
     )
@@ -226,7 +237,12 @@ class UpdateWalletRequestSchema(OpenAPISchema):
         dump_default="default",
         validate=validate.OneOf(["default", "both", "base"]),
         metadata={
-            "description": "Webhook target dispatch type for this wallet.         default - Dispatch only to webhooks associated with this wallet.         base - Dispatch only to webhooks associated with the base wallet.         both - Dispatch to both webhook targets.",
+            "description": (
+                "Webhook target dispatch type for this wallet.         default -"
+                " Dispatch only to webhooks associated with this wallet.         base -"
+                " Dispatch only to webhooks associated with the base wallet.        "
+                " both - Dispatch to both webhook targets."
+            ),
             "example": "default",
         },
     )
@@ -245,13 +261,19 @@ class UpdateWalletRequestSchema(OpenAPISchema):
     )
     label = fields.Str(
         metadata={
-            "description": "Label for this wallet. This label is publicized        (self-attested) to other agents as part of forming a connection.",
+            "description": (
+                "Label for this wallet. This label is publicized        (self-attested)"
+                " to other agents as part of forming a connection."
+            ),
             "example": "Alice",
         }
     )
     image_url = fields.Str(
         metadata={
-            "description": "Image url for this wallet. This image url is publicized        (self-attested) to other agents as part of forming a connection.",
+            "description": (
+                "Image url for this wallet. This image url is publicized       "
+                " (self-attested) to other agents as part of forming a connection."
+            ),
             "example": "https://aries.ca/images/sample.png",
         }
     )
@@ -273,7 +295,10 @@ class RemoveWalletRequestSchema(OpenAPISchema):
 
     wallet_key = fields.Str(
         metadata={
-            "description": "Master key used for key derivation. Only required for         unmanaged wallets.",
+            "description": (
+                "Master key used for key derivation. Only required for        "
+                " unmanaged wallets."
+            ),
             "example": "MySecretKey123",
         }
     )
@@ -284,7 +309,10 @@ class CreateWalletTokenRequestSchema(OpenAPISchema):
 
     wallet_key = fields.Str(
         metadata={
-            "description": "Master key used for key derivation. Only required for         unamanged wallets.",
+            "description": (
+                "Master key used for key derivation. Only required for        "
+                " unamanged wallets."
+            ),
             "example": "MySecretKey123",
         }
     )
@@ -526,8 +554,9 @@ async def wallet_create_token(request: web.BaseRequest):
 
         if (not wallet_record.requires_external_key) and wallet_key:
             raise web.HTTPBadRequest(
-                reason=f"Wallet {wallet_id} doesn't require"
-                " the wallet key to be provided"
+                reason=(
+                    f"Wallet {wallet_id} doesn't require the wallet key to be provided"
+                )
             )
 
         token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
@@ -571,8 +600,9 @@ async def wallet_remove(request: web.BaseRequest):
 
         if (not wallet_record.requires_external_key) and wallet_key:
             raise web.HTTPBadRequest(
-                reason=f"Wallet {wallet_id} doesn't require"
-                " the wallet key to be provided"
+                reason=(
+                    f"Wallet {wallet_id} doesn't require the wallet key to be provided"
+                )
             )
 
         await multitenant_mgr.remove_wallet(wallet_id, wallet_key)

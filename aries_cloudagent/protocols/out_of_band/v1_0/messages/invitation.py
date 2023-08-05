@@ -258,7 +258,9 @@ class InvitationMessageSchema(AgentMessageSchema):
     services = fields.List(
         ServiceOrDIDField(
             required=True,
-            description="Either a DIDComm service object (as per RFC0067) or a DID string.",
+            description=(
+                "Either a DIDComm service object (as per RFC0067) or a DID string."
+            ),
         ),
         metadata={
             "example": [
@@ -281,14 +283,20 @@ class InvitationMessageSchema(AgentMessageSchema):
     goal_code = fields.Str(
         required=False,
         metadata={
-            "description": "A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message",
+            "description": (
+                "A self-attested code the receiver may want to display to the user or"
+                " use in automatically deciding what to do with the out-of-band message"
+            ),
             "example": "issue-vc",
         },
     )
     goal = fields.Str(
         required=False,
         metadata={
-            "description": "A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message",
+            "description": (
+                "A self-attested string that the receiver may want to display to the"
+                " user about the context-specific goal of the out-of-band message"
+            ),
             "example": "To issue a Faber College Graduate credential",
         },
     )

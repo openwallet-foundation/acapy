@@ -664,6 +664,9 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         fields.Str(metadata={"example": "23"}),
         required=False,
         metadata={
-            "description": "Credential revocation identifier for credential revoked and pending publication to ledger"
+            "description": (
+                "Credential revocation identifier for credential revoked and pending"
+                " publication to ledger"
+            )
         },
     )

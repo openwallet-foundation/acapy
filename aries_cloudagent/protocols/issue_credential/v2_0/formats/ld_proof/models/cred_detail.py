@@ -74,7 +74,9 @@ class LDProofVCDetailSchema(BaseModelSchema):
         LDProofVCDetailOptionsSchema(),
         required=True,
         metadata={
-            "description": "Options for specifying how the linked data proof is created.",
+            "description": (
+                "Options for specifying how the linked data proof is created."
+            ),
             "example": {"proofType": "Ed25519Signature2018"},
         },
     )

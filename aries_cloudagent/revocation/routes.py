@@ -224,7 +224,10 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
     publish = fields.Boolean(
         required=False,
         metadata={
-            "description": "(True) publish revocation to ledger immediately, or (default, False) mark it pending"
+            "description": (
+                "(True) publish revocation to ledger immediately, or (default, False)"
+                " mark it pending"
+            )
         },
     )
     notify = fields.Boolean(
@@ -235,21 +238,29 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
         validate=validate.OneOf(["v1_0", "v2_0"]),
         required=False,
         metadata={
-            "description": "Specify which version of the revocation notification should be sent"
+            "description": (
+                "Specify which version of the revocation notification should be sent"
+            )
         },
     )
     connection_id = fields.Str(
         required=False,
         validate=UUID4_VALIDATE,
         metadata={
-            "description": "Connection ID to which the revocation notification will be sent; required if notify is true",
+            "description": (
+                "Connection ID to which the revocation notification will be sent;"
+                " required if notify is true"
+            ),
             "example": UUID4_EXAMPLE,
         },
     )
     thread_id = fields.Str(
         required=False,
         metadata={
-            "description": "Thread ID of the credential exchange message thread resulting in the credential now being revoked; required if notify is true"
+            "description": (
+                "Thread ID of the credential exchange message thread resulting in the"
+                " credential now being revoked; required if notify is true"
+            )
         },
     )
     comment = fields.Str(
@@ -312,7 +323,10 @@ class ClearPendingRevocationsRequestSchema(OpenAPISchema):
             )
         ),
         metadata={
-            "description": "Credential revocation ids by revocation registry id: omit for all, specify null or empty list for all pending per revocation registry"
+            "description": (
+                "Credential revocation ids by revocation registry id: omit for all,"
+                " specify null or empty list for all pending per revocation registry"
+            )
         },
     )
 
@@ -1124,13 +1138,17 @@ async def send_rev_reg_def(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -1238,13 +1256,17 @@ async def send_rev_reg_entry(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 

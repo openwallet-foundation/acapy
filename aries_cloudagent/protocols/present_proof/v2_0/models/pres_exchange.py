@@ -324,7 +324,9 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         required=False,
         dump_only=True,
         metadata={
-            "description": "Attachment content by format for proposal, request, and presentation"
+            "description": (
+                "Attachment content by format for proposal, request, and presentation"
+            )
         },
     )
     verified = fields.Str(
@@ -361,7 +363,10 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         required=False,
         dump_default=True,
         metadata={
-            "description": "Verifier choice to remove this presentation exchange record when complete",
+            "description": (
+                "Verifier choice to remove this presentation exchange record when"
+                " complete"
+            ),
             "example": False,
         },
     )

@@ -50,7 +50,12 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
         ),
         required=False,
         metadata={
-            "description": "If present, credential must satisfy one of given restrictions: specify schema_id, schema_issuer_did, schema_name, schema_version, issuer_did, cred_def_id, and/or attr::<attribute-name>::value where <attribute-name> represents a credential attribute name"
+            "description": (
+                "If present, credential must satisfy one of given restrictions: specify"
+                " schema_id, schema_issuer_did, schema_name, schema_version,"
+                " issuer_did, cred_def_id, and/or attr::<attribute-name>::value where"
+                " <attribute-name> represents a credential attribute name"
+            )
         },
     )
     non_revoked = fields.Nested(
@@ -60,7 +65,9 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
                     required=False,
                     validate=INT_EPOCH_VALIDATE,
                     metadata={
-                        "description": "Earliest time of interest in non-revocation interval",
+                        "description": (
+                            "Earliest time of interest in non-revocation interval"
+                        ),
                         "strict": True,
                         "example": INT_EPOCH_EXAMPLE,
                     },
@@ -69,7 +76,9 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
                     required=False,
                     validate=INT_EPOCH_VALIDATE,
                     metadata={
-                        "description": "Latest time of interest in non-revocation interval",
+                        "description": (
+                            "Latest time of interest in non-revocation interval"
+                        ),
                         "strict": True,
                         "example": INT_EPOCH_EXAMPLE,
                     },
@@ -136,7 +145,12 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
         ),
         required=False,
         metadata={
-            "description": "If present, credential must satisfy one of given restrictions: specify schema_id, schema_issuer_did, schema_name, schema_version, issuer_did, cred_def_id, and/or attr::<attribute-name>::value where <attribute-name> represents a credential attribute name"
+            "description": (
+                "If present, credential must satisfy one of given restrictions: specify"
+                " schema_id, schema_issuer_did, schema_name, schema_version,"
+                " issuer_did, cred_def_id, and/or attr::<attribute-name>::value where"
+                " <attribute-name> represents a credential attribute name"
+            )
         },
     )
     non_revoked = fields.Nested(
@@ -146,7 +160,9 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
                     required=False,
                     validate=INT_EPOCH_VALIDATE,
                     metadata={
-                        "description": "Earliest time of interest in non-revocation interval",
+                        "description": (
+                            "Earliest time of interest in non-revocation interval"
+                        ),
                         "strict": True,
                         "example": INT_EPOCH_EXAMPLE,
                     },
@@ -155,7 +171,9 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
                     required=False,
                     validate=INT_EPOCH_VALIDATE,
                     metadata={
-                        "description": "Latest time of interest in non-revocation interval",
+                        "description": (
+                            "Latest time of interest in non-revocation interval"
+                        ),
                         "strict": True,
                         "example": INT_EPOCH_EXAMPLE,
                     },
@@ -256,7 +274,9 @@ class IndyProofRequestSchema(BaseModelSchema):
                     required=False,
                     validate=INT_EPOCH_VALIDATE,
                     metadata={
-                        "description": "Earliest time of interest in non-revocation interval",
+                        "description": (
+                            "Earliest time of interest in non-revocation interval"
+                        ),
                         "strict": True,
                         "example": INT_EPOCH_EXAMPLE,
                     },
@@ -265,7 +285,9 @@ class IndyProofRequestSchema(BaseModelSchema):
                     required=False,
                     validate=INT_EPOCH_VALIDATE,
                     metadata={
-                        "description": "Latest time of interest in non-revocation interval",
+                        "description": (
+                            "Latest time of interest in non-revocation interval"
+                        ),
                         "strict": True,
                         "example": INT_EPOCH_EXAMPLE,
                     },

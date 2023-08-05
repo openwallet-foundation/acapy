@@ -365,7 +365,10 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
         required=False,
         dump_default=True,
         metadata={
-            "description": "Verifier choice to remove this presentation exchange record when complete",
+            "description": (
+                "Verifier choice to remove this presentation exchange record when"
+                " complete"
+            ),
             "example": False,
         },
     )

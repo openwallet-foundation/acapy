@@ -750,7 +750,9 @@ class AttachDecoratorSchema(BaseModelSchema):
         required=False,
         validate=INDY_ISO8601_DATETIME_VALIDATE,
         metadata={
-            "description": "Hint regarding last modification datetime, in ISO-8601 format",
+            "description": (
+                "Hint regarding last modification datetime, in ISO-8601 format"
+            ),
             "example": INDY_ISO8601_DATETIME_EXAMPLE,
         },
     )

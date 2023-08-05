@@ -149,7 +149,10 @@ class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
     auto_remove = fields.Bool(
         required=False,
         metadata={
-            "description": "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     comment = fields.Str(
@@ -205,7 +208,10 @@ class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
     auto_remove = fields.Bool(
         required=False,
         metadata={
-            "description": "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     comment = fields.Str(
@@ -255,14 +261,20 @@ class V10CredentialFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     auto_issue = fields.Bool(
         required=False,
         metadata={
-            "description": "Whether to respond automatically to credential requests, creating and issuing requested credentials"
+            "description": (
+                "Whether to respond automatically to credential requests, creating and"
+                " issuing requested credentials"
+            )
         },
     )
     auto_remove = fields.Bool(
         required=False,
         dump_default=True,
         metadata={
-            "description": "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     comment = fields.Str(
@@ -287,14 +299,20 @@ class V10CredentialConnFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     auto_issue = fields.Bool(
         required=False,
         metadata={
-            "description": "Whether to respond automatically to credential requests, creating and issuing requested credentials"
+            "description": (
+                "Whether to respond automatically to credential requests, creating and"
+                " issuing requested credentials"
+            )
         },
     )
     auto_remove = fields.Bool(
         required=False,
         dump_default=True,
         metadata={
-            "description": "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     comment = fields.Str(
@@ -350,7 +368,10 @@ class V10CredentialExchangeAutoRemoveRequestSchema(OpenAPISchema):
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
 
@@ -783,7 +804,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     if not preview_spec:
-        raise web.HTTPBadRequest(reason=("Missing credential_preview"))
+        raise web.HTTPBadRequest(reason="Missing credential_preview")
 
     trace_msg = body.get("trace")
     cred_ex_record = None
@@ -858,7 +879,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     if not preview_spec:
-        raise web.HTTPBadRequest(reason=("Missing credential_preview"))
+        raise web.HTTPBadRequest(reason="Missing credential_preview")
     trace_msg = body.get("trace")
 
     cred_ex_record = None

@@ -318,6 +318,8 @@ class TraceDecoratorSchema(BaseModelSchema):
         required=False,
         allow_none=True,
         metadata={
-            "description": "The set of reports collected so far for this message or thread"
+            "description": (
+                "The set of reports collected so far for this message or thread"
+            )
         },
     )

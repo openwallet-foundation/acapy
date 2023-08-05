@@ -127,7 +127,9 @@ class V20CredExRecordIndySchema(BaseRecordSchema):
         required=False,
         validate=INDY_CRED_REV_ID_VALIDATE,
         metadata={
-            "description": "Credential revocation identifier within revocation registry",
+            "description": (
+                "Credential revocation identifier within revocation registry"
+            ),
             "example": INDY_CRED_REV_ID_EXAMPLE,
         },
     )

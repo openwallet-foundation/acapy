@@ -98,11 +98,15 @@ class MessagesAttachSchema(AgentMessageSchema):
                     "protocolVersion": 2,
                     "reqId": 1597766666168851000,
                     "signatures": {
-                        "LjgpST2rjs": "4uq1mUATWKZArwyuPgjUEw5UBysWNbkf2SN6SqVwbfSqCfnbm1Vnfw"
+                        "LjgpST2rjs": (
+                            "4uq1mUATWKZArwyuPgjUEw5UBysWNbkf2SN6SqVwbfSqCfnbm1Vnfw"
+                        )
                     },
                     "taaAcceptance": {
                         "mechanism": "manual",
-                        "taaDigest": "f50feca7bd4202c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62",
+                        "taaDigest": (
+                            "f50feca7bd4202c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62"
+                        ),
                         "time": 1597708800,
                     },
                 }

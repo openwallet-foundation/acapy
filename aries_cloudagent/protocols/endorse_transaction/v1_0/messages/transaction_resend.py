@@ -8,8 +8,7 @@ from .....messaging.valid import UUIDFour
 from ..message_types import TRANSACTION_RESEND, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".transaction_resend_handler.TransactionResendHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.transaction_resend_handler.TransactionResendHandler"
 )
 
 

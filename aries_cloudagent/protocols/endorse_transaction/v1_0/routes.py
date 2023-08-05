@@ -698,7 +698,9 @@ async def transaction_write(request: web.BaseRequest):
 
     if transaction.state != TransactionRecord.STATE_TRANSACTION_ENDORSED:
         raise web.HTTPForbidden(
-            reason=" The transaction cannot be written to the ledger as it is in state: "
+            reason=(
+                " The transaction cannot be written to the ledger as it is in state: "
+            )
             + transaction.state
         )
 

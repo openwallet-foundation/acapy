@@ -17,8 +17,7 @@ from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers."
-    "credential_proposal_handler.CredentialProposalHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_proposal_handler.CredentialProposalHandler"
 )
 
 

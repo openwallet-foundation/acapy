@@ -116,7 +116,9 @@ class ProblemReportSchema(AgentMessageSchema):
         required=False,
         validate=validate.OneOf(["message", "thread", "connection"]),
         metadata={
-            "description": "Breadth of impact of problem: message, thread, or connection",
+            "description": (
+                "Breadth of impact of problem: message, thread, or connection"
+            ),
             "example": "thread",
         },
     )
@@ -133,7 +135,9 @@ class ProblemReportSchema(AgentMessageSchema):
         required=False,
         validate=RFC3339_DATETIME_VALIDATE,
         metadata={
-            "description": "Problem detection time, precision at least day up to millisecond",
+            "description": (
+                "Problem detection time, precision at least day up to millisecond"
+            ),
             "example": RFC3339_DATETIME_EXAMPLE,
         },
     )

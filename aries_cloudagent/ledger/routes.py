@@ -191,7 +191,9 @@ class QueryStringEndpointSchema(OpenAPISchema):
         required=False,
         validate=ENDPOINT_TYPE_VALIDATE,
         metadata={
-            "description": f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')",
+            "description": (
+                f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"
+            ),
             "example": ENDPOINT_TYPE_EXAMPLE,
         },
     )
@@ -324,13 +326,17 @@ async def register_ledger_nym(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -392,12 +398,16 @@ async def register_ledger_nym(request: web.BaseRequest):
                 endorser_write_txn = not write_ledger_nym_transaction
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
-                    author_goal_code=TransactionRecord.REGISTER_PUBLIC_DID
-                    if endorser_write_txn
-                    else None,
-                    signer_goal_code=TransactionRecord.WRITE_DID_TRANSACTION
-                    if endorser_write_txn
-                    else None,
+                    author_goal_code=(
+                        TransactionRecord.REGISTER_PUBLIC_DID
+                        if endorser_write_txn
+                        else None
+                    ),
+                    signer_goal_code=(
+                        TransactionRecord.WRITE_DID_TRANSACTION
+                        if endorser_write_txn
+                        else None
+                    ),
                     endorser_write_txn=endorser_write_txn,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,

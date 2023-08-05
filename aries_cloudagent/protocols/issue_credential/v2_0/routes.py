@@ -116,7 +116,9 @@ class V20CredExRecordListResultSchema(OpenAPISchema):
     results = fields.List(
         fields.Nested(V20CredExRecordDetailSchema),
         metadata={
-            "description": "Credential exchange records and corresponding detail records"
+            "description": (
+                "Credential exchange records and corresponding detail records"
+            )
         },
     )
 
@@ -213,7 +215,10 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     auto_remove = fields.Bool(
         required=False,
         metadata={
-            "description": "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     comment = fields.Str(
@@ -270,7 +275,10 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
     auto_remove = fields.Bool(
         required=False,
         metadata={
-            "description": "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     comment = fields.Str(
@@ -349,7 +357,10 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
     auto_issue = fields.Bool(
         required=False,
         metadata={
-            "description": "Whether to respond automatically to credential requests, creating and issuing requested credentials"
+            "description": (
+                "Whether to respond automatically to credential requests, creating and"
+                " issuing requested credentials"
+            )
         },
     )
 
@@ -360,7 +371,10 @@ class V20CredOfferConnFreeRequestSchema(V20IssueCredSchemaCore):
     auto_issue = fields.Bool(
         required=False,
         metadata={
-            "description": "Whether to respond automatically to credential requests, creating and issuing requested credentials"
+            "description": (
+                "Whether to respond automatically to credential requests, creating and"
+                " issuing requested credentials"
+            )
         },
     )
 
@@ -380,7 +394,10 @@ class V20CredRequestRequestSchema(OpenAPISchema):
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
 
@@ -1115,13 +1132,15 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         cred_manager = V20CredManager(profile)
         (cred_ex_record, cred_offer_message) = await cred_manager.create_offer(
             cred_ex_record,
-            counter_proposal=V20CredProposal(
-                comment=None,
-                credential_preview=V20CredPreview.deserialize(preview_spec),
-                **_formats_filters(filt_spec),
-            )
-            if preview_spec
-            else None,
+            counter_proposal=(
+                V20CredProposal(
+                    comment=None,
+                    credential_preview=V20CredPreview.deserialize(preview_spec),
+                    **_formats_filters(filt_spec),
+                )
+                if preview_spec
+                else None
+            ),
             comment=None,
         )
 

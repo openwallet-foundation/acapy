@@ -64,7 +64,11 @@ class CredentialStatusOptionsSchema(Schema):
     type = fields.Str(
         required=True,
         metadata={
-            "description": "Credential status method type to use for the credential. Should match status method registered in the Verifiable Credential Extension Registry",
+            "description": (
+                "Credential status method type to use for the credential. Should match"
+                " status method registered in the Verifiable Credential Extension"
+                " Registry"
+            ),
             "example": "CredentialStatusList2017",
         },
     )
@@ -83,7 +87,10 @@ class LDProofVCDetailOptionsSchema(BaseModelSchema):
         data_key="proofType",
         required=True,
         metadata={
-            "description": "The proof type used for the proof. Should match suites registered in the Linked Data Cryptographic Suite Registry",
+            "description": (
+                "The proof type used for the proof. Should match suites registered in"
+                " the Linked Data Cryptographic Suite Registry"
+            ),
             "example": "Ed25519Signature2018",
         },
     )
@@ -92,7 +99,10 @@ class LDProofVCDetailOptionsSchema(BaseModelSchema):
         data_key="proofPurpose",
         required=False,
         metadata={
-            "description": "The proof purpose used for the proof. Should match proof purposes registered in the Linked Data Proofs Specification",
+            "description": (
+                "The proof purpose used for the proof. Should match proof purposes"
+                " registered in the Linked Data Proofs Specification"
+            ),
             "example": "assertionMethod",
         },
     )
@@ -101,7 +111,10 @@ class LDProofVCDetailOptionsSchema(BaseModelSchema):
         required=False,
         validate=INDY_ISO8601_DATETIME_VALIDATE,
         metadata={
-            "description": "The date and time of the proof (with a maximum accuracy in seconds). Defaults to current system time",
+            "description": (
+                "The date and time of the proof (with a maximum accuracy in seconds)."
+                " Defaults to current system time"
+            ),
             "example": INDY_ISO8601_DATETIME_EXAMPLE,
         },
     )
@@ -117,7 +130,10 @@ class LDProofVCDetailOptionsSchema(BaseModelSchema):
     challenge = fields.Str(
         required=False,
         metadata={
-            "description": "A challenge to include in the proof. SHOULD be provided by the requesting party of the credential (=holder)",
+            "description": (
+                "A challenge to include in the proof. SHOULD be provided by the"
+                " requesting party of the credential (=holder)"
+            ),
             "example": UUIDFour.EXAMPLE,
         },
     )
@@ -127,6 +143,10 @@ class LDProofVCDetailOptionsSchema(BaseModelSchema):
         data_key="credentialStatus",
         required=False,
         metadata={
-            "description": "The credential status mechanism to use for the credential. Omitting the property indicates the issued credential will not include a credential status"
+            "description": (
+                "The credential status mechanism to use for the credential. Omitting"
+                " the property indicates the issued credential will not include a"
+                " credential status"
+            )
         },
     )

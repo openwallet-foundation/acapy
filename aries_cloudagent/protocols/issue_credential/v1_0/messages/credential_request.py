@@ -13,8 +13,7 @@ from .....messaging.decorators.attach_decorator import (
 from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers."
-    "credential_request_handler.CredentialRequestHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_request_handler.CredentialRequestHandler"
 )
 
 

@@ -81,7 +81,10 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         fields.Str(),
         required=False,
         metadata={
-            "description": "List of mime type in order of preference that should be use in responding to the message",
+            "description": (
+                "List of mime type in order of preference that should be use in"
+                " responding to the message"
+            ),
             "example": ["didcomm/aip1", "didcomm/aip2;env=rfc19"],
         },
     )
@@ -95,7 +98,10 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     metadata = fields.Dict(
         required=False,
         metadata={
-            "description": "Optional metadata to attach to the connection created with the invitation"
+            "description": (
+                "Optional metadata to attach to the connection created with the"
+                " invitation"
+            )
         },
     )
     my_label = fields.Str(
@@ -124,14 +130,20 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     goal_code = fields.Str(
         required=False,
         metadata={
-            "description": "A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message",
+            "description": (
+                "A self-attested code the receiver may want to display to the user or"
+                " use in automatically deciding what to do with the out-of-band message"
+            ),
             "example": "issue-vc",
         },
     )
     goal = fields.Str(
         required=False,
         metadata={
-            "description": "A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message",
+            "description": (
+                "A self-attested string that the receiver may want to display to the"
+                " user about the context-specific goal of the out-of-band message"
+            ),
             "example": "To issue a Faber College Graduate credential",
         },
     )

@@ -515,7 +515,7 @@ def post_process_routes(app: web.Application):
             "description": "Holder credential management",
             "externalDocs": {
                 "description": "Overview",
-                "url": ("https://w3c.github.io/vc-data-model/#credentials"),
+                "url": "https://w3c.github.io/vc-data-model/#credentials",
             },
         }
     )

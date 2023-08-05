@@ -399,7 +399,9 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         required=False,
         dump_only=True,
         metadata={
-            "description": "Attachment content by format for proposal, offer, request, and issue"
+            "description": (
+                "Attachment content by format for proposal, offer, request, and issue"
+            )
         },
     )
     auto_offer = fields.Bool(
@@ -412,7 +414,9 @@ class V20CredExRecordSchema(BaseExchangeSchema):
     auto_issue = fields.Bool(
         required=False,
         metadata={
-            "description": "Issuer choice to issue to request in this credential exchange",
+            "description": (
+                "Issuer choice to issue to request in this credential exchange"
+            ),
             "example": False,
         },
     )
@@ -420,7 +424,9 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         required=False,
         dump_default=True,
         metadata={
-            "description": "Issuer choice to remove this credential exchange record when complete",
+            "description": (
+                "Issuer choice to remove this credential exchange record when complete"
+            ),
             "example": False,
         },
     )

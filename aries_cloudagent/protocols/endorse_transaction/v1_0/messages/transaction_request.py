@@ -9,8 +9,7 @@ from ..message_types import TRANSACTION_REQUEST, PROTOCOL_PACKAGE
 
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".transaction_request_handler.TransactionRequestHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.transaction_request_handler.TransactionRequestHandler"
 )
 
 
@@ -101,11 +100,15 @@ class TransactionRequestSchema(AgentMessageSchema):
                         "protocolVersion": 2,
                         "reqId": 1597766666168851000,
                         "signatures": {
-                            "LjgpST2rjsox": "4uq1mUATKMn6Y9sTaGWyuPgjUEw5UBysWNbfSqCfnbm1Vnfw"
+                            "LjgpST2rjsox": (
+                                "4uq1mUATKMn6Y9sTaGWyuPgjUEw5UBysWNbfSqCfnbm1Vnfw"
+                            )
                         },
                         "taaAcceptance": {
                             "mechanism": "manual",
-                            "taaDigest": "f50feca75664270842bd4202c2d6f23e4c6a7e0fc2feb9f62",
+                            "taaDigest": (
+                                "f50feca75664270842bd4202c2d6f23e4c6a7e0fc2feb9f62"
+                            ),
                             "time": 1597708800,
                         },
                     }
@@ -116,7 +119,9 @@ class TransactionRequestSchema(AgentMessageSchema):
     endorser_write_txn = fields.Boolean(
         required=False,
         metadata={
-            "description": "If True, Endorser will write the transaction after endorsing it",
+            "description": (
+                "If True, Endorser will write the transaction after endorsing it"
+            ),
             "example": True,
         },
     )

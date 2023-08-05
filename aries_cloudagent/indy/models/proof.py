@@ -707,7 +707,10 @@ class IndyPresSpecSchema(AdminAPIMessageTracingSchema):
         values=fields.Str(
             metadata={
                 "example": "self_attested_value",
-                "description": "Self-attested attribute values to use in requested-credentials structure for proof construction",
+                "description": (
+                    "Self-attested attribute values to use in requested-credentials"
+                    " structure for proof construction"
+                ),
             }
         ),
         metadata={"description": "Self-attested attributes to build into proof"},
@@ -717,7 +720,10 @@ class IndyPresSpecSchema(AdminAPIMessageTracingSchema):
         keys=fields.Str(metadata={"example": "attr_referent"}),
         values=fields.Nested(IndyRequestedCredsRequestedAttrSchema),
         metadata={
-            "description": "Nested object mapping proof request attribute referents to requested-attribute specifiers"
+            "description": (
+                "Nested object mapping proof request attribute referents to"
+                " requested-attribute specifiers"
+            )
         },
     )
     requested_predicates = fields.Dict(
@@ -725,7 +731,10 @@ class IndyPresSpecSchema(AdminAPIMessageTracingSchema):
         keys=fields.Str(metadata={"example": "pred_referent"}),
         values=fields.Nested(IndyRequestedCredsRequestedPredSchema),
         metadata={
-            "description": "Nested object mapping proof request predicate referents to requested-predicate specifiers"
+            "description": (
+                "Nested object mapping proof request predicate referents to"
+                " requested-predicate specifiers"
+            )
         },
     )
     trace = fields.Bool(

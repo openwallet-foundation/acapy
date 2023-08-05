@@ -82,7 +82,10 @@ class DIDSchema(OpenAPISchema):
     posture = fields.Str(
         validate=DID_POSTURE_VALIDATE,
         metadata={
-            "description": "Whether DID is current public DID, posted to ledger but not current public DID, or local to the wallet",
+            "description": (
+                "Whether DID is current public DID, posted to ledger but not current"
+                " public DID, or local to the wallet"
+            ),
             "example": DID_POSTURE_EXAMPLE,
         },
     )
@@ -135,7 +138,10 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
         required=False,
         validate=ENDPOINT_TYPE_VALIDATE,
         metadata={
-            "description": f"Endpoint type to set (default '{EndpointType.ENDPOINT.w3c}'); affects only public or posted DIDs",
+            "description": (
+                f"Endpoint type to set (default '{EndpointType.ENDPOINT.w3c}'); affects"
+                " only public or posted DIDs"
+            ),
             "example": ENDPOINT_TYPE_EXAMPLE,
         },
     )
@@ -220,7 +226,10 @@ class DIDListQueryStringSchema(OpenAPISchema):
         required=False,
         validate=DID_POSTURE_VALIDATE,
         metadata={
-            "description": "Whether DID is current public DID, posted to ledger but current public DID, or local to the wallet",
+            "description": (
+                "Whether DID is current public DID, posted to ledger but current public"
+                " DID, or local to the wallet"
+            ),
             "example": DID_POSTURE_EXAMPLE,
         },
     )
@@ -229,7 +238,9 @@ class DIDListQueryStringSchema(OpenAPISchema):
         validate=validate.OneOf([KEY.method_name, SOV.method_name]),
         metadata={
             "example": KEY.method_name,
-            "description": "DID method to query for. e.g. sov to only fetch indy/sov DIDs",
+            "description": (
+                "DID method to query for. e.g. sov to only fetch indy/sov DIDs"
+            ),
         },
     )
     key_type = fields.Str(
@@ -257,8 +268,10 @@ class DIDCreateOptionsSchema(OpenAPISchema):
         validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
         metadata={
             "example": ED25519.key_type,
-            "description": "Key type to use for the DID keypair. "
-            + "Validated with the chosen DID method's supported key types.",
+            "description": (
+                "Key type to use for the DID keypair. "
+                + "Validated with the chosen DID method's supported key types."
+            ),
         },
     )
 
@@ -266,8 +279,10 @@ class DIDCreateOptionsSchema(OpenAPISchema):
         required=False,
         validate=GENERIC_DID_VALIDATE,
         metadata={
-            "description": "Specify final value of the did (including did:<method>: prefix)"
-            + "if the method supports or requires so.",
+            "description": (
+                "Specify final value of the did (including did:<method>: prefix)"
+                + "if the method supports or requires so."
+            ),
             "example": GENERIC_DID_EXAMPLE,
         },
     )
@@ -281,8 +296,10 @@ class DIDCreateSchema(OpenAPISchema):
         dump_default=SOV.method_name,
         metadata={
             "example": SOV.method_name,
-            "description": "Method for the requested DID."
-            + "Supported methods are 'key', 'sov', and any other registered method.",
+            "description": (
+                "Method for the requested DID."
+                + "Supported methods are 'key', 'sov', and any other registered method."
+            ),
         },
     )
 
@@ -290,14 +307,19 @@ class DIDCreateSchema(OpenAPISchema):
         DIDCreateOptionsSchema,
         required=False,
         metadata={
-            "description": "To define a key type and/or a did depending on chosen DID method."
+            "description": (
+                "To define a key type and/or a did depending on chosen DID method."
+            )
         },
     )
 
     seed = fields.Str(
         required=False,
         metadata={
-            "description": "Optional seed to use for DID, Must beenabled in configuration before use.",
+            "description": (
+                "Optional seed to use for DID, Must beenabled in configuration before"
+                " use."
+            ),
             "example": "000000000000000000000000Trustee1",
         },
     )
@@ -481,7 +503,7 @@ async def wallet_create_did(request: web.BaseRequest):
         method = did_methods.from_method(body.get("method", "sov"))
         if not method:
             raise web.HTTPForbidden(
-                reason=(f"method {body.get('method')} is not supported by the agent.")
+                reason=f"method {body.get('method')} is not supported by the agent."
             )
 
         key_types = session.inject(KeyTypes)
@@ -501,10 +523,7 @@ async def wallet_create_did(request: web.BaseRequest):
         did = body.get("options", {}).get("did")
         if method.holder_defined_did() == HolderDefinedDid.NO and did:
             raise web.HTTPForbidden(
-                reason=(
-                    f"method {method.method_name} does not"
-                    f" support user-defined DIDs"
-                )
+                reason=f"method {method.method_name} does not support user-defined DIDs"
             )
         elif method.holder_defined_did() == HolderDefinedDid.REQUIRED and not did:
             raise web.HTTPBadRequest(
@@ -721,13 +740,17 @@ async def promote_wallet_public_did(
                 )
             if not endorser_info:
                 raise web.HTTPForbidden(
-                    reason="Endorser Info is not set up in "
-                    "connection metadata for this connection record"
+                    reason=(
+                        "Endorser Info is not set up in "
+                        "connection metadata for this connection record"
+                    )
                 )
             if "endorser_did" not in endorser_info.keys():
                 raise web.HTTPForbidden(
-                    reason=' "endorser_did" is not set in "endorser_info"'
-                    " in connection metadata for this connection record"
+                    reason=(
+                        ' "endorser_did" is not set in "endorser_info"'
+                        " in connection metadata for this connection record"
+                    )
                 )
             endorser_did = endorser_info["endorser_did"]
 
@@ -823,13 +846,17 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -1054,7 +1081,8 @@ async def on_register_nym_event(profile: Profile, event: Event):
         except StorageError as err:
             # log the error, but continue
             LOGGER.exception(
-                "Error accepting endorser invitation/configuring endorser connection: %s",
+                "Error accepting endorser invitation/configuring endorser"
+                " connection: %s",
                 err,
             )
             return

@@ -165,14 +165,20 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to respond automatically to presentation requests, building and presenting requested proof"
+            "description": (
+                "Whether to respond automatically to presentation requests, building"
+                " and presenting requested proof"
+            )
         },
     )
     auto_remove = fields.Bool(
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     trace = fields.Bool(
@@ -232,7 +238,10 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     trace = fields.Bool(
@@ -267,7 +276,10 @@ class V20PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
     trace = fields.Bool(
@@ -291,14 +303,20 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
         DIFPresSpecSchema,
         required=False,
         metadata={
-            "description": "Optional Presentation specification for DIF, overrides the PresentionExchange record's PresRequest"
+            "description": (
+                "Optional Presentation specification for DIF, overrides the"
+                " PresentionExchange record's PresRequest"
+            )
         },
     )
     auto_remove = fields.Bool(
         required=False,
         dump_default=False,
         metadata={
-            "description": "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
         },
     )
 
@@ -668,9 +686,9 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                             ):
                                 raise web.HTTPBadRequest(
                                     reason=(
-                                        "Only BbsBlsSignature2020, Ed25519Signature2018 "
-                                        "and Ed25519Signature2020 signature types "
-                                        "are supported"
+                                        "Only BbsBlsSignature2020, Ed25519Signature2018"
+                                        " and Ed25519Signature2020 signature types are"
+                                        " supported"
                                     )
                                 )
                             else:

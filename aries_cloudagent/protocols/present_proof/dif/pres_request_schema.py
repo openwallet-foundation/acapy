@@ -52,13 +52,19 @@ class DIFPresSpecSchema(OpenAPISchema):
     issuer_id = fields.Str(
         required=False,
         metadata={
-            "description": "Issuer identifier to sign the presentation, if different from current public DID"
+            "description": (
+                "Issuer identifier to sign the presentation, if different from current"
+                " public DID"
+            )
         },
     )
     record_ids = fields.Dict(
         required=False,
         metadata={
-            "description": "Mapping of input_descriptor id to list of stored W3C credential record_id",
+            "description": (
+                "Mapping of input_descriptor id to list of stored W3C credential"
+                " record_id"
+            ),
             "example": {
                 "<input descriptor id_1>": ["<record id_1>", "<record id_2>"],
                 "<input descriptor id_2>": ["<record id>"],
@@ -71,7 +77,10 @@ class DIFPresSpecSchema(OpenAPISchema):
     reveal_doc = fields.Dict(
         required=False,
         metadata={
-            "description": "reveal doc [JSON-LD frame] dict used to derive the credential when selective disclosure is required",
+            "description": (
+                "reveal doc [JSON-LD frame] dict used to derive the credential when"
+                " selective disclosure is required"
+            ),
             "example": {
                 "@context": [
                     "https://www.w3.org/2018/credentials/v1",

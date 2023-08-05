@@ -8,8 +8,7 @@ from ..message_types import CONNECTION_REQUEST, PROTOCOL_PACKAGE
 from ..models.connection_detail import ConnectionDetail, ConnectionDetailSchema
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".connection_request_handler.ConnectionRequestHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.connection_request_handler.ConnectionRequestHandler"
 )
 
 

@@ -130,7 +130,10 @@ class CreateInvitationRequestSchema(OpenAPISchema):
     metadata = fields.Dict(
         required=False,
         metadata={
-            "description": "Optional metadata to attach to the connection created with the invitation"
+            "description": (
+                "Optional metadata to attach to the connection created with the"
+                " invitation"
+            )
         },
     )
     mediation_id = fields.Str(
@@ -644,9 +647,11 @@ async def connections_create_invitation(request: web.BaseRequest):
         result = {
             "connection_id": connection and connection.connection_id,
             "invitation": invitation.serialize(),
-            "invitation_url": f"{base_endpoint}{invitation_url}"
-            if invitation_url.startswith("?")
-            else invitation_url,
+            "invitation_url": (
+                f"{base_endpoint}{invitation_url}"
+                if invitation_url.startswith("?")
+                else invitation_url
+            ),
         }
     except (ConnectionManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
