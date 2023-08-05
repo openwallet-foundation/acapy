@@ -10,7 +10,7 @@ from typing import List, Optional
 from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import INDY_RAW_PUBLIC_KEY_VALIDATE, INDY_RAW_PUBLIC_KEY_EXAMPLE
+from ..valid import INDY_RAW_PUBLIC_KEY_EXAMPLE, INDY_RAW_PUBLIC_KEY_VALIDATE
 
 
 class ServiceDecorator(BaseModel):

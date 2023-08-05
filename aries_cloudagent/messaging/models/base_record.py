@@ -4,7 +4,6 @@ import json
 import logging
 import sys
 import uuid
-
 from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Type, TypeVar, Union
 
@@ -15,11 +14,9 @@ from ...config.settings import BaseSettings
 from ...core.profile import ProfileSession
 from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
 from ...storage.record import StorageRecord
-
 from ..util import datetime_to_str, time_now
-from ..valid import INDY_ISO8601_DATETIME_VALIDATE, INDY_ISO8601_DATETIME_EXAMPLE
-
-from .base import BaseModel, BaseModelSchema, BaseModelError
+from ..valid import INDY_ISO8601_DATETIME_EXAMPLE, INDY_ISO8601_DATETIME_VALIDATE
+from .base import BaseModel, BaseModelError, BaseModelSchema
 
 LOGGER = logging.getLogger(__name__)
 

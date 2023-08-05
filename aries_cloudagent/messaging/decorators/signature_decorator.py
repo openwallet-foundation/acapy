@@ -8,11 +8,17 @@ from marshmallow import EXCLUDE, fields
 
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
-from ...wallet.util import b64_to_bytes, bytes_to_b64
 from ...wallet.key_type import ED25519
-
+from ...wallet.util import b64_to_bytes, bytes_to_b64
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import Base64URL_VALIDATE, Base64URL_EXAMPLE, BASE64URL_VALIDATE, BASE64URL_EXAMPLE, INDY_RAW_PUBLIC_KEY_VALIDATE, INDY_RAW_PUBLIC_KEY_EXAMPLE
+from ..valid import (
+    BASE64URL_EXAMPLE,
+    BASE64URL_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    Base64URL_EXAMPLE,
+    Base64URL_VALIDATE,
+)
 
 
 class SignatureDecorator(BaseModel):

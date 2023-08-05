@@ -5,9 +5,15 @@ import re
 from marshmallow import fields
 
 from ...core.profile import Profile
-
 from ..models.openapi import OpenAPISchema
-from ..valid import INDY_DID_VALIDATE, INDY_DID_EXAMPLE, INDY_SCHEMA_ID_VALIDATE, INDY_SCHEMA_ID_EXAMPLE, INDY_VERSION_VALIDATE, INDY_VERSION_EXAMPLE
+from ..valid import (
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
+)
 
 
 class SchemaQueryStringSchema(OpenAPISchema):
