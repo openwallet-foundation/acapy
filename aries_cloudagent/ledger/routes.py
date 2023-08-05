@@ -6,11 +6,12 @@ import logging
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    querystring_schema,
     match_info_schema,
+    querystring_schema,
     request_schema,
     response_schema,
 )
+
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
@@ -20,13 +21,13 @@ from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     ENDPOINT,
     ENDPOINT_TYPE,
-    INDY_DID,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
     INDY_RAW_PUBLIC_KEY,
     INT_EPOCH,
     UUIDFour,
 )
 from ..multitenant.base import BaseMultitenantManager
-
 from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
@@ -36,32 +37,31 @@ from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 from ..protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
 from ..storage.error import StorageError, StorageNotFoundError
 from ..wallet.error import WalletError, WalletNotFoundError
-
-from .base import BaseLedger, Role as LedgerRole
+from .base import BaseLedger
+from .base import Role as LedgerRole
+from .endpoint_type import EndpointType
+from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 from .multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
 )
-from .multiple_ledger.ledger_requests_executor import (
-    GET_NYM_ROLE,
-    GET_KEY_FOR_DID,
-    GET_ENDPOINT_FOR_DID,
-    IndyLedgerRequestsExecutor,
-)
 from .multiple_ledger.ledger_config_schema import (
+    ConfigurableWriteLedgersSchema,
     LedgerConfigListSchema,
     WriteLedgerSchema,
-    ConfigurableWriteLedgersSchema,
 )
-from .endpoint_type import EndpointType
-from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
+from .multiple_ledger.ledger_requests_executor import (
+    GET_ENDPOINT_FOR_DID,
+    GET_KEY_FOR_DID,
+    GET_NYM_ROLE,
+    IndyLedgerRequestsExecutor,
+)
 from .util import notify_register_did_event
-
 
 LOGGER = logging.getLogger(__name__)
 

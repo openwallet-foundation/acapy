@@ -1,5 +1,7 @@
 """Credential exchange admin routes."""
 
+from json.decoder import JSONDecodeError
+
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -8,11 +10,9 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from json.decoder import JSONDecodeError
+
 from marshmallow import fields, validate
 
-from ...out_of_band.v1_0.models.oob_record import OobRecord
-from ....wallet.util import default_did_from_verkey
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
@@ -23,16 +23,22 @@ from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
     UUIDFour,
-    UUID4,
 )
 from ....storage.error import StorageError, StorageNotFoundError
-from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
-
+from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
+from ....wallet.util import default_did_from_verkey
+from ...out_of_band.v1_0.models.oob_record import OobRecord
 from . import problem_report_for_record, report_problem
 from .manager import CredentialManager, CredentialManagerError
 from .message_types import SPEC_URI

@@ -10,15 +10,16 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.cred_precis import IndyCredPrecisSchema
+from ....indy.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
 from ....indy.models.proof import IndyPresSpecSchema
 from ....indy.models.proof_request import IndyProofRequestSchema
-from ....indy.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
 from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -28,13 +29,13 @@ from ....messaging.valid import (
     INDY_EXTRA_WQL,
     NUM_STR_NATURAL,
     NUM_STR_WHOLE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
     UUIDFour,
-    UUID4,
 )
 from ....storage.error import StorageError, StorageNotFoundError
-from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....wallet.error import WalletNotFoundError
-
 from . import problem_report_for_record, report_problem
 from .manager import PresentationManager, PresentationManagerError
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI

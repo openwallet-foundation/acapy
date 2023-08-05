@@ -4,14 +4,16 @@ from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
 )
-
 from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
-
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
 HANDLER_CLASS = (

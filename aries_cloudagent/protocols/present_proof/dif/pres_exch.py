@@ -1,18 +1,20 @@
 """Schemas for dif presentation exchange attachment."""
+from typing import Mapping, Sequence, Union
+
 from marshmallow import (
-    fields,
-    validate,
     EXCLUDE,
     INCLUDE,
-    pre_load,
-    post_dump,
     ValidationError,
+    fields,
+    post_dump,
+    pre_load,
+    validate,
 )
-from typing import Sequence, Union, Mapping
 
-from ....messaging.models.base import BaseModelSchema, BaseModel
+from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
-    UUID4,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
     StrOrDictField,
     StrOrNumberField,
 )

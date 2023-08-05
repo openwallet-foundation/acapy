@@ -1,6 +1,7 @@
 """Connection handling admin routes."""
 
 import json
+from typing import cast
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -10,23 +11,25 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from typing import cast
+
 from marshmallow import fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
-from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....cache.base import BaseCache
+from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    ENDPOINT,
-    INDY_DID,
-    INDY_RAW_PUBLIC_KEY,
+    ENDPOINT_EXAMPLE,
+    ENDPOINT_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
     UUIDFour,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
-
 from .manager import ConnectionManager, ConnectionManagerError
 from .message_types import SPEC_URI
 from .messages.connection_invitation import (

@@ -3,9 +3,9 @@
 import json
 import logging
 import os
+import re
 import shutil
 from asyncio import shield
-import re
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -15,6 +15,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
@@ -24,19 +25,25 @@ from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuerError
 from ..ledger.base import BaseLedger
-from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..ledger.error import LedgerError
+from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
-    INDY_REV_REG_ID,
-    INDY_REV_REG_SIZE,
-    UUID4,
-    WHOLE_NUM,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_CRED_REV_ID_EXAMPLE,
+    INDY_CRED_REV_ID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    INDY_REV_REG_SIZE_EXAMPLE,
+    INDY_REV_REG_SIZE_VALIDATE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
+    WHOLE_NUM_EXAMPLE,
+    WHOLE_NUM_VALIDATE,
     UUIDFour,
 )
 from ..protocols.endorse_transaction.v1_0.manager import (
@@ -47,12 +54,11 @@ from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 from ..protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
 from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
-
 from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
 from .manager import RevocationManager, RevocationManagerError
@@ -62,13 +68,12 @@ from .models.issuer_cred_rev_record import (
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .util import (
-    REVOCATION_EVENT_PREFIX,
-    REVOCATION_REG_INIT_EVENT,
-    REVOCATION_REG_ENDORSED_EVENT,
     REVOCATION_ENTRY_EVENT,
+    REVOCATION_EVENT_PREFIX,
+    REVOCATION_REG_ENDORSED_EVENT,
+    REVOCATION_REG_INIT_EVENT,
     notify_revocation_entry_event,
 )
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -260,7 +265,7 @@ class PublishRevocationsSchema(OpenAPISchema):
 
     rrid2crid = fields.Dict(
         required=False,
-        keys=fields.Str(metadata={"example": INDY_REV_REG_ID["example"]}),
+        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
                 validate=INDY_CRED_REV_ID_VALIDATE,
@@ -296,7 +301,7 @@ class ClearPendingRevocationsRequestSchema(OpenAPISchema):
 
     purge = fields.Dict(
         required=False,
-        keys=fields.Str(metadata={"example": INDY_REV_REG_ID["example"]}),
+        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
                 validate=INDY_CRED_REV_ID_VALIDATE,
@@ -389,7 +394,7 @@ class RevRegUpdateTailsFileUriSchema(OpenAPISchema):
         required=True,
         metadata={
             "description": "Public URI to the tails file",
-            "example": f"http://192.168.56.133:6543/revocation/registry/{INDY_REV_REG_ID['example']}/tails-file",
+            "example": f"http://192.168.56.133:6543/revocation/registry/{INDY_REV_REG_ID_EXAMPLE}/tails-file",
         },
     )
 

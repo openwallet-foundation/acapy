@@ -7,9 +7,12 @@ from marshmallow import fields
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
-    INDY_REV_REG_ID,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_CRED_REV_ID_EXAMPLE,
+    INDY_CRED_REV_ID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
     UUIDFour,
 )
 

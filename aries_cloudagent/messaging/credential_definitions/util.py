@@ -5,15 +5,17 @@ import re
 from marshmallow import fields
 
 from ...core.profile import Profile
-
 from ..models.openapi import OpenAPISchema
 from ..valid import (
-    INDY_DID,
-    INDY_CRED_DEF_ID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
 )
-
 
 CRED_DEF_SENT_RECORD_TYPE = "cred_def_sent"
 

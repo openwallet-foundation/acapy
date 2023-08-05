@@ -4,21 +4,25 @@ from typing import Mapping
 
 from marshmallow import (
     EXCLUDE,
-    fields,
     Schema,
+    ValidationError,
+    fields,
     validate,
     validates_schema,
-    ValidationError,
 )
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_PREDICATE,
-    INDY_VERSION,
-    INT_EPOCH,
-    NUM_STR_NATURAL,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_PREDICATE_EXAMPLE,
+    INDY_PREDICATE_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
+    INT_EPOCH_EXAMPLE,
+    INT_EPOCH_VALIDATE,
+    NUM_STR_NATURAL_EXAMPLE,
+    NUM_STR_NATURAL_VALIDATE,
 )
 
 
@@ -42,7 +46,7 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
                 ),
                 metadata={"example": "cred_def_id"},
             ),
-            values=fields.Str(metadata={"example": INDY_CRED_DEF_ID["example"]}),
+            values=fields.Str(metadata={"example": INDY_CRED_DEF_ID_EXAMPLE}),
         ),
         required=False,
         metadata={
@@ -128,7 +132,7 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
                 ),
                 metadata={"example": "cred_def_id"},
             ),
-            values=fields.Str(metadata={"example": INDY_CRED_DEF_ID["example"]}),
+            values=fields.Str(metadata={"example": INDY_CRED_DEF_ID_EXAMPLE}),
         ),
         required=False,
         metadata={

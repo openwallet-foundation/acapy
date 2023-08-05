@@ -2,12 +2,8 @@
 from marshmallow import fields
 
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import (
-    UUID4,
-    StrOrDictField,
-)
+from ....messaging.valid import UUID4_EXAMPLE, UUID4_VALIDATE, StrOrDictField
 from ....vc.vc_ld import LinkedDataProofSchema
-
 from .pres_exch import PresentationSubmissionSchema
 
 

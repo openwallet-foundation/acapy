@@ -7,13 +7,16 @@ from marshmallow import EXCLUDE, fields
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
-    INDY_REV_REG_ID,
-    INDY_SCHEMA_ID,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_CRED_REV_ID_EXAMPLE,
+    INDY_CRED_REV_ID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
     UUIDFour,
 )
-
 from .non_rev_interval import IndyNonRevocationIntervalSchema
 
 

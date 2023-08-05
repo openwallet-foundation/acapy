@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
+
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
@@ -20,14 +21,21 @@ from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
-    DID_POSTURE,
-    ENDPOINT,
-    ENDPOINT_TYPE,
-    GENERIC_DID,
-    INDY_DID,
-    INDY_RAW_PUBLIC_KEY,
+    DID_POSTURE_EXAMPLE,
+    DID_POSTURE_VALIDATE,
+    ENDPOINT_EXAMPLE,
+    ENDPOINT_TYPE_EXAMPLE,
+    ENDPOINT_TYPE_VALIDATE,
+    ENDPOINT_VALIDATE,
+    GENERIC_DID_EXAMPLE,
+    GENERIC_DID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    JWT_EXAMPLE,
+    JWT_VALIDATE,
     IndyDID,
-    JWT,
     Uri,
 )
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
@@ -125,10 +133,10 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
     )
     endpoint_type = fields.Str(
         required=False,
-        validate=ENDPOINT_VALIDATE,
+        validate=ENDPOINT_TYPE_VALIDATE,
         metadata={
             "description": f"Endpoint type to set (default '{EndpointType.ENDPOINT.w3c}'); affects only public or posted DIDs",
-            "example": ENDPOINT_EXAMPLE_TYPE,
+            "example": ENDPOINT_TYPE_EXAMPLE,
         },
     )
 
@@ -414,7 +422,7 @@ async def wallet_did_list(request: web.BaseRequest):
                 and (
                     filter_posture is None
                     or (
-                        filter_posture is DID_POSTURE.WALLET_ONLY
+                        filter_posture is DIDPosture.WALLET_ONLY
                         and not info.metadata.get("posted")
                     )
                 )

@@ -6,15 +6,20 @@ from marshmallow import EXCLUDE, fields, validate
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_REV_REG_ID,
-    INDY_SCHEMA_ID,
-    INT_EPOCH,
-    NUM_STR_WHOLE,
-    NUM_STR_ANY,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INT_EPOCH_EXAMPLE,
+    INT_EPOCH_VALIDATE,
+    NUM_STR_ANY_EXAMPLE,
+    NUM_STR_ANY_VALIDATE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
 )
 from ...utils.tracing import AdminAPIMessageTracingSchema
-
 from .predicate import Predicate
 from .requested_creds import (
     IndyRequestedCredsRequestedAttrSchema,

@@ -6,11 +6,16 @@ from marshmallow import EXCLUDE, fields, validate
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
-    BASE58_SHA256_HASH,
-    INDY_CRED_DEF_ID,
-    INDY_REV_REG_ID,
-    INDY_VERSION,
-    NATURAL_NUM,
+    BASE58_SHA256_HASH_EXAMPLE,
+    BASE58_SHA256_HASH_VALIDATE,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
+    NATURAL_NUM_EXAMPLE,
+    NATURAL_NUM_VALIDATE,
 )
 
 

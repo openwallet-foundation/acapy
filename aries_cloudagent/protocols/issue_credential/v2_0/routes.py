@@ -1,7 +1,6 @@
 """Credential exchange admin routes."""
 
 import logging
-
 from json.decoder import JSONDecodeError
 from typing import Mapping
 
@@ -13,10 +12,9 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, validate, validates_schema, ValidationError
 
-from ...out_of_band.v1_0.models.oob_record import OobRecord
-from ....wallet.util import default_did_from_verkey
+from marshmallow import ValidationError, fields, validate, validates_schema
+
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
@@ -27,18 +25,26 @@ from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
     UUIDFour,
-    UUID4,
 )
 from ....storage.error import StorageError, StorageNotFoundError
-from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
+from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....vc.ld_proofs.error import LinkedDataProofException
-
+from ....wallet.util import default_did_from_verkey
+from ...out_of_band.v1_0.models.oob_record import OobRecord
 from . import problem_report_for_record, report_problem
+from .formats.handler import V20CredFormatError
+from .formats.ld_proof.models.cred_detail import LDProofVCDetailSchema
 from .manager import V20CredManager, V20CredManagerError
 from .message_types import ATTACHMENT_FORMAT, CRED_20_PROPOSAL, SPEC_URI
 from .messages.cred_format import V20CredFormat
@@ -46,10 +52,8 @@ from .messages.cred_problem_report import ProblemReportReason
 from .messages.cred_proposal import V20CredProposal
 from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
-from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 from .models.detail.indy import V20CredExRecordIndySchema
-from .formats.handler import V20CredFormatError
-from .formats.ld_proof.models.cred_detail import LDProofVCDetailSchema
+from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 
 LOGGER = logging.getLogger(__name__)
 

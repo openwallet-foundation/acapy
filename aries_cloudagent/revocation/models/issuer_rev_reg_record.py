@@ -7,7 +7,7 @@ from functools import total_ordering
 from os.path import join
 from pathlib import Path
 from shutil import move
-from typing import Any, Mapping, Sequence, Union, Tuple
+from typing import Any, Mapping, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 from marshmallow import fields, validate
@@ -25,17 +25,19 @@ from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError, LedgerTransactionError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    BASE58_SHA256_HASH,
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_REV_REG_ID,
+    BASE58_SHA256_HASH_EXAMPLE,
+    BASE58_SHA256_HASH_VALIDATE,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
     UUIDFour,
 )
 from ...tails.base import BaseTailsServer
-
 from ..error import RevocationError
 from ..recover import generate_ledger_rrrecovery_txn
-
 from .issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation_registry import RevocationRegistry
 
