@@ -1,23 +1,24 @@
 """Verifiable Credential marshmallow schema classes."""
 
 from datetime import datetime
-from pytz import utc
 from typing import List, Optional, Union
 
-from marshmallow import INCLUDE, fields, post_dump, ValidationError
+from pytz import utc
+
+from marshmallow import INCLUDE, ValidationError, fields, post_dump
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
-    CREDENTIAL_CONTEXT_VALIDATE,
     CREDENTIAL_CONTEXT_EXAMPLE,
-    CREDENTIAL_TYPE_VALIDATE,
-    CREDENTIAL_TYPE_EXAMPLE,
-    CREDENTIAL_SUBJECT_VALIDATE,
+    CREDENTIAL_CONTEXT_VALIDATE,
     CREDENTIAL_SUBJECT_EXAMPLE,
-    DIDKey,
-    DictOrDictListField,
-    RFC3339_DATETIME_VALIDATE,
+    CREDENTIAL_SUBJECT_VALIDATE,
+    CREDENTIAL_TYPE_EXAMPLE,
+    CREDENTIAL_TYPE_VALIDATE,
     RFC3339_DATETIME_EXAMPLE,
+    RFC3339_DATETIME_VALIDATE,
+    DictOrDictListField,
+    DIDKey,
     StrOrDictField,
     Uri,
     UriOrDictField,
@@ -26,10 +27,7 @@ from ...ld_proofs.constants import (
     CREDENTIALS_CONTEXT_V1_URL,
     VERIFIABLE_CREDENTIAL_TYPE,
 )
-from .linked_data_proof import (
-    LDProof,
-    LinkedDataProofSchema,
-)
+from .linked_data_proof import LDProof, LinkedDataProofSchema
 
 
 class VerifiableCredential(BaseModel):
