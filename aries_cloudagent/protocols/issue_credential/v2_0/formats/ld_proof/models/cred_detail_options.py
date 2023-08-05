@@ -1,10 +1,15 @@
 """LDProofVCDetailOptions."""
 
 from typing import Optional
-from marshmallow import fields, Schema, INCLUDE
+
+from marshmallow import INCLUDE, Schema, fields
 
 from .......messaging.models.base import BaseModel, BaseModelSchema
-from .......messaging.valid import INDY_ISO8601_DATETIME_VALIDATE, INDY_ISO8601_DATETIME_EXAMPLE, UUIDFour
+from .......messaging.valid import (
+    INDY_ISO8601_DATETIME_EXAMPLE,
+    INDY_ISO8601_DATETIME_VALIDATE,
+    UUIDFour,
+)
 
 
 class LDProofVCDetailOptions(BaseModel):

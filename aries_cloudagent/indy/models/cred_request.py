@@ -5,7 +5,14 @@ from typing import Mapping
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INDY_CRED_DEF_ID_VALIDATE, INDY_CRED_DEF_ID_EXAMPLE, INDY_DID_VALIDATE, INDY_DID_EXAMPLE, NUM_STR_WHOLE_VALIDATE, NUM_STR_WHOLE_EXAMPLE
+from ...messaging.valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
+)
 
 
 class IndyCredRequest(BaseModel):

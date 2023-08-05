@@ -1,7 +1,6 @@
 """Handle connection information interface with non-secrets storage."""
 
 import json
-
 from enum import Enum
 from typing import Any, Optional, Union
 
@@ -9,8 +8,14 @@ from marshmallow import fields, validate
 
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ...messaging.valid import INDY_DID_VALIDATE, INDY_DID_EXAMPLE, INDY_RAW_PUBLIC_KEY_VALIDATE, INDY_RAW_PUBLIC_KEY_EXAMPLE, UUIDFour
-
+from ...messaging.valid import (
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    UUIDFour,
+)
+from ...protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ...protocols.connections.v1_0.message_types import (
     CONNECTION_INVITATION,
     CONNECTION_REQUEST,
@@ -19,16 +24,15 @@ from ...protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
-from ...protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ...protocols.didcomm_prefix import DIDCommPrefix
-from ...protocols.didexchange.v1_0.messages.request import DIDXRequest
 from ...protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from ...protocols.didexchange.v1_0.messages.request import DIDXRequest
 from ...protocols.out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitation,
 )
 from ...storage.base import BaseStorage
-from ...storage.record import StorageRecord
 from ...storage.error import StorageNotFoundError
+from ...storage.record import StorageRecord
 
 
 class ConnRecord(BaseRecord):

@@ -5,21 +5,20 @@ import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
+
 from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUID4_VALIDATE, UUID4_EXAMPLE
+from ....messaging.valid import UUID4_EXAMPLE, UUID4_VALIDATE
 from ....storage.error import StorageError, StorageNotFoundError
-
 from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManagerError
-
 from .manager import OutOfBandManager, OutOfBandManagerError
-from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from .message_types import SPEC_URI
+from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from .models.invitation import InvitationRecordSchema
 from .models.oob_record import OobRecordSchema
 

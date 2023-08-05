@@ -1,11 +1,17 @@
 """LinkedDataProof."""
 
+from typing import Optional
+
 from marshmallow import INCLUDE, fields, post_dump
 
-from ....messaging.valid import INDY_ISO8601_DATETIME_VALIDATE, INDY_ISO8601_DATETIME_EXAMPLE, UUIDFour, Uri_VALIDATE, Uri_EXAMPLE
 from ....messaging.models.base import BaseModel, BaseModelSchema
-
-from typing import Optional
+from ....messaging.valid import (
+    INDY_ISO8601_DATETIME_EXAMPLE,
+    INDY_ISO8601_DATETIME_VALIDATE,
+    Uri_EXAMPLE,
+    Uri_VALIDATE,
+    UUIDFour,
+)
 
 
 class LDProof(BaseModel):

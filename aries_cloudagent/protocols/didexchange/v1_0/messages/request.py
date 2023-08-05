@@ -1,6 +1,7 @@
 """Represents a DID exchange request message under RFC 23."""
 
 from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -8,8 +9,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import INDY_DID_VALIDATE, INDY_DID_EXAMPLE
-
+from .....messaging.valid import INDY_DID_EXAMPLE, INDY_DID_VALIDATE
 from ..message_types import DIDX_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.request_handler.DIDXRequestHandler"

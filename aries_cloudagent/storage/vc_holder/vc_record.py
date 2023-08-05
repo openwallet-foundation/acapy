@@ -1,14 +1,13 @@
 """Model for representing a stored verifiable credential."""
 
 import logging
-
 from typing import Mapping, Sequence
 from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import ENDPOINT_VALIDATE, ENDPOINT_EXAMPLE, UUIDFour
+from ...messaging.valid import ENDPOINT_EXAMPLE, ENDPOINT_VALIDATE, UUIDFour
 
 LOGGER = logging.getLogger(__name__)
 

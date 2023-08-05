@@ -1,19 +1,21 @@
 import json
-from aries_cloudagent.messaging.valid import ENDPOINT_TYPE_VALIDATE, ENDPOINT_TYPE_EXAMPLE
-import pytest
-
-from asynctest import mock as async_mock
 
 import indy_vdr
+import pytest
+from asynctest import mock as async_mock
+
+from aries_cloudagent.messaging.valid import (
+    ENDPOINT_TYPE_EXAMPLE,
+    ENDPOINT_TYPE_VALIDATE,
+)
 
 from ...core.in_memory import InMemoryProfile
 from ...indy.issuer import IndyIssuer
 from ...wallet.base import BaseWallet
-from ...wallet.key_type import KeyType, ED25519
-from ...wallet.did_method import SOV, DIDMethods, DIDMethod, HolderDefinedDid
 from ...wallet.did_info import DIDInfo
+from ...wallet.did_method import SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from ...wallet.did_posture import DIDPosture
-
+from ...wallet.key_type import ED25519, KeyType
 from ..endpoint_type import EndpointType
 from ..indy_vdr import (
     BadLedgerRequestError,

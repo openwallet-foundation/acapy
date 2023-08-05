@@ -7,8 +7,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import INDY_DID_VALIDATE, INDY_DID_EXAMPLE
-
+from .....messaging.valid import INDY_DID_EXAMPLE, INDY_DID_VALIDATE
 from ..message_types import DIDX_RESPONSE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.response_handler.DIDXResponseHandler"

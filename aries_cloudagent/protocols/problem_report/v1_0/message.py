@@ -2,11 +2,10 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import EXCLUDE, fields, validate, validates_schema, ValidationError
+from marshmallow import EXCLUDE, ValidationError, fields, validate, validates_schema
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ....messaging.valid import RFC3339_DATETIME_VALIDATE, RFC3339_DATETIME_EXAMPLE
-
+from ....messaging.valid import RFC3339_DATETIME_EXAMPLE, RFC3339_DATETIME_VALIDATE
 from .message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handler.ProblemReportHandler"

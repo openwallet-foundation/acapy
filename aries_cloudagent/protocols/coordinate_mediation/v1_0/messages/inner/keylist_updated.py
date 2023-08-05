@@ -6,7 +6,7 @@ Represents single item in keylist-update-response.updated list.
 from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
-from ......messaging.valid import DID_KEY_VALIDATE, DID_KEY_EXAMPLE
+from ......messaging.valid import DID_KEY_EXAMPLE, DID_KEY_VALIDATE
 from ...normalization import normalize_from_public_key
 
 

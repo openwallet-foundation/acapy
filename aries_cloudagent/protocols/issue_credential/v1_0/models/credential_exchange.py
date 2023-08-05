@@ -1,7 +1,6 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
 import logging
-
 from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields, validate
@@ -12,15 +11,17 @@ from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSch
 from .....indy.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
 from .....indy.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import INDY_CRED_DEF_ID_VALIDATE, INDY_CRED_DEF_ID_EXAMPLE, INDY_SCHEMA_ID_VALIDATE, INDY_SCHEMA_ID_EXAMPLE, UUIDFour
-from .....storage.base import StorageError
-
-from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
-from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
-from ..messages.credential_exchange_webhook import (
-    V10CredentialExchangeWebhook,
+from .....messaging.valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    UUIDFour,
 )
-
+from .....storage.base import StorageError
+from ..messages.credential_exchange_webhook import V10CredentialExchangeWebhook
+from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
+from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
 from . import UNENCRYPTED_TAGS
 
 LOGGER = logging.getLogger(__name__)

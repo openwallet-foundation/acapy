@@ -13,13 +13,16 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
 )
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.util import canon
-from ...messaging.valid import INDY_CRED_DEF_ID_VALIDATE, INDY_CRED_DEF_ID_EXAMPLE, INDY_PREDICATE_VALIDATE, INDY_PREDICATE_EXAMPLE
+from ...messaging.valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_PREDICATE_EXAMPLE,
+    INDY_PREDICATE_VALIDATE,
+)
 from ...multitenant.base import BaseMultitenantManager
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.util import b64_to_str
-
 from ..util import generate_pr_nonce
-
 from .non_rev_interval import IndyNonRevocationInterval
 from .predicate import Predicate
 

@@ -8,7 +8,7 @@ from marshmallow import fields
 from marshmallow.validate import OneOf
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
-from ......messaging.valid import ROUTING_KEY_VALIDATE, ROUTING_KEY_EXAMPLE
+from ......messaging.valid import ROUTING_KEY_EXAMPLE, ROUTING_KEY_VALIDATE
 from ...normalization import normalize_from_public_key
 
 

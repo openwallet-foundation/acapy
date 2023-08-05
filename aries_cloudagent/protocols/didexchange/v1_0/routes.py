@@ -17,10 +17,17 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import ENDPOINT_VALIDATE, ENDPOINT_EXAMPLE, GENERIC_DID_VALIDATE, GENERIC_DID_EXAMPLE, UUIDFour, UUID4_VALIDATE, UUID4_EXAMPLE
+from ....messaging.valid import (
+    ENDPOINT_EXAMPLE,
+    ENDPOINT_VALIDATE,
+    GENERIC_DID_EXAMPLE,
+    GENERIC_DID_VALIDATE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
+    UUIDFour,
+)
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
-
 from .manager import DIDXManager, DIDXManagerError
 from .message_types import SPEC_URI
 from .messages.request import DIDXRequest, DIDXRequestSchema

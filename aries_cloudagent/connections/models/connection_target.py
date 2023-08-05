@@ -5,7 +5,12 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INDY_RAW_PUBLIC_KEY_VALIDATE, INDY_RAW_PUBLIC_KEY_EXAMPLE, GENERIC_DID_VALIDATE, GENERIC_DID_EXAMPLE
+from ...messaging.valid import (
+    GENERIC_DID_EXAMPLE,
+    GENERIC_DID_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+)
 
 
 class ConnectionTarget(BaseModel):

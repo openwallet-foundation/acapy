@@ -6,7 +6,7 @@ from marshmallow import EXCLUDE, fields
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
-from .....messaging.valid import DID_KEY_VALIDATE, DID_KEY_EXAMPLE
+from .....messaging.valid import DID_KEY_EXAMPLE, DID_KEY_VALIDATE
 from .....storage.base import StorageDuplicateError, StorageNotFoundError
 
 
