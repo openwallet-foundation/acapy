@@ -7,7 +7,7 @@ This decorator allows changes to agent response behaviour and queue status updat
 from marshmallow import EXCLUDE, fields, validate
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import WHOLE_NUM_EXAMPLE, WHOLE_NUM_VALIDATE, UUIDFour
+from ..valid import WHOLE_NUM_EXAMPLE, WHOLE_NUM_VALIDATE, UUID4_EXAMPLE
 
 
 class TransportDecorator(BaseModel):
@@ -60,7 +60,7 @@ class TransportDecoratorSchema(BaseModelSchema):
         required=False,
         metadata={
             "description": "Identifier for thread for which to enable return routing",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     queued_message_count = fields.Int(

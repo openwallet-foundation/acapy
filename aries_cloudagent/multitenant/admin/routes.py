@@ -15,7 +15,7 @@ from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import JSONWebToken, UUIDFour
+from ...messaging.valid import JSONWebToken, UUID4_EXAMPLE
 from ...multitenant.base import BaseMultitenantManager
 from ...storage.error import StorageError, StorageNotFoundError
 from ...wallet.error import WalletSettingsError
@@ -121,7 +121,7 @@ class WalletIdMatchInfoSchema(OpenAPISchema):
 
     wallet_id = fields.Str(
         required=True,
-        metadata={"description": "Subwallet identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Subwallet identifier", "example": UUID4_EXAMPLE},
     )
 
 

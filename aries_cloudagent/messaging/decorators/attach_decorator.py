@@ -38,7 +38,7 @@ from ..valid import (
     SHA256_EXAMPLE,
     SHA256_VALIDATE,
     DictOrDictListField,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 
 
@@ -727,7 +727,7 @@ class AttachDecoratorSchema(BaseModelSchema):
         required=False,
         allow_none=False,
         data_key="@id",
-        metadata={"description": "Attachment identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Attachment identifier", "example": UUID4_EXAMPLE},
     )
     mime_type = fields.Str(
         required=False,

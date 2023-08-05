@@ -22,7 +22,7 @@ from ....indy.issuer import IndyIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....protocols.connections.v1_0.manager import ConnectionManager
 from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
@@ -57,7 +57,7 @@ class TranIdMatchInfoSchema(OpenAPISchema):
 
     tran_id = fields.Str(
         required=True,
-        metadata={"description": "Transaction identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Transaction identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -103,7 +103,7 @@ class TransactionConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

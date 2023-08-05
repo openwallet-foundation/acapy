@@ -33,7 +33,7 @@ from ...messaging.valid import (
     INDY_DID_VALIDATE,
     INDY_REV_REG_ID_EXAMPLE,
     INDY_REV_REG_ID_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from ...tails.base import BaseTailsServer
 from ..error import RevocationError
@@ -581,7 +581,7 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         required=False,
         metadata={
             "description": "Issuer revocation registry record identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     state = fields.Str(

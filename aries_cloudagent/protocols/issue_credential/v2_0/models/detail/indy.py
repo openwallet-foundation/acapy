@@ -11,7 +11,7 @@ from ......messaging.valid import (
     INDY_CRED_REV_ID_VALIDATE,
     INDY_REV_REG_ID_EXAMPLE,
     INDY_REV_REG_ID_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from .. import UNENCRYPTED_TAGS
 
@@ -95,20 +95,20 @@ class V20CredExRecordIndySchema(BaseRecordSchema):
 
     cred_ex_indy_id = fields.Str(
         required=False,
-        metadata={"description": "Record identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Record identifier", "example": UUID4_EXAMPLE},
     )
     cred_ex_id = fields.Str(
         required=False,
         metadata={
             "description": "Corresponding v2.0 credential exchange record identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     cred_id_stored = fields.Str(
         required=False,
         metadata={
             "description": "Credential identifier stored in wallet",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     cred_request_metadata = fields.Dict(

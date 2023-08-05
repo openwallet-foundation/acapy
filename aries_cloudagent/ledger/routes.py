@@ -29,7 +29,7 @@ from ..messaging.valid import (
     INDY_RAW_PUBLIC_KEY_VALIDATE,
     INT_EPOCH_EXAMPLE,
     INT_EPOCH_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from ..multitenant.base import BaseMultitenantManager
 from ..protocols.endorse_transaction.v1_0.manager import (
@@ -165,7 +165,7 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

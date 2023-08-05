@@ -16,7 +16,7 @@ from .....messaging.valid import (
     INDY_CRED_DEF_ID_VALIDATE,
     INDY_SCHEMA_ID_EXAMPLE,
     INDY_SCHEMA_ID_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from .....storage.base import StorageError
 from ..messages.credential_exchange_webhook import V10CredentialExchangeWebhook
@@ -338,22 +338,22 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": "Credential exchange identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     connection_id = fields.Str(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.Str(
         required=False,
-        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     parent_thread_id = fields.Str(
         required=False,
         metadata={
             "description": "Parent thread identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     initiator = fields.Str(
@@ -420,7 +420,7 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
     )
     credential_id = fields.Str(
         required=False,
-        metadata={"description": "Credential identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Credential identifier", "example": UUID4_EXAMPLE},
     )
     raw_credential = fields.Nested(
         IndyCredentialSchema(),

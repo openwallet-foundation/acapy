@@ -7,7 +7,7 @@ from uuid import uuid4
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import ENDPOINT_EXAMPLE, ENDPOINT_VALIDATE, UUIDFour
+from ...messaging.valid import ENDPOINT_EXAMPLE, ENDPOINT_VALIDATE, UUID4_EXAMPLE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -152,5 +152,5 @@ class VCRecordSchema(BaseModelSchema):
         values=fields.Str(metadata={"description": "Retrieval tag value"}),
     )
     record_id = fields.Str(
-        metadata={"description": "Record identifier", "example": UUIDFour.EXAMPLE}
+        metadata={"description": "Record identifier", "example": UUID4_EXAMPLE}
     )

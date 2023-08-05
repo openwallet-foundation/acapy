@@ -9,7 +9,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 
 from ..message_types import CRED_20_OFFER, PROTOCOL_PACKAGE
 
@@ -100,7 +100,7 @@ class V20CredOfferSchema(AgentMessageSchema):
             "description": (
                 "Issuer-unique identifier to coordinate credential replacement"
             ),
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     comment = fields.Str(

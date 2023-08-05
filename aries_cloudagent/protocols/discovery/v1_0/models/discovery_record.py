@@ -6,7 +6,7 @@ from marshmallow import fields
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 from .....storage.error import StorageDuplicateError, StorageNotFoundError
 
 from ..messages.disclose import Disclose, DiscloseSchema
@@ -135,16 +135,16 @@ class V10DiscoveryRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": "Credential exchange identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     connection_id = fields.Str(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.Str(
         required=False,
-        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     query_msg = fields.Nested(
         QuerySchema(), required=False, metadata={"description": "Query message"}

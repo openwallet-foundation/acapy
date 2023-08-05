@@ -53,7 +53,7 @@ from ..valid import (
     INDY_REV_REG_SIZE_VALIDATE,
     INDY_SCHEMA_ID_EXAMPLE,
     INDY_SCHEMA_ID_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from .util import (
     CRED_DEF_SENT_RECORD_TYPE,
@@ -170,7 +170,7 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

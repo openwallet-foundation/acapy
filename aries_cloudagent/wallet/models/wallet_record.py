@@ -10,7 +10,7 @@ from ...messaging.models.base_record import (
     BaseRecord,
     BaseRecordSchema,
 )
-from ...messaging.valid import UUIDFour
+from ...messaging.valid import UUID4_EXAMPLE
 from ..error import WalletSettingsError
 
 
@@ -137,7 +137,7 @@ class WalletRecordSchema(BaseRecordSchema):
 
     wallet_id = fields.Str(
         required=True,
-        metadata={"description": "Wallet record ID", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Wallet record ID", "example": UUID4_EXAMPLE},
     )
     key_management_mode = fields.Str(
         required=True,

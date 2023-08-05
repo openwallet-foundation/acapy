@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 
 from ..message_types import ENDORSED_TRANSACTION_RESPONSE, PROTOCOL_PACKAGE
 
@@ -69,7 +69,7 @@ class EndorsedTransactionResponseSchema(AgentMessageSchema):
             "description": (
                 "The transaction id of the agent who this response is sent to"
             ),
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     thread_id = fields.Str(
@@ -78,7 +78,7 @@ class EndorsedTransactionResponseSchema(AgentMessageSchema):
             "description": (
                 "The transaction id of the agent who this response is sent from"
             ),
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     signature_response = fields.Dict(

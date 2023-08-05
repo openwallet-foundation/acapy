@@ -35,7 +35,7 @@ from ....messaging.valid import (
     INDY_VERSION_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
@@ -67,11 +67,11 @@ class V20CredExRecordListQueryStringSchema(OpenAPISchema):
 
     connection_id = fields.UUID(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.UUID(
         required=False,
-        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     role = fields.Str(
         required=False,
@@ -234,7 +234,7 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
         allow_none=True,
         metadata={
             "description": "Optional identifier used to manage credential replacement",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 
@@ -263,7 +263,7 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
 
     connection_id = fields.UUID(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     # Request can only start with LD Proof
     filter_ = fields.Nested(
@@ -308,7 +308,7 @@ class V20CredExFreeSchema(V20IssueCredSchemaCore):
 
     connection_id = fields.UUID(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
     verification_method = fields.Str(
@@ -352,7 +352,7 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
 
     connection_id = fields.UUID(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     auto_issue = fields.Bool(
         required=False,
@@ -423,7 +423,7 @@ class V20CredIdMatchInfoSchema(OpenAPISchema):
 
     credential_id = fields.Str(
         required=True,
-        metadata={"description": "Credential identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Credential identifier", "example": UUID4_EXAMPLE},
     )
 
 

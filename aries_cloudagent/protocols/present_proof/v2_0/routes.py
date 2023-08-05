@@ -34,7 +34,6 @@ from ....messaging.valid import (
     NUM_STR_WHOLE_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    UUIDFour,
 )
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
@@ -75,11 +74,11 @@ class V20PresExRecordListQueryStringSchema(OpenAPISchema):
 
     connection_id = fields.UUID(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.UUID(
         required=False,
-        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     role = fields.Str(
         required=False,
@@ -151,7 +150,7 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
 
     connection_id = fields.UUID(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     comment = fields.Str(
         required=False,
@@ -258,7 +257,7 @@ class V20PresSendRequestRequestSchema(V20PresCreateRequestRequestSchema):
 
     connection_id = fields.UUID(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

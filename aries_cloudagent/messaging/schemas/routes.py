@@ -50,7 +50,7 @@ from ..valid import (
     INDY_SCHEMA_ID_VALIDATE,
     INDY_VERSION_EXAMPLE,
     INDY_VERSION_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from .util import (
     EVENT_LISTENER_PATTERN,
@@ -157,7 +157,7 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

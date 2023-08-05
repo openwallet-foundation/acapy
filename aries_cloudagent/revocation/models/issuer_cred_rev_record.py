@@ -13,7 +13,7 @@ from ...messaging.valid import (
     INDY_CRED_REV_ID_VALIDATE,
     INDY_REV_REG_ID_EXAMPLE,
     INDY_REV_REG_ID_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 
 
@@ -141,7 +141,7 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
         required=False,
         metadata={
             "description": "Issuer credential revocation record identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     state = fields.Str(
@@ -155,7 +155,7 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
         required=False,
         metadata={
             "description": "Credential exchange record identifier at credential issue",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     rev_reg_id = fields.Str(

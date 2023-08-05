@@ -33,7 +33,7 @@ from ....messaging.valid import (
     INDY_VERSION_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
@@ -63,11 +63,11 @@ class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
 
     connection_id = fields.UUID(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.UUID(
         required=False,
-        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     role = fields.Str(
         required=False,
@@ -168,7 +168,7 @@ class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
 
     connection_id = fields.UUID(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     cred_def_id = fields.Str(
         required=False,
@@ -248,7 +248,7 @@ class V10CredentialFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
 
     connection_id = fields.UUID(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     cred_def_id = fields.Str(
         required=True,
@@ -344,7 +344,7 @@ class CredIdMatchInfoSchema(OpenAPISchema):
 
     credential_id = fields.Str(
         required=True,
-        metadata={"description": "Credential identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Credential identifier", "example": UUID4_EXAMPLE},
     )
 
 

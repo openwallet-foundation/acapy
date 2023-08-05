@@ -13,7 +13,7 @@ from .....messaging.decorators.service_decorator import (
 )
 
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 
 from ..messages.invitation import InvitationMessage, InvitationMessageSchema
 
@@ -241,7 +241,7 @@ class OobRecordSchema(BaseExchangeSchema):
 
     oob_id = fields.Str(
         required=True,
-        metadata={"description": "Oob record identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Oob record identifier", "example": UUID4_EXAMPLE},
     )
     state = fields.Str(
         required=True,
@@ -257,7 +257,7 @@ class OobRecordSchema(BaseExchangeSchema):
         required=True,
         metadata={
             "description": "Invitation message identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     invitation = fields.Nested(
@@ -272,7 +272,7 @@ class OobRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": "Connection record identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 
@@ -280,7 +280,7 @@ class OobRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": "Connection record identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 
@@ -288,7 +288,7 @@ class OobRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": "Recipient key used for oob invitation",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 

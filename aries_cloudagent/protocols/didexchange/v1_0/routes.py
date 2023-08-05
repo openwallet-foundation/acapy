@@ -24,7 +24,7 @@ from ....messaging.valid import (
     GENERIC_DID_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
@@ -154,7 +154,7 @@ class DIDXConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -163,14 +163,14 @@ class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
     ref_id = fields.Str(
         required=True,
         metadata={
             "description": "Inbound connection identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 

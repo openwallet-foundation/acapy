@@ -10,7 +10,7 @@ from marshmallow import fields
 
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError
 
 from .base_service import BaseIntroductionService, IntroductionError
@@ -29,7 +29,7 @@ class IntroStartQueryStringSchema(OpenAPISchema):
         required=True,
         metadata={
             "description": "Target connection identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     message = fields.Str(
@@ -43,7 +43,7 @@ class IntroConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

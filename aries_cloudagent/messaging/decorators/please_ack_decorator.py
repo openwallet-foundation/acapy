@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import UUIDFour
+from ..valid import UUID4_EXAMPLE
 
 
 class PleaseAckDecorator(BaseModel):
@@ -46,7 +46,7 @@ class PleaseAckDecoratorSchema(BaseModelSchema):
     message_id = fields.Str(
         required=False,
         allow_none=False,
-        metadata={"description": "Message identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Message identifier", "example": UUID4_EXAMPLE},
     )
     on = fields.List(
         fields.Str(metadata={"example": "OUTCOME"}),

@@ -8,7 +8,7 @@ from marshmallow import fields
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageNotFoundError
 
 from .message_types import SPEC_URI
@@ -38,7 +38,7 @@ class PingConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

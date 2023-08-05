@@ -10,7 +10,7 @@ from marshmallow import EXCLUDE, fields
 from .....utils.classloader import DeferLoad
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 
 from ..models.detail.indy import V20CredExRecordIndy
 from ..models.detail.ld_proof import V20CredExRecordLDProof
@@ -132,7 +132,7 @@ class V20CredFormatSchema(BaseModelSchema):
     attach_id = fields.Str(
         required=True,
         allow_none=False,
-        metadata={"description": "Attachment identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Attachment identifier", "example": UUID4_EXAMPLE},
     )
     format_ = fields.Str(
         required=True,

@@ -11,7 +11,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
 
 from .messages.menu import Menu, MenuSchema
@@ -34,7 +34,7 @@ class PerformRequestSchema(OpenAPISchema):
     params = fields.Dict(
         required=False,
         keys=fields.Str(metadata={"example": "parameter"}),
-        values=fields.Str(metadata={"example": UUIDFour.EXAMPLE}),
+        values=fields.Str(metadata={"example": UUID4_EXAMPLE}),
         metadata={"description": "Input parameter values"},
     )
 
@@ -81,7 +81,7 @@ class MenuConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

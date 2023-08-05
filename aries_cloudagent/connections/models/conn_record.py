@@ -13,7 +13,7 @@ from ...messaging.valid import (
     INDY_DID_VALIDATE,
     INDY_RAW_PUBLIC_KEY_EXAMPLE,
     INDY_RAW_PUBLIC_KEY_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from ...protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ...protocols.connections.v1_0.message_types import (
@@ -637,7 +637,7 @@ class ConnRecordSchema(BaseRecordSchema):
 
     connection_id = fields.Str(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     my_did = fields.Str(
         required=False,
@@ -682,7 +682,7 @@ class ConnRecordSchema(BaseRecordSchema):
         required=False,
         metadata={
             "description": "Inbound routing connection id to use",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     invitation_key = fields.Str(
@@ -697,14 +697,14 @@ class ConnRecordSchema(BaseRecordSchema):
         required=False,
         metadata={
             "description": "ID of out-of-band invitation message",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     request_id = fields.Str(
         required=False,
         metadata={
             "description": "Connection request identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     routing_state = fields.Str(

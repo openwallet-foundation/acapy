@@ -9,7 +9,7 @@ from ....messaging.valid import (
     INDY_ISO8601_DATETIME_EXAMPLE,
     INDY_ISO8601_DATETIME_VALIDATE,
     Uri,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 
 
@@ -121,7 +121,7 @@ class LinkedDataProofSchema(BaseModelSchema):
                 "Associates a challenge with a proof, for use with a proofPurpose such"
                 " as authentication"
             ),
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 

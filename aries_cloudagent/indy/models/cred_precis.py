@@ -15,7 +15,7 @@ from ...messaging.valid import (
     INDY_REV_REG_ID_VALIDATE,
     INDY_SCHEMA_ID_EXAMPLE,
     INDY_SCHEMA_ID_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from .non_rev_interval import IndyNonRevocationIntervalSchema
 
@@ -56,7 +56,7 @@ class IndyCredInfoSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     referent = fields.Str(
-        metadata={"description": "Wallet referent", "example": UUIDFour.EXAMPLE}
+        metadata={"description": "Wallet referent", "example": UUID4_EXAMPLE}
     )
     attrs = fields.Dict(
         keys=fields.Str(metadata={"example": "userid"}),

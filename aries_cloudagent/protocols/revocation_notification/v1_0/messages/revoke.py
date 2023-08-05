@@ -2,7 +2,7 @@
 
 from marshmallow import fields
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 from ..message_types import PROTOCOL_PACKAGE, REVOKE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.revoke_handler.RevokeHandler"
@@ -41,7 +41,7 @@ class RevokeSchema(AgentMessageSchema):
             "description": (
                 "Thread ID of credential exchange resulting in this issued credential"
             ),
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     comment = fields.Str(

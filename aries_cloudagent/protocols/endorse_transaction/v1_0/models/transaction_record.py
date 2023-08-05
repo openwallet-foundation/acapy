@@ -7,7 +7,7 @@ from .....messaging.models.base_record import (
     BaseExchangeRecord,
     BaseExchangeSchema,
 )
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 
 from ..controller import (
     ENDORSE_TRANSACTION,
@@ -148,7 +148,7 @@ class TransactionRecordSchema(BaseExchangeSchema):
 
     transaction_id = fields.Str(
         required=False,
-        metadata={"description": "Transaction identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Transaction identifier", "example": UUID4_EXAMPLE},
     )
     _type = fields.Str(
         required=False, metadata={"description": "Transaction type", "example": "101"}
@@ -171,7 +171,7 @@ class TransactionRecordSchema(BaseExchangeSchema):
         fields.Dict(
             metadata={
                 "example": {
-                    "message_id": UUIDFour.EXAMPLE,
+                    "message_id": UUID4_EXAMPLE,
                     "context": TransactionRecord.SIGNATURE_CONTEXT,
                     "method": TransactionRecord.ADD_SIGNATURE,
                     "signer_goal_code": TransactionRecord.REFUSE_TRANSACTION,
@@ -190,7 +190,7 @@ class TransactionRecordSchema(BaseExchangeSchema):
             values=fields.Str(),
             metadata={
                 "example": {
-                    "attach_id": UUIDFour.EXAMPLE,
+                    "attach_id": UUID4_EXAMPLE,
                     "format": TransactionRecord.FORMAT_VERSION,
                 }
             },
@@ -233,7 +233,7 @@ class TransactionRecordSchema(BaseExchangeSchema):
     )
     thread_id = fields.Str(
         required=False,
-        metadata={"description": "Thread Identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Thread Identifier", "example": UUID4_EXAMPLE},
     )
     connection_id = fields.Str(
         required=False,
@@ -241,7 +241,7 @@ class TransactionRecordSchema(BaseExchangeSchema):
             "description": (
                 "The connection identifier for thie particular transaction record"
             ),
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     endorser_write_txn = fields.Boolean(

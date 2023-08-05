@@ -8,7 +8,7 @@ from .......messaging.models.base import BaseModel, BaseModelSchema
 from .......messaging.valid import (
     INDY_ISO8601_DATETIME_EXAMPLE,
     INDY_ISO8601_DATETIME_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 
 
@@ -134,7 +134,7 @@ class LDProofVCDetailOptionsSchema(BaseModelSchema):
                 "A challenge to include in the proof. SHOULD be provided by the"
                 " requesting party of the credential (=holder)"
             ),
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 

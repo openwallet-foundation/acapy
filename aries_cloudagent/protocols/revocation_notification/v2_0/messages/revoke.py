@@ -6,7 +6,7 @@ from .....messaging.decorators.please_ack_decorator import (
     PleaseAckDecorator,
     PleaseAckDecoratorSchema,
 )
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 from ..message_types import PROTOCOL_PACKAGE, REVOKE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.revoke_handler.RevokeHandler"
@@ -58,7 +58,7 @@ class RevokeSchema(AgentMessageSchema):
         required=True,
         metadata={
             "description": "Credential ID of the issued credential to be revoked",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     please_ack = fields.Nested(

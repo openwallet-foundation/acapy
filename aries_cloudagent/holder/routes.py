@@ -28,7 +28,7 @@ from ..messaging.valid import (
     NUM_STR_NATURAL_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.vc_holder.base import VCHolder
@@ -156,7 +156,7 @@ class HolderCredIdMatchInfoSchema(OpenAPISchema):
 
     credential_id = fields.Str(
         required=True,
-        metadata={"description": "Credential identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Credential identifier", "example": UUID4_EXAMPLE},
     )
 
 

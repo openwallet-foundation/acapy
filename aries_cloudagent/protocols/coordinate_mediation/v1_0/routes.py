@@ -14,7 +14,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
 from ...connections.v1_0.routes import ConnectionsConnIdMatchInfoSchema
 from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
@@ -35,13 +35,12 @@ from .route_manager import RouteManager
 CONNECTION_ID_SCHEMA = fields.UUID(
     description="Connection identifier (optional)",
     required=False,
-    example=UUIDFour.EXAMPLE,
+        "example": UUID4_EXAMPLE,
 )
 
 
 MEDIATION_ID_SCHEMA = fields.UUID(
-    description="Mediation record identifier",
-    example=UUIDFour.EXAMPLE,
+    metadata={"description": "Mediation record identifier", "example": UUID4_EXAMPLE},
 )
 
 

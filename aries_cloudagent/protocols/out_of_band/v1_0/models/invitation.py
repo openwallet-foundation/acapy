@@ -5,7 +5,7 @@ from typing import Any, Mapping, Union
 from marshmallow import fields
 
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 
 from ..messages.invitation import InvitationMessage, InvitationMessageSchema
 
@@ -97,7 +97,7 @@ class InvitationRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": "Invitation record identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     state = fields.Str(
@@ -111,14 +111,14 @@ class InvitationRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": "Invitation message identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     oob_id = fields.Str(
         required=False,
         metadata={
             "description": "Out of band record identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     invitation = fields.Nested(

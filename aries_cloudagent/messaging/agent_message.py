@@ -37,7 +37,7 @@ from .models.base import (
     resolve_class,
     resolve_meta_property,
 )
-from .valid import UUIDFour
+from .valid import UUID4_EXAMPLE
 from .base_message import BaseMessage, DIDCommVersion
 
 
@@ -473,7 +473,7 @@ class AgentMessageSchema(BaseModelSchema):
     _id = fields.Str(
         data_key="@id",
         required=False,
-        metadata={"description": "Message identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Message identifier", "example": UUID4_EXAMPLE},
     )
 
     def __init__(self, *args, **kwargs):

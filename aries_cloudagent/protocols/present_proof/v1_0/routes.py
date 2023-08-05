@@ -34,7 +34,7 @@ from ....messaging.valid import (
     NUM_STR_WHOLE_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
@@ -60,11 +60,11 @@ class V10PresentationExchangeListQueryStringSchema(OpenAPISchema):
 
     connection_id = fields.UUID(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.UUID(
         required=False,
-        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     role = fields.Str(
         required=False,
@@ -119,7 +119,7 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
 
     connection_id = fields.UUID(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     comment = fields.Str(
         required=False,
@@ -194,7 +194,7 @@ class V10PresentationSendRequestRequestSchema(
 
     connection_id = fields.UUID(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

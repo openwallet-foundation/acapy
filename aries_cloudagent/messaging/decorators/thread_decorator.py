@@ -10,7 +10,7 @@ from typing import Mapping
 from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import UUIDFour
+from ..valid import UUID4_EXAMPLE
 
 
 class ThreadDecorator(BaseModel):
@@ -122,14 +122,14 @@ class ThreadDecoratorSchema(BaseModelSchema):
     thid = fields.Str(
         required=False,
         allow_none=True,
-        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     pthid = fields.Str(
         required=False,
         allow_none=True,
         metadata={
             "description": "Parent thread identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
     sender_order = fields.Int(

@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 from .....utils.classloader import DeferLoad
 
 if TYPE_CHECKING:
@@ -122,7 +122,7 @@ class V20PresFormatSchema(BaseModelSchema):
     attach_id = fields.Str(
         required=True,
         allow_none=False,
-        metadata={"description": "Attachment identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Attachment identifier", "example": UUID4_EXAMPLE},
     )
     format_ = fields.Str(
         required=True,

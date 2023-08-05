@@ -10,7 +10,7 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import UUIDFour
+from ..valid import UUID4_EXAMPLE
 
 
 TRACE_MESSAGE_TARGET = "message"
@@ -239,12 +239,12 @@ class TraceReportSchema(BaseModelSchema):
     msg_id = fields.Str(
         required=True,
         allow_none=False,
-        metadata={"description": "Message Id", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Message Id", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.Str(
         required=True,
         allow_none=False,
-        metadata={"description": "Message Id", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Message Id", "example": UUID4_EXAMPLE},
     )
     traced_type = fields.Str(
         required=False,

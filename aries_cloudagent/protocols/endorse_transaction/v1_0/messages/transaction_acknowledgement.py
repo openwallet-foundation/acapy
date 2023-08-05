@@ -2,7 +2,7 @@
 
 from marshmallow import EXCLUDE, fields
 
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 
 from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
 
@@ -51,5 +51,5 @@ class TransactionAcknowledgementSchema(V10AckSchema):
         model_class = TransactionAcknowledgement
         unknown = EXCLUDE
 
-    thread_id = fields.Str(required=True, metadata={"example": UUIDFour.EXAMPLE})
+    thread_id = fields.Str(required=True, metadata={"example": UUID4_EXAMPLE})
     ledger_response = fields.Dict(required=False)

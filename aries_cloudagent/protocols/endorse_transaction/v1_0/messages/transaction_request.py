@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 
 from ..message_types import TRANSACTION_REQUEST, PROTOCOL_PACKAGE
 
@@ -62,7 +62,7 @@ class TransactionRequestSchema(AgentMessageSchema):
         model_class = TransactionRequest
         unknown = EXCLUDE
 
-    transaction_id = fields.Str(required=False, metadata={"example": UUIDFour.EXAMPLE})
+    transaction_id = fields.Str(required=False, metadata={"example": UUID4_EXAMPLE})
     signature_request = fields.Dict(
         required=False,
         metadata={

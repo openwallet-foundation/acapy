@@ -145,7 +145,7 @@ class InvitationResultSchema(OpenAPISchema):
     """Result schema for a new connection invitation."""
 
     connection_id = fields.Str(
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE}
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE}
     )
     invitation = fields.Nested(ConnectionInvitationSchema())
     invitation_url = fields.Str(
@@ -292,7 +292,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         required=False,
         metadata={
             "description": "Identifier of the associated Invitation Mesage",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 
@@ -374,7 +374,7 @@ class ConnectionsConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -383,14 +383,14 @@ class ConnIdRefIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=True,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
     ref_id = fields.Str(
         required=True,
         metadata={
             "description": "Inbound connection identifier",
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 

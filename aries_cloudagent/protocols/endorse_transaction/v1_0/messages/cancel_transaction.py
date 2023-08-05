@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 
 from ..message_types import CANCEL_TRANSACTION, PROTOCOL_PACKAGE
 
@@ -58,4 +58,4 @@ class CancelTransactionSchema(AgentMessageSchema):
             "example": "cancelled",
         },
     )
-    thread_id = fields.Str(required=False, metadata={"example": UUIDFour.EXAMPLE})
+    thread_id = fields.Str(required=False, metadata={"example": UUID4_EXAMPLE})

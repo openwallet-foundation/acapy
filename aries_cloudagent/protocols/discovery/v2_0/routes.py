@@ -7,7 +7,7 @@ from marshmallow import fields
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageNotFoundError, StorageError
 
 from .manager import V20DiscoveryMgr
@@ -56,7 +56,7 @@ class QueryFeaturesQueryStringSchema(OpenAPISchema):
                 "Connection identifier, if none specified, then the query will provide"
                 " features for this agent."
             ),
-            "example": UUIDFour.EXAMPLE,
+            "example": UUID4_EXAMPLE,
         },
     )
 
@@ -66,7 +66,7 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
 
     connection_id = fields.Str(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

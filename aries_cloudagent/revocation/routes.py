@@ -44,7 +44,7 @@ from ..messaging.valid import (
     UUID4_VALIDATE,
     WHOLE_NUM_EXAMPLE,
     WHOLE_NUM_VALIDATE,
-    UUIDFour,
+    UUID4_EXAMPLE,
 )
 from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
@@ -496,7 +496,7 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
 
     conn_id = fields.Str(
         required=False,
-        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
