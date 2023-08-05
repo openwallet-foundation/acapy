@@ -2,9 +2,10 @@
 
 from collections import namedtuple
 from enum import Enum
-from marshmallow import EXCLUDE, fields
-from typing import Mapping, Sequence, Type, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping, Sequence, Type, Union
 from uuid import uuid4
+
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema

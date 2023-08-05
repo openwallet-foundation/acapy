@@ -1,24 +1,24 @@
 """Event tracing."""
 
+import datetime
 import json
 import logging
 import time
-import datetime
+
 import requests
 
 from marshmallow import fields
 
-from ..transport.inbound.message import InboundMessage
-from ..transport.outbound.message import OutboundMessage
 from ..messaging.agent_message import AgentMessage
 from ..messaging.decorators.trace_decorator import (
-    TraceReport,
-    TRACE_MESSAGE_TARGET,
     TRACE_LOG_TARGET,
+    TRACE_MESSAGE_TARGET,
+    TraceReport,
 )
 from ..messaging.models.base_record import BaseExchangeRecord
 from ..messaging.models.openapi import OpenAPISchema
-
+from ..transport.inbound.message import InboundMessage
+from ..transport.outbound.message import OutboundMessage
 
 LOGGER = logging.getLogger(__name__)
 DT_FMT = "%Y-%m-%d %H:%M:%S.%f%z"

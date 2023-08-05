@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
-
 from .menu_form import MenuForm, MenuFormSchema
 
 

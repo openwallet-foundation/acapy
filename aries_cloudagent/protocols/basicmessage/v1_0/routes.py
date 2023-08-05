@@ -10,7 +10,6 @@ from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageNotFoundError
-
 from .message_types import SPEC_URI
 from .messages.basicmessage import BasicMessage
 

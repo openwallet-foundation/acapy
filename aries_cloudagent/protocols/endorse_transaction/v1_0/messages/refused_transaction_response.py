@@ -4,8 +4,7 @@ from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import UUID4_EXAMPLE
-
-from ..message_types import REFUSED_TRANSACTION_RESPONSE, PROTOCOL_PACKAGE
+from ..message_types import PROTOCOL_PACKAGE, REFUSED_TRANSACTION_RESPONSE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"

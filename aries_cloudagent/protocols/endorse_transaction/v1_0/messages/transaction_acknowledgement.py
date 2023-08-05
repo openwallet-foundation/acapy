@@ -3,10 +3,8 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.valid import UUID4_EXAMPLE
-
 from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
-
-from ..message_types import TRANSACTION_ACKNOWLEDGEMENT, PROTOCOL_PACKAGE
+from ..message_types import PROTOCOL_PACKAGE, TRANSACTION_ACKNOWLEDGEMENT
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"

@@ -7,9 +7,7 @@ from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......wallet.util import b64_to_str
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import CREDENTIAL_PREVIEW
 
 

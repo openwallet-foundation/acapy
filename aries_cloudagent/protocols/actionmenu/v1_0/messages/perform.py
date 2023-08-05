@@ -5,7 +5,6 @@ from typing import Mapping
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import PERFORM, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.perform_handler.PerformHandler"

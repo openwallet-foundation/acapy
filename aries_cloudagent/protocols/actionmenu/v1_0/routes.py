@@ -13,7 +13,6 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
-
 from .messages.menu import Menu, MenuSchema
 from .messages.menu_request import MenuRequest
 from .messages.perform import Perform

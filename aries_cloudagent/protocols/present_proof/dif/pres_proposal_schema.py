@@ -2,8 +2,7 @@
 from marshmallow import fields
 
 from ....messaging.models.openapi import OpenAPISchema
-
-from .pres_exch import InputDescriptorsSchema, DIFOptionsSchema
+from .pres_exch import DIFOptionsSchema, InputDescriptorsSchema
 
 
 class DIFProofProposalSchema(OpenAPISchema):

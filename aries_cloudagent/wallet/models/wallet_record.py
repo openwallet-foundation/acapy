@@ -2,14 +2,10 @@
 
 from typing import Any, Optional, Sequence
 
-from marshmallow import fields
-from marshmallow import validate
+from marshmallow import fields, validate
 from marshmallow.utils import EXCLUDE
 
-from ...messaging.models.base_record import (
-    BaseRecord,
-    BaseRecordSchema,
-)
+from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import UUID4_EXAMPLE
 from ..error import WalletSettingsError
 

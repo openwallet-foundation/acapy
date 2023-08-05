@@ -3,14 +3,11 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ....connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
-
 from ..message_types import INVITATION, PROTOCOL_PACKAGE
-
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.invitation_handler.InvitationHandler"
 

@@ -4,7 +4,6 @@ from marshmallow import EXCLUDE, fields
 
 from .....indy.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (

@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields, validate
 
 from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
-
 from ..message_types import PRESENTATION_ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (

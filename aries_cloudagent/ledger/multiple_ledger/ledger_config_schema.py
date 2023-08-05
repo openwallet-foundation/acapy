@@ -1,13 +1,9 @@
 """Schema for configuring multiple ledgers."""
 import uuid
 
-from marshmallow import (
-    fields,
-    pre_load,
-    EXCLUDE,
-)
+from marshmallow import EXCLUDE, fields, pre_load
 
-from ...messaging.models.base import BaseModelSchema, BaseModel
+from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.models.openapi import OpenAPISchema
 
 

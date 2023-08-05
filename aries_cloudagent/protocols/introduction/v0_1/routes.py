@@ -12,7 +12,6 @@ from ....admin.request_context import AdminRequestContext
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError
-
 from .base_service import BaseIntroductionService, IntroductionError
 
 LOGGER = logging.getLogger(__name__)

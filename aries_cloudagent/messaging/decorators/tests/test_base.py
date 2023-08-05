@@ -1,18 +1,9 @@
-import json
-import pytest
-import uuid
-
-from copy import deepcopy
-from datetime import datetime, timezone
-from time import time
 from unittest import TestCase
 
 from marshmallow import EXCLUDE, fields
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
-
-from .. import base as test_module
-from ..base import BaseDecoratorSet, DECORATOR_PREFIX
+from ..base import DECORATOR_PREFIX, BaseDecoratorSet
 
 
 class SampleDecorator(BaseModel):

@@ -8,8 +8,8 @@ from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
     INDY_ISO8601_DATETIME_EXAMPLE,
     INDY_ISO8601_DATETIME_VALIDATE,
-    Uri,
     UUID4_EXAMPLE,
+    Uri,
 )
 
 

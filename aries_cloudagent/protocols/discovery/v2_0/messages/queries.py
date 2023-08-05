@@ -1,11 +1,11 @@
 """Represents a feature discovery queries message."""
 
 from typing import Sequence
+
 from marshmallow import EXCLUDE, fields, validate
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.models.base import BaseModel, BaseModelSchema
-
 from ..message_types import PROTOCOL_PACKAGE, QUERIES
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.queries_handler.QueriesHandler"

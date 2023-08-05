@@ -1,6 +1,7 @@
 """Revoke message."""
 
 from marshmallow import fields
+
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import UUID4_EXAMPLE
 from ..message_types import PROTOCOL_PACKAGE, REVOKE

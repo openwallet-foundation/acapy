@@ -2,11 +2,10 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import EXCLUDE, fields, Schema, ValidationError
+from marshmallow import EXCLUDE, Schema, ValidationError, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.models.base import BaseModelError
-
 from ..message_types import DISCLOSURES, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.disclosures_handler.DisclosuresHandler"

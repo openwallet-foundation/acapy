@@ -1,16 +1,15 @@
 """A (proof) presentation content message."""
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 from typing import Sequence
+
+from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import PRES_20, PROTOCOL_PACKAGE
-
 from .pres_format import V20PresFormat, V20PresFormatSchema
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.pres_handler.V20PresHandler"

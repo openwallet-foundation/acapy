@@ -5,7 +5,6 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
-
 from .menu_form_param import MenuFormParam, MenuFormParamSchema
 
 

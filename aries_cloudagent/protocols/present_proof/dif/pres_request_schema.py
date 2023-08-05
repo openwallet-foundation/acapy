@@ -1,15 +1,15 @@
 """DIF Proof Request Schema."""
-from marshmallow import fields, INCLUDE
 from typing import Optional, Union
+
+from marshmallow import INCLUDE, fields
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.models.openapi import OpenAPISchema
-
 from .pres_exch import (
-    PresentationDefinitionSchema,
-    PresentationDefinition,
-    DIFOptionsSchema,
     DIFOptions,
+    DIFOptionsSchema,
+    PresentationDefinition,
+    PresentationDefinitionSchema,
 )
 
 

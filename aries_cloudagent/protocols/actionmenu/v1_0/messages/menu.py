@@ -5,7 +5,6 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import MENU, PROTOCOL_PACKAGE
 from ..models.menu_option import MenuOption, MenuOptionSchema
 

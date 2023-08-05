@@ -2,7 +2,6 @@ from asynctest import TestCase as AsyncTestCase
 
 from ....core.in_memory import InMemoryProfile
 from ....storage.base import StorageNotFoundError
-
 from .. import issuer_cred_rev_record as test_module
 from ..issuer_cred_rev_record import IssuerCredRevRecord
 

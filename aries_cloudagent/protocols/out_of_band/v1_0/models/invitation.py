@@ -6,7 +6,6 @@ from marshmallow import fields
 
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUID4_EXAMPLE
-
 from ..messages.invitation import InvitationMessage, InvitationMessageSchema
 
 

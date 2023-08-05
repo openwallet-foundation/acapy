@@ -9,7 +9,6 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER, PROTOCOL_PACKAGE
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 

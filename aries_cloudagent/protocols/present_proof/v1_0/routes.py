@@ -34,7 +34,6 @@ from ....messaging.valid import (
     NUM_STR_WHOLE_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    UUID4_EXAMPLE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event

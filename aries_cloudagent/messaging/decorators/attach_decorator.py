@@ -37,8 +37,8 @@ from ..valid import (
     JWS_HEADER_KID_VALIDATE,
     SHA256_EXAMPLE,
     SHA256_VALIDATE,
-    DictOrDictListField,
     UUID4_EXAMPLE,
+    DictOrDictListField,
 )
 
 

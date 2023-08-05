@@ -1,17 +1,15 @@
 """."""
 import logging
+from typing import Any, Mapping, Union
 
-from typing import Union, Mapping, Any
 from marshmallow import fields
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUID4_EXAMPLE
 from .....storage.error import StorageDuplicateError, StorageNotFoundError
-
 from ..messages.disclose import Disclose, DiscloseSchema
 from ..messages.query import Query, QuerySchema
-
 from . import UNENCRYPTED_TAGS
 
 LOGGER = logging.getLogger(__name__)

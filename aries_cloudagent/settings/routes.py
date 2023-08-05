@@ -4,17 +4,18 @@ import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
+
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
-from ..multitenant.base import BaseMultitenantManager
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..messaging.models.openapi import OpenAPISchema
 from ..multitenant.admin.routes import (
-    get_extra_settings_dict_per_tenant,
     ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP,
+    get_extra_settings_dict_per_tenant,
 )
+from ..multitenant.base import BaseMultitenantManager
 
 LOGGER = logging.getLogger(__name__)
 

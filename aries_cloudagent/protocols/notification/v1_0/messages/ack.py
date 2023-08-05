@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import NOTIF_10_ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.ack_handler.V10AckHandler"

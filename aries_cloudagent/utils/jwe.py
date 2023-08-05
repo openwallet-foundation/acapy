@@ -2,11 +2,10 @@
 
 import binascii
 import json
-
 from collections import OrderedDict
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
-from marshmallow import fields, Schema, ValidationError
+from marshmallow import Schema, ValidationError, fields
 
 from ..wallet.util import b64_to_bytes, bytes_to_b64
 

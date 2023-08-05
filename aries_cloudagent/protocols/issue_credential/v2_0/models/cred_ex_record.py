@@ -1,24 +1,21 @@
 """Aries#0453 v2.0 credential exchange information with non-secrets storage."""
 
 import logging
-
 from typing import Any, Mapping, Optional, Union
 
-from marshmallow import fields, Schema, validate
+from marshmallow import Schema, fields, validate
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUID4_EXAMPLE
 from .....storage.base import StorageError
-
+from ..messages.cred_ex_record_webhook import V20CredExRecordWebhook
 from ..messages.cred_format import V20CredFormat
 from ..messages.cred_issue import V20CredIssue, V20CredIssueSchema
-from ..messages.cred_proposal import V20CredProposal, V20CredProposalSchema
 from ..messages.cred_offer import V20CredOffer, V20CredOfferSchema
+from ..messages.cred_proposal import V20CredProposal, V20CredProposalSchema
 from ..messages.cred_request import V20CredRequest, V20CredRequestSchema
 from ..messages.inner.cred_preview import V20CredPreviewSchema
-from ..messages.cred_ex_record_webhook import V20CredExRecordWebhook
-
 from . import UNENCRYPTED_TAGS
 
 LOGGER = logging.getLogger(__name__)

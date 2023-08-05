@@ -12,7 +12,6 @@ from marshmallow import EXCLUDE, fields
 from ..models.base import BaseModel, BaseModelSchema
 from ..valid import UUID4_EXAMPLE
 
-
 TRACE_MESSAGE_TARGET = "message"
 TRACE_LOG_TARGET = "log"
 

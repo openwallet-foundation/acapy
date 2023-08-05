@@ -11,15 +11,12 @@ from .....messaging.decorators.service_decorator import (
     ServiceDecorator,
     ServiceDecoratorSchema,
 )
-
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUID4_EXAMPLE
-
-from ..messages.invitation import InvitationMessage, InvitationMessageSchema
-
 from .....storage.base import BaseStorage
-from .....storage.record import StorageRecord
 from .....storage.error import StorageNotFoundError
+from .....storage.record import StorageRecord
+from ..messages.invitation import InvitationMessage, InvitationMessageSchema
 
 
 class OobRecord(BaseExchangeRecord):

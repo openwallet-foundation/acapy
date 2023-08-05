@@ -1,22 +1,19 @@
 """Presentation exchange record."""
 
 import logging
-
 from typing import Any, Mapping, Union
 
-from marshmallow import fields, Schema, validate
+from marshmallow import Schema, fields, validate
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUID4_EXAMPLE
 from .....storage.base import StorageError
-
 from ..messages.pres import V20Pres, V20PresSchema
 from ..messages.pres_format import V20PresFormat
 from ..messages.pres_proposal import V20PresProposal, V20PresProposalSchema
 from ..messages.pres_request import V20PresRequest, V20PresRequestSchema
 from ..messages.pres_webhook import V20PresExRecordWebhook
-
 from . import UNENCRYPTED_TAGS
 
 LOGGER = logging.getLogger(__name__)

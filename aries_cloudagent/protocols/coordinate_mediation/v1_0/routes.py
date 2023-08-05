@@ -8,6 +8,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
@@ -30,7 +31,6 @@ from .messages.mediate_deny import MediationDenySchema
 from .messages.mediate_grant import MediationGrantSchema
 from .models.mediation_record import MediationRecord, MediationRecordSchema
 from .route_manager import RouteManager
-
 
 CONNECTION_ID_SCHEMA = fields.UUID(
     required=False,

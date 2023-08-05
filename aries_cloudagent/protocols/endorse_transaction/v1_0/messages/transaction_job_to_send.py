@@ -3,8 +3,7 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
-from ..message_types import TRANSACTION_JOB_TO_SEND, PROTOCOL_PACKAGE
+from ..message_types import PROTOCOL_PACKAGE, TRANSACTION_JOB_TO_SEND
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"

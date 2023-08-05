@@ -1,19 +1,18 @@
 """Validators for schema fields."""
 
 import json
-
 import re
 
 from base58 import alphabet
-from marshmallow.validate import OneOf, Range, Regexp, Validator
+
 from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Field
-
-from .util import epoch_to_str
+from marshmallow.validate import OneOf, Range, Regexp, Validator
 
 from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
 from ..revocation.models.revocation_registry import RevocationRegistry
 from ..wallet.did_posture import DIDPosture as DIDPostureEnum
+from .util import epoch_to_str
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 

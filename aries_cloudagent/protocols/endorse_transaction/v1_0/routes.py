@@ -6,18 +6,19 @@ import logging
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    response_schema,
+    match_info_schema,
     querystring_schema,
     request_schema,
-    match_info_schema,
+    response_schema,
 )
+
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
-from ....core.util import STARTUP_EVENT_PATTERN, SHUTDOWN_EVENT_PATTERN
+from ....core.util import SHUTDOWN_EVENT_PATTERN, STARTUP_EVENT_PATTERN
 from ....indy.issuer import IndyIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.models.base import BaseModelError
@@ -30,11 +31,10 @@ from ....protocols.connections.v1_0.messages.connection_invitation import (
 from ....protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ....protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ....storage.error import StorageError, StorageNotFoundError
-
 from .manager import TransactionManager, TransactionManagerError
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
 from .transaction_jobs import TransactionJob
-from .util import is_author_role, get_endorser_connection_id
+from .util import get_endorser_connection_id, is_author_role
 
 LOGGER = logging.getLogger(__name__)
 

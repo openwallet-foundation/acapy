@@ -44,7 +44,6 @@ from ..messaging.valid import (
     UUID4_VALIDATE,
     WHOLE_NUM_EXAMPLE,
     WHOLE_NUM_VALIDATE,
-    UUID4_EXAMPLE,
 )
 from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,

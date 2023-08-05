@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -10,9 +10,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecoratorSchema,
 )
 from .....messaging.valid import UUID4_EXAMPLE
-
 from ..message_types import CRED_20_OFFER, PROTOCOL_PACKAGE
-
 from .cred_format import V20CredFormat, V20CredFormatSchema
 from .inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 

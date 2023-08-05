@@ -3,18 +3,14 @@
 from marshmallow import fields
 
 from .....core.profile import ProfileSession
-from .....messaging.models.base_record import (
-    BaseExchangeRecord,
-    BaseExchangeSchema,
-)
+from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUID4_EXAMPLE
-
 from ..controller import (
     ENDORSE_TRANSACTION,
     REFUSE_TRANSACTION,
-    WRITE_TRANSACTION,
-    WRITE_DID_TRANSACTION,
     REGISTER_PUBLIC_DID,
+    WRITE_DID_TRANSACTION,
+    WRITE_TRANSACTION,
 )
 
 

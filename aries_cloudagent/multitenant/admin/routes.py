@@ -8,6 +8,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+
 from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ...admin.request_context import AdminRequestContext
@@ -15,13 +16,12 @@ from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import JSONWebToken, UUID4_EXAMPLE
+from ...messaging.valid import UUID4_EXAMPLE, JSONWebToken
 from ...multitenant.base import BaseMultitenantManager
 from ...storage.error import StorageError, StorageNotFoundError
 from ...wallet.error import WalletSettingsError
 from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ..error import WalletKeyMissingError
-
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_LOG_LEVEL": "log.level",

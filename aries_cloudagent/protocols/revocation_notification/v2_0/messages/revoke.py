@@ -1,6 +1,7 @@
 """Revoke message."""
 
 from marshmallow import fields, validate
+
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.please_ack_decorator import (
     PleaseAckDecorator,

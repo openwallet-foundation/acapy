@@ -3,9 +3,7 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import ATTACHED_MESSAGE
-
 
 SCHEMA_TYPE = "101"
 PROTOCOL_VERSION = "2"

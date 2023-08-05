@@ -24,7 +24,6 @@ from ....messaging.valid import (
     GENERIC_DID_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    UUID4_EXAMPLE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError

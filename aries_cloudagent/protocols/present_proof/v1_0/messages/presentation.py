@@ -9,7 +9,6 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import PRESENTATION, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.presentation_handler.PresentationHandler"

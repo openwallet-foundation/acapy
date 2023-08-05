@@ -6,13 +6,7 @@ from re import sub
 from typing import Optional, Sequence, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
-from marshmallow import (
-    EXCLUDE,
-    fields,
-    post_dump,
-    validates_schema,
-    ValidationError,
-)
+from marshmallow import EXCLUDE, ValidationError, fields, post_dump, validates_schema
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -20,14 +14,11 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecoratorSchema,
 )
 from .....messaging.valid import DIDValidation
-from .....wallet.util import bytes_to_b64, b64_to_bytes
-
+from .....wallet.util import b64_to_bytes, bytes_to_b64
+from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ....didcomm_prefix import DIDCommPrefix
 from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
-from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
-
-from ..message_types import INVITATION, DEFAULT_VERSION
-
+from ..message_types import DEFAULT_VERSION, INVITATION
 from .service import Service
 
 HSProtoSpec = namedtuple("HSProtoSpec", "rfc name aka")

@@ -7,7 +7,6 @@ from marshmallow import EXCLUDE, fields
 from ......core.profile import ProfileSession
 from ......messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ......messaging.valid import UUID4_EXAMPLE
-
 from .. import UNENCRYPTED_TAGS
 
 

@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import PROTOCOL_PACKAGE, ROUTE_QUERY_REQUEST
 from ..models.paginate import Paginate, PaginateSchema
 

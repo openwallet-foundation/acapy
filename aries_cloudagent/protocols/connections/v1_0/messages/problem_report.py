@@ -1,10 +1,10 @@
 """Represents a connection problem report message."""
 
 from enum import Enum
+
 from marshmallow import EXCLUDE, fields, validate
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import PROBLEM_REPORT
 
 HANDLER_CLASS = (

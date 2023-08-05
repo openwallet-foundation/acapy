@@ -2,16 +2,15 @@
 
 from collections import namedtuple
 from enum import Enum
-from typing import Mapping, Sequence, Type, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Mapping, Sequence, Type, Union
 from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields
 
-from .....utils.classloader import DeferLoad
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUID4_EXAMPLE
-
+from .....utils.classloader import DeferLoad
 from ..models.detail.indy import V20CredExRecordIndy
 from ..models.detail.ld_proof import V20CredExRecordLDProof
 

@@ -2,10 +2,9 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
+from pydid.verification_method import Ed25519VerificationKey2018
+
 from marshmallow import INCLUDE, Schema, fields
-from pydid.verification_method import (
-    Ed25519VerificationKey2018,
-)
 
 from ...admin.request_context import AdminRequestContext
 from ...config.base import InjectionError
@@ -14,10 +13,7 @@ from ...resolver.did_resolver import DIDResolver
 from ...wallet.error import WalletError
 from ..models.openapi import OpenAPISchema
 from .credential import sign_credential, verify_credential
-from .error import (
-    BaseJSONLDMessagingError,
-)
-
+from .error import BaseJSONLDMessagingError
 
 SUPPORTED_VERIFICATION_METHOD_TYPES = (Ed25519VerificationKey2018,)
 
