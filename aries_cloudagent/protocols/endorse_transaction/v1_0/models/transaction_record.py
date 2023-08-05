@@ -211,8 +211,8 @@ class TransactionRecordSchema(BaseExchangeSchema):
                             ' "test_schema","version": "2.1",},"type":'
                             ' "101",},"protocolVersion": 2,"reqId":'
                             ' 1597766666168851000,"signatures": {"LjgpST2rjsox":'
-                            ' "4ATKMn6Y9sTgwqaGTm7py2c2M8x1EVDTWKZArwyuPgjU"},"taaAcceptance":'
-                            ' {"mechanism": "manual","taaDigest":'
+                            ' "4ATKMn6Y9sTgwqaGTm7py2c2M8x1EVDTWKZArwyuPgjU"},'
+                            ' "taaAcceptance": {"mechanism": "manual","taaDigest":'
                             ' "f50fe2c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62","time":'
                             " 1597708800,}}"
                         )

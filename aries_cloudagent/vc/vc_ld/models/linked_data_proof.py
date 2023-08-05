@@ -84,7 +84,10 @@ class LinkedDataProofSchema(BaseModelSchema):
         validate=Uri(),
         metadata={
             "description": "Information used for proof verification",
-            "example": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+            "example": (
+                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg34"
+                "2Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            ),
         },
     )
 
@@ -126,7 +129,10 @@ class LinkedDataProofSchema(BaseModelSchema):
         required=False,
         metadata={
             "description": "Associates a Detached Json Web Signature with a proof",
-            "example": "eyJhbGciOiAiRWREUc2UsICJjcml0IjogWyJiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQ1Ch6YBKY7UBAjg6iBX5qBQ",
+            "example": (
+                "eyJhbGciOiAiRWREUc2UsICJjcml0IjogWyJiNjQiXX0..lKJU0Df_keblRKhZAS9"
+                "Qq6zybm-HqUXNVZ8vgEPNTAjQ1Ch6YBKY7UBAjg6iBX5qBQ"
+            ),
         },
     )
 
@@ -135,7 +141,10 @@ class LinkedDataProofSchema(BaseModelSchema):
         data_key="proofValue",
         metadata={
             "description": "The proof value of a proof",
-            "example": "sy1AahqbzJQ63n9RtekmwzqZeVj494VppdAVJBnMYrTwft6cLJJGeTSSxCCJ6HKnRtwE7jjDh6sB2z2AAiZY9BBnCD8wUVgwqH3qchGRCuC2RugA4eQ9fUrR4Yuycac3caiaaay",
+            "example": (
+                "sy1AahqbzJQ63n9RtekmwzqZeVj494VppdAVJBnMYrTwft6cLJJGeTSSxCCJ6HKnR"
+                "twE7jjDh6sB2z2AAiZY9BBnCD8wUVgwqH3qchGRCuC2RugA4eQ9fUrR4Yuycac3caiaaay"
+            ),
         },
     )
 

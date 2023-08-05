@@ -42,7 +42,8 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
         fields.Dict(
             keys=fields.Str(
                 validate=validate.Regexp(
-                    "^schema_id|schema_issuer_did|schema_name|schema_version|issuer_did|cred_def_id|attr::.+::value$"
+                    "^schema_id|schema_issuer_did|schema_name|schema_version|issuer_did|"
+                    "cred_def_id|attr::.+::value$"
                 ),
                 metadata={"example": "cred_def_id"},
             ),
@@ -137,7 +138,8 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
         fields.Dict(
             keys=fields.Str(
                 validate=validate.Regexp(
-                    "^schema_id|schema_issuer_did|schema_name|schema_version|issuer_did|cred_def_id|attr::.+::value$"
+                    "^schema_id|schema_issuer_did|schema_name|schema_version|issuer_did|"
+                    "cred_def_id|attr::.+::value$"
                 ),
                 metadata={"example": "cred_def_id"},
             ),

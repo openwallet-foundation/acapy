@@ -408,7 +408,10 @@ class RevRegUpdateTailsFileUriSchema(OpenAPISchema):
         required=True,
         metadata={
             "description": "Public URI to the tails file",
-            "example": f"http://192.168.56.133:6543/revocation/registry/{INDY_REV_REG_ID_EXAMPLE}/tails-file",
+            "example": (
+                "http://192.168.56.133:6543/revocation/registry/"
+                f"{INDY_REV_REG_ID_EXAMPLE}/tails-file"
+            ),
         },
     )
 

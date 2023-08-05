@@ -163,7 +163,10 @@ class JWSCreateSchema(OpenAPISchema):
         validate=Uri(),
         metadata={
             "description": "Information used for proof verification",
-            "example": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+            "example": (
+                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg34"
+                "2Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            ),
         },
     )
 

@@ -130,6 +130,9 @@ class InvitationRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": "Invitation message URL",
-            "example": "https://example.com/endpoint?c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjogIi4uLiJ9XX0=",
+            "example": (
+                "https://example.com/endpoint?c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjog"
+                "Ii4uLiJ9XX0="
+            ),
         },
     )

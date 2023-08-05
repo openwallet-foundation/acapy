@@ -149,7 +149,10 @@ class SignatureDecoratorSchema(BaseModelSchema):
         validate=BASE64URL_VALIDATE,
         metadata={
             "description": "signature value, base64url-encoded",
-            "example": "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg==",
+            "example": (
+                "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-l4mKOz7AmkMHDj2"
+                "IgDEa1-GCFfWXNl96a7Bg=="
+            ),
         },
     )
     sig_data = fields.Str(
