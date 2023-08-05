@@ -16,8 +16,6 @@ from ..valid import (
     BASE64URL_VALIDATE,
     INDY_RAW_PUBLIC_KEY_EXAMPLE,
     INDY_RAW_PUBLIC_KEY_VALIDATE,
-    Base64URL_EXAMPLE,
-    Base64URL_VALIDATE,
 )
 
 
@@ -148,7 +146,7 @@ class SignatureDecoratorSchema(BaseModelSchema):
     )
     signature = fields.Str(
         required=True,
-        validate=Base64URL(),
+        validate=BASE64URL_VALIDATE,
         metadata={
             "description": "signature value, base64url-encoded",
             "example": "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg==",
@@ -156,10 +154,10 @@ class SignatureDecoratorSchema(BaseModelSchema):
     )
     sig_data = fields.Str(
         required=True,
-        validate=BASE64_VALIDATE,
+        validate=BASE64URL_VALIDATE,
         metadata={
             "description": "Signature data, base64url-encoded",
-            "example": BASE64_EXAMPLEURL,
+            "example": BASE64URL_EXAMPLE,
         },
     )
     signer = fields.Str(
