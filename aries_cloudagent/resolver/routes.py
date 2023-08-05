@@ -41,12 +41,13 @@ Resolve did document admin routes.
 
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, response_schema
+from pydid.common import DID_PATTERN
+
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
-from .base import DIDMethodNotSupported, DIDNotFound, ResolverError, ResolutionResult
-from pydid.common import DID_PATTERN
+from .base import DIDMethodNotSupported, DIDNotFound, ResolutionResult, ResolverError
 from .did_resolver import DIDResolver
 
 
@@ -74,13 +75,14 @@ class W3cDID(validate.Regexp):
         )
 
 
-_W3cDID = {"validate": W3cDID(), "example": W3cDID.EXAMPLE}
-
-
 class DIDMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking DID."""
 
-    did = fields.Str(required=True, **_W3cDID, metadata={"description": "DID"})
+    did = fields.Str(
+        required=True,
+        validate=W3cDID(),
+        metadata={"description": "DID", "example": W3cDID.EXAMPLE},
+    )
 
 
 @docs(tags=["resolver"], summary="Retrieve doc for requested did")
