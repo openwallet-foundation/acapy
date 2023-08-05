@@ -26,9 +26,12 @@ from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    INDY_EXTRA_WQL,
-    NUM_STR_NATURAL,
-    NUM_STR_WHOLE,
+    INDY_EXTRA_WQL_EXAMPLE,
+    INDY_EXTRA_WQL_VALIDATE,
+    NUM_STR_NATURAL_EXAMPLE,
+    NUM_STR_NATURAL_VALIDATE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
     UUIDFour,
