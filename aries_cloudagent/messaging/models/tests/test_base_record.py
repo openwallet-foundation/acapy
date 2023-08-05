@@ -56,7 +56,7 @@ class ARecordImplSchema(BaseRecordSchema):
         model_class = BaseRecordImpl
         unknown = EXCLUDE
 
-    ident = fields.Str(attribute="_id")
+    ident = fields.Str(attribute='_id')
     a = fields.Str()
     b = fields.Str()
     code = fields.Str()

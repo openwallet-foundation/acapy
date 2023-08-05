@@ -76,9 +76,7 @@ class CredentialRequestSchema(AgentMessageSchema):
         model_class = CredentialRequest
         unknown = EXCLUDE
 
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
-    requests_attach = fields.Nested(
-        AttachDecoratorSchema, required=True, many=True, data_key="requests~attach"
-    )
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
+    requests_attach = fields.Nested(AttachDecoratorSchema, required=True, many=
+        True, data_key='requests~attach')

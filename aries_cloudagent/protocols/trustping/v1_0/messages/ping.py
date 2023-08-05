@@ -45,15 +45,8 @@ class PingSchema(AgentMessageSchema):
         model_class = Ping
         unknown = EXCLUDE
 
-    response_requested = fields.Bool(
-        description="Whether response is requested (default True)",
-        default=True,
-        required=False,
-        example=True,
-    )
-    comment = fields.Str(
-        description="Optional comment to include",
-        required=False,
-        allow_none=True,
-        example="Hello",
-    )
+    response_requested = fields.Bool(dump_default=True, required=False,
+        metadata={'description': 'Whether response is requested (default True)',
+        'example': True})
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Optional comment to include', 'example': 'Hello'})

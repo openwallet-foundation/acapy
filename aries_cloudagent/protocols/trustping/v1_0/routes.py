@@ -18,23 +18,22 @@ from .messages.ping import Ping
 class PingRequestSchema(OpenAPISchema):
     """Request schema for performing a ping."""
 
-    comment = fields.Str(
-        description="Comment for the ping message", required=False, allow_none=True
-    )
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Comment for the ping message'})
 
 
 class PingRequestResponseSchema(OpenAPISchema):
     """Request schema for performing a ping."""
 
-    thread_id = fields.Str(required=False, description="Thread ID of the ping message")
+    thread_id = fields.Str(required=False, metadata={'description':
+        'Thread ID of the ping message'})
 
 
 class PingConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
-    )
+    conn_id = fields.Str(required=True, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
 
 
 @docs(tags=["trustping"], summary="Send a trust ping to a connection")

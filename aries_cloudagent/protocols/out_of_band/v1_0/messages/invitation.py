@@ -211,75 +211,39 @@ class InvitationMessageSchema(AgentMessageSchema):
         model_class = InvitationMessage
         unknown = EXCLUDE
 
-    _type = fields.Str(
-        data_key="@type",
-        required=False,
-        description="Message type",
-        example="https://didcomm.org/my-family/1.0/my-message-type",
-    )
-    label = fields.Str(required=False, description="Optional label", example="Bob")
-    image_url = fields.URL(
-        data_key="imageUrl",
-        required=False,
-        allow_none=True,
-        description="Optional image URL for out-of-band invitation",
-        example="http://192.168.56.101/img/logo.jpg",
-    )
-    handshake_protocols = fields.List(
-        fields.Str(
-            description="Handshake protocol",
-            example=DIDCommPrefix.qualify_current(HSProto.RFC23.name),
-        ),
-        required=False,
-    )
-    accept = fields.List(
-        fields.Str(),
-        example=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
-        description=("List of mime type in order of preference"),
-        required=False,
-    )
-    requests_attach = fields.Nested(
-        AttachDecoratorSchema,
-        required=False,
-        many=True,
-        data_key="requests~attach",
-        description="Optional request attachment",
-    )
-    services = fields.List(
-        ServiceOrDIDField(
-            required=True,
-            description=(
-                "Either a DIDComm service object (as per RFC0067) or a DID string."
-            ),
-        ),
-        example=[
-            {
-                "did": "WgWxqztrNooG92RXvxSTWv",
-                "id": "string",
-                "recipientKeys": [
-                    "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
-                ],
-                "routingKeys": [
-                    "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
-                ],
-                "serviceEndpoint": "http://192.168.56.101:8020",
-                "type": "string",
-            },
-            "did:sov:WgWxqztrNooG92RXvxSTWv",
-        ],
-    )
-    goal_code = fields.Str(
-        required=False,
-        description="A self-attested code the receiver may want to display to the user "
-        "or use in automatically deciding what to do with the out-of-band message",
-        example="issue-vc",
-    )
-    goal = fields.Str(
-        required=False,
-        description="A self-attested string that the receiver may want to display to the "
-        "user about the context-specific goal of the out-of-band message",
-        example="To issue a Faber College Graduate credential",
-    )
+    _type = fields.Str(data_key='@type', required=False, metadata={
+        'description': 'Message type', 'example':
+        'https://didcomm.org/my-family/1.0/my-message-type'})
+    label = fields.Str(required=False, metadata={'description':
+        'Optional label', 'example': 'Bob'})
+    image_url = fields.URL(data_key='imageUrl', required=False, allow_none=True,
+        metadata={'description':
+        'Optional image URL for out-of-band invitation', 'example':
+        'http://192.168.56.101/img/logo.jpg'})
+    handshake_protocols = fields.List(fields.Str(metadata={'description':
+        'Handshake protocol', 'example': DIDCommPrefix.qualify_current(HSProto.
+        RFC23.name)}), required=False)
+    accept = fields.List(fields.Str(), required=False, metadata={'example': [
+        'didcomm/aip1', 'didcomm/aip2;env=rfc19'], 'description':
+        'List of mime type in order of preference'})
+    requests_attach = fields.Nested(AttachDecoratorSchema, required=False, many
+        =True, data_key='requests~attach', metadata={'description':
+        'Optional request attachment'})
+    services = fields.List(ServiceOrDIDField(required=True, description=
+        'Either a DIDComm service object (as per RFC0067) or a DID string.'),
+        metadata={'example': [{'did': 'WgWxqztrNooG92RXvxSTWv', 'id': 'string',
+        'recipientKeys': [
+        'did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH'],
+        'routingKeys': [
+        'did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH'],
+        'serviceEndpoint': 'http://192.168.56.101:8020', 'type': 'string'},
+        'did:sov:WgWxqztrNooG92RXvxSTWv']})
+    goal_code = fields.Str(required=False, metadata={'description':
+        'A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message'
+        , 'example': 'issue-vc'})
+    goal = fields.Str(required=False, metadata={'description':
+        'A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message'
+        , 'example': 'To issue a Faber College Graduate credential'})
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

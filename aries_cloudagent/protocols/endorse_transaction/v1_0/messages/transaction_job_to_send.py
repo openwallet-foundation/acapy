@@ -49,8 +49,6 @@ class TransactionJobToSendSchema(AgentMessageSchema):
         model_class = TransactionJobToSend
         unknown = EXCLUDE
 
-    job = fields.Str(
-        required=True,
-        description="Transaction job that is sent to the other agent",
-        example="TRANSACTION_AUTHOR",
-    )
+    job = fields.Str(required=True, metadata={'description':
+        'Transaction job that is sent to the other agent', 'example':
+        'TRANSACTION_AUTHOR'})

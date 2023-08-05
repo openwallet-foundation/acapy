@@ -25,22 +25,17 @@ class IntroModuleResponseSchema(OpenAPISchema):
 class IntroStartQueryStringSchema(OpenAPISchema):
     """Query string parameters for request to start introduction."""
 
-    target_connection_id = fields.Str(
-        description="Target connection identifier",
-        required=True,
-        example=UUIDFour.EXAMPLE,
-    )
-    message = fields.Str(
-        description="Message", required=False, example="Allow me to introduce ..."
-    )
+    target_connection_id = fields.Str(required=True, metadata={'description':
+        'Target connection identifier', 'example': UUIDFour.EXAMPLE})
+    message = fields.Str(required=False, metadata={'description': 'Message',
+        'example': 'Allow me to introduce ...'})
 
 
 class IntroConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
-    )
+    conn_id = fields.Str(required=True, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
 
 
 @docs(

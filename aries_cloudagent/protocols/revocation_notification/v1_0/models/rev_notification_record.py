@@ -139,36 +139,20 @@ class RevNotificationRecordSchema(BaseRecordSchema):
         model_class = "RevNotificationRecord"
         unknown = EXCLUDE
 
-    rev_reg_id = fields.Str(
-        required=False,
-        description="Revocation registry identifier",
-        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
-    )
-    cred_rev_id = fields.Str(
-        required=False,
-        description="Credential revocation identifier",
-        validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE,
-    )
-    connection_id = fields.Str(
-        description=(
-            "Connection ID to which the revocation notification will be sent; "
-            "required if notify is true"
-        ),
-        required=False,
-        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
-    )
-    thread_id = fields.Str(
-        description=(
-            "Thread ID of the credential exchange message thread resulting in "
-            "the credential now being revoked; required if notify is true"
-        ),
-        required=False,
-    )
-    comment = fields.Str(
-        description="Optional comment to include in revocation notification",
-        required=False,
-    )
-    version = fields.Str(
-        description="Version of Revocation Notification to send out",
-        required=False,
-    )
+    rev_reg_id = fields.Str(required=False, validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={'description': 'Revocation registry identifier', 'example':
+        INDY_REV_REG_ID_EXAMPLE})
+    cred_rev_id = fields.Str(required=False, validate=INDY_CRED_REV_ID_VALIDATE,
+        metadata={'description': 'Credential revocation identifier', 'example':
+        INDY_CRED_REV_ID_EXAMPLE})
+    connection_id = fields.Str(required=False, validate=UUID4_VALIDATE,
+        metadata={'description':
+        'Connection ID to which the revocation notification will be sent; required if notify is true'
+        , 'example': UUID4_EXAMPLE})
+    thread_id = fields.Str(required=False, metadata={'description':
+        'Thread ID of the credential exchange message thread resulting in the credential now being revoked; required if notify is true'
+        })
+    comment = fields.Str(required=False, metadata={'description':
+        'Optional comment to include in revocation notification'})
+    version = fields.Str(required=False, metadata={'description':
+        'Version of Revocation Notification to send out'})

@@ -49,7 +49,5 @@ class KeylistUpdateResponseSchema(AgentMessageSchema):
 
         model_class = KeylistUpdateResponse
 
-    updated = fields.List(
-        fields.Nested(KeylistUpdatedSchema()),
-        description="List of update results for each update",
-    )
+    updated = fields.List(fields.Nested(KeylistUpdatedSchema()), metadata={
+        'description': 'List of update results for each update'})

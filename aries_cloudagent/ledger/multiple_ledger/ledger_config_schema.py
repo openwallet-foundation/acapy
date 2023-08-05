@@ -45,16 +45,15 @@ class LedgerConfigInstanceSchema(BaseModelSchema):
         model_class = LedgerConfigInstance
         unknown = EXCLUDE
 
-    id = fields.Str(
-        description="ledger_id",
-        required=False,
-    )
-    is_production = fields.Bool(description="is_production", required=False)
-    genesis_transactions = fields.Str(
-        description="genesis_transactions", required=False
-    )
-    genesis_file = fields.Str(description="genesis_file", required=False)
-    genesis_url = fields.Str(description="genesis_url", required=False)
+    id = fields.Str(required=False, metadata={'description': 'ledger_id'})
+    is_production = fields.Bool(required=False, metadata={'description':
+        'is_production'})
+    genesis_transactions = fields.Str(required=False, metadata={'description':
+        'genesis_transactions'})
+    genesis_file = fields.Str(required=False, metadata={'description':
+        'genesis_file'})
+    genesis_url = fields.Str(required=False, metadata={'description':
+        'genesis_url'})
 
     @pre_load
     def validate_id(self, data, **kwargs):
@@ -67,13 +66,8 @@ class LedgerConfigInstanceSchema(BaseModelSchema):
 class LedgerConfigListSchema(OpenAPISchema):
     """Schema for Ledger Config List."""
 
-    ledger_config_list = fields.List(
-        fields.Nested(
-            LedgerConfigInstanceSchema(),
-            required=True,
-        ),
-        required=True,
-    )
+    ledger_config_list = fields.List(fields.Nested(LedgerConfigInstanceSchema(),
+        required=True), required=True)
 
 
 class WriteLedgerSchema(OpenAPISchema):
@@ -85,10 +79,9 @@ class WriteLedgerSchema(OpenAPISchema):
 class ConfigurableWriteLedgersSchema(OpenAPISchema):
     """Schema for list of configurable write ledger."""
 
-    write_ledgers = fields.List(
-        fields.Str(description="Ledgers identifiers"),
-        description="List of configurable write ledgers identifiers",
-    )
+    write_ledgers = fields.List(fields.Str(metadata={'description':
+        'Ledgers identifiers'}), metadata={'description':
+        'List of configurable write ledgers identifiers'})
 
 
 class MultipleLedgerModuleResultSchema(OpenAPISchema):

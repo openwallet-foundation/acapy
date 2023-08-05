@@ -85,20 +85,13 @@ class V20PresProposalSchema(AgentMessageSchema):
         model_class = V20PresProposal
         unknown = EXCLUDE
 
-    comment = fields.Str(description="Human-readable comment", required=False)
-    formats = fields.Nested(
-        V20PresFormatSchema,
-        many=True,
-        required=True,
-        descrption="Acceptable attachment formats",
-    )
-    proposals_attach = fields.Nested(
-        AttachDecoratorSchema,
-        many=True,
-        required=True,
-        data_key="proposals~attach",
-        description="Attachment per acceptable format on corresponding identifier",
-    )
+    comment = fields.Str(required=False, metadata={'description':
+        'Human-readable comment'})
+    formats = fields.Nested(V20PresFormatSchema, many=True, required=True,
+        metadata={'descrption': 'Acceptable attachment formats'})
+    proposals_attach = fields.Nested(AttachDecoratorSchema, many=True, required
+        =True, data_key='proposals~attach', metadata={'description':
+        'Attachment per acceptable format on corresponding identifier'})
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

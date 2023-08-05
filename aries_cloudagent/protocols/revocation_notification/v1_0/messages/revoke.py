@@ -35,14 +35,8 @@ class RevokeSchema(AgentMessageSchema):
         model_class = Revoke
 
     # TODO support please ack
-    thread_id = fields.Str(
-        required=True,
-        description=(
-            "Thread ID of credential exchange resulting in this issued credential"
-        ),
-        example=UUIDFour.EXAMPLE,
-    )
-    comment = fields.Str(
-        required=False,
-        description="Human readable information about revocation notification",
-    )
+    thread_id = fields.Str(required=True, metadata={'description':
+        'Thread ID of credential exchange resulting in this issued credential',
+        'example': UUIDFour.EXAMPLE})
+    comment = fields.Str(required=False, metadata={'description':
+        'Human readable information about revocation notification'})

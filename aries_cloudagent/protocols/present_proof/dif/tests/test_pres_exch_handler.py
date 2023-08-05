@@ -2900,7 +2900,7 @@ class TestPresExchHandler:
     @pytest.mark.asyncio
     async def test_filter_by_field_path_match_on_proof(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
-        field = DIFField(paths=["$.proof.proofPurpose"])
+        field = DIFField(paths=['$.proof.proofPurpose'])
         cred = VCRecord(
             contexts=[
                 "https://www.w3.org/2018/credentials/v1",

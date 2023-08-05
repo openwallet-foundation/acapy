@@ -134,37 +134,23 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
 
         model_class = IssuerCredRevRecord
 
-    record_id = fields.Str(
-        required=False,
-        description="Issuer credential revocation record identifier",
-        example=UUIDFour.EXAMPLE,
-    )
-    state = fields.Str(
-        required=False,
-        description="Issue credential revocation record state",
-        example=IssuerCredRevRecord.STATE_ISSUED,
-    )
-    cred_ex_id = fields.Str(
-        required=False,
-        description="Credential exchange record identifier at credential issue",
-        example=UUIDFour.EXAMPLE,
-    )
-    rev_reg_id = fields.Str(
-        required=False,
-        description="Revocation registry identifier",
-        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
-    )
-    cred_def_id = fields.Str(
-        required=False,
-        description="Credential definition identifier",
-        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
-    )
-    cred_rev_id = fields.Str(
-        required=False,
-        description="Credential revocation identifier",
-        validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE,
-    )
-    cred_ex_version = fields.Str(
-        required=False,
-        description="Credential exchange version",
-    )
+    record_id = fields.Str(required=False, metadata={'description':
+        'Issuer credential revocation record identifier', 'example': UUIDFour.
+        EXAMPLE})
+    state = fields.Str(required=False, metadata={'description':
+        'Issue credential revocation record state', 'example':
+        IssuerCredRevRecord.STATE_ISSUED})
+    cred_ex_id = fields.Str(required=False, metadata={'description':
+        'Credential exchange record identifier at credential issue', 'example':
+        UUIDFour.EXAMPLE})
+    rev_reg_id = fields.Str(required=False, validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={'description': 'Revocation registry identifier', 'example':
+        INDY_REV_REG_ID_EXAMPLE})
+    cred_def_id = fields.Str(required=False, validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={'description': 'Credential definition identifier', 'example':
+        INDY_CRED_DEF_ID_EXAMPLE})
+    cred_rev_id = fields.Str(required=False, validate=INDY_CRED_REV_ID_VALIDATE,
+        metadata={'description': 'Credential revocation identifier', 'example':
+        INDY_CRED_REV_ID_EXAMPLE})
+    cred_ex_version = fields.Str(required=False, metadata={'description':
+        'Credential exchange version'})

@@ -54,96 +54,55 @@ class V10PresentProofModuleResponseSchema(OpenAPISchema):
 class V10PresentationExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for presentation exchange list query."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier",
-        required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
-    )
-    thread_id = fields.UUID(
-        description="Thread identifier",
-        required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
-    )
-    role = fields.Str(
-        description="Role assigned in presentation exchange",
-        required=False,
-        validate=validate.OneOf(
-            [
-                getattr(V10PresentationExchange, m)
-                for m in vars(V10PresentationExchange)
-                if m.startswith("ROLE_")
-            ]
-        ),
-    )
-    state = fields.Str(
-        description="Presentation exchange state",
-        required=False,
-        validate=validate.OneOf(
-            [
-                getattr(V10PresentationExchange, m)
-                for m in vars(V10PresentationExchange)
-                if m.startswith("STATE_")
-            ]
-        ),
-    )
+    connection_id = fields.UUID(required=False, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    thread_id = fields.UUID(required=False, metadata={'description':
+        'Thread identifier', 'example': UUIDFour.EXAMPLE})
+    role = fields.Str(required=False, validate=validate.OneOf([getattr(
+        V10PresentationExchange, m) for m in vars(V10PresentationExchange) if m
+        .startswith('ROLE_')]), metadata={'description':
+        'Role assigned in presentation exchange'})
+    state = fields.Str(required=False, validate=validate.OneOf([getattr(
+        V10PresentationExchange, m) for m in vars(V10PresentationExchange) if m
+        .startswith('STATE_')]), metadata={'description':
+        'Presentation exchange state'})
 
 
 class V10PresentationExchangeListSchema(OpenAPISchema):
     """Result schema for an Aries RFC 37 v1.0 presentation exchange query."""
 
-    results = fields.List(
-        fields.Nested(V10PresentationExchangeSchema()),
-        description="Aries RFC 37 v1.0 presentation exchange records",
-    )
+    results = fields.List(fields.Nested(V10PresentationExchangeSchema()),
+        metadata={'description': 'Aries RFC 37 v1.0 presentation exchange records'}
+        )
 
 
 class V10PresentationSendRequestSchema(IndyPresSpecSchema):
     """Request schema for sending a presentation."""
 
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the presentation exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-        default=False,
-    )
+    auto_remove = fields.Bool(required=False, dump_default=False, metadata={
+        'description':
+        'Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)'
+        })
 
 
 class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
-    )
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
-    presentation_proposal = fields.Nested(
-        IndyPresPreviewSchema(),
-        required=True,
-    )
-    auto_present = fields.Boolean(
-        description=(
-            "Whether to respond automatically to presentation requests, building "
-            "and presenting requested proof"
-        ),
-        required=False,
-        default=False,
-    )
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the presentation exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-        default=False,
-    )
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
-        required=False,
-        example=False,
-    )
+    connection_id = fields.UUID(required=True, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
+    presentation_proposal = fields.Nested(IndyPresPreviewSchema(), required=True)
+    auto_present = fields.Boolean(required=False, dump_default=False, metadata=
+        {'description':
+        'Whether to respond automatically to presentation requests, building and presenting requested proof'
+        })
+    auto_remove = fields.Bool(required=False, dump_default=False, metadata={
+        'description':
+        'Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)'
+        })
+    trace = fields.Bool(required=False, metadata={'description':
+        'Whether to trace event (default false)', 'example': False})
 
 
 class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
@@ -151,24 +110,14 @@ class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
 
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
     comment = fields.Str(required=False, allow_none=True)
-    auto_verify = fields.Bool(
-        description="Verifier choice to auto-verify proof presentation",
-        required=False,
-        example=False,
-    )
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the presentation exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-        default=False,
-    )
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
-        required=False,
-        example=False,
-    )
+    auto_verify = fields.Bool(required=False, metadata={'description':
+        'Verifier choice to auto-verify proof presentation', 'example': False})
+    auto_remove = fields.Bool(required=False, dump_default=False, metadata={
+        'description':
+        'Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)'
+        })
+    trace = fields.Bool(required=False, metadata={'description':
+        'Whether to trace event (default false)', 'example': False})
 
 
 class V10PresentationSendRequestRequestSchema(
@@ -176,58 +125,39 @@ class V10PresentationSendRequestRequestSchema(
 ):
     """Request schema for sending a proof request on a connection."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
-    )
+    connection_id = fields.UUID(required=True, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
 
 
 class V10PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a proof request bound to a proposal."""
 
-    auto_verify = fields.Bool(
-        description="Verifier choice to auto-verify proof presentation",
-        required=False,
-        example=False,
-    )
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the presentation exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-        default=False,
-    )
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
-        required=False,
-        example=False,
-    )
+    auto_verify = fields.Bool(required=False, metadata={'description':
+        'Verifier choice to auto-verify proof presentation', 'example': False})
+    auto_remove = fields.Bool(required=False, dump_default=False, metadata={
+        'description':
+        'Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)'
+        })
+    trace = fields.Bool(required=False, metadata={'description':
+        'Whether to trace event (default false)', 'example': False})
 
 
 class CredentialsFetchQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credentials fetch request query string."""
 
-    referent = fields.Str(
-        description="Proof request referents of interest, comma-separated",
-        required=False,
-        example="1_name_uuid,2_score_uuid",
-    )
-    start = fields.Str(
-        description="Start index",
-        required=False,
-        strict=True,
-        validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE,
-    )
-    count = fields.Str(
-        description="Maximum number to retrieve",
-        required=False,
-        validate=NUM_STR_NATURAL_VALIDATE, example=NUM_STR_NATURAL_EXAMPLE,
-    )
-    extra_query = fields.Str(
-        description="(JSON) object mapping referents to extra WQL queries",
-        required=False,
-        validate=INDY_EXTRA_WQL_VALIDATE, example=INDY_EXTRA_WQL_EXAMPLE,
-    )
+    referent = fields.Str(required=False, metadata={'description':
+        'Proof request referents of interest, comma-separated', 'example':
+        '1_name_uuid,2_score_uuid'})
+    start = fields.Str(required=False, validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={'description': 'Start index', 'strict': True, 'example':
+        NUM_STR_WHOLE_EXAMPLE})
+    count = fields.Str(required=False, validate=NUM_STR_NATURAL_VALIDATE,
+        metadata={'description': 'Maximum number to retrieve', 'example':
+        NUM_STR_NATURAL_EXAMPLE})
+    extra_query = fields.Str(required=False, validate=INDY_EXTRA_WQL_VALIDATE,
+        metadata={'description':
+        '(JSON) object mapping referents to extra WQL queries', 'example':
+        INDY_EXTRA_WQL_EXAMPLE})
 
 
 class V10PresentationProblemReportRequestSchema(OpenAPISchema):
@@ -239,9 +169,9 @@ class V10PresentationProblemReportRequestSchema(OpenAPISchema):
 class V10PresExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking presentation exchange id."""
 
-    pres_ex_id = fields.Str(
-        description="Presentation exchange identifier", required=True, validate=UUID4_VALIDATE, example=UUID4_EXAMPLE
-    )
+    pres_ex_id = fields.Str(required=True, validate=UUID4_VALIDATE, metadata={
+        'description': 'Presentation exchange identifier', 'example':
+        UUID4_EXAMPLE})
 
 
 @docs(tags=["present-proof v1.0"], summary="Fetch all present-proof exchange records")

@@ -93,31 +93,19 @@ class V20CredExRecordIndySchema(BaseRecordSchema):
         model_class = V20CredExRecordIndy
         unknown = EXCLUDE
 
-    cred_ex_indy_id = fields.Str(
-        required=False,
-        description="Record identifier",
-        example=UUIDFour.EXAMPLE,
-    )
-    cred_ex_id = fields.Str(
-        required=False,
-        description="Corresponding v2.0 credential exchange record identifier",
-        example=UUIDFour.EXAMPLE,
-    )
-    cred_id_stored = fields.Str(
-        required=False,
-        description="Credential identifier stored in wallet",
-        example=UUIDFour.EXAMPLE,
-    )
-    cred_request_metadata = fields.Dict(
-        required=False, description="Credential request metadata for indy holder"
-    )
-    rev_reg_id = fields.Str(
-        required=False,
-        description="Revocation registry identifier",
-        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
-    )
-    cred_rev_id = fields.Str(
-        required=False,
-        description="Credential revocation identifier within revocation registry",
-        validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE,
-    )
+    cred_ex_indy_id = fields.Str(required=False, metadata={'description':
+        'Record identifier', 'example': UUIDFour.EXAMPLE})
+    cred_ex_id = fields.Str(required=False, metadata={'description':
+        'Corresponding v2.0 credential exchange record identifier', 'example':
+        UUIDFour.EXAMPLE})
+    cred_id_stored = fields.Str(required=False, metadata={'description':
+        'Credential identifier stored in wallet', 'example': UUIDFour.EXAMPLE})
+    cred_request_metadata = fields.Dict(required=False, metadata={'description':
+        'Credential request metadata for indy holder'})
+    rev_reg_id = fields.Str(required=False, validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={'description': 'Revocation registry identifier', 'example':
+        INDY_REV_REG_ID_EXAMPLE})
+    cred_rev_id = fields.Str(required=False, validate=INDY_CRED_REV_ID_VALIDATE,
+        metadata={'description':
+        'Credential revocation identifier within revocation registry',
+        'example': INDY_CRED_REV_ID_EXAMPLE})

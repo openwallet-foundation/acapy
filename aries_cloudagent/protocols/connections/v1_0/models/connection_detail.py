@@ -90,12 +90,9 @@ class ConnectionDetailSchema(BaseModelSchema):
         model_class = ConnectionDetail
         unknown = EXCLUDE
 
-    did = fields.Str(
-        data_key="DID",
-        required=False,
-        description="DID for connection detail",
-        validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
-    )
+    did = fields.Str(data_key='DID', required=False, validate=INDY_DID_VALIDATE,
+        metadata={'description': 'DID for connection detail', 'example':
+        INDY_DID_EXAMPLE})
     did_doc = DIDDocWrapper(
         data_key="DIDDoc",
         required=False,

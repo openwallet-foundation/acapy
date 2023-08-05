@@ -78,21 +78,14 @@ class CredAttrSpecSchema(BaseModelSchema):
         model_class = CredAttrSpec
         unknown = EXCLUDE
 
-    name = fields.Str(
-        description="Attribute name", required=True, example="favourite_drink"
-    )
-    mime_type = fields.Str(
-        description="MIME type: omit for (null) default",
-        required=False,
-        data_key="mime-type",
-        example="image/jpeg",
-        allow_none=True,
-    )
-    value = fields.Str(
-        description="Attribute value: base64-encode if MIME type is present",
-        required=True,
-        example="martini",
-    )
+    name = fields.Str(required=True, metadata={'description': 'Attribute name',
+        'example': 'favourite_drink'})
+    mime_type = fields.Str(required=False, data_key='mime-type', allow_none=
+        True, metadata={'description': 'MIME type: omit for (null) default',
+        'example': 'image/jpeg'})
+    value = fields.Str(required=True, metadata={'description':
+        'Attribute value: base64-encode if MIME type is present', 'example':
+        'martini'})
 
 
 class CredentialPreview(BaseModel):
@@ -168,12 +161,7 @@ class CredentialPreviewSchema(BaseModelSchema):
         model_class = CredentialPreview
         unknown = EXCLUDE
 
-    _type = fields.Str(
-        description="Message type identifier",
-        required=False,
-        example=CREDENTIAL_PREVIEW,
-        data_key="@type",
-    )
-    attributes = fields.Nested(
-        CredAttrSpecSchema, many=True, required=True, data_key="attributes"
-    )
+    _type = fields.Str(required=False, data_key='@type', metadata={
+        'description': 'Message type identifier', 'example': CREDENTIAL_PREVIEW})
+    attributes = fields.Nested(CredAttrSpecSchema, many=True, required=True,
+        data_key='attributes')

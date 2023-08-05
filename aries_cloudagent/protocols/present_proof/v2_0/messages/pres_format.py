@@ -119,16 +119,8 @@ class V20PresFormatSchema(BaseModelSchema):
         model_class = V20PresFormat
         unknown = EXCLUDE
 
-    attach_id = fields.Str(
-        required=True,
-        allow_none=False,
-        description="Attachment identifier",
-        example=UUIDFour.EXAMPLE,
-    )
-    format_ = fields.Str(
-        required=True,
-        allow_none=False,
-        description="Attachment format specifier",
-        data_key="format",
-        example="dif/presentation-exchange/submission@v1.0",
-    )
+    attach_id = fields.Str(required=True, allow_none=False, metadata={
+        'description': 'Attachment identifier', 'example': UUIDFour.EXAMPLE})
+    format_ = fields.Str(required=True, allow_none=False, data_key='format',
+        metadata={'description': 'Attachment format specifier', 'example':
+        'dif/presentation-exchange/submission@v1.0'})

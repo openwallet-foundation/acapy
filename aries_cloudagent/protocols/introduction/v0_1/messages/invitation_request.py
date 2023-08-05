@@ -43,14 +43,8 @@ class InvitationRequestSchema(AgentMessageSchema):
         model_class = InvitationRequest
         unknown = EXCLUDE
 
-    responder = fields.Str(
-        required=True,
-        description="Agent name initiating the introduction",
-        example="Alice's agent",
-    )
-    message = fields.Str(
-        required=False,
-        allow_none=True,
-        description="Comments on the introduction",
-        example="Hello Charlie, it's Alice; allow me to present Bob",
-    )
+    responder = fields.Str(required=True, metadata={'description':
+        'Agent name initiating the introduction', 'example': "Alice's agent"})
+    message = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Comments on the introduction', 'example':
+        "Hello Charlie, it's Alice; allow me to present Bob"})

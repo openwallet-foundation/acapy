@@ -88,22 +88,13 @@ class V20CredRequestSchema(AgentMessageSchema):
         model_class = V20CredRequest
         unknown = EXCLUDE
 
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
-    formats = fields.Nested(
-        V20CredFormatSchema,
-        many=True,
-        required=True,
-        description="Acceptable attachment formats",
-    )
-    requests_attach = fields.Nested(
-        AttachDecoratorSchema,
-        required=True,
-        many=True,
-        data_key="requests~attach",
-        description="Request attachments",
-    )
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
+    formats = fields.Nested(V20CredFormatSchema, many=True, required=True,
+        metadata={'description': 'Acceptable attachment formats'})
+    requests_attach = fields.Nested(AttachDecoratorSchema, required=True, many=
+        True, data_key='requests~attach', metadata={'description':
+        'Request attachments'})
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

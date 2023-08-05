@@ -84,10 +84,8 @@ RECIPIENT_TERMS_SCHEMA = fields.List(
 class MediationListSchema(OpenAPISchema):
     """Result schema for mediation list query."""
 
-    results = fields.List(
-        fields.Nested(MediationRecordSchema),
-        description="List of mediation records",
-    )
+    results = fields.List(fields.Nested(MediationRecordSchema), metadata={
+        'description': 'List of mediation records'})
 
 
 class MediationListQueryStringSchema(OpenAPISchema):
@@ -123,45 +121,34 @@ class GetKeylistQuerySchema(OpenAPISchema):
     """Get keylist query string paramaters."""
 
     conn_id = CONNECTION_ID_SCHEMA
-    role = fields.Str(
-        description=f"Filer on role, '{MediationRecord.ROLE_CLIENT}' for keys \
-        mediated by other agents, '{MediationRecord.ROLE_SERVER}' for keys \
-        mediated by this agent",
-        validate=validate.OneOf(
-            [MediationRecord.ROLE_CLIENT, MediationRecord.ROLE_SERVER]
-        ),
-        missing=MediationRecord.ROLE_SERVER,
-        required=False,
-    )
+    role = fields.Str(validate=validate.OneOf([MediationRecord.ROLE_CLIENT,
+        MediationRecord.ROLE_SERVER]), load_default=MediationRecord.ROLE_SERVER,
+        required=False, metadata={'description':
+        f"Filer on role, '{MediationRecord.ROLE_CLIENT}' for keys     mediated by other agents, '{MediationRecord.ROLE_SERVER}' for keys     mediated by this agent"
+        })
 
 
 class KeylistSchema(OpenAPISchema):
     """Result schema for mediation list query."""
 
-    results = fields.List(
-        fields.Nested(RouteRecordSchema),
-        description="List of keylist records",
-    )
+    results = fields.List(fields.Nested(RouteRecordSchema), metadata={
+        'description': 'List of keylist records'})
 
 
 class KeylistQueryFilterRequestSchema(OpenAPISchema):
     """Request schema for keylist query filtering."""
 
-    filter = fields.Dict(
-        required=False,
-        description="Filter for keylist query",
-    )
+    filter = fields.Dict(required=False, metadata={'description':
+        'Filter for keylist query'})
 
 
 class KeylistQueryPaginateQuerySchema(OpenAPISchema):
     """Query string schema for keylist query pagination."""
 
-    paginate_limit = fields.Int(
-        required=False, missing=-1, description="limit number of results"
-    )
-    paginate_offset = fields.Int(
-        required=False, missing=0, description="offset to use in pagination"
-    )
+    paginate_limit = fields.Int(required=False, load_default=-1, metadata={
+        'description': 'limit number of results'})
+    paginate_offset = fields.Int(required=False, load_default=0, metadata={
+        'description': 'offset to use in pagination'})
 
 
 class KeylistUpdateRequestSchema(OpenAPISchema):

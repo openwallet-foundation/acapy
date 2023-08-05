@@ -36,27 +36,19 @@ class ProtocolDescriptorSchema(Schema):
     """Schema for an entry in the protocols list."""
 
     id = fields.Str(required=True)
-    feature_type = fields.Str(
-        required=True, description="feature-type", data_key="feature-type"
-    )
-    roles = fields.List(
-        fields.Str(
-            description="Role: requester or responder",
-            example="requester",
-        ),
-        required=False,
-        allow_none=True,
-        description="List of roles",
-    )
+    feature_type = fields.Str(required=True, data_key='feature-type', metadata=
+        {'description': 'feature-type'})
+    roles = fields.List(fields.Str(metadata={'description':
+        'Role: requester or responder', 'example': 'requester'}), required=
+        False, allow_none=True, metadata={'description': 'List of roles'})
 
 
 class GoalCodeDescriptorSchema(Schema):
     """Schema for an entry in the goal_code list."""
 
     id = fields.Str(required=True)
-    feature_type = fields.Str(
-        required=True, description="feature-type", data_key="feature-type"
-    )
+    feature_type = fields.Str(required=True, data_key='feature-type', metadata=
+        {'description': 'feature-type'})
 
 
 class Disclosures(AgentMessage):
@@ -89,8 +81,6 @@ class DisclosuresSchema(AgentMessageSchema):
         model_class = Disclosures
         unknown = EXCLUDE
 
-    disclosures = fields.List(
-        ProtocolOrGoalCodeDescriptorField(),
-        required=True,
-        description="List of protocol or goal_code descriptors",
-    )
+    disclosures = fields.List(ProtocolOrGoalCodeDescriptorField(), required=
+        True, metadata={'description': 'List of protocol or goal_code descriptors'}
+        )

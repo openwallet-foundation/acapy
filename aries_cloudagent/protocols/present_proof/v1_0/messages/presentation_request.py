@@ -71,12 +71,7 @@ class PresentationRequestSchema(AgentMessageSchema):
         model_class = PresentationRequest
         unknown = EXCLUDE
 
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
-    request_presentations_attach = fields.Nested(
-        AttachDecoratorSchema,
-        required=True,
-        many=True,
-        data_key="request_presentations~attach",
-    )
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
+    request_presentations_attach = fields.Nested(AttachDecoratorSchema,
+        required=True, many=True, data_key='request_presentations~attach')

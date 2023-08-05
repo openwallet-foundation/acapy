@@ -119,35 +119,16 @@ class ThreadDecoratorSchema(BaseModelSchema):
         model_class = ThreadDecorator
         unknown = EXCLUDE
 
-    thid = fields.Str(
-        required=False,
-        allow_none=True,
-        description="Thread identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
-    )
-    pthid = fields.Str(
-        required=False,
-        allow_none=True,
-        description="Parent thread identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
-    )
-    sender_order = fields.Int(
-        required=False,
-        allow_none=True,
-        description="Ordinal of message among all from current sender in thread",
-        example=11,
-        strict=True,
-    )
-    received_orders = fields.Dict(
-        keys=fields.Str(description="Sender key"),
-        values=fields.Int(
-            description="Highest sender_order value for sender",
-            example=3,
-            strict=True,
-        ),
-        required=False,
-        allow_none=True,
-        description=(
-            "Highest sender_order value that sender has seen from others on thread"
-        ),
-    )
+    thid = fields.Str(required=False, allow_none=True, metadata={'description':
+        'Thread identifier', 'example': UUIDFour.EXAMPLE})
+    pthid = fields.Str(required=False, allow_none=True, metadata={'description':
+        'Parent thread identifier', 'example': UUIDFour.EXAMPLE})
+    sender_order = fields.Int(required=False, allow_none=True, metadata={
+        'description':
+        'Ordinal of message among all from current sender in thread', 'example':
+        11, 'strict': True})
+    received_orders = fields.Dict(keys=fields.Str(metadata={'description':
+        'Sender key'}), values=fields.Int(metadata={'description':
+        'Highest sender_order value for sender', 'example': 3, 'strict': True}),
+        required=False, allow_none=True, metadata={'description':
+        'Highest sender_order value that sender has seen from others on thread'})

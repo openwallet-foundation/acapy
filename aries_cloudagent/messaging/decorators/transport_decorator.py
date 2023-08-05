@@ -48,20 +48,12 @@ class TransportDecoratorSchema(BaseModelSchema):
         model_class = TransportDecorator
         unknown = EXCLUDE
 
-    return_route = fields.Str(
-        required=False,
-        description="Return routing mode: none, all, or thread",
-        example="all",
-        validate=validate.OneOf(["none", "all", "thread"]),
-    )
-    return_route_thread = fields.Str(
-        required=False,
-        description="Identifier for thread for which to enable return routing",
-        example=UUIDFour.EXAMPLE,
-    )
-    queued_message_count = fields.Int(
-        required=False,
-        description="Number of queued messages",
-        strict=True,
-        validate=WHOLE_NUM_VALIDATE, example=WHOLE_NUM_EXAMPLE,
-    )
+    return_route = fields.Str(required=False, validate=validate.OneOf(['none',
+        'all', 'thread']), metadata={'description':
+        'Return routing mode: none, all, or thread', 'example': 'all'})
+    return_route_thread = fields.Str(required=False, metadata={'description':
+        'Identifier for thread for which to enable return routing', 'example':
+        UUIDFour.EXAMPLE})
+    queued_message_count = fields.Int(required=False, validate=
+        WHOLE_NUM_VALIDATE, metadata={'description':
+        'Number of queued messages', 'strict': True, 'example': WHOLE_NUM_EXAMPLE})

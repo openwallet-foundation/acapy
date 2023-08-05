@@ -24,7 +24,7 @@ class SimpleModelSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     value = fields.Str(required=True)
-    handled_decorator = fields.Str(required=False, data_key="handled~decorator")
+    handled_decorator = fields.Str(required=False, data_key='handled~decorator')
 
 
 class TestDecoratorSet(TestCase):

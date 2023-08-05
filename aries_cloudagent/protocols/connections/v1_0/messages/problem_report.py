@@ -54,18 +54,10 @@ class ConnectionProblemReportSchema(AgentMessageSchema):
         model_class = ConnectionProblemReport
         unknown = EXCLUDE
 
-    explain = fields.Str(
-        required=False,
-        description="Localized error explanation",
-        example="Invitation not accepted",
-    )
-    problem_code = fields.Str(
-        data_key="problem-code",
-        required=False,
-        description="Standard error identifier",
-        validate=validate.OneOf(
-            choices=[prr.value for prr in ProblemReportReason],
-            error="Value {input} must be one of {choices}.",
-        ),
-        example=ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
-    )
+    explain = fields.Str(required=False, metadata={'description':
+        'Localized error explanation', 'example': 'Invitation not accepted'})
+    problem_code = fields.Str(data_key='problem-code', required=False, validate
+        =validate.OneOf(choices=[prr.value for prr in ProblemReportReason],
+        error='Value {input} must be one of {choices}.'), metadata={
+        'description': 'Standard error identifier', 'example':
+        ProblemReportReason.INVITATION_NOT_ACCEPTED.value})

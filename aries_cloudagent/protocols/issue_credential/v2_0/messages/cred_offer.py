@@ -93,31 +93,18 @@ class V20CredOfferSchema(AgentMessageSchema):
         model_class = V20CredOffer
         unknown = EXCLUDE
 
-    replacement_id = fields.Str(
-        description="Issuer-unique identifier to coordinate credential replacement",
-        required=False,
-        allow_none=False,
-        example=UUIDFour.EXAMPLE,
-    )
-    comment = fields.Str(
-        description="Human-readable comment",
-        required=False,
-        allow_none=True,
-    )
+    replacement_id = fields.Str(required=False, allow_none=False, metadata={
+        'description':
+        'Issuer-unique identifier to coordinate credential replacement',
+        'example': UUIDFour.EXAMPLE})
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
-    formats = fields.Nested(
-        V20CredFormatSchema,
-        many=True,
-        required=True,
-        description="Acceptable credential formats",
-    )
-    offers_attach = fields.Nested(
-        AttachDecoratorSchema,
-        required=True,
-        many=True,
-        data_key="offers~attach",
-        description="Offer attachments",
-    )
+    formats = fields.Nested(V20CredFormatSchema, many=True, required=True,
+        metadata={'description': 'Acceptable credential formats'})
+    offers_attach = fields.Nested(AttachDecoratorSchema, required=True, many=
+        True, data_key='offers~attach', metadata={'description':
+        'Offer attachments'})
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

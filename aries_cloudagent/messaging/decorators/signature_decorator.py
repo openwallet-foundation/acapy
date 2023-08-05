@@ -132,24 +132,16 @@ class SignatureDecoratorSchema(BaseModelSchema):
         model_class = SignatureDecorator
         unknown = EXCLUDE
 
-    signature_type = fields.Str(
-        data_key="@type",
-        required=True,
-        description="Signature type",
-        example=(DIDCommPrefix.NEW.qualify("signature/1.0/ed25519Sha512_single")),
-    )
-    signature = fields.Str(
-        required=True,
-        description="signature value, base64url-encoded",
-        example=(
-            "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-"
-            "l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg=="
-        ),
-        validate=Base64URL(),
-    )
-    sig_data = fields.Str(
-        required=True, description="Signature data, base64url-encoded", validate=BASE64_VALIDATE, example=BASE64_EXAMPLEURL
-    )
-    signer = fields.Str(
-        required=True, description="Signer verification key", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE
-    )
+    signature_type = fields.Str(data_key='@type', required=True, metadata={
+        'description': 'Signature type', 'example': DIDCommPrefix.NEW.qualify(
+        'signature/1.0/ed25519Sha512_single')})
+    signature = fields.Str(required=True, validate=Base64URL(), metadata={
+        'description': 'signature value, base64url-encoded', 'example':
+        'FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg=='
+        })
+    sig_data = fields.Str(required=True, validate=BASE64_VALIDATE, metadata={
+        'description': 'Signature data, base64url-encoded', 'example':
+        BASE64_EXAMPLEURL})
+    signer = fields.Str(required=True, validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={'description': 'Signer verification key', 'example':
+        INDY_RAW_PUBLIC_KEY_EXAMPLE})

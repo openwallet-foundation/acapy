@@ -93,36 +93,18 @@ class InvitationRecordSchema(BaseExchangeSchema):
 
         model_class = InvitationRecord
 
-    invitation_id = fields.Str(
-        required=False,
-        description="Invitation record identifier",
-        example=UUIDFour.EXAMPLE,
-    )
-    state = fields.Str(
-        required=False,
-        description="Out of band message exchange state",
-        example=InvitationRecord.STATE_AWAIT_RESPONSE,
-    )
-    invi_msg_id = fields.Str(
-        required=False,
-        description="Invitation message identifier",
-        example=UUIDFour.EXAMPLE,
-    )
-    oob_id = fields.Str(
-        required=False,
-        description="Out of band record identifier",
-        example=UUIDFour.EXAMPLE,
-    )
-    invitation = fields.Nested(
-        InvitationMessageSchema(),
-        required=False,
-        description="Out of band invitation message",
-    )
-    invitation_url = fields.Str(
-        required=False,
-        description="Invitation message URL",
-        example=(
-            "https://example.com/endpoint?"
-            "c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjogIi4uLiJ9XX0="
-        ),
-    )
+    invitation_id = fields.Str(required=False, metadata={'description':
+        'Invitation record identifier', 'example': UUIDFour.EXAMPLE})
+    state = fields.Str(required=False, metadata={'description':
+        'Out of band message exchange state', 'example': InvitationRecord.
+        STATE_AWAIT_RESPONSE})
+    invi_msg_id = fields.Str(required=False, metadata={'description':
+        'Invitation message identifier', 'example': UUIDFour.EXAMPLE})
+    oob_id = fields.Str(required=False, metadata={'description':
+        'Out of band record identifier', 'example': UUIDFour.EXAMPLE})
+    invitation = fields.Nested(InvitationMessageSchema(), required=False,
+        metadata={'description': 'Out of band invitation message'})
+    invitation_url = fields.Str(required=False, metadata={'description':
+        'Invitation message URL', 'example':
+        'https://example.com/endpoint?c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjogIi4uLiJ9XX0='
+        })

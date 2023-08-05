@@ -44,13 +44,8 @@ class RouteQueryRequestSchema(AgentMessageSchema):
         model_class = RouteQueryRequest
         unknown = EXCLUDE
 
-    filter = fields.Dict(
-        keys=fields.Str(description="field"),
-        values=fields.List(
-            fields.Str(description="value"), description="List of values"
-        ),
-        required=False,
-        allow_none=True,
-        description="Filter by field name and value",
-    )
+    filter = fields.Dict(keys=fields.Str(metadata={'description': 'field'}),
+        values=fields.List(fields.Str(metadata={'description': 'value'}),
+        metadata={'description': 'List of values'}), required=False, allow_none
+        =True, metadata={'description': 'Filter by field name and value'})
     paginate = fields.Nested(PaginateSchema(), required=False, allow_none=True)

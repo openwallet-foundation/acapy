@@ -21,34 +21,21 @@ CRED_DEF_SENT_RECORD_TYPE = "cred_def_sent"
 class CredDefQueryStringSchema(OpenAPISchema):
     """Query string parameters for credential definition searches."""
 
-    schema_id = fields.Str(
-        description="Schema identifier",
-        required=False,
-        validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE,
-    )
-    schema_issuer_did = fields.Str(
-        description="Schema issuer DID",
-        required=False,
-        validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE,
-    )
-    schema_name = fields.Str(
-        description="Schema name",
-        required=False,
-        example="membership",
-    )
-    schema_version = fields.Str(
-        description="Schema version", required=False, validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE
-    )
-    issuer_did = fields.Str(
-        description="Issuer DID",
-        required=False,
-        validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE,
-    )
-    cred_def_id = fields.Str(
-        description="Credential definition id",
-        required=False,
-        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
-    )
+    schema_id = fields.Str(required=False, validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={'description': 'Schema identifier', 'example':
+        INDY_SCHEMA_ID_EXAMPLE})
+    schema_issuer_did = fields.Str(required=False, validate=INDY_DID_VALIDATE,
+        metadata={'description': 'Schema issuer DID', 'example': INDY_DID_EXAMPLE})
+    schema_name = fields.Str(required=False, metadata={'description':
+        'Schema name', 'example': 'membership'})
+    schema_version = fields.Str(required=False, validate=INDY_VERSION_VALIDATE,
+        metadata={'description': 'Schema version', 'example': INDY_VERSION_EXAMPLE}
+        )
+    issuer_did = fields.Str(required=False, validate=INDY_DID_VALIDATE,
+        metadata={'description': 'Issuer DID', 'example': INDY_DID_EXAMPLE})
+    cred_def_id = fields.Str(required=False, validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={'description': 'Credential definition id', 'example':
+        INDY_CRED_DEF_ID_EXAMPLE})
 
 
 CRED_DEF_TAGS = [

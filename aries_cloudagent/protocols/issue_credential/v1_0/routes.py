@@ -55,47 +55,25 @@ class IssueCredentialModuleResponseSchema(OpenAPISchema):
 class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange list query."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier",
-        required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
-    )
-    thread_id = fields.UUID(
-        description="Thread identifier",
-        required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
-    )
-    role = fields.Str(
-        description="Role assigned in credential exchange",
-        required=False,
-        validate=validate.OneOf(
-            [
-                getattr(V10CredentialExchange, m)
-                for m in vars(V10CredentialExchange)
-                if m.startswith("ROLE_")
-            ]
-        ),
-    )
-    state = fields.Str(
-        description="Credential exchange state",
-        required=False,
-        validate=validate.OneOf(
-            [
-                getattr(V10CredentialExchange, m)
-                for m in vars(V10CredentialExchange)
-                if m.startswith("STATE_")
-            ]
-        ),
-    )
+    connection_id = fields.UUID(required=False, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    thread_id = fields.UUID(required=False, metadata={'description':
+        'Thread identifier', 'example': UUIDFour.EXAMPLE})
+    role = fields.Str(required=False, validate=validate.OneOf([getattr(
+        V10CredentialExchange, m) for m in vars(V10CredentialExchange) if m.
+        startswith('ROLE_')]), metadata={'description':
+        'Role assigned in credential exchange'})
+    state = fields.Str(required=False, validate=validate.OneOf([getattr(
+        V10CredentialExchange, m) for m in vars(V10CredentialExchange) if m.
+        startswith('STATE_')]), metadata={'description':
+        'Credential exchange state'})
 
 
 class V10CredentialExchangeListResultSchema(OpenAPISchema):
     """Result schema for Aries#0036 v1.0 credential exchange query."""
 
-    results = fields.List(
-        fields.Nested(V10CredentialExchangeSchema),
-        description="Aries#0036 v1.0 credential exchange records",
-    )
+    results = fields.List(fields.Nested(V10CredentialExchangeSchema), metadata=
+        {'description': 'Aries#0036 v1.0 credential exchange records'})
 
 
 class V10CredentialStoreRequestSchema(OpenAPISchema):
@@ -107,77 +85,56 @@ class V10CredentialStoreRequestSchema(OpenAPISchema):
 class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
     """Base class for request schema for sending credential proposal admin message."""
 
-    cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        required=False,
-        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
-    )
-    schema_id = fields.Str(
-        description="Schema identifier", required=False, validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE
-    )
-    schema_issuer_did = fields.Str(
-        description="Schema issuer DID", required=False, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
-    )
-    schema_name = fields.Str(
-        description="Schema name", required=False, example="preferences"
-    )
-    schema_version = fields.Str(
-        description="Schema version", required=False, validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE
-    )
-    issuer_did = fields.Str(
-        description="Credential issuer DID", required=False, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
-    )
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-    )
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
+    cred_def_id = fields.Str(required=False, validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={'description': 'Credential definition identifier', 'example':
+        INDY_CRED_DEF_ID_EXAMPLE})
+    schema_id = fields.Str(required=False, validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={'description': 'Schema identifier', 'example':
+        INDY_SCHEMA_ID_EXAMPLE})
+    schema_issuer_did = fields.Str(required=False, validate=INDY_DID_VALIDATE,
+        metadata={'description': 'Schema issuer DID', 'example': INDY_DID_EXAMPLE})
+    schema_name = fields.Str(required=False, metadata={'description':
+        'Schema name', 'example': 'preferences'})
+    schema_version = fields.Str(required=False, validate=INDY_VERSION_VALIDATE,
+        metadata={'description': 'Schema version', 'example': INDY_VERSION_EXAMPLE}
+        )
+    issuer_did = fields.Str(required=False, validate=INDY_DID_VALIDATE,
+        metadata={'description': 'Credential issuer DID', 'example':
+        INDY_DID_EXAMPLE})
+    auto_remove = fields.Bool(required=False, metadata={'description':
+        'Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)'
+        })
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
     credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
 
 
 class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
     """Base class for request schema for sending credential proposal admin message."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier",
-        required=True,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
-    )
-    cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        required=False,
-        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
-    )
-    schema_id = fields.Str(
-        description="Schema identifier", required=False, validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE
-    )
-    schema_issuer_did = fields.Str(
-        description="Schema issuer DID", required=False, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
-    )
-    schema_name = fields.Str(
-        description="Schema name", required=False, example="preferences"
-    )
-    schema_version = fields.Str(
-        description="Schema version", required=False, validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE
-    )
-    issuer_did = fields.Str(
-        description="Credential issuer DID", required=False, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
-    )
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-    )
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
+    connection_id = fields.UUID(required=True, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    cred_def_id = fields.Str(required=False, validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={'description': 'Credential definition identifier', 'example':
+        INDY_CRED_DEF_ID_EXAMPLE})
+    schema_id = fields.Str(required=False, validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={'description': 'Schema identifier', 'example':
+        INDY_SCHEMA_ID_EXAMPLE})
+    schema_issuer_did = fields.Str(required=False, validate=INDY_DID_VALIDATE,
+        metadata={'description': 'Schema issuer DID', 'example': INDY_DID_EXAMPLE})
+    schema_name = fields.Str(required=False, metadata={'description':
+        'Schema name', 'example': 'preferences'})
+    schema_version = fields.Str(required=False, validate=INDY_VERSION_VALIDATE,
+        metadata={'description': 'Schema version', 'example': INDY_VERSION_EXAMPLE}
+        )
+    issuer_did = fields.Str(required=False, validate=INDY_DID_VALIDATE,
+        metadata={'description': 'Credential issuer DID', 'example':
+        INDY_DID_EXAMPLE})
+    auto_remove = fields.Bool(required=False, metadata={'description':
+        'Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)'
+        })
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
 
 
 class V10CredentialProposalRequestOptSchema(V10CredentialProposalRequestSchemaBase):
@@ -195,82 +152,53 @@ class V10CredentialProposalRequestMandSchema(V10CredentialProposalRequestSchemaB
 class V10CredentialBoundOfferRequestSchema(OpenAPISchema):
     """Request schema for sending bound credential offer admin message."""
 
-    counter_proposal = fields.Nested(
-        CredentialProposalSchema,
-        required=False,
-        description="Optional counter-proposal",
-    )
+    counter_proposal = fields.Nested(CredentialProposalSchema, required=False,
+        metadata={'description': 'Optional counter-proposal'})
 
 
 class V10CredentialFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending free credential offer admin message."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier",
-        required=True,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
-    )
-    cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        required=True,
-        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
-    )
-    auto_issue = fields.Bool(
-        description=(
-            "Whether to respond automatically to credential requests, creating "
-            "and issuing requested credentials"
-        ),
-        required=False,
-    )
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-        default=True,
-    )
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
+    connection_id = fields.UUID(required=True, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    cred_def_id = fields.Str(required=True, validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={'description': 'Credential definition identifier', 'example':
+        INDY_CRED_DEF_ID_EXAMPLE})
+    auto_issue = fields.Bool(required=False, metadata={'description':
+        'Whether to respond automatically to credential requests, creating and issuing requested credentials'
+        })
+    auto_remove = fields.Bool(required=False, dump_default=True, metadata={
+        'description':
+        'Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)'
+        })
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
 class V10CredentialConnFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for creating connection free credential offer."""
 
-    cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        required=True,
-        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
-    )
-    auto_issue = fields.Bool(
-        description=(
-            "Whether to respond automatically to credential requests, creating "
-            "and issuing requested credentials"
-        ),
-        required=False,
-    )
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-        default=True,
-    )
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
+    cred_def_id = fields.Str(required=True, validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={'description': 'Credential definition identifier', 'example':
+        INDY_CRED_DEF_ID_EXAMPLE})
+    auto_issue = fields.Bool(required=False, metadata={'description':
+        'Whether to respond automatically to credential requests, creating and issuing requested credentials'
+        })
+    auto_remove = fields.Bool(required=False, dump_default=True, metadata={
+        'description':
+        'Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)'
+        })
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
 
 class V10CredentialIssueRequestSchema(OpenAPISchema):
     """Request schema for sending credential issue admin message."""
 
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
 
 
 class V10CredentialProblemReportRequestSchema(OpenAPISchema):
@@ -282,30 +210,24 @@ class V10CredentialProblemReportRequestSchema(OpenAPISchema):
 class CredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
-    credential_id = fields.Str(
-        description="Credential identifier", required=True, example=UUIDFour.EXAMPLE
-    )
+    credential_id = fields.Str(required=True, metadata={'description':
+        'Credential identifier', 'example': UUIDFour.EXAMPLE})
 
 
 class CredExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential exchange id."""
 
-    cred_ex_id = fields.Str(
-        description="Credential exchange identifier", required=True, validate=UUID4_VALIDATE, example=UUID4_EXAMPLE
-    )
+    cred_ex_id = fields.Str(required=True, validate=UUID4_VALIDATE, metadata={
+        'description': 'Credential exchange identifier', 'example': UUID4_EXAMPLE})
 
 
 class V10CredentialExchangeAutoRemoveRequestSchema(OpenAPISchema):
     """Request Schema for overriding default preserve exchange records setting."""
 
-    auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
-        required=False,
-        default=False,
-    )
+    auto_remove = fields.Bool(required=False, dump_default=False, metadata={
+        'description':
+        'Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)'
+        })
 
 
 @docs(

@@ -54,7 +54,7 @@ class KeylistSchema(AgentMessageSchema):
 
         model_class = Keylist
 
-    pagination = fields.Nested(
-        KeylistQueryPaginateSchema(), required=False, description="List of update rules"
-    )
-    keys = fields.List(fields.Nested(KeylistKeySchema()), description="Keys")
+    pagination = fields.Nested(KeylistQueryPaginateSchema(), required=False,
+        metadata={'description': 'List of update rules'})
+    keys = fields.List(fields.Nested(KeylistKeySchema()), metadata={
+        'description': 'Keys'})

@@ -21,39 +21,27 @@ from .models.discovery_record import (
 class V10DiscoveryExchangeListResultSchema(OpenAPISchema):
     """Result schema for Discover Features v1.0 exchange records."""
 
-    results = fields.List(
-        fields.Nested(
-            V10DiscoveryRecordSchema,
-            description="Discover Features v1.0 exchange record",
-        )
-    )
+    results = fields.List(fields.Nested(V10DiscoveryRecordSchema, metadata={
+        'description': 'Discover Features v1.0 exchange record'}))
 
 
 class QueryFeaturesQueryStringSchema(OpenAPISchema):
     """Query string parameters for feature query."""
 
-    query = fields.Str(
-        description="Protocol feature query", required=False, example="*"
-    )
-    comment = fields.Str(description="Comment", required=False, example="test")
-    connection_id = fields.Str(
-        description=(
-            "Connection identifier, if none specified, "
-            "then the query will provide features for this agent."
-        ),
-        example=UUIDFour.EXAMPLE,
-        required=False,
-    )
+    query = fields.Str(required=False, metadata={'description':
+        'Protocol feature query', 'example': '*'})
+    comment = fields.Str(required=False, metadata={'description': 'Comment',
+        'example': 'test'})
+    connection_id = fields.Str(required=False, metadata={'description':
+        'Connection identifier, if none specified, then the query will provide features for this agent.'
+        , 'example': UUIDFour.EXAMPLE})
 
 
 class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
     """Query string parameter for Discover Features v1.0 exchange record."""
 
-    connection_id = fields.Str(
-        description="Connection identifier",
-        example=UUIDFour.EXAMPLE,
-        required=False,
-    )
+    connection_id = fields.Str(required=False, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
 
 
 @docs(

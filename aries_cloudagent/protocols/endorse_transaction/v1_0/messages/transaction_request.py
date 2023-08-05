@@ -63,52 +63,26 @@ class TransactionRequestSchema(AgentMessageSchema):
         model_class = TransactionRequest
         unknown = EXCLUDE
 
-    transaction_id = fields.Str(required=False, example=UUIDFour.EXAMPLE)
-    signature_request = fields.Dict(
-        required=False,
-        example={
-            "context": "did:sov",
-            "method": "add-signature",
-            "signature_type": "<requested signature type>",
-            "signer_goal_code": "transaction.endorse",
-            "author_goal_code": "transaction.ledger.write",
-        },
-    )
-    timing = fields.Dict(required=False, example={"expires_time": "1597708800"})
-    transaction_type = fields.Str(required=False, example="101")
-    messages_attach = fields.Dict(
-        required=False,
-        example={
-            "@id": "143c458d-1b1c-40c7-ab85-4d16808ddf0a",
-            "mime-type": "application/json",
-            "data": {
-                "json": {
-                    "endorser": "V4SGRU86Z58d6TV7PBUe6f",
-                    "identifier": "LjgpST2rjsoxYegQDRm7EL",
-                    "operation": {
-                        "data": {
-                            "attr_names": ["first_name", "last_name"],
-                            "name": "test_schema",
-                            "version": "2.1",
-                        },
-                        "type": "101",
-                    },
-                    "protocolVersion": 2,
-                    "reqId": 1597766666168851000,
-                    "signatures": {
-                        "LjgpST2rjsox": "4uq1mUATKMn6Y9sTaGWyuPgjUEw5UBysWNbfSqCfnbm1Vnfw"
-                    },
-                    "taaAcceptance": {
-                        "mechanism": "manual",
-                        "taaDigest": "f50feca75664270842bd4202c2d6f23e4c6a7e0fc2feb9f62",
-                        "time": 1597708800,
-                    },
-                }
-            },
-        },
-    )
-    endorser_write_txn = fields.Boolean(
-        description="If True, Endorser will write the transaction after endorsing it",
-        required=False,
-        example=True,
-    )
+    transaction_id = fields.Str(required=False, metadata={'example': UUIDFour.
+        EXAMPLE})
+    signature_request = fields.Dict(required=False, metadata={'example': {
+        'context': 'did:sov', 'method': 'add-signature', 'signature_type':
+        '<requested signature type>', 'signer_goal_code': 'transaction.endorse',
+        'author_goal_code': 'transaction.ledger.write'}})
+    timing = fields.Dict(required=False, metadata={'example': {'expires_time':
+        '1597708800'}})
+    transaction_type = fields.Str(required=False, metadata={'example': '101'})
+    messages_attach = fields.Dict(required=False, metadata={'example': {'@id':
+        '143c458d-1b1c-40c7-ab85-4d16808ddf0a', 'mime-type': 'application/json',
+        'data': {'json': {'endorser': 'V4SGRU86Z58d6TV7PBUe6f', 'identifier':
+        'LjgpST2rjsoxYegQDRm7EL', 'operation': {'data': {'attr_names': [
+        'first_name', 'last_name'], 'name': 'test_schema', 'version': '2.1'},
+        'type': '101'}, 'protocolVersion': 2, 'reqId': 1597766666168851000,
+        'signatures': {'LjgpST2rjsox':
+        '4uq1mUATKMn6Y9sTaGWyuPgjUEw5UBysWNbfSqCfnbm1Vnfw'}, 'taaAcceptance': {
+        'mechanism': 'manual', 'taaDigest':
+        'f50feca75664270842bd4202c2d6f23e4c6a7e0fc2feb9f62', 'time': 1597708800
+        }}}}})
+    endorser_write_txn = fields.Boolean(required=False, metadata={'description':
+        'If True, Endorser will write the transaction after endorsing it',
+        'example': True})

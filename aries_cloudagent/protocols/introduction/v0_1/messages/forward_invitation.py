@@ -50,9 +50,6 @@ class ForwardInvitationSchema(AgentMessageSchema):
         model_class = ForwardInvitation
 
     invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
-    message = fields.Str(
-        required=False,
-        allow_none=True,
-        description="Comments on the introduction",
-        example="Hello Bob, it's Alice",
-    )
+    message = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Comments on the introduction', 'example':
+        "Hello Bob, it's Alice"})

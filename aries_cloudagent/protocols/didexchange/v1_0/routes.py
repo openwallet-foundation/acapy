@@ -36,104 +36,77 @@ from .messages.request import DIDXRequest, DIDXRequestSchema
 class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
 
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE)
-    my_label = fields.Str(
-        description="Label for connection request", required=False, example="Broker"
-    )
+    my_endpoint = fields.Str(required=False, validate=ENDPOINT_VALIDATE,
+        metadata={'description': 'My URL endpoint', 'example': ENDPOINT_EXAMPLE})
+    my_label = fields.Str(required=False, metadata={'description':
+        'Label for connection request', 'example': 'Broker'})
 
 
 class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create-request-implicit request query string."""
 
-    their_public_did = fields.Str(
-        required=True,
-        allow_none=False,
-        description="Qualified public DID to which to request connection",
-        validate=GENERIC_DID_VALIDATE, example=GENERIC_DID_EXAMPLE,
-    )
-    alias = fields.Str(
-        description="Alias for connection",
-        required=False,
-        example="Barry",
-    )
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE)
-    my_label = fields.Str(
-        description="Label for connection request", required=False, example="Broker"
-    )
-    mediation_id = fields.Str(
-        required=False,
-        description="Identifier for active mediation record to be used",
-        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
-    )
-    use_public_did = fields.Boolean(
-        required=False,
-        description="Use public DID for this connection",
-    )
-    goal_code = fields.Str(
-        required=False,
-        description="A self-attested code the receiver may want to display to the user "
-        "or use in automatically deciding what to do with the out-of-band message",
-        example="issue-vc",
-    )
-    goal = fields.Str(
-        required=False,
-        description="A self-attested string that the receiver may want to display to the "
-        "user about the context-specific goal of the out-of-band message",
-        example="To issue a Faber College Graduate credential",
-    )
+    their_public_did = fields.Str(required=True, allow_none=False, validate=
+        GENERIC_DID_VALIDATE, metadata={'description':
+        'Qualified public DID to which to request connection', 'example':
+        GENERIC_DID_EXAMPLE})
+    alias = fields.Str(required=False, metadata={'description':
+        'Alias for connection', 'example': 'Barry'})
+    my_endpoint = fields.Str(required=False, validate=ENDPOINT_VALIDATE,
+        metadata={'description': 'My URL endpoint', 'example': ENDPOINT_EXAMPLE})
+    my_label = fields.Str(required=False, metadata={'description':
+        'Label for connection request', 'example': 'Broker'})
+    mediation_id = fields.Str(required=False, validate=UUID4_VALIDATE, metadata
+        ={'description': 'Identifier for active mediation record to be used',
+        'example': UUID4_EXAMPLE})
+    use_public_did = fields.Boolean(required=False, metadata={'description':
+        'Use public DID for this connection'})
+    goal_code = fields.Str(required=False, metadata={'description':
+        'A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message'
+        , 'example': 'issue-vc'})
+    goal = fields.Str(required=False, metadata={'description':
+        'A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message'
+        , 'example': 'To issue a Faber College Graduate credential'})
 
 
 class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive-request-implicit request query string."""
 
-    alias = fields.Str(
-        description="Alias for connection",
-        required=False,
-        example="Barry",
-    )
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE)
-    auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
-        required=False,
-    )
-    mediation_id = fields.Str(
-        required=False,
-        description="Identifier for active mediation record to be used",
-        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
-    )
+    alias = fields.Str(required=False, metadata={'description':
+        'Alias for connection', 'example': 'Barry'})
+    my_endpoint = fields.Str(required=False, validate=ENDPOINT_VALIDATE,
+        metadata={'description': 'My URL endpoint', 'example': ENDPOINT_EXAMPLE})
+    auto_accept = fields.Boolean(required=False, metadata={'description':
+        'Auto-accept connection (defaults to configuration)'})
+    mediation_id = fields.Str(required=False, validate=UUID4_VALIDATE, metadata
+        ={'description': 'Identifier for active mediation record to be used',
+        'example': UUID4_EXAMPLE})
 
 
 class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept-request request query string."""
 
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE)
-    mediation_id = fields.Str(
-        required=False,
-        description="Identifier for active mediation record to be used",
-        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
-    )
+    my_endpoint = fields.Str(required=False, validate=ENDPOINT_VALIDATE,
+        metadata={'description': 'My URL endpoint', 'example': ENDPOINT_EXAMPLE})
+    mediation_id = fields.Str(required=False, validate=UUID4_VALIDATE, metadata
+        ={'description': 'Identifier for active mediation record to be used',
+        'example': UUID4_EXAMPLE})
 
 
 class DIDXConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
-    )
+    conn_id = fields.Str(required=True, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
 
 
 class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection and ref ids."""
 
-    conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
-    )
+    conn_id = fields.Str(required=True, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
 
-    ref_id = fields.Str(
-        description="Inbound connection identifier",
-        required=True,
-        example=UUIDFour.EXAMPLE,
-    )
+    ref_id = fields.Str(required=True, metadata={'description':
+        'Inbound connection identifier', 'example': UUIDFour.EXAMPLE})
 
 
 @docs(

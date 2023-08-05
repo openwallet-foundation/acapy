@@ -55,15 +55,8 @@ class ConnectionRequestSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     connection = fields.Nested(ConnectionDetailSchema, required=True)
-    label = fields.Str(
-        required=True,
-        description="Label for connection request",
-        example="Request to connect with Bob",
-    )
-    image_url = fields.Str(
-        data_key="imageUrl",
-        required=False,
-        description="Optional image URL for connection request",
-        example="http://192.168.56.101/img/logo.jpg",
-        allow_none=True,
-    )
+    label = fields.Str(required=True, metadata={'description':
+        'Label for connection request', 'example': 'Request to connect with Bob'})
+    image_url = fields.Str(data_key='imageUrl', required=False, allow_none=True,
+        metadata={'description': 'Optional image URL for connection request',
+        'example': 'http://192.168.56.101/img/logo.jpg'})

@@ -39,13 +39,10 @@ class QueryItemSchema(BaseModelSchema):
         model_class = QueryItem
         unknown = EXCLUDE
 
-    feature_type = fields.Str(
-        required=True,
-        description="feature type",
-        data_key="feature-type",
-        validate=validate.OneOf(["protocol", "goal-code"]),
-    )
-    match = fields.Str(required=True, description="match")
+    feature_type = fields.Str(required=True, data_key='feature-type', validate=
+        validate.OneOf(['protocol', 'goal-code']), metadata={'description':
+        'feature type'})
+    match = fields.Str(required=True, metadata={'description': 'match'})
 
 
 class Queries(AgentMessage):

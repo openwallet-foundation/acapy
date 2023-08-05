@@ -14,28 +14,13 @@ from .pres_exch import PresentationSubmissionSchema
 class DIFProofSchema(OpenAPISchema):
     """Schema for DIF Proof."""
 
-    id = fields.Str(
-        description="ID",
-        required=False,
-        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
-    )
-    contexts = fields.List(
-        StrOrDictField(),
-        data_key="@context",
-        required=True,
-    )
-    types = fields.List(
-        fields.Str(description="Types"),
-        data_key="type",
-        required=True,
-    )
-    credentials = fields.List(
-        fields.Dict(description="Credentials", required=False),
-        data_key="verifiableCredential",
-    )
-    proof = fields.Nested(
-        LinkedDataProofSchema(),
-        required=False,
-        description="The proof of the credential",
-    )
+    id = fields.Str(required=False, validate=UUID4_VALIDATE, metadata={
+        'description': 'ID', 'example': UUID4_EXAMPLE})
+    contexts = fields.List(StrOrDictField(), data_key='@context', required=True)
+    types = fields.List(fields.Str(metadata={'description': 'Types'}), data_key
+        ='type', required=True)
+    credentials = fields.List(fields.Dict(required=False, metadata={
+        'description': 'Credentials'}), data_key='verifiableCredential')
+    proof = fields.Nested(LinkedDataProofSchema(), required=False, metadata={
+        'description': 'The proof of the credential'})
     presentation_submission = fields.Nested(PresentationSubmissionSchema())

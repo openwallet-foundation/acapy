@@ -633,91 +633,51 @@ class ConnRecordSchema(BaseRecordSchema):
 
         model_class = ConnRecord
 
-    connection_id = fields.Str(
-        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
-    )
-    my_did = fields.Str(
-        required=False, description="Our DID for connection", validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
-    )
-    their_did = fields.Str(
-        required=False, description="Their DID for connection", validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
-    )
-    their_label = fields.Str(
-        required=False, description="Their label for connection", example="Bob"
-    )
-    their_role = fields.Str(
-        required=False,
-        description="Their role in the connection protocol",
-        validate=validate.OneOf(
-            [label for role in ConnRecord.Role for label in role.value]
-        ),
-        example=ConnRecord.Role.REQUESTER.rfc23,
-    )
-    connection_protocol = fields.Str(
-        required=False,
-        description="Connection protocol used",
-        validate=validate.OneOf([proto.value for proto in ConnRecord.Protocol]),
-        example=ConnRecord.Protocol.RFC_0160.aries_protocol,
-    )
-    rfc23_state = fields.Str(
-        dump_only=True,
-        description="State per RFC 23",
-        example="invitation-sent",
-    )
-    inbound_connection_id = fields.Str(
-        required=False,
-        description="Inbound routing connection id to use",
-        example=UUIDFour.EXAMPLE,
-    )
-    invitation_key = fields.Str(
-        required=False, description="Public key for connection", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE
-    )
-    invitation_msg_id = fields.Str(
-        required=False,
-        description="ID of out-of-band invitation message",
-        example=UUIDFour.EXAMPLE,
-    )
-    request_id = fields.Str(
-        required=False,
-        description="Connection request identifier",
-        example=UUIDFour.EXAMPLE,
-    )
-    routing_state = fields.Str(
-        required=False,
-        description="Routing state of connection",
-        validate=validate.OneOf(
-            ConnRecord.get_attributes_by_prefix("ROUTING_STATE_", walk_mro=False)
-        ),
-        example=ConnRecord.ROUTING_STATE_ACTIVE,
-    )
-    accept = fields.Str(
-        required=False,
-        description="Connection acceptance: manual or auto",
-        example=ConnRecord.ACCEPT_AUTO,
-        validate=validate.OneOf(
-            ConnRecord.get_attributes_by_prefix("ACCEPT_", walk_mro=False)
-        ),
-    )
-    error_msg = fields.Str(
-        required=False,
-        description="Error message",
-        example="No DIDDoc provided; cannot connect to public DID",
-    )
-    invitation_mode = fields.Str(
-        required=False,
-        description="Invitation mode",
-        example=ConnRecord.INVITATION_MODE_ONCE,
-        validate=validate.OneOf(
-            ConnRecord.get_attributes_by_prefix("INVITATION_MODE_", walk_mro=False)
-        ),
-    )
-    alias = fields.Str(
-        required=False,
-        description="Optional alias to apply to connection for later use",
-        example="Bob, providing quotes",
-    )
-    their_public_did = fields.Str(
-        required=False,
-        description="Other agent's public DID for connection",
-        example="2cpBmR3FqGKWi5EyUbpRY8",
-    )
+    connection_id = fields.Str(required=False, metadata={'description':
+        'Connection identifier', 'example': UUIDFour.EXAMPLE})
+    my_did = fields.Str(required=False, validate=INDY_DID_VALIDATE, metadata={
+        'description': 'Our DID for connection', 'example': INDY_DID_EXAMPLE})
+    their_did = fields.Str(required=False, validate=INDY_DID_VALIDATE, metadata
+        ={'description': 'Their DID for connection', 'example': INDY_DID_EXAMPLE})
+    their_label = fields.Str(required=False, metadata={'description':
+        'Their label for connection', 'example': 'Bob'})
+    their_role = fields.Str(required=False, validate=validate.OneOf([label for
+        role in ConnRecord.Role for label in role.value]), metadata={
+        'description': 'Their role in the connection protocol', 'example':
+        ConnRecord.Role.REQUESTER.rfc23})
+    connection_protocol = fields.Str(required=False, validate=validate.OneOf([
+        proto.value for proto in ConnRecord.Protocol]), metadata={'description':
+        'Connection protocol used', 'example': ConnRecord.Protocol.RFC_0160.
+        aries_protocol})
+    rfc23_state = fields.Str(dump_only=True, metadata={'description':
+        'State per RFC 23', 'example': 'invitation-sent'})
+    inbound_connection_id = fields.Str(required=False, metadata={'description':
+        'Inbound routing connection id to use', 'example': UUIDFour.EXAMPLE})
+    invitation_key = fields.Str(required=False, validate=
+        INDY_RAW_PUBLIC_KEY_VALIDATE, metadata={'description':
+        'Public key for connection', 'example': INDY_RAW_PUBLIC_KEY_EXAMPLE})
+    invitation_msg_id = fields.Str(required=False, metadata={'description':
+        'ID of out-of-band invitation message', 'example': UUIDFour.EXAMPLE})
+    request_id = fields.Str(required=False, metadata={'description':
+        'Connection request identifier', 'example': UUIDFour.EXAMPLE})
+    routing_state = fields.Str(required=False, validate=validate.OneOf(
+        ConnRecord.get_attributes_by_prefix('ROUTING_STATE_', walk_mro=False)),
+        metadata={'description': 'Routing state of connection', 'example':
+        ConnRecord.ROUTING_STATE_ACTIVE})
+    accept = fields.Str(required=False, validate=validate.OneOf(ConnRecord.
+        get_attributes_by_prefix('ACCEPT_', walk_mro=False)), metadata={
+        'description': 'Connection acceptance: manual or auto', 'example':
+        ConnRecord.ACCEPT_AUTO})
+    error_msg = fields.Str(required=False, metadata={'description':
+        'Error message', 'example':
+        'No DIDDoc provided; cannot connect to public DID'})
+    invitation_mode = fields.Str(required=False, validate=validate.OneOf(
+        ConnRecord.get_attributes_by_prefix('INVITATION_MODE_', walk_mro=False)
+        ), metadata={'description': 'Invitation mode', 'example': ConnRecord.
+        INVITATION_MODE_ONCE})
+    alias = fields.Str(required=False, metadata={'description':
+        'Optional alias to apply to connection for later use', 'example':
+        'Bob, providing quotes'})
+    their_public_did = fields.Str(required=False, metadata={'description':
+        "Other agent's public DID for connection", 'example':
+        '2cpBmR3FqGKWi5EyUbpRY8'})

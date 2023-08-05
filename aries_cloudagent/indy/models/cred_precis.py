@@ -52,49 +52,30 @@ class IndyCredInfoSchema(BaseModelSchema):
         model_class = IndyCredInfo
         unknown = EXCLUDE
 
-    referent = fields.Str(
-        description="Wallet referent",
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
-    )
-    attrs = fields.Dict(
-        description="Attribute names and value",
-        keys=fields.Str(example="userid"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Str(example="alice"),
-    )
-    schema_id = fields.Str(
-        description="Schema identifier",
-        validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE,
-    )
-    cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
-    )
-    rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
-        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
-        allow_none=True,
-    )
-    cred_rev_id = fields.Str(
-        description="Credential revocation identifier",
-        validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE,
-        allow_none=True,
-    )
+    referent = fields.Str(metadata={'description': 'Wallet referent', 'example':
+        UUIDFour.EXAMPLE})
+    attrs = fields.Dict(keys=fields.Str(metadata={'example': 'userid'}), values
+        =fields.Str(metadata={'example': 'alice'}), metadata={'description':
+        'Attribute names and value'})
+    schema_id = fields.Str(validate=INDY_SCHEMA_ID_VALIDATE, metadata={
+        'description': 'Schema identifier', 'example': INDY_SCHEMA_ID_EXAMPLE})
+    cred_def_id = fields.Str(validate=INDY_CRED_DEF_ID_VALIDATE, metadata={
+        'description': 'Credential definition identifier', 'example':
+        INDY_CRED_DEF_ID_EXAMPLE})
+    rev_reg_id = fields.Str(validate=INDY_REV_REG_ID_VALIDATE, allow_none=True,
+        metadata={'description': 'Revocation registry identifier', 'example':
+        INDY_REV_REG_ID_EXAMPLE})
+    cred_rev_id = fields.Str(validate=INDY_CRED_REV_ID_VALIDATE, allow_none=
+        True, metadata={'description': 'Credential revocation identifier',
+        'example': INDY_CRED_REV_ID_EXAMPLE})
 
 
 class IndyCredPrecisSchema(OpenAPISchema):
     """Schema for precis that indy credential search returns (and aca-py augments)."""
 
-    cred_info = fields.Nested(
-        IndyCredInfoSchema(),
-        description="Credential info",
-    )
-    interval = fields.Nested(
-        IndyNonRevocationIntervalSchema(),
-        description="Non-revocation interval from presentation request",
-    )
-    presentation_referents = fields.List(  # aca-py augments with pres_referents
-        fields.Str(
-            description="presentation referent",
-            example="1_age_uuid",
-        ),
-    )
+    cred_info = fields.Nested(IndyCredInfoSchema(), metadata={'description':
+        'Credential info'})
+    interval = fields.Nested(IndyNonRevocationIntervalSchema(), metadata={
+        'description': 'Non-revocation interval from presentation request'})
+    presentation_referents = fields.List(fields.Str(metadata={'description':
+        'presentation referent', 'example': '1_age_uuid'}))

@@ -91,30 +91,15 @@ class V20CredProposalSchema(AgentMessageSchema):
         model_class = V20CredProposal
         unknown = EXCLUDE
 
-    comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
-    credential_preview = fields.Nested(
-        V20CredPreviewSchema,
-        description="Credential preview",
-        required=False,
-        allow_none=False,
-    )
-    formats = fields.Nested(
-        V20CredFormatSchema,
-        many=True,
-        required=True,
-        description="Attachment formats",
-    )
-    filters_attach = fields.Nested(
-        AttachDecoratorSchema,
-        data_key="filters~attach",
-        required=True,
-        description=(
-            "Credential filter per acceptable format on corresponding identifier"
-        ),
-        many=True,
-    )
+    comment = fields.Str(required=False, allow_none=True, metadata={
+        'description': 'Human-readable comment'})
+    credential_preview = fields.Nested(V20CredPreviewSchema, required=False,
+        allow_none=False, metadata={'description': 'Credential preview'})
+    formats = fields.Nested(V20CredFormatSchema, many=True, required=True,
+        metadata={'description': 'Attachment formats'})
+    filters_attach = fields.Nested(AttachDecoratorSchema, data_key=
+        'filters~attach', required=True, many=True, metadata={'description':
+        'Credential filter per acceptable format on corresponding identifier'})
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

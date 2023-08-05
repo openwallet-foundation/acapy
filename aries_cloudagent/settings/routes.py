@@ -22,28 +22,17 @@ LOGGER = logging.getLogger(__name__)
 class UpdateProfileSettingsSchema(OpenAPISchema):
     """Schema to update profile settings."""
 
-    extra_settings = fields.Dict(
-        description="Agent config key-value pairs",
-        required=False,
-        example={
-            "log-level": "INFO",
-            "ACAPY_INVITE_PUBLIC": True,
-            "public-invites": False,
-        },
-    )
+    extra_settings = fields.Dict(required=False, metadata={'description':
+        'Agent config key-value pairs', 'example': {'log-level': 'INFO',
+        'ACAPY_INVITE_PUBLIC': True, 'public-invites': False}})
 
 
 class ProfileSettingsSchema(OpenAPISchema):
     """Profile settings response schema."""
 
-    settings = fields.Dict(
-        description="Profile settings dict",
-        example={
-            "log.level": "INFO",
-            "debug.invite_public": True,
-            "public_invites": False,
-        },
-    )
+    settings = fields.Dict(metadata={'description': 'Profile settings dict',
+        'example': {'log.level': 'INFO', 'debug.invite_public': True,
+        'public_invites': False}})
 
 
 def _get_filtered_settings_dict(wallet_settings: dict):
