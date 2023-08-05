@@ -19,12 +19,16 @@ from ..connections.models.conn_record import ConnRecord
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
-    ENDPOINT,
-    ENDPOINT_TYPE,
+    ENDPOINT_EXAMPLE,
+    ENDPOINT_TYPE_EXAMPLE,
+    ENDPOINT_TYPE_VALIDATE,
+    ENDPOINT_VALIDATE,
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
-    INDY_RAW_PUBLIC_KEY,
-    INT_EPOCH,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    INT_EPOCH_EXAMPLE,
+    INT_EPOCH_VALIDATE,
     UUIDFour,
 )
 from ..multitenant.base import BaseMultitenantManager
@@ -185,10 +189,10 @@ class QueryStringEndpointSchema(OpenAPISchema):
     )
     endpoint_type = fields.Str(
         required=False,
-        validate=ENDPOINT_VALIDATE,
+        validate=ENDPOINT_TYPE_VALIDATE,
         metadata={
             "description": f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')",
-            "example": ENDPOINT_EXAMPLE_TYPE,
+            "example": ENDPOINT_TYPE_EXAMPLE,
         },
     )
 

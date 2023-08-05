@@ -5,15 +5,16 @@ An attach decorator embeds content or specifies appended content.
 """
 
 
+import copy
 import json
 import uuid
-import copy
-
 from typing import Any, Mapping, Sequence, Tuple, Union
 
 from marshmallow import EXCLUDE, fields, pre_load
 
+from ...did.did_key import DIDKey
 from ...wallet.base import BaseWallet
+from ...wallet.key_type import ED25519
 from ...wallet.util import (
     b58_to_bytes,
     b64_to_bytes,
@@ -24,16 +25,19 @@ from ...wallet.util import (
     str_to_b64,
     unpad,
 )
-from ...wallet.key_type import ED25519
-from ...did.did_key import DIDKey
 from ..models.base import BaseModel, BaseModelError, BaseModelSchema
 from ..valid import (
-    BASE64,
-    BASE64URL_NO_PAD,
+    BASE64_EXAMPLE,
+    BASE64_VALIDATE,
+    BASE64URL_NO_PAD_EXAMPLE,
+    BASE64URL_NO_PAD_VALIDATE,
+    INDY_ISO8601_DATETIME_EXAMPLE,
+    INDY_ISO8601_DATETIME_VALIDATE,
+    JWS_HEADER_KID_EXAMPLE,
+    JWS_HEADER_KID_VALIDATE,
+    SHA256_EXAMPLE,
+    SHA256_VALIDATE,
     DictOrDictListField,
-    INDY_ISO8601_DATETIME,
-    JWS_HEADER_KID,
-    SHA256,
     UUIDFour,
 )
 
@@ -118,16 +122,16 @@ class AttachDecoratorData1JWSSchema(BaseModelSchema):
     header = fields.Nested(AttachDecoratorDataJWSHeaderSchema, required=True)
     protected = fields.Str(
         required=False,
-        validate=BASE64_VALIDATE,
+        validate=BASE64URL_NO_PAD_VALIDATE,
         metadata={
             "description": "protected JWS header",
-            "example": BASE64_EXAMPLEURL_NO_PAD,
+            "example": BASE64URL_NO_PAD_EXAMPLE,
         },
     )
     signature = fields.Str(
         required=True,
-        validate=BASE64_VALIDATE,
-        metadata={"description": "signature", "example": BASE64_EXAMPLEURL_NO_PAD},
+        validate=BASE64URL_NO_PAD_VALIDATE,
+        metadata={"description": "signature", "example": BASE64URL_NO_PAD_EXAMPLE},
     )
 
 
@@ -190,16 +194,16 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
     header = fields.Nested(AttachDecoratorDataJWSHeaderSchema, required=False)
     protected = fields.Str(
         required=False,
-        validate=BASE64_VALIDATE,
+        validate=BASE64URL_NO_PAD_VALIDATE,
         metadata={
             "description": "protected JWS header",
-            "example": BASE64_EXAMPLEURL_NO_PAD,
+            "example": BASE64URL_NO_PAD_EXAMPLE,
         },
     )
     signature = fields.Str(
         required=False,
-        validate=BASE64_VALIDATE,
-        metadata={"description": "signature", "example": BASE64_EXAMPLEURL_NO_PAD},
+        validate=BASE64URL_NO_PAD_VALIDATE,
+        metadata={"description": "signature", "example": BASE64URL_NO_PAD_EXAMPLE},
     )
     signatures = fields.List(
         fields.Nested(AttachDecoratorData1JWSSchema),

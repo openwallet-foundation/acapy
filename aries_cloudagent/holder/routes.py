@@ -10,6 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
@@ -19,10 +20,14 @@ from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
-    ENDPOINT,
-    INDY_WQL,
-    NUM_STR_NATURAL,
-    NUM_STR_WHOLE,
+    ENDPOINT_EXAMPLE,
+    ENDPOINT_VALIDATE,
+    INDY_WQL_EXAMPLE,
+    INDY_WQL_VALIDATE,
+    NUM_STR_NATURAL_EXAMPLE,
+    NUM_STR_NATURAL_VALIDATE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
     UUIDFour,
 )
 from ..storage.error import StorageError, StorageNotFoundError
