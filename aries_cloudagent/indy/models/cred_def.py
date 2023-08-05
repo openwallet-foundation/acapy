@@ -109,7 +109,7 @@ class CredentialDefinitionSchema(OpenAPISchema):
     schemaId = fields.Str(
         metadata={
             "description": "Schema identifier within credential definition identifier",
-            "example": ":".join(INDY_CRED_DEF_ID["example"].split(":")[3:-1]),
+            "example": ":".join(INDY_CRED_DEF_ID_EXAMPLE.split(":")[3:-1]),
         }
     )
     typ = fields.Constant(
@@ -123,7 +123,7 @@ class CredentialDefinitionSchema(OpenAPISchema):
     tag = fields.Str(
         metadata={
             "description": "Tag within credential definition identifier",
-            "example": INDY_CRED_DEF_ID["example"].split(":")[-1],
+            "example": INDY_CRED_DEF_ID_EXAMPLE.split(":")[-1],
         }
     )
     value = fields.Nested(

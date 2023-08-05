@@ -34,7 +34,7 @@ class SchemaSchema(OpenAPISchema):
     name = fields.Str(
         metadata={
             "description": "Schema name",
-            "example": INDY_SCHEMA_ID["example"].split(":")[2],
+            "example": INDY_SCHEMA_ID_EXAMPLE.split(":")[2],
         }
     )
     version = fields.Str(

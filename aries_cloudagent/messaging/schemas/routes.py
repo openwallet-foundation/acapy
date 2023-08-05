@@ -138,7 +138,7 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
         validate=Regexp(f"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
         metadata={
             "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID["example"],
+            "example": INDY_SCHEMA_ID_EXAMPLE,
         },
     )
 
