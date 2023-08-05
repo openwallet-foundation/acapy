@@ -12,7 +12,7 @@ from ...wallet.util import b64_to_bytes, bytes_to_b64
 from ...wallet.key_type import ED25519
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import Base64URL, BASE64URL, INDY_RAW_PUBLIC_KEY
+from ..valid import Base64URL_VALIDATE, Base64URL_EXAMPLE, BASE64URL_VALIDATE, BASE64URL_EXAMPLE, INDY_RAW_PUBLIC_KEY_VALIDATE, INDY_RAW_PUBLIC_KEY_EXAMPLE
 
 
 class SignatureDecorator(BaseModel):

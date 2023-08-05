@@ -46,7 +46,7 @@ from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 
 from ..models.openapi import OpenAPISchema
-from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID
+from ..valid import INDY_CRED_DEF_ID_VALIDATE, INDY_CRED_DEF_ID_EXAMPLE, INDY_REV_REG_SIZE_VALIDATE, INDY_REV_REG_SIZE_EXAMPLE, INDY_SCHEMA_ID_VALIDATE, INDY_SCHEMA_ID_EXAMPLE
 
 
 from .util import (

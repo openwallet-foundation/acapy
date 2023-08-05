@@ -12,7 +12,7 @@ from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..util import datetime_to_str
-from ..valid import INDY_ISO8601_DATETIME
+from ..valid import INDY_ISO8601_DATETIME_VALIDATE, INDY_ISO8601_DATETIME_EXAMPLE
 
 
 class TimingDecorator(BaseModel):

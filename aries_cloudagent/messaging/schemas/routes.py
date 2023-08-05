@@ -44,7 +44,7 @@ from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 
 from ..models.openapi import OpenAPISchema
-from ..valid import B58, INDY_SCHEMA_ID, INDY_VERSION
+from ..valid import B58, INDY_SCHEMA_ID_VALIDATE, INDY_SCHEMA_ID_EXAMPLE, INDY_VERSION_VALIDATE, INDY_VERSION_EXAMPLE
 
 from .util import (
     SchemaQueryStringSchema,
