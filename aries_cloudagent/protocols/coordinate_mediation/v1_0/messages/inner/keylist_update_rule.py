@@ -46,7 +46,7 @@ class KeylistUpdateRuleSchema(BaseModelSchema):
         model_class = KeylistUpdateRule
 
     recipient_key = fields.Str(
-        description="Key to remove or add", required=True, **ROUTING_KEY
+        description="Key to remove or add", required=True, validate=ROUTING_KEY_VALIDATE, example=ROUTING_KEY_EXAMPLE
     )
     action = fields.Str(
         required=True,

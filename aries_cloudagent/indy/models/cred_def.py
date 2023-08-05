@@ -16,20 +16,20 @@ from ...messaging.valid import (
 class CredDefValuePrimarySchema(OpenAPISchema):
     """Cred def value primary schema."""
 
-    n = fields.Str(**NUM_STR_WHOLE)
-    s = fields.Str(**NUM_STR_WHOLE)
+    n = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
+    s = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
     r = fields.Nested(
         Schema.from_dict(
             {
-                "master_secret": fields.Str(**NUM_STR_WHOLE),
-                "number": fields.Str(**NUM_STR_WHOLE),
-                "remainder": fields.Str(**NUM_STR_WHOLE),
+                "master_secret": fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE),
+                "number": fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE),
+                "remainder": fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE),
             }
         ),
         name="CredDefValuePrimaryRSchema",
     )
-    rctxt = fields.Str(**NUM_STR_WHOLE)
-    z = fields.Str(**NUM_STR_WHOLE)
+    rctxt = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
+    z = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
 
 
 class CredDefValueRevocationSchema(OpenAPISchema):
@@ -64,11 +64,11 @@ class CredDefValueSchema(OpenAPISchema):
 class CredentialDefinitionSchema(OpenAPISchema):
     """Marshmallow schema for indy cred def."""
 
-    ver = fields.Str(description="Node protocol version", **INDY_VERSION)
+    ver = fields.Str(description="Node protocol version", validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE)
     ident = fields.Str(
         description="Credential definition identifier",
         data_key="id",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     schemaId = fields.Str(
         description="Schema identifier within credential definition identifier",

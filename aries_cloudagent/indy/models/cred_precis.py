@@ -63,20 +63,20 @@ class IndyCredInfoSchema(BaseModelSchema):
     )
     schema_id = fields.Str(
         description="Schema identifier",
-        **INDY_SCHEMA_ID,
+        validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE,
     )
     cred_def_id = fields.Str(
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     rev_reg_id = fields.Str(
         description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
         allow_none=True,
     )
     cred_rev_id = fields.Str(
         description="Credential revocation identifier",
-        **INDY_CRED_REV_ID,
+        validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE,
         allow_none=True,
     )
 

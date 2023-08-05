@@ -51,7 +51,7 @@ class DIDXResponseSchema(AgentMessageSchema):
         model_class = DIDXResponse
         unknown = EXCLUDE
 
-    did = fields.Str(description="DID of exchange", **INDY_DID)
+    did = fields.Str(description="DID of exchange", validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,

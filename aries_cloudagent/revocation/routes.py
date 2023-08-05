@@ -81,13 +81,13 @@ class RevRegCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     credential_definition_id = fields.Str(
-        description="Credential definition identifier", **INDY_CRED_DEF_ID
+        description="Credential definition identifier", validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE
     )
     max_cred_num = fields.Int(
         required=False,
         description="Revocation registry size",
         strict=True,
-        **INDY_REV_REG_SIZE,
+        validate=INDY_REV_REG_SIZE_VALIDATE, example=INDY_REV_REG_SIZE_EXAMPLE,
     )
 
 
@@ -134,17 +134,17 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
     rev_reg_id = fields.Str(
         description="Revocation registry identifier",
         required=False,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
     )
     cred_rev_id = fields.Str(
         description="Credential revocation identifier",
         required=False,
-        **INDY_CRED_REV_ID,
+        validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE,
     )
     cred_ex_id = fields.Str(
         description="Credential exchange identifier",
         required=False,
-        **UUID4,
+        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
     )
 
 
@@ -164,12 +164,12 @@ class RevRegId(OpenAPISchema):
     rev_reg_id = fields.Str(
         description="Revocation registry identifier",
         required=False,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
     )
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
 
 
@@ -216,7 +216,7 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
             "required if notify is true"
         ),
         required=False,
-        **UUID4,
+        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
     )
     thread_id = fields.Str(
         description=(
@@ -239,7 +239,7 @@ class PublishRevocationsSchema(OpenAPISchema):
         keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
         values=fields.List(
             fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
+                description="Credential revocation identifier", validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE
             )
         ),
         description="Credential revocation ids by revocation registry id",
@@ -269,7 +269,7 @@ class ClearPendingRevocationsRequestSchema(OpenAPISchema):
         keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
         values=fields.List(
             fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
+                description="Credential revocation identifier", validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE
             )
         ),
         description=(
@@ -305,7 +305,7 @@ class RevRegIssuedResultSchema(OpenAPISchema):
     result = fields.Int(
         description="Number of credentials issued against revocation registry",
         strict=True,
-        **WHOLE_NUM,
+        validate=WHOLE_NUM_VALIDATE, example=WHOLE_NUM_EXAMPLE,
     )
 
 
@@ -336,7 +336,7 @@ class RevRegsCreatedSchema(OpenAPISchema):
     """Result schema for request for revocation registries created."""
 
     rev_reg_ids = fields.List(
-        fields.Str(description="Revocation registry identifiers", **INDY_REV_REG_ID)
+        fields.Str(description="Revocation registry identifiers", validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE)
     )
 
 
@@ -359,7 +359,7 @@ class RevRegsCreatedQueryStringSchema(OpenAPISchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     state = fields.Str(
         description="Revocation registry state",
@@ -396,7 +396,7 @@ class RevRegIdMatchInfoSchema(OpenAPISchema):
     rev_reg_id = fields.Str(
         description="Revocation Registry identifier",
         required=True,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
     )
 
 
@@ -406,7 +406,7 @@ class RevocationCredDefIdMatchInfoSchema(OpenAPISchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
 
 

@@ -90,12 +90,12 @@ class IndyPresPredSpecSchema(BaseModelSchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     predicate = fields.Str(
         description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
-        **INDY_PREDICATE,
+        validate=INDY_PREDICATE_VALIDATE, example=INDY_PREDICATE_EXAMPLE,
     )
     threshold = fields.Int(description="Threshold value", required=True, strict=True)
 
@@ -227,7 +227,7 @@ class IndyPresAttrSpecSchema(BaseModelSchema):
     name = fields.Str(
         description="Attribute name", required=True, example="favourite_drink"
     )
-    cred_def_id = fields.Str(required=False, **INDY_CRED_DEF_ID)
+    cred_def_id = fields.Str(required=False, validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE)
     mime_type = fields.Str(
         description="MIME type (default null)",
         required=False,

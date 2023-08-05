@@ -278,7 +278,7 @@ class CredentialSchema(BaseModelSchema):
         data_key="@context",
         required=True,
         description="The JSON-LD context of the credential",
-        **CREDENTIAL_CONTEXT,
+        validate=CREDENTIAL_CONTEXT_VALIDATE, example=CREDENTIAL_CONTEXT_EXAMPLE,
     )
 
     id = fields.Str(
@@ -292,7 +292,7 @@ class CredentialSchema(BaseModelSchema):
         fields.Str(required=True),
         required=True,
         description="The JSON-LD type of the credential",
-        **CREDENTIAL_TYPE,
+        validate=CREDENTIAL_TYPE_VALIDATE, example=CREDENTIAL_TYPE_EXAMPLE,
     )
 
     issuer = StrOrDictField(
@@ -308,20 +308,20 @@ class CredentialSchema(BaseModelSchema):
         data_key="issuanceDate",
         required=True,
         description="The issuance date",
-        **RFC3339_DATETIME,
+        validate=RFC3339_DATETIME_VALIDATE, example=RFC3339_DATETIME_EXAMPLE,
     )
 
     expiration_date = fields.Str(
         data_key="expirationDate",
         required=False,
         description="The expiration date",
-        **RFC3339_DATETIME,
+        validate=RFC3339_DATETIME_VALIDATE, example=RFC3339_DATETIME_EXAMPLE,
     )
 
     credential_subject = DictOrDictListField(
         required=True,
         data_key="credentialSubject",
-        **CREDENTIAL_SUBJECT,
+        validate=CREDENTIAL_SUBJECT_VALIDATE, example=CREDENTIAL_SUBJECT_EXAMPLE,
     )
 
     proof = fields.Nested(

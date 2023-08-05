@@ -148,8 +148,8 @@ class SignatureDecoratorSchema(BaseModelSchema):
         validate=Base64URL(),
     )
     sig_data = fields.Str(
-        required=True, description="Signature data, base64url-encoded", **BASE64URL
+        required=True, description="Signature data, base64url-encoded", validate=BASE64_VALIDATE, example=BASE64_EXAMPLEURL
     )
     signer = fields.Str(
-        required=True, description="Signer verification key", **INDY_RAW_PUBLIC_KEY
+        required=True, description="Signer verification key", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE
     )

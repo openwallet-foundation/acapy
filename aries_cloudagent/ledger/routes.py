@@ -90,7 +90,7 @@ class TAAAcceptanceSchema(OpenAPISchema):
     """TAA acceptance record."""
 
     mechanism = fields.Str()
-    time = fields.Int(strict=True, **INT_EPOCH)
+    time = fields.Int(strict=True, validate=INT_EPOCH_VALIDATE, example=INT_EPOCH_EXAMPLE)
 
 
 class TAAInfoSchema(OpenAPISchema):
@@ -122,10 +122,10 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     did = fields.Str(
         description="DID to register",
         required=True,
-        **INDY_DID,
+        validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE,
     )
     verkey = fields.Str(
-        description="Verification key", required=True, **INDY_RAW_PUBLIC_KEY
+        description="Verification key", required=True, validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE
     )
     alias = fields.Str(
         description="Alias",
@@ -161,19 +161,19 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
 class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(description="DID of interest", required=True, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)
 
 
 class QueryStringEndpointSchema(OpenAPISchema):
     """Parameters and validators for query string with DID and endpoint type."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(description="DID of interest", required=True, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)
     endpoint_type = fields.Str(
         description=(
             f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"
         ),
         required=False,
-        **ENDPOINT_TYPE,
+        validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE_TYPE,
     )
 
 
@@ -208,7 +208,7 @@ class GetDIDVerkeyResponseSchema(OpenAPISchema):
     verkey = fields.Str(
         description="Full verification key",
         allow_none=True,
-        **INDY_RAW_PUBLIC_KEY,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE,
     )
 
 
@@ -218,7 +218,7 @@ class GetDIDEndpointResponseSchema(OpenAPISchema):
     endpoint = fields.Str(
         description="Full verification key",
         allow_none=True,
-        **ENDPOINT,
+        validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE,
     )
 
 

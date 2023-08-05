@@ -60,15 +60,15 @@ class WalletModuleResponseSchema(OpenAPISchema):
 class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
-    did = fields.Str(description="DID of interest", **GENERIC_DID)
-    verkey = fields.Str(description="Public verification key", **INDY_RAW_PUBLIC_KEY)
+    did = fields.Str(description="DID of interest", validate=GENERIC_DID_VALIDATE, example=GENERIC_DID_EXAMPLE)
+    verkey = fields.Str(description="Public verification key", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE)
     posture = fields.Str(
         description=(
             "Whether DID is current public DID, "
             "posted to ledger but not current public DID, "
             "or local to the wallet"
         ),
-        **DID_POSTURE,
+        validate=DID_POSTURE_VALIDATE, example=DID_POSTURE_EXAMPLE,
     )
     method = fields.Str(
         description="Did method associated with the DID", example=SOV.method_name
@@ -95,9 +95,9 @@ class DIDListSchema(OpenAPISchema):
 class DIDEndpointWithTypeSchema(OpenAPISchema):
     """Request schema to set DID endpoint of particular type."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(description="DID of interest", required=True, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)
     endpoint = fields.Str(
-        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
+        description="Endpoint to set (omit to delete)", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE
     )
     endpoint_type = fields.Str(
         description=(
@@ -105,7 +105,7 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
             "affects only public or posted DIDs"
         ),
         required=False,
-        **ENDPOINT_TYPE,
+        validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE_TYPE,
     )
 
 
@@ -114,7 +114,7 @@ class JWSCreateSchema(OpenAPISchema):
 
     headers = fields.Dict()
     payload = fields.Dict(required=True)
-    did = fields.Str(description="DID of interest", required=False, **GENERIC_DID)
+    did = fields.Str(description="DID of interest", required=False, validate=GENERIC_DID_VALIDATE, example=GENERIC_DID_EXAMPLE)
     verification_method = fields.Str(
         data_key="verificationMethod",
         required=False,
@@ -130,7 +130,7 @@ class JWSCreateSchema(OpenAPISchema):
 class JWSVerifySchema(OpenAPISchema):
     """Request schema to verify a jws created from a DID."""
 
-    jwt = fields.Str(**JWT)
+    jwt = fields.Str(validate=JWT_VALIDATE, example=JWT_EXAMPLE)
 
 
 class JWSVerifyResponseSchema(OpenAPISchema):
@@ -146,20 +146,20 @@ class JWSVerifyResponseSchema(OpenAPISchema):
 class DIDEndpointSchema(OpenAPISchema):
     """Request schema to set DID endpoint; response schema to get DID endpoint."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(description="DID of interest", required=True, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)
     endpoint = fields.Str(
-        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
+        description="Endpoint to set (omit to delete)", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE
     )
 
 
 class DIDListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for DID list request query string."""
 
-    did = fields.Str(description="DID of interest", required=False, **GENERIC_DID)
+    did = fields.Str(description="DID of interest", required=False, validate=GENERIC_DID_VALIDATE, example=GENERIC_DID_EXAMPLE)
     verkey = fields.Str(
         description="Verification key of interest",
         required=False,
-        **INDY_RAW_PUBLIC_KEY,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE,
     )
     posture = fields.Str(
         description=(
@@ -168,7 +168,7 @@ class DIDListQueryStringSchema(OpenAPISchema):
             "or local to the wallet"
         ),
         required=False,
-        **DID_POSTURE,
+        validate=DID_POSTURE_VALIDATE, example=DID_POSTURE_EXAMPLE,
     )
     method = fields.Str(
         required=False,
@@ -187,7 +187,7 @@ class DIDListQueryStringSchema(OpenAPISchema):
 class DIDQueryStringSchema(OpenAPISchema):
     """Parameters and validators for set public DID request query string."""
 
-    did = fields.Str(description="DID of interest", required=True, **GENERIC_DID)
+    did = fields.Str(description="DID of interest", required=True, validate=GENERIC_DID_VALIDATE, example=GENERIC_DID_EXAMPLE)
 
 
 class DIDCreateOptionsSchema(OpenAPISchema):
@@ -205,7 +205,7 @@ class DIDCreateOptionsSchema(OpenAPISchema):
         required=False,
         description="Specify final value of the did (including did:<method>: prefix)"
         + "if the method supports or requires so.",
-        **GENERIC_DID,
+        validate=GENERIC_DID_VALIDATE, example=GENERIC_DID_EXAMPLE,
     )
 
 

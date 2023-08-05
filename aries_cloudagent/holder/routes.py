@@ -57,17 +57,17 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
     start = fields.Str(
         description="Start index",
         required=False,
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE,
     )
     count = fields.Str(
         description="Maximum number to retrieve",
         required=False,
-        **NUM_STR_NATURAL,
+        validate=NUM_STR_NATURAL_VALIDATE, example=NUM_STR_NATURAL_EXAMPLE,
     )
     wql = fields.Str(
         description="(JSON) WQL query",
         required=False,
-        **INDY_WQL,
+        validate=INDY_WQL_VALIDATE, example=INDY_WQL_EXAMPLE,
     )
 
 
@@ -77,21 +77,21 @@ class W3CCredentialsListRequestSchema(OpenAPISchema):
     contexts = fields.List(
         fields.Str(
             description="Credential context to match",
-            **ENDPOINT,
+            validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE,
         ),
         required=False,
     )
     types = fields.List(
         fields.Str(
             description="Credential type to match",
-            **ENDPOINT,
+            validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE,
         ),
         required=False,
     )
     schema_ids = fields.List(
         fields.Str(
             description="Credential schema identifier",
-            **ENDPOINT,
+            validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE,
         ),
         description="Schema identifiers, all of which to match",
         required=False,
@@ -143,12 +143,12 @@ class CredRevokedQueryStringSchema(OpenAPISchema):
         data_key="from",
         description="Earliest epoch of revocation status interval of interest",
         required=False,
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE,
     )
     to = fields.Str(
         description="Latest epoch of revocation status interval of interest",
         required=False,
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE,
     )
 
 

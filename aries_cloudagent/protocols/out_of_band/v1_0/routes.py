@@ -113,7 +113,7 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
     )
     goal_code = fields.Str(
         required=False,
@@ -149,7 +149,7 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
     )
 
 

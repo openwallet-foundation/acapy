@@ -559,12 +559,12 @@ class BaseRecordSchema(BaseModelSchema):
         example="active",
     )
     created_at = fields.Str(
-        required=False, description="Time of record creation", **INDY_ISO8601_DATETIME
+        required=False, description="Time of record creation", validate=INDY_ISO8601_DATETIME_VALIDATE, example=INDY_ISO8601_DATETIME_EXAMPLE
     )
     updated_at = fields.Str(
         required=False,
         description="Time of last record update",
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE, example=INDY_ISO8601_DATETIME_EXAMPLE,
     )
 
 

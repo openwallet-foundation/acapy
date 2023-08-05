@@ -64,13 +64,13 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
                     required=False,
                     description="Earliest time of interest in non-revocation interval",
                     strict=True,
-                    **INT_EPOCH,
+                    validate=INT_EPOCH_VALIDATE, example=INT_EPOCH_EXAMPLE,
                 ),
                 "to": fields.Int(
                     required=False,
                     description="Latest time of interest in non-revocation interval",
                     strict=True,
-                    **INT_EPOCH,
+                    validate=INT_EPOCH_VALIDATE, example=INT_EPOCH_EXAMPLE,
                 ),
             },
             name="IndyProofReqAttrSpecNonRevokedSchema",
@@ -112,7 +112,7 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
     p_type = fields.Str(
         description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
-        **INDY_PREDICATE,
+        validate=INDY_PREDICATE_VALIDATE, example=INDY_PREDICATE_EXAMPLE,
     )
     p_value = fields.Int(description="Threshold value", required=True, strict=True)
     restrictions = fields.List(
@@ -146,13 +146,13 @@ class IndyProofReqPredSpecSchema(OpenAPISchema):
                     required=False,
                     description="Earliest time of interest in non-revocation interval",
                     strict=True,
-                    **INT_EPOCH,
+                    validate=INT_EPOCH_VALIDATE, example=INT_EPOCH_EXAMPLE,
                 ),
                 "to": fields.Int(
                     required=False,
                     description="Latest time of interest in non-revocation interval",
                     strict=True,
-                    **INT_EPOCH,
+                    validate=INT_EPOCH_VALIDATE, example=INT_EPOCH_EXAMPLE,
                 ),
             },
             name="IndyProofReqPredSpecNonRevokedSchema",
@@ -211,7 +211,7 @@ class IndyProofRequestSchema(BaseModelSchema):
     nonce = fields.Str(
         description="Nonce",
         required=False,
-        **NUM_STR_NATURAL,
+        validate=NUM_STR_NATURAL_VALIDATE, example=NUM_STR_NATURAL_EXAMPLE,
     )
     name = fields.Str(
         description="Proof request name",
@@ -223,7 +223,7 @@ class IndyProofRequestSchema(BaseModelSchema):
         description="Proof request version",
         required=False,
         default="1.0",
-        **INDY_VERSION,
+        validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE,
     )
     requested_attributes = fields.Dict(
         description="Requested attribute specifications of proof request",
@@ -244,13 +244,13 @@ class IndyProofRequestSchema(BaseModelSchema):
                     required=False,
                     description="Earliest time of interest in non-revocation interval",
                     strict=True,
-                    **INT_EPOCH,
+                    validate=INT_EPOCH_VALIDATE, example=INT_EPOCH_EXAMPLE,
                 ),
                 "to": fields.Int(
                     required=False,
                     description="Latest time of interest in non-revocation interval",
                     strict=True,
-                    **INT_EPOCH,
+                    validate=INT_EPOCH_VALIDATE, example=INT_EPOCH_EXAMPLE,
                 ),
             },
             name="IndyProofRequestNonRevokedSchema",

@@ -36,7 +36,7 @@ from .messages.request import DIDXRequest, DIDXRequestSchema
 class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
 
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(description="My URL endpoint", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE)
     my_label = fields.Str(
         description="Label for connection request", required=False, example="Broker"
     )
@@ -49,21 +49,21 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         required=True,
         allow_none=False,
         description="Qualified public DID to which to request connection",
-        **GENERIC_DID,
+        validate=GENERIC_DID_VALIDATE, example=GENERIC_DID_EXAMPLE,
     )
     alias = fields.Str(
         description="Alias for connection",
         required=False,
         example="Barry",
     )
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(description="My URL endpoint", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE)
     my_label = fields.Str(
         description="Label for connection request", required=False, example="Broker"
     )
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
     )
     use_public_did = fields.Boolean(
         required=False,
@@ -91,7 +91,7 @@ class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
         required=False,
         example="Barry",
     )
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(description="My URL endpoint", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE)
     auto_accept = fields.Boolean(
         description="Auto-accept connection (defaults to configuration)",
         required=False,
@@ -99,18 +99,18 @@ class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
     )
 
 
 class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept-request request query string."""
 
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(description="My URL endpoint", required=False, validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE)
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
     )
 
 

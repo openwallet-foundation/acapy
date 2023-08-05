@@ -368,10 +368,10 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
     credential_definition_id = fields.Str(
         required=False,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     schema_id = fields.Str(
-        required=False, description="Schema identifier", **INDY_SCHEMA_ID
+        required=False, description="Schema identifier", validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE
     )
     credential_proposal_dict = fields.Nested(
         CredentialProposalSchema(),

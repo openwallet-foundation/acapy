@@ -114,10 +114,10 @@ class V20CredExRecordIndySchema(BaseRecordSchema):
     rev_reg_id = fields.Str(
         required=False,
         description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
     )
     cred_rev_id = fields.Str(
         required=False,
         description="Credential revocation identifier within revocation registry",
-        **INDY_CRED_REV_ID,
+        validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE,
     )

@@ -117,7 +117,7 @@ class ProblemReportSchema(AgentMessageSchema):
         data_key="time-noticed",
         required=False,
         description="Problem detection time, precision at least day up to millisecond",
-        **RFC3339_DATETIME,
+        validate=RFC3339_DATETIME_VALIDATE, example=RFC3339_DATETIME_EXAMPLE,
     )
     tracking_uri = fields.Str(
         required=False,

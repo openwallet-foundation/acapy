@@ -44,7 +44,7 @@ class IndyAttrValueSchema(BaseModelSchema):
     encoded = fields.Str(
         required=True,
         description="Attribute encoded value",
-        **NUM_STR_ANY,
+        validate=NUM_STR_ANY_VALIDATE, example=NUM_STR_ANY_EXAMPLE,
     )
 
 
@@ -90,17 +90,17 @@ class IndyCredentialSchema(BaseModelSchema):
     schema_id = fields.Str(
         required=True,
         description="Schema identifier",
-        **INDY_SCHEMA_ID,
+        validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE,
     )
     cred_def_id = fields.Str(
         required=True,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     rev_reg_id = fields.Str(
         allow_none=True,
         description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
     )
     values = fields.Dict(
         keys=fields.Str(description="Attribute name"),

@@ -72,7 +72,7 @@ class DIDXRequestSchema(AgentMessageSchema):
         description="Label for DID exchange request",
         example="Request to connect with Bob",
     )
-    did = fields.Str(description="DID of exchange", **INDY_DID)
+    did = fields.Str(description="DID of exchange", validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,

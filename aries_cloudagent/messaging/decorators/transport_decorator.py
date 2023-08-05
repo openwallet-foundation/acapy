@@ -63,5 +63,5 @@ class TransportDecoratorSchema(BaseModelSchema):
         required=False,
         description="Number of queued messages",
         strict=True,
-        **WHOLE_NUM,
+        validate=WHOLE_NUM_VALIDATE, example=WHOLE_NUM_EXAMPLE,
     )

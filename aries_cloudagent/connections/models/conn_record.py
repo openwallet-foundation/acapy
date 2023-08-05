@@ -637,10 +637,10 @@ class ConnRecordSchema(BaseRecordSchema):
         required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
     )
     my_did = fields.Str(
-        required=False, description="Our DID for connection", **INDY_DID
+        required=False, description="Our DID for connection", validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
     )
     their_did = fields.Str(
-        required=False, description="Their DID for connection", **INDY_DID
+        required=False, description="Their DID for connection", validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
     )
     their_label = fields.Str(
         required=False, description="Their label for connection", example="Bob"
@@ -670,7 +670,7 @@ class ConnRecordSchema(BaseRecordSchema):
         example=UUIDFour.EXAMPLE,
     )
     invitation_key = fields.Str(
-        required=False, description="Public key for connection", **INDY_RAW_PUBLIC_KEY
+        required=False, description="Public key for connection", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE
     )
     invitation_msg_id = fields.Str(
         required=False,

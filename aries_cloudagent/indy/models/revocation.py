@@ -112,7 +112,7 @@ class IndyRevRegDefValueSchema(BaseModelSchema):
         description="Maximum number of credentials; registry size",
         strict=True,
         data_key="maxCredNum",
-        **NATURAL_NUM,
+        validate=NATURAL_NUM_VALIDATE, example=NATURAL_NUM_EXAMPLE,
     )
     public_keys = fields.Nested(
         IndyRevRegDefValuePublicKeysSchema(),
@@ -122,7 +122,7 @@ class IndyRevRegDefValueSchema(BaseModelSchema):
     tails_hash = fields.Str(
         data_key="tailsHash",
         description="Tails hash value",
-        **BASE58_SHA256_HASH,
+        validate=BASE58_SHA256_HASH_VALIDATE, example=BASE58_SHA256_HASH_EXAMPLE,
     )
     tails_location = fields.Str(
         description="Tails file location",
@@ -168,12 +168,12 @@ class IndyRevRegDefSchema(BaseModelSchema):
 
     ver = fields.Str(
         description="Version of revocation registry definition",
-        **INDY_VERSION,
+        validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE,
     )
     id_ = fields.Str(
         description="Indy revocation registry identifier",
         data_key="id",
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
     )
     revoc_def_type = fields.Str(
         description="Revocation registry type (specify CL_ACCUM)",
@@ -185,7 +185,7 @@ class IndyRevRegDefSchema(BaseModelSchema):
     cred_def_id = fields.Str(
         data_key="credDefId",
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     value = fields.Nested(
         IndyRevRegDefValueSchema(), description="Revocation registry definition value"
@@ -264,7 +264,7 @@ class IndyRevRegEntrySchema(BaseModelSchema):
 
     ver = fields.Str(
         description="Version of revocation registry entry",
-        **INDY_VERSION,
+        validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE,
     )
     value = fields.Nested(
         IndyRevRegEntryValueSchema(),

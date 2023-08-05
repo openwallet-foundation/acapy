@@ -588,14 +588,14 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
     cred_def_id = fields.Str(
         required=False,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     error_msg = fields.Str(
         required=False,
         description="Error message",
         example="Revocation registry undefined",
     )
-    issuer_did = fields.Str(required=False, description="Issuer DID", **INDY_DID)
+    issuer_did = fields.Str(required=False, description="Issuer DID", validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)
     max_cred_num = fields.Int(
         required=False,
         description="Maximum number of credentials for revocation registry",
@@ -609,7 +609,7 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         validate=validate.Equal("CL_ACCUM"),
     )
     revoc_reg_id = fields.Str(
-        required=False, description="Revocation registry identifier", **INDY_REV_REG_ID
+        required=False, description="Revocation registry identifier", validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE
     )
     revoc_reg_def = fields.Nested(
         IndyRevRegDefSchema(),
@@ -623,7 +623,7 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         required=False, description="Tag within issuer revocation registry identifier"
     )
     tails_hash = fields.Str(
-        required=False, description="Tails hash", **BASE58_SHA256_HASH
+        required=False, description="Tails hash", validate=BASE58_SHA256_HASH_VALIDATE, example=BASE58_SHA256_HASH_EXAMPLE
     )
     tails_public_uri = fields.Str(
         required=False, description="Public URI for tails file"

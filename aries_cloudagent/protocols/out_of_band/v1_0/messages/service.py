@@ -61,17 +61,17 @@ class ServiceSchema(BaseModelSchema):
 
     _id = fields.Str(required=True, description="Service identifier", data_key="id")
     _type = fields.Str(required=True, description="Service type", data_key="type")
-    did = fields.Str(required=False, description="Service DID", **INDY_DID)
+    did = fields.Str(required=False, description="Service DID", validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)
 
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **DID_KEY),
+        fields.Str(description="Recipient public key", validate=DID_KEY_VALIDATE, example=DID_KEY_EXAMPLE),
         data_key="recipientKeys",
         required=False,
         description="List of recipient keys",
     )
 
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **DID_KEY),
+        fields.Str(description="Routing key", validate=DID_KEY_VALIDATE, example=DID_KEY_EXAMPLE),
         data_key="routingKeys",
         required=False,
         description="List of routing keys",

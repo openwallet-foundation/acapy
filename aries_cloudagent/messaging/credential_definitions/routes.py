@@ -67,7 +67,7 @@ from ..models.base import BaseModelError
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
-    schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
+    schema_id = fields.Str(description="Schema identifier", validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE)
     support_revocation = fields.Boolean(
         required=False, description="Revocation supported flag"
     )
@@ -75,7 +75,7 @@ class CredentialDefinitionSendRequestSchema(OpenAPISchema):
         description="Revocation registry size",
         required=False,
         strict=True,
-        **INDY_REV_REG_SIZE,
+        validate=INDY_REV_REG_SIZE_VALIDATE, example=INDY_REV_REG_SIZE_EXAMPLE,
     )
     tag = fields.Str(
         required=False,
@@ -89,7 +89,7 @@ class CredentialDefinitionSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     credential_definition_id = fields.Str(
-        description="Credential definition identifier", **INDY_CRED_DEF_ID
+        description="Credential definition identifier", validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE
     )
 
 
@@ -118,7 +118,7 @@ class CredentialDefinitionsCreatedResultSchema(OpenAPISchema):
     """Result schema for cred-defs-created request."""
 
     credential_definition_ids = fields.List(
-        fields.Str(description="Credential definition identifiers", **INDY_CRED_DEF_ID)
+        fields.Str(description="Credential definition identifiers", validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE)
     )
 
 
@@ -128,7 +128,7 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
 
 

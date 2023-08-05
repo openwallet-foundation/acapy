@@ -61,16 +61,16 @@ class IndyEQProofSchema(BaseModelSchema):
 
     revealed_attrs = fields.Dict(
         keys=fields.Str(example="preference"),
-        values=fields.Str(**NUM_STR_ANY),
+        values=fields.Str(validate=NUM_STR_ANY_VALIDATE, example=NUM_STR_ANY_EXAMPLE),
     )
-    a_prime = fields.Str(**NUM_STR_WHOLE)
-    e = fields.Str(**NUM_STR_WHOLE)
-    v = fields.Str(**NUM_STR_WHOLE)
+    a_prime = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
+    e = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
+    v = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
     m = fields.Dict(
         keys=fields.Str(example="master_secret"),
-        values=fields.Str(**NUM_STR_WHOLE),
+        values=fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE),
     )
-    m2 = fields.Str(**NUM_STR_WHOLE)
+    m2 = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
 
 
 class IndyGEProofPred(BaseModel):
@@ -149,11 +149,11 @@ class IndyGEProofSchema(BaseModelSchema):
         model_class = IndyGEProof
         unknown = EXCLUDE
 
-    u = fields.Dict(keys=fields.Str(), values=fields.Str(**NUM_STR_WHOLE))
-    r = fields.Dict(keys=fields.Str(), values=fields.Str(**NUM_STR_WHOLE))
-    mj = fields.Str(**NUM_STR_WHOLE)
-    alpha = fields.Str(**NUM_STR_WHOLE)
-    t = fields.Dict(keys=fields.Str(), values=fields.Str(**NUM_STR_WHOLE))
+    u = fields.Dict(keys=fields.Str(), values=fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE))
+    r = fields.Dict(keys=fields.Str(), values=fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE))
+    mj = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
+    alpha = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
+    t = fields.Dict(keys=fields.Str(), values=fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE))
     predicate = fields.Nested(IndyGEProofPredSchema)
 
 
@@ -376,7 +376,7 @@ class RawEncodedSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     raw = fields.Str(description="Raw value")
-    encoded = fields.Str(description="Encoded value", **NUM_STR_ANY)
+    encoded = fields.Str(description="Encoded value", validate=NUM_STR_ANY_VALIDATE, example=NUM_STR_ANY_EXAMPLE)
 
 
 class IndyProofRequestedProofRevealedAttr(RawEncoded):
@@ -572,21 +572,21 @@ class IndyProofIdentifierSchema(BaseModelSchema):
         model_class = IndyProofIdentifier
         unknown = EXCLUDE
 
-    schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
+    schema_id = fields.Str(description="Schema identifier", validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE)
     cred_def_id = fields.Str(
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     rev_reg_id = fields.Str(
         description="Revocation registry identifier",
         allow_none=True,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
     )
     timestamp = fields.Int(
         strict=True,
         allow_none=True,
         description="Timestamp epoch",
-        **INT_EPOCH,
+        validate=INT_EPOCH_VALIDATE, example=INT_EPOCH_EXAMPLE,
     )
 
 

@@ -83,9 +83,9 @@ class CredentialProposalSchema(AgentMessageSchema):
     credential_proposal = fields.Nested(
         CredentialPreviewSchema, required=False, allow_none=False
     )
-    schema_id = fields.Str(required=False, allow_none=False, **INDY_SCHEMA_ID)
-    schema_issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)
+    schema_id = fields.Str(required=False, allow_none=False, validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE)
+    schema_issuer_did = fields.Str(required=False, allow_none=False, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)
     schema_name = fields.Str(required=False, allow_none=False)
-    schema_version = fields.Str(required=False, allow_none=False, **INDY_VERSION)
-    cred_def_id = fields.Str(required=False, allow_none=False, **INDY_CRED_DEF_ID)
-    issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)
+    schema_version = fields.Str(required=False, allow_none=False, validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE)
+    cred_def_id = fields.Str(required=False, allow_none=False, validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE)
+    issuer_did = fields.Str(required=False, allow_none=False, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE)

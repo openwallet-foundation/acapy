@@ -143,12 +143,12 @@ class RevNotificationRecordSchema(BaseRecordSchema):
     rev_reg_id = fields.Str(
         required=False,
         description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE, example=INDY_REV_REG_ID_EXAMPLE,
     )
     cred_rev_id = fields.Str(
         required=False,
         description="Credential revocation identifier",
-        **INDY_CRED_REV_ID,
+        validate=INDY_CRED_REV_ID_VALIDATE, example=INDY_CRED_REV_ID_EXAMPLE,
     )
     connection_id = fields.Str(
         description=(
@@ -156,7 +156,7 @@ class RevNotificationRecordSchema(BaseRecordSchema):
             "required if notify is true"
         ),
         required=False,
-        **UUID4,
+        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
     )
     thread_id = fields.Str(
         description=(

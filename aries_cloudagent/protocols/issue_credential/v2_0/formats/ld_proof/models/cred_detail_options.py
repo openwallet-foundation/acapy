@@ -106,7 +106,7 @@ class LDProofVCDetailOptionsSchema(BaseModelSchema):
             "The date and time of the proof (with a maximum accuracy in seconds)."
             " Defaults to current system time"
         ),
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE, example=INDY_ISO8601_DATETIME_EXAMPLE,
     )
 
     domain = fields.Str(

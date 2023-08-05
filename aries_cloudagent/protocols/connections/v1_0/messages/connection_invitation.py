@@ -109,10 +109,10 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         example="Bob",
     )
     did = fields.Str(
-        required=False, description="DID for connection invitation", **GENERIC_DID
+        required=False, description="DID for connection invitation", validate=GENERIC_DID_VALIDATE, example=GENERIC_DID_EXAMPLE
     )
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(description="Recipient public key", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE),
         data_key="recipientKeys",
         required=False,
         description="List of recipient keys",
@@ -124,7 +124,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         example="http://192.168.56.101:8020",
     )
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(description="Routing key", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE),
         data_key="routingKeys",
         required=False,
         description="List of routing keys",

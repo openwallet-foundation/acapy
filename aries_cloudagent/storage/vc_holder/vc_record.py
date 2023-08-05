@@ -93,7 +93,7 @@ class VCRecordSchema(BaseModelSchema):
         model_class = VCRecord
         unknown = EXCLUDE
 
-    contexts = fields.List(fields.Str(description="Context", **ENDPOINT))
+    contexts = fields.List(fields.Str(description="Context", validate=ENDPOINT_VALIDATE, example=ENDPOINT_EXAMPLE))
     expanded_types = fields.List(
         fields.Str(
             description="JSON-LD expanded type extracted from type and context",

@@ -94,7 +94,7 @@ class ConnectionDetailSchema(BaseModelSchema):
         data_key="DID",
         required=False,
         description="DID for connection detail",
-        **INDY_DID
+        validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
     )
     did_doc = DIDDocWrapper(
         data_key="DIDDoc",

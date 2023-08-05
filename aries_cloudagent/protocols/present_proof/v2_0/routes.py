@@ -326,17 +326,17 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
         description="Start index",
         required=False,
         strict=True,
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE,
     )
     count = fields.Str(
         description="Maximum number to retrieve",
         required=False,
-        **NUM_STR_NATURAL,
+        validate=NUM_STR_NATURAL_VALIDATE, example=NUM_STR_NATURAL_EXAMPLE,
     )
     extra_query = fields.Str(
         description="(JSON) object mapping referents to extra WQL queries",
         required=False,
-        **INDY_EXTRA_WQL,
+        validate=INDY_EXTRA_WQL_VALIDATE, example=INDY_EXTRA_WQL_EXAMPLE,
     )
 
 
@@ -350,7 +350,7 @@ class V20PresExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters for request taking presentation exchange id."""
 
     pres_ex_id = fields.Str(
-        description="Presentation exchange identifier", required=True, **UUID4
+        description="Presentation exchange identifier", required=True, validate=UUID4_VALIDATE, example=UUID4_EXAMPLE
     )
 
 

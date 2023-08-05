@@ -172,5 +172,5 @@ class MediationRecordSchema(BaseRecordSchema):
     connection_id = fields.Str(required=True)
     mediator_terms = fields.List(fields.Str(), required=False)
     recipient_terms = fields.List(fields.Str(), required=False)
-    routing_keys = fields.List(fields.Str(**DID_KEY), required=False)
+    routing_keys = fields.List(fields.Str(validate=DID_KEY_VALIDATE, example=DID_KEY_EXAMPLE), required=False)
     endpoint = fields.Str(required=False)

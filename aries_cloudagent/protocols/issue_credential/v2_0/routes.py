@@ -135,22 +135,22 @@ class V20CredFilterIndySchema(OpenAPISchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     schema_id = fields.Str(
-        description="Schema identifier", required=False, **INDY_SCHEMA_ID
+        description="Schema identifier", required=False, validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID", required=False, **INDY_DID
+        description="Schema issuer DID", required=False, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
     )
     schema_name = fields.Str(
         description="Schema name", required=False, example="preferences"
     )
     schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
+        description="Schema version", required=False, validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE
     )
     issuer_did = fields.Str(
-        description="Credential issuer DID", required=False, **INDY_DID
+        description="Credential issuer DID", required=False, validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE
     )
 
 
@@ -394,7 +394,7 @@ class V20CredExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential exchange id."""
 
     cred_ex_id = fields.Str(
-        description="Credential exchange identifier", required=True, **UUID4
+        description="Credential exchange identifier", required=True, validate=UUID4_VALIDATE, example=UUID4_EXAMPLE
     )
 
 

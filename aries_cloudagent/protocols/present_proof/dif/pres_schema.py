@@ -17,7 +17,7 @@ class DIFProofSchema(OpenAPISchema):
     id = fields.Str(
         description="ID",
         required=False,
-        **UUID4,
+        validate=UUID4_VALIDATE, example=UUID4_EXAMPLE,
     )
     contexts = fields.List(
         StrOrDictField(),

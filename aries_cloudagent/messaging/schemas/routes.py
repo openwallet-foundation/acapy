@@ -70,7 +70,7 @@ class SchemaSendRequestSchema(OpenAPISchema):
         example="prefs",
     )
     schema_version = fields.Str(
-        required=True, description="Schema version", **INDY_VERSION
+        required=True, description="Schema version", validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE
     )
     attributes = fields.List(
         fields.Str(
@@ -86,7 +86,7 @@ class SchemaSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     schema_id = fields.Str(
-        description="Schema identifier", required=True, **INDY_SCHEMA_ID
+        description="Schema identifier", required=True, validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE
     )
     schema = fields.Nested(
         SchemaSchema(),
@@ -119,7 +119,7 @@ class SchemasCreatedResultSchema(OpenAPISchema):
     """Result schema for a schemas-created request."""
 
     schema_ids = fields.List(
-        fields.Str(description="Schema identifiers", **INDY_SCHEMA_ID)
+        fields.Str(description="Schema identifiers", validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE)
     )
 
 

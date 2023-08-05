@@ -68,7 +68,7 @@ class AttachDecoratorDataJWSHeaderSchema(BaseModelSchema):
     kid = fields.Str(
         description="Key identifier, in W3C did:key or DID URL format",
         required=True,
-        **JWS_HEADER_KID,
+        validate=JWS_HEADER_KID_VALIDATE, example=JWS_HEADER_KID_EXAMPLE,
     )
 
 
@@ -114,9 +114,9 @@ class AttachDecoratorData1JWSSchema(BaseModelSchema):
 
     header = fields.Nested(AttachDecoratorDataJWSHeaderSchema, required=True)
     protected = fields.Str(
-        description="protected JWS header", required=False, **BASE64URL_NO_PAD
+        description="protected JWS header", required=False, validate=BASE64_VALIDATE, example=BASE64_EXAMPLEURL_NO_PAD
     )
-    signature = fields.Str(description="signature", required=True, **BASE64URL_NO_PAD)
+    signature = fields.Str(description="signature", required=True, validate=BASE64_VALIDATE, example=BASE64_EXAMPLEURL_NO_PAD)
 
 
 class AttachDecoratorDataJWS(BaseModel):
@@ -182,12 +182,12 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
     protected = fields.Str(
         description="protected JWS header",
         required=False,  # packed in signatures if multi-sig
-        **BASE64URL_NO_PAD,
+        validate=BASE64_VALIDATE, example=BASE64_EXAMPLEURL_NO_PAD,
     )
     signature = fields.Str(
         description="signature",
         required=False,  # packed in signatures if multi-sig
-        **BASE64URL_NO_PAD,
+        validate=BASE64_VALIDATE, example=BASE64_EXAMPLEURL_NO_PAD,
     )
     signatures = fields.List(
         fields.Nested(AttachDecoratorData1JWSSchema),
@@ -481,7 +481,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         return data
 
     base64_ = fields.Str(
-        description="Base64-encoded data", required=False, data_key="base64", **BASE64
+        description="Base64-encoded data", required=False, data_key="base64", validate=BASE64_VALIDATE, example=BASE64_EXAMPLE
     )
     jws_ = fields.Nested(
         AttachDecoratorDataJWSSchema,
@@ -505,7 +505,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         description="SHA256 hash (binhex encoded) of content",
         required=False,
         data_key="sha256",
-        **SHA256,
+        validate=SHA256_VALIDATE, example=SHA256_EXAMPLE,
     )
 
 
@@ -724,7 +724,7 @@ class AttachDecoratorSchema(BaseModelSchema):
     lastmod_time = fields.Str(
         description="Hint regarding last modification datetime, in ISO-8601 format",
         required=False,
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE, example=INDY_ISO8601_DATETIME_EXAMPLE,
     )
     description = fields.Str(
         description="Human-readable description of content",

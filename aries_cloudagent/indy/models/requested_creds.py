@@ -35,5 +35,5 @@ class IndyRequestedCredsRequestedPredSchema(OpenAPISchema):
         description="Epoch timestamp of interest for non-revocation proof",
         required=False,
         strict=True,
-        **INT_EPOCH,
+        validate=INT_EPOCH_VALIDATE, example=INT_EPOCH_EXAMPLE,
     )

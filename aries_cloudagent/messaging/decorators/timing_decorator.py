@@ -63,20 +63,20 @@ class TimingDecoratorSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     in_time = fields.Str(
-        required=False, description="Time of message receipt", **INDY_ISO8601_DATETIME
+        required=False, description="Time of message receipt", validate=INDY_ISO8601_DATETIME_VALIDATE, example=INDY_ISO8601_DATETIME_EXAMPLE
     )
     out_time = fields.Str(
-        required=False, description="Time of message dispatch", **INDY_ISO8601_DATETIME
+        required=False, description="Time of message dispatch", validate=INDY_ISO8601_DATETIME_VALIDATE, example=INDY_ISO8601_DATETIME_EXAMPLE
     )
     stale_time = fields.Str(
         required=False,
         description="Time when message should be considered stale",
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE, example=INDY_ISO8601_DATETIME_EXAMPLE,
     )
     expires_time = fields.Str(
         required=False,
         description="Time when message should be considered expired",
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE, example=INDY_ISO8601_DATETIME_EXAMPLE,
     )
     delay_milli = fields.Int(
         required=False,
@@ -87,5 +87,5 @@ class TimingDecoratorSchema(BaseModelSchema):
     wait_until_time = fields.Str(
         required=False,
         description="Earliest time at which to perform processing",
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE, example=INDY_ISO8601_DATETIME_EXAMPLE,
     )

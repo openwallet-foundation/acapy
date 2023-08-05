@@ -16,13 +16,13 @@ from ...messaging.valid import (
 class SchemaSchema(OpenAPISchema):
     """Marshmallow schema for indy schema."""
 
-    ver = fields.Str(description="Node protocol version", **INDY_VERSION)
-    ident = fields.Str(data_key="id", description="Schema identifier", **INDY_SCHEMA_ID)
+    ver = fields.Str(description="Node protocol version", validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE)
+    ident = fields.Str(data_key="id", description="Schema identifier", validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE)
     name = fields.Str(
         description="Schema name",
         example=INDY_SCHEMA_ID["example"].split(":")[2],
     )
-    version = fields.Str(description="Schema version", **INDY_VERSION)
+    version = fields.Str(description="Schema version", validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE)
     attr_names = fields.List(
         fields.Str(
             description="Attribute name",
@@ -31,4 +31,4 @@ class SchemaSchema(OpenAPISchema):
         description="Schema attribute names",
         data_key="attrNames",
     )
-    seqNo = fields.Int(description="Schema sequence number", strict=True, **NATURAL_NUM)
+    seqNo = fields.Int(description="Schema sequence number", strict=True, validate=NATURAL_NUM_VALIDATE, example=NATURAL_NUM_EXAMPLE)

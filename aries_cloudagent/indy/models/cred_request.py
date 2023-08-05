@@ -53,12 +53,12 @@ class IndyCredRequestSchema(BaseModelSchema):
     prover_did = fields.Str(
         required=True,
         description="Prover DID",
-        **INDY_DID,
+        validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE,
     )
     cred_def_id = fields.Str(
         required=True,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE, example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     blinded_ms = fields.Dict(
         required=True,
@@ -71,5 +71,5 @@ class IndyCredRequestSchema(BaseModelSchema):
     nonce = fields.Str(
         required=True,
         description="Nonce in credential request",
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE,
     )

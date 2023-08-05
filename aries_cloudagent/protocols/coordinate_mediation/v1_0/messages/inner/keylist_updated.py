@@ -55,6 +55,6 @@ class KeylistUpdatedSchema(BaseModelSchema):
         model_class = KeylistUpdated
         unknown = EXCLUDE
 
-    recipient_key = fields.Str(required=True, **DID_KEY)
+    recipient_key = fields.Str(required=True, validate=DID_KEY_VALIDATE, example=DID_KEY_EXAMPLE)
     action = fields.Str(required=True)
     result = fields.Str(required=True)

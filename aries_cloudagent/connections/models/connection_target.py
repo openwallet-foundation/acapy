@@ -58,7 +58,7 @@ class ConnectionTargetSchema(BaseModelSchema):
         model_class = ConnectionTarget
         unknown = EXCLUDE
 
-    did = fields.Str(required=False, description="", **GENERIC_DID)
+    did = fields.Str(required=False, description="", validate=GENERIC_DID_VALIDATE, example=GENERIC_DID_EXAMPLE)
     endpoint = fields.Str(
         required=False,
         description="Connection endpoint",
@@ -66,16 +66,16 @@ class ConnectionTargetSchema(BaseModelSchema):
     )
     label = fields.Str(required=False, description="Connection label", example="Bob")
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(description="Recipient public key", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE),
         required=False,
         description="List of recipient keys",
     )
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(description="Routing key", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE),
         data_key="routingKeys",
         required=False,
         description="List of routing keys",
     )
     sender_key = fields.Str(
-        required=False, description="Sender public key", **INDY_RAW_PUBLIC_KEY
+        required=False, description="Sender public key", validate=INDY_RAW_PUBLIC_KEY_VALIDATE, example=INDY_RAW_PUBLIC_KEY_EXAMPLE
     )

@@ -16,12 +16,12 @@ class SchemaQueryStringSchema(OpenAPISchema):
     schema_id = fields.Str(
         description="Schema identifier",
         required=False,
-        **INDY_SCHEMA_ID,
+        validate=INDY_SCHEMA_ID_VALIDATE, example=INDY_SCHEMA_ID_EXAMPLE,
     )
     schema_issuer_did = fields.Str(
         description="Schema issuer DID",
         required=False,
-        **INDY_DID,
+        validate=INDY_DID_VALIDATE, example=INDY_DID_EXAMPLE,
     )
     schema_name = fields.Str(
         description="Schema name",
@@ -29,7 +29,7 @@ class SchemaQueryStringSchema(OpenAPISchema):
         example="membership",
     )
     schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
+        description="Schema version", required=False, validate=INDY_VERSION_VALIDATE, example=INDY_VERSION_EXAMPLE
     )
 
 
