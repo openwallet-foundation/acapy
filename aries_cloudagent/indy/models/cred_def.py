@@ -57,9 +57,9 @@ class CredDefValueRevocationSchema(OpenAPISchema):
         metadata={"example": "1 1D64716fCDC00C 1 0C781960FA66E3D3 2 095E45DDF417D"}
     )
     h = fields.Str(metadata={"example": "1 16675DAE54BFAE8 2 095E45DD417D"})
-    h0 = fields.Str(example="1 21E5EF9476EAF18 2 095E45DDF417D")
-    h1 = fields.Str(example="1 236D1D99236090 2 095E45DDF417D")
-    h2 = fields.Str(example="1 1C3AE8D1F1E277 2 095E45DDF417D")
+    h0 = fields.Str(metadata={"example": "1 21E5EF9476EAF18 2 095E45DDF417D"})
+    h1 = fields.Str(metadata={"example": "1 236D1D99236090 2 095E45DDF417D"})
+    h2 = fields.Str(metadata={"example": "1 1C3AE8D1F1E277 2 095E45DDF417D"})
     htilde = fields.Str(metadata={"example": "1 1D8549E8C0F8 2 095E45DDF417D"})
     h_cap = fields.Str(
         metadata={"example": "1 1B2A32CF3167 1 2490FEBF6EE55 1 0000000000000000"}

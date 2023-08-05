@@ -85,7 +85,9 @@ class IndyEQProofSchema(BaseModelSchema):
             validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
         ),
     )
-    m2 = fields.Str(validate=NUM_STR_WHOLE_VALIDATE, example=NUM_STR_WHOLE_EXAMPLE)
+    m2 = fields.Str(
+        validate=NUM_STR_WHOLE_VALIDATE, metadata={"example": NUM_STR_WHOLE_EXAMPLE}
+    )
 
 
 class IndyGEProofPred(BaseModel):
