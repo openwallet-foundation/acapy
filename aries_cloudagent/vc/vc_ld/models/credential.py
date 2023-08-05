@@ -8,12 +8,16 @@ from marshmallow import INCLUDE, fields, post_dump, ValidationError
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
-    CREDENTIAL_CONTEXT,
-    CREDENTIAL_TYPE,
-    CREDENTIAL_SUBJECT,
+    CREDENTIAL_CONTEXT_VALIDATE,
+    CREDENTIAL_CONTEXT_EXAMPLE,
+    CREDENTIAL_TYPE_VALIDATE,
+    CREDENTIAL_TYPE_EXAMPLE,
+    CREDENTIAL_SUBJECT_VALIDATE,
+    CREDENTIAL_SUBJECT_EXAMPLE,
     DIDKey,
     DictOrDictListField,
-    RFC3339_DATETIME,
+    RFC3339_DATETIME_VALIDATE,
+    RFC3339_DATETIME_EXAMPLE,
     StrOrDictField,
     Uri,
     UriOrDictField,
