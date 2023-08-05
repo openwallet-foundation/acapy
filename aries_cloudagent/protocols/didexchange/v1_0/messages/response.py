@@ -7,7 +7,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import INDY_DID
+from .....messaging.valid import INDY_DID_VALIDATE, INDY_DID_EXAMPLE
 
 from ..message_types import DIDX_RESPONSE, PROTOCOL_PACKAGE
 

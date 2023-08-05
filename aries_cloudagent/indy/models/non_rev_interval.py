@@ -5,7 +5,7 @@ from time import time
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INT_EPOCH
+from ...messaging.valid import INT_EPOCH_VALIDATE, INT_EPOCH_EXAMPLE
 
 
 class IndyNonRevocationInterval(BaseModel):

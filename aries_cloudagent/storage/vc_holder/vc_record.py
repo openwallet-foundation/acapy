@@ -8,7 +8,7 @@ from uuid import uuid4
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import ENDPOINT, UUIDFour
+from ...messaging.valid import ENDPOINT_VALIDATE, ENDPOINT_EXAMPLE, UUIDFour
 
 LOGGER = logging.getLogger(__name__)
 

@@ -12,7 +12,7 @@ from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSch
 from .....indy.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
 from .....indy.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
+from .....messaging.valid import INDY_CRED_DEF_ID_VALIDATE, INDY_CRED_DEF_ID_EXAMPLE, INDY_SCHEMA_ID_VALIDATE, INDY_SCHEMA_ID_EXAMPLE, UUIDFour
 from .....storage.base import StorageError
 
 from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema

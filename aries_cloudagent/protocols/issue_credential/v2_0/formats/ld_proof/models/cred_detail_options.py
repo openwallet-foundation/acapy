@@ -4,7 +4,7 @@ from typing import Optional
 from marshmallow import fields, Schema, INCLUDE
 
 from .......messaging.models.base import BaseModel, BaseModelSchema
-from .......messaging.valid import INDY_ISO8601_DATETIME, UUIDFour
+from .......messaging.valid import INDY_ISO8601_DATETIME_VALIDATE, INDY_ISO8601_DATETIME_EXAMPLE, UUIDFour
 
 
 class LDProofVCDetailOptions(BaseModel):

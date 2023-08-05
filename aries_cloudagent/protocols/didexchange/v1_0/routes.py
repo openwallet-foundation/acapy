@@ -17,7 +17,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import ENDPOINT, GENERIC_DID, UUIDFour, UUID4
+from ....messaging.valid import ENDPOINT_VALIDATE, ENDPOINT_EXAMPLE, GENERIC_DID_VALIDATE, GENERIC_DID_EXAMPLE, UUIDFour, UUID4_VALIDATE, UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 

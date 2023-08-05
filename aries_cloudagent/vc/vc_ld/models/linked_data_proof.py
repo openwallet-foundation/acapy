@@ -2,7 +2,7 @@
 
 from marshmallow import INCLUDE, fields, post_dump
 
-from ....messaging.valid import INDY_ISO8601_DATETIME, UUIDFour, Uri
+from ....messaging.valid import INDY_ISO8601_DATETIME_VALIDATE, INDY_ISO8601_DATETIME_EXAMPLE, UUIDFour, Uri_VALIDATE, Uri_EXAMPLE
 from ....messaging.models.base import BaseModel, BaseModelSchema
 
 from typing import Optional

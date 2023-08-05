@@ -9,7 +9,7 @@ from marshmallow import fields, validate
 
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
+from ...messaging.valid import INDY_DID_VALIDATE, INDY_DID_EXAMPLE, INDY_RAW_PUBLIC_KEY_VALIDATE, INDY_RAW_PUBLIC_KEY_EXAMPLE, UUIDFour
 
 from ...protocols.connections.v1_0.message_types import (
     CONNECTION_INVITATION,

@@ -4,7 +4,7 @@ from marshmallow import EXCLUDE, fields
 
 from .....connections.models.diddoc import DIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import INDY_DID
+from .....messaging.valid import INDY_DID_VALIDATE, INDY_DID_EXAMPLE
 
 
 class DIDDocWrapper(fields.Field):

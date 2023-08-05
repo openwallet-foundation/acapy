@@ -3,7 +3,7 @@
 from marshmallow import fields
 
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import INT_EPOCH
+from ...messaging.valid import INT_EPOCH_VALIDATE, INT_EPOCH_EXAMPLE
 
 
 class IndyRequestedCredsRequestedAttrSchema(OpenAPISchema):

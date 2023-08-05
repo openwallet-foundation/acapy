@@ -8,7 +8,7 @@ from marshmallow.utils import EXCLUDE
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
-from .....messaging.valid import INDY_CRED_REV_ID, INDY_REV_REG_ID, UUID4
+from .....messaging.valid import INDY_CRED_REV_ID_VALIDATE, INDY_CRED_REV_ID_EXAMPLE, INDY_REV_REG_ID_VALIDATE, INDY_REV_REG_ID_EXAMPLE, UUID4_VALIDATE, UUID4_EXAMPLE
 from .....storage.error import StorageNotFoundError, StorageDuplicateError
 from ..messages.revoke import Revoke
 

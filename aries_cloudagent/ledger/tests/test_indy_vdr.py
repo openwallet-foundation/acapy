@@ -1,5 +1,5 @@
 import json
-from aries_cloudagent.messaging.valid import ENDPOINT_TYPE
+from aries_cloudagent.messaging.valid import ENDPOINT_TYPE_VALIDATE, ENDPOINT_TYPE_EXAMPLE
 import pytest
 
 from asynctest import mock as async_mock

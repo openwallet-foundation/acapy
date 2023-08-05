@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields, post_dump
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import DID_KEY, INDY_DID
+from .....messaging.valid import DID_KEY_VALIDATE, DID_KEY_EXAMPLE, INDY_DID_VALIDATE, INDY_DID_EXAMPLE
 
 
 class Service(BaseModel):

@@ -3,7 +3,7 @@
 from marshmallow import fields
 
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import INDY_SCHEMA_ID, INDY_VERSION, NATURAL_NUM
+from ...messaging.valid import INDY_SCHEMA_ID_VALIDATE, INDY_SCHEMA_ID_EXAMPLE, INDY_VERSION_VALIDATE, INDY_VERSION_EXAMPLE, NATURAL_NUM_VALIDATE, NATURAL_NUM_EXAMPLE
 
 
 class SchemaSchema(OpenAPISchema):

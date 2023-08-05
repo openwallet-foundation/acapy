@@ -6,7 +6,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import GENERIC_DID, INDY_RAW_PUBLIC_KEY
+from .....messaging.valid import GENERIC_DID_VALIDATE, GENERIC_DID_EXAMPLE, INDY_RAW_PUBLIC_KEY_VALIDATE, INDY_RAW_PUBLIC_KEY_EXAMPLE
 from .....wallet.util import b64_to_bytes, bytes_to_b64
 
 from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE

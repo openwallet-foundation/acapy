@@ -5,7 +5,7 @@ from typing import Mapping, Sequence
 from marshmallow import EXCLUDE, fields, validate, validates_schema, ValidationError
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ....messaging.valid import RFC3339_DATETIME
+from ....messaging.valid import RFC3339_DATETIME_VALIDATE, RFC3339_DATETIME_EXAMPLE
 
 from .message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 

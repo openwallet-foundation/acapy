@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, NUM_STR_WHOLE
+from ...messaging.valid import INDY_CRED_DEF_ID_VALIDATE, INDY_CRED_DEF_ID_EXAMPLE, INDY_SCHEMA_ID_VALIDATE, INDY_SCHEMA_ID_EXAMPLE, NUM_STR_WHOLE_VALIDATE, NUM_STR_WHOLE_EXAMPLE
 
 
 class IndyKeyCorrectnessProof(BaseModel):

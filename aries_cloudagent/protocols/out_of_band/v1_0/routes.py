@@ -11,7 +11,7 @@ from marshmallow.exceptions import ValidationError
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUID4
+from ....messaging.valid import UUID4_VALIDATE, UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
 
 from ...didcomm_prefix import DIDCommPrefix

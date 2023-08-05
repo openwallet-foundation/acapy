@@ -3,7 +3,7 @@
 from marshmallow import fields, Schema
 
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import INDY_CRED_DEF_ID, INDY_VERSION, NUM_STR_WHOLE
+from ...messaging.valid import INDY_CRED_DEF_ID_VALIDATE, INDY_CRED_DEF_ID_EXAMPLE, INDY_VERSION_VALIDATE, INDY_VERSION_EXAMPLE, NUM_STR_WHOLE_VALIDATE, NUM_STR_WHOLE_EXAMPLE
 
 
 class CredDefValuePrimarySchema(OpenAPISchema):
