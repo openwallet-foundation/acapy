@@ -6,7 +6,7 @@ pytest-cov==2.10.1
 pytest-flake8==1.1.1
 mock~=4.0
 
-flake8==4.0.1
+flake8~=6.1.0
 # flake8-rst-docstrings==0.0.8
 flake8-docstrings==1.5.0
 flake8-rst==0.7.2
