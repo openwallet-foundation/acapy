@@ -64,7 +64,7 @@ class W3cDID(validate.Regexp):
     PATTERN = DID_PATTERN
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             W3cDID.PATTERN,
