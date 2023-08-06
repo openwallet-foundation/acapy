@@ -10,7 +10,7 @@ flake8==4.0.1
 # flake8-rst-docstrings==0.0.8
 flake8-docstrings==1.5.0
 flake8-rst==0.7.2
-pydocstyle==3.0.0
+pydocstyle~=6.3.0
 pre-commit~=3.3.3
 
 sphinx==1.8.4
