@@ -88,7 +88,7 @@ class WholeNumber(Range):
     def __call__(self, value):
         """Validate input value."""
 
-        if type(value) != int:
+        if not isinstance(value, int):
             raise ValidationError("Value {input} is not a valid whole number")
         super().__call__(value)
 
@@ -136,7 +136,7 @@ class NaturalNumber(Range):
     def __call__(self, value):
         """Validate input value."""
 
-        if type(value) != int:
+        if not isinstance(value, int):
             raise ValidationError("Value {input} is not a valid natural number")
         super().__call__(value)
 
@@ -177,7 +177,7 @@ class IndyRevRegSize(Range):
     def __call__(self, value):
         """Validate input value."""
 
-        if type(value) != int:
+        if not isinstance(value, int):
             raise ValidationError(
                 "Value {input} must be an integer between "
                 f"{RevocationRegistry.MIN_SIZE} and "

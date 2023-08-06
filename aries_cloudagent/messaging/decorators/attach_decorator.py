@@ -53,7 +53,7 @@ class AttachDecoratorDataJWSHeader(BaseModel):
     def __eq__(self, other: Any):
         """Compare equality with another."""
 
-        return type(self) == type(other) and self.kid == other.kid
+        return isinstance(self, other.__class__) and self.kid == other.kid
 
 
 class AttachDecoratorDataJWSHeaderSchema(BaseModelSchema):
@@ -96,7 +96,7 @@ class AttachDecoratorData1JWS(BaseModel):
         """Compare equality with another."""
 
         return (
-            type(self) == type(other)
+            isinstance(self, other.__class__)
             and self.header == other.header
             and self.protected == other.protected
             and self.signature == other.signature
