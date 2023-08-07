@@ -65,7 +65,7 @@ class IntEpoch(Range):
     EXAMPLE = EXAMPLE_TIMESTAMP
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(  # use u64 for indy-sdk compatibility
             min=0,
@@ -80,14 +80,14 @@ class WholeNumber(Range):
     EXAMPLE = 0
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(min=0, error="Value {input} is not a non-negative integer")
 
     def __call__(self, value):
         """Validate input value."""
 
-        if type(value) != int:
+        if not isinstance(value, int):
             raise ValidationError("Value {input} is not a valid whole number")
         super().__call__(value)
 
@@ -99,7 +99,7 @@ class NumericStrWhole(Regexp):
     PATTERN = r"^[0-9]*$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             NumericStrWhole.PATTERN,
@@ -114,7 +114,7 @@ class NumericStrAny(Regexp):
     PATTERN = r"^-?[0-9]*$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             NumericStrAny.PATTERN,
@@ -128,14 +128,14 @@ class NaturalNumber(Range):
     EXAMPLE = 10
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(min=1, error="Value {input} is not a positive integer")
 
     def __call__(self, value):
         """Validate input value."""
 
-        if type(value) != int:
+        if not isinstance(value, int):
             raise ValidationError("Value {input} is not a valid natural number")
         super().__call__(value)
 
@@ -147,7 +147,7 @@ class NumericStrNatural(Regexp):
     PATTERN = r"^[1-9][0-9]*$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             NumericStrNatural.PATTERN,
@@ -161,7 +161,7 @@ class IndyRevRegSize(Range):
     EXAMPLE = 1000
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             min=RevocationRegistry.MIN_SIZE,
@@ -176,7 +176,7 @@ class IndyRevRegSize(Range):
     def __call__(self, value):
         """Validate input value."""
 
-        if type(value) != int:
+        if not isinstance(value, int):
             raise ValidationError(
                 "Value {input} must be an integer between "
                 f"{RevocationRegistry.MIN_SIZE} and "
@@ -192,7 +192,7 @@ class JWSHeaderKid(Regexp):
     PATTERN = rf"^did:(?:key:z[{B58}]+|sov:[{B58}]{{21,22}}(;.*)?(\?.*)?#.+)$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             JWSHeaderKid.PATTERN,
@@ -211,7 +211,7 @@ class JSONWebToken(Regexp):
     PATTERN = r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             JSONWebToken.PATTERN,
@@ -226,7 +226,7 @@ class DIDKey(Regexp):
     PATTERN = re.compile(rf"^did:key:z[{B58}]+$")
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             DIDKey.PATTERN, error="Value {input} is not in W3C did:key format"
@@ -240,7 +240,7 @@ class DIDWeb(Regexp):
     PATTERN = re.compile(r"^(did:web:)([a-zA-Z0-9%._-]*:)*[a-zA-Z0-9%._-]+$")
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             DIDWeb.PATTERN, error="Value {input} is not in W3C did:web format"
@@ -253,7 +253,7 @@ class DIDPosture(OneOf):
     EXAMPLE = DIDPostureEnum.WALLET_ONLY.moniker
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             choices=[did_posture.moniker for did_posture in DIDPostureEnum],
@@ -268,7 +268,7 @@ class IndyDID(Regexp):
     PATTERN = re.compile(rf"^(did:sov:)?[{B58}]{{21,22}}$")
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndyDID.PATTERN,
@@ -290,7 +290,7 @@ class DIDValidation(Regexp):
     PATTERN = re.compile(rf"^did:{METHOD}:{METHOD_ID}{PARAMS}{PATH}{QUERY}{FRAGMENT}$")
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             DIDValidation.PATTERN,
@@ -306,7 +306,7 @@ class MaybeIndyDID(Regexp):
     PATTERN = re.compile(IndyDID.PATTERN.pattern + "|" + DIDValidation.PATTERN.pattern)
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             MaybeIndyDID.PATTERN,
@@ -321,7 +321,7 @@ class IndyRawPublicKey(Regexp):
     PATTERN = rf"^[{B58}]{{43,44}}$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndyRawPublicKey.PATTERN,
@@ -341,7 +341,7 @@ class RoutingKey(Regexp):
     PATTERN = re.compile(DIDKey.PATTERN.pattern + "|" + IndyRawPublicKey.PATTERN)
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             RoutingKey.PATTERN,
@@ -365,7 +365,7 @@ class IndyCredDefId(Regexp):
     )
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndyCredDefId.PATTERN,
@@ -380,7 +380,7 @@ class IndyVersion(Regexp):
     PATTERN = r"^[0-9.]+$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndyVersion.PATTERN,
@@ -395,7 +395,7 @@ class IndySchemaId(Regexp):
     PATTERN = rf"^[{B58}]{{21,22}}:2:.+:[0-9.]+$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndySchemaId.PATTERN,
@@ -415,7 +415,7 @@ class IndyRevRegId(Regexp):
     )
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndyRevRegId.PATTERN,
@@ -430,7 +430,7 @@ class IndyCredRevId(Regexp):
     PATTERN = r"^[1-9][0-9]*$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndyCredRevId.PATTERN,
@@ -444,7 +444,7 @@ class IndyPredicate(OneOf):
     EXAMPLE = ">="
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             choices=["<", "<=", ">=", ">"],
@@ -462,7 +462,7 @@ class IndyISO8601DateTime(Regexp):
     )
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndyISO8601DateTime.PATTERN,
@@ -480,7 +480,7 @@ class RFC3339DateTime(Regexp):
     )
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             RFC3339DateTime.PATTERN,
@@ -495,7 +495,7 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
     PATTERN = r"^{.*}$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndyWQL.PATTERN,
@@ -523,7 +523,7 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
     PATTERN = r'^{\s*".*?"\s*:\s*{.*?}\s*(,\s*".*?"\s*:\s*{.*?}\s*)*\s*}$'
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             IndyExtraWQL.PATTERN,
@@ -551,7 +551,7 @@ class Base64(Regexp):
     PATTERN = r"^[a-zA-Z0-9+/]*={0,2}$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             Base64.PATTERN,
@@ -566,7 +566,7 @@ class Base64URL(Regexp):
     PATTERN = r"^[-_a-zA-Z0-9]*={0,2}$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             Base64URL.PATTERN,
@@ -581,7 +581,7 @@ class Base64URLNoPad(Regexp):
     PATTERN = r"^[-_a-zA-Z0-9]*$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             Base64URLNoPad.PATTERN,
@@ -596,7 +596,7 @@ class SHA256Hash(Regexp):
     PATTERN = r"^[a-fA-F0-9+/]{64}$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             SHA256Hash.PATTERN,
@@ -611,7 +611,7 @@ class Base58SHA256Hash(Regexp):
     PATTERN = rf"^[{B58}]{{43,44}}$"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             Base58SHA256Hash.PATTERN,
@@ -632,7 +632,7 @@ class UUIDFour(Regexp):
     )
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             UUIDFour.PATTERN,
@@ -647,7 +647,7 @@ class Uri(Regexp):
     PATTERN = r"\w+:(\/?\/?)[^\s]+"
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
         super().__init__(Uri.PATTERN, error="Value {input} is not URI")
 
 
@@ -663,7 +663,7 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
     )
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             Endpoint.PATTERN,
@@ -677,7 +677,7 @@ class EndpointType(OneOf):
     EXAMPLE = EndpointTypeEnum.ENDPOINT.w3c
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             choices=[e.w3c for e in EndpointTypeEnum],
@@ -692,7 +692,7 @@ class CredentialType(Validator):
     EXAMPLE = [CREDENTIAL_TYPE, "AlumniCredential"]
 
     def __init__(self) -> None:
-        """Initializer."""
+        """Initialize the instance."""
         super().__init__()
 
     def __call__(self, value):
@@ -716,7 +716,7 @@ class CredentialContext(Validator):
     EXAMPLE = [FIRST_CONTEXT, "https://www.w3.org/2018/credentials/examples/v1"]
 
     def __init__(self) -> None:
-        """Initializer."""
+        """Initialize the instance."""
         super().__init__()
 
     def __call__(self, value):
@@ -740,7 +740,7 @@ class CredentialSubject(Validator):
     }
 
     def __init__(self) -> None:
-        """Initializer."""
+        """Initialize the instance."""
         super().__init__()
 
     def __call__(self, value):
@@ -769,7 +769,7 @@ class IndyOrKeyDID(Regexp):
     def __init__(
         self,
     ):
-        """Initializer."""
+        """Initialize the instance."""
         super().__init__(
             IndyOrKeyDID.PATTERN,
             error="Value {input} is not in did:key or indy did format",

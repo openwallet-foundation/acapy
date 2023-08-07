@@ -15,7 +15,7 @@ class SampleDecorator(BaseModel):
         schema_class = "SampleDecoratorSchema"
 
     def __init__(self, score: int, **kwargs):
-        """Initializer."""
+        """Initialize the instance."""
         super().__init__(**kwargs)
         self.score = score
 
