@@ -50,10 +50,10 @@ class MediationDenySchema(AgentMessageSchema):
         model_class = MediationDeny
 
     mediator_terms = fields.List(
-        fields.Str(description="Terms for mediator to agree"),
+        fields.Str(metadata={"description": "Terms for mediator to agree"}),
         required=False,
     )
     recipient_terms = fields.List(
-        fields.Str(description="Terms for recipient to agree"),
+        fields.Str(metadata={"description": "Terms for recipient to agree"}),
         required=False,
     )

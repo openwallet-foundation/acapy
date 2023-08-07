@@ -1,24 +1,21 @@
 """Aries#0453 v2.0 credential exchange information with non-secrets storage."""
 
 import logging
-
 from typing import Any, Mapping, Optional, Union
 
-from marshmallow import fields, Schema, validate
+from marshmallow import Schema, fields, validate
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 from .....storage.base import StorageError
-
+from ..messages.cred_ex_record_webhook import V20CredExRecordWebhook
 from ..messages.cred_format import V20CredFormat
 from ..messages.cred_issue import V20CredIssue, V20CredIssueSchema
-from ..messages.cred_proposal import V20CredProposal, V20CredProposalSchema
 from ..messages.cred_offer import V20CredOffer, V20CredOfferSchema
+from ..messages.cred_proposal import V20CredProposal, V20CredProposalSchema
 from ..messages.cred_request import V20CredRequest, V20CredRequestSchema
 from ..messages.inner.cred_preview import V20CredPreviewSchema
-from ..messages.cred_ex_record_webhook import V20CredExRecordWebhook
-
 from . import UNENCRYPTED_TAGS
 
 LOGGER = logging.getLogger(__name__)
@@ -310,67 +307,81 @@ class V20CredExRecordSchema(BaseExchangeSchema):
 
     cred_ex_id = fields.Str(
         required=False,
-        description="Credential exchange identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     connection_id = fields.Str(
-        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.Str(
-        required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     parent_thread_id = fields.Str(
-        required=False, description="Parent thread identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={
+            "description": "Parent thread identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     initiator = fields.Str(
         required=False,
-        description="Issue-credential exchange initiator: self or external",
-        example=V20CredExRecord.INITIATOR_SELF,
         validate=validate.OneOf(
             V20CredExRecord.get_attributes_by_prefix("INITIATOR_", walk_mro=False)
         ),
+        metadata={
+            "description": "Issue-credential exchange initiator: self or external",
+            "example": V20CredExRecord.INITIATOR_SELF,
+        },
     )
     role = fields.Str(
         required=False,
-        description="Issue-credential exchange role: holder or issuer",
-        example=V20CredExRecord.ROLE_ISSUER,
         validate=validate.OneOf(
             V20CredExRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
         ),
+        metadata={
+            "description": "Issue-credential exchange role: holder or issuer",
+            "example": V20CredExRecord.ROLE_ISSUER,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Issue-credential exchange state",
-        example=V20CredExRecord.STATE_DONE,
         validate=validate.OneOf(
             V20CredExRecord.get_attributes_by_prefix("STATE_", walk_mro=True)
         ),
+        metadata={
+            "description": "Issue-credential exchange state",
+            "example": V20CredExRecord.STATE_DONE,
+        },
     )
     cred_preview = fields.Nested(
         V20CredPreviewSchema(),
         required=False,
         dump_only=True,
-        description="Credential preview from credential proposal",
+        metadata={"description": "Credential preview from credential proposal"},
     )
     cred_proposal = fields.Nested(
         V20CredProposalSchema(),
         required=False,
-        description="Credential proposal message",
+        metadata={"description": "Credential proposal message"},
     )
     cred_offer = fields.Nested(
         V20CredOfferSchema(),
         required=False,
-        description="Credential offer message",
+        metadata={"description": "Credential offer message"},
     )
     cred_request = fields.Nested(
         V20CredRequestSchema(),
         required=False,
-        description="Serialized credential request message",
+        metadata={"description": "Serialized credential request message"},
     )
     cred_issue = fields.Nested(
         V20CredIssueSchema(),
         required=False,
-        description="Serialized credential issue message",
+        metadata={"description": "Serialized credential issue message"},
     )
     by_format = fields.Nested(
         Schema.from_dict(
@@ -383,31 +394,40 @@ class V20CredExRecordSchema(BaseExchangeSchema):
             name="V20CredExRecordByFormatSchema",
         ),
         required=False,
-        description=(
-            "Attachment content by format for proposal, offer, request, and issue"
-        ),
         dump_only=True,
+        metadata={
+            "description": (
+                "Attachment content by format for proposal, offer, request, and issue"
+            )
+        },
     )
     auto_offer = fields.Bool(
         required=False,
-        description="Holder choice to accept offer in this credential exchange",
-        example=False,
+        metadata={
+            "description": "Holder choice to accept offer in this credential exchange",
+            "example": False,
+        },
     )
     auto_issue = fields.Bool(
         required=False,
-        description="Issuer choice to issue to request in this credential exchange",
-        example=False,
+        metadata={
+            "description": (
+                "Issuer choice to issue to request in this credential exchange"
+            ),
+            "example": False,
+        },
     )
     auto_remove = fields.Bool(
         required=False,
-        default=True,
-        description=(
-            "Issuer choice to remove this credential exchange record when complete"
-        ),
-        example=False,
+        dump_default=True,
+        metadata={
+            "description": (
+                "Issuer choice to remove this credential exchange record when complete"
+            ),
+            "example": False,
+        },
     )
     error_msg = fields.Str(
         required=False,
-        description="Error message",
-        example="The front fell off",
+        metadata={"description": "Error message", "example": "The front fell off"},
     )

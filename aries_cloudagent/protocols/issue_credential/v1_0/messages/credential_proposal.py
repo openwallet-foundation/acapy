@@ -4,19 +4,20 @@ from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
 )
-
 from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
-
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers."
-    "credential_proposal_handler.CredentialProposalHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_proposal_handler.CredentialProposalHandler"
 )
 
 
@@ -78,14 +79,41 @@ class CredentialProposalSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     credential_proposal = fields.Nested(
         CredentialPreviewSchema, required=False, allow_none=False
     )
-    schema_id = fields.Str(required=False, allow_none=False, **INDY_SCHEMA_ID)
-    schema_issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)
+    schema_id = fields.Str(
+        required=False,
+        allow_none=False,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={"example": INDY_SCHEMA_ID_EXAMPLE},
+    )
+    schema_issuer_did = fields.Str(
+        required=False,
+        allow_none=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"example": INDY_DID_EXAMPLE},
+    )
     schema_name = fields.Str(required=False, allow_none=False)
-    schema_version = fields.Str(required=False, allow_none=False, **INDY_VERSION)
-    cred_def_id = fields.Str(required=False, allow_none=False, **INDY_CRED_DEF_ID)
-    issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)
+    schema_version = fields.Str(
+        required=False,
+        allow_none=False,
+        validate=INDY_VERSION_VALIDATE,
+        metadata={"example": INDY_VERSION_EXAMPLE},
+    )
+    cred_def_id = fields.Str(
+        required=False,
+        allow_none=False,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={"example": INDY_CRED_DEF_ID_EXAMPLE},
+    )
+    issuer_did = fields.Str(
+        required=False,
+        allow_none=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"example": INDY_DID_EXAMPLE},
+    )

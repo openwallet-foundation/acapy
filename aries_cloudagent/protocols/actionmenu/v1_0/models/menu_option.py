@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
-
 from .menu_form import MenuForm, MenuFormSchema
 
 
@@ -52,25 +51,27 @@ class MenuOptionSchema(BaseModelSchema):
 
     name = fields.Str(
         required=True,
-        description="Menu option name (unique identifier)",
-        example="window_prefs",
+        metadata={
+            "description": "Menu option name (unique identifier)",
+            "example": "window_prefs",
+        },
     )
     title = fields.Str(
         required=True,
-        description="Menu option title",
-        example="Window Preferences",
+        metadata={"description": "Menu option title", "example": "Window Preferences"},
     )
     description = fields.Str(
         required=False,
-        description="Additional descriptive text for menu option",
-        example="Window display preferences",
+        metadata={
+            "description": "Additional descriptive text for menu option",
+            "example": "Window display preferences",
+        },
     )
     disabled = fields.Bool(
         required=False,
-        description="Whether to show option as disabled",
-        example="False",
+        metadata={
+            "description": "Whether to show option as disabled",
+            "example": "False",
+        },
     )
-    form = fields.Nested(
-        MenuFormSchema(),
-        required=False,
-    )
+    form = fields.Nested(MenuFormSchema(), required=False)

@@ -6,11 +6,12 @@ import logging
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    querystring_schema,
     match_info_schema,
+    querystring_schema,
     request_schema,
     response_schema,
 )
+
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
@@ -18,15 +19,19 @@ from ..connections.models.conn_record import ConnRecord
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
-    ENDPOINT,
-    ENDPOINT_TYPE,
-    INDY_DID,
-    INDY_RAW_PUBLIC_KEY,
-    INT_EPOCH,
-    UUIDFour,
+    ENDPOINT_EXAMPLE,
+    ENDPOINT_TYPE_EXAMPLE,
+    ENDPOINT_TYPE_VALIDATE,
+    ENDPOINT_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    INT_EPOCH_EXAMPLE,
+    INT_EPOCH_VALIDATE,
+    UUID4_EXAMPLE,
 )
 from ..multitenant.base import BaseMultitenantManager
-
 from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
@@ -36,32 +41,31 @@ from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 from ..protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
 from ..storage.error import StorageError, StorageNotFoundError
 from ..wallet.error import WalletError, WalletNotFoundError
-
-from .base import BaseLedger, Role as LedgerRole
+from .base import BaseLedger
+from .base import Role as LedgerRole
+from .endpoint_type import EndpointType
+from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 from .multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
 )
-from .multiple_ledger.ledger_requests_executor import (
-    GET_NYM_ROLE,
-    GET_KEY_FOR_DID,
-    GET_ENDPOINT_FOR_DID,
-    IndyLedgerRequestsExecutor,
-)
 from .multiple_ledger.ledger_config_schema import (
+    ConfigurableWriteLedgersSchema,
     LedgerConfigListSchema,
     WriteLedgerSchema,
-    ConfigurableWriteLedgersSchema,
 )
-from .endpoint_type import EndpointType
-from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
+from .multiple_ledger.ledger_requests_executor import (
+    GET_ENDPOINT_FOR_DID,
+    GET_KEY_FOR_DID,
+    GET_NYM_ROLE,
+    IndyLedgerRequestsExecutor,
+)
 from .util import notify_register_did_event
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -90,7 +94,10 @@ class TAAAcceptanceSchema(OpenAPISchema):
     """TAA acceptance record."""
 
     mechanism = fields.Str()
-    time = fields.Int(strict=True, **INT_EPOCH)
+    time = fields.Int(
+        validate=INT_EPOCH_VALIDATE,
+        metadata={"strict": True, "example": INT_EPOCH_EXAMPLE},
+    )
 
 
 class TAAInfoSchema(OpenAPISchema):
@@ -120,24 +127,27 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for register ledger nym request."""
 
     did = fields.Str(
-        description="DID to register",
         required=True,
-        **INDY_DID,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "DID to register", "example": INDY_DID_EXAMPLE},
     )
     verkey = fields.Str(
-        description="Verification key", required=True, **INDY_RAW_PUBLIC_KEY
+        required=True,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Verification key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
     )
     alias = fields.Str(
-        description="Alias",
-        required=False,
-        example="Barry",
+        required=False, metadata={"description": "Alias", "example": "Barry"}
     )
     role = fields.Str(
-        description="Role",
         required=False,
         validate=validate.OneOf(
             [r.name for r in LedgerRole if isinstance(r.value[0], int)] + ["reset"]
         ),
+        metadata={"description": "Role"},
     )
 
 
@@ -145,8 +155,8 @@ class CreateDidTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -154,26 +164,38 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
 class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(
+        required=True,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "DID of interest", "example": INDY_DID_EXAMPLE},
+    )
 
 
 class QueryStringEndpointSchema(OpenAPISchema):
     """Parameters and validators for query string with DID and endpoint type."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(
+        required=True,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "DID of interest", "example": INDY_DID_EXAMPLE},
+    )
     endpoint_type = fields.Str(
-        description=(
-            f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"
-        ),
         required=False,
-        **ENDPOINT_TYPE,
+        validate=ENDPOINT_TYPE_VALIDATE,
+        metadata={
+            "description": (
+                f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"
+            ),
+            "example": ENDPOINT_TYPE_EXAMPLE,
+        },
     )
 
 
@@ -181,14 +203,16 @@ class TxnOrRegisterLedgerNymResponseSchema(OpenAPISchema):
     """Response schema for ledger nym registration."""
 
     success = fields.Bool(
-        description="Success of nym registration operation",
-        example=True,
+        metadata={
+            "description": "Success of nym registration operation",
+            "example": True,
+        }
     )
 
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="DID transaction to endorse",
+        metadata={"description": "DID transaction to endorse"},
     )
 
 
@@ -196,9 +220,8 @@ class GetNymRoleResponseSchema(OpenAPISchema):
     """Response schema to get nym role operation."""
 
     role = fields.Str(
-        description="Ledger role",
         validate=validate.OneOf([r.name for r in LedgerRole]),
-        example=LedgerRole.ENDORSER.name,
+        metadata={"description": "Ledger role", "example": LedgerRole.ENDORSER.name},
     )
 
 
@@ -206,9 +229,12 @@ class GetDIDVerkeyResponseSchema(OpenAPISchema):
     """Response schema to get DID verkey."""
 
     verkey = fields.Str(
-        description="Full verification key",
         allow_none=True,
-        **INDY_RAW_PUBLIC_KEY,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Full verification key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
     )
 
 
@@ -216,9 +242,9 @@ class GetDIDEndpointResponseSchema(OpenAPISchema):
     """Response schema to get DID endpoint."""
 
     endpoint = fields.Str(
-        description="Full verification key",
         allow_none=True,
-        **ENDPOINT,
+        validate=ENDPOINT_VALIDATE,
+        metadata={"description": "Full verification key", "example": ENDPOINT_EXAMPLE},
     )
 
 
@@ -300,13 +326,17 @@ async def register_ledger_nym(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -368,12 +398,16 @@ async def register_ledger_nym(request: web.BaseRequest):
                 endorser_write_txn = not write_ledger_nym_transaction
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
-                    author_goal_code=TransactionRecord.REGISTER_PUBLIC_DID
-                    if endorser_write_txn
-                    else None,
-                    signer_goal_code=TransactionRecord.WRITE_DID_TRANSACTION
-                    if endorser_write_txn
-                    else None,
+                    author_goal_code=(
+                        TransactionRecord.REGISTER_PUBLIC_DID
+                        if endorser_write_txn
+                        else None
+                    ),
+                    signer_goal_code=(
+                        TransactionRecord.WRITE_DID_TRANSACTION
+                        if endorser_write_txn
+                        else None
+                    ),
                     endorser_write_txn=endorser_write_txn,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,

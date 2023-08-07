@@ -10,6 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
@@ -19,11 +20,15 @@ from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
-    ENDPOINT,
-    INDY_WQL,
-    NUM_STR_NATURAL,
-    NUM_STR_WHOLE,
-    UUIDFour,
+    ENDPOINT_EXAMPLE,
+    ENDPOINT_VALIDATE,
+    INDY_WQL_EXAMPLE,
+    INDY_WQL_VALIDATE,
+    NUM_STR_NATURAL_EXAMPLE,
+    NUM_STR_NATURAL_VALIDATE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
+    UUID4_EXAMPLE,
 )
 from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.vc_holder.base import VCHolder
@@ -39,8 +44,8 @@ class AttributeMimeTypesResultSchema(OpenAPISchema):
     """Result schema for credential attribute MIME type."""
 
     results = fields.Dict(
-        keys=fields.Str(description="Attribute name"),
-        values=fields.Str(description="MIME type"),
+        keys=fields.Str(metadata={"description": "Attribute name"}),
+        values=fields.Str(metadata={"description": "MIME type"}),
         allow_none=True,
     )
 
@@ -55,19 +60,22 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
     start = fields.Str(
-        description="Start index",
         required=False,
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={"description": "Start index", "example": NUM_STR_WHOLE_EXAMPLE},
     )
     count = fields.Str(
-        description="Maximum number to retrieve",
         required=False,
-        **NUM_STR_NATURAL,
+        validate=NUM_STR_NATURAL_VALIDATE,
+        metadata={
+            "description": "Maximum number to retrieve",
+            "example": NUM_STR_NATURAL_EXAMPLE,
+        },
     )
     wql = fields.Str(
-        description="(JSON) WQL query",
         required=False,
-        **INDY_WQL,
+        validate=INDY_WQL_VALIDATE,
+        metadata={"description": "(JSON) WQL query", "example": INDY_WQL_EXAMPLE},
     )
 
 
@@ -76,49 +84,64 @@ class W3CCredentialsListRequestSchema(OpenAPISchema):
 
     contexts = fields.List(
         fields.Str(
-            description="Credential context to match",
-            **ENDPOINT,
+            validate=ENDPOINT_VALIDATE,
+            metadata={
+                "description": "Credential context to match",
+                "example": ENDPOINT_EXAMPLE,
+            },
         ),
         required=False,
     )
     types = fields.List(
         fields.Str(
-            description="Credential type to match",
-            **ENDPOINT,
+            validate=ENDPOINT_VALIDATE,
+            metadata={
+                "description": "Credential type to match",
+                "example": ENDPOINT_EXAMPLE,
+            },
         ),
         required=False,
     )
     schema_ids = fields.List(
         fields.Str(
-            description="Credential schema identifier",
-            **ENDPOINT,
+            validate=ENDPOINT_VALIDATE,
+            metadata={
+                "description": "Credential schema identifier",
+                "example": ENDPOINT_EXAMPLE,
+            },
         ),
-        description="Schema identifiers, all of which to match",
         required=False,
+        metadata={"description": "Schema identifiers, all of which to match"},
     )
     issuer_id = fields.Str(
         required=False,
-        description="Credential issuer identifier to match",
+        metadata={"description": "Credential issuer identifier to match"},
     )
     subject_ids = fields.List(
-        fields.Str(description="Subject identifier"),
-        description="Subject identifiers, all of which to match",
+        fields.Str(metadata={"description": "Subject identifier"}),
         required=False,
+        metadata={"description": "Subject identifiers, all of which to match"},
     )
     proof_types = fields.List(
         fields.Str(
-            description="Signature suite used for proof", example="Ed25519Signature2018"
+            metadata={
+                "description": "Signature suite used for proof",
+                "example": "Ed25519Signature2018",
+            }
         )
     )
-    given_id = fields.Str(required=False, description="Given credential id to match")
+    given_id = fields.Str(
+        required=False, metadata={"description": "Given credential id to match"}
+    )
     tag_query = fields.Dict(
-        keys=fields.Str(description="Tag name"),
-        values=fields.Str(description="Tag value"),
+        keys=fields.Str(metadata={"description": "Tag name"}),
+        values=fields.Str(metadata={"description": "Tag value"}),
         required=False,
-        description="Tag filter",
+        metadata={"description": "Tag filter"},
     )
     max_results = fields.Int(
-        strict=True, description="Maximum number of results to return", required=False
+        required=False,
+        metadata={"strict": True, "description": "Maximum number of results to return"},
     )
 
 
@@ -132,7 +155,8 @@ class HolderCredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
     credential_id = fields.Str(
-        description="Credential identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Credential identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -141,21 +165,29 @@ class CredRevokedQueryStringSchema(OpenAPISchema):
 
     fro = fields.Str(
         data_key="from",
-        description="Earliest epoch of revocation status interval of interest",
         required=False,
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Earliest epoch of revocation status interval of interest",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
     )
     to = fields.Str(
-        description="Latest epoch of revocation status interval of interest",
         required=False,
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Latest epoch of revocation status interval of interest",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
     )
 
 
 class CredRevokedResultSchema(OpenAPISchema):
     """Result schema for credential revoked request."""
 
-    revoked = fields.Bool(description="Whether credential is revoked on the ledger")
+    revoked = fields.Bool(
+        metadata={"description": "Whether credential is revoked on the ledger"}
+    )
 
 
 @docs(tags=["credentials"], summary="Fetch credential from wallet by id")
@@ -483,7 +515,7 @@ def post_process_routes(app: web.Application):
             "description": "Holder credential management",
             "externalDocs": {
                 "description": "Overview",
-                "url": ("https://w3c.github.io/vc-data-model/#credentials"),
+                "url": "https://w3c.github.io/vc-data-model/#credentials",
             },
         }
     )

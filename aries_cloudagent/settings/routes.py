@@ -4,17 +4,18 @@ import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
+
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
-from ..multitenant.base import BaseMultitenantManager
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..messaging.models.openapi import OpenAPISchema
 from ..multitenant.admin.routes import (
-    get_extra_settings_dict_per_tenant,
     ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP,
+    get_extra_settings_dict_per_tenant,
 )
+from ..multitenant.base import BaseMultitenantManager
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,12 +24,14 @@ class UpdateProfileSettingsSchema(OpenAPISchema):
     """Schema to update profile settings."""
 
     extra_settings = fields.Dict(
-        description="Agent config key-value pairs",
         required=False,
-        example={
-            "log-level": "INFO",
-            "ACAPY_INVITE_PUBLIC": True,
-            "public-invites": False,
+        metadata={
+            "description": "Agent config key-value pairs",
+            "example": {
+                "log-level": "INFO",
+                "ACAPY_INVITE_PUBLIC": True,
+                "public-invites": False,
+            },
         },
     )
 
@@ -37,12 +40,14 @@ class ProfileSettingsSchema(OpenAPISchema):
     """Profile settings response schema."""
 
     settings = fields.Dict(
-        description="Profile settings dict",
-        example={
-            "log.level": "INFO",
-            "debug.invite_public": True,
-            "public_invites": False,
-        },
+        metadata={
+            "description": "Profile settings dict",
+            "example": {
+                "log.level": "INFO",
+                "debug.invite_public": True,
+                "public_invites": False,
+            },
+        }
     )
 
 

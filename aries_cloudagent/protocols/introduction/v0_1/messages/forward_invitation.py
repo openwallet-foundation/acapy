@@ -7,9 +7,7 @@ from .....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
-
 from ..message_types import FORWARD_INVITATION, PROTOCOL_PACKAGE
-
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.forward_invitation_handler.ForwardInvitationHandler"
@@ -53,6 +51,8 @@ class ForwardInvitationSchema(AgentMessageSchema):
     message = fields.Str(
         required=False,
         allow_none=True,
-        description="Comments on the introduction",
-        example="Hello Bob, it's Alice",
+        metadata={
+            "description": "Comments on the introduction",
+            "example": "Hello Bob, it's Alice",
+        },
     )
