@@ -54,6 +54,17 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
         *args,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            message: Message
+            obj_id: Object ID
+            obj: Object
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(message, obj_id, obj, *args, **kwargs)
         self._message = message
         self.obj_id = obj_id
@@ -61,6 +72,7 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
 
     @property
     def message(self):
+        """Message."""
         return f"{self._message}: {self.obj_id}, {self.obj}"
 
 

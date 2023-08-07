@@ -1,1 +1,1 @@
-"""Routes for DID Web Registry"""
+"""Routes for DID Web Registry."""

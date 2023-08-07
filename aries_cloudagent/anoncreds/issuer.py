@@ -546,6 +546,7 @@ class AnonCredsIssuer:
         credential_request: dict,
         credential_values: dict,
     ) -> str:
+        """Create Credential."""
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         schema_id = credential_offer["schema_id"]
         schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)

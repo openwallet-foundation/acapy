@@ -7,8 +7,8 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....core.in_memory import InMemoryProfile
 from .....anoncreds.holder import AnonCredsHolder
-from .....anoncreds.models.xform import indy_proof_req_preview2indy_requested_creds
-from .....anoncreds.models.pres_preview import (
+from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,

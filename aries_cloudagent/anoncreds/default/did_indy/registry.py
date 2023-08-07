@@ -1,4 +1,4 @@
-"""DID Indy Registry"""
+"""DID Indy Registry."""
 import logging
 import re
 from typing import Optional, Pattern, Sequence
@@ -25,13 +25,22 @@ LOGGER = logging.getLogger(__name__)
 
 
 class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
-    """DIDIndyRegistry"""
+    """DIDIndyRegistry."""
 
     def __init__(self):
+        """
+        Initialize an instance.
+
+        Args:
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         self._supported_identifiers_regex = re.compile(r"^did:indy:.*$")
 
     @property
     def supported_identifiers_regex(self) -> Pattern:
+        """Supported Identifiers regex."""
         return self._supported_identifiers_regex
         # TODO: fix regex (too general)
 

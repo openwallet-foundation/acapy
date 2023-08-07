@@ -16,7 +16,8 @@ RUN pip3 install --no-cache-dir \
 	-r requirements.txt \
 	-r requirements.askar.txt \
 	-r requirements.bbs.txt \
-	-r requirements.dev.txt
+	-r requirements.dev.txt \
+	-r requirements.anoncreds.txt
 
 ADD aries_cloudagent ./aries_cloudagent
 ADD bin ./bin

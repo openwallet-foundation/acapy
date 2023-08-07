@@ -1,4 +1,4 @@
-"""DID Web Registry"""
+"""DID Web Registry."""
 import re
 from typing import Optional, Pattern, Sequence
 
@@ -18,15 +18,24 @@ from ...models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaR
 
 
 class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
-    """DIDWebRegistry"""
+    """DIDWebRegistry."""
 
     def __init__(self):
+        """
+        Initialize an instance.
+
+        Args:
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         self._supported_identifiers_regex = re.compile(
             r"^did:web:[a-z0-9]+(?:\.[a-z0-9]+)*(?::\d+)?(?:\/[^#\s]*)?(?:#.*)?\s*$"
         )
 
     @property
     def supported_identifiers_regex(self) -> Pattern:
+        """Supported Identifiers Regular Expression."""
         return self._supported_identifiers_regex
         # TODO: fix regex (too general)
 

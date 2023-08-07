@@ -1,4 +1,4 @@
-"""Anoncreds cred def OpenAPI validators"""
+"""Anoncreds cred def OpenAPI validators."""
 from typing import Optional
 from typing_extensions import Literal
 
@@ -11,7 +11,7 @@ from ...messaging.valid import NUM_STR_WHOLE
 
 
 class CredDefValuePrimary(BaseModel):
-    """PrimarySchema"""
+    """PrimarySchema."""
 
     class Meta:
         """PrimarySchema metadata."""
@@ -19,6 +19,19 @@ class CredDefValuePrimary(BaseModel):
         schema_class = "CredDefValuePrimarySchema"
 
     def __init__(self, n: str, s: str, r: dict, rctxt: str, z: str, **kwargs):
+        """
+        Initialize an instance.
+
+        Args:
+            n: n
+            s: s
+            r: r
+            rctxt: rctxt
+            z: z
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.n = n
         self.s = s
@@ -65,6 +78,25 @@ class CredDefValueRevocation(BaseModel):
         pk: str,
         y: str,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            g: g
+            g_dash: g_dash
+            h: h
+            h0: h0
+            h1: h1
+            h2: h2
+            htilde: htilde
+            h_cap: h_cap
+            u: u
+            pk: pk
+            y: y
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         self.g = g
         self.g_dash = g_dash
         self.h = h
@@ -82,6 +114,8 @@ class CredDefValueRevocationSchema(BaseModelSchema):
     """Cred def value revocation schema."""
 
     class Meta:
+        """Metadata."""
+
         model_class = CredDefValueRevocation
         unknown = EXCLUDE
 
@@ -112,6 +146,16 @@ class CredDefValue(BaseModel):
         revocation: Optional[CredDefValueRevocation] = None,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            primary: Cred Def value primary
+            revocation: Cred Def value revocation
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.primary = primary
         self.revocation = revocation
@@ -138,7 +182,7 @@ class CredDefValueSchema(BaseModelSchema):
 
 
 class CredDef(BaseModel):
-    """AnonCredsCredDef"""
+    """AnonCredsCredDef."""
 
     class Meta:
         """AnonCredsCredDef metadata."""
@@ -154,6 +198,19 @@ class CredDef(BaseModel):
         value: CredDefValue,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            issuer_id: Issuer ID
+            schema_id: Schema ID
+            type: Type
+            tag: Tag
+            value: Cred Def value
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
         self.schema_id = schema_id
@@ -212,6 +269,17 @@ class CredDefState(BaseModel):
         credential_definition_id: Optional[str],
         credential_definition: CredDef,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            state: State
+            credential_definition_id: Cred Def ID
+            credential_definition: Cred Def
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         self.state = state
         self.credential_definition_id = credential_definition_id
         self.credential_definition = credential_definition
@@ -260,6 +328,18 @@ class CredDefResult(BaseModel):
         credential_definition_metadata: dict,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            job_id: Job ID
+            credential_definition_state: Cred Def state
+            registration_metadata: Registration metadata
+            credential_definition_metadata: Cred Def metadata
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.job_id = job_id
         self.credential_definition_state = credential_definition_state
@@ -299,6 +379,18 @@ class GetCredDefResult(BaseModel):
         credential_definition_metadata: dict,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            credential_definition_id: Cred Def ID
+            credential_definition: Cred Def
+            resolution_metadata: Resolution metadata
+            credential_definition_metadata: Cred Def metadata
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.credential_definition_id = credential_definition_id
         self.credential_definition = credential_definition

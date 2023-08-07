@@ -78,7 +78,7 @@ class IndyPresExchHandler:
         return requested_referents
 
     async def _get_credentials(self, requested_referents: dict):
-        """Extract mapping of presentation referents to credential ids"""
+        """Extract mapping of presentation referents to credential ids."""
         credentials = {}
         for reft in requested_referents:
             credential_id = requested_referents[reft]["cred_id"]
@@ -103,7 +103,7 @@ class IndyPresExchHandler:
     async def _get_ledger_objects(
         self, credentials: dict
     ) -> Tuple[Dict[str, AnonCredsSchema], Dict[str, CredDef], Dict[str, RevRegDef]]:
-        """Get all schemas, credential definitions, and revocation registries in use"""
+        """Get all schemas, credential definitions, and revocation registries in use."""
         schemas = {}
         cred_defs = {}
         revocation_registries = {}

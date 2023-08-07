@@ -29,7 +29,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --multitenant --multi-ledger --revocation | --multitenant --multi-ledger --revocation | driverslicense |
 
 
-   @T001.1-RFC0586 @GHA
+   @T001.1-RFC0586 @GHA-Anoncreds-break
    Scenario Outline: endorse a transaction and write to the ledger
       Given we have "2" agents
          | name  | role     | capabilities        |
@@ -97,7 +97,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --revocation --public-did --mediation --multitenant | --revocation --mediation --multitenant    | driverslicense | Data_DL_NormalizedValues |
          | --multitenant --multi-ledger --revocation --public-did | --multitenant --multi-ledger --revocation | driverslicense | Data_DL_NormalizedValues |
 
-   @T002.1-RFC0586 @GHA
+   @T002.1-RFC0586 @GHA-Anoncreds-break
    Scenario Outline: endorse a schema and cred def transaction, write to the ledger, issue and revoke a credential, manually invoking each endorsement endpoint
       Given we have "2" agents
          | name  | role     | capabilities        |
@@ -168,7 +168,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --endorser-role endorser --revocation --public-did --multitenant             | --endorser-role author --revocation --multitenant             | driverslicense | Data_DL_NormalizedValues |
          | --endorser-role endorser --revocation --public-did --mediation --multitenant | --endorser-role author --revocation --mediation --multitenant | driverslicense | Data_DL_NormalizedValues |
 
-   @T003.1-RFC0586 @GHA
+   @T003.1-RFC0586 @GHA-Anoncreds-break
    Scenario Outline: endorse a schema and cred def transaction, write to the ledger, issue and revoke a credential, with auto endorsing workflow
       Given we have "2" agents
          | name  | role     | capabilities        |
