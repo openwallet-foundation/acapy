@@ -2,11 +2,10 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import EXCLUDE, fields, validate, validates_schema, ValidationError
+from marshmallow import EXCLUDE, ValidationError, fields, validate, validates_schema
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ....messaging.valid import RFC3339_DATETIME
-
+from ....messaging.valid import RFC3339_DATETIME_EXAMPLE, RFC3339_DATETIME_VALIDATE
 from .message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handler.ProblemReportHandler"
@@ -72,63 +71,89 @@ class ProblemReportSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     description = fields.Dict(
-        keys=fields.Str(description="Locale or 'code'", example="en-US"),
-        values=fields.Str(description="Problem description or error code"),
+        keys=fields.Str(
+            metadata={"description": "Locale or 'code'", "example": "en-US"}
+        ),
+        values=fields.Str(
+            metadata={"description": "Problem description or error code"}
+        ),
         required=False,
-        description="Human-readable localized problem descriptions",
+        metadata={"description": "Human-readable localized problem descriptions"},
     )
     problem_items = fields.List(
         fields.Dict(
-            keys=fields.Str(description="Problematic parameter or item"),
-            values=fields.Str(description="Problem text/number/value"),
-            description="Problem item",
+            keys=fields.Str(metadata={"description": "Problematic parameter or item"}),
+            values=fields.Str(metadata={"description": "Problem text/number/value"}),
+            metadata={"description": "Problem item"},
         ),
         data_key="problem-items",
         required=False,
-        description="List of problem items",
+        metadata={"description": "List of problem items"},
     )
     who_retries = fields.Str(
         data_key="who-retries",
         required=False,
-        description="Party to retry: you, me, both, none",
-        example="you",
         validate=validate.OneOf(["you", "me", "both", "none"]),
+        metadata={
+            "description": "Party to retry: you, me, both, none",
+            "example": "you",
+        },
     )
     fix_hint = fields.Dict(
-        keys=fields.Str(description="Locale", example="en-US"),
+        keys=fields.Str(metadata={"description": "Locale", "example": "en-US"}),
         values=fields.Str(
-            description="Localized message", example="Synchronize time to NTP"
+            metadata={
+                "description": "Localized message",
+                "example": "Synchronize time to NTP",
+            }
         ),
         required=False,
-        description="Human-readable localized suggestions how to fix problem",
+        metadata={
+            "description": "Human-readable localized suggestions how to fix problem"
+        },
     )
     impact = fields.Str(
         required=False,
-        description="Breadth of impact of problem: message, thread, or connection",
-        example="thread",
         validate=validate.OneOf(["message", "thread", "connection"]),
+        metadata={
+            "description": (
+                "Breadth of impact of problem: message, thread, or connection"
+            ),
+            "example": "thread",
+        },
     )
     where = fields.Str(
         required=False,
-        description="Where the error occurred, from reporter perspective",
-        example="you - agency",
-        validate=validate.Regexp(r"(you)|(me)|(other) - .+"),
+        validate=validate.Regexp("(you)|(me)|(other) - .+"),
+        metadata={
+            "description": "Where the error occurred, from reporter perspective",
+            "example": "you - agency",
+        },
     )
     time_noticed = fields.Str(
         data_key="time-noticed",
         required=False,
-        description="Problem detection time, precision at least day up to millisecond",
-        **RFC3339_DATETIME,
+        validate=RFC3339_DATETIME_VALIDATE,
+        metadata={
+            "description": (
+                "Problem detection time, precision at least day up to millisecond"
+            ),
+            "example": RFC3339_DATETIME_EXAMPLE,
+        },
     )
     tracking_uri = fields.Str(
         required=False,
-        description="URI allowing recipient to track error status",
-        example="http://myservice.com/status",
+        metadata={
+            "description": "URI allowing recipient to track error status",
+            "example": "http://myservice.com/status",
+        },
     )
     escalation_uri = fields.Str(
         required=False,
-        description="URI to supply additional help",
-        example="mailto://help.desk@myservice.com",
+        metadata={
+            "description": "URI to supply additional help",
+            "example": "mailto://help.desk@myservice.com",
+        },
     )
 
     @validates_schema

@@ -1,34 +1,33 @@
 """Agent message base class and schema."""
 
 import uuid
-
 from collections import OrderedDict
 from re import sub
-from typing import Mapping, Optional, Union, Text
+from typing import Mapping, Optional, Text, Union
 
 from marshmallow import (
     EXCLUDE,
+    ValidationError,
     fields,
-    pre_load,
+    post_dump,
     post_load,
     pre_dump,
-    post_dump,
-    ValidationError,
+    pre_load,
 )
 
 from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..wallet.base import BaseWallet
-
+from .base_message import BaseMessage, DIDCommVersion
 from .decorators.base import BaseDecoratorSet
 from .decorators.default import DecoratorSet
+from .decorators.service_decorator import ServiceDecorator
 from .decorators.signature_decorator import SignatureDecorator  # TODO deprecated
 from .decorators.thread_decorator import ThreadDecorator
-from .decorators.service_decorator import ServiceDecorator
 from .decorators.trace_decorator import (
+    TRACE_LOG_TARGET,
+    TRACE_MESSAGE_TARGET,
     TraceDecorator,
     TraceReport,
-    TRACE_MESSAGE_TARGET,
-    TRACE_LOG_TARGET,
 )
 from .models.base import (
     BaseModel,
@@ -37,8 +36,7 @@ from .models.base import (
     resolve_class,
     resolve_meta_property,
 )
-from .valid import UUIDFour
-from .base_message import BaseMessage, DIDCommVersion
+from .valid import UUID4_EXAMPLE
 
 
 class AgentMessageError(BaseModelError):
@@ -465,14 +463,15 @@ class AgentMessageSchema(BaseModelSchema):
         data_key="@type",
         dump_only=True,
         required=False,
-        description="Message type",
-        example="https://didcomm.org/my-family/1.0/my-message-type",
+        metadata={
+            "description": "Message type",
+            "example": "https://didcomm.org/my-family/1.0/my-message-type",
+        },
     )
     _id = fields.Str(
         data_key="@id",
         required=False,
-        description="Message identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Message identifier", "example": UUID4_EXAMPLE},
     )
 
     def __init__(self, *args, **kwargs):

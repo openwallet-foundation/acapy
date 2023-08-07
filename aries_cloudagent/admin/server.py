@@ -1,14 +1,16 @@
 """Admin server classes."""
 
 import asyncio
-from hmac import compare_digest
 import logging
 import re
-from typing import Callable, Coroutine, Optional, Pattern, Sequence, cast
 import uuid
 import warnings
 import weakref
+from hmac import compare_digest
+from typing import Callable, Coroutine, Optional, Pattern, Sequence, cast
 
+import aiohttp_cors
+import jwt
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -16,8 +18,7 @@ from aiohttp_apispec import (
     setup_aiohttp_apispec,
     validation_middleware,
 )
-import aiohttp_cors
-import jwt
+
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
@@ -27,6 +28,7 @@ from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
+from ..messaging.valid import UUIDFour
 from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
@@ -35,7 +37,6 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
-from ..messaging.valid import UUIDFour
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -61,23 +62,26 @@ class AdminModulesSchema(OpenAPISchema):
     """Schema for the modules endpoint."""
 
     result = fields.List(
-        fields.Str(description="admin module"), description="List of admin modules"
+        fields.Str(metadata={"description": "admin module"}),
+        metadata={"description": "List of admin modules"},
     )
 
 
 class AdminConfigSchema(OpenAPISchema):
     """Schema for the config endpoint."""
 
-    config = fields.Dict(description="Configuration settings")
+    config = fields.Dict(metadata={"description": "Configuration settings"})
 
 
 class AdminStatusSchema(OpenAPISchema):
     """Schema for the status endpoint."""
 
-    version = fields.Str(description="Version code")
-    label = fields.Str(description="Default label", allow_none=True)
-    timing = fields.Dict(description="Timing results", required=False)
-    conductor = fields.Dict(description="Conductor statistics", required=False)
+    version = fields.Str(metadata={"description": "Version code"})
+    label = fields.Str(allow_none=True, metadata={"description": "Default label"})
+    timing = fields.Dict(required=False, metadata={"description": "Timing results"})
+    conductor = fields.Dict(
+        required=False, metadata={"description": "Conductor statistics"}
+    )
 
 
 class AdminResetSchema(OpenAPISchema):
@@ -87,13 +91,17 @@ class AdminResetSchema(OpenAPISchema):
 class AdminStatusLivelinessSchema(OpenAPISchema):
     """Schema for the liveliness endpoint."""
 
-    alive = fields.Boolean(description="Liveliness status", example=True)
+    alive = fields.Boolean(
+        metadata={"description": "Liveliness status", "example": True}
+    )
 
 
 class AdminStatusReadinessSchema(OpenAPISchema):
     """Schema for the readiness endpoint."""
 
-    ready = fields.Boolean(description="Readiness status", example=True)
+    ready = fields.Boolean(
+        metadata={"description": "Readiness status", "example": True}
+    )
 
 
 class AdminShutdownSchema(OpenAPISchema):
@@ -642,9 +650,11 @@ class AdminServer(BaseAdminServer):
 
         """
         config = {
-            k: self.context.settings[k]
-            if (isinstance(self.context.settings[k], (str, int)))
-            else self.context.settings[k].copy()
+            k: (
+                self.context.settings[k]
+                if (isinstance(self.context.settings[k], (str, int)))
+                else self.context.settings[k].copy()
+            )
             for k in self.context.settings
             if k
             not in [

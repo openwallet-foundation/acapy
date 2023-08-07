@@ -8,9 +8,8 @@ from marshmallow import fields
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageNotFoundError
-
 from .message_types import SPEC_URI
 from .messages.basicmessage import BasicMessage
 
@@ -22,14 +21,17 @@ class BasicMessageModuleResponseSchema(OpenAPISchema):
 class SendMessageSchema(OpenAPISchema):
     """Request schema for sending a message."""
 
-    content = fields.Str(description="Message content", example="Hello")
+    content = fields.Str(
+        metadata={"description": "Message content", "example": "Hello"}
+    )
 
 
 class BasicConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

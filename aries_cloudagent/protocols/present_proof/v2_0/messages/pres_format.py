@@ -2,13 +2,14 @@
 
 from collections import namedtuple
 from enum import Enum
-from marshmallow import EXCLUDE, fields
-from typing import Mapping, Sequence, Type, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping, Sequence, Type, Union
 from uuid import uuid4
+
+from marshmallow import EXCLUDE, fields
 
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 from .....utils.classloader import DeferLoad
 
 if TYPE_CHECKING:
@@ -122,13 +123,14 @@ class V20PresFormatSchema(BaseModelSchema):
     attach_id = fields.Str(
         required=True,
         allow_none=False,
-        description="Attachment identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Attachment identifier", "example": UUID4_EXAMPLE},
     )
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="Attachment format specifier",
         data_key="format",
-        example="dif/presentation-exchange/submission@v1.0",
+        metadata={
+            "description": "Attachment format specifier",
+            "example": "dif/presentation-exchange/submission@v1.0",
+        },
     )

@@ -4,7 +4,7 @@ from marshmallow import EXCLUDE, fields
 
 from .....connections.models.diddoc import DIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import INDY_DID
+from .....messaging.valid import INDY_DID_EXAMPLE, INDY_DID_VALIDATE
 
 
 class DIDDocWrapper(fields.Field):
@@ -93,11 +93,16 @@ class ConnectionDetailSchema(BaseModelSchema):
     did = fields.Str(
         data_key="DID",
         required=False,
-        description="DID for connection detail",
-        **INDY_DID
+        validate=INDY_DID_VALIDATE,
+        metadata={
+            "description": "DID for connection detail",
+            "example": INDY_DID_EXAMPLE,
+        },
     )
     did_doc = DIDDocWrapper(
         data_key="DIDDoc",
         required=False,
-        description="DID document for connection detail",
+        metadata={
+            "description": "DID document for connection detail",
+        },
     )

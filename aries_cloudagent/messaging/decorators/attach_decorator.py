@@ -5,15 +5,16 @@ An attach decorator embeds content or specifies appended content.
 """
 
 
+import copy
 import json
 import uuid
-import copy
-
 from typing import Any, Mapping, Sequence, Tuple, Union
 
 from marshmallow import EXCLUDE, fields, pre_load
 
+from ...did.did_key import DIDKey
 from ...wallet.base import BaseWallet
+from ...wallet.key_type import ED25519
 from ...wallet.util import (
     b58_to_bytes,
     b64_to_bytes,
@@ -24,17 +25,20 @@ from ...wallet.util import (
     str_to_b64,
     unpad,
 )
-from ...wallet.key_type import ED25519
-from ...did.did_key import DIDKey
 from ..models.base import BaseModel, BaseModelError, BaseModelSchema
 from ..valid import (
-    BASE64,
-    BASE64URL_NO_PAD,
+    BASE64_EXAMPLE,
+    BASE64_VALIDATE,
+    BASE64URL_NO_PAD_EXAMPLE,
+    BASE64URL_NO_PAD_VALIDATE,
+    INDY_ISO8601_DATETIME_EXAMPLE,
+    INDY_ISO8601_DATETIME_VALIDATE,
+    JWS_HEADER_KID_EXAMPLE,
+    JWS_HEADER_KID_VALIDATE,
+    SHA256_EXAMPLE,
+    SHA256_VALIDATE,
+    UUID4_EXAMPLE,
     DictOrDictListField,
-    INDY_ISO8601_DATETIME,
-    JWS_HEADER_KID,
-    SHA256,
-    UUIDFour,
 )
 
 
@@ -66,9 +70,12 @@ class AttachDecoratorDataJWSHeaderSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     kid = fields.Str(
-        description="Key identifier, in W3C did:key or DID URL format",
         required=True,
-        **JWS_HEADER_KID,
+        validate=JWS_HEADER_KID_VALIDATE,
+        metadata={
+            "description": "Key identifier, in W3C did:key or DID URL format",
+            "example": JWS_HEADER_KID_EXAMPLE,
+        },
     )
 
 
@@ -114,9 +121,18 @@ class AttachDecoratorData1JWSSchema(BaseModelSchema):
 
     header = fields.Nested(AttachDecoratorDataJWSHeaderSchema, required=True)
     protected = fields.Str(
-        description="protected JWS header", required=False, **BASE64URL_NO_PAD
+        required=False,
+        validate=BASE64URL_NO_PAD_VALIDATE,
+        metadata={
+            "description": "protected JWS header",
+            "example": BASE64URL_NO_PAD_EXAMPLE,
+        },
     )
-    signature = fields.Str(description="signature", required=True, **BASE64URL_NO_PAD)
+    signature = fields.Str(
+        required=True,
+        validate=BASE64URL_NO_PAD_VALIDATE,
+        metadata={"description": "signature", "example": BASE64URL_NO_PAD_EXAMPLE},
+    )
 
 
 class AttachDecoratorDataJWS(BaseModel):
@@ -175,24 +191,24 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
 
         return data
 
-    header = fields.Nested(
-        AttachDecoratorDataJWSHeaderSchema,
-        required=False,  # packed in signatures if multi-sig
-    )
+    header = fields.Nested(AttachDecoratorDataJWSHeaderSchema, required=False)
     protected = fields.Str(
-        description="protected JWS header",
-        required=False,  # packed in signatures if multi-sig
-        **BASE64URL_NO_PAD,
+        required=False,
+        validate=BASE64URL_NO_PAD_VALIDATE,
+        metadata={
+            "description": "protected JWS header",
+            "example": BASE64URL_NO_PAD_EXAMPLE,
+        },
     )
     signature = fields.Str(
-        description="signature",
-        required=False,  # packed in signatures if multi-sig
-        **BASE64URL_NO_PAD,
+        required=False,
+        validate=BASE64URL_NO_PAD_VALIDATE,
+        metadata={"description": "signature", "example": BASE64URL_NO_PAD_EXAMPLE},
     )
     signatures = fields.List(
         fields.Nested(AttachDecoratorData1JWSSchema),
-        required=False,  # only present if multi-sig
-        description="List of signatures",
+        required=False,
+        metadata={"description": "List of signatures"},
     )
 
 
@@ -481,31 +497,39 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         return data
 
     base64_ = fields.Str(
-        description="Base64-encoded data", required=False, data_key="base64", **BASE64
+        required=False,
+        data_key="base64",
+        validate=BASE64_VALIDATE,
+        metadata={"description": "Base64-encoded data", "example": BASE64_EXAMPLE},
     )
     jws_ = fields.Nested(
         AttachDecoratorDataJWSSchema,
-        description="Detached Java Web Signature",
         required=False,
         data_key="jws",
+        metadata={"description": "Detached Java Web Signature"},
     )
     json_ = DictOrDictListField(
-        description="JSON-serialized data",
         required=False,
-        example='{"sample": "content"}',
         data_key="json",
+        metadata={
+            "description": "JSON-serialized data",
+            "example": '{"sample": "content"}',
+        },
     )
     links_ = fields.List(
-        fields.Str(example="https://link.to/data"),
-        description="List of hypertext links to data",
+        fields.Str(metadata={"example": "https://link.to/data"}),
         required=False,
         data_key="links",
+        metadata={"description": "List of hypertext links to data"},
     )
     sha256_ = fields.Str(
-        description="SHA256 hash (binhex encoded) of content",
         required=False,
         data_key="sha256",
-        **SHA256,
+        validate=SHA256_VALIDATE,
+        metadata={
+            "description": "SHA256 hash (binhex encoded) of content",
+            "example": SHA256_EXAMPLE,
+        },
     )
 
 
@@ -700,38 +724,43 @@ class AttachDecoratorSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     ident = fields.Str(
-        description="Attachment identifier",
-        example=UUIDFour.EXAMPLE,
         required=False,
         allow_none=False,
         data_key="@id",
+        metadata={"description": "Attachment identifier", "example": UUID4_EXAMPLE},
     )
     mime_type = fields.Str(
-        description="MIME type",
-        example="image/png",
         required=False,
         data_key="mime-type",
+        metadata={"description": "MIME type", "example": "image/png"},
     )
     filename = fields.Str(
-        description="File name", example="IMG1092348.png", required=False
+        required=False,
+        metadata={"description": "File name", "example": "IMG1092348.png"},
     )
     byte_count = fields.Int(
-        description="Byte count of data included by reference",
-        example=1234,
         required=False,
-        strict=True,
+        metadata={
+            "description": "Byte count of data included by reference",
+            "example": 1234,
+            "strict": True,
+        },
     )
     lastmod_time = fields.Str(
-        description="Hint regarding last modification datetime, in ISO-8601 format",
         required=False,
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": (
+                "Hint regarding last modification datetime, in ISO-8601 format"
+            ),
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
     )
     description = fields.Str(
-        description="Human-readable description of content",
-        example="view from doorway, facing east, with lights off",
         required=False,
+        metadata={
+            "description": "Human-readable description of content",
+            "example": "view from doorway, facing east, with lights off",
+        },
     )
-    data = fields.Nested(
-        AttachDecoratorDataSchema,
-        required=True,
-    )
+    data = fields.Nested(AttachDecoratorDataSchema, required=True)

@@ -7,8 +7,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import INDY_DID
-
+from .....messaging.valid import INDY_DID_EXAMPLE, INDY_DID_VALIDATE
 from ..message_types import DIDX_RESPONSE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.response_handler.DIDXResponseHandler"
@@ -52,10 +51,13 @@ class DIDXResponseSchema(AgentMessageSchema):
         model_class = DIDXResponse
         unknown = EXCLUDE
 
-    did = fields.Str(description="DID of exchange", **INDY_DID)
+    did = fields.Str(
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "DID of exchange", "example": INDY_DID_EXAMPLE},
+    )
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,
-        description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",
+        metadata={"description": "As signed attachment, DID Doc associated with DID"},
     )

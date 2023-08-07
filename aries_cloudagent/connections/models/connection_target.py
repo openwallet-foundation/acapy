@@ -5,7 +5,12 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INDY_RAW_PUBLIC_KEY, GENERIC_DID
+from ...messaging.valid import (
+    GENERIC_DID_EXAMPLE,
+    GENERIC_DID_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+)
 
 
 class ConnectionTarget(BaseModel):
@@ -53,24 +58,49 @@ class ConnectionTargetSchema(BaseModelSchema):
         model_class = ConnectionTarget
         unknown = EXCLUDE
 
-    did = fields.Str(required=False, description="", **GENERIC_DID)
+    did = fields.Str(
+        required=False,
+        validate=GENERIC_DID_VALIDATE,
+        metadata={"description": "", "example": GENERIC_DID_EXAMPLE},
+    )
     endpoint = fields.Str(
         required=False,
-        description="Connection endpoint",
-        example="http://192.168.56.102:8020",
+        metadata={
+            "description": "Connection endpoint",
+            "example": "http://192.168.56.102:8020",
+        },
     )
-    label = fields.Str(required=False, description="Connection label", example="Bob")
+    label = fields.Str(
+        required=False, metadata={"description": "Connection label", "example": "Bob"}
+    )
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Recipient public key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
         required=False,
-        description="List of recipient keys",
+        metadata={"description": "List of recipient keys"},
     )
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Routing key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
         data_key="routingKeys",
         required=False,
-        description="List of routing keys",
+        metadata={"description": "List of routing keys"},
     )
     sender_key = fields.Str(
-        required=False, description="Sender public key", **INDY_RAW_PUBLIC_KEY
+        required=False,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Sender public key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
     )

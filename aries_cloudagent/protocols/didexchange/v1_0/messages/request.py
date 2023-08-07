@@ -1,6 +1,7 @@
 """Represents a DID exchange request message under RFC 23."""
 
 from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -8,8 +9,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import INDY_DID
-
+from .....messaging.valid import INDY_DID_EXAMPLE, INDY_DID_VALIDATE
 from ..message_types import DIDX_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.request_handler.DIDXRequestHandler"
@@ -69,25 +69,38 @@ class DIDXRequestSchema(AgentMessageSchema):
 
     label = fields.Str(
         required=True,
-        description="Label for DID exchange request",
-        example="Request to connect with Bob",
+        metadata={
+            "description": "Label for DID exchange request",
+            "example": "Request to connect with Bob",
+        },
     )
-    did = fields.Str(description="DID of exchange", **INDY_DID)
+    did = fields.Str(
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "DID of exchange", "example": INDY_DID_EXAMPLE},
+    )
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,
-        description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",
+        metadata={"description": "As signed attachment, DID Doc associated with DID"},
     )
     goal_code = fields.Str(
         required=False,
-        description="A self-attested code the receiver may want to display to the user "
-        "or use in automatically deciding what to do with the out-of-band message",
-        example="issue-vc",
+        metadata={
+            "description": (
+                "A self-attested code the receiver may want to display to the user or"
+                " use in automatically deciding what to do with the out-of-band message"
+            ),
+            "example": "issue-vc",
+        },
     )
     goal = fields.Str(
         required=False,
-        description="A self-attested string that the receiver may want to display to the "
-        "user about the context-specific goal of the out-of-band message",
-        example="To issue a Faber College Graduate credential",
+        metadata={
+            "description": (
+                "A self-attested string that the receiver may want to display to the"
+                " user about the context-specific goal of the out-of-band message"
+            ),
+            "example": "To issue a Faber College Graduate credential",
+        },
     )

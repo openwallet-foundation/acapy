@@ -11,15 +11,12 @@ from .....messaging.decorators.service_decorator import (
     ServiceDecorator,
     ServiceDecoratorSchema,
 )
-
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import UUIDFour
-
-from ..messages.invitation import InvitationMessage, InvitationMessageSchema
-
+from .....messaging.valid import UUID4_EXAMPLE
 from .....storage.base import BaseStorage
-from .....storage.record import StorageRecord
 from .....storage.error import StorageNotFoundError
+from .....storage.record import StorageRecord
+from ..messages.invitation import InvitationMessage, InvitationMessageSchema
 
 
 class OobRecord(BaseExchangeRecord):
@@ -241,56 +238,61 @@ class OobRecordSchema(BaseExchangeSchema):
 
     oob_id = fields.Str(
         required=True,
-        description="Oob record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Oob record identifier", "example": UUID4_EXAMPLE},
     )
     state = fields.Str(
         required=True,
-        description="Out of band message exchange state",
-        example=OobRecord.STATE_AWAIT_RESPONSE,
         validate=validate.OneOf(
             OobRecord.get_attributes_by_prefix("STATE_", walk_mro=True)
         ),
+        metadata={
+            "description": "Out of band message exchange state",
+            "example": OobRecord.STATE_AWAIT_RESPONSE,
+        },
     )
     invi_msg_id = fields.Str(
         required=True,
-        description="Invitation message identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Invitation message identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     invitation = fields.Nested(
         InvitationMessageSchema(),
         required=True,
-        description="Out of band invitation message",
+        metadata={"description": "Out of band invitation message"},
     )
 
-    their_service = fields.Nested(
-        ServiceDecoratorSchema(),
-        required=False,
-    )
+    their_service = fields.Nested(ServiceDecoratorSchema(), required=False)
 
     connection_id = fields.Str(
-        description="Connection record identifier",
         required=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Connection record identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
     attach_thread_id = fields.Str(
-        description="Connection record identifier",
         required=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Connection record identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
     our_recipient_key = fields.Str(
-        description="Recipient key used for oob invitation",
         required=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Recipient key used for oob invitation",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
     role = fields.Str(
-        description="OOB Role",
         required=False,
-        example=OobRecord.ROLE_RECEIVER,
         validate=validate.OneOf(
             OobRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
         ),
+        metadata={"description": "OOB Role", "example": OobRecord.ROLE_RECEIVER},
     )

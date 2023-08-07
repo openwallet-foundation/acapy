@@ -1,19 +1,18 @@
 """Validators for schema fields."""
 
 import json
-
 import re
 
 from base58 import alphabet
-from marshmallow.validate import OneOf, Range, Regexp, Validator
+
 from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Field
-
-from .util import epoch_to_str
+from marshmallow.validate import OneOf, Range, Regexp, Validator
 
 from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
 from ..revocation.models.revocation_registry import RevocationRegistry
 from ..wallet.did_posture import DIDPosture as DIDPostureEnum
+from .util import epoch_to_str
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
@@ -778,62 +777,116 @@ class IndyOrKeyDID(Regexp):
 
 
 # Instances for marshmallow schema specification
-INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
-WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
-NUM_STR_WHOLE = {"validate": NumericStrWhole(), "example": NumericStrWhole.EXAMPLE}
-NUM_STR_ANY = {"validate": NumericStrAny(), "example": NumericStrAny.EXAMPLE}
-NATURAL_NUM = {"validate": NaturalNumber(), "example": NaturalNumber.EXAMPLE}
-NUM_STR_NATURAL = {
-    "validate": NumericStrNatural(),
-    "example": NumericStrNatural.EXAMPLE,
-}
-INDY_REV_REG_SIZE = {"validate": IndyRevRegSize(), "example": IndyRevRegSize.EXAMPLE}
-JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
-JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
-DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
-DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
-ROUTING_KEY = {"validate": RoutingKey(), "example": RoutingKey.EXAMPLE}
-INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
-GENERIC_DID = {"validate": MaybeIndyDID(), "example": MaybeIndyDID.EXAMPLE}
-INDY_RAW_PUBLIC_KEY = {
-    "validate": IndyRawPublicKey(),
-    "example": IndyRawPublicKey.EXAMPLE,
-}
-INDY_SCHEMA_ID = {"validate": IndySchemaId(), "example": IndySchemaId.EXAMPLE}
-INDY_CRED_DEF_ID = {"validate": IndyCredDefId(), "example": IndyCredDefId.EXAMPLE}
-INDY_REV_REG_ID = {"validate": IndyRevRegId(), "example": IndyRevRegId.EXAMPLE}
-INDY_CRED_REV_ID = {"validate": IndyCredRevId(), "example": IndyCredRevId.EXAMPLE}
-INDY_VERSION = {"validate": IndyVersion(), "example": IndyVersion.EXAMPLE}
-INDY_PREDICATE = {"validate": IndyPredicate(), "example": IndyPredicate.EXAMPLE}
-INDY_ISO8601_DATETIME = {
-    "validate": IndyISO8601DateTime(),
-    "example": IndyISO8601DateTime.EXAMPLE,
-}
-RFC3339_DATETIME = {"validate": RFC3339DateTime(), "example": RFC3339DateTime.EXAMPLE}
-INDY_WQL = {"validate": IndyWQL(), "example": IndyWQL.EXAMPLE}
-INDY_EXTRA_WQL = {"validate": IndyExtraWQL(), "example": IndyExtraWQL.EXAMPLE}
-BASE64 = {"validate": Base64(), "example": Base64.EXAMPLE}
-BASE64URL = {"validate": Base64URL(), "example": Base64URL.EXAMPLE}
-BASE64URL_NO_PAD = {"validate": Base64URLNoPad(), "example": Base64URLNoPad.EXAMPLE}
-SHA256 = {"validate": SHA256Hash(), "example": SHA256Hash.EXAMPLE}
-BASE58_SHA256_HASH = {
-    "validate": Base58SHA256Hash(),
-    "example": Base58SHA256Hash.EXAMPLE,
-}
-UUID4 = {"validate": UUIDFour(), "example": UUIDFour.EXAMPLE}
-ENDPOINT = {"validate": Endpoint(), "example": Endpoint.EXAMPLE}
-ENDPOINT_TYPE = {"validate": EndpointType(), "example": EndpointType.EXAMPLE}
-CREDENTIAL_TYPE = {"validate": CredentialType(), "example": CredentialType.EXAMPLE}
-CREDENTIAL_CONTEXT = {
-    "validate": CredentialContext(),
-    "example": CredentialContext.EXAMPLE,
-}
-URI = {"validate": Uri(), "example": Uri.EXAMPLE}
-CREDENTIAL_SUBJECT = {
-    "validate": CredentialSubject(),
-    "example": CredentialSubject.EXAMPLE,
-}
-INDY_OR_KEY_DID = {
-    "validate": IndyOrKeyDID(),
-    "example": IndyOrKeyDID.EXAMPLE,
-}
+INT_EPOCH_VALIDATE = IntEpoch()
+INT_EPOCH_EXAMPLE = IntEpoch.EXAMPLE
+
+WHOLE_NUM_VALIDATE = WholeNumber()
+WHOLE_NUM_EXAMPLE = WholeNumber.EXAMPLE
+
+NUM_STR_WHOLE_VALIDATE = NumericStrWhole()
+NUM_STR_WHOLE_EXAMPLE = NumericStrWhole.EXAMPLE
+
+NUM_STR_ANY_VALIDATE = NumericStrAny()
+NUM_STR_ANY_EXAMPLE = NumericStrAny.EXAMPLE
+
+NATURAL_NUM_VALIDATE = NaturalNumber()
+NATURAL_NUM_EXAMPLE = NaturalNumber.EXAMPLE
+
+NUM_STR_NATURAL_VALIDATE = NumericStrNatural()
+NUM_STR_NATURAL_EXAMPLE = NumericStrNatural.EXAMPLE
+
+INDY_REV_REG_SIZE_VALIDATE = IndyRevRegSize()
+INDY_REV_REG_SIZE_EXAMPLE = IndyRevRegSize.EXAMPLE
+
+JWS_HEADER_KID_VALIDATE = JWSHeaderKid()
+JWS_HEADER_KID_EXAMPLE = JWSHeaderKid.EXAMPLE
+
+JWT_VALIDATE = JSONWebToken()
+JWT_EXAMPLE = JSONWebToken.EXAMPLE
+
+DID_KEY_VALIDATE = DIDKey()
+DID_KEY_EXAMPLE = DIDKey.EXAMPLE
+
+DID_POSTURE_VALIDATE = DIDPosture()
+DID_POSTURE_EXAMPLE = DIDPosture.EXAMPLE
+
+ROUTING_KEY_VALIDATE = RoutingKey()
+ROUTING_KEY_EXAMPLE = RoutingKey.EXAMPLE
+
+INDY_DID_VALIDATE = IndyDID()
+INDY_DID_EXAMPLE = IndyDID.EXAMPLE
+
+GENERIC_DID_VALIDATE = MaybeIndyDID()
+GENERIC_DID_EXAMPLE = MaybeIndyDID.EXAMPLE
+
+INDY_RAW_PUBLIC_KEY_VALIDATE = IndyRawPublicKey()
+INDY_RAW_PUBLIC_KEY_EXAMPLE = IndyRawPublicKey.EXAMPLE
+
+INDY_SCHEMA_ID_VALIDATE = IndySchemaId()
+INDY_SCHEMA_ID_EXAMPLE = IndySchemaId.EXAMPLE
+
+INDY_CRED_DEF_ID_VALIDATE = IndyCredDefId()
+INDY_CRED_DEF_ID_EXAMPLE = IndyCredDefId.EXAMPLE
+
+INDY_REV_REG_ID_VALIDATE = IndyRevRegId()
+INDY_REV_REG_ID_EXAMPLE = IndyRevRegId.EXAMPLE
+
+INDY_CRED_REV_ID_VALIDATE = IndyCredRevId()
+INDY_CRED_REV_ID_EXAMPLE = IndyCredRevId.EXAMPLE
+
+INDY_VERSION_VALIDATE = IndyVersion()
+INDY_VERSION_EXAMPLE = IndyVersion.EXAMPLE
+
+INDY_PREDICATE_VALIDATE = IndyPredicate()
+INDY_PREDICATE_EXAMPLE = IndyPredicate.EXAMPLE
+
+INDY_ISO8601_DATETIME_VALIDATE = IndyISO8601DateTime()
+INDY_ISO8601_DATETIME_EXAMPLE = IndyISO8601DateTime.EXAMPLE
+
+RFC3339_DATETIME_VALIDATE = RFC3339DateTime()
+RFC3339_DATETIME_EXAMPLE = RFC3339DateTime.EXAMPLE
+
+INDY_WQL_VALIDATE = IndyWQL()
+INDY_WQL_EXAMPLE = IndyWQL.EXAMPLE
+
+INDY_EXTRA_WQL_VALIDATE = IndyExtraWQL()
+INDY_EXTRA_WQL_EXAMPLE = IndyExtraWQL.EXAMPLE
+
+BASE64_VALIDATE = Base64()
+BASE64_EXAMPLE = Base64.EXAMPLE
+
+BASE64URL_VALIDATE = Base64URL()
+BASE64URL_EXAMPLE = Base64URL.EXAMPLE
+
+BASE64URL_NO_PAD_VALIDATE = Base64URLNoPad()
+BASE64URL_NO_PAD_EXAMPLE = Base64URLNoPad.EXAMPLE
+
+SHA256_VALIDATE = SHA256Hash()
+SHA256_EXAMPLE = SHA256Hash.EXAMPLE
+
+BASE58_SHA256_HASH_VALIDATE = Base58SHA256Hash()
+BASE58_SHA256_HASH_EXAMPLE = Base58SHA256Hash.EXAMPLE
+
+UUID4_VALIDATE = UUIDFour()
+UUID4_EXAMPLE = UUIDFour.EXAMPLE
+
+ENDPOINT_VALIDATE = Endpoint()
+ENDPOINT_EXAMPLE = Endpoint.EXAMPLE
+
+ENDPOINT_TYPE_VALIDATE = EndpointType()
+ENDPOINT_TYPE_EXAMPLE = EndpointType.EXAMPLE
+
+CREDENTIAL_TYPE_VALIDATE = CredentialType()
+CREDENTIAL_TYPE_EXAMPLE = CredentialType.EXAMPLE
+
+CREDENTIAL_CONTEXT_VALIDATE = CredentialContext()
+CREDENTIAL_CONTEXT_EXAMPLE = CredentialContext.EXAMPLE
+
+URI_VALIDATE = Uri()
+URI_EXAMPLE = Uri.EXAMPLE
+
+CREDENTIAL_SUBJECT_VALIDATE = CredentialSubject()
+CREDENTIAL_SUBJECT_EXAMPLE = CredentialSubject.EXAMPLE
+
+INDY_OR_KEY_DID_VALIDATE = IndyOrKeyDID()
+INDY_OR_KEY_DID_EXAMPLE = IndyOrKeyDID.EXAMPLE
