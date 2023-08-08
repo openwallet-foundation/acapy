@@ -68,7 +68,7 @@ class TestConfig:
             "recipient_keys": [],
         }
 
-        peer_did = create_peer_did_2(
+        peer_did, peer_doc = create_peer_did_2(
             self.test_verkey, service=service
         )
 

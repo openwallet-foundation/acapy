@@ -526,7 +526,7 @@ class BaseConnectionManager:
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
             # JSload into LegacyDIDDoc, converting old DIDDoc classes into DIDDocument compliant objects
         try:
-            DIDDocument.from_json(record.value), record
+            return DIDDocument.from_json(record.value), record
         except Exception as e: 
             self._logger.warning("EXCEPTION LOADING DID_DOC")
             self._logger.warning(str(e))
@@ -535,5 +535,5 @@ class BaseConnectionManager:
             self._logger.warning("conversion complete, updating record in wallet with complaint record")
             await self.store_did_document(doc)
             self._logger.warning("Update successful.")
-            return doc,record
+            return doc, record
 

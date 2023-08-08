@@ -313,7 +313,7 @@ class DIDXManager(BaseConnectionManager):
                         ),
                         "recipient_keys": [],
                     }
-                    peer_did = create_peer_did_2(
+                    peer_did, peer_doc = create_peer_did_2(
                         bytes_to_b58(verkey_bytes), service=service
                     )
 
@@ -654,7 +654,7 @@ class DIDXManager(BaseConnectionManager):
                         "recipient_keys": [],
                     }
 
-                    peer_did = create_peer_did_2(
+                    peer_did, peer_doc = create_peer_did_2(
                         bytes_to_b58(verkey_bytes), service=service
                     )
                     self._logger.warning(peer_did)
