@@ -45,6 +45,7 @@ from ..wallet.did_info import DIDInfo
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
 from .models.diddoc import LegacyDIDDoc, PublicKey, PublicKeyType, Service, DIDDoc
+from .models.diddoc.util import upgrade_legacy_did_doc_to_peer_did
 from ..wallet.util import bytes_to_b58, b64_to_bytes
 
 
@@ -524,4 +525,15 @@ class BaseConnectionManager:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
             # JSload into LegacyDIDDoc, converting old DIDDoc classes into DIDDocument compliant objects
-        return LegacyDIDDoc.from_json(record.value), record
+        try:
+            DIDDocument.from_json(record.value), record
+        except Exception as e: 
+            self._logger.warning("EXCEPTION LOADING DID_DOC")
+            self._logger.warning(str(e))
+            self._logger.warning("Attemping conversion to peer_did_2 and document")
+            did,doc = upgrade_legacy_did_doc_to_peer_did(record.value)
+            self._logger.warning("conversion complete, updating record in wallet with complaint record")
+            await self.store_did_document(doc)
+            self._logger.warning("Update successful.")
+            return doc,record
+

@@ -14,7 +14,7 @@ from ....wallet.askar import _create_keypair
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.diddoc import LegacyDIDDoc # JS
-from ....connections.models.diddoc.util import create_peer_did_2_from_verkey
+from ....connections.models.diddoc.util import create_peer_did_2
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
@@ -313,7 +313,7 @@ class DIDXManager(BaseConnectionManager):
                         ),
                         "recipient_keys": [],
                     }
-                    peer_did = create_peer_did_2_from_verkey(
+                    peer_did = create_peer_did_2(
                         bytes_to_b58(verkey_bytes), service=service
                     )
 
@@ -654,7 +654,7 @@ class DIDXManager(BaseConnectionManager):
                         "recipient_keys": [],
                     }
 
-                    peer_did = create_peer_did_2_from_verkey(
+                    peer_did = create_peer_did_2(
                         bytes_to_b58(verkey_bytes), service=service
                     )
                     self._logger.warning(peer_did)

@@ -17,7 +17,7 @@ from .....connections.models.diddoc import (
     Service,
 )
 
-from .....connections.models.diddoc.util import create_peer_did_2_from_verkey
+from .....connections.models.diddoc.util import create_peer_did_2
 from .....wallet.askar import _create_keypair
 from .....wallet.util import bytes_to_b58
 
@@ -68,7 +68,7 @@ class TestConfig:
             "recipient_keys": [],
         }
 
-        peer_did = create_peer_did_2_from_verkey(
+        peer_did = create_peer_did_2(
             self.test_verkey, service=service
         )
 

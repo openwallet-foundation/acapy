@@ -17,11 +17,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import json
 
+from typing import Tuple
 from base58 import b58decode
 from urllib.parse import urlparse
 from pydid.did import DID_PATTERN
-from peerdid.dids import DID, DIDDocument, create_peer_did_numalgo_2
+from peerdid.dids import DID, DIDDocument, create_peer_did_numalgo_2, resolve_peer_did
 from peerdid.keys import X25519KeyAgreementKey, Ed25519VerificationKey
 
 
@@ -120,11 +122,25 @@ def ok_did(token: str) -> bool:
         return False
 
 
-def create_peer_did_2_from_verkey(verkey: str, service: dict = None) -> DID:
+def create_peer_did_2(verkey: str, service: dict = None) -> Tuple[DID, DIDDocument]:
     """verkey must by base58"""
 
     enc_keys = [X25519KeyAgreementKey.from_base58(verkey)]
     sign_keys = [Ed25519VerificationKey.from_base58(verkey)]
 
-    var = create_peer_did_numalgo_2(enc_keys, sign_keys, service)
-    return var
+    did = create_peer_did_numalgo_2(enc_keys, sign_keys, service)
+    doc = resolve_peer_did(did)
+    return did, doc
+
+
+
+def upgrade_legacy_did_doc_to_peer_did(json_str:str) -> Tuple[DID, DIDDocument]:
+    doc_dict = json.loads(json_str)
+
+    public_key_b58 = doc_dict["publicKey"][0]["publicKeyBase58"]
+    service = doc_dict["service"][0]
+
+    if service["type"] == "IndyAgent":
+        service["type"] =  "DIDCommMessaging"
+    
+    return create_peer_did_2(public_key_b58,service)
