@@ -236,15 +236,10 @@ class BaseConnectionManager:
             storage: BaseStorage = session.inject(BaseStorage)
             await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
-    async def resolve_invitation(
+    async def resolve_didcomm_services(
         self, did: str, service_accept: Optional[Sequence[Text]] = None
-    ):
-        """
-        Resolve invitation with the DID Resolver.
-
-        Args:
-            did: Document ID to resolve
-        """
+    ) -> Tuple[ResolvedDocument, List[DIDCommService]]:
+        """Resolve a DIDComm services for a given DID."""
         if not did.startswith("did:"):
             # DID is bare indy "nym"
             # prefix with did:sov: for backwards compatibility
@@ -269,6 +264,41 @@ class BaseConnectionManager:
             key=lambda service: service.priority,
         )
 
+        return doc, didcomm_services
+
+    async def verification_methods_for_service(
+        self, doc: ResolvedDocument, service: DIDCommService
+    ) -> Tuple[List[VerificationMethod], List[VerificationMethod]]:
+        """Dereference recipient and routing keys.
+
+        Returns verification methods for a DIDComm service to enable extracting
+        key material.
+        """
+        resolver = self._profile.inject(DIDResolver)
+        recipient_keys: List[VerificationMethod] = [
+            await resolver.dereference_verification_method(
+                self._profile, url, document=doc
+            )
+            for url in service.recipient_keys
+        ]
+        routing_keys: List[VerificationMethod] = [
+            await resolver.dereference_verification_method(
+                self._profile, url, document=doc
+            )
+            for url in service.routing_keys
+        ]
+        return recipient_keys, routing_keys
+
+    async def resolve_invitation(
+        self, did: str, service_accept: Optional[Sequence[Text]] = None
+    ) -> Tuple[str, List[str], List[str]]:
+        """
+        Resolve invitation with the DID Resolver.
+
+        Args:
+            did: Document ID to resolve
+        """
+        doc, didcomm_services = await self.resolve_didcomm_services(did, service_accept)
         if not didcomm_services:
             raise BaseConnectionManagerError(
                 "Cannot connect via public DID that has no associated DIDComm services"
@@ -276,15 +306,10 @@ class BaseConnectionManager:
 
         first_didcomm_service, *_ = didcomm_services
 
-        endpoint = first_didcomm_service.service_endpoint
-        recipient_keys: List[VerificationMethod] = [
-            await resolver.dereference(self._profile, url, document=doc)
-            for url in first_didcomm_service.recipient_keys
-        ]
-        routing_keys: List[VerificationMethod] = [
-            await resolver.dereference(self._profile, url, document=doc)
-            for url in first_didcomm_service.routing_keys
-        ]
+        endpoint = str(first_didcomm_service.service_endpoint)
+        recipient_keys, routing_keys = await self.verification_methods_for_service(
+            doc, first_didcomm_service
+        )
 
         return (
             endpoint,
@@ -294,6 +319,49 @@ class BaseConnectionManager:
             ],
             [self._extract_key_material_in_base58_format(key) for key in routing_keys],
         )
+
+    async def resolve_connection_targets(
+        self,
+        did: str,
+        sender_verkey: Optional[str] = None,
+        their_label: Optional[str] = None,
+    ) -> List[ConnectionTarget]:
+        """Resolve connection targets for a DID."""
+        self._logger.debug("Resolving connection targets for DID %s", did)
+        doc, didcomm_services = await self.resolve_didcomm_services(did)
+        self._logger.debug("Resolved DID document: %s", doc)
+        self._logger.debug("Resolved DIDComm services: %s", didcomm_services)
+        targets = []
+        for service in didcomm_services:
+            try:
+                recips, routing = await self.verification_methods_for_service(
+                    doc, service
+                )
+                endpoint = str(service.service_endpoint)
+                targets.append(
+                    ConnectionTarget(
+                        did=doc.id,
+                        endpoint=endpoint,
+                        label=their_label,
+                        recipient_keys=[
+                            self._extract_key_material_in_base58_format(key)
+                            for key in recips
+                        ],
+                        routing_keys=[
+                            self._extract_key_material_in_base58_format(key)
+                            for key in routing
+                        ],
+                        sender_key=sender_verkey,
+                    )
+                )
+            except ResolverError:
+                self._logger.exception(
+                    "Failed to resolve service details while determining "
+                    "connection targets; skipping service"
+                )
+                continue
+
+        return targets
 
     @staticmethod
     def _extract_key_material_in_base58_format(method: VerificationMethod) -> str:
@@ -328,7 +396,7 @@ class BaseConnectionManager:
 
     async def fetch_connection_targets(
         self, connection: ConnRecord
-    ) -> Sequence[ConnectionTarget]:
+    ) -> Optional[Sequence[ConnectionTarget]]:
         """Get a list of connection targets from a `ConnRecord`.
 
         Args:
@@ -416,20 +484,21 @@ class BaseConnectionManager:
                 self._logger.debug("No target DID associated with connection")
                 return None
 
-            did_doc, _ = await self.fetch_did_document(connection.their_did)
-
             async with self._profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(connection.my_did)
 
-            results = self.diddoc_connection_targets(
-                did_doc, my_info.verkey, connection.their_label
+            results = await self.resolve_connection_targets(
+                connection.their_did, my_info.verkey, connection.their_label
             )
 
         return results
 
     def diddoc_connection_targets(
-        self, doc: DIDDoc, sender_verkey: str, their_label: str = None
+        self,
+        doc: pydid.DIDDocument,
+        sender_verkey: str,
+        their_label: Optional[str] = None,
     ) -> Sequence[ConnectionTarget]:
         """Get a list of connection targets from a DID Document.
 
@@ -439,12 +508,8 @@ class BaseConnectionManager:
             their_label: The connection label they are using
         """
 
-        if not doc:
-            raise BaseConnectionManagerError("No DIDDoc provided for connection target")
-        if not doc.did:
-            raise BaseConnectionManagerError("DIDDoc has no DID")
         if not doc.service:
-            raise BaseConnectionManagerError("No services defined by DIDDoc")
+            raise BaseConnectionManagerError("No services defined by DID Doc")
 
         targets = []
         for service in doc.service.values():

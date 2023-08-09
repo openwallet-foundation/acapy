@@ -474,23 +474,24 @@ class DIDXManager(BaseConnectionManager):
                 conn_rec = new_conn_rec
 
         # request DID doc describes requester DID
-        if not (request.did_doc_attach and request.did_doc_attach.data):
-            raise DIDXManagerError(
-                "DID Doc attachment missing or has no data: "
-                "cannot connect to public DID"
+        if request.did_doc_attach and request.did_doc_attach.data:
+            self._logger.debug("Received DID Doc attachment in request")
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
+                await self.store_did_document(conn_did_doc)
+            if request.did != conn_did_doc.did:
+                raise DIDXManagerError(
+                    (
+                        f"Connection DID {request.did} does not match "
+                        f"DID Doc id {conn_did_doc.did}"
+                    ),
+                    error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                )
+        else:
+            self._logger.debug(
+                "No DID Doc attachment in request; doc will be resolved from DID"
             )
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
-        if request.did != conn_did_doc.did:
-            raise DIDXManagerError(
-                (
-                    f"Connection DID {request.did} does not match "
-                    f"DID Doc id {conn_did_doc.did}"
-                ),
-                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
-            )
-        await self.store_did_document(conn_did_doc)
 
         if conn_rec:  # request is against explicit invitation
             auto_accept = (
@@ -511,7 +512,7 @@ class DIDXManager(BaseConnectionManager):
             # request is against implicit invitation on public DID
             if not self.profile.settings.get("requests_through_public_did"):
                 raise DIDXManagerError(
-                    "Unsolicited connection requests to " "public DID is not enabled"
+                    "Unsolicited connection requests to public DID is not enabled"
                 )
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -744,19 +745,22 @@ class DIDXManager(BaseConnectionManager):
             )
 
         their_did = response.did
-        if not response.did_doc_attach:
-            raise DIDXManagerError("No DIDDoc attached; cannot connect to public DID")
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            conn_did_doc = await self.verify_diddoc(
-                wallet, response.did_doc_attach, conn_rec.invitation_key
+        if response.did_doc_attach:
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                conn_did_doc = await self.verify_diddoc(
+                    wallet, response.did_doc_attach, conn_rec.invitation_key
+                )
+            if their_did != conn_did_doc.did:
+                raise DIDXManagerError(
+                    f"Connection DID {their_did} "
+                    f"does not match DID doc id {conn_did_doc.did}"
+                )
+            await self.store_did_document(conn_did_doc)
+        else:
+            self._logger.debug(
+                "No DID Doc attachment in response; doc will be resolved from DID"
             )
-        if their_did != conn_did_doc.did:
-            raise DIDXManagerError(
-                f"Connection DID {their_did} "
-                f"does not match DID doc id {conn_did_doc.did}"
-            )
-        await self.store_did_document(conn_did_doc)
 
         conn_rec.their_did = their_did
         conn_rec.state = ConnRecord.State.RESPONSE.rfc23

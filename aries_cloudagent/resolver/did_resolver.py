@@ -10,7 +10,7 @@ from itertools import chain
 import logging
 from typing import List, Optional, Sequence, Text, Tuple, Union
 
-from pydid import DID, DIDError, DIDUrl, Resource
+from pydid import DID, DIDError, DIDUrl, Resource, VerificationMethod
 import pydid
 from pydid.doc.doc import BaseDIDDocument, IDNotFoundError
 
@@ -144,3 +144,16 @@ class DIDResolver:
             raise ResolverError(
                 "Failed to dereference DID URL: {}".format(error)
             ) from error
+
+    async def dereference_verification_method(
+        self,
+        profile: Profile,
+        did_url: str,
+        *,
+        document: Optional[BaseDIDDocument] = None,
+    ) -> VerificationMethod:
+        """Dereference a DID URL to a verification method."""
+        dereferenced = await self.dereference(profile, did_url, document=document)
+        if isinstance(dereferenced, VerificationMethod):
+            return dereferenced
+        raise ValueError("DID URL does not dereference to a verification method")
