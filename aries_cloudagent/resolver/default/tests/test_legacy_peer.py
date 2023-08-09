@@ -86,7 +86,7 @@ class TestLegacyPeerDIDResolver:
         ) as mock_mgr, async_mock.patch.object(
             test_module, "LegacyDocCorrections"
         ) as mock_corrections:
-            doc = object
+            doc = object()
             mock_corrections.apply = async_mock.MagicMock(return_value=doc)
             mock_mgr.return_value = async_mock.MagicMock(
                 fetch_did_document=async_mock.CoroutineMock(

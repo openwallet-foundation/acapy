@@ -40,7 +40,7 @@ P = ParamSpec("P")
 class LegacyDocCorrections:
     """Legacy peer DID document corrections.
 
-    These correctionsto align the document with updated DID spec and DIDComm
+    These corrections align the document with updated DID spec and DIDComm
     conventions. This also helps with consistent processing of DID Docs.
 
     Input example:
