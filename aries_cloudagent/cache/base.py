@@ -2,7 +2,7 @@
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Sequence, Text, Union
+from typing import Any, Optional, Sequence, Text, Union
 
 from ..core.error import BaseError
 
@@ -32,7 +32,9 @@ class BaseCache(ABC):
         """
 
     @abstractmethod
-    async def set(self, keys: Union[Text, Sequence[Text]], value: Any, ttl: int = None):
+    async def set(
+        self, keys: Union[Text, Sequence[Text]], value: Any, ttl: Optional[int] = None
+    ):
         """
         Add an item to the cache with an optional ttl.
 
@@ -125,7 +127,7 @@ class CacheKeyLock:
         if result:
             self._future.set_result(fut.result())
 
-    async def set_result(self, value: Any, ttl: int = None):
+    async def set_result(self, value: Any, ttl: Optional[int] = None):
         """Set the result, updating the cache and any waiters."""
         if self.done and value:
             raise CacheError("Result already set")
