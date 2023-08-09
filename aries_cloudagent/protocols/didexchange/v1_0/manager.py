@@ -202,17 +202,20 @@ class DIDXManager(BaseConnectionManager):
             The new `ConnRecord` instance
 
         """
-        my_public_info = None
+        public_did = None
         if use_public_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_public_info = await wallet.get_public_did()
+                public_did = my_public_info.did
+                if not public_did.startswith("did:"):
+                    public_did = f"did:sov:{public_did}"
             if not my_public_info:
                 raise WalletError("No public DID configured")
 
         conn_rec = ConnRecord(
-            my_did=my_public_info.did
-            if my_public_info
+            my_did=public_did
+            if public_did
             else None,  # create-request will fill in on local DID creation
             their_did=their_public_did,
             their_label=None,
@@ -608,6 +611,10 @@ class DIDXManager(BaseConnectionManager):
                 my_info = await wallet.get_public_did()
             if not my_info:
                 raise WalletError("No public DID configured")
+            did = my_info.did
+            if not did.startswith("did:"):
+                did = f"did:sov:{did}"
+            conn_rec.my_did = did
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
