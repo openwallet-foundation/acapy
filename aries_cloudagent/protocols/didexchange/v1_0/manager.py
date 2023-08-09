@@ -514,12 +514,6 @@ class DIDXManager(BaseConnectionManager):
                 raise DIDXManagerError(
                     "Unsolicited connection requests to public DID is not enabled"
                 )
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(
-                    method=SOV,
-                    key_type=ED25519,
-                )
 
             auto_accept = bool(
                 auto_accept_implicit
@@ -530,7 +524,7 @@ class DIDXManager(BaseConnectionManager):
             )
 
             conn_rec = ConnRecord(
-                my_did=my_info.did,
+                my_did=None,  # Defer DID creation until create_response
                 accept=(
                     ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL
                 ),
