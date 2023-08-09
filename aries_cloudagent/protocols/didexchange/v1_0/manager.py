@@ -202,20 +202,17 @@ class DIDXManager(BaseConnectionManager):
             The new `ConnRecord` instance
 
         """
-        public_did = None
+        my_public_info = None
         if use_public_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_public_info = await wallet.get_public_did()
-                public_did = my_public_info.did
-                if not public_did.startswith("did:"):
-                    public_did = f"did:sov:{public_did}"
             if not my_public_info:
                 raise WalletError("No public DID configured")
 
         conn_rec = ConnRecord(
-            my_did=public_did
-            if public_did
+            my_did=my_public_info.did
+            if my_public_info
             else None,  # create-request will fill in on local DID creation
             their_did=their_public_did,
             their_label=None,
@@ -319,6 +316,9 @@ class DIDXManager(BaseConnectionManager):
             # Omit DID Doc attachment if we're using a public DID
             did_doc = None
             attach = None
+            did = conn_rec.my_did
+            if not did.startswith("did:"):
+                did = f"did:sov:{did}"
         else:
             did_doc = await self.create_did_document(
                 my_info,
@@ -332,6 +332,7 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 await attach.data.sign(my_info.verkey, wallet)
+            did = conn_rec.my_did
 
         if conn_rec.their_public_did is not None:
             qualified_did = conn_rec.their_public_did
@@ -347,7 +348,7 @@ class DIDXManager(BaseConnectionManager):
 
         request = DIDXRequest(
             label=my_label,
-            did=conn_rec.my_did,
+            did=did,
             did_doc_attach=attach,
             goal_code=goal_code,
             goal=goal,
@@ -605,16 +606,17 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
+            did = my_info.did
         elif use_public_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_public_did()
             if not my_info:
                 raise WalletError("No public DID configured")
+            conn_rec.my_did = my_info.did
             did = my_info.did
             if not did.startswith("did:"):
                 did = f"did:sov:{did}"
-            conn_rec.my_did = did
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -623,6 +625,7 @@ class DIDXManager(BaseConnectionManager):
                     key_type=ED25519,
                 )
             conn_rec.my_did = my_info.did
+            did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
@@ -657,7 +660,7 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 await attach.data.sign(conn_rec.invitation_key, wallet)
 
-        response = DIDXResponse(did=my_info.did, did_doc_attach=attach)
+        response = DIDXResponse(did=did, did_doc_attach=attach)
         # Assign thread information
         response.assign_thread_from(request)
         response.assign_trace_from(request)
