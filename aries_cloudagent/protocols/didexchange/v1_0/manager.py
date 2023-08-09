@@ -35,7 +35,7 @@ from ...out_of_band.v1_0.messages.invitation import (
 from ...out_of_band.v1_0.messages.service import Service as OOBService
 from .message_types import ARIES_PROTOCOL as DIDX_PROTO
 from .messages.complete import DIDXComplete
-from .messages.problem_report_reason import ProblemReportReason
+from .messages.problem_report import DIDXProblemReport, ProblemReportReason
 from .messages.request import DIDXRequest
 from .messages.response import DIDXResponse
 
@@ -368,10 +368,10 @@ class DIDXManager(BaseConnectionManager):
         self,
         request: DIDXRequest,
         recipient_did: str,
-        recipient_verkey: str = None,
-        my_endpoint: str = None,
-        alias: str = None,
-        auto_accept_implicit: bool = None,
+        recipient_verkey: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        alias: Optional[str] = None,
+        auto_accept_implicit: Optional[bool] = None,
     ) -> ConnRecord:
         """
         Receive and store a connection request.
@@ -561,8 +561,8 @@ class DIDXManager(BaseConnectionManager):
     async def create_response(
         self,
         conn_rec: ConnRecord,
-        my_endpoint: str = None,
-        mediation_id: str = None,
+        my_endpoint: Optional[str] = None,
+        mediation_id: Optional[str] = None,
     ) -> DIDXResponse:
         """
         Create a connection response for a received connection request.
@@ -855,6 +855,61 @@ class DIDXManager(BaseConnectionManager):
                 )
 
         return conn_rec
+
+    async def reject(
+        self,
+        conn_rec: ConnRecord,
+        *,
+        reason: Optional[str] = None,
+    ) -> DIDXProblemReport:
+        """Abandon an existing DID exchange."""
+        state_to_reject_code = {
+            ConnRecord.State.INVITATION.rfc23
+            + "-received": ProblemReportReason.INVITATION_NOT_ACCEPTED,
+            ConnRecord.State.REQUEST.rfc23
+            + "-received": ProblemReportReason.REQUEST_NOT_ACCEPTED,
+        }
+        code = state_to_reject_code.get(conn_rec.rfc23_state)
+        if not code:
+            raise DIDXManagerError(
+                f"Cannot reject connection in state: {conn_rec.rfc23_state}"
+            )
+
+        async with self.profile.session() as session:
+            await conn_rec.abandon(session, reason=reason)
+
+        report = DIDXProblemReport(
+            description={
+                "code": code.value,
+                "en": reason or "DID exchange rejected",
+            },
+        )
+
+        # TODO Delete the record?
+        return report
+
+    async def receive_problem_report(
+        self,
+        conn_rec: ConnRecord,
+        report: DIDXProblemReport,
+    ):
+        """Receive problem report."""
+        if not report.description:
+            raise DIDXManagerError("Missing description in problem report")
+
+        if report.description.get("code") in set(
+            reason.value for reason in ProblemReportReason
+        ):
+            self._logger.info("Problem report indicates connection is abandoned")
+            async with self.profile.session() as session:
+                await conn_rec.abandon(
+                    session,
+                    reason=report.description.get("en"),
+                )
+        else:
+            raise DIDXManagerError(
+                f"Received unrecognized problem report: {report.description}"
+            )
 
     async def verify_diddoc(
         self,
