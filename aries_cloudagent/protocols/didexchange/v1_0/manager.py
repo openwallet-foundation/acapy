@@ -564,6 +564,7 @@ class DIDXManager(BaseConnectionManager):
         conn_rec: ConnRecord,
         my_endpoint: Optional[str] = None,
         mediation_id: Optional[str] = None,
+        use_public_did: Optional[bool] = None,
     ) -> DIDXResponse:
         """
         Create a connection response for a received connection request.
@@ -607,6 +608,12 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
+        elif use_public_did:
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.get_public_did()
+            if not my_info:
+                raise WalletError("No public DID configured")
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -631,18 +638,24 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        did_doc = await self.create_did_document(
-            my_info,
-            conn_rec.inbound_connection_id,
-            my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
-        )
-        attach = AttachDecorator.data_base64(did_doc.serialize())
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            await attach.data.sign(conn_rec.invitation_key, wallet)
+        if use_public_did:
+            # Omit DID Doc attachment if we're using a public DID
+            did_doc = None
+            attach = None
+        else:
+            did_doc = await self.create_did_document(
+                my_info,
+                conn_rec.inbound_connection_id,
+                my_endpoints,
+                mediation_records=list(
+                    filter(None, [base_mediation_record, mediation_record])
+                ),
+            )
+            attach = AttachDecorator.data_base64(did_doc.serialize())
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                await attach.data.sign(conn_rec.invitation_key, wallet)
+
         response = DIDXResponse(did=my_info.did, did_doc_attach=attach)
         # Assign thread information
         response.assign_thread_from(request)

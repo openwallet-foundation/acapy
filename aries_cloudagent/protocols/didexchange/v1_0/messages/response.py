@@ -1,5 +1,6 @@
 """Represents a DID exchange response message under RFC 23."""
 
+from typing import Optional
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -27,7 +28,7 @@ class DIDXResponse(AgentMessage):
         self,
         *,
         did: str = None,
-        did_doc_attach: AttachDecorator = None,
+        did_doc_attach: Optional[AttachDecorator] = None,
         **kwargs,
     ):
         """
