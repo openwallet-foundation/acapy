@@ -103,6 +103,7 @@ class DIDResolver:
             for resolver in self.resolvers
             if await resolver.supports(profile, did)
         ]
+        LOGGER.debug("Valid resolvers for DID %s: %s", did, valid_resolvers)
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
         non_native_resolvers = filter(
             lambda resolver: not resolver.native, valid_resolvers
