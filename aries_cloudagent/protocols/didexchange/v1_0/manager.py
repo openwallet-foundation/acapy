@@ -14,7 +14,7 @@ from ....wallet.askar import _create_keypair
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.diddoc import LegacyDIDDoc # JS
-from ....connections.models.diddoc.util import create_peer_did_2
+from ....connections.models.diddoc.util import create_peer_did_2, upgrade_legacy_did_doc_to_peer_did
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
@@ -505,16 +505,16 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
-            if request.did != conn_did_doc.did:
-                if str("did:sov:" + request.did) == str(conn_did_doc.did):
+            if request.did != conn_did_doc.id:
+                if "did:peer:" in str(conn_did_doc.id) and "did:peer:" not in request.did:
                     self._logger.warning(
-                        f"legacy behaviour: Connection DID is unqualified {request.did}, but did doc did has did:sov {conn_did_doc.did}"
+                        f"did doc was created from peerdid library, but sender did not send did:peer:, this is ok."
                     )
                 else:
                     raise DIDXManagerError(
                         (
                             f"Connection DID {request.did} does not match "
-                            f"DID Doc id {conn_did_doc.did}"
+                            f"DID Doc id {conn_did_doc.id}"
                         ),
                         error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
                     )
@@ -937,15 +937,18 @@ class DIDXManager(BaseConnectionManager):
         wallet: BaseWallet,
         attached: AttachDecorator,
         invi_key: str = None,
-    ) -> LegacyDIDDoc:
+    ) -> DIDDocument:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
         if not signed_diddoc_bytes:
             raise DIDXManagerError("DID doc attachment is not signed.")
         if not await attached.data.verify(wallet, invi_key):
             raise DIDXManagerError("DID doc attachment signature failed verification")
-
-        return LegacyDIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
+        try:
+            return DIDDocument.deserialize(json.loads(signed_diddoc_bytes.decode()))
+        except Exception as e: 
+            did, doc = upgrade_legacy_did_doc_to_peer_did(signed_diddoc_bytes.decode())
+            return doc
 
     async def get_resolved_did_document(self, qualified_did: str) -> ResolvedDocument:
         """Return resolved DID document."""

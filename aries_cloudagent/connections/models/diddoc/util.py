@@ -142,5 +142,7 @@ def upgrade_legacy_did_doc_to_peer_did(json_str:str) -> Tuple[DID, DIDDocument]:
 
     if service["type"] == "IndyAgent":
         service["type"] =  "DIDCommMessaging"
-    
+    if "id" in service["id"]:
+        del service["id"]
+        
     return create_peer_did_2(public_key_b58,service)
