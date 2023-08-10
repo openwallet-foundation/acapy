@@ -19,7 +19,7 @@ class AnonCredsRevocationSetupManager(ABC):
 
     @abstractmethod
     def register_events(self, event_bus: EventBus):
-        """Setup the manager."""
+        """Event registration."""
 
 
 class DefaultRevocationSetup(AnonCredsRevocationSetupManager):

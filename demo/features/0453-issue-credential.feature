@@ -1,7 +1,7 @@
 @RFC0453
 Feature: RFC 0453 Aries agent issue credential
 
-  @T003-RFC0453 @GHA
+  @T003-RFC0453 @GHA-Anoncreds-break
   Scenario Outline: Issue a credential with the Issuer beginning with an offer
     Given we have "2" agents
       | name  | role    | capabilities        |
@@ -20,7 +20,7 @@ Feature: RFC 0453 Aries agent issue credential
        #| --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
 
-  @T003.1-RFC0453 @GHA
+  @T003.1-RFC0453 @GHA-Anoncreds-break
   Scenario Outline: Issue a json-ld credential with the Issuer beginning with an offer
     Given we have "2" agents
       | name  | role    | capabilities        |
@@ -40,7 +40,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
 
-  @T004-RFC0453 @GHA
+  @T004-RFC0453 @GHA-Anoncreds-break
   Scenario Outline: Issue a credential with revocation, with the Issuer beginning with an offer, and then revoking the credential
     Given we have "2" agents
       | name  | role    | capabilities        |

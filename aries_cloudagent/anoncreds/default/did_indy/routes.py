@@ -1,1 +1,1 @@
-"""Routes for DID Indy Registry"""
+"""Routes for DID Indy Registry."""

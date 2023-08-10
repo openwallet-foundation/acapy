@@ -1,4 +1,4 @@
-"""AnonCreds Registry"""
+"""AnonCreds Registry."""
 import logging
 from typing import List, Optional, Sequence
 
@@ -30,7 +30,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AnonCredsRegistry:
-    """AnonCredsRegistry"""
+    """AnonCredsRegistry."""
 
     def __init__(self, registries: Optional[List[BaseAnonCredsHandler]] = None):
         """Create DID Resolver."""

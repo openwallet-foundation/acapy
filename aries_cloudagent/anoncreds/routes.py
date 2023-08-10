@@ -290,7 +290,7 @@ async def cred_def_get(request: web.BaseRequest):
 
 
 class GetCredDefsResponseSchema(OpenAPISchema):
-    """AnonCredsRegistryGetCredDefsSchema"""
+    """AnonCredsRegistryGetCredDefsSchema."""
 
     credential_definition_ids = fields.List(
         fields.Str(

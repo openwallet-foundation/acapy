@@ -1,4 +1,4 @@
-"""Legacy Indy Registry"""
+"""Legacy Indy Registry."""
 from asyncio import shield
 import json
 import logging
@@ -65,9 +65,17 @@ DEFAULT_SIGNATURE_TYPE = "CL"
 
 
 class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
-    """LegacyIndyRegistry"""
+    """LegacyIndyRegistry."""
 
     def __init__(self):
+        """
+        Initialize an instance.
+
+        Args:
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
         INDY_DID = rf"^(did:sov:)?[{B58}]{{21,22}}$"
         INDY_SCHEMA_ID = rf"^[{B58}]{{21,22}}:2:.+:[0-9.]+$"
@@ -90,6 +98,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     @property
     def supported_identifiers_regex(self) -> Pattern:
+        """Supported Identifiers Regular Expression."""
         return self._supported_identifiers_regex
 
     async def setup(self, context: InjectionContext):
@@ -546,7 +555,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         rev_reg_def_type: str,
         entry: dict,
     ) -> dict:
-        """Send a revocation registry entry to the ledger with fixes if needed"""
+        """Send a revocation registry entry to the ledger with fixes if needed."""
         # TODO Handle multitenancy and multi-ledger (like in get cred def)
         ledger = profile.inject(BaseLedger)
 

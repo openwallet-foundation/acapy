@@ -40,6 +40,7 @@ class IndyTailsServer(BaseTailsServer):
         Returns:
             Tuple[bool, str]: tuple with success status and url of uploaded
             file or error message if failed
+
         """
         tails_server_upload_url = context.settings.get("tails_server_upload_url")
         genesis_transactions = context.settings.get("ledger.genesis_transactions")

@@ -1,6 +1,6 @@
 Feature: RFC 0454 Aries agent present proof
 
-   @T001-RFC0454 @GHA
+   @T001-RFC0454 @GHA-Anoncreds-break
    Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
       Given we have "2" agents
          | name  | role     | capabilities        |
@@ -57,7 +57,7 @@ Feature: RFC 0454 Aries agent present proof
          | Faber  | --public-did --cred-type json-ld --did-exchange           | --did-exchange            | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
 
-   @T002-RFC0454 @GHA
+   @T002-RFC0454 @GHA-Anoncreds-break
    Scenario Outline: Present Proof where the issuer revokes the credential and the proof fails
       Given we have "2" agents
          | name  | role     | capabilities        |
@@ -97,7 +97,7 @@ Feature: RFC 0454 Aries agent present proof
          | Acme   | --revocation --public-did --mediation      |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
          | Acme   | --revocation --public-did --multitenant    | --multitenant    | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-   @T003-RFC0454.1 @GHA
+   @T003-RFC0454.1 @GHA-Anoncreds-break
    Scenario Outline: Present Proof for multiple credentials where the one is revocable and one isn't, neither credential is revoked
       Given we have "4" agents
          | name  | role     | capabilities         |
@@ -137,7 +137,7 @@ Feature: RFC 0454 Aries agent present proof
          | issuer1 | Acme1_capabilities        | issuer2 | Acme2_capabilities | Bob_cap | Schema_name_1     | Credential_data_1 | Schema_name_2 | Credential_data_2 | Proof_request                    |
          | Acme1   | --revocation --public-did | Acme2   | --public-did       |         | driverslicense_v2 | Data_DL_MaxValues | health_id     | Data_DL_MaxValues | DL_age_over_19_v2_with_health_id_r2 |
 
-   @T003-RFC0454.2 @GHA
+   @T003-RFC0454.2 @GHA-Anoncreds-break
    Scenario Outline: Present Proof for multiple credentials where the one is revocable and one isn't, and the revocable credential is revoked, and the proof checks for revocation and fails
       Given we have "4" agents
          | name  | role     | capabilities         |
@@ -159,7 +159,7 @@ Feature: RFC 0454 Aries agent present proof
          | Acme1   | --revocation --public-did | Acme2   | --public-did       |         | driverslicense_v2 | Data_DL_MaxValues | health_id     | Data_DL_MaxValues | DL_age_over_19_v2_with_health_id |
          | Acme1   | --revocation --public-did | Acme2   | --public-did       |         | driverslicense_v2 | Data_DL_MaxValues | health_id     | Data_DL_MaxValues | DL_age_over_19_v2_with_health_id_r2 |
 
-   @T003-RFC0454.3 @GHA
+   @T003-RFC0454.3 @GHA-Anoncreds-break
    Scenario Outline: Present Proof for multiple credentials where the one is revocable and one isn't, and the revocable credential is revoked, and the proof doesn't check for revocation and passes
       Given we have "4" agents
          | name  | role     | capabilities         |

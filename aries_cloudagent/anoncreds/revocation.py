@@ -64,6 +64,8 @@ class AnonCredsRevocationRegistryFullError(AnonCredsRevocationError):
 
 
 class RevokeResult(NamedTuple):
+    """RevokeResult."""
+
     prev: RevList
     curr: Optional[RevList] = None
     revoked: Optional[Sequence[int]] = None
@@ -1063,7 +1065,7 @@ class AnonCredsRevocation:
         )
 
     async def mark_pending_revocations(self, rev_reg_def_id: str, *crids: int):
-        """Stores the cred rev ids to publish later."""
+        """Cred rev ids stored to publish later."""
         async with self.profile.transaction() as txn:
             entry = await txn.handle.fetch(
                 CATEGORY_REV_LIST,

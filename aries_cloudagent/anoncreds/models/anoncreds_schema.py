@@ -1,4 +1,4 @@
-"""Anoncreds Schema OpenAPI validators"""
+"""Anoncreds Schema OpenAPI validators."""
 
 from typing import Any, Dict, List, Optional
 
@@ -21,6 +21,18 @@ class AnonCredsSchema(BaseModel):
     def __init__(
         self, issuer_id: str, attr_names: List[str], name: str, version: str, **kwargs
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            issuer_id: Issuer ID
+            attr_names: Schema Attribute Name list
+            name: Schema name
+            version: Schema version
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
         self.attr_names = attr_names
@@ -80,6 +92,18 @@ class GetSchemaResult(BaseModel):
         schema_metadata: Dict[str, Any],
         **kwargs
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            schema: AnonCreds Schema
+            schema_id: Schema ID
+            resolution_metadata: Resolution Metdata
+            schema_metadata: Schema Metadata
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.schema_value = schema
         self.schema_id = schema_id
@@ -177,6 +201,18 @@ class SchemaResult(BaseModel):
         schema_metadata: Optional[dict] = None,
         **kwargs
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            job_id: Job ID
+            schema_state: Schema state
+            registration_metadata: Registration Metdata
+            schema_metadata: Schema Metadata
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.job_id = job_id
         self.schema_state = schema_state

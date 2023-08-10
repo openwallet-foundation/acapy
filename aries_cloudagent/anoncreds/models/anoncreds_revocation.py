@@ -1,4 +1,4 @@
-"""Anoncreds cred def OpenAPI validators"""
+"""Anoncreds cred def OpenAPI validators."""
 from typing import Any, Dict, List, Optional
 from typing_extensions import Literal
 
@@ -25,6 +25,18 @@ class RevRegDefValue(BaseModel):
         tails_hash: str,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            public_keys: Public Keys
+            max_cred_num: Max. number of Creds
+            tails_location: Tails file location
+            tails_hash: Tails file hash
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.public_keys = public_keys
         self.max_cred_num = max_cred_num
@@ -48,7 +60,7 @@ class RevRegDefValueSchema(BaseModelSchema):
 
 
 class RevRegDef(BaseModel):
-    """RevRegDef"""
+    """RevRegDef."""
 
     class Meta:
         """RevRegDef metadata."""
@@ -64,6 +76,19 @@ class RevRegDef(BaseModel):
         value: RevRegDefValue,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            issuer_id: Issuer ID
+            type: type
+            cred_def_id: Cred Def ID
+            tag: Tag
+            value: Rev Reg Def Value
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
         self.type = type
@@ -122,6 +147,17 @@ class RevRegDefState(BaseModel):
         revocation_registry_definition_id: str,
         revocation_registry_definition: RevRegDef,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            state: State
+            revocation_registry_definition_id: Rev Reg Definition ID
+            revocation_registry_definition: Rev Reg Definition
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         self.state = state
         self.revocation_registry_definition_id = revocation_registry_definition_id
         self.revocation_registry_definition = revocation_registry_definition
@@ -170,6 +206,18 @@ class RevRegDefResult(BaseModel):
         revocation_registry_definition_metadata: dict,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            job_id: Job ID
+            revocation_registry_definition_state: Rev Reg Def state
+            registration_metadata: Registration metadata
+            revocation_registry_definition_metadata: Rev Reg Def metadata
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.job_id = job_id
         self.revocation_registry_definition_state = revocation_registry_definition_state
@@ -180,12 +228,14 @@ class RevRegDefResult(BaseModel):
 
     @property
     def rev_reg_def_id(self):
+        """Revocation Registry Definition ID."""
         return (
             self.revocation_registry_definition_state.revocation_registry_definition_id
         )
 
     @property
     def rev_reg_def(self):
+        """Revocation Registry Definition."""
         return self.revocation_registry_definition_state.revocation_registry_definition
 
 
@@ -206,7 +256,7 @@ class RevRegDefResultSchema(BaseModelSchema):
 
 
 class GetRevRegDefResult(BaseModel):
-    """GetRevRegDefResult"""
+    """GetRevRegDefResult."""
 
     class Meta:
         """GetRevRegDefResult metadata."""
@@ -221,6 +271,18 @@ class GetRevRegDefResult(BaseModel):
         revocation_registry_metadata: Dict[str, Any],
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            revocation_registry: Revocation registry
+            revocation_registry_id: Revocation Registry ID
+            resolution_metadata: Resolution metadata
+            revocation_registry_metadata: Revocation Registry metadata
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.revocation_registry = revocation_registry
         self.revocation_registry_id = revocation_registry_id
@@ -229,6 +291,8 @@ class GetRevRegDefResult(BaseModel):
 
 
 class GetRevRegDefResultSchema(BaseModelSchema):
+    """GetRevRegDefResultSchema."""
+
     class Meta:
         """GetRevRegDefResultSchema metadata."""
 
@@ -258,6 +322,19 @@ class RevList(BaseModel):
         timestamp: Optional[int] = None,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            issuer_id: Job ID
+            rev_reg_def_id: Revocation Registry Def. ID
+            revocation_list: Revocation list
+            current_accumulator: Current accumulator
+            timestamp: Timestamp
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
         self.rev_reg_def_id = rev_reg_def_id
@@ -322,6 +399,16 @@ class RevListState(BaseModel):
         state: str,
         revocation_list: RevList,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            state: State
+            revocation_list: Revocation list
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         self.state = state
         self.revocation_list = revocation_list
 
@@ -364,6 +451,18 @@ class RevListResult(BaseModel):
         revocation_list_metadata: dict,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            job_id: Job ID
+            revocation_list_state: Revocation list state
+            registration_metadata: Registration metadata
+            revocation_list_metadata: Revocation list metadata
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.job_id = job_id
         self.revocation_list_state = revocation_list_state
@@ -372,6 +471,7 @@ class RevListResult(BaseModel):
 
     @property
     def rev_reg_def_id(self):
+        """Rev reg def id."""
         return self.revocation_list_state.revocation_list.rev_reg_def_id
 
 
@@ -392,7 +492,7 @@ class RevListResultSchema(BaseModelSchema):
 
 
 class GetRevListResult(BaseModel):
-    """GetRevListResult"""
+    """GetRevListResult."""
 
     class Meta:
         """GetRevListResult metadata."""
@@ -406,6 +506,17 @@ class GetRevListResult(BaseModel):
         revocation_registry_metadata: Dict[str, Any],
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            revocation_list: Revocation list
+            resolution_metadata: Resolution metadata
+            revocation_registry_metadata: Rev Reg metadata
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         super().__init__(**kwargs)
         self.revocation_list = revocation_list
         self.resolution_metadata = resolution_metadata
@@ -413,7 +524,7 @@ class GetRevListResult(BaseModel):
 
 
 class GetRevListResultSchema(BaseModelSchema):
-    """GetRevListResultSchema"""
+    """GetRevListResultSchema."""
 
     class Meta:
         """GetRevListResultSchema metadata."""

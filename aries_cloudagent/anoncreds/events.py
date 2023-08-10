@@ -35,6 +35,15 @@ class CredDefFinishedEvent(Event):
         self,
         payload: CredDefFinishedPayload,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            payload: CredDefFinishedPayload
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         self._topic = CRED_DEF_FINISHED_EVENT
         self._payload = payload
 
@@ -47,6 +56,7 @@ class CredDefFinishedEvent(Event):
         support_revocation: bool,
         max_cred_num: int,
     ):
+        """With payload."""
         payload = CredDefFinishedPayload(
             schema_id, cred_def_id, issuer_id, support_revocation, max_cred_num
         )
@@ -69,6 +79,15 @@ class RevRegDefFinishedEvent(Event):
     """Event for rev reg def finished."""
 
     def __init__(self, payload: RevRegDefFinishedPayload):
+        """
+        Initialize an instance.
+
+        Args:
+            payload: RevRegDefFinishedPayload
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         self._topic = REV_REG_DEF_FINISHED_EVENT
         self._payload = payload
 
@@ -78,6 +97,7 @@ class RevRegDefFinishedEvent(Event):
         rev_reg_def_id: str,
         rev_reg_def: RevRegDef,
     ):
+        """With payload."""
         payload = RevRegDefFinishedPayload(rev_reg_def_id, rev_reg_def)
         return cls(payload)
 
@@ -95,6 +115,15 @@ class RevListFinishedEvent(Event):
     """Event for rev list finished."""
 
     def __init__(self, payload: RevListFinishedPayload):
+        """
+        Initialize an instance.
+
+        Args:
+            payload: RevListFinishedPayload
+
+        TODO: update this docstring - Anoncreds-break.
+
+        """
         self._topic = REV_LIST_FINISHED_EVENT
         self._payload = payload
 

@@ -1,1 +1,1 @@
-"""Routes for Legacy Indy Registry"""
+"""Routes for Legacy Indy Registry."""

@@ -38,6 +38,15 @@ class LedgerObjectAlreadyExistsError(LedgerError, Generic[T]):
         *args,
         **kwargs,
     ):
+        """
+        Initialize an instance.
+
+        Args:
+            message: Human readable message text
+            obj_id: ledger object id
+            obj: ledger object
+
+        """
         super().__init__(message, obj_id, obj, *args, **kwargs)
         self._message = message
         self.obj_id = obj_id
@@ -45,4 +54,5 @@ class LedgerObjectAlreadyExistsError(LedgerError, Generic[T]):
 
     @property
     def message(self):
+        """Error message."""
         return f"{self._message}: {self.obj_id}, {self.obj}"
