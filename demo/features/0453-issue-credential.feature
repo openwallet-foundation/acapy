@@ -1,6 +1,41 @@
 @RFC0453
 Feature: RFC 0453 Aries agent issue credential
 
+  @T004-RFC0453 @GHA-Anoncreds-break @GHA
+  Scenario Outline: Using anoncreds, Issue a credential with revocation, with the Issuer beginning with an offer, and then revoking the credential
+    Given we have "2" agents
+      | name  | role    | capabilities        |
+      | Acme  | issuer  | <Acme_capabilities> |
+      | Bob   | holder  | <Bob_capabilities>  |
+    And "Acme" and "Bob" have an existing connection
+    And Using anoncreds, "Bob" has an issued <Schema_name> credential <Credential_data> from "Acme"
+    Then Using anoncreds, "Acme" revokes the credential
+    And "Bob" has the credential issued
+
+    Examples:
+       | Acme_capabilities                        | Bob_capabilities  | Schema_name    | Credential_data          |
+       | --revocation --cred-type anoncreds --public-did |            | anoncreds-testing | Data_AC_NormalizedValues |
+       | --revocation --cred-type anoncreds --public-did --did-exchange | --did-exchange| anoncreds-testing | Data_AC_NormalizedValues |
+       | --revocation --cred-type anoncreds --public-did --multitenant  | --multitenant | anoncreds-testing | Data_AC_NormalizedValues |
+
+  @T003-RFC0453 @GHA-Anoncreds-break @GHA
+  Scenario Outline: Using anoncreds, Issue a credential with the Issuer beginning with an offer
+    Given we have "2" agents
+      | name  | role    | capabilities        |
+      | Acme  | issuer  | <Acme_capabilities> |
+      | Bob   | holder  | <Bob_capabilities>  |
+    And "Acme" and "Bob" have an existing connection
+    And Using anoncreds, "Acme" is ready to issue a credential for <Schema_name>
+    When "Acme" offers a credential with data <Credential_data>
+    Then "Bob" has the credential issued
+
+    Examples:
+       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
+       | --public-did --cred-type anoncreds     |                           | anoncreds-testing | Data_AC_NormalizedValues |
+       | --public-did --cred-type anoncreds --did-exchange | --did-exchange | anoncreds-testing | Data_AC_NormalizedValues |
+       | --public-did --cred-type anoncreds --mediation | --mediation       | anoncreds-testing | Data_AC_NormalizedValues |
+       | --public-did --cred-type anoncreds --multitenant | --multitenant   | anoncreds-testing | Data_AC_NormalizedValues |
+
   @T003-RFC0453 @GHA-Anoncreds-break
   Scenario Outline: Issue a credential with the Issuer beginning with an offer
     Given we have "2" agents

@@ -23,6 +23,7 @@ from runners.support.agent import (  # noqa:E402
     connect_wallet_to_endorser,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
+    CRED_FORMAT_ANONCREDS,
     DID_METHOD_KEY,
     KEY_TYPE_BLS,
 )
@@ -246,7 +247,11 @@ class AriesAgent(DemoAgent):
 
         elif state == "offer-received":
             log_status("#15 After receiving credential offer, send credential request")
-            if message["by_format"]["cred_offer"].get("indy"):
+            if not message.get("by_format"):
+                await self.admin_POST(
+                    f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
+                )
+            elif message["by_format"]["cred_offer"].get("indy"):
                 await self.admin_POST(
                     f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
                 )
@@ -609,7 +614,12 @@ class AriesAgent(DemoAgent):
             await self.detect_connection()
 
     async def create_schema_and_cred_def(
-        self, schema_name, schema_attrs, revocation, version=None
+        self,
+        schema_name,
+        schema_attrs,
+        revocation,
+        version=None,
+        cred_type=CRED_FORMAT_INDY,
     ):
         with log_timer("Publish schema/cred def duration:"):
             log_status("#3/4 Create a new schema/cred def on the ledger")
@@ -631,6 +641,7 @@ class AriesAgent(DemoAgent):
                 schema_attrs,
                 support_revocation=revocation,
                 revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
+                cred_type=cred_type,
             )
             return cred_def_id
 
@@ -749,7 +760,7 @@ class AgentContainer:
         # create public DID ... UNLESS we are an author ...
         if (not self.endorser_role) or (self.endorser_role == "endorser"):
             if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
-                await self.agent.register_did(cred_type=CRED_FORMAT_INDY)
+                await self.agent.register_did(cred_type=self.cred_type)
                 log_msg("Created public DID")
 
         # if we are endorsing, create the endorser agent first, then we can use the
@@ -854,10 +865,14 @@ class AgentContainer:
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
             # need to redister schema and cred def on the ledger
             self.cred_def_id = await self.agent.create_schema_and_cred_def(
-                schema_name, schema_attrs, self.revocation, version=version
+                schema_name,
+                schema_attrs,
+                self.revocation,
+                version=version,
+                cred_type=self.cred_type,
             )
             return self.cred_def_id
         elif self.cred_type == CRED_FORMAT_JSON_LD:
@@ -874,7 +889,7 @@ class AgentContainer:
     ):
         log_status("#13 Issue credential offer to X")
 
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
                 "attributes": cred_attrs,
@@ -1332,10 +1347,16 @@ async def create_agent_with_args(args, ident: str = None):
     else:
         aip = 20
 
-    if "cred_type" in args and args.cred_type != CRED_FORMAT_INDY:
+    if "cred_type" in args and args.cred_type not in [
+        CRED_FORMAT_INDY,
+        CRED_FORMAT_ANONCREDS,
+    ]:
         public_did = None
         aip = 20
-    elif "cred_type" in args and args.cred_type == CRED_FORMAT_INDY:
+    elif "cred_type" in args and args.cred_type in [
+        CRED_FORMAT_INDY,
+        CRED_FORMAT_ANONCREDS,
+    ]:
         public_did = True
     else:
         public_did = args.public_did if "public_did" in args else None

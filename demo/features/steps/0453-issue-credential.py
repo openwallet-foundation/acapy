@@ -45,7 +45,32 @@ def step_impl(context, issuer, schema_name):
     # confirm the cred def was actually created
     async_sleep(2.0)
     cred_def_saved = agent_container_GET(
-        agent["agent"], "/credential-definitions/" + cred_def_id
+        agent["agent"], "/credential-definition/" + cred_def_id
+    )
+    assert cred_def_saved
+
+    context.schema_name = schema_name
+    context.cred_def_id = cred_def_id
+
+
+@given('Using anoncreds, "{issuer}" is ready to issue a credential for {schema_name}')
+@then('Using anoncreds, "{issuer}" is ready to issue a credential for {schema_name}')
+def step_impl(context, issuer, schema_name):
+    agent = context.active_agents[issuer]
+
+    schema_info = read_schema_data(schema_name)
+
+    cred_def_id = aries_container_create_schema_cred_def(
+        agent["agent"],
+        schema_info["schema"]["name"],
+        schema_info["schema"]["attrNames"],
+        version=schema_info["schema"]["version"],
+    )
+
+    # confirm the cred def was actually created
+    async_sleep(2.0)
+    cred_def_saved = agent_container_GET(
+        agent["agent"], f"/anoncreds/credential-definition/{cred_def_id}"
     )
     assert cred_def_saved
 
@@ -111,6 +136,59 @@ def step_impl(context, holder):
 
     # pause for a few seconds
     async_sleep(3.0)
+
+
+@given('Using anoncreds, "{holder}" revokes the credential')
+@when('Using anoncreds, "{holder}" revokes the credential')
+@then('Using anoncreds, "{holder}" revokes the credential')
+def step_impl(context, holder):
+    agent = context.active_agents[holder]
+
+    # get the required revocation info from the last credential exchange
+    cred_exchange = context.cred_exchange
+    cred_ex_id = (
+        cred_exchange["cred_ex_id"]
+        if "cred_ex_id" in cred_exchange
+        else cred_exchange["cred_ex_record"]["cred_ex_id"]
+    )
+    # refresh it...
+    cred_exchange = agent_container_GET(
+        agent["agent"], "/issue-credential-2.0/records/" + cred_ex_id
+    )
+    context.cred_exchange = cred_exchange
+    print("cred_exchange:", json.dumps(cred_exchange))
+    # we need the connection id...
+    connection_id = (
+        cred_exchange["connection_id"]
+        if "connection_id" in cred_exchange
+        else cred_exchange["cred_ex_record"]["connection_id"]
+    )
+
+    cred_exchange = agent_container_POST(
+        agent["agent"],
+        "/anoncreds/revoke",
+        data={
+            "cred_ex_id": cred_ex_id,
+            "connection_id": connection_id,
+            "notify": True,
+        },
+    )
+    async_sleep(3.0)
+    # publish the revocations
+    publish_response = agent_container_POST(
+        agent["agent"],
+        "/anoncreds/publish-revocations",
+        data={},
+    )
+    print("publish_response:", json.dumps(publish_response))
+    # pause for a few seconds
+    async_sleep(3.0)
+    # refresh it...
+    cred_exchange = agent_container_GET(
+        agent["agent"], "/issue-credential-2.0/records/" + cred_ex_id
+    )
+    context.cred_exchange = cred_exchange
+    # print("cred_exchange:", json.dumps(cred_exchange))
 
 
 @given('"{holder}" successfully revoked the credential')
@@ -341,6 +419,56 @@ def step_impl(context, issuer, holder, credential_data):
     pass
 
 
+@when(
+    '"{issuer}" offers "{holder}" an anoncreds credential with data {credential_data}'
+)
+def step_impl(context, issuer, holder, credential_data):
+    # initiate a cred exchange with an anoncreds credential
+    agent = context.active_agents[issuer]
+    holder_agent = context.active_agents[holder]
+
+    offer_request = {
+        "connection_id": agent["agent"].agent.connection_id,
+        "filter": {
+            "ld_proof": {
+                "credential": {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                    ],
+                    "type": [
+                        "VerifiableCredential",
+                        "PermanentResident",
+                    ],
+                    "id": "https://credential.example.com/residents/1234567890",
+                    "issuer": agent["agent"].agent.did,
+                    "issuanceDate": "2020-01-01T12:00:00Z",
+                    "credentialSubject": {
+                        "type": ["PermanentResident"],
+                        # let the holder set this
+                        # "id": holder_agent["agent"].agent.did,
+                        "givenName": "ALICE",
+                        "familyName": "SMITH",
+                        "gender": "Female",
+                        "birthCountry": "Bahamas",
+                        "birthDate": "1958-07-17",
+                    },
+                },
+                "options": {"proofType": SIG_TYPE_BLS},
+            }
+        },
+    }
+
+    agent_container_POST(
+        agent["agent"],
+        "/issue-credential-2.0/send-offer",
+        offer_request,
+    )
+
+    # TODO test for goodness
+    pass
+
+
 @then('"{holder}" has the json-ld credential issued')
 def step_impl(context, holder):
     # verify the holder has a w3c credential
@@ -395,6 +523,29 @@ def step_impl(context, holder, schema_name, credential_data, issuer):
     context.execute_steps(
         '''
         Given "'''
+        + issuer
+        + """" is ready to issue a credential for """
+        + schema_name
+        + '''
+        When "'''
+        + issuer
+        + """" offers a credential with data """
+        + credential_data
+        + '''
+        Then "'''
+        + holder
+        + """" has the credential issued
+    """
+    )
+
+
+@given(
+    'Using anoncreds, "{holder}" has an issued {schema_name} credential {credential_data} from "{issuer}"'
+)
+def step_impl(context, holder, schema_name, credential_data, issuer):
+    context.execute_steps(
+        '''
+        Given Using anoncreds, "'''
         + issuer
         + """" is ready to issue a credential for """
         + schema_name
