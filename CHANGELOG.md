@@ -68,7 +68,7 @@ deleted from ACA-Py storage.
 - Dependencies and Internal Updates
   - chore(deps): Bump certifi from 2023.5.7 to 2023.7.22 in /demo/playground/scripts dependencies [\#2354](https://github.com/hyperledger/aries-cloudagent-python/pull/2354) [dependabot bot](https://github.com/dependabot bot)
 - Release management pull requests
-  - 0.10.0-rc0 [\#2413](https://github.com/hyperledger/aries-cloudagent-python/pull/2413) [swcurran](https://github.com/swcurran)
+  - 0.10.0-rc0 [\#2414](https://github.com/hyperledger/aries-cloudagent-python/pull/2414) [swcurran](https://github.com/swcurran)
 
 # 0.9.0
 
