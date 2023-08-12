@@ -1286,9 +1286,17 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save_ex, async_mock.patch.object(
             V20CredExRecord, "delete_record", autospec=True
         ) as mock_delete_ex, async_mock.patch.object(
-            test_module.LOGGER, "exception", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
+            ),
         ) as mock_log_exception, async_mock.patch.object(
-            test_module.LOGGER, "warning", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(warning=async_mock.MagicMock()),
+            ),
         ) as mock_log_warning:
             mock_delete_ex.side_effect = test_module.StorageError()
             (_, ack) = await self.manager.send_cred_ack(stored_exchange)

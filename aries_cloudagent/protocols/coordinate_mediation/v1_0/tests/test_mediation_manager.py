@@ -376,6 +376,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         self,
         session: ProfileSession,
         manager: MediationManager,
+        profile: Profile,
     ):
         """test_store_update_results."""
         await RouteRecord(
@@ -412,23 +413,37 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         with async_mock.patch.object(
             RouteRecord, "query", async_mock.CoroutineMock()
         ) as mock_route_rec_query, async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    error=async_mock.MagicMock(),
+                ),
+            )
         ) as mock_logger_error:
+            _manager_with_mock_logger = MediationManager(profile)
             mock_route_rec_query.side_effect = StorageNotFoundError("no record")
 
-            await manager.store_update_results(TEST_CONN_ID, results)
+            await _manager_with_mock_logger.store_update_results(TEST_CONN_ID, results)
             mock_logger_error.assert_called_once()
 
         with async_mock.patch.object(
             RouteRecord, "query", async_mock.CoroutineMock()
         ) as mock_route_rec_query, async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    error=async_mock.MagicMock(),
+                ),
+            )
         ) as mock_logger_error:
+            _manager_with_mock_logger = MediationManager(profile)
             mock_route_rec_query.return_value = [
                 async_mock.MagicMock(delete_record=async_mock.CoroutineMock())
             ] * 2
 
-            await manager.store_update_results(TEST_CONN_ID, results)
+            await _manager_with_mock_logger.store_update_results(TEST_CONN_ID, results)
             mock_logger_error.assert_called_once()
 
     async def test_store_update_results_exists_relay(self, session, manager):

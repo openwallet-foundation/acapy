@@ -59,7 +59,6 @@ from ....message_types import (
 from ...handler import V20CredFormatError
 
 from ..handler import LDProofCredFormatHandler
-from ..handler import LOGGER as LD_PROOF_LOGGER
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
@@ -214,7 +213,11 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         await details_ld_proof[1].save(self.session)  # exercise logger warning on get()
 
         with async_mock.patch.object(
-            LD_PROOF_LOGGER, "warning", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(warning=async_mock.MagicMock()),
+            ),
         ) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_ld_proof
             mock_warning.assert_called_once()

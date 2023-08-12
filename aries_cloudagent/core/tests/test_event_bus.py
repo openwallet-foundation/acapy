@@ -85,7 +85,14 @@ def test_unsub_unsubbed_processor(event_bus: EventBus, processor):
 async def test_sub_notify(event_bus: EventBus, profile, event, processor):
     """Test subscriber receives event."""
     event_bus.subscribe(re.compile(".*"), processor)
-    await event_bus.notify(profile, event)
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(debug=async_mock.MagicMock()),
+        ),
+    ):
+        await event_bus.notify(profile, event)
     assert processor.profile == profile
     assert processor.event == event
 
@@ -106,7 +113,14 @@ async def test_sub_notify_error_logged_and_exec_continues(
     event_bus.subscribe(re.compile(".*"), bad_processor)
     event_bus.subscribe(re.compile(".*"), processor)
     with async_mock.patch.object(
-        test_module.LOGGER, "exception", async_mock.MagicMock()
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(
+                debug=async_mock.MagicMock(),
+                exception=async_mock.MagicMock(),
+            ),
+        ),
     ) as mock_log_exc:
         await event_bus.notify(profile, event)
 
@@ -128,53 +142,87 @@ async def test_sub_notify_regex_filtering(
     event_bus: EventBus, profile, processor, pattern, topic
 ):
     """Test events are filtered correctly."""
-    event = Event(topic)
-    event_bus.subscribe(re.compile(pattern), processor)
-    await event_bus.notify(profile, event)
-    assert processor.profile == profile
-    assert processor.event == event
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(debug=async_mock.MagicMock()),
+        ),
+    ):
+        event = Event(topic)
+        event_bus.subscribe(re.compile(pattern), processor)
+        await event_bus.notify(profile, event)
+        assert processor.profile == profile
+        assert processor.event == event
 
 
 @pytest.mark.asyncio
 async def test_sub_notify_no_match(event_bus: EventBus, profile, event, processor):
     """Test event not given to processor when pattern doesn't match."""
-    event_bus.subscribe(re.compile("^$"), processor)
-    await event_bus.notify(profile, event)
-    assert processor.profile is None
-    assert processor.event is None
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(debug=async_mock.MagicMock()),
+        ),
+    ):
+        event_bus.subscribe(re.compile("^$"), processor)
+        await event_bus.notify(profile, event)
+        assert processor.profile is None
+        assert processor.event is None
 
 
 @pytest.mark.asyncio
 async def test_sub_notify_only_one(event_bus: EventBus, profile, event, processor):
     """Test only one subscriber is called when pattern matches only one."""
-    processor1 = MockProcessor()
-    event_bus.subscribe(re.compile(".*"), processor)
-    event_bus.subscribe(re.compile("^$"), processor1)
-    await event_bus.notify(profile, event)
-    assert processor.profile == profile
-    assert processor.event == event
-    assert processor1.profile is None
-    assert processor1.event is None
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(debug=async_mock.MagicMock()),
+        ),
+    ):
+        processor1 = MockProcessor()
+        event_bus.subscribe(re.compile(".*"), processor)
+        event_bus.subscribe(re.compile("^$"), processor1)
+        await event_bus.notify(profile, event)
+        assert processor.profile == profile
+        assert processor.event == event
+        assert processor1.profile is None
+        assert processor1.event is None
 
 
 @pytest.mark.asyncio
 async def test_sub_notify_both(event_bus: EventBus, profile, event, processor):
     """Test both subscribers are called when pattern matches both."""
-    processor1 = MockProcessor()
-    event_bus.subscribe(re.compile(".*"), processor)
-    event_bus.subscribe(re.compile("anything"), processor1)
-    await event_bus.notify(profile, event)
-    assert processor.profile == profile
-    assert processor.event == event
-    assert processor1.profile == profile
-    assert processor1.event == event
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(debug=async_mock.MagicMock()),
+        ),
+    ):
+        processor1 = MockProcessor()
+        event_bus.subscribe(re.compile(".*"), processor)
+        event_bus.subscribe(re.compile("anything"), processor1)
+        await event_bus.notify(profile, event)
+        assert processor.profile == profile
+        assert processor.event == event
+        assert processor1.profile == profile
+        assert processor1.event == event
 
 
 @pytest.mark.asyncio
 async def test_wait_for_event_multiple_do_not_collide(event_bus: EventBus, profile):
     """Test multiple wait_for_event calls don't collide."""
     pattern = re.compile(".*")
-    with event_bus.wait_for_event(profile, pattern) as event1:
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(debug=async_mock.MagicMock()),
+        ),
+    ), event_bus.wait_for_event(profile, pattern) as event1:
         with event_bus.wait_for_event(profile, pattern) as event2:
             assert len(event_bus.topic_patterns_to_subscribers) == 1
             assert len(event_bus.topic_patterns_to_subscribers[pattern]) == 2
@@ -186,7 +234,13 @@ async def test_wait_for_event_multiple_do_not_collide(event_bus: EventBus, profi
 
 @pytest.mark.asyncio
 async def test_wait_for_event(event_bus: EventBus, profile, event):
-    with event_bus.wait_for_event(profile, re.compile(".*")) as returned_event:
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(debug=async_mock.MagicMock()),
+        ),
+    ), event_bus.wait_for_event(profile, re.compile(".*")) as returned_event:
         await event_bus.notify(profile, event)
         assert await returned_event == event
 
@@ -195,7 +249,13 @@ async def test_wait_for_event(event_bus: EventBus, profile, event):
 async def test_wait_for_event_condition(event_bus: EventBus, profile, event):
     with event_bus.wait_for_event(
         profile, re.compile(".*"), lambda e: e.payload == "asdf"
-    ) as returned_event:
+    ) as returned_event, async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(debug=async_mock.MagicMock()),
+        ),
+    ):
         # This shouldn't trigger our condition because payload == "payload"
         await event_bus.notify(profile, event)
         assert not returned_event.done()

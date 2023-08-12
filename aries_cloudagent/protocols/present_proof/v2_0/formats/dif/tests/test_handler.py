@@ -1968,7 +1968,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
         with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+            ),
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2021,7 +2025,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
         with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+            ),
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2074,7 +2082,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
         with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+            ),
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2124,7 +2136,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
         with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+            ),
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2174,7 +2190,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
         with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+            ),
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2264,7 +2284,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
         with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+            ),
         ) as mock_log_err, async_mock.patch.object(
             jsonld, "expand", async_mock.MagicMock()
         ) as mock_jsonld_expand:

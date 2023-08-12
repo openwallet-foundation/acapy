@@ -13,6 +13,8 @@ from ...handlers import problem_report_handler as test_module
 from ...manager import OutOfBandManagerError
 from ...messages.problem_report import OOBProblemReport, ProblemReportReason
 
+from .. import problem_report_handler as test_module
+
 
 @pytest.fixture()
 async def request_context() -> RequestContext:
@@ -69,8 +71,12 @@ class TestOOBProblemReportHandler:
         )
         handler = test_module.OOBProblemReportMessageHandler()
         with async_mock.patch.object(
-            handler._logger, "exception", async_mock.MagicMock()
-        ) as mock_exc_logger:
+                test_module,
+                "get_logger_inst",
+                async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
+                ),
+            ) as mock_exc_logger:
             responder = MockResponder()
             await handler.handle(context=request_context, responder=responder)
 

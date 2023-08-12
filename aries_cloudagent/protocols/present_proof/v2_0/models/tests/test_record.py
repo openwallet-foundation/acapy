@@ -129,7 +129,11 @@ class TestRecord(AsyncTestCase):
         with async_mock.patch.object(
             record, "save", async_mock.CoroutineMock()
         ) as mock_save, async_mock.patch.object(
-            test_module.LOGGER, "exception", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
+            ),
         ) as mock_log_exc:
             mock_save.side_effect = test_module.StorageError()
             await record.save_error_state(session, reason="testing")

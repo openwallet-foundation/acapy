@@ -1552,20 +1552,34 @@ class TestCredentialManager(AsyncTestCase):
         ) as mock_save_ex, async_mock.patch.object(
             V10CredentialExchange, "delete_record", autospec=True
         ) as mock_delete_ex, async_mock.patch.object(
-            test_module.LOGGER, "exception", async_mock.MagicMock()
-        ) as mock_log_exception, async_mock.patch.object(
-            test_module.LOGGER, "warning", async_mock.MagicMock()
-        ) as mock_log_warning:
+            test_module, "get_logger_inst", async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    exception=async_mock.MagicMock(),
+                    warning=async_mock.MagicMock(),
+                ),
+            )
+        ) as mock_log_exception:
+            # async_mock.patch.object(
+            #     test_module, "get_logger_inst", async_mock.MagicMock(
+            #         return_value=async_mock.MagicMock(
+            #             exception=async_mock.MagicMock(),
+            #             warning=async_mock.MagicMock(),
+            #         ),
+            #     )
+            # ) as mock_logger
+            _manager = CredentialManager(self.profile)
             mock_delete_ex.side_effect = test_module.StorageError()
-            (exch, ack) = await self.manager.send_credential_ack(stored_exchange)
+            (exch, ack) = await _manager.send_credential_ack(stored_exchange)
             assert ack._thread
+            # raise Exception(str(mock_logger.exception.call_count) + "\n\n" + str(mock_logger.warning.call_count))
+            raise Exception(str(mock_log_exception.call_count))
             mock_log_exception.assert_called_once()  # cover exception log-and-continue
             mock_log_warning.assert_called_once()  # no BaseResponder
             assert exch.state == V10CredentialExchange.STATE_ACKED
 
             mock_responder = MockResponder()  # cover with responder
             self.context.injector.bind_instance(BaseResponder, mock_responder)
-            (exch, ack) = await self.manager.send_credential_ack(stored_exchange)
+            (exch, ack) = await _manager.send_credential_ack(stored_exchange)
             assert ack._thread
             assert exch.state == V10CredentialExchange.STATE_ACKED
 

@@ -100,7 +100,11 @@ class TestPresentationProposalHandler(AsyncTestCase):
             responder = MockResponder()
 
             with async_mock.patch.object(
-                handler._logger, "exception", async_mock.MagicMock()
+                test_module,
+                "get_logger_inst",
+                async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
+                ),
             ) as mock_log_exc:
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()

@@ -646,7 +646,11 @@ class TestPresentationManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_decorator, async_mock.patch.object(
-            test_indy_util_module.LOGGER, "info", async_mock.MagicMock()
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(info=async_mock.MagicMock()),
+            ),
         ) as mock_log_info:
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
