@@ -1,5 +1,8 @@
 """Handler for incoming forward invitation messages."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -18,7 +21,11 @@ class ForwardInvitationHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        self._logger.debug("ForwardInvitationHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("ForwardInvitationHandler called with context %s", context)
         assert isinstance(context.message, ForwardInvitation)
 
         if not context.connection_ready:
@@ -33,7 +40,7 @@ class ForwardInvitationHandler(BaseHandler):
         try:
             await connection_mgr.receive_invitation(context.message.invitation)
         except ConnectionManagerError as e:
-            self._logger.exception("Error receiving forward connection invitation")
+            _logger.exception("Error receiving forward connection invitation")
             await responder.send_reply(
                 ProblemReport(
                     description={

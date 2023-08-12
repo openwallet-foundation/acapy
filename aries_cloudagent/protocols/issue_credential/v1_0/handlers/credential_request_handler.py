@@ -1,5 +1,8 @@
 """Credential request message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
@@ -28,10 +31,14 @@ class CredentialRequestHandler(BaseHandler):
 
         """
         r_time = get_timer()
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
         profile = context.profile
-        self._logger.debug("CredentialRequestHandler called with context %s", context)
+        _logger.debug("CredentialRequestHandler called with context %s", context)
         assert isinstance(context.message, CredentialRequest)
-        self._logger.info(
+        _logger.info(
             "Received credential request message: %s",
             context.message.serialize(as_string=True),
         )
@@ -87,7 +94,7 @@ class CredentialRequestHandler(BaseHandler):
                     LedgerError,
                     StorageError,
                 ) as err:
-                    self._logger.exception("Error responding to credential request")
+                    _logger.exception("Error responding to credential request")
                     if cred_ex_record:
                         async with profile.session() as session:
                             await cred_ex_record.save_error_state(
@@ -108,7 +115,7 @@ class CredentialRequestHandler(BaseHandler):
                     perf_counter=r_time,
                 )
             else:
-                self._logger.warning(
+                _logger.warning(
                     "Operation set for auto-issue but credential exchange record "
                     f"{cred_ex_record.credential_exchange_id} "
                     "has no attribute values"

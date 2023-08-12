@@ -1,5 +1,8 @@
 """Handler for incoming disclose messages."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -16,7 +19,11 @@ class DiscloseHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        self._logger.debug("DiscloseHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("DiscloseHandler called with context %s", context)
         assert isinstance(context.message, Disclose)
         if not context.connection_ready:
             raise HandlerException(

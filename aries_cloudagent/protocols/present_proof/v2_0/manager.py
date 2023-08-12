@@ -4,11 +4,13 @@ import logging
 
 from typing import Optional, Tuple
 
-from ...out_of_band.v1_0.models.oob_record import OobRecord
+from ....config.logging import get_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
+
+from ...out_of_band.v1_0.models.oob_record import OobRecord
 
 from .messages.pres import V20Pres
 from .messages.pres_ack import V20PresAck
@@ -17,9 +19,6 @@ from .messages.pres_problem_report import V20PresProblemReport, ProblemReportRea
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
 from .models.pres_exchange import V20PresExRecord
-
-
-LOGGER = logging.getLogger(__name__)
 
 
 class V20PresManagerError(BaseError):
@@ -37,6 +36,10 @@ class V20PresManager:
         """
 
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     async def create_exchange_for_proposal(
         self,
@@ -440,7 +443,7 @@ class V20PresManager:
                 async with self._profile.session() as session:
                     await pres_ex_record.delete_record(session)
         else:
-            LOGGER.warning(
+            self._logger.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
                 pres_ex_record.thread_id,
             )

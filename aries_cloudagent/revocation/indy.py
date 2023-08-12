@@ -3,6 +3,7 @@ import logging
 from typing import Optional, Sequence, Tuple
 from uuid import uuid4
 
+from ..config.logging import get_logger_inst
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.multiple_ledger.ledger_requests_executor import (
@@ -27,8 +28,6 @@ from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.revocation_registry import RevocationRegistry
 from .util import notify_revocation_reg_init_event
 
-LOGGER = logging.getLogger(__name__)
-
 
 class IndyRevocation:
     """Class for managing Indy credential revocation."""
@@ -38,6 +37,10 @@ class IndyRevocation:
     def __init__(self, profile: Profile):
         """Initialize the IndyRevocation instance."""
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     async def init_issuer_registry(
         self,
@@ -125,9 +128,9 @@ class IndyRevocation:
         )
 
         for rec in recs:
-            LOGGER.debug(f"decommission {rec.state} rev. reg.")
-            LOGGER.debug(f"revoc_reg_id: {rec.revoc_reg_id}")
-            LOGGER.debug(f"cred_def_id: {cred_def_id}")
+            self._logger.debug(f"decommission {rec.state} rev. reg.")
+            self._logger.debug(f"revoc_reg_id: {rec.revoc_reg_id}")
+            self._logger.debug(f"cred_def_id: {cred_def_id}")
             # decommission active registry, we need to init a replacement
             init = IssuerRevRegRecord.STATE_ACTIVE == rec.state
             await self._set_registry_status(

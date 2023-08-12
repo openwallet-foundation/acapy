@@ -1,5 +1,8 @@
 """Transaction resend handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -21,8 +24,11 @@ class TransactionResendHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-
-        self._logger.debug(f"TransactionResendHandler called with context {context}")
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug(f"TransactionResendHandler called with context {context}")
         assert isinstance(context.message, TransactionResend)
 
         if not context.connection_ready:
@@ -34,4 +40,4 @@ class TransactionResendHandler(BaseHandler):
                 context.message, context.connection_record.connection_id
             )
         except TransactionManagerError:
-            self._logger.exception("Error receiving resend transaction request")
+            _logger.exception("Error receiving resend transaction request")

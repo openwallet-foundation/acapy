@@ -5,6 +5,7 @@ from typing import Any, Mapping, Union
 
 from marshmallow import Schema, fields, validate
 
+from .....config.logging import get_logger_inst
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUID4_EXAMPLE
@@ -15,8 +16,6 @@ from ..messages.pres_proposal import V20PresProposal, V20PresProposalSchema
 from ..messages.pres_request import V20PresRequest, V20PresRequestSchema
 from ..messages.pres_webhook import V20PresExRecordWebhook
 from . import UNENCRYPTED_TAGS
-
-LOGGER = logging.getLogger(__name__)
 
 
 class V20PresExRecord(BaseExchangeRecord):
@@ -162,7 +161,10 @@ class V20PresExRecord(BaseExchangeRecord):
             log_params: Additional parameters to log
             override: Override configured logging regimen, print to stderr instead
         """
-
+        _logger: logging.Logger = get_logger_inst(
+            profile=session.profile,
+            logger_name=__name__,
+        )
         if self._last_state == state:  # already done
             return
 
@@ -178,7 +180,7 @@ class V20PresExRecord(BaseExchangeRecord):
                 log_override=log_override,
             )
         except StorageError as err:
-            LOGGER.exception(err)
+            _logger.exception(err)
 
     # Override
     async def emit_event(self, session: ProfileSession, payload: Any = None):

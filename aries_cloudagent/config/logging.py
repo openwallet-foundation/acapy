@@ -10,18 +10,20 @@ from random import randint
 import re
 import sys
 import time as mod_time
-from typing import Optional, TextIO
+from typing import Optional, TextIO, TYPE_CHECKING
 
 import pkg_resources
 from portalocker import LOCK_EX, lock, unlock
 from pythonjsonlogger import jsonlogger
 
 from ..config.settings import Settings
-from ..core.profile import Profile
 from ..version import __version__
 from ..wallet.base import BaseWallet, DIDInfo
 from .banner import Banner
 from .base import BaseSettings
+
+if TYPE_CHECKING:  # To avoid circular import error
+    from ..core.profile import Profile
 
 
 DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
@@ -521,7 +523,7 @@ def clear_prev_handlers(logger: logging.Logger) -> logging.Logger:
     return logger
 
 
-def get_logger_inst(profile: Profile, logger_name) -> logging.Logger:
+def get_logger_inst(profile: "Profile", logger_name) -> logging.Logger:
     """Return a logger instance with provided name and handlers."""
     did_ident = get_did_ident(profile)
     if did_ident:
@@ -536,7 +538,7 @@ def get_logger_inst(profile: Profile, logger_name) -> logging.Logger:
     )
 
 
-def get_did_ident(profile: Profile) -> Optional[str]:
+def get_did_ident(profile: "Profile") -> Optional[str]:
     """Get public did identifier for logging, if applicable."""
     did_ident = None
     if profile.settings.get("log.file"):

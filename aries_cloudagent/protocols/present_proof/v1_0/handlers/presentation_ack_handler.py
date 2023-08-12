@@ -1,5 +1,8 @@
 """Presentation ack message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
@@ -21,10 +24,13 @@ class PresentationAckHandler(BaseHandler):
             responder: responder callback
         """
         r_time = get_timer()
-
-        self._logger.debug("PresentationAckHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("PresentationAckHandler called with context %s", context)
         assert isinstance(context.message, PresentationAck)
-        self._logger.info(
+        _logger.info(
             "Received presentation ack message: %s",
             context.message.serialize(as_string=True),
         )

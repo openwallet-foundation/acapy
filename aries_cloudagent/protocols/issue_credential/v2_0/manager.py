@@ -4,6 +4,7 @@ import logging
 
 from typing import Mapping, Optional, Tuple
 
+from ....config.logging import get_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.oob_processor import OobRecord
 from ....core.error import BaseError
@@ -21,8 +22,6 @@ from .messages.cred_request import V20CredRequest
 from .messages.inner.cred_preview import V20CredPreview
 from .models.cred_ex_record import V20CredExRecord
 
-LOGGER = logging.getLogger(__name__)
-
 
 class V20CredManagerError(BaseError):
     """Credential manager error under issue-credential protocol v2.0."""
@@ -38,6 +37,10 @@ class V20CredManager:
             profile: The profile instance for this credential manager
         """
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     @property
     def profile(self) -> Profile:
@@ -649,7 +652,7 @@ class V20CredManager:
                 await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
         except StorageError:
-            LOGGER.exception(
+            self._logger.exception(
                 "Error sending credential ack"
             )  # holder still owes an ack: carry on
 
@@ -660,7 +663,7 @@ class V20CredManager:
                 connection_id=cred_ex_record.connection_id,
             )
         else:
-            LOGGER.warning(
+            self._logger.warning(
                 "Configuration has no BaseResponder: cannot ack credential on %s",
                 cred_ex_record.thread_id,
             )

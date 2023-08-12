@@ -1,5 +1,8 @@
 """Credential proposal message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -27,10 +30,13 @@ class V20CredProposalHandler(BaseHandler):
 
         """
         r_time = get_timer()
-
-        self._logger.debug("V20CredProposalHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("V20CredProposalHandler called with context %s", context)
         assert isinstance(context.message, V20CredProposal)
-        self._logger.info(
+        _logger.info(
             "Received v2.0 credential proposal message: %s",
             context.message.serialize(as_string=True),
         )
@@ -73,7 +79,7 @@ class V20CredProposalHandler(BaseHandler):
                 StorageError,
                 V20CredManagerError,
             ) as err:
-                self._logger.exception("Error responding to credential proposal")
+                _logger.exception("Error responding to credential proposal")
                 async with profile.session() as session:
                     await cred_ex_record.save_error_state(
                         session,

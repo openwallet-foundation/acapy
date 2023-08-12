@@ -1,4 +1,5 @@
 """Multiple IndySdkLedger Manager."""
+
 import asyncio
 import concurrent.futures
 import logging
@@ -8,6 +9,7 @@ from collections import OrderedDict
 from typing import Optional, Tuple, Mapping, List
 
 from ...cache.base import BaseCache
+from ...config.logging import get_logger_inst
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
@@ -21,8 +23,6 @@ from ..merkel_validation.domain_txn_handler import (
 from ..merkel_validation.trie import SubTrie
 
 from .base_manager import BaseMultipleLedgerManager, MultipleLedgerManagerError
-
-LOGGER = logging.getLogger(__name__)
 
 
 class MultiIndyLedgerManager(BaseMultipleLedgerManager):
@@ -53,6 +53,10 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         self.endorser_map = endorser_map
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     async def get_write_ledgers(self) -> List[str]:
         """Return the write IndySdkLedger instance."""
@@ -124,7 +128,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
                 response = json.loads(response_json)
                 data = response.get("result", {}).get("data")
                 if not data:
-                    LOGGER.warning(f"Did {did} not posted to ledger {ledger_id}")
+                    self._logger.warning(f"Did {did} not posted to ledger {ledger_id}")
                     return None
                 if isinstance(data, str):
                     data = json.loads(data)
@@ -132,7 +136,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
                     expected_value=prepare_for_state_read(response),
                     proof_nodes=get_proof_nodes(response),
                 ):
-                    LOGGER.warning(
+                    self._logger.warning(
                         f"State Proof validation failed for Did {did} "
                         f"and ledger {ledger_id}"
                     )
@@ -141,13 +145,13 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
                     return (ledger_id, indy_sdk_ledger, True)
                 return (ledger_id, indy_sdk_ledger, False)
         except asyncio.TimeoutError:
-            LOGGER.exception(
+            self._logger.exception(
                 f"get-nym request timedout for Did {did} and "
                 f"ledger {ledger_id}, reply not received within 10 sec"
             )
             return None
         except LedgerError as err:
-            LOGGER.error(
+            self._logger.error(
                 "Exception when building and submitting get-nym request, "
                 f"for Did {did} and ledger {ledger_id}, {err}"
             )

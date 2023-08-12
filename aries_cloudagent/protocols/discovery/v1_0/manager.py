@@ -5,6 +5,7 @@ import logging
 
 from typing import Optional
 
+from ....config.logging import get_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....core.protocol_registry import ProtocolRegistry
@@ -30,7 +31,10 @@ class V10DiscoveryMgr:
             profile: The profile for this manager
         """
         self._profile = profile
-        self._logger = logging.getLogger(__name__)
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     @property
     def profile(self) -> Profile:

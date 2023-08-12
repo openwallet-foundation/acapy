@@ -1,5 +1,8 @@
 """Presentation request message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....ledger.error import LedgerError
@@ -31,10 +34,13 @@ class V20PresRequestHandler(BaseHandler):
 
         """
         r_time = get_timer()
-
-        self._logger.debug("V20PresRequestHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("V20PresRequestHandler called with context %s", context)
         assert isinstance(context.message, V20PresRequest)
-        self._logger.info(
+        _logger.info(
             "Received v2.0 presentation request message: %s",
             context.message.serialize(as_string=True),
         )
@@ -122,7 +128,7 @@ class V20PresRequestHandler(BaseHandler):
                 WalletNotFoundError,
                 V20PresFormatHandlerError,
             ) as err:
-                self._logger.exception(err)
+                _logger.exception(err)
                 if pres_ex_record:
                     async with profile.session() as session:
                         await pres_ex_record.save_error_state(

@@ -3,6 +3,7 @@ import json
 import logging
 from typing import Dict, Optional, Sequence, Tuple
 
+from ....config.logging import get_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
 from ....storage.base import BaseStorage
@@ -27,8 +28,6 @@ from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
 from .normalization import normalize_from_did_key
-
-LOGGER = logging.getLogger(__name__)
 
 
 class MediationManagerError(BaseError):
@@ -67,6 +66,10 @@ class MediationManager:
         self._profile = profile
         if not profile:
             raise MediationManagerError("Missing profile")
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     # Role: Server {{{
 
@@ -580,7 +583,7 @@ class MediationManager:
             for updated in results:
                 if updated.result != KeylistUpdated.RESULT_SUCCESS:
                     # TODO better handle different results?
-                    LOGGER.warning(
+                    self._logger.warning(
                         "Keylist update failure: %s(%s): %s",
                         updated.action,
                         updated.recipient_key,
@@ -614,13 +617,13 @@ class MediationManager:
                             },
                         )
                     except StorageNotFoundError as err:
-                        LOGGER.error(
+                        self._logger.error(
                             "No route found while processing keylist update response: %s",
                             err,
                         )
                     else:
                         if len(records) > 1:
-                            LOGGER.error(
+                            self._logger.error(
                                 f"Too many ({len(records)}) routes found "
                                 "while processing keylist update response"
                             )

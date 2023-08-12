@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Optional
 
-from ...out_of_band.v1_0.models.oob_record import OobRecord
+from ....config.logging import get_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -12,6 +12,9 @@ from ....indy.verifier import IndyVerifier
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
+
+from ...out_of_band.v1_0.models.oob_record import OobRecord
+
 from ..indy.pres_exch_handler import IndyPresExchHandler
 
 from .messages.presentation_ack import PresentationAck
@@ -24,8 +27,6 @@ from .messages.presentation_request import PresentationRequest
 from .messages.presentation import Presentation
 from .message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
 from .models.presentation_exchange import V10PresentationExchange
-
-LOGGER = logging.getLogger(__name__)
 
 
 class PresentationManagerError(BaseError):
@@ -43,6 +44,10 @@ class PresentationManager:
         """
 
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     async def create_exchange_for_proposal(
         self,
@@ -469,7 +474,7 @@ class PresentationManager:
             except StorageNotFoundError:
                 # This can happen in AIP1 style connectionless exchange. ACA-PY only
                 # supported this for receiving a presentation
-                LOGGER.error(
+                self._logger.error(
                     "Unable to send connectionless presentation ack without associated "
                     "oob record. This can happen if proof request was sent without "
                     "wrapping it in an out of band invitation (AIP1-style)."
@@ -498,7 +503,7 @@ class PresentationManager:
                 async with self._profile.session() as session:
                     await presentation_exchange_record.delete_record(session)
         else:
-            LOGGER.warning(
+            self._logger.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
                 presentation_exchange_record.thread_id,
             )

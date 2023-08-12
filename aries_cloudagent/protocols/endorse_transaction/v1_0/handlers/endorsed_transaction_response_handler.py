@@ -1,5 +1,8 @@
 """Endorsed transaction response handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -22,8 +25,11 @@ class EndorsedTransactionResponseHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-
-        self._logger.debug(
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug(
             f"EndorsedTransactionResponseHandler called with context {context}"
         )
         assert isinstance(context.message, EndorsedTransactionResponse)
@@ -36,7 +42,7 @@ class EndorsedTransactionResponseHandler(BaseHandler):
         try:
             transaction = await mgr.receive_endorse_response(context.message)
         except TransactionManagerError:
-            self._logger.exception("Error receiving endorsed transaction response")
+            _logger.exception("Error receiving endorsed transaction response")
 
         # Automatically write transaction if flag is set
         if context.settings.get("endorser.auto_write"):
@@ -51,4 +57,4 @@ class EndorsedTransactionResponseHandler(BaseHandler):
                     connection_id=transaction.connection_id,
                 )
             except (StorageError, TransactionManagerError) as err:
-                self._logger.exception(err)
+                _logger.exception(err)

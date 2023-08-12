@@ -24,7 +24,7 @@ from ..config.ledger import (
     ledger_config,
     load_multiple_genesis_transactions_from_config,
 )
-from ..config.logging import LoggingConfigurator
+from ..config.logging import LoggingConfigurator, get_logger_inst
 from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
 from ..commands.upgrade import (
@@ -551,9 +551,12 @@ class Conductor:
             can_respond: If the session supports return routing
 
         """
-
+        _logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         if message.receipt.direct_response_requested and not can_respond:
-            LOGGER.warning(
+            _logger.warning(
                 "Direct response requested, but not supported by transport: %s",
                 message.transport_type,
             )
@@ -569,7 +572,7 @@ class Conductor:
                 lambda completed: self.dispatch_complete(message, completed),
             )
         except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Shutdown on ledger error %s", str(e))
+            _logger.error("Shutdown on ledger error %s", str(e))
             if self.admin_server:
                 self.admin_server.notify_fatal_error()
             raise
@@ -660,10 +663,14 @@ class Conductor:
 
     def handle_not_returned(self, profile: Profile, outbound: OutboundMessage):
         """Handle a message that failed delivery via an inbound session."""
+        _logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         try:
             self.dispatcher.run_task(self.queue_outbound(profile, outbound))
         except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Shutdown on ledger error %s", str(e))
+            _logger.error("Shutdown on ledger error %s", str(e))
             if self.admin_server:
                 self.admin_server.notify_fatal_error()
             raise
@@ -681,6 +688,10 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
+        _logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         has_target = outbound.target or outbound.target_list
 
         # populate connection target(s)
@@ -693,10 +704,10 @@ class Conductor:
                     )
                 )
             except ConnectionManagerError:
-                LOGGER.exception("Error preparing outbound message for transmission")
+                _logger.exception("Error preparing outbound message for transmission")
                 return OutboundSendStatus.UNDELIVERABLE
             except (LedgerConfigError, LedgerTransactionError) as e:
-                LOGGER.error("Shutdown on ledger error %s", str(e))
+                _logger.error("Shutdown on ledger error %s", str(e))
                 if self.admin_server:
                     self.admin_server.notify_fatal_error()
                 raise
@@ -716,11 +727,15 @@ class Conductor:
         self, profile: Profile, outbound: OutboundMessage
     ) -> OutboundSendStatus:
         """Save the message to an internal outbound queue."""
+        _logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         try:
             await self.outbound_transport_manager.enqueue_message(profile, outbound)
             return OutboundSendStatus.QUEUED_FOR_DELIVERY
         except OutboundDeliveryError:
-            LOGGER.warning("Cannot queue message for delivery, no supported transport")
+            _logger.warning("Cannot queue message for delivery, no supported transport")
             return self.handle_not_delivered(profile, outbound)
 
     def handle_not_delivered(

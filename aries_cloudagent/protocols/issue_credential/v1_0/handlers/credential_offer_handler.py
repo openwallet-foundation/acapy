@@ -1,6 +1,8 @@
 """Credential offer message handler."""
 
+import logging
 
+from .....config.logging import get_logger_inst
 from .....wallet.util import default_did_from_verkey
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
@@ -30,10 +32,14 @@ class CredentialOfferHandler(BaseHandler):
 
         """
         r_time = get_timer()
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
         profile = context.profile
-        self._logger.debug("CredentialOfferHandler called with context %s", context)
+        _logger.debug("CredentialOfferHandler called with context %s", context)
         assert isinstance(context.message, CredentialOffer)
-        self._logger.info(
+        _logger.info(
             "Received credential offer message: %s",
             context.message.serialize(as_string=True),
         )
@@ -98,7 +104,7 @@ class CredentialOfferHandler(BaseHandler):
                 LedgerError,
                 StorageError,
             ) as err:
-                self._logger.exception("Error responding to credential offer")
+                _logger.exception("Error responding to credential offer")
                 if cred_ex_record:
                     async with profile.session() as session:
                         await cred_ex_record.save_error_state(

@@ -1,5 +1,8 @@
 """Handler for incoming invitation request messages."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -18,7 +21,11 @@ class InvitationRequestHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        self._logger.debug("InvitationRequestHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("InvitationRequestHandler called with context %s", context)
         assert isinstance(context.message, IntroInvitationRequest)
 
         if not context.connection_ready:

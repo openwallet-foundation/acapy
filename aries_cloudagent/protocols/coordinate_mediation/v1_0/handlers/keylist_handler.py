@@ -1,6 +1,7 @@
 """Handler for keylist message."""
 import logging
 
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
@@ -10,17 +11,16 @@ from ..messages.keylist import Keylist
 from ..models.mediation_record import MediationRecord
 
 
-LOG = logging.getLogger(__name__)
-
-
 class KeylistHandler(BaseHandler):
     """Handler for keylist message."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle keylist message."""
-        self._logger.debug(
-            "%s called with context %s", self.__class__.__name__, context
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
         )
+        _logger.debug("%s called with context %s", self.__class__.__name__, context)
         assert isinstance(context.message, Keylist)
 
         if not context.connection_ready:
@@ -32,11 +32,11 @@ class KeylistHandler(BaseHandler):
                     session, context.connection_record.connection_id
                 )
         except StorageNotFoundError as err:
-            LOG.warning(
+            _logger.warning(
                 "Received keylist from connection that is not acting as mediator: %s",
                 err,
             )
             return
 
         # TODO verify our keylist matches?
-        LOG.info("Keylist received: %s", context.message)
+        _logger.info("Keylist received: %s", context.message)

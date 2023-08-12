@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 import logging
 from typing import List, Optional, Tuple
 
+from ....config.logging import get_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
@@ -21,9 +22,6 @@ from .manager import MediationManager
 from .messages.keylist_update import KeylistUpdate
 from .models.mediation_record import MediationRecord
 from .normalization import normalize_from_did_key
-
-
-LOGGER = logging.getLogger(__name__)
 
 
 class RouteManagerError(Exception):
@@ -129,7 +127,11 @@ class RouteManager(ABC):
         mediation_record: Optional[MediationRecord] = None,
     ) -> Optional[KeylistUpdate]:
         """Set up routing for a new connection when we are the invitee."""
-        LOGGER.debug("Routing connection as invitee")
+        _logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        _logger.debug("Routing connection as invitee")
         my_info = await self.get_or_create_my_did(profile, conn_record)
         return await self._route_for_key(
             profile, my_info.verkey, mediation_record, skip_if_exists=True
@@ -142,7 +144,11 @@ class RouteManager(ABC):
         mediation_record: Optional[MediationRecord] = None,
     ) -> Optional[KeylistUpdate]:
         """Set up routing for a new connection when we are the inviter."""
-        LOGGER.debug("Routing connection as inviter")
+        _logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        _logger.debug("Routing connection as inviter")
         my_info = await self.get_or_create_my_did(profile, conn_record)
 
         replace_key = conn_record.invitation_key

@@ -47,8 +47,6 @@ from ...models.detail.indy import V20CredExRecordIndy
 
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 
-LOGGER = logging.getLogger(__name__)
-
 
 class IndyCredFormatHandler(V20CredFormatHandler):
     """Indy credential format handler."""
@@ -96,7 +94,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             )
 
         if len(records) > 1:
-            LOGGER.warning(
+            self._logger.warning(
                 "Cred ex id %s has %d %s detail records: should be 1",
                 cred_ex_id,
                 len(records),
@@ -355,7 +353,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         for attempt in range(max(retries, 1)):
             if attempt > 0:
-                LOGGER.info(
+                self._logger.info(
                     "Waiting 2s before retrying credential issuance for cred def '%s'",
                     cred_def_id,
                 )
@@ -493,5 +491,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     session, reason="store credential v2.0", event=True
                 )
         except IndyHolderError as e:
-            LOGGER.error(f"Error storing credential: {e.error_code} - {e.message}")
+            self._logger.error(
+                f"Error storing credential: {e.error_code} - {e.message}"
+            )
             raise e

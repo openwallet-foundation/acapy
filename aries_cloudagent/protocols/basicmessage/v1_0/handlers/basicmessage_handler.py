@@ -1,5 +1,8 @@
 """Basic message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -19,10 +22,14 @@ class BasicMessageHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug("BasicMessageHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("BasicMessageHandler called with context %s", context)
         assert isinstance(context.message, BasicMessage)
 
-        self._logger.info("Received basic message: %s", context.message.content)
+        _logger.info("Received basic message: %s", context.message.content)
 
         body = context.message.content
         meta = {"content": body}

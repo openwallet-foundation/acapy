@@ -1,5 +1,8 @@
 """Presentation request message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolder, IndyHolderError
 from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
@@ -31,11 +34,15 @@ class PresentationRequestHandler(BaseHandler):
 
         """
         r_time = get_timer()
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
         profile = context.profile
 
-        self._logger.debug("PresentationRequestHandler called with context %s", context)
+        _logger.debug("PresentationRequestHandler called with context %s", context)
         assert isinstance(context.message, PresentationRequest)
-        self._logger.info(
+        _logger.info(
             "Received presentation request message: %s",
             context.message.serialize(as_string=True),
         )
@@ -125,7 +132,7 @@ class PresentationRequestHandler(BaseHandler):
                     holder=context.inject(IndyHolder),
                 )
             except ValueError as err:
-                self._logger.warning(f"{err}")
+                _logger.warning(f"{err}")
                 return  # not a protocol error: prover could still build proof manually
 
             presentation_message = None
@@ -148,7 +155,7 @@ class PresentationRequestHandler(BaseHandler):
                 StorageError,
                 WalletNotFoundError,
             ) as err:
-                self._logger.exception(err)
+                _logger.exception(err)
                 if presentation_exchange_record:
                     async with profile.session() as session:
                         await presentation_exchange_record.save_error_state(

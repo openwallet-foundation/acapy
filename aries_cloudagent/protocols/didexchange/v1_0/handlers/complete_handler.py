@@ -1,5 +1,8 @@
 """Connection complete handler under RFC 23 (DID exchange)."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -20,7 +23,11 @@ class DIDXCompleteHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"DIDXCompleteHandler called with context {context}")
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug(f"DIDXCompleteHandler called with context {context}")
         assert isinstance(context.message, DIDXComplete)
 
         profile = context.profile
@@ -29,4 +36,4 @@ class DIDXCompleteHandler(BaseHandler):
             await mgr.accept_complete(context.message, context.message_receipt)
         except DIDXManagerError:
             # no corresponding request: no targets to send problem report; log and quit
-            self._logger.exception("Error receiving connection complete")
+            _logger.exception("Error receiving connection complete")

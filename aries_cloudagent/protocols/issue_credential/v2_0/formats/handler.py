@@ -5,6 +5,7 @@ import logging
 
 from typing import Mapping, Tuple
 
+from .....config.logging import get_logger_inst
 from .....core.error import BaseError
 from .....core.profile import Profile
 from .....messaging.decorators.attach_decorator import AttachDecorator
@@ -35,6 +36,10 @@ class V20CredFormatHandler(ABC):
         super().__init__()
 
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     @property
     def profile(self) -> Profile:

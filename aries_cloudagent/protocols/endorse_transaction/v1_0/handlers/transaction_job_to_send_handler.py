@@ -1,5 +1,8 @@
 """Transaction Job to send handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -20,8 +23,11 @@ class TransactionJobToSendHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-
-        self._logger.debug(f"TransactionJobToSendHandler called with context {context}")
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug(f"TransactionJobToSendHandler called with context {context}")
         assert isinstance(context.message, TransactionJobToSend)
 
         mgr = TransactionManager(context.profile)
@@ -30,4 +36,4 @@ class TransactionJobToSendHandler(BaseHandler):
                 context.message, context.message_receipt
             )
         except TransactionManagerError:
-            self._logger.exception("Error receiving transaction jobs")
+            _logger.exception("Error receiving transaction jobs")

@@ -1,7 +1,9 @@
 """Handler for incoming forward messages."""
 
+import logging
 import json
 
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -18,12 +20,16 @@ class ForwardHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        self._logger.debug("ForwardHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("ForwardHandler called with context %s", context)
         assert isinstance(context.message, Forward)
 
         if not context.message_receipt.recipient_verkey:
             raise HandlerException("Cannot forward message: unknown recipient")
-        self._logger.info(
+        _logger.info(
             "Received forward for: %s", context.message_receipt.recipient_verkey
         )
 
@@ -35,7 +41,7 @@ class ForwardHandler(BaseHandler):
         try:
             recipient = await rt_mgr.get_recipient(target)
         except RoutingManagerError:
-            self._logger.exception("Error resolving recipient for forwarded message")
+            _logger.exception("Error resolving recipient for forwarded message")
             return
 
         # load connection
@@ -47,9 +53,7 @@ class ForwardHandler(BaseHandler):
         connection_verkey = connection_targets[0].recipient_keys[0]
 
         # Note: not currently vetting the state of the connection here
-        self._logger.info(
-            f"Forwarding message to connection: {recipient.connection_id}"
-        )
+        _logger.info(f"Forwarding message to connection: {recipient.connection_id}")
 
         send_status = await responder.send(
             packed,

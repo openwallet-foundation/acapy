@@ -1,5 +1,8 @@
 """Handler for revoke message."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import BaseHandler
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
@@ -16,7 +19,11 @@ class RevokeHandler(BaseHandler):
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle revoke message."""
         assert isinstance(context.message, Revoke)
-        self._logger.debug(
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug(
             "Received notification of revocation for cred issued in thread %s "
             "with comment: %s",
             context.message.thread_id,

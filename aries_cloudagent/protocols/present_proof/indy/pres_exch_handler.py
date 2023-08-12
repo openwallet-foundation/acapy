@@ -5,6 +5,7 @@ import time
 
 from typing import Union, Tuple
 
+from ....config.logging import get_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
@@ -21,8 +22,6 @@ from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
 from ..v2_0.models.pres_exchange import V20PresExRecord
 
-LOGGER = logging.getLogger(__name__)
-
 
 class IndyPresExchHandlerError(BaseError):
     """Base class for Indy Presentation Exchange related errors."""
@@ -38,6 +37,10 @@ class IndyPresExchHandler:
         """Initialize PresExchange Handler."""
         super().__init__()
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     async def return_presentation(
         self,
@@ -83,7 +86,7 @@ class IndyPresExchHandler:
                 if not credentials[req_item["cred_id"]].get(
                     "rev_reg_id"
                 ) and req_item.pop("timestamp", None):
-                    LOGGER.info(
+                    self._logger.info(
                         f"Removed superfluous timestamp from requested_credentials {r} "
                         f"{reft} for non-revocable credential {req_item['cred_id']}"
                     )
@@ -190,7 +193,7 @@ class IndyPresExchHandler:
                     )
                 )
             except IndyHolderError as e:
-                LOGGER.error(
+                self._logger.error(
                     f"Failed to create revocation state: {e.error_code}, {e.message}"
                 )
                 raise e

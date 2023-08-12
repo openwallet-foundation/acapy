@@ -53,8 +53,6 @@ from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHan
 from .models.cred_detail_options import LDProofVCDetailOptions
 from .models.cred_detail import LDProofVCDetail, LDProofVCDetailSchema
 
-LOGGER = logging.getLogger(__name__)
-
 SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     CredentialIssuancePurpose.term,
     AuthenticationProofPurpose.term,
@@ -134,7 +132,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             )
 
         if len(records) > 1:
-            LOGGER.warning(
+            self._logger.warning(
                 "Cred ex id %s has %d %s detail records: should be 1",
                 cred_ex_id,
                 len(records),

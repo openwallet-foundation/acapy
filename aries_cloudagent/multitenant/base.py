@@ -8,6 +8,7 @@ from typing import Iterable, List, Optional, cast, Tuple
 import jwt
 
 from ..config.injection_context import InjectionContext
+from ..config.logging import get_logger_inst
 from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
 from ..protocols.coordinate_mediation.v1_0.manager import (
@@ -22,8 +23,6 @@ from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.models.wallet_record import WalletRecord
 from .error import WalletKeyMissingError
-
-LOGGER = logging.getLogger(__name__)
 
 
 class MultitenantManagerError(BaseError):
@@ -42,6 +41,10 @@ class BaseMultitenantManager(ABC):
         self._profile = profile
         if not profile:
             raise MultitenantManagerError("Missing profile")
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     @property
     @abstractmethod
@@ -104,7 +107,7 @@ class BaseMultitenantManager(ABC):
         if dispatch_type == "both":
             webhook_urls = list(set(base_webhook_urls) | set(subwallet_webhook_urls))
             if not webhook_urls:
-                LOGGER.warning(
+                self._logger.warning(
                     "No webhook URLs in context configuration "
                     f"nor wallet record {wallet_id}, but wallet record "
                     f"configures dispatch type {dispatch_type}"
@@ -112,7 +115,7 @@ class BaseMultitenantManager(ABC):
         elif dispatch_type == "default":
             webhook_urls = subwallet_webhook_urls
             if not webhook_urls:
-                LOGGER.warning(
+                self._logger.warning(
                     f"No webhook URLs in nor wallet record {wallet_id}, but "
                     f"wallet record configures dispatch type {dispatch_type}"
                 )

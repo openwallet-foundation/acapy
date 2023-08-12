@@ -5,6 +5,7 @@ from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields, validate
 
+from .....config.logging import get_logger_inst
 from .....core.profile import ProfileSession
 from .....indy.models.cred import IndyCredential, IndyCredentialSchema
 from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSchema
@@ -23,8 +24,6 @@ from ..messages.credential_exchange_webhook import V10CredentialExchangeWebhook
 from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
 from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
 from . import UNENCRYPTED_TAGS
-
-LOGGER = logging.getLogger(__name__)
 
 
 class V10CredentialExchange(BaseExchangeRecord):
@@ -206,7 +205,10 @@ class V10CredentialExchange(BaseExchangeRecord):
             log_params: Additional parameters to log
             override: Override configured logging regimen, print to stderr instead
         """
-
+        _logger: logging.Logger = get_logger_inst(
+            profile=session.profile,
+            logger_name=__name__,
+        )
         if self._last_state == state:  # already done
             return
 
@@ -222,7 +224,7 @@ class V10CredentialExchange(BaseExchangeRecord):
                 log_override=log_override,
             )
         except StorageError:
-            LOGGER.exception("Error saving credential exchange error state")
+            _logger.exception("Error saving credential exchange error state")
 
     # Override
     async def emit_event(self, session: ProfileSession, payload: Any = None):

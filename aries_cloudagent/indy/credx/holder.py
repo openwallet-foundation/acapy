@@ -20,12 +20,11 @@ from indy_credx import (
 )
 
 from ...askar.profile import AskarProfile
+from ...config.logging import get_logger_inst
 from ...ledger.base import BaseLedger
 from ...wallet.error import WalletNotFoundError
 
 from ..holder import IndyHolder, IndyHolderError
-
-LOGGER = logging.getLogger(__name__)
 
 CATEGORY_CREDENTIAL = "credential"
 CATEGORY_LINK_SECRET = "master_secret"
@@ -61,6 +60,10 @@ class IndyCredxHolder(IndyHolder):
 
         """
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     @property
     def profile(self) -> AskarProfile:
@@ -138,7 +141,7 @@ class IndyCredxHolder(IndyHolder):
             cred_req_metadata.to_json(),
         )
 
-        LOGGER.debug(
+        self._logger.debug(
             "Created credential request. "
             "credential_request_json=%s credential_request_metadata_json=%s",
             cred_req_json,

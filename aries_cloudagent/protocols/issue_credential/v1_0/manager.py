@@ -7,6 +7,7 @@ import logging
 from typing import Mapping, Optional, Tuple
 
 from ....cache.base import BaseCache
+from ....config.logging import get_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -44,8 +45,6 @@ from .models.credential_exchange import (
     V10CredentialExchange,
 )
 
-LOGGER = logging.getLogger(__name__)
-
 
 class CredentialManagerError(BaseError):
     """Credential error."""
@@ -61,6 +60,10 @@ class CredentialManager:
             profile: The profile instance for this credential manager
         """
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     @property
     def profile(self) -> Profile:
@@ -439,7 +442,7 @@ class CredentialManager:
             }
 
         if cred_ex_record.state == V10CredentialExchange.STATE_REQUEST_SENT:
-            LOGGER.warning(
+            self._logger.warning(
                 "create_request called multiple times for v1.0 credential exchange: %s",
                 cred_ex_record.credential_exchange_id,
             )
@@ -541,7 +544,7 @@ class CredentialManager:
                     "Indy issue credential format can't start from credential request"
                 ) from None
             if cred_ex_record.state != V10CredentialExchange.STATE_OFFER_SENT:
-                LOGGER.error(
+                self._logger.error(
                     "Skipping credential request; exchange state is %s (id=%s)",
                     cred_ex_record.state,
                     cred_ex_record.credential_exchange_id,
@@ -580,7 +583,7 @@ class CredentialManager:
         credential_ser = None
 
         if cred_ex_record.credential:
-            LOGGER.warning(
+            self._logger.warning(
                 "issue_credential called multiple times for v1.0 credential exchange %s",
                 cred_ex_record.credential_exchange_id,
             )
@@ -625,7 +628,7 @@ class CredentialManager:
 
             for attempt in range(max(retries, 1)):
                 if attempt > 0:
-                    LOGGER.info(
+                    self._logger.info(
                         "Waiting 2s before retrying credential issuance "
                         "for cred def '%s'",
                         cred_def_id,
@@ -830,7 +833,9 @@ class CredentialManager:
                 rev_reg_def=revoc_reg_def,
             )
         except IndyHolderError as e:
-            LOGGER.error("Error storing credential: %s: %s", e.error_code, e.message)
+            self._logger.error(
+                "Error storing credential: %s: %s", e.error_code, e.message
+            )
             raise e
 
         credential_json = await holder.get_credential(credential_id)
@@ -884,7 +889,7 @@ class CredentialManager:
                         txn, cred_ex_record.credential_exchange_id, for_update=True
                     )
                 except StorageNotFoundError:
-                    LOGGER.warning(
+                    self._logger.warning(
                         "Skipping credential exchange ack, record not found: '%s'",
                         cred_ex_record.credential_exchange_id,
                     )
@@ -894,7 +899,7 @@ class CredentialManager:
                     cred_ex_record.state
                     != V10CredentialExchange.STATE_CREDENTIAL_RECEIVED
                 ):
-                    LOGGER.warning(
+                    self._logger.warning(
                         "Skipping credential exchange ack, state is '%s' for record '%s'",
                         cred_ex_record.state,
                         cred_ex_record.credential_exchange_id,
@@ -910,7 +915,7 @@ class CredentialManager:
                     await cred_ex_record.delete_record(session)  # all done: delete
 
         except StorageError:
-            LOGGER.exception(
+            self._logger.exception(
                 "Error updating credential exchange"
             )  # holder still owes an ack: carry on
 
@@ -921,7 +926,7 @@ class CredentialManager:
                 connection_id=cred_ex_record.connection_id,
             )
         else:
-            LOGGER.warning(
+            self._logger.warning(
                 "Configuration has no BaseResponder: cannot ack credential on %s",
                 cred_ex_record.thread_id,
             )
@@ -951,7 +956,7 @@ class CredentialManager:
                     )
                 )
             except StorageNotFoundError:
-                LOGGER.warning(
+                self._logger.warning(
                     "Skip ack message on credential exchange, record not found %s",
                     message._thread_id,
                 )
@@ -988,7 +993,7 @@ class CredentialManager:
                     )
                 )
             except StorageNotFoundError:
-                LOGGER.warning(
+                self._logger.warning(
                     "Skip problem report on credential exchange, record not found %s",
                     message._thread_id,
                 )

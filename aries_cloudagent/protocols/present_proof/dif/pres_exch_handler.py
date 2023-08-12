@@ -21,6 +21,7 @@ from typing import Sequence, Optional, Tuple, Union, Dict, List
 from unflatten import unflatten
 from uuid import uuid4
 
+from ....config.logging import get_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....storage.vc_holder.vc_record import VCRecord
@@ -64,7 +65,6 @@ PRESENTATION_SUBMISSION_JSONLD_CONTEXT = (
 PRESENTATION_SUBMISSION_JSONLD_TYPE = "PresentationSubmission"
 PYTZ_TIMEZONE_PATTERN = re.compile(r"(([a-zA-Z]+)(?:\/)([a-zA-Z]+))")
 LIST_INDEX_PATTERN = re.compile(r"\[(\W+)\]|\[(\d+)\]")
-LOGGER = logging.getLogger(__name__)
 
 
 class DIFPresExchError(BaseError):
@@ -111,6 +111,10 @@ class DIFPresExchHandler:
             self.proof_type = proof_type
         self.is_holder = False
         self.reveal_doc_frame = reveal_doc
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     async def _get_issue_suite(
         self,
@@ -785,7 +789,7 @@ class DIFPresExchHandler:
                     val = self.is_numeric(val)
                     return val > _filter.exclusive_min
                 except DIFPresExchError as err:
-                    LOGGER.error(err)
+                    self._logger.error(err)
             return False
         except (TypeError, ValueError, ParserError):
             return False
@@ -815,7 +819,7 @@ class DIFPresExchHandler:
                     val = self.is_numeric(val)
                     return val < _filter.exclusive_max
                 except DIFPresExchError as err:
-                    LOGGER.error(err)
+                    self._logger.error(err)
             return False
         except (TypeError, ValueError, ParserError):
             return False
@@ -845,7 +849,7 @@ class DIFPresExchHandler:
                     val = self.is_numeric(val)
                     return val <= _filter.maximum
                 except DIFPresExchError as err:
-                    LOGGER.error(err)
+                    self._logger.error(err)
             return False
         except (TypeError, ValueError, ParserError):
             return False
@@ -875,7 +879,7 @@ class DIFPresExchHandler:
                     val = self.is_numeric(val)
                     return val >= _filter.minimum
                 except DIFPresExchError as err:
-                    LOGGER.error(err)
+                    self._logger.error(err)
             return False
         except (TypeError, ValueError, ParserError):
             return False

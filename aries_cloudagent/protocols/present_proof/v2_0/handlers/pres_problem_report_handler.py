@@ -1,5 +1,8 @@
 """Presentation problem report message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import BaseHandler
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
@@ -19,7 +22,11 @@ class V20PresProblemReportHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug(
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug(
             "Present-proof v2.0 problem report handler called with context %s",
             context,
         )
@@ -32,6 +39,6 @@ class V20PresProblemReportHandler(BaseHandler):
                 context.connection_record.connection_id,
             )
         except (StorageError, StorageNotFoundError):
-            self._logger.exception(
+            _logger.exception(
                 "Error processing present-proof v2.0 problem report message"
             )

@@ -1,5 +1,8 @@
 """Action menu perform request message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -20,10 +23,14 @@ class PerformHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug("PerformHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("PerformHandler called with context %s", context)
         assert isinstance(context.message, Perform)
 
-        self._logger.info("Received action menu perform request")
+        _logger.info("Received action menu perform request")
 
         service: BaseMenuService = context.inject_or(BaseMenuService)
         if service:

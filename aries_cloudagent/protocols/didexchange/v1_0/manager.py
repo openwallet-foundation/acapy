@@ -8,6 +8,7 @@ import pydid
 from pydid import BaseDIDDocument as ResolvedDocument
 from pydid import DIDCommService
 
+from ....config.logging import get_logger_inst
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.diddoc import DIDDoc
@@ -54,7 +55,10 @@ class DIDXManager(BaseConnectionManager):
             profile: The profile for this did exchange manager
         """
         self._profile = profile
-        self._logger = logging.getLogger(__name__)
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         super().__init__(self._profile)
 
     @property

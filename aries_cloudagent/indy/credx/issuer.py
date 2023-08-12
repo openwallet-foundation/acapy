@@ -21,6 +21,7 @@ from indy_credx import (
 )
 
 from ...askar.profile import AskarProfile
+from ...config.logging import get_logger_inst
 
 from ..issuer import (
     IndyIssuer,
@@ -29,8 +30,6 @@ from ..issuer import (
     DEFAULT_CRED_DEF_TAG,
     DEFAULT_SIGNATURE_TYPE,
 )
-
-LOGGER = logging.getLogger(__name__)
 
 CATEGORY_CRED_DEF = "credential_def"
 CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
@@ -54,6 +53,10 @@ class IndyCredxIssuer(IndyIssuer):
 
         """
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     @property
     def profile(self) -> AskarProfile:
@@ -448,7 +451,7 @@ class IndyCredxIssuer(IndyIssuer):
             for rev_id in cred_revoc_ids:
                 rev_id = int(rev_id)
                 if rev_id < 1 or rev_id > max_cred_num:
-                    LOGGER.error(
+                    self._logger.error(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s not in range",
                         revoc_reg_id,
@@ -456,7 +459,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     failed_crids.add(rev_id)
                 elif rev_id > rev_info["curr_id"]:
-                    LOGGER.warn(
+                    self._logger.warn(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s not yet issued",
                         revoc_reg_id,
@@ -464,7 +467,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     failed_crids.add(rev_id)
                 elif rev_id in used_ids:
-                    LOGGER.warn(
+                    self._logger.warn(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s already revoked",
                         revoc_reg_id,
@@ -500,7 +503,7 @@ class IndyCredxIssuer(IndyIssuer):
                         CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                     )
                     if not rev_reg_upd or not rev_reg_info:
-                        LOGGER.warn(
+                        self._logger.warn(
                             "Revocation registry missing, skipping update: {}",
                             revoc_reg_id,
                         )

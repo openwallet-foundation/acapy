@@ -1,5 +1,8 @@
 """Presentation proposal message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -26,12 +29,14 @@ class PresentationProposalHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        profile = context.profile
-        self._logger.debug(
-            "PresentationProposalHandler called with context %s", context
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
         )
+        profile = context.profile
+        _logger.debug("PresentationProposalHandler called with context %s", context)
         assert isinstance(context.message, PresentationProposal)
-        self._logger.info(
+        _logger.info(
             "Received presentation proposal message: %s",
             context.message.serialize(as_string=True),
         )
@@ -71,7 +76,7 @@ class PresentationProposalHandler(BaseHandler):
                 )
                 await responder.send_reply(presentation_request_message)
             except (BaseModelError, LedgerError, StorageError) as err:
-                self._logger.exception(err)
+                _logger.exception(err)
                 if presentation_exchange_record:
                     async with profile.session() as session:
                         await presentation_exchange_record.save_error_state(

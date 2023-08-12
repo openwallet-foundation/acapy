@@ -1,5 +1,8 @@
 """Generic problem report handler."""
 
+import logging
+
+from ....config.logging import get_logger_inst
 from ....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -20,10 +23,14 @@ class ProblemReportHandler(BaseHandler):
             responder: Responder used to reply
 
         """
-        self._logger.debug("ProblemReportHandler called with context %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("ProblemReportHandler called with context %s", context)
         assert isinstance(context.message, ProblemReport)
 
-        self._logger.info(
+        _logger.info(
             "Received problem report from: %s, %r",
             context.message_receipt.sender_did,
             context.message,

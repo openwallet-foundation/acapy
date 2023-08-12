@@ -5,6 +5,7 @@ from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields, validate
 
+from .....config.logging import get_logger_inst
 from .....core.profile import ProfileSession
 from .....indy.models.proof import IndyProof, IndyProofSchema
 from .....indy.models.proof_request import IndyProofRequest, IndyProofRequestSchema
@@ -21,8 +22,6 @@ from ..messages.presentation_request import (
 )
 from ..messages.presentation_webhook import V10PresentationExchangeWebhook
 from . import UNENCRYPTED_TAGS
-
-LOGGER = logging.getLogger(__name__)
 
 
 class V10PresentationExchange(BaseExchangeRecord):
@@ -176,7 +175,10 @@ class V10PresentationExchange(BaseExchangeRecord):
             log_params: Additional parameters to log
             override: Override configured logging regimen, print to stderr instead
         """
-
+        _logger: logging.Logger = get_logger_inst(
+            profile=session.profile,
+            logger_name=__name__,
+        )
         if self._last_state == state:  # already done
             return
 
@@ -192,7 +194,7 @@ class V10PresentationExchange(BaseExchangeRecord):
                 log_override=log_override,
             )
         except StorageError as err:
-            LOGGER.exception(err)
+            _logger.exception(err)
 
     # Override
     async def emit_event(self, session: ProfileSession, payload: Any = None):

@@ -1,5 +1,8 @@
 """Credential problem report message handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
@@ -19,7 +22,11 @@ class CredProblemReportHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        self._logger.debug(
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug(
             "Issue-credential v2.0 problem report handler called with context %s",
             context,
         )
@@ -42,6 +49,6 @@ class CredProblemReportHandler(BaseHandler):
                 context.connection_record.connection_id,
             )
         except (StorageError, StorageNotFoundError):
-            self._logger.exception(
+            _logger.exception(
                 "Error processing issue-credential v2.0 problem report message"
             )

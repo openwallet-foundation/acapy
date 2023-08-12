@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
+from ...config.logging import get_logger_inst
 from ...core.profile import Profile, ProfileSession
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.revocation import (
@@ -42,8 +43,6 @@ from .issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation_registry import RevocationRegistry
 
 DEFAULT_REGISTRY_SIZE = 1000
-
-LOGGER = logging.getLogger(__name__)
 
 
 @total_ordering
@@ -184,6 +183,10 @@ class IssuerRevRegRecord(BaseRecord):
 
     async def generate_registry(self, profile: Profile):
         """Create the revocation registry definition and tails file."""
+        _logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         if not self.tag:
             self.tag = self._id or str(uuid.uuid4())
 
@@ -197,7 +200,7 @@ class IssuerRevRegRecord(BaseRecord):
         issuer = profile.inject(IndyIssuer)
         tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
-        LOGGER.debug("Creating revocation registry with size: %d", self.max_cred_num)
+        _logger.debug("Creating revocation registry with size: %d", self.max_cred_num)
 
         try:
             (
@@ -285,6 +288,10 @@ class IssuerRevRegRecord(BaseRecord):
         endorser_did: str = None,
     ) -> dict:
         """Send a registry entry to the ledger."""
+        _logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         if not (
             self.revoc_reg_id
             and self.revoc_def_type
@@ -325,27 +332,27 @@ class IssuerRevRegRecord(BaseRecord):
                     #   Ledger rejected transaction request: client request invalid:
                     #   InvalidClientRequest(...)
                     # In this scenario we try to post a correction
-                    LOGGER.warn("Retry ledger update/fix due to error")
-                    LOGGER.warn(err)
+                    _logger.warn("Retry ledger update/fix due to error")
+                    _logger.warn(err)
                     (_, _, res) = await self.fix_ledger_entry(
                         profile,
                         True,
                         ledger.pool.genesis_txns,
                     )
                     rev_entry_res = {"result": res}
-                    LOGGER.warn("Ledger update/fix applied")
+                    _logger.warn("Ledger update/fix applied")
                 elif "InvalidClientTaaAcceptanceError" in err.roll_up:
                     # if no write access (with "InvalidClientTaaAcceptanceError")
                     # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
                     #   Ledger rejected transaction request: client request invalid:
                     #   InvalidClientTaaAcceptanceError(...)
-                    LOGGER.error("Ledger update failed due to TAA issue")
-                    LOGGER.error(err)
+                    _logger.error("Ledger update failed due to TAA issue")
+                    _logger.error(err)
                     raise err
                 else:
                     # not sure what happened, raise an error
-                    LOGGER.error("Ledger update failed due to unknown issue")
-                    LOGGER.error(err)
+                    _logger.error("Ledger update failed due to unknown issue")
+                    _logger.error(err)
                     raise err
         if self.state == IssuerRevRegRecord.STATE_POSTED:
             self.state = IssuerRevRegRecord.STATE_ACTIVE  # initial entry activates
@@ -364,6 +371,10 @@ class IssuerRevRegRecord(BaseRecord):
     ) -> Tuple[dict, dict, dict]:
         """Fix the ledger entry to match wallet-recorded credentials."""
         # get rev reg delta (revocations published to ledger)
+        _logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         ledger = profile.inject(BaseLedger)
         async with ledger:
             (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(self.revoc_reg_id)
@@ -387,12 +398,12 @@ class IssuerRevRegRecord(BaseRecord):
                         # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
                         rec_count += 1
 
-            LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
-            LOGGER.debug(
+            _logger.debug(">>> fixed entry recs count = %s", rec_count)
+            _logger.debug(
                 ">>> rev_reg_record.revoc_reg_entry.value: %s",
                 self.revoc_reg_entry.value,
             )
-            LOGGER.debug(
+            _logger.debug(
                 '>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value")
             )
 
@@ -412,7 +423,7 @@ class IssuerRevRegRecord(BaseRecord):
                 )
                 recovery_txn = json.loads(calculated_txn.to_json())
 
-                LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
+                _logger.debug(">>> apply_ledger_update = %s", apply_ledger_update)
                 if apply_ledger_update:
                     ledger = session.inject_or(BaseLedger)
                     if not ledger:

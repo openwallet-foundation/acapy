@@ -1,5 +1,8 @@
 """Ping response handler."""
 
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -20,11 +23,14 @@ class PingResponseHandler(BaseHandler):
             responder: Responder used to reply
 
         """
-
-        self._logger.debug("PingResponseHandler called with context: %s", context)
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug("PingResponseHandler called with context: %s", context)
         assert isinstance(context.message, PingResponse)
 
-        self._logger.info(
+        _logger.info(
             "Received trust ping response from: %s", context.message_receipt.sender_did
         )
 

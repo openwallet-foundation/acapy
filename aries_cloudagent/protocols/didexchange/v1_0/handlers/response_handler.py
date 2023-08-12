@@ -3,6 +3,9 @@
 from aries_cloudagent.protocols.didexchange.v1_0.messages.problem_report import (
     DIDXProblemReport,
 )
+import logging
+
+from .....config.logging import get_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -25,7 +28,11 @@ class DIDXResponseHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        self._logger.debug(f"DIDXResponseHandler called with context {context}")
+        _logger: logging.Logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=__name__,
+        )
+        _logger.debug(f"DIDXResponseHandler called with context {context}")
         assert isinstance(context.message, DIDXResponse)
 
         profile = context.profile
@@ -35,7 +42,7 @@ class DIDXResponseHandler(BaseHandler):
                 context.message, context.message_receipt
             )
         except DIDXManagerError as e:
-            self._logger.exception("Error receiving DID exchange response")
+            _logger.exception("Error receiving DID exchange response")
             if e.error_code:
                 targets = None
                 if context.message.did_doc_attach:
@@ -45,9 +52,7 @@ class DIDXResponseHandler(BaseHandler):
                             context.message_receipt.recipient_verkey,
                         )
                     except DIDXManagerError:
-                        self._logger.exception(
-                            "Error parsing DIDDoc for problem report"
-                        )
+                        _logger.exception("Error parsing DIDDoc for problem report")
                 await responder.send_reply(
                     DIDXProblemReport(
                         description={"en": e.message, "code": e.error_code}

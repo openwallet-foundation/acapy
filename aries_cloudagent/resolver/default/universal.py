@@ -7,10 +7,10 @@ from typing import Iterable, Optional, Pattern, Sequence, Union, Text
 import aiohttp
 
 from ...config.injection_context import InjectionContext
+from ...config.logging import get_logger_inst
 from ...core.profile import Profile
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
-LOGGER = logging.getLogger(__name__)
 DEFAULT_ENDPOINT = "https://dev.uniresolver.io/1.0"
 
 
@@ -84,13 +84,16 @@ class UniversalResolver(BaseDIDResolver):
         service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve DID through remote universal resolver."""
-
+        _logger: logging.Logger = get_logger_inst(
+            profile=_profile,
+            logger_name=__name__,
+        )
         async with aiohttp.ClientSession(headers=self.__default_headers) as session:
             async with session.get(f"{self._endpoint}/identifiers/{did}") as resp:
                 if resp.status == 200:
                     doc = await resp.json()
                     did_doc = doc["didDocument"]
-                    LOGGER.info("Retrieved doc: %s", did_doc)
+                    _logger.info("Retrieved doc: %s", did_doc)
                     return did_doc
                 if resp.status == 404:
                     raise DIDNotFound(f"{did} not found by {self.__class__.__name__}")

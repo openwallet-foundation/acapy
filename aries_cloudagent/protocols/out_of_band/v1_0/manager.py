@@ -6,8 +6,8 @@ import re
 from typing import Mapping, Optional, Sequence, Union, Text
 import uuid
 
-
 from ....messaging.decorators.service_decorator import ServiceDecorator
+from ....config.logging import get_logger_inst
 from ....core.event_bus import EventBus
 from ....core.util import get_version_from_message
 from ....connections.base_manager import BaseConnectionManager
@@ -40,7 +40,6 @@ from .models.oob_record import OobRecord
 from .messages.service import Service
 from .message_types import DEFAULT_VERSION
 
-LOGGER = logging.getLogger(__name__)
 REUSE_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse"
 REUSE_ACCEPTED_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse_accepted"
 
@@ -63,6 +62,10 @@ class OutOfBandManager(BaseConnectionManager):
             profile: The profile for this out of band manager
         """
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         super().__init__(self._profile)
 
     @property
@@ -459,7 +462,7 @@ class OutOfBandManager(BaseConnectionManager):
         if (
             public_did is not None and use_existing_connection
         ):  # invite has public DID: seek existing connection
-            LOGGER.debug(
+            self._logger.debug(
                 "Trying to find existing connection for oob invitation with "
                 f"did {public_did}"
             )
@@ -482,7 +485,7 @@ class OutOfBandManager(BaseConnectionManager):
                 oob_record, conn_rec, get_version_from_message(invitation)
             )
 
-            LOGGER.warning(
+            self._logger.warning(
                 f"Connection reuse request finished with state {oob_record.state}"
             )
 
@@ -503,7 +506,7 @@ class OutOfBandManager(BaseConnectionManager):
                 mediation_id=mediation_id,
                 service_accept=service_accept,
             )
-            LOGGER.debug(
+            self._logger.debug(
                 f"Performed handshake with connection {oob_record.connection_id}"
             )
             # re-fetch connection record
@@ -527,7 +530,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         # Handle any attachments
         if invitation.requests_attach:
-            LOGGER.debug(
+            self._logger.debug(
                 f"Process attached messages for oob exchange {oob_record.oob_id} "
                 f"(connection_id {oob_record.connection_id})"
             )
@@ -579,9 +582,9 @@ class OutOfBandManager(BaseConnectionManager):
             service = oob_record.invitation.services[0]
             their_service = await self._service_decorator_from_service(service)
             if their_service:
-                LOGGER.debug("Found service for oob record %s", their_service)
+                self._logger.debug("Found service for oob record %s", their_service)
             else:
-                LOGGER.debug("No service decorator obtained from %s", service)
+                self._logger.debug("No service decorator obtained from %s", service)
 
         await message_processor.handle_message(
             self.profile, messages, oob_record=oob_record, their_service=their_service
@@ -626,7 +629,7 @@ class OutOfBandManager(BaseConnectionManager):
                 routing_keys=routing_keys,
             )
         else:
-            LOGGER.warning(
+            self._logger.warning(
                 "Unexpected type `%s` passed to `_service_decorator_from_service`",
                 type(service),
             )
@@ -672,9 +675,11 @@ class OutOfBandManager(BaseConnectionManager):
                     ]:
                         return oob_record
 
-                LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted mesage")
+                self._logger.debug(
+                    f"Wait for oob {oob_id} to receive reuse accepted mesage"
+                )
                 event = await await_event
-                LOGGER.debug("Received reuse response message")
+                self._logger.debug("Received reuse response message")
                 return OobRecord.deserialize(event.payload)
 
         try:
@@ -696,7 +701,7 @@ class OutOfBandManager(BaseConnectionManager):
             "^acapy::record::connections::(active|completed|response)$"
         )
 
-        LOGGER.debug(f"Wait for connection {connection_id} to become active")
+        self._logger.debug(f"Wait for connection {connection_id} to become active")
 
         async def _wait_for_state() -> ConnRecord:
             event = self.profile.inject(EventBus)
@@ -715,7 +720,9 @@ class OutOfBandManager(BaseConnectionManager):
                     if conn_record.is_ready:
                         return conn_record
 
-                LOGGER.debug(f"Wait for connection {connection_id} to become active")
+                self._logger.debug(
+                    f"Wait for connection {connection_id} to become active"
+                )
                 # Wait for connection record to be in state
                 event = await await_event
                 return ConnRecord.deserialize(event.payload)
@@ -727,7 +734,9 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
         except asyncio.TimeoutError:
-            LOGGER.warning(f"Connection for connection_id {connection_id} not ready")
+            self._logger.warning(
+                f"Connection for connection_id {connection_id} not ready"
+            )
             return None
 
     async def _handle_hanshake_reuse(
@@ -740,7 +749,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         # Wait for the reuse accepted message
         oob_record = await self._wait_for_reuse_response(oob_record.oob_id)
-        LOGGER.debug(
+        self._logger.debug(
             f"Oob reuse for oob id {oob_record.oob_id} with connection "
             f"{oob_record.connection_id} finished with state {oob_record.state}"
         )
@@ -825,7 +834,7 @@ class OutOfBandManager(BaseConnectionManager):
                 }
             )
 
-        LOGGER.debug(f"Creating connection with public did {public_did}")
+        self._logger.debug(f"Creating connection with public did {public_did}")
 
         conn_record = None
         for protocol in supported_handshake_protocols:
