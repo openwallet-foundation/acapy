@@ -320,6 +320,19 @@ class BaseConnectionManager:
             [self._extract_key_material_in_base58_format(key) for key in routing_keys],
         )
 
+    async def record_keys_for_public_did(self, did: str):
+        """Record the keys for a public DID.
+
+        This is required to correlate sender verkeys back to a connection.
+        """
+        doc, didcomm_services = await self.resolve_didcomm_services(did)
+        for service in didcomm_services:
+            recips, _ = await self.verification_methods_for_service(doc, service)
+            for recip in recips:
+                await self.add_key_for_did(
+                    did, self._extract_key_material_in_base58_format(recip)
+                )
+
     async def resolve_connection_targets(
         self,
         did: str,

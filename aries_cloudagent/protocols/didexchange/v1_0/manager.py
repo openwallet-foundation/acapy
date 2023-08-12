@@ -493,9 +493,13 @@ class DIDXManager(BaseConnectionManager):
                     error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
                 )
         else:
+            if request.did is None:
+                raise DIDXManagerError("No DID in request")
+
             self._logger.debug(
                 "No DID Doc attachment in request; doc will be resolved from DID"
             )
+            await self.record_keys_for_public_did(request.did)
 
         if conn_rec:  # request is against explicit invitation
             auto_accept = (
@@ -775,9 +779,13 @@ class DIDXManager(BaseConnectionManager):
                 )
             await self.store_did_document(conn_did_doc)
         else:
+            if response.did is None:
+                raise DIDXManagerError("No DID in response")
+
             self._logger.debug(
                 "No DID Doc attachment in response; doc will be resolved from DID"
             )
+            await self.record_keys_for_public_did(response.did)
 
         conn_rec.their_did = their_did
         conn_rec.state = ConnRecord.State.RESPONSE.rfc23
