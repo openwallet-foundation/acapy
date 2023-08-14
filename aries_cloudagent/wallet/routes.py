@@ -50,6 +50,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
 from ..resolver.base import ResolverError
 from ..storage.error import StorageError, StorageNotFoundError
 from ..wallet.jwt import jwt_sign, jwt_verify
+from ..wallet.sd_jwt import sd_jwt_sign
 from .base import BaseWallet
 from .did_info import DIDInfo
 from .did_method import KEY, SOV, DIDMethod, DIDMethods, HolderDefinedDid
@@ -941,6 +942,43 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     return web.json_response(jws)
 
 
+@docs(
+    tags=["wallet"], summary="Create a EdDSA sd-jws using did keys with a given payload"
+)
+@request_schema(JWSCreateSchema)  # check
+@response_schema(WalletModuleResponseSchema(), description="")
+async def wallet_sd_jwt_sign(request: web.BaseRequest):
+    """
+        Request handler for sd-jws creation using did.
+
+    Args:
+        "headers": { ... },
+        "payload": { ... },
+        "did": "did:example:123",
+        "verificationMethod": "did:example:123#keys-1"
+        with did and verification being mutually exclusive.
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    did = body.get("did")
+    verification_method = body.get("verificationMethod")
+    headers = body.get("headers", {})
+    payload = body.get("payload", {})
+
+    try:
+        sd_jws = await sd_jwt_sign(
+            context.profile, headers, payload, did, verification_method
+        )
+    except ValueError as err:
+        raise web.HTTPBadRequest(reason="Bad did or verification method") from err
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(sd_jws)
+
+
 @docs(tags=["wallet"], summary="Verify a EdDSA jws using did keys with a given JWS")
 @request_schema(JWSVerifySchema())
 @response_schema(JWSVerifyResponseSchema(), 200, description="")
@@ -1125,6 +1163,7 @@ async def register(app: web.Application):
             web.post("/wallet/set-did-endpoint", wallet_set_did_endpoint),
             web.post("/wallet/jwt/sign", wallet_jwt_sign),
             web.post("/wallet/jwt/verify", wallet_jwt_verify),
+            web.post("/wallet/sd-jwt/sign", wallet_sd_jwt_sign),
             web.get(
                 "/wallet/get-did-endpoint", wallet_get_did_endpoint, allow_head=False
             ),
