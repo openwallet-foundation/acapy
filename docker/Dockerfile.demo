@@ -1,4 +1,5 @@
-FROM indy-base
+ARG python_version=3.9.16
+FROM python:${python_version}-slim-bullseye
 
 ENV ENABLE_PTVSD 0
 ENV ENABLE_PYDEVD_PYCHARM 0
@@ -26,7 +27,7 @@ ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
-RUN mkdir demo logs && chown -R indy:indy demo logs && chmod -R ug+rw demo logs
+RUN mkdir demo logs && chown -R aries:aries demo logs && chmod -R ug+rw demo logs
 
 # Add and install demo code
 ADD demo/requirements.txt ./demo/requirements.txt

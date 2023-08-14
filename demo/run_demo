@@ -85,7 +85,7 @@ do
       echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
       exit 1
     fi
-    DOCKER_VOL="${DOCKER_VOL} -v /$(pwd)/../logs:/home/indy/logs"
+    DOCKER_VOL="${DOCKER_VOL} -v /$(pwd)/../logs:/home/aries/logs"
     continue
   ;;
   --bg)
@@ -149,7 +149,6 @@ else
 fi
 
 echo "Preparing agent image..."
-docker build -q -t indy-base -f ../docker/Dockerfile.indy --target=indy-base .. || exit 1
 docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
 
 if [ ! -z "$DOCKERHOST" ]; then
