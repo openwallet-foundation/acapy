@@ -9,7 +9,10 @@ import uuid
 
 import markdown
 import prompt_toolkit
-from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
+from prompt_toolkit import __version__ as ptk_version
+PTK3 = ptk_version.startswith('3.')
+if not PTK3:
+    from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
 
 from ..config.settings import Settings
@@ -212,7 +215,8 @@ async def select_aml_tty(taa_info, provision: bool = False) -> Optional[str]:
     )
 
     # setup for prompt_toolkit
-    use_asyncio_event_loop()
+    if not PTK3:
+        use_asyncio_event_loop()
 
     prompt_toolkit.print_formatted_text(HTML(taa_html))
 
@@ -226,7 +230,10 @@ async def select_aml_tty(taa_info, provision: bool = False) -> Optional[str]:
 
     while True:
         try:
-            opt = await prompt_toolkit.prompt(opts_text, async_=True)
+            if PTK3:
+                opt = await prompt_toolkit.PromptSession().prompt_async(opts_text)
+            else:
+                opt = await prompt_toolkit.prompt(opts_text, async_=True)
         except EOFError:
             return None
         if not opt:
