@@ -216,7 +216,8 @@ class V20PresManager:
         Create a presentation exchange record for input presentation request.
 
         Args:
-            pres_ex_record: Presentation exchange record for which to add presentation request
+            pres_ex_record: Presentation exchange record for which to add
+                presentation request
             pres_request_message: Presentation request to use in exchange record
 
         Returns:
@@ -228,7 +229,8 @@ class V20PresManager:
         pres_ex_record.presentation_request_dict = pres_request_message
         async with self._profile.session() as session:
             await pres_ex_record.save(
-                session, reason="create v2.0 presentation request in response to a proposal"
+                session,
+                reason="create v2.0 presentation request in response to a proposal",
             )
 
         return pres_ex_record

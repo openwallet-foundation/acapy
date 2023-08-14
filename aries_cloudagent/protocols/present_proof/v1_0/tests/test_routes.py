@@ -788,7 +788,6 @@ class TestProofRoutes(AsyncTestCase):
             "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 

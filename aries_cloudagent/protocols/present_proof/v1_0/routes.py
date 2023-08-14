@@ -767,7 +767,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
                 )
             ],
         )
-        
+
         try:
             presentation_manager = PresentationManager(profile)
             pres_ex_record = await presentation_manager.create_request_as_response(

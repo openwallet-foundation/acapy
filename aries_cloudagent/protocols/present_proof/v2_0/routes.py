@@ -1126,7 +1126,9 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
         pres_request_message = V20PresRequest(
             comment=comment,
             will_confirm=True,
-            **_formats_attach(pres_request_spec, PRES_20_REQUEST, "request_presentations"),
+            **_formats_attach(
+                pres_request_spec, PRES_20_REQUEST, "request_presentations"
+            ),
         )
 
         try:

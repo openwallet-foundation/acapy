@@ -230,8 +230,12 @@ class PresentationManager:
 
         """
         presentation_exchange_record.state = V10PresentationExchange.STATE_REQUEST_SENT
-        presentation_exchange_record.presentation_request = presentation_request_message.indy_proof_request()
-        presentation_exchange_record.presentation_request_dict = presentation_request_message
+        presentation_exchange_record.presentation_request = (
+            presentation_request_message.indy_proof_request()
+        )
+        presentation_exchange_record.presentation_request_dict = (
+            presentation_request_message
+        )
         async with self._profile.session() as session:
             await presentation_exchange_record.save(
                 session, reason="create presentation request in response to a proposal"
