@@ -623,12 +623,151 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             in str(context.exception)
         )
 
-    async def test_receive_request(self):
+    async def test_receive_request_no_offer(self):
         cred_ex_record = async_mock.MagicMock()
+        cred_ex_record.cred_offer = None
         cred_request_message = async_mock.MagicMock()
 
-        # Not much to assert. Receive request doesn't do anything
+        # Not much to assert. Receive request doesn't do anything if no prior offer
         await self.handler.receive_request(cred_ex_record, cred_request_message)
+
+    async def test_receive_request_with_offer_no_id(self):
+        cred_offer = V20CredOffer(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            offers_attach=[AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0")],
+        )
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-id",
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            cred_offer=cred_offer,
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0")
+            ],
+        )
+
+        await self.handler.receive_request(cred_ex_record, cred_request)
+
+    async def test_receive_request_with_offer_with_id(self):
+        detail = deepcopy(LD_PROOF_VC_DETAIL)
+        detail["credential"]["credentialSubject"]["id"] = "some id"
+        cred_offer = V20CredOffer(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            offers_attach=[AttachDecorator.data_base64(detail, ident="0")],
+        )
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-id",
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            cred_offer=cred_offer,
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(detail, ident="0")],
+        )
+
+        await self.handler.receive_request(cred_ex_record, cred_request)
+
+    async def test_receive_request_with_offer_with_id_x_mismatch_id(self):
+        detail = deepcopy(LD_PROOF_VC_DETAIL)
+        detail["credential"]["credentialSubject"]["id"] = "some id"
+        cred_offer = V20CredOffer(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            offers_attach=[AttachDecorator.data_base64(detail, ident="0")],
+        )
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-id",
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            cred_offer=cred_offer,
+        )
+        req_detail = deepcopy(detail)
+        req_detail["credential"]["credentialSubject"]["id"] = "other id"
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(req_detail, ident="0")],
+        )
+
+        with self.assertRaises(V20CredFormatError) as context:
+            await self.handler.receive_request(cred_ex_record, cred_request)
+        assert "must match offer" in str(context.exception)
+
+    async def test_receive_request_with_offer_with_id_x_changed_cred(self):
+        detail = deepcopy(LD_PROOF_VC_DETAIL)
+        cred_offer = V20CredOffer(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            offers_attach=[AttachDecorator.data_base64(detail, ident="0")],
+        )
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-id",
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            cred_offer=cred_offer,
+        )
+        req_detail = deepcopy(LD_PROOF_VC_DETAIL_ED25519_2020)
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(req_detail, ident="0")],
+        )
+
+        with self.assertRaises(V20CredFormatError) as context:
+            await self.handler.receive_request(cred_ex_record, cred_request)
+        assert "Request must match offer if offer is sent" in str(context.exception)
 
     async def test_issue_credential(self):
         cred_request = V20CredRequest(
