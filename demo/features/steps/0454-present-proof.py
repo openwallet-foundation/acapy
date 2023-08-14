@@ -37,6 +37,20 @@ def step_impl(context, verifier, request_for_proof, prover):
 
     proof_request_info = read_proof_req_data(request_for_proof)
 
+    # replace any restrictions that need the cred def id...
+    cred_def_id = context.cred_def_id
+    cred_def_restrictions = [{"cred_def_id": cred_def_id}]
+
+    if "cred_def_restriction" in proof_request_info["requested_attributes"]:
+        proof_request_info["requested_attributes"]["cred_def_restriction"][
+            "restrictions"
+        ] = cred_def_restrictions
+
+    if "cred_def_predicate" in proof_request_info["requested_predicates"]:
+        proof_request_info["requested_predicates"]["cred_def_predicate"][
+            "restrictions"
+        ] = cred_def_restrictions
+
     proof_exchange = aries_container_request_proof(agent["agent"], proof_request_info)
 
     context.proof_request = proof_request_info

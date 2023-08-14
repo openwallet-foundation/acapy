@@ -1,5 +1,41 @@
 Feature: RFC 0454 Aries agent present proof
 
+   @T001-RFC0454 @GHA-Anoncreds-break @GHA
+   Scenario Outline: Using anoncreds, Present Proof where the prover does not propose a presentation of the proof and is acknowledged
+      Given we have "2" agents
+         | name  | role     | capabilities        |
+         | Faber | verifier | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "<issuer>" and "Bob" have an existing connection
+      And Using anoncreds, "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" and "Bob" have an existing connection
+      When "Faber" sends a request for proof presentation <Proof_request> to "Bob"
+      Then "Faber" has the proof verified
+
+      Examples:
+         | issuer | Acme_capabilities                      | Bob_capabilities          | Schema_name       | Credential_data   | Proof_request     |
+         | Faber  | --public-did --cred-type anoncreds                           |                           | anoncreds-testing | Data_AC_NormalizedValues | AC_age_over_40 |
+         | Faber  | --public-did --cred-type anoncreds --did-exchange            | --did-exchange            | anoncreds-testing | Data_AC_NormalizedValues | AC_age_over_40 |
+
+
+   @T002-RFC0454 @GHA-Anoncreds-break @GHA
+   Scenario Outline: Using anoncreds, Present Proof where the issuer revokes the credential and the proof fails
+      Given we have "2" agents
+         | name  | role     | capabilities        |
+         | Faber | verifier | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "<issuer>" and "Bob" have an existing connection
+      And Using anoncreds, "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And Using anoncreds, "<issuer>" revokes the credential
+      And "Faber" and "Bob" have an existing connection
+      When "Faber" sends a request for proof presentation <Proof_request> to "Bob"
+      Then "Faber" has the proof verification fail
+
+      Examples:
+         | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
+         | Faber  | --revocation --public-did --cred-type anoncreds                  |                  | anoncreds-testing | Data_AC_NormalizedValues | AC_age_over_40 |
+         | Faber  | --revocation --public-did --did-exchange --cred-type anoncreds   | --did-exchange   | anoncreds-testing | Data_AC_NormalizedValues | AC_age_over_40 |
+
    @T001-RFC0454 @GHA-Anoncreds-break
    Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
       Given we have "2" agents
