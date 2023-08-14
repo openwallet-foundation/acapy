@@ -88,6 +88,7 @@ async def sd_jwt_sign(
         issuer_key=None,
         holder_key=None,
         profile=profile,
+        headers=headers,
         did=did,
         verification_method=verification_method,
     )
