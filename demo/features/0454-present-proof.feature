@@ -16,7 +16,7 @@ Feature: RFC 0454 Aries agent present proof
          | issuer | Acme_capabilities                      | Bob_capabilities          | Schema_name       | Credential_data   | Proof_request     |
          | Faber  | --public-did --cred-type anoncreds                           |                           | anoncreds-testing | Data_AC_NormalizedValues | AC_age_over_40 |
          | Faber  | --public-did --cred-type anoncreds --did-exchange            | --did-exchange            | anoncreds-testing | Data_AC_NormalizedValues | AC_age_over_40 |
-
+         | Faber  | --public-did --cred-type anoncreds                           |                           | anoncreds-testing | Data_AC_NormalizedValues | AC_age_over_40_schema |
 
    @T002-RFC0454 @GHA-Anoncreds-break @GHA
    Scenario Outline: Using anoncreds, Present Proof where the issuer revokes the credential and the proof fails

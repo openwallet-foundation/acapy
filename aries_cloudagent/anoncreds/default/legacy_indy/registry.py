@@ -168,7 +168,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     issuer_id=schema["id"].split(":")[0],
                     attr_names=schema["attrNames"],
                     name=schema["name"],
-                    version=schema["ver"],
+                    version=schema["version"],
                 )
                 result = GetSchemaResult(
                     schema=anonscreds_schema,
