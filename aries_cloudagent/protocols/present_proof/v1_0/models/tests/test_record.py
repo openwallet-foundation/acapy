@@ -97,6 +97,7 @@ class TestRecord(AsyncTestCase):
             connection_id="conn_id",
             thread_id="thid",
             auto_present=True,
+            auto_remove=True,
         )
         record.presentation_proposal_dict = presentation_proposal  # cover setter
         record.presentation_request_dict = None  # cover setter
@@ -115,6 +116,7 @@ class TestRecord(AsyncTestCase):
             "verified": None,
             "verified_msgs": None,
             "trace": False,
+            "auto_remove": True,
         }
 
         bx_record = BasexRecordImpl()

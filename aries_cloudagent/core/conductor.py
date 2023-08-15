@@ -11,6 +11,7 @@ wallet.
 import hashlib
 import json
 import logging
+from typing import Optional
 
 from packaging import version as package_version
 from qrcode import QRCode
@@ -34,7 +35,7 @@ from ..commands.upgrade import (
 )
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
-
+from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
@@ -144,11 +145,7 @@ class Conductor:
                 MultiIndyLedgerManagerProvider(self.root_profile),
             )
             if not (context.settings.get("ledger.genesis_transactions")):
-                ledger = (
-                    await context.injector.inject(
-                        BaseMultipleLedgerManager
-                    ).get_write_ledger()
-                )[1]
+                ledger = context.injector.inject(BaseLedger)
                 if (
                     self.root_profile.BACKEND_NAME == "askar"
                     and ledger.BACKEND_NAME == "indy-vdr"
@@ -318,6 +315,7 @@ class Conductor:
             self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
+        LoggingConfigurator.print_notices(context.settings)
 
         # record ACA-Py version in Wallet, if needed
         from_version_storage = None
@@ -680,7 +678,7 @@ class Conductor:
         self,
         profile: Profile,
         outbound: OutboundMessage,
-        inbound: InboundMessage = None,
+        inbound: Optional[InboundMessage] = None,
     ) -> OutboundSendStatus:
         """
         Queue an outbound message for transport.
@@ -703,7 +701,7 @@ class Conductor:
                 )
             except ConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
-                return
+                return OutboundSendStatus.UNDELIVERABLE
             except (LedgerConfigError, LedgerTransactionError) as e:
                 LOGGER.error("Shutdown on ledger error %s", str(e))
                 if self.admin_server:

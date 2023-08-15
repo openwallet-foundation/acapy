@@ -5,7 +5,6 @@ from typing import Mapping
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import PERFORM, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.perform_handler.PerformHandler"
@@ -44,12 +43,10 @@ class PerformSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     name = fields.Str(
-        required=True,
-        description="Menu option name",
-        example="Query",
+        required=True, metadata={"description": "Menu option name", "example": "Query"}
     )
     params = fields.Dict(
         required=False,
-        keys=fields.Str(example="parameter"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Str(example="value"),
+        keys=fields.Str(metadata={"example": "parameter"}),
+        values=fields.Str(metadata={"example": "value"}),
     )

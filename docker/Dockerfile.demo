@@ -1,11 +1,12 @@
-FROM indy-base
+ARG from_image=ghcr.io/hyperledger/aries-cloudagent-python:py3.9-0.9.0
+FROM ${from_image}
 
 ENV ENABLE_PTVSD 0
 ENV ENABLE_PYDEVD_PYCHARM 0
 ENV PYDEVD_PYCHARM_HOST "host.docker.internal"
 ENV ACAPY_DEBUG_WEBHOOKS 1
 
-RUN mkdir bin && curl -L -o bin/jq \
+RUN mkdir -p bin && curl -L -o bin/jq \
 	https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && \
 	chmod ug+x bin/jq
 
@@ -26,7 +27,7 @@ ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
-RUN mkdir demo logs && chown -R indy:indy demo logs && chmod -R ug+rw demo logs
+RUN mkdir demo logs && chown -R aries:aries demo logs && chmod -R ug+rw demo logs
 
 # Add and install demo code
 ADD demo/requirements.txt ./demo/requirements.txt

@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import PING_RESPONSE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.ping_response_handler.PingResponseHandler"
@@ -42,7 +41,6 @@ class PingResponseSchema(AgentMessageSchema):
 
     comment = fields.Str(
         required=False,
-        description="Optional comment to include",
-        example="Hello",
         allow_none=True,
+        metadata={"description": "Optional comment to include", "example": "Hello"},
     )

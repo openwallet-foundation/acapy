@@ -35,7 +35,7 @@ from ...out_of_band.v1_0.messages.invitation import (
 from ...out_of_band.v1_0.messages.service import Service as OOBService
 from .message_types import ARIES_PROTOCOL as DIDX_PROTO
 from .messages.complete import DIDXComplete
-from .messages.problem_report_reason import ProblemReportReason
+from .messages.problem_report import DIDXProblemReport, ProblemReportReason
 from .messages.request import DIDXRequest
 from .messages.response import DIDXResponse
 
@@ -231,6 +231,7 @@ class DIDXManager(BaseConnectionManager):
             mediation_id=mediation_id,
             goal_code=goal_code,
             goal=goal,
+            use_public_did=bool(my_public_info),
         )
         conn_rec.request_id = request._id
         conn_rec.state = ConnRecord.State.REQUEST.rfc23
@@ -245,11 +246,12 @@ class DIDXManager(BaseConnectionManager):
     async def create_request(
         self,
         conn_rec: ConnRecord,
-        my_label: str = None,
-        my_endpoint: str = None,
-        mediation_id: str = None,
-        goal_code: str = None,
-        goal: str = None,
+        my_label: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        mediation_id: Optional[str] = None,
+        goal_code: Optional[str] = None,
+        goal: Optional[str] = None,
+        use_public_did: bool = False,
     ) -> DIDXRequest:
         """
         Create a new connection request for a previously-received invitation.
@@ -262,6 +264,8 @@ class DIDXManager(BaseConnectionManager):
                 service endpoint
             goal_code: Optional self-attested code for sharing intent of connection
             goal: Optional self-attested string for sharing intent of connection
+            use_public_did: Flag whether to use public DID and omit DID Doc
+                attachment on request
         Returns:
             A new `DIDXRequest` message to send to the other agent
 
@@ -296,12 +300,7 @@ class DIDXManager(BaseConnectionManager):
                     method=SOV,
                     key_type=ED25519,
                 )
-            conn_rec.my_did = my_info.did
-
-        # Idempotent; if routing has already been set up, no action taken
-        await self._route_manager.route_connection_as_invitee(
-            self.profile, conn_rec, mediation_record
-        )
+                conn_rec.my_did = my_info.did
 
         # Create connection request message
         if my_endpoint:
@@ -313,25 +312,36 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        did_doc = await self.create_did_document(
-            my_info,
-            conn_rec.inbound_connection_id,
-            my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
-        )
+        if use_public_did:
+            # Omit DID Doc attachment if we're using a public DID
+            did_doc = None
+            attach = None
+        else:
+            did_doc = await self.create_did_document(
+                my_info,
+                conn_rec.inbound_connection_id,
+                my_endpoints,
+                mediation_records=list(
+                    filter(None, [base_mediation_record, mediation_record])
+                ),
+            )
+            attach = AttachDecorator.data_base64(did_doc.serialize())
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                await attach.data.sign(my_info.verkey, wallet)
+
         if conn_rec.their_public_did is not None:
             qualified_did = conn_rec.their_public_did
             did_document = await self.get_resolved_did_document(qualified_did)
             did_url = await self.get_first_applicable_didcomm_service(did_document)
+        else:
+            did_url = None
+
         pthid = conn_rec.invitation_msg_id or did_url
-        attach = AttachDecorator.data_base64(did_doc.serialize())
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            await attach.data.sign(my_info.verkey, wallet)
+
         if not my_label:
             my_label = self.profile.settings.get("default_label")
+
         request = DIDXRequest(
             label=my_label,
             did=conn_rec.my_did,
@@ -347,16 +357,21 @@ class DIDXManager(BaseConnectionManager):
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Created connection request")
 
+        # Idempotent; if routing has already been set up, no action taken
+        await self._route_manager.route_connection_as_invitee(
+            self.profile, conn_rec, mediation_record
+        )
+
         return request
 
     async def receive_request(
         self,
         request: DIDXRequest,
         recipient_did: str,
-        recipient_verkey: str = None,
-        my_endpoint: str = None,
-        alias: str = None,
-        auto_accept_implicit: bool = None,
+        recipient_verkey: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        alias: Optional[str] = None,
+        auto_accept_implicit: Optional[bool] = None,
     ) -> ConnRecord:
         """
         Receive and store a connection request.
@@ -546,8 +561,8 @@ class DIDXManager(BaseConnectionManager):
     async def create_response(
         self,
         conn_rec: ConnRecord,
-        my_endpoint: str = None,
-        mediation_id: str = None,
+        my_endpoint: Optional[str] = None,
+        mediation_id: Optional[str] = None,
     ) -> DIDXResponse:
         """
         Create a connection response for a received connection request.
@@ -840,6 +855,61 @@ class DIDXManager(BaseConnectionManager):
                 )
 
         return conn_rec
+
+    async def reject(
+        self,
+        conn_rec: ConnRecord,
+        *,
+        reason: Optional[str] = None,
+    ) -> DIDXProblemReport:
+        """Abandon an existing DID exchange."""
+        state_to_reject_code = {
+            ConnRecord.State.INVITATION.rfc23
+            + "-received": ProblemReportReason.INVITATION_NOT_ACCEPTED,
+            ConnRecord.State.REQUEST.rfc23
+            + "-received": ProblemReportReason.REQUEST_NOT_ACCEPTED,
+        }
+        code = state_to_reject_code.get(conn_rec.rfc23_state)
+        if not code:
+            raise DIDXManagerError(
+                f"Cannot reject connection in state: {conn_rec.rfc23_state}"
+            )
+
+        async with self.profile.session() as session:
+            await conn_rec.abandon(session, reason=reason)
+
+        report = DIDXProblemReport(
+            description={
+                "code": code.value,
+                "en": reason or "DID exchange rejected",
+            },
+        )
+
+        # TODO Delete the record?
+        return report
+
+    async def receive_problem_report(
+        self,
+        conn_rec: ConnRecord,
+        report: DIDXProblemReport,
+    ):
+        """Receive problem report."""
+        if not report.description:
+            raise DIDXManagerError("Missing description in problem report")
+
+        if report.description.get("code") in set(
+            reason.value for reason in ProblemReportReason
+        ):
+            self._logger.info("Problem report indicates connection is abandoned")
+            async with self.profile.session() as session:
+                await conn_rec.abandon(
+                    session,
+                    reason=report.description.get("en"),
+                )
+        else:
+            raise DIDXManagerError(
+                f"Received unrecognized problem report: {report.description}"
+            )
 
     async def verify_diddoc(
         self,

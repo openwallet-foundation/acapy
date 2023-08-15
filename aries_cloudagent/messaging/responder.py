@@ -8,7 +8,7 @@ import asyncio
 import json
 
 from abc import ABC, abstractmethod
-from typing import Sequence, Union, Optional, Tuple
+from typing import List, Sequence, Union, Optional, Tuple
 
 from ..cache.base import BaseCache
 from ..connections.models.connection_target import ConnectionTarget
@@ -208,7 +208,9 @@ class MockResponder(BaseResponder):
 
     def __init__(self):
         """Initialize the mock responder."""
-        self.messages = []
+        self.messages: List[
+            Tuple[Union[BaseMessage, str, bytes, OutboundMessage], Optional[dict]]
+        ] = []
 
     async def send(
         self, message: Union[BaseMessage, str, bytes], **kwargs

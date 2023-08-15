@@ -12,6 +12,7 @@ ARIES_PROTOCOL = "didexchange/1.0"
 DIDX_REQUEST = f"{ARIES_PROTOCOL}/request"
 DIDX_RESPONSE = f"{ARIES_PROTOCOL}/response"
 DIDX_COMPLETE = f"{ARIES_PROTOCOL}/complete"
+PROBLEM_REPORT = f"{ARIES_PROTOCOL}/problem_report"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.didexchange.v1_0"
 

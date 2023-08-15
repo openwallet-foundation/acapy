@@ -4,6 +4,7 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from pydid import DIDDocument
 
+from .. import manager as test_module
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.base_manager import BaseConnectionManagerError
@@ -24,7 +25,7 @@ from .....resolver.tests import DOC
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo
-from .....wallet.did_method import SOV, DIDMethods
+from .....wallet.did_method import DIDMethods, SOV
 from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
@@ -36,8 +37,8 @@ from ....discovery.v2_0.manager import V20DiscoveryMgr
 from ....out_of_band.v1_0.manager import OutOfBandManager
 from ....out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ....out_of_band.v1_0.messages.service import Service as OOBService
-from .. import manager as test_module
 from ..manager import DIDXManager, DIDXManagerError
+from ..messages.problem_report import DIDXProblemReport, ProblemReportReason
 
 
 class TestConfig:
@@ -309,6 +310,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             assert info_public.did == conn_rec.my_did
+            assert self.responder.messages
+            request, kwargs = self.responder.messages[0]
+            assert isinstance(request, test_module.DIDXRequest)
+            assert request.did_doc_attach is None
 
     async def test_create_request_implicit_no_public_did(self):
         with self.assertRaises(WalletError) as context:
@@ -470,6 +475,24 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 my_endpoint="http://testendpoint.com/endpoint",
             )
             assert didx_req
+
+    async def test_create_request_public_did(self):
+        mock_conn_rec = async_mock.MagicMock(
+            connection_id="dummy",
+            my_did=self.did_info.did,
+            their_did=TestConfig.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.REQUEST.rfc23,
+            retrieve_invitation=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    services=[TestConfig.test_target_did],
+                )
+            ),
+            save=async_mock.CoroutineMock(),
+        )
+
+        request = await self.manager.create_request(mock_conn_rec, use_public_did=True)
+        assert request.did_doc_attach is None
 
     async def test_receive_request_explicit_public_did(self):
         async with self.profile.session() as session:
@@ -1802,6 +1825,88 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             with self.assertRaises(DIDXManagerError):
                 await self.manager.accept_complete(mock_complete, receipt)
+
+    async def test_reject_invited(self):
+        mock_conn = ConnRecord(
+            connection_id="dummy",
+            inbound_connection_id=None,
+            their_did=TestConfig.test_target_did,
+            state=ConnRecord.State.INVITATION.rfc23,
+            their_role=ConnRecord.Role.RESPONDER,
+        )
+        mock_conn.abandon = async_mock.CoroutineMock()
+        reason = "He doesn't like you!"
+        report = await self.manager.reject(mock_conn, reason=reason)
+        assert report
+
+    async def test_reject_requested(self):
+        mock_conn = ConnRecord(
+            connection_id="dummy",
+            inbound_connection_id=None,
+            their_did=TestConfig.test_target_did,
+            state=ConnRecord.State.REQUEST.rfc23,
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        mock_conn.abandon = async_mock.CoroutineMock()
+        reason = "I don't like you either! You just watch yourself!"
+        report = await self.manager.reject(mock_conn, reason=reason)
+        assert report
+
+    async def test_reject_invalid(self):
+        mock_conn = ConnRecord(
+            connection_id="dummy",
+            inbound_connection_id=None,
+            their_did=TestConfig.test_target_did,
+            state=ConnRecord.State.COMPLETED.rfc23,
+        )
+        mock_conn.abandon = async_mock.CoroutineMock()
+        reason = "I'll be careful."
+        with self.assertRaises(DIDXManagerError) as context:
+            await self.manager.reject(mock_conn, reason=reason)
+        assert "Cannot reject connection in state" in str(context.exception)
+
+    async def test_receive_problem_report(self):
+        mock_conn = async_mock.MagicMock(
+            connection_id="dummy",
+            inbound_connection_id=None,
+            their_did=TestConfig.test_target_did,
+            state=ConnRecord.State.COMPLETED.rfc23,
+        )
+        mock_conn.abandon = async_mock.CoroutineMock()
+        report = DIDXProblemReport(
+            description={
+                "code": ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                "en": "You'll be dead!",
+            }
+        )
+        await self.manager.receive_problem_report(mock_conn, report)
+        assert mock_conn.abandon.called_once()
+
+    async def test_receive_problem_report_x_missing_description(self):
+        mock_conn = async_mock.MagicMock(
+            connection_id="dummy",
+            inbound_connection_id=None,
+            their_did=TestConfig.test_target_did,
+            state=ConnRecord.State.COMPLETED.rfc23,
+        )
+        mock_conn.abandon = async_mock.CoroutineMock()
+        report = DIDXProblemReport()
+        with self.assertRaises(DIDXManagerError) as context:
+            await self.manager.receive_problem_report(mock_conn, report)
+        assert "Missing description" in str(context.exception)
+
+    async def test_receive_problem_report_x_unrecognized_code(self):
+        mock_conn = async_mock.MagicMock(
+            connection_id="dummy",
+            inbound_connection_id=None,
+            their_did=TestConfig.test_target_did,
+            state=ConnRecord.State.COMPLETED.rfc23,
+        )
+        mock_conn.abandon = async_mock.CoroutineMock()
+        report = DIDXProblemReport(description={"code": "something random"})
+        with self.assertRaises(DIDXManagerError) as context:
+            await self.manager.receive_problem_report(mock_conn, report)
+        assert "unrecognized problem report" in str(context.exception)
 
     async def test_create_did_document(self):
         did_info = DIDInfo(

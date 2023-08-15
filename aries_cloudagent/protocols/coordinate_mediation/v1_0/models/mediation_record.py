@@ -6,7 +6,7 @@ from marshmallow import EXCLUDE, fields
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
-from .....messaging.valid import DID_KEY
+from .....messaging.valid import DID_KEY_EXAMPLE, DID_KEY_VALIDATE
 from .....storage.base import StorageDuplicateError, StorageNotFoundError
 
 
@@ -96,7 +96,7 @@ class MediationRecord(BaseRecord):
         ]:
             raise ValueError(
                 f"{state} is not a valid state, "
-                f"must be one of ("
+                "must be one of ("
                 f"{MediationRecord.STATE_DENIED}, "
                 f"{MediationRecord.STATE_GRANTED}, "
                 f"{MediationRecord.STATE_REQUEST}"
@@ -172,5 +172,8 @@ class MediationRecordSchema(BaseRecordSchema):
     connection_id = fields.Str(required=True)
     mediator_terms = fields.List(fields.Str(), required=False)
     recipient_terms = fields.List(fields.Str(), required=False)
-    routing_keys = fields.List(fields.Str(**DID_KEY), required=False)
+    routing_keys = fields.List(
+        fields.Str(validate=DID_KEY_VALIDATE, metadata={"example": DID_KEY_EXAMPLE}),
+        required=False,
+    )
     endpoint = fields.Str(required=False)
