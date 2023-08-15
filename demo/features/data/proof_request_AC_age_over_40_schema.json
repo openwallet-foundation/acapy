@@ -1,0 +1,29 @@
+{
+    "presentation_proposal": {
+       "requested_attributes": {
+          "name_restriction": {
+             "name": "name",
+             "restrictions": [
+                {
+                    "schema_name": "anoncreds-testing",
+                    "schema_version": "0.1"
+                }
+             ]
+          }
+       },
+       "requested_predicates": {
+          "age_predicate": {
+             "name": "age",
+             "p_type": ">",
+             "p_value": 40,
+             "restrictions": [
+                {
+                    "schema_name": "anoncreds-testing",
+                    "schema_version": "0.1"
+                }
+             ]
+          }
+       },
+       "version": "0.1.0"
+    }
+ }
