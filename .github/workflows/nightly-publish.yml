@@ -1,0 +1,42 @@
+name: Nightly Publish
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  tests:
+    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
+    name: Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.9", "3.10"]
+    uses: ./.github/workflows/tests.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+
+  tests-indy:
+    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
+    name: Tests (Indy)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.9", "3.10"]
+    uses: ./.github/workflows/tests-indy.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      indy-version: "1.16.0"
+
+  publish:
+    name: Publish
+    needs: [tests, tests-indy]
+    uses: ./.github/workflows/publish.yml
+    with:
+      tag: "nightly"
+      platform: "linux/amd64"
