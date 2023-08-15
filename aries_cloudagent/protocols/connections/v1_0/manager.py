@@ -525,8 +525,12 @@ class ConnectionManager(BaseConnectionManager):
             connection.their_did = request.connection.did
             connection.state = ConnRecord.State.REQUEST.rfc160
             async with self.profile.session() as session:
+                # force emitting event that would be ignored for multi-use invitations
+                # since the record is not new, and the state was not updated
                 await connection.save(
-                    session, reason="Received connection request from invitation"
+                    session,
+                    reason="Received connection request from invitation",
+                    event=True,
                 )
         elif not self.profile.settings.get("public_invites"):
             raise ConnectionManagerError("Public invitations are not enabled")

@@ -14,11 +14,3 @@ jobs:
     with:
       python-version: "3.9"
       os: "ubuntu-latest"
-
-  tests-indy:
-    name: Tests (Indy)
-    uses: ./.github/workflows/tests-indy.yml
-    with:
-      python-version: "3.9"
-      indy-version: "1.16.0"
-      os: "ubuntu-latest"
