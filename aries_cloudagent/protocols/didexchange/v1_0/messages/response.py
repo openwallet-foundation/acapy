@@ -7,7 +7,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import ANYDID_OR_UNQUALIFIED
+from .....messaging.valid import ANY_DID_OR_UNQUALIFIED_EXAMPLE, ANY_DID_OR_UNQUALIFIED_VALIDATE
 
 from ..message_types import DIDX_RESPONSE, PROTOCOL_PACKAGE
 
@@ -52,10 +52,13 @@ class DIDXResponseSchema(AgentMessageSchema):
         model_class = DIDXResponse
         unknown = EXCLUDE
 
-    did = fields.Str(description="DID of exchange", **ANYDID_OR_UNQUALIFIED)
+    did = fields.Str(
+        validate=ANY_DID_OR_UNQUALIFIED_VALIDATE,
+        metadata={"description": "DID of exchange", "example": ANY_DID_OR_UNQUALIFIED_EXAMPLE},
+    )
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,
-        description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",
+        metadata={"description": "As signed attachment, DID Doc associated with DID"},
     )

@@ -1,0 +1,7 @@
+- id: sovrinMain
+  is_production: true
+  is_write: true
+- id: sovrinStaging
+  is_production: true
+- id: sovrinTest
+  is_production: false

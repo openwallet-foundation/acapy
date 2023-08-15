@@ -4,7 +4,9 @@ from marshmallow import EXCLUDE, fields
 from peerdid.dids import DIDDocument
 from .....connections.models.diddoc import LegacyDIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import ANY_DID
+<<<<<<< HEAD
+from .....messaging.valid import ANY_DID_EXAMPLE, ANY_DID_VALIDATE
+>>>>>>> main
 
 
 class DIDDocWrapper(fields.Field):
@@ -97,12 +99,17 @@ class ConnectionDetailSchema(BaseModelSchema):
     did = fields.Str(
         data_key="DID",
         required=False,
-        description="DID for connection detail",
-        **ANY_DID
+        validate=ANY_DID_VALIDATE,
+        metadata={
+            "description": "DID for connection detail",
+            "example": ANY_DID_EXAMPLE,
+        },
     )
     # JS this could accept DIDDocWrapper OR another wrapper of peerdid.dids.DIDDocument
     did_doc = DIDDocWrapper(
         data_key="DIDDoc",
         required=False,
-        description="DID document for connection detail",
+        metadata={
+            "description": "DID document for connection detail",
+        },
     )

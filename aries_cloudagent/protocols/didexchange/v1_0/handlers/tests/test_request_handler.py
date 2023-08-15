@@ -2,21 +2,19 @@ from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
 from peerdid.dids import resolve_peer_did
 
-from ......connections.models import connection_target, conn_record
+from ......connections.models import conn_record, connection_target
+from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......core.in_memory import InMemoryProfile
-from ......wallet.did_method import SOV, DIDMethods
-from ......wallet.key_type import ED25519
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
-from .....problem_report.v1_0.message import ProblemReport
-
+from ......wallet.did_method import DIDMethods, SOV
+from ......wallet.key_type import ED25519
 from ...handlers import request_handler as test_module
 from ...manager import DIDXManagerError
+from ...messages.problem_report import DIDXProblemReport, ProblemReportReason
 from ...messages.request import DIDXRequest
-from ...messages.problem_report_reason import ProblemReportReason
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -156,8 +154,13 @@ class TestDIDXRequestHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert isinstance(result, ProblemReport) and (
-            result.description["code"] == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+        assert (
+            isinstance(result, DIDXProblemReport)
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": None}
 
@@ -183,8 +186,13 @@ class TestDIDXRequestHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert isinstance(result, ProblemReport) and (
-            result.description["code"] == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+        assert (
+            isinstance(result, DIDXProblemReport)
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": [mock_conn_target]}
 
@@ -214,7 +222,12 @@ class TestDIDXRequestHandler(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
         result, target = messages[0]
-        assert isinstance(result, ProblemReport) and (
-            result.description["code"] == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+        assert (
+            isinstance(result, DIDXProblemReport)
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": None}

@@ -7,7 +7,7 @@ from functools import total_ordering
 from os.path import join
 from pathlib import Path
 from shutil import move
-from typing import Any, Mapping, Sequence, Union, Tuple
+from typing import Any, Mapping, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 from marshmallow import fields, validate
@@ -25,17 +25,19 @@ from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError, LedgerTransactionError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    BASE58_SHA256_HASH,
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_REV_REG_ID,
-    UUIDFour,
+    BASE58_SHA256_HASH_EXAMPLE,
+    BASE58_SHA256_HASH_VALIDATE,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    UUID4_EXAMPLE,
 )
 from ...tails.base import BaseTailsServer
-
 from ..error import RevocationError
 from ..recover import generate_ledger_rrrecovery_txn
-
 from .issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation_registry import RevocationRegistry
 
@@ -577,65 +579,94 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
 
     record_id = fields.Str(
         required=False,
-        description="Issuer revocation registry record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Issuer revocation registry record identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Issue revocation registry record state",
-        example=IssuerRevRegRecord.STATE_ACTIVE,
+        metadata={
+            "description": "Issue revocation registry record state",
+            "example": IssuerRevRegRecord.STATE_ACTIVE,
+        },
     )
     cred_def_id = fields.Str(
         required=False,
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     error_msg = fields.Str(
         required=False,
-        description="Error message",
-        example="Revocation registry undefined",
+        metadata={
+            "description": "Error message",
+            "example": "Revocation registry undefined",
+        },
     )
-    issuer_did = fields.Str(required=False, description="Issuer DID", **INDY_DID)
+    issuer_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Issuer DID", "example": INDY_DID_EXAMPLE},
+    )
     max_cred_num = fields.Int(
         required=False,
-        description="Maximum number of credentials for revocation registry",
-        strict=True,
-        example=1000,
+        metadata={
+            "description": "Maximum number of credentials for revocation registry",
+            "strict": True,
+            "example": 1000,
+        },
     )
     revoc_def_type = fields.Str(
         required=False,
-        description="Revocation registry type (specify CL_ACCUM)",
-        example="CL_ACCUM",
         validate=validate.Equal("CL_ACCUM"),
+        metadata={
+            "description": "Revocation registry type (specify CL_ACCUM)",
+            "example": "CL_ACCUM",
+        },
     )
     revoc_reg_id = fields.Str(
-        required=False, description="Revocation registry identifier", **INDY_REV_REG_ID
+        required=False,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
     revoc_reg_def = fields.Nested(
         IndyRevRegDefSchema(),
         required=False,
-        description="Revocation registry definition",
+        metadata={"description": "Revocation registry definition"},
     )
     revoc_reg_entry = fields.Nested(
-        IndyRevRegEntrySchema(), required=False, description="Revocation registry entry"
+        IndyRevRegEntrySchema(),
+        required=False,
+        metadata={"description": "Revocation registry entry"},
     )
     tag = fields.Str(
-        required=False, description="Tag within issuer revocation registry identifier"
+        required=False,
+        metadata={"description": "Tag within issuer revocation registry identifier"},
     )
     tails_hash = fields.Str(
-        required=False, description="Tails hash", **BASE58_SHA256_HASH
+        required=False,
+        validate=BASE58_SHA256_HASH_VALIDATE,
+        metadata={"description": "Tails hash", "example": BASE58_SHA256_HASH_EXAMPLE},
     )
     tails_public_uri = fields.Str(
-        required=False, description="Public URI for tails file"
+        required=False, metadata={"description": "Public URI for tails file"}
     )
     tails_local_path = fields.Str(
-        required=False, description="Local path to tails file"
+        required=False, metadata={"description": "Local path to tails file"}
     )
     pending_pub = fields.List(
-        fields.Str(example="23"),
-        description=(
-            "Credential revocation identifier for credential "
-            "revoked and pending publication to ledger"
-        ),
+        fields.Str(metadata={"example": "23"}),
         required=False,
+        metadata={
+            "description": (
+                "Credential revocation identifier for credential revoked and pending"
+                " publication to ledger"
+            )
+        },
     )

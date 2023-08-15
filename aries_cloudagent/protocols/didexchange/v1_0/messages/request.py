@@ -1,5 +1,7 @@
 """Represents a DID exchange request message under RFC 23."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -7,7 +9,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import ANYDID_OR_UNQUALIFIED
+from .....messaging.valid import ANY_DID_OR_UNQUALIFIED_EXAMPLE, ANY_DID_OR_UNQUALIFIED_VALIDATE
 
 from ..message_types import DIDX_REQUEST, PROTOCOL_PACKAGE
 
@@ -27,11 +29,11 @@ class DIDXRequest(AgentMessage):
     def __init__(
         self,
         *,
-        label: str = None,
-        did: str = None,
-        did_doc_attach: AttachDecorator = None,
-        goal_code: str = None,
-        goal: str = None,
+        label: Optional[str] = None,
+        did: Optional[str] = None,
+        did_doc_attach: Optional[AttachDecorator] = None,
+        goal_code: Optional[str] = None,
+        goal: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -68,25 +70,41 @@ class DIDXRequestSchema(AgentMessageSchema):
 
     label = fields.Str(
         required=True,
-        description="Label for DID exchange request",
-        example="Request to connect with Bob",
+        metadata={
+            "description": "Label for DID exchange request",
+            "example": "Request to connect with Bob",
+        },
     )
-    did = fields.Str(description="DID of exchange", **ANYDID_OR_UNQUALIFIED)
+    did = fields.Str(
+        validate=ANY_DID_OR_UNQUALIFIED_VALIDATE,
+        metadata={
+            "description": "DID of exchange", 
+            "example": ANY_DID_OR_UNQUALIFIED_EXAMPLE
+        }
+    )
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,
-        description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",
+        metadata={"description": "As signed attachment, DID Doc associated with DID"},
     )
     goal_code = fields.Str(
         required=False,
-        description="A self-attested code the receiver may want to display to the user "
-        "or use in automatically deciding what to do with the out-of-band message",
-        example="issue-vc",
+        metadata={
+            "description": (
+                "A self-attested code the receiver may want to display to the user or"
+                " use in automatically deciding what to do with the out-of-band message"
+            ),
+            "example": "issue-vc",
+        },
     )
     goal = fields.Str(
         required=False,
-        description="A self-attested string that the receiver may want to display to the "
-        "user about the context-specific goal of the out-of-band message",
-        example="To issue a Faber College Graduate credential",
+        metadata={
+            "description": (
+                "A self-attested string that the receiver may want to display to the"
+                " user about the context-specific goal of the out-of-band message"
+            ),
+            "example": "To issue a Faber College Graduate credential",
+        },
     )

@@ -7,12 +7,10 @@ from marshmallow import fields
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import KEYLIST, PROTOCOL_PACKAGE
 from .inner.keylist_key import KeylistKeySchema
-
 from .inner.keylist_query_paginate import (
     KeylistQueryPaginate,
     KeylistQueryPaginateSchema,
 )
-
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.keylist_handler.KeylistHandler"
 
@@ -55,6 +53,10 @@ class KeylistSchema(AgentMessageSchema):
         model_class = Keylist
 
     pagination = fields.Nested(
-        KeylistQueryPaginateSchema(), required=False, description="List of update rules"
+        KeylistQueryPaginateSchema(),
+        required=False,
+        metadata={"description": "List of update rules"},
     )
-    keys = fields.List(fields.Nested(KeylistKeySchema()), description="Keys")
+    keys = fields.List(
+        fields.Nested(KeylistKeySchema()), metadata={"description": "Keys"}
+    )

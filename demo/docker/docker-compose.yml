@@ -51,7 +51,7 @@ services:
         --log-level 'info' ",
       ]
     volumes:
-      - ./ledgers.yaml:/home/indy/ledgers.yaml
+      - ./ledgers.yaml:/home/aries/ledgers.yaml
     networks:
       - tails-network
 

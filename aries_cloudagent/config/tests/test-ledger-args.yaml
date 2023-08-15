@@ -1,5 +1,6 @@
 - id: sovrinMain
   is_production: true
+  is_write: true
   genesis_transactions:
     reqSignature: {}
     txn:
@@ -26,6 +27,7 @@
     ver: '1'
 - id: sovrinStaging
   is_production: true
+  is_write: true
   genesis_file: /home/indy/ledger/sandbox/pool_transactions_genesis
 - id: sovrinTest
   is_production: false

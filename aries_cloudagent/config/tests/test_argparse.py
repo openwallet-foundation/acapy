@@ -67,15 +67,39 @@ class TestArgParse(AsyncTestCase):
         result = parser.parse_args(
             [
                 "--genesis-transactions-list",
+                "./aries_cloudagent/config/tests/test-ledger-args-no-write.yaml",
+            ]
+        )
+        assert (
+            result.genesis_transactions_list
+            == "./aries_cloudagent/config/tests/test-ledger-args-no-write.yaml"
+        )
+        with self.assertRaises(argparse.ArgsParseError):
+            settings = group.get_settings(result)
+
+        result = parser.parse_args(
+            [
+                "--genesis-transactions-list",
+                "./aries_cloudagent/config/tests/test-ledger-args-no-genesis.yaml",
+            ]
+        )
+        assert (
+            result.genesis_transactions_list
+            == "./aries_cloudagent/config/tests/test-ledger-args-no-genesis.yaml"
+        )
+        with self.assertRaises(argparse.ArgsParseError):
+            settings = group.get_settings(result)
+
+        result = parser.parse_args(
+            [
+                "--genesis-transactions-list",
                 "./aries_cloudagent/config/tests/test-ledger-args.yaml",
             ]
         )
-
         assert (
             result.genesis_transactions_list
             == "./aries_cloudagent/config/tests/test-ledger-args.yaml"
         )
-
         settings = group.get_settings(result)
 
         assert len(settings.get("ledger.ledger_config_list")) == 3
@@ -83,7 +107,9 @@ class TestArgParse(AsyncTestCase):
             {
                 "id": "sovrinStaging",
                 "is_production": True,
+                "is_write": True,
                 "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
+                "pool_name": "sovrinStaging",
             }
         ) in settings.get("ledger.ledger_config_list")
         assert (
@@ -91,6 +117,7 @@ class TestArgParse(AsyncTestCase):
                 "id": "sovrinTest",
                 "is_production": False,
                 "genesis_url": "http://localhost:9000/genesis",
+                "pool_name": "sovrinTest",
             }
         ) in settings.get("ledger.ledger_config_list")
 

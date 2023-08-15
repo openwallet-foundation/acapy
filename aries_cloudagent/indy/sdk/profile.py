@@ -6,6 +6,7 @@ from typing import Any, Mapping
 import warnings
 from weakref import finalize, ref
 
+from ...cache.base import BaseCache
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
 from ...core.error import ProfileError
@@ -14,6 +15,7 @@ from ...ledger.base import BaseLedger
 from ...ledger.indy import IndySdkLedger, IndySdkLedgerPool
 from ...storage.base import BaseStorage, BaseStorageSearch
 from ...storage.vc_holder.base import VCHolder
+from ...utils.multi_ledger import get_write_ledger_config_for_profile
 from ...wallet.base import BaseWallet
 from ...wallet.indy import IndySdkWallet
 from ..holder import IndyHolder
@@ -87,8 +89,44 @@ class IndySdkProfile(Profile):
                 "aries_cloudagent.storage.vc_holder.indy.IndySdkVCHolder", self.opened
             ),
         )
-
-        if self.ledger_pool:
+        if (
+            self.settings.get("ledger.ledger_config_list")
+            and len(self.settings.get("ledger.ledger_config_list")) >= 1
+        ):
+            write_ledger_config = get_write_ledger_config_for_profile(
+                settings=self.settings
+            )
+            cache = self.context.injector.inject_or(BaseCache)
+            injector.bind_provider(
+                BaseLedger,
+                ClassProvider(
+                    IndySdkLedger,
+                    IndySdkLedgerPool(
+                        write_ledger_config.get("pool_name")
+                        or write_ledger_config.get("id"),
+                        keepalive=write_ledger_config.get("keepalive"),
+                        cache=cache,
+                        genesis_transactions=write_ledger_config.get(
+                            "genesis_transactions"
+                        ),
+                        read_only=write_ledger_config.get("read_only"),
+                        socks_proxy=write_ledger_config.get("socks_proxy"),
+                    ),
+                    ref(self),
+                ),
+            )
+            self.settings["ledger.write_ledger"] = write_ledger_config.get("id")
+            if (
+                "endorser_alias" in write_ledger_config
+                and "endorser_did" in write_ledger_config
+            ):
+                self.settings["endorser.endorser_alias"] = write_ledger_config.get(
+                    "endorser_alias"
+                )
+                self.settings["endorser.endorser_public_did"] = write_ledger_config.get(
+                    "endorser_did"
+                )
+        elif self.ledger_pool:
             injector.bind_provider(
                 BaseLedger, ClassProvider(IndySdkLedger, self.ledger_pool, ref(self))
             )

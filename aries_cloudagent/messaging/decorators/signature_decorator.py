@@ -8,11 +8,15 @@ from marshmallow import EXCLUDE, fields
 
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
-from ...wallet.util import b64_to_bytes, bytes_to_b64
 from ...wallet.key_type import ED25519
-
+from ...wallet.util import b64_to_bytes, bytes_to_b64
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import Base64URL, BASE64URL, INDY_RAW_PUBLIC_KEY
+from ..valid import (
+    BASE64URL_EXAMPLE,
+    BASE64URL_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+)
 
 
 class SignatureDecorator(BaseModel):
@@ -135,21 +139,35 @@ class SignatureDecoratorSchema(BaseModelSchema):
     signature_type = fields.Str(
         data_key="@type",
         required=True,
-        description="Signature type",
-        example=(DIDCommPrefix.NEW.qualify("signature/1.0/ed25519Sha512_single")),
+        metadata={
+            "description": "Signature type",
+            "example": DIDCommPrefix.NEW.qualify("signature/1.0/ed25519Sha512_single"),
+        },
     )
     signature = fields.Str(
         required=True,
-        description="signature value, base64url-encoded",
-        example=(
-            "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-"
-            "l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg=="
-        ),
-        validate=Base64URL(),
+        validate=BASE64URL_VALIDATE,
+        metadata={
+            "description": "signature value, base64url-encoded",
+            "example": (
+                "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-l4mKOz7AmkMHDj2"
+                "IgDEa1-GCFfWXNl96a7Bg=="
+            ),
+        },
     )
     sig_data = fields.Str(
-        required=True, description="Signature data, base64url-encoded", **BASE64URL
+        required=True,
+        validate=BASE64URL_VALIDATE,
+        metadata={
+            "description": "Signature data, base64url-encoded",
+            "example": BASE64URL_EXAMPLE,
+        },
     )
     signer = fields.Str(
-        required=True, description="Signer verification key", **INDY_RAW_PUBLIC_KEY
+        required=True,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Signer verification key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
     )

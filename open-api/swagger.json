@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v0.9.0",
+    "version" : "v0.10.0-rc0",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -2276,7 +2276,7 @@
         }
       }
     },
-    "/ledger/multiple/config" : {
+    "/ledger/config" : {
       "get" : {
         "tags" : [ "ledger" ],
         "summary" : "Fetch the multiple ledger configuration currently in use",
@@ -2292,7 +2292,49 @@
         }
       }
     },
-    "/ledger/multiple/get-write-ledger" : {
+    "/ledger/get-write-ledgers" : {
+      "get" : {
+        "tags" : [ "ledger" ],
+        "summary" : "Fetch list of available write ledger",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "example" : "ledger id"
+            }
+          }
+        }
+      }
+    },
+    "/ledger/set-write-ledger" : {
+      "put" : {
+        "tags" : [ "ledger" ],
+        "summary" : "Set write ledger",
+        "produces" : [ "application/json" ],
+        "parameters" : [ 
+          {
+            "name" : "ledger_id",
+            "in" : "path",
+            "description" : "Ledger identifier",
+            "required" : true,
+            "type" : "string"
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/WriteLedgerResponse"
+            }
+          }
+        }
+      }
+    },
+    "/ledger/get-write-ledger" : {
       "get" : {
         "tags" : [ "ledger" ],
         "summary" : "Fetch the current write ledger",
@@ -11945,6 +11987,14 @@
       "type" : "object",
       "properties" : {
         "ledger_id" : {
+          "type" : "string"
+        }
+      }
+    },
+    "WriteLedgerResponse" : {
+      "type" : "object",
+      "properties" : {
+        "write_ledger" : {
           "type" : "string"
         }
       }

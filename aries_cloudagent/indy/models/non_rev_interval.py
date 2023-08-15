@@ -5,7 +5,7 @@ from time import time
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INT_EPOCH
+from ...messaging.valid import INT_EPOCH_EXAMPLE, INT_EPOCH_VALIDATE
 
 
 class IndyNonRevocationInterval(BaseModel):
@@ -57,14 +57,20 @@ class IndyNonRevocationIntervalSchema(BaseModelSchema):
 
     fro = fields.Int(
         required=False,
-        description="Earliest time of interest in non-revocation interval",
         data_key="from",
-        strict=True,
-        **INT_EPOCH
+        validate=INT_EPOCH_VALIDATE,
+        metadata={
+            "description": "Earliest time of interest in non-revocation interval",
+            "strict": True,
+            "example": INT_EPOCH_EXAMPLE,
+        },
     )
     to = fields.Int(
         required=False,
-        description="Latest time of interest in non-revocation interval",
-        strict=True,
-        **INT_EPOCH
+        validate=INT_EPOCH_VALIDATE,
+        metadata={
+            "description": "Latest time of interest in non-revocation interval",
+            "strict": True,
+            "example": INT_EPOCH_EXAMPLE,
+        },
     )

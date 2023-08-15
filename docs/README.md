@@ -22,13 +22,27 @@ To test generate and view the RTD documentation locally, you must install [Sphin
 [Sphinx RTD theme](https://pypi.org/project/sphinx-rtd-theme/). Follow the instructions on the respective pages to install
 and verify the installation on your system.
 
+**NOTE** In the latest release, the version of Sphinx installed on my Linux
+system failed to run because of a dependency change (import error from
+`jinja2`), and an update to Sphinx has (so far) not worked. As a result, I am
+now using the Sphinx docker image to do the `sphinx-apidoc` step. I've not yet
+been able to get the build step working with docker, but will update the notes
+when I've done that.
+
 ### Generate Module Files
 
 To rebuild the project and settings from scratch (you'll need to move the generated index file up a level):
 
+See the **NOTE** above for the need for the use of docker in these steps.
+
 ``` bash
+alias sphinx-apidoc='docker run -it --rm -v ${PWD}:/docs sphinxdoc/sphinx sphinx-apidoc'
+cp -r ../aries_cloudagent .
 rm -rf generated
-sphinx-apidoc -f -M -o  ./generated ../aries_cloudagent/ $(find ../aries_cloudagent/ -name '*tests*')
+# sphinx-apidoc -f -M -o  ./generated ../aries_cloudagent/ $(find ../aries_cloudagent/ -name '*tests*')
+sphinx-apidoc -f -M -o  ./generated ./aries_cloudagent/ $(find ./aries_cloudagent/ -name '*tests*')
+rm -rf ./aries_cloudagent
+unalias sphinx-apidoc
 ```
 
 Note that the `find` command that is used to exclude any of the `test` python files from the RTD documentation.

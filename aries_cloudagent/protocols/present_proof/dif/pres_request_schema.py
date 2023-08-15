@@ -1,15 +1,15 @@
 """DIF Proof Request Schema."""
-from marshmallow import fields, INCLUDE
 from typing import Optional, Union
+
+from marshmallow import INCLUDE, fields
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.models.openapi import OpenAPISchema
-
 from .pres_exch import (
-    PresentationDefinitionSchema,
-    PresentationDefinition,
-    DIFOptionsSchema,
     DIFOptions,
+    DIFOptionsSchema,
+    PresentationDefinition,
+    PresentationDefinitionSchema,
 )
 
 
@@ -40,13 +40,9 @@ class DIFProofRequestSchema(BaseModelSchema):
         unknown = INCLUDE
         model_class = DIFProofRequest
 
-    options = fields.Nested(
-        DIFOptionsSchema(),
-        required=False,
-    )
+    options = fields.Nested(DIFOptionsSchema(), required=False)
     presentation_definition = fields.Nested(
-        PresentationDefinitionSchema(),
-        required=True,
+        PresentationDefinitionSchema(), required=True
     )
 
 
@@ -54,56 +50,58 @@ class DIFPresSpecSchema(OpenAPISchema):
     """Schema for DIF Presentation Spec schema."""
 
     issuer_id = fields.Str(
-        description=(
-            (
-                "Issuer identifier to sign the presentation,"
-                " if different from current public DID"
-            )
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Issuer identifier to sign the presentation, if different from current"
+                " public DID"
+            )
+        },
     )
     record_ids = fields.Dict(
-        description=(
-            (
-                "Mapping of input_descriptor id to list "
-                "of stored W3C credential record_id"
-            )
-        ),
-        example=(
-            {
+        required=False,
+        metadata={
+            "description": (
+                "Mapping of input_descriptor id to list of stored W3C credential"
+                " record_id"
+            ),
+            "example": {
                 "<input descriptor id_1>": ["<record id_1>", "<record id_2>"],
                 "<input descriptor id_2>": ["<record id>"],
-            }
-        ),
-        required=False,
+            },
+        },
     )
     presentation_definition = fields.Nested(
-        PresentationDefinitionSchema(),
-        required=False,
+        PresentationDefinitionSchema(), required=False
     )
     reveal_doc = fields.Dict(
-        description=(
-            "reveal doc [JSON-LD frame] dict used"
-            " to derive the credential when selective"
-            " disclosure is required"
-        ),
         required=False,
-        example={
-            "@context": [
-                "https://www.w3.org/2018/credentials/v1",
-                "https://w3id.org/security/bbs/v1",
-            ],
-            "type": ["VerifiableCredential", "LabReport"],
-            "@explicit": True,
-            "@requireAll": True,
-            "issuanceDate": {},
-            "issuer": {},
-            "credentialSubject": {
-                "Observation": [
-                    {"effectiveDateTime": {}, "@explicit": True, "@requireAll": True}
+        metadata={
+            "description": (
+                "reveal doc [JSON-LD frame] dict used to derive the credential when"
+                " selective disclosure is required"
+            ),
+            "example": {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://w3id.org/security/bbs/v1",
                 ],
+                "type": ["VerifiableCredential", "LabReport"],
                 "@explicit": True,
                 "@requireAll": True,
+                "issuanceDate": {},
+                "issuer": {},
+                "credentialSubject": {
+                    "Observation": [
+                        {
+                            "effectiveDateTime": {},
+                            "@explicit": True,
+                            "@requireAll": True,
+                        }
+                    ],
+                    "@explicit": True,
+                    "@requireAll": True,
+                },
             },
         },
     )

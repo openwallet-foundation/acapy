@@ -2,19 +2,19 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, response_schema
+
 from marshmallow import fields
 
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
-from ....storage.error import StorageNotFoundError, StorageError
-
+from ....messaging.valid import UUID4_EXAMPLE
+from ....storage.error import StorageError, StorageNotFoundError
 from .manager import V20DiscoveryMgr
 from .message_types import SPEC_URI
 from .models.discovery_record import (
-    V20DiscoveryRecordSchema,
     V20DiscoveryExchangeRecord,
+    V20DiscoveryRecordSchema,
 )
 
 
@@ -23,7 +23,7 @@ class V20DiscoveryExchangeResultSchema(OpenAPISchema):
 
     results = fields.Nested(
         V20DiscoveryRecordSchema,
-        description="Discover Features v2.0 exchange record",
+        metadata={"description": "Discover Features v2.0 exchange record"},
     )
 
 
@@ -33,7 +33,7 @@ class V20DiscoveryExchangeListResultSchema(OpenAPISchema):
     results = fields.List(
         fields.Nested(
             V20DiscoveryRecordSchema,
-            description="Discover Features v2.0 exchange record",
+            metadata={"description": "Discover Features v2.0 exchange record"},
         )
     )
 
@@ -42,18 +42,22 @@ class QueryFeaturesQueryStringSchema(OpenAPISchema):
     """Query string parameters for feature query."""
 
     query_protocol = fields.Str(
-        description="Protocol feature-type query", required=False, example="*"
+        required=False,
+        metadata={"description": "Protocol feature-type query", "example": "*"},
     )
     query_goal_code = fields.Str(
-        description="Goal-code feature-type query", required=False, example="*"
+        required=False,
+        metadata={"description": "Goal-code feature-type query", "example": "*"},
     )
     connection_id = fields.Str(
-        description=(
-            "Connection identifier, if none specified, "
-            "then the query will provide features for this agent."
-        ),
-        example=UUIDFour.EXAMPLE,
         required=False,
+        metadata={
+            "description": (
+                "Connection identifier, if none specified, then the query will provide"
+                " features for this agent."
+            ),
+            "example": UUID4_EXAMPLE,
+        },
     )
 
 
@@ -61,9 +65,8 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
     """Query string parameter for Discover Features v2.0 exchange record."""
 
     connection_id = fields.Str(
-        description="Connection identifier",
-        example=UUIDFour.EXAMPLE,
         required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

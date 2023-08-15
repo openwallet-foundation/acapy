@@ -1,17 +1,15 @@
 """."""
 import logging
+from typing import Any, Mapping, Union
 
-from typing import Union, Mapping, Any
 from marshmallow import fields
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 from .....storage.error import StorageDuplicateError, StorageNotFoundError
-
 from ..messages.disclose import Disclose, DiscloseSchema
 from ..messages.query import Query, QuerySchema
-
 from . import UNENCRYPTED_TAGS
 
 LOGGER = logging.getLogger(__name__)
@@ -133,22 +131,22 @@ class V10DiscoveryRecordSchema(BaseExchangeSchema):
 
     discovery_exchange_id = fields.Str(
         required=False,
-        description="Credential exchange identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     connection_id = fields.Str(
-        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.Str(
-        required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     query_msg = fields.Nested(
-        QuerySchema(),
-        required=False,
-        description="Query message",
+        QuerySchema(), required=False, metadata={"description": "Query message"}
     )
     disclose = fields.Nested(
-        DiscloseSchema(),
-        required=False,
-        description="Disclose message",
+        DiscloseSchema(), required=False, metadata={"description": "Disclose message"}
     )
