@@ -23,6 +23,7 @@ from runners.support.agent import (  # noqa:E402
     connect_wallet_to_endorser,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
+    CRED_FORMAT_ANONCREDS,
     DID_METHOD_KEY,
     KEY_TYPE_BLS,
 )
@@ -246,7 +247,14 @@ class AriesAgent(DemoAgent):
 
         elif state == "offer-received":
             log_status("#15 After receiving credential offer, send credential request")
-            if message["by_format"]["cred_offer"].get("indy"):
+            if not message.get("by_format"):
+                # this should not happen, something hinky when running in IDE...
+                # this will work if using indy payloads
+                self.log(f"No 'by_format' in message: {message}")
+                await self.admin_POST(
+                    f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
+                )
+            elif message["by_format"]["cred_offer"].get("indy"):
                 await self.admin_POST(
                     f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
                 )
@@ -389,154 +397,163 @@ class AriesAgent(DemoAgent):
         pres_ex_id = message["pres_ex_id"]
         self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
-        if state == "request-received":
+        if state in ["request-received"]:
             # prover role
             log_status(
                 "#24 Query for credentials in the wallet that satisfy the proof request"
             )
-            pres_request_indy = message["by_format"].get("pres_request", {}).get("indy")
-            pres_request_dif = message["by_format"].get("pres_request", {}).get("dif")
-            request = {}
+            if not message.get("by_format"):
+                # this should not happen, something hinky when running in IDE...
+                self.log(f"No 'by_format' in message: {message}")
+            else:
+                pres_request_indy = (
+                    message["by_format"].get("pres_request", {}).get("indy")
+                )
+                pres_request_dif = (
+                    message["by_format"].get("pres_request", {}).get("dif")
+                )
+                request = {}
 
-            if not pres_request_dif and not pres_request_indy:
-                raise Exception("Invalid presentation request received")
+                if not pres_request_dif and not pres_request_indy:
+                    raise Exception("Invalid presentation request received")
 
-            if pres_request_indy:
-                # include self-attested attributes (not included in credentials)
-                creds_by_reft = {}
-                revealed = {}
-                self_attested = {}
-                predicates = {}
+                if pres_request_indy:
+                    # include self-attested attributes (not included in credentials)
+                    creds_by_reft = {}
+                    revealed = {}
+                    self_attested = {}
+                    predicates = {}
 
-                try:
-                    # select credentials to provide for the proof
-                    creds = await self.admin_GET(
-                        f"/present-proof-2.0/records/{pres_ex_id}/credentials"
-                    )
-                    if creds:
-                        # select only indy credentials
-                        creds = [x for x in creds if "cred_info" in x]
-                        if "timestamp" in creds[0]["cred_info"]["attrs"]:
-                            sorted_creds = sorted(
+                    try:
+                        # select credentials to provide for the proof
+                        creds = await self.admin_GET(
+                            f"/present-proof-2.0/records/{pres_ex_id}/credentials"
+                        )
+                        if creds:
+                            # select only indy credentials
+                            creds = [x for x in creds if "cred_info" in x]
+                            if "timestamp" in creds[0]["cred_info"]["attrs"]:
+                                sorted_creds = sorted(
+                                    creds,
+                                    key=lambda c: int(
+                                        c["cred_info"]["attrs"]["timestamp"]
+                                    ),
+                                    reverse=True,
+                                )
+                            else:
+                                sorted_creds = creds
+                            for row in sorted_creds:
+                                for referent in row["presentation_referents"]:
+                                    if referent not in creds_by_reft:
+                                        creds_by_reft[referent] = row
+
+                        # submit the proof wit one unrevealed revealed attribute
+                        revealed_flag = False
+                        for referent in pres_request_indy["requested_attributes"]:
+                            if referent in creds_by_reft:
+                                revealed[referent] = {
+                                    "cred_id": creds_by_reft[referent]["cred_info"][
+                                        "referent"
+                                    ],
+                                    "revealed": revealed_flag,
+                                }
+                                revealed_flag = True
+                            else:
+                                self_attested[referent] = "my self-attested value"
+
+                        for referent in pres_request_indy["requested_predicates"]:
+                            if referent in creds_by_reft:
+                                predicates[referent] = {
+                                    "cred_id": creds_by_reft[referent]["cred_info"][
+                                        "referent"
+                                    ]
+                                }
+
+                        log_status("#25 Generate the indy proof")
+                        indy_request = {
+                            "indy": {
+                                "requested_predicates": predicates,
+                                "requested_attributes": revealed,
+                                "self_attested_attributes": self_attested,
+                            }
+                        }
+                        request.update(indy_request)
+                    except ClientError:
+                        pass
+
+                if pres_request_dif:
+                    try:
+                        # select credentials to provide for the proof
+                        creds = await self.admin_GET(
+                            f"/present-proof-2.0/records/{pres_ex_id}/credentials"
+                        )
+                        if creds and 0 < len(creds):
+                            # select only dif credentials
+                            creds = [x for x in creds if "issuanceDate" in x]
+                            creds = sorted(
                                 creds,
-                                key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
+                                key=lambda c: c["issuanceDate"],
                                 reverse=True,
                             )
+                            records = creds
                         else:
-                            sorted_creds = creds
-                        for row in sorted_creds:
-                            for referent in row["presentation_referents"]:
-                                if referent not in creds_by_reft:
-                                    creds_by_reft[referent] = row
+                            records = []
 
-                    # submit the proof wit one unrevealed revealed attribute
-                    revealed_flag = False
-                    for referent in pres_request_indy["requested_attributes"]:
-                        if referent in creds_by_reft:
-                            revealed[referent] = {
-                                "cred_id": creds_by_reft[referent]["cred_info"][
-                                    "referent"
-                                ],
-                                "revealed": revealed_flag,
-                            }
-                            revealed_flag = True
-                        else:
-                            self_attested[referent] = "my self-attested value"
-
-                    for referent in pres_request_indy["requested_predicates"]:
-                        if referent in creds_by_reft:
-                            predicates[referent] = {
-                                "cred_id": creds_by_reft[referent]["cred_info"][
-                                    "referent"
-                                ]
-                            }
-
-                    log_status("#25 Generate the indy proof")
-                    indy_request = {
-                        "indy": {
-                            "requested_predicates": predicates,
-                            "requested_attributes": revealed,
-                            "self_attested_attributes": self_attested,
+                        log_status("#25 Generate the dif proof")
+                        dif_request = {
+                            "dif": {},
                         }
-                    }
-                    request.update(indy_request)
-                except ClientError:
-                    pass
+                        # specify the record id for each input_descriptor id:
+                        dif_request["dif"]["record_ids"] = {}
+                        for input_descriptor in pres_request_dif[
+                            "presentation_definition"
+                        ]["input_descriptors"]:
+                            input_descriptor_schema_uri = []
+                            for element in input_descriptor["schema"]:
+                                input_descriptor_schema_uri.append(element["uri"])
 
-            if pres_request_dif:
-                try:
-                    # select credentials to provide for the proof
-                    creds = await self.admin_GET(
-                        f"/present-proof-2.0/records/{pres_ex_id}/credentials"
-                    )
-                    if creds and 0 < len(creds):
-                        # select only dif credentials
-                        creds = [x for x in creds if "issuanceDate" in x]
-                        creds = sorted(
-                            creds,
-                            key=lambda c: c["issuanceDate"],
-                            reverse=True,
-                        )
-                        records = creds
-                    else:
-                        records = []
+                            for record in records:
+                                if self.check_input_descriptor_record_id(
+                                    input_descriptor_schema_uri, record
+                                ):
+                                    record_id = record["record_id"]
+                                    dif_request["dif"]["record_ids"][
+                                        input_descriptor["id"]
+                                    ] = [
+                                        record_id,
+                                    ]
+                                    break
+                        log_msg("presenting ld-presentation:", dif_request)
+                        request.update(dif_request)
 
-                    log_status("#25 Generate the dif proof")
-                    dif_request = {
-                        "dif": {},
-                    }
-                    # specify the record id for each input_descriptor id:
-                    dif_request["dif"]["record_ids"] = {}
-                    for input_descriptor in pres_request_dif["presentation_definition"][
-                        "input_descriptors"
-                    ]:
-                        input_descriptor_schema_uri = []
-                        for element in input_descriptor["schema"]:
-                            input_descriptor_schema_uri.append(element["uri"])
+                        # NOTE that the holder/prover can also/or specify constraints by including the whole proof request
+                        # and constraining the presented credentials by adding filters, for example:
+                        #
+                        # request = {
+                        #     "dif": pres_request_dif,
+                        # }
+                        # request["dif"]["presentation_definition"]["input_descriptors"]["constraints"]["fields"].append(
+                        #      {
+                        #          "path": [
+                        #              "$.id"
+                        #          ],
+                        #          "purpose": "Specify the id of the credential to present",
+                        #          "filter": {
+                        #              "const": "https://credential.example.com/residents/1234567890"
+                        #          }
+                        #      }
+                        # )
+                        #
+                        # (NOTE the above assumes the credential contains an "id", which is an optional field)
 
-                        for record in records:
-                            if self.check_input_descriptor_record_id(
-                                input_descriptor_schema_uri, record
-                            ):
-                                record_id = record["record_id"]
-                                dif_request["dif"]["record_ids"][
-                                    input_descriptor["id"]
-                                ] = [
-                                    record_id,
-                                ]
-                                break
-                    log_msg("presenting ld-presentation:", dif_request)
-                    request.update(dif_request)
+                    except ClientError:
+                        pass
 
-                    # NOTE that the holder/prover can also/or specify constraints by including the whole proof request
-                    # and constraining the presented credentials by adding filters, for example:
-                    #
-                    # request = {
-                    #     "dif": pres_request_dif,
-                    # }
-                    # request["dif"]["presentation_definition"]["input_descriptors"]["constraints"]["fields"].append(
-                    #      {
-                    #          "path": [
-                    #              "$.id"
-                    #          ],
-                    #          "purpose": "Specify the id of the credential to present",
-                    #          "filter": {
-                    #              "const": "https://credential.example.com/residents/1234567890"
-                    #          }
-                    #      }
-                    # )
-                    #
-                    # (NOTE the above assumes the credential contains an "id", which is an optional field)
-
-                except ClientError:
-                    pass
-
-            log_status("#26 Send the proof to X: " + json.dumps(request))
-            await self.admin_POST(
-                f"/present-proof-2.0/records/{pres_ex_id}/send-presentation",
-                request,
-            )
-
+                log_status("#26 Send the proof to X: " + json.dumps(request))
+                await self.admin_POST(
+                    f"/present-proof-2.0/records/{pres_ex_id}/send-presentation",
+                    request,
+                )
         elif state == "presentation-received":
             # verifier role
             log_status("#27 Process the proof provided by X")
@@ -609,7 +626,12 @@ class AriesAgent(DemoAgent):
             await self.detect_connection()
 
     async def create_schema_and_cred_def(
-        self, schema_name, schema_attrs, revocation, version=None
+        self,
+        schema_name,
+        schema_attrs,
+        revocation,
+        version=None,
+        cred_type=CRED_FORMAT_INDY,
     ):
         with log_timer("Publish schema/cred def duration:"):
             log_status("#3/4 Create a new schema/cred def on the ledger")
@@ -631,6 +653,7 @@ class AriesAgent(DemoAgent):
                 schema_attrs,
                 support_revocation=revocation,
                 revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
+                cred_type=cred_type,
             )
             return cred_def_id
 
@@ -749,7 +772,7 @@ class AgentContainer:
         # create public DID ... UNLESS we are an author ...
         if (not self.endorser_role) or (self.endorser_role == "endorser"):
             if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
-                await self.agent.register_did(cred_type=CRED_FORMAT_INDY)
+                await self.agent.register_did(cred_type=self.cred_type)
                 log_msg("Created public DID")
 
         # if we are endorsing, create the endorser agent first, then we can use the
@@ -854,10 +877,14 @@ class AgentContainer:
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
             # need to redister schema and cred def on the ledger
             self.cred_def_id = await self.agent.create_schema_and_cred_def(
-                schema_name, schema_attrs, self.revocation, version=version
+                schema_name,
+                schema_attrs,
+                self.revocation,
+                version=version,
+                cred_type=self.cred_type,
             )
             return self.cred_def_id
         elif self.cred_type == CRED_FORMAT_JSON_LD:
@@ -874,7 +901,7 @@ class AgentContainer:
     ):
         log_status("#13 Issue credential offer to X")
 
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
                 "attributes": cred_attrs,
@@ -934,7 +961,7 @@ class AgentContainer:
     async def request_proof(self, proof_request, explicit_revoc_required: bool = False):
         log_status("#20 Request proof of degree from alice")
 
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
             indy_proof_request = {
                 "name": proof_request["name"]
                 if "name" in proof_request
@@ -1015,7 +1042,7 @@ class AgentContainer:
 
         # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
             # return verified status
             return self.agent.last_proof_received["verified"]
 
@@ -1332,10 +1359,16 @@ async def create_agent_with_args(args, ident: str = None):
     else:
         aip = 20
 
-    if "cred_type" in args and args.cred_type != CRED_FORMAT_INDY:
+    if "cred_type" in args and args.cred_type not in [
+        CRED_FORMAT_INDY,
+        CRED_FORMAT_ANONCREDS,
+    ]:
         public_did = None
         aip = 20
-    elif "cred_type" in args and args.cred_type == CRED_FORMAT_INDY:
+    elif "cred_type" in args and args.cred_type in [
+        CRED_FORMAT_INDY,
+        CRED_FORMAT_ANONCREDS,
+    ]:
         public_did = True
     else:
         public_did = args.public_did if "public_did" in args else None

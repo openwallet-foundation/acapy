@@ -16,6 +16,8 @@ from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..core.error import ProfileError
 from ..core.profile import Profile, ProfileManager, ProfileSession
+from ..indy.holder import IndyHolder
+from ..indy.issuer import IndyIssuer
 from ..ledger.base import BaseLedger
 from ..ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ..storage.base import BaseStorage, BaseStorageSearch
@@ -101,6 +103,19 @@ class AskarProfile(Profile):
             ClassProvider(
                 "aries_cloudagent.storage.vc_holder.askar.AskarVCHolder",
                 ref(self),
+            ),
+        )
+        injector.bind_provider(
+            IndyHolder,
+            ClassProvider(
+                "aries_cloudagent.indy.credx.holder.IndyCredxHolder",
+                ref(self),
+            ),
+        )
+        injector.bind_provider(
+            IndyIssuer,
+            ClassProvider(
+                "aries_cloudagent.indy.credx.issuer.IndyCredxIssuer", ref(self)
             ),
         )
         if self.ledger_pool:
