@@ -995,7 +995,7 @@ class IndySdkLedger(BaseLedger):
 
         Anything more accurate is a privacy concern.
         """
-        return int(datetime.combine(date.today(), datetime.min.time(), tzinfo=timezone.utc).timestamp())
+        return int(datetime.combine(date.today(), datetime.min.time(), timezone.utc).timestamp())
 
     async def accept_txn_author_agreement(
         self, taa_record: dict, mechanism: str, accept_time: int = None
