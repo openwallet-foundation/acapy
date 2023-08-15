@@ -21,7 +21,7 @@ jobs:
 
   publish:
     name: Publish
-    needs: [tests, tests-indy]
+    needs: tests
     uses: ./.github/workflows/publish.yml
     with:
       tag: "nightly"
