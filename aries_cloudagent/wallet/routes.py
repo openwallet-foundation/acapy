@@ -175,7 +175,7 @@ class JWSCreateSchema(OpenAPISchema):
 class SDJWSCreateSchema(JWSCreateSchema):
     """Request schema to create an sd-jws with a particular DID."""
 
-    sd_list = fields.List(fields.Str)
+    sd_list = fields.List(fields.Str())
 
 
 class JWSVerifySchema(OpenAPISchema):

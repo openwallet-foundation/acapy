@@ -30,7 +30,7 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
         add_decoy_claims: bool = False,
         serialization_format: str = "compact",
     ):
-        """Initalize an SDJWTIssuerACAPy instance."""
+        """Initialize an SDJWTIssuerACAPy instance."""
         self._user_claims = user_claims
         self._issuer_key = issuer_key
         self._holder_key = holder_key
