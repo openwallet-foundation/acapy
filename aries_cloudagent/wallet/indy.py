@@ -11,6 +11,7 @@ import indy.crypto
 import indy.wallet
 
 from indy.error import IndyError, ErrorCode
+from aries_askar import Key
 
 from ..did.did_key import DIDKey
 from ..indy.sdk.error import IndyErrorHandler
@@ -423,6 +424,7 @@ class IndySdkWallet(BaseWallet):
         seed: str = None,
         did: str = None,
         metadata: dict = None,
+        keypair: Key = None
     ) -> DIDInfo:
         """
         Create and store a new local DID.

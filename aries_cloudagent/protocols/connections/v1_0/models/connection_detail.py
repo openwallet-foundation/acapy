@@ -4,9 +4,7 @@ from marshmallow import EXCLUDE, fields
 from peerdid.dids import DIDDocument
 from .....connections.models.diddoc import LegacyDIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
-<<<<<<< HEAD
 from .....messaging.valid import ANY_DID_EXAMPLE, ANY_DID_VALIDATE
->>>>>>> main
 
 
 class DIDDocWrapper(fields.Field):

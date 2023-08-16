@@ -2,6 +2,7 @@
 
 import asyncio
 from typing import List, Sequence, Tuple, Union
+from aries_askar import Key
 
 from .did_parameters_validation import DIDParametersValidation
 from ..core.in_memory import InMemoryProfile
@@ -192,6 +193,7 @@ class InMemoryWallet(BaseWallet):
         seed: str = None,
         did: str = None,
         metadata: dict = None,
+        keypair: Key = None
     ) -> DIDInfo:
         """
         Create and store a new local DID.

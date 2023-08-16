@@ -364,6 +364,8 @@ class DIDXManager(BaseConnectionManager):
                     filter(None, [base_mediation_record, mediation_record])
                 ),
             )
+        
+        if did_doc:
             attach = AttachDecorator.data_base64(did_doc.serialize())
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -838,16 +840,16 @@ class DIDXManager(BaseConnectionManager):
                 conn_did_doc = await self.verify_diddoc(
                     wallet, response.did_doc_attach, conn_rec.invitation_key
                 )
-            if their_did != conn_did_doc.did:
-                if str("did:sov:" + their_did) == str(conn_did_doc.did):
+            if their_did != conn_did_doc.id:
+                if str("did:sov:" + their_did) == str(conn_did_doc.id):
                     self._logger.warning(
-                        f"legacy behaviour: Connection DID is unqualified {their_did}, but did doc did has did:sov {conn_did_doc.did}"
+                        f"legacy behaviour: Connection DID is unqualified {their_did}, but did doc did has did:sov {conn_did_doc.id}"
                     )
                 else:
                     raise DIDXManagerError(
                         (
                             f"Connection DID {their_did} does not match "
-                            f"DID Doc id {conn_did_doc.did}"
+                            f"DID Doc id {conn_did_doc.id}"
                         ),
                     )
 

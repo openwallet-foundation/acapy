@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import List, Sequence, Tuple, Union
+from aries_askar import Key
 
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
@@ -94,6 +95,7 @@ class BaseWallet(ABC):
         seed: str = None,
         did: str = None,
         metadata: dict = None,
+        keypair: Key = None
     ) -> DIDInfo:
         """
         Create and store a new local DID.
