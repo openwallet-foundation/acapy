@@ -1280,7 +1280,10 @@ class TestV20CredManager(AsyncTestCase):
             trace=False,
             auto_remove=True,
         )
-
+        mock_logger_inst = async_mock.MagicMock(
+            exception=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+        )
         with async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save_ex, async_mock.patch.object(
@@ -1289,21 +1292,14 @@ class TestV20CredManager(AsyncTestCase):
             test_module,
             "get_logger_inst",
             async_mock.MagicMock(
-                return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
+                return_value=mock_logger_inst,
             ),
-        ) as mock_log_exception, async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(warning=async_mock.MagicMock()),
-            ),
-        ) as mock_log_warning:
+        ) as mock_logger:
             mock_delete_ex.side_effect = test_module.StorageError()
             (_, ack) = await self.manager.send_cred_ack(stored_exchange)
             assert ack._thread
-            mock_log_exception.assert_called_once()  # cover exception log-and-continue
-            mock_log_warning.assert_called_once()  # no BaseResponder
-
+            mock_logger_inst.exception.call_count == 1  # cover exception log-and-continue
+            mock_logger_inst.warning.call_count == 1  # no BaseResponder
             mock_responder = MockResponder()  # cover with responder
             self.context.injector.bind_instance(BaseResponder, mock_responder)
             (cx_rec, ack) = await self.manager.send_cred_ack(stored_exchange)

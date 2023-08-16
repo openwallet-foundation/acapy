@@ -286,16 +286,16 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         ]
         await details_indy[0].save(self.session)
         await details_indy[1].save(self.session)  # exercise logger warning on get()
-
+        mock_logger = async_mock.MagicMock(
+            return_value=async_mock.MagicMock(warning=async_mock.MagicMock()),
+        )
         with async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(warning=async_mock.MagicMock()),
-            ),
-        ) as mock_warning:
+            self.handler,
+            "_logger",
+            mock_logger,
+        ):
             assert await self.handler.get_detail_record(cred_ex_id) in details_indy
-            mock_warning.assert_called_once()
+            assert mock_logger.warning.call_count == 1
 
     async def test_check_uniqueness(self):
         with async_mock.patch.object(

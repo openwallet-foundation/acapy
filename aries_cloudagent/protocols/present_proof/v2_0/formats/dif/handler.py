@@ -1,7 +1,6 @@
 """V2.0 present-proof dif presentation-exchange format handler."""
 
 import json
-import logging
 
 from marshmallow import RAISE
 from typing import Mapping, Tuple, Sequence
@@ -47,8 +46,6 @@ from ...messages.pres import V20Pres
 from ...models.pres_exchange import V20PresExRecord
 
 from ..handler import V20PresFormatHandler, V20PresFormatHandlerError
-
-LOGGER = logging.getLogger(__name__)
 
 
 class DIFPresFormatHandler(V20PresFormatHandler):
@@ -356,7 +353,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         except StorageNotFoundError as err:
             raise V20PresFormatHandlerError(err)
         except TypeError as err:
-            LOGGER.error(str(err))
+            self._logger.error(str(err))
             responder = self._profile.inject_or(BaseResponder)
             if responder:
                 report = ProblemReport(
@@ -391,7 +388,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             )
             return self.get_format_data(PRES_20, pres)
         except DIFPresExchError as err:
-            LOGGER.error(str(err))
+            self._logger.error(str(err))
             responder = self._profile.inject_or(BaseResponder)
             if responder:
                 report = ProblemReport(
@@ -444,7 +441,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             await dif_handler.verify_received_pres(pd=pres_definition, pres=dif_proof)
             return True
         except DIFPresExchError as err:
-            LOGGER.error(str(err))
+            self._logger.error(str(err))
             responder = self._profile.inject_or(BaseResponder)
             if responder:
                 report = ProblemReport(

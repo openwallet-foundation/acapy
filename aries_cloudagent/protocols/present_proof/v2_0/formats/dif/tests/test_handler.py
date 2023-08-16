@@ -1967,15 +1967,16 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
+        mock_logger = async_mock.MagicMock(
+            return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+        )
         with async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
-            ),
-        ) as mock_log_err:
+            self.handler,
+            "_logger",
+            mock_logger,
+        ):
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
-            mock_log_err.assert_called_once()
+            assert mock_logger.error.call_count == 1
 
     async def test_verify_received_pres_no_match_a(self):
         dif_proof_req = deepcopy(DIF_PRES_REQUEST_B)
@@ -2024,15 +2025,16 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
+        mock_logger = async_mock.MagicMock(
+            return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+        )
         with async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
-            ),
-        ) as mock_log_err:
+            self.handler,
+            "_logger",
+            mock_logger,
+        ):
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
-            mock_log_err.assert_called_once()
+            assert mock_logger.error.call_count == 1
 
     async def test_verify_received_pres_no_match_b(self):
         dif_proof_req = deepcopy(DIF_PRES_REQUEST_B)
@@ -2081,15 +2083,16 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
+        mock_logger = async_mock.MagicMock(
+            return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+        )
         with async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
-            ),
-        ) as mock_log_err:
+            self.handler,
+            "_logger",
+            mock_logger,
+        ):
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
-            mock_log_err.assert_called_once()
+            assert mock_logger.error.call_count == 1
 
     async def test_verify_received_pres_limit_disclosure_fail_a(self):
         dif_proof = deepcopy(DIF_PRES)
@@ -2135,15 +2138,16 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
+        mock_logger = async_mock.MagicMock(
+            return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+        )
         with async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
-            ),
-        ) as mock_log_err:
+            self.handler,
+            "_logger",
+            mock_logger,
+        ):
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
-            mock_log_err.assert_called_once()
+            assert mock_logger.error.call_count == 1
 
     async def test_verify_received_pres_limit_disclosure_fail_b(self):
         dif_proof = deepcopy(DIF_PRES)
@@ -2189,15 +2193,16 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
+        mock_logger = async_mock.MagicMock(
+            return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+        )
         with async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
-            ),
-        ) as mock_log_err:
+            self.handler,
+            "_logger",
+            mock_logger,
+        ):
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
-            mock_log_err.assert_called_once()
+            assert mock_logger.error.call_count == 1
 
     async def test_verify_received_pres_fail_schema_filter(self):
         dif_proof = deepcopy(DIF_PRES)
@@ -2283,18 +2288,19 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
+        mock_logger = async_mock.MagicMock(
+            return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
+        )
         with async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
-            ),
-        ) as mock_log_err, async_mock.patch.object(
+            self.handler,
+            "_logger",
+            mock_logger,
+        ), async_mock.patch.object(
             jsonld, "expand", async_mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
-            mock_log_err.assert_called_once()
+            assert mock_logger.error.call_count == 1
 
     async def test_create_pres_catch_typeerror(self):
         self.context.injector.bind_instance(

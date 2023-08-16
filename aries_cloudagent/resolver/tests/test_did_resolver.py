@@ -18,6 +18,7 @@ from ..base import (
     ResolverType,
 )
 from ..did_resolver import DIDResolver
+from .. import did_resolver as test_module
 
 from . import DOC
 
@@ -89,11 +90,20 @@ class MockResolver(BaseDIDResolver):
 
 @pytest.fixture
 def resolver():
-    did_resolver_registry = []
-    for method in TEST_DID_METHODS:
-        resolver = MockResolver([method], DIDDocument.deserialize(DOC))
-        did_resolver_registry.append(resolver)
-    return DIDResolver(did_resolver_registry)
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(
+                debug=async_mock.MagicMock(),
+            ),
+        ),
+    ):
+        did_resolver_registry = []
+        for method in TEST_DID_METHODS:
+            resolver = MockResolver([method], DIDDocument.deserialize(DOC))
+            did_resolver_registry.append(resolver)
+        yield DIDResolver(did_resolver_registry)
 
 
 @pytest.fixture
@@ -207,5 +217,13 @@ async def test_resolve_did_x_not_found(profile):
     py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     cowsay_resolver_not_found = MockResolver(["cowsay"], resolved=DIDNotFound())
     resolver = DIDResolver([cowsay_resolver_not_found])
-    with pytest.raises(DIDNotFound):
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(
+                debug=async_mock.MagicMock(),
+            ),
+        ),
+    ), pytest.raises(DIDNotFound):
         await resolver.resolve(profile, py_did)

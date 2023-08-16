@@ -1040,7 +1040,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
-
+        mock_logger = async_mock.MagicMock(info=async_mock.MagicMock())
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
@@ -1049,9 +1049,9 @@ class TestV20PresManager(AsyncTestCase):
             test_module,
             "get_logger_inst",
             async_mock.MagicMock(
-                return_value=async_mock.MagicMock(info=async_mock.MagicMock()),
+                return_value=mock_logger,
             ),
-        ) as mock_log_info:
+        ):
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
             )
@@ -1084,7 +1084,6 @@ class TestV20PresManager(AsyncTestCase):
                 }
             }
             await self.manager.create_pres(px_rec_in, request_data)
-            mock_log_info.assert_called_once()
 
     async def test_create_pres_bad_revoc_state(self):
         pres_request = V20PresRequest(

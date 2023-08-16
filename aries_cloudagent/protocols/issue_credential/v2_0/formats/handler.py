@@ -17,8 +17,6 @@ from ..messages.cred_request import V20CredRequest
 from ..messages.cred_issue import V20CredIssue
 from ..models.cred_ex_record import V20CredExRecord
 
-LOGGER = logging.getLogger(__name__)
-
 CredFormatAttachment = Tuple[V20CredFormat, AttachDecorator]
 
 

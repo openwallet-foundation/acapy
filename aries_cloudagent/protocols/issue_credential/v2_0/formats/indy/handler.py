@@ -1,7 +1,5 @@
 """V2.0 issue-credential indy credential format handler."""
 
-import logging
-
 from marshmallow import RAISE
 import json
 from typing import Mapping, Tuple

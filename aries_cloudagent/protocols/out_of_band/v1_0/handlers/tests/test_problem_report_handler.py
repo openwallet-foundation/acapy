@@ -71,12 +71,12 @@ class TestOOBProblemReportHandler:
         )
         handler = test_module.OOBProblemReportMessageHandler()
         with async_mock.patch.object(
-                test_module,
-                "get_logger_inst",
-                async_mock.MagicMock(
-                    return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
-                ),
-            ) as mock_exc_logger:
+            test_module,
+            "get_logger_inst",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
+            ),
+        ) as mock_exc_logger:
             responder = MockResponder()
             await handler.handle(context=request_context, responder=responder)
 

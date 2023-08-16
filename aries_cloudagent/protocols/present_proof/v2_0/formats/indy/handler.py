@@ -1,7 +1,6 @@
 """V2.0 present-proof indy presentation-exchange format handler."""
 
 import json
-import logging
 
 from marshmallow import RAISE
 from typing import Mapping, Tuple
@@ -29,8 +28,6 @@ from ...messages.pres_format import V20PresFormat
 from ...models.pres_exchange import V20PresExRecord
 
 from ..handler import V20PresFormatHandler, V20PresFormatHandlerError
-
-LOGGER = logging.getLogger(__name__)
 
 
 class IndyPresExchangeHandler(V20PresFormatHandler):
@@ -146,7 +143,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                     )
                 )
             except ValueError as err:
-                LOGGER.warning(f"{err}")
+                self._logger.warning(f"{err}")
                 raise V20PresFormatHandlerError(
                     f"No matching Indy credentials found: {err}"
                 )

@@ -6,13 +6,12 @@ from typing import Tuple
 
 from .....core.error import BaseError
 from .....core.profile import Profile
+from .....config.logging import get_logger_inst
 from .....messaging.decorators.attach_decorator import AttachDecorator
 
 from ..messages.pres import V20Pres
 from ..messages.pres_format import V20PresFormat
 from ..models.pres_exchange import V20PresExRecord
-
-LOGGER = logging.getLogger(__name__)
 
 PresFormatAttachment = Tuple[V20PresFormat, AttachDecorator]
 
@@ -30,6 +29,10 @@ class V20PresFormatHandler(ABC):
         """Initialize PresExchange Handler."""
         super().__init__()
         self._profile = profile
+        self._logger: logging.Logger = get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
 
     @property
     def profile(self) -> Profile:

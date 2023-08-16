@@ -1,4 +1,5 @@
 """Utilities related to logging."""
+
 import asyncio
 from datetime import datetime, timedelta
 from io import TextIOWrapper

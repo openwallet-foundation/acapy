@@ -1,7 +1,5 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
-
-import logging
 from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, INCLUDE

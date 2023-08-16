@@ -304,23 +304,11 @@ class TestOutboundTransportManager(AsyncTestCase):
         mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
         with async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
-            ),
+            test_module.LOGGER, "exception", async_mock.MagicMock()
         ) as mock_logger_exception, async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(error=async_mock.MagicMock()),
-            ),
+            test_module.LOGGER, "error", async_mock.MagicMock()
         ) as mock_logger_error, async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(isEnabledFor=async_mock.MagicMock()),
-            ),
+            test_module.LOGGER, "isEnabledFor", async_mock.MagicMock()
         ) as mock_logger_enabled, async_mock.patch.object(
             mgr, "process_queued", async_mock.MagicMock()
         ) as mock_process:

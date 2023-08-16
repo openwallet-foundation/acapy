@@ -419,7 +419,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
                 return_value=async_mock.MagicMock(
                     error=async_mock.MagicMock(),
                 ),
-            )
+            ),
         ) as mock_logger_error:
             _manager_with_mock_logger = MediationManager(profile)
             mock_route_rec_query.side_effect = StorageNotFoundError("no record")
@@ -436,7 +436,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
                 return_value=async_mock.MagicMock(
                     error=async_mock.MagicMock(),
                 ),
-            )
+            ),
         ) as mock_logger_error:
             _manager_with_mock_logger = MediationManager(profile)
             mock_route_rec_query.return_value = [
