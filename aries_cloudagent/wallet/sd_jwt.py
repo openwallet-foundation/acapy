@@ -12,10 +12,12 @@ from ..core.error import BaseError
 
 
 class SDJWTError(BaseError):
-    """SD-JWT Error"""
+    """SD-JWT Error."""
 
 
 class SDJWTIssuerACAPy(SDJWTIssuer):
+    """SDJWTIssuer class for ACA-Py implementation."""
+
     def __init__(
         self,
         user_claims: dict,
@@ -28,6 +30,7 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
         add_decoy_claims: bool = False,
         serialization_format: str = "compact",
     ):
+        """Initalize an SDJWTIssuerACAPy instance."""
         self._user_claims = user_claims
         self._issuer_key = issuer_key
         self._holder_key = holder_key
@@ -52,6 +55,7 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
         )
 
     async def issue(self):
+        """Issue an sd-jwt."""
         self._check_for_sd_claim(self._user_claims)
         self._assemble_sd_jwt_payload()
         await self._create_signed_jws()
@@ -60,7 +64,9 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
 
 def sort_sd_list(sd_list):
     """
-    Sorts sd list such that selectively disclosable claims deepest
+    Sorts sd_list.
+
+    Ensures that selectively disclosable claims deepest
     in the structure are handled first.
     """
     nested_claim_sort = [(len(sd.split(".")), sd) for sd in sd_list]
@@ -75,7 +81,14 @@ async def sd_jwt_sign(
     sd_list: List,
     did: Optional[str] = None,
     verification_method: Optional[str] = None,
-) -> SDJWTIssuerACAPy:
+) -> str:
+    """
+    Sign sd-jwt.
+
+    Use sd_list to wrap selectively disclosable claims with
+    SDObj within payload, create SDJWTIssuerACAPy object, and
+    call SDJWTIssuerACAPy.issue().
+    """
 
     sorted_sd_list = sort_sd_list(sd_list)
     for sd in sorted_sd_list:
