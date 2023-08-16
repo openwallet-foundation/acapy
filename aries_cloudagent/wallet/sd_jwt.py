@@ -25,23 +25,37 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
         headers: dict,
         did: Optional[str] = None,
         verification_method: Optional[str] = None,
+        add_decoy_claims: bool = False,
+        serialization_format: str = "compact",
     ):
+        self._user_claims = user_claims
+        self._issuer_key = issuer_key
+        self._holder_key = holder_key
+
         self.profile = profile
         self.headers = headers
         self.did = did
         self.verification_method = verification_method
-        super().__init__(user_claims, issuer_key, holder_key)
 
-    def _create_signed_jws(self):
+        self._add_decoy_claims = add_decoy_claims
+        self._serialization_format = serialization_format
+        self.ii_disclosures = []
+
+    async def _create_signed_jws(self):
         self.serialized_sd_jwt = ""
-
-        return jwt_sign(
+        return await jwt_sign(
             self.profile,
             self.headers,
             self.sd_jwt_payload,
             self.did,
             self.verification_method,
         )
+
+    async def issue(self):
+        self._check_for_sd_claim(self._user_claims)
+        self._assemble_sd_jwt_payload()
+        await self._create_signed_jws()
+        self._create_combined()
 
 
 def sort_sd_list(sd_list):
@@ -92,6 +106,7 @@ async def sd_jwt_sign(
         did=did,
         verification_method=verification_method,
     )
+    await sd_jwt_issuer.issue()
     print(json.dumps(sd_jwt_issuer.sd_jwt_payload, indent=4))
 
     return sd_jwt_issuer.sd_jwt_issuance
