@@ -6,7 +6,9 @@ Resolution is performed by looking up a stored DID Document.
 from copy import deepcopy
 from dataclasses import asdict, dataclass
 import logging
-from typing import Optional, Sequence, Text
+from typing import Optional, Sequence, Text, Union
+
+from pydid import DID
 
 from ...cache.base import BaseCache
 from ...config.injection_context import InjectionContext
@@ -159,8 +161,6 @@ class RetrieveResult:
 class LegacyPeerDIDResolver(BaseDIDResolver):
     """Resolve legacy peer DIDs."""
 
-    DEFAULT_TTL = 3600
-
     def __init__(self):
         """Initialize the resolver instance."""
         super().__init__(ResolverType.NATIVE)
@@ -193,7 +193,7 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
 
         Return value is cached.
         """
-        cache_key = f"legacy_peer_did_resolver::{did}"
+        cache_key = f"resolver::LegacyPeerDIDResolver::{did}"
         cache = profile.inject_or(BaseCache)
         if cache:
             async with cache.acquire(cache_key) as entry:
@@ -231,6 +231,19 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
             return result.is_local
         else:
             return False
+
+    async def resolve(
+        self,
+        profile: Profile,
+        did: Union[str, DID],
+        service_accept: Optional[Sequence[Text]] = None,
+    ) -> dict:
+        """Resolve a Legacy Peer DID to a DID document by fetching from the wallet.
+
+        This overrides the default resolve method so we can take care of caching
+        ourselves since we use it for the supports method as well.
+        """
+        return await self._resolve(profile, str(did), service_accept)
 
     async def _resolve(
         self,

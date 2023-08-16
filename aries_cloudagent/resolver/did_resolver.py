@@ -30,7 +30,7 @@ LOGGER = logging.getLogger(__name__)
 class DIDResolver:
     """did resolver singleton."""
 
-    def __init__(self, resolvers: List[BaseDIDResolver] = None):
+    def __init__(self, resolvers: Optional[List[BaseDIDResolver]] = None):
         """Create DID Resolver."""
         self.resolvers = resolvers or []
 
