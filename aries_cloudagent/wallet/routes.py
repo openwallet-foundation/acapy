@@ -172,6 +172,12 @@ class JWSCreateSchema(OpenAPISchema):
     )
 
 
+class SDJWSCreateSchema(JWSCreateSchema):
+    """Request schema to create an sd-jws with a particular DID."""
+
+    sd_list = fields.List()
+
+
 class JWSVerifySchema(OpenAPISchema):
     """Request schema to verify a jws created from a DID."""
 
@@ -945,7 +951,7 @@ async def wallet_jwt_sign(request: web.BaseRequest):
 @docs(
     tags=["wallet"], summary="Create a EdDSA sd-jws using did keys with a given payload"
 )
-@request_schema(JWSCreateSchema)  # check
+@request_schema(SDJWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
 async def wallet_sd_jwt_sign(request: web.BaseRequest):
     """
@@ -964,10 +970,11 @@ async def wallet_sd_jwt_sign(request: web.BaseRequest):
     verification_method = body.get("verificationMethod")
     headers = body.get("headers", {})
     payload = body.get("payload", {})
+    sd_list = body.get("sd)list", [])
 
     try:
         sd_jws = await sd_jwt_sign(
-            context.profile, headers, payload, did, verification_method
+            context.profile, headers, payload, sd_list, did, verification_method
         )
     except ValueError as err:
         raise web.HTTPBadRequest(reason="Bad did or verification method") from err
