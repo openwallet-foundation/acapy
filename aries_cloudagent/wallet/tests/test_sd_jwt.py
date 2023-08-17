@@ -16,7 +16,7 @@ from ...wallet.key_type import ED25519
 from ...wallet.in_memory import InMemoryWallet
 
 from ..jwt import jwt_sign, jwt_verify, resolve_public_key_by_kid_for_verify
-from ..sd_jwt import sd_jwt_sign
+from ..sd_jwt import sd_jwt_sign, sd_jwt_verify
 
 from .test_jwt import profile, in_memory_wallet
 
@@ -74,4 +74,4 @@ class TestSDJWT:
 
         assert signed
 
-        # assert await jwt_verify(profile, signed)
+        assert await sd_jwt_verify(profile, signed)
