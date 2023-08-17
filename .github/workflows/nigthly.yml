@@ -40,11 +40,12 @@ jobs:
   publish:
     name: Publish
     needs: [setup_and_check_pub]
-    if: ${{ needs.setup_and_check_pub.outputs.commits_today > 0 }}
+    if: always()
+    # if: ${{ needs.setup_and_check_pub.outputs.commits_today > 0 }}
     uses: ./.github/workflows/publish.yml
-    strategy:
-      matrix:
-        tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
+    # strategy:
+    #   matrix:
+    #     tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
     with:
-      tag: ${{ matrix.tag }}
+      tag: "nightly"
       platforms: "linux/amd64"
