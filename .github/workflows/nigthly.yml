@@ -31,6 +31,8 @@ jobs:
         run: echo ${{ github.sha }}
       - name: Get new commits
         run: echo "COMMITS_TODAY=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_OUTPUT
+      - name: echo new commits
+        run: echo "$(git log --oneline --since '24 hours ago' | wc -l)"
       - name: Get Date
         id: date
         run: echo "name=DATE::$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
