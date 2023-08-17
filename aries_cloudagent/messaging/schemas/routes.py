@@ -3,7 +3,7 @@
 import json
 from time import time
 
-from asyncio import shield
+# from asyncio import shield
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -17,31 +17,39 @@ from aiohttp_apispec import (
 from marshmallow import fields
 from marshmallow.validate import Regexp
 
+from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
+from aries_cloudagent.wallet.base import BaseWallet
+
 from ...admin.request_context import AdminRequestContext
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
-from ...indy.issuer import IndyIssuer, IndyIssuerError
+
+# from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.schema import SchemaSchema
-from ...ledger.base import BaseLedger
-from ...ledger.error import LedgerError
+
+# from ...ledger.base import BaseLedger
+from ...ledger.error import BadLedgerRequestError, LedgerError
 from ...ledger.multiple_ledger.ledger_requests_executor import (
     GET_SCHEMA,
     IndyLedgerRequestsExecutor,
 )
 from ...multitenant.base import BaseMultitenantManager
-from ...protocols.endorse_transaction.v1_0.manager import (
-    TransactionManager,
-    TransactionManagerError,
-)
+
+# from ...protocols.endorse_transaction.v1_0.manager import (
+#     TransactionManager,
+#     TransactionManagerError,
+# )
 from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
-from ...protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
-    get_endorser_connection_id,
-)
+
+# from ...protocols.endorse_transaction.v1_0.util import (
+#     is_author_role,
+#     get_endorser_connection_id,
+# )
 from ...storage.base import BaseStorage, StorageRecord
-from ...storage.error import StorageError
+
+# from ...storage.error import StorageError
 
 from ..models.openapi import OpenAPISchema
 from ..valid import B58, INDY_SCHEMA_ID, INDY_VERSION
@@ -56,9 +64,10 @@ from .util import (
 
 
 from ..valid import UUIDFour
-from ...connections.models.conn_record import ConnRecord
-from ...storage.error import StorageNotFoundError
-from ..models.base import BaseModelError
+
+# from ...connections.models.conn_record import ConnRecord
+# from ...storage.error import StorageNotFoundError
+# from ..models.base import BaseModelError
 
 
 class SchemaSendRequestSchema(OpenAPISchema):
@@ -169,20 +178,71 @@ async def schemas_send_schema(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    outbound_handler = request["outbound_message_router"]
+    # outbound_handler = request["outbound_message_router"]
 
-    create_transaction_for_endorser = json.loads(
-        request.query.get("create_transaction_for_endorser", "false")
-    )
-    write_ledger = not create_transaction_for_endorser
-    endorser_did = None
-    connection_id = request.query.get("conn_id")
+    # create_transaction_for_endorser = json.loads(
+    #     request.query.get("create_transaction_for_endorser", "false")
+    # )
+    # write_ledger = not create_transaction_for_endorser
+    # endorser_did = None
+    # connection_id = request.query.get("conn_id")
 
     body = await request.json()
 
-    schema_name = body.get("schema_name")
-    schema_version = body.get("schema_version")
-    attributes = body.get("attributes")
+    my_public_info = None
+    async with profile.session() as session:
+        wallet = session.inject(BaseWallet)
+        my_public_info = await wallet.get_public_did()
+    if not my_public_info:
+        raise BadLedgerRequestError("Cannot publish schema without a public DID")
+
+    # schema_name = body.get("schema_name")
+    # schema_version = body.get("schema_version")
+    # attributes = body.get("attributes")
+
+    # body = await request.json()
+    options = {}
+    # schema_data = body.get("schema")
+
+    issuer_id = my_public_info.did
+    attr_names = body.get("attributes")
+    name = body.get("schema_name")
+    version = body.get("schema_version")
+
+    issuer = AnonCredsIssuer(context.profile)
+    result = await issuer.create_and_register_schema(
+        issuer_id, name, version, attr_names, options=options
+    )
+    # return web.json_response(result.serialize())
+    schema_id = result.schema_state.schema_id
+    meta_data = {
+        "context": {
+            "schema_id": schema_id,
+            "schema_name": result.schema_state.schema_value.name,
+            "schema_version": result.schema_state.schema_value.version,
+            "attributes": result.schema_state.schema_value.attr_names,
+        },
+        "processing": {},
+    }
+    schema_def = {
+        "ver": "1.0",
+        "ident": schema_id,
+        "name": result.schema_state.schema_value.name,
+        "version": result.schema_state.schema_value.version,
+        "attr_names": result.schema_state.schema_value.attr_names,
+        "seqNo": result.schema_metadata["seqNo"],
+    }
+
+    # Notify event
+    await notify_schema_event(context.profile, schema_id, meta_data)
+    return web.json_response(
+        {
+            "sent": {"schema_id": schema_id, "schema": schema_def},
+            "schema_id": schema_id,
+            "schema": schema_def,
+        }
+    )
+    """
 
     tag_query = {"schema_name": schema_name, "schema_version": schema_version}
     async with profile.session() as session:
@@ -317,6 +377,7 @@ async def schemas_send_schema(request: web.BaseRequest):
                 "txn": transaction.serialize(),
             }
         )
+    """
 
 
 @docs(

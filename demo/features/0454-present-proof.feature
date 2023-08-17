@@ -36,7 +36,7 @@ Feature: RFC 0454 Aries agent present proof
          | Faber  | --revocation --public-did --cred-type anoncreds                  |                  | anoncreds-testing | Data_AC_NormalizedValues | AC_age_over_40 |
          | Faber  | --revocation --public-did --did-exchange --cred-type anoncreds   | --did-exchange   | anoncreds-testing | Data_AC_NormalizedValues | AC_age_over_40 |
 
-   @T001-RFC0454 @GHA-Anoncreds-break
+   @T001-RFC0454 @GHA-Anoncreds-update @GHA
    Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
       Given we have "2" agents
          | name  | role     | capabilities        |

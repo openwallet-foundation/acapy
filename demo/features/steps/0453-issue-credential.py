@@ -45,7 +45,7 @@ def step_impl(context, issuer, schema_name):
     # confirm the cred def was actually created
     async_sleep(2.0)
     cred_def_saved = agent_container_GET(
-        agent["agent"], "/credential-definition/" + cred_def_id
+        agent["agent"], "/credential-definitions/" + cred_def_id
     )
     assert cred_def_saved
 
