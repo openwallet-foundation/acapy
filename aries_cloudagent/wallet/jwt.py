@@ -120,7 +120,7 @@ async def resolve_public_key_by_kid_for_verify(profile: Profile, kid: str) -> st
 
 async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
     """Verify a JWT and return the headers and payload."""
-    encoded_headers, encoded_payload, encoded_signiture = jwt.split(".", 3)
+    encoded_headers, encoded_payload, encoded_signature = jwt.split(".", 3)
     headers = b64_to_dict(encoded_headers)
     if "alg" not in headers or headers["alg"] != "EdDSA" or "kid" not in headers:
         raise BadJWSHeaderError(
@@ -129,7 +129,7 @@ async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
 
     payload = b64_to_dict(encoded_payload)
     verification_method = headers["kid"]
-    decoded_signature = b64_to_bytes(encoded_signiture, urlsafe=True)
+    decoded_signature = b64_to_bytes(encoded_signature, urlsafe=True)
 
     async with profile.session() as session:
         verkey = await resolve_public_key_by_kid_for_verify(
