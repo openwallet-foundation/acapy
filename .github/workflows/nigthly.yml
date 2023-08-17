@@ -19,25 +19,30 @@ jobs:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
 
-  publish:
-    name: Publish
-    runs-on: "ubuntu-latest"
-    needs: [tests]
+  setup_and_check_pub:
+    name: Setup Publish
+    runs-on: ubuntu-latest
+    outputs:
+      commits_today: ${{ steps.should_run.outputs.COMMITS_TODAY }}
+      date: ${{ steps.date.outputs.DATE }}
     steps:
       - uses: actions/checkout@v2
-      - name: print check_latest_commit
+      - name: print latest_commit
         run: echo ${{ github.sha }}
-      - id: should_run
-        continue-on-error: true
-        name: check latest commit is less than a day
-        if: ${{ github.event_name == 'schedule' }}
-        run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+      - name: Get new commits
+        run: echo "COMMITS_TODAY=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_OUTPUT
       - name: Get Date
         id: date
-        run: echo "date::$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-      - name: Build And Publish
-        if: ${{ steps.outputs.should_run != 'false' }}
-        uses: ./.github/workflows/publish.yml
-        with:
-          tag: nightly-${{ steps.date.outputes.date }}
-          platform: "linux/amd64"
+        run: echo "name=DATE::$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+  publish:
+    name: Publish
+    needs: [setup_and_check_pub]
+    if: needs.setup_and_check_pub.outputs.commits_today < 0
+    uses: ./.github/workflows/publish.yml
+    strategy:
+      matrix:
+        tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
+    with:
+      tag: ${{ matrix.tag }}
+      platform: "linux/amd64"
