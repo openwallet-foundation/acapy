@@ -50,7 +50,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
 from ..resolver.base import ResolverError
 from ..storage.error import StorageError, StorageNotFoundError
 from ..wallet.jwt import jwt_sign, jwt_verify
-from ..wallet.sd_jwt import sd_jwt_sign
+from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
 from .base import BaseWallet
 from .did_info import DIDInfo
 from .did_method import KEY, SOV, DIDMethod, DIDMethods, HolderDefinedDid
@@ -1015,6 +1015,36 @@ async def wallet_jwt_verify(request: web.BaseRequest):
     )
 
 
+@docs(tags=["wallet"], summary="Verify a EdDSA sd-jws using did keys with a given JWS")
+@request_schema(JWSVerifySchema())
+@response_schema(JWSVerifyResponseSchema(), 200, description="")
+async def wallet_sd_jwt_verify(request: web.BaseRequest):
+    """
+        Request handler for sd-jws validation using did.
+
+    Args:
+        "sd-jwt": { ... }
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    sd_jwt = body["sd_jwt"]
+    try:
+        result = await sd_jwt_verify(context.profile, sd_jwt)
+    except (BadJWSHeaderError, InvalidVerificationMethod) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except ResolverError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    return web.json_response(
+        {
+            "valid": result.valid,
+            "headers": result.headers,
+            "payload": result.payload,
+            "kid": result.kid,
+        }
+    )
+
+
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
 @querystring_schema(DIDQueryStringSchema())
 @response_schema(DIDEndpointSchema, 200, description="")
@@ -1171,6 +1201,7 @@ async def register(app: web.Application):
             web.post("/wallet/jwt/sign", wallet_jwt_sign),
             web.post("/wallet/jwt/verify", wallet_jwt_verify),
             web.post("/wallet/sd-jwt/sign", wallet_sd_jwt_sign),
+            web.post("/wallet/sd-jwt/verify", wallet_sd_jwt_verify),
             web.get(
                 "/wallet/get-did-endpoint", wallet_get_did_endpoint, allow_head=False
             ),
