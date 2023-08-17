@@ -321,9 +321,12 @@ class DIDXManager(BaseConnectionManager):
                     peer_did_2, peer_doc = create_peer_did_2(
                         bytes_to_b58(verkey_bytes), service=service
                     )
+                    dp3,dp3_doc = gen_did_peer_3(peer_did_2)
+
                     my_info = await wallet.create_local_did(
                         PEER, ED25519, keypair=keypair, did=peer_did_2
                     )
+                    await wallet.create_local_did(PEER,ED25519, keypair=keypair,did=dp3)
 
             else:  # use old unqualified dids
                 async with self.profile.session() as session:
@@ -830,32 +833,30 @@ class DIDXManager(BaseConnectionManager):
 
         their_did = response.did
         # request DID doc describes requester DID
-        if response.did and response.did.startswith("did:peer:2"):
-            peer_did_3, conn_did_doc = gen_did_peer_3(response.did)
-            their_did = peer_did_3
-            #now that you have send did:peer:2 and gotten response, update conn.my_did
-            my_dp3, my_dp3_doc = gen_did_peer_3(conn_rec.my_did)
-            conn_rec.my_did = my_dp3
-        else:
-            if not response.did_doc_attach:
-                raise DIDXManagerError(
-                    "No DIDDoc attached; cannot connect to public DID"
+        if conn_rec.my_did.startswith("did:peer:2"):
+            peer_did_3, my_dp3_doc = gen_did_peer_3(conn_rec.my_did)
+            conn_rec.my_did = peer_did_3
+        if not response.did_doc_attach:
+            raise DIDXManagerError(
+                "No DIDDoc attached; cannot connect to public DID"
+            )
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            #TODO: need to store did:peer:3 as a local did when it was first created
+
+            conn_did_doc = await self.verify_diddoc(
+                wallet, response.did_doc_attach, conn_rec.invitation_key
+            )
+        if their_did != conn_did_doc.id:
+            if str("did:sov:" + their_did) == str(conn_did_doc.id):
+                self._logger.warning(
+                    f"legacy behaviour: Connection DID is unqualified {their_did}, but did doc did has did:sov {conn_did_doc.id}"
                 )
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                conn_did_doc = await self.verify_diddoc(
-                    wallet, response.did_doc_attach, conn_rec.invitation_key
-                )
-            if their_did != conn_did_doc.id:
-                if str("did:sov:" + their_did) == str(conn_did_doc.id):
-                    self._logger.warning(
-                        f"legacy behaviour: Connection DID is unqualified {their_did}, but did doc did has did:sov {conn_did_doc.id}"
+            else:
+                self._logger.error(
+                        f"Connection DID {their_did} does not match "
+                        f"DID Doc id {conn_did_doc.id}"
                     )
-                else:
-                    self._logger.error(
-                            f"Connection DID {their_did} does not match "
-                            f"DID Doc id {conn_did_doc.id}"
-                        )
 
         await self.store_did_document(conn_did_doc)
 
