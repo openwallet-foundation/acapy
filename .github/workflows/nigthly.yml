@@ -23,24 +23,24 @@ jobs:
     name: Setup Publish
     runs-on: ubuntu-latest
     outputs:
-      commits_today: ${{ steps.should_run.outputs.COMMITS_TODAY }}
-      date: ${{ steps.date.outputs.DATE }}
+      commits_today: ${{ steps.should_run.outputs.commits_today }}
+      date: ${{ steps.date.outputs.date }}
     steps:
       - uses: actions/checkout@v2
       - name: print latest_commit
         run: echo ${{ github.sha }}
       - name: Get new commits
-        run: echo "COMMITS_TODAY=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_OUTPUT
+        run: echo "commits_today=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_OUTPUT
       - name: echo new commits
         run: echo "$(git log --oneline --since '24 hours ago' | wc -l)"
       - name: Get Date
         id: date
-        run: echo "name=DATE::$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
   publish:
     name: Publish
     needs: [setup_and_check_pub]
-    if: ${{ needs.setup_and_check_pub.outputs.commits_today > 0 }}
+    if: needs.setup_and_check_pub.outputs.commits_today > 0
     uses: ./.github/workflows/publish.yml
     # strategy:
     #   matrix:
