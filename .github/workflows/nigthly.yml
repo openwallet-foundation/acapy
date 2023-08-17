@@ -45,5 +45,5 @@ jobs:
       matrix:
         tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
     with:
-      tag: "nightly"
+      tag: ${{ matrix.tag }}
       platforms: "linux/amd64"
