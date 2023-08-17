@@ -134,14 +134,12 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
     ):
         self.profile = profile
         self.sd_jwt_presentation = sd_jwt_presentation
-        self.jwt = ""
         self._serialization_format = serialization_format
 
     async def _verify_sd_jwt(self):
-        self.serialized_sd_jwt = ""
         return await jwt_verify(
             self.profile,
-            self.jwt,
+            self.serialized_sd_jwt,
         )
 
     def _parse_sd_jwt(self, sd_jwt):
@@ -154,7 +152,7 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
             return self._unverified_input_sd_jwt
 
     async def verify(self):
-        self.jwt = self._parse_sd_jwt(self.sd_jwt_presentation)
+        self.serialized_sd_jwt = self._parse_sd_jwt(self.sd_jwt_presentation)
         self._create_hash_mappings(self._input_disclosures)
         return await self._verify_sd_jwt()
 
