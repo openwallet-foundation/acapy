@@ -5,7 +5,7 @@ For Connection, DIDExchange and OutOfBand Manager.
 """
 
 import logging
-from typing import Optional, List, Sequence, Tuple, Text
+from typing import List, Optional, Sequence, Text, Tuple, Union
 
 from multiformats import multibase, multicodec
 from pydid import (
@@ -16,8 +16,8 @@ from pydid import (
 import pydid
 from pydid.verification_method import (
     Ed25519VerificationKey2018,
-    JsonWebKey2020,
     Ed25519VerificationKey2020,
+    JsonWebKey2020,
 )
 
 from ..config.logging import get_logger_inst
@@ -30,9 +30,8 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
-from ..protocols.coordinate_mediation.v1_0.route_manager import (
-    RouteManager,
-)
+from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ..resolver.base import ResolverError
 from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
@@ -40,10 +39,10 @@ from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
+from ..wallet.util import b64_to_bytes, bytes_to_b58
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
 from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from ..wallet.util import bytes_to_b58, b64_to_bytes
 
 
 class BaseConnectionManagerError(BaseError):
@@ -407,6 +406,124 @@ class BaseConnectionManager:
                 f"Key type {type(method).__name__} is not supported"
             )
 
+    async def _fetch_connection_targets_for_invitation(
+        self,
+        connection: ConnRecord,
+        invitation: Union[ConnectionInvitation, InvitationMessage],
+        sender_verkey: str,
+    ) -> Sequence[ConnectionTarget]:
+        """Get a list of connection targets for an invitation.
+
+        This will extract target info for either a connection or OOB invitation.
+
+        Args:
+            connection: ConnRecord the invitation is associated with.
+            invitation: Connection or OOB invitation retrieved from conn record.
+
+        Returns:
+            A list of `ConnectionTarget` objects
+        """
+        if isinstance(invitation, ConnectionInvitation):
+            # conn protocol invitation
+            if invitation.did:
+                did = invitation.did
+                (
+                    endpoint,
+                    recipient_keys,
+                    routing_keys,
+                ) = await self.resolve_invitation(did)
+
+            else:
+                endpoint = invitation.endpoint
+                recipient_keys = invitation.recipient_keys
+                routing_keys = invitation.routing_keys
+        else:
+            # out-of-band invitation
+            oob_service_item = invitation.services[0]
+            if isinstance(oob_service_item, str):
+                (
+                    endpoint,
+                    recipient_keys,
+                    routing_keys,
+                ) = await self.resolve_invitation(oob_service_item)
+
+            else:
+                endpoint = oob_service_item.service_endpoint
+                recipient_keys = [
+                    DIDKey.from_did(k).public_key_b58
+                    for k in oob_service_item.recipient_keys
+                ]
+                routing_keys = [
+                    DIDKey.from_did(k).public_key_b58
+                    for k in oob_service_item.routing_keys
+                ]
+
+        return [
+            ConnectionTarget(
+                did=connection.their_did,
+                endpoint=endpoint,
+                label=invitation.label if invitation else None,
+                recipient_keys=recipient_keys,
+                routing_keys=routing_keys,
+                sender_key=sender_verkey,
+            )
+        ]
+
+    async def _fetch_targets_for_connection_in_progress(
+        self, connection: ConnRecord, sender_verkey: str
+    ) -> Sequence[ConnectionTarget]:
+        """Get a list of connection targets from an incomplete `ConnRecord`.
+
+        This covers retrieving targets for connections that are still in the
+        process of bootstrapping. This includes connections that are in states
+        invitation-received or request-received.
+
+        Args:
+            connection: The connection record (with associated `DIDDoc`)
+                used to generate the connection target
+        Returns:
+            A list of `ConnectionTarget` objects
+        """
+        if (
+            connection.invitation_msg_id
+            or connection.invitation_key
+            or not connection.their_did
+        ):  # invitation received or sending request to invitation
+            async with self._profile.session() as session:
+                invitation = await connection.retrieve_invitation(session)
+            targets = await self._fetch_connection_targets_for_invitation(
+                connection,
+                invitation,
+                sender_verkey,
+            )
+        else:  # sending implicit request
+            if connection.their_did:
+                # request is implicit; did isn't set if we've received an
+                # invitation, only the invitation key
+                invitation = None
+                did = connection.their_did
+                (
+                    endpoint,
+                    recipient_keys,
+                    routing_keys,
+                ) = await self.resolve_invitation(did)
+            else:
+                raise BaseConnectionManagerError(
+                    "Connection is in invalid state to fetch targets"
+                )
+            targets = [
+                ConnectionTarget(
+                    did=connection.their_did,
+                    endpoint=endpoint,
+                    label=invitation.label if invitation else None,
+                    recipient_keys=recipient_keys,
+                    routing_keys=routing_keys,
+                    sender_key=sender_verkey,
+                )
+            ]
+
+        return targets
+
     async def fetch_connection_targets(
         self, connection: ConnRecord
     ) -> Optional[Sequence[ConnectionTarget]]:
@@ -420,92 +537,27 @@ class BaseConnectionManager:
         if not connection.my_did:
             self._logger.debug("No local DID associated with connection")
             return None
-        results = None
+
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            my_info = await wallet.get_local_did(connection.my_did)
 
         if (
             ConnRecord.State.get(connection.state)
             in (ConnRecord.State.INVITATION, ConnRecord.State.REQUEST)
             and ConnRecord.Role.get(connection.their_role) is ConnRecord.Role.RESPONDER
-        ):
-            if (
-                connection.invitation_msg_id
-                or connection.invitation_key
-                or not connection.their_did
-            ):
-                async with self._profile.session() as session:
-                    invitation = await connection.retrieve_invitation(session)
-                if isinstance(
-                    invitation, ConnectionInvitation
-                ):  # conn protocol invitation
-                    if invitation.did:
-                        did = invitation.did
-                        (
-                            endpoint,
-                            recipient_keys,
-                            routing_keys,
-                        ) = await self.resolve_invitation(did)
-
-                    else:
-                        endpoint = invitation.endpoint
-                        recipient_keys = invitation.recipient_keys
-                        routing_keys = invitation.routing_keys
-                else:  # out-of-band invitation
-                    oob_service_item = invitation.services[0]
-                    if isinstance(oob_service_item, str):
-                        (
-                            endpoint,
-                            recipient_keys,
-                            routing_keys,
-                        ) = await self.resolve_invitation(oob_service_item)
-
-                    else:
-                        endpoint = oob_service_item.service_endpoint
-                        recipient_keys = [
-                            DIDKey.from_did(k).public_key_b58
-                            for k in oob_service_item.recipient_keys
-                        ]
-                        routing_keys = [
-                            DIDKey.from_did(k).public_key_b58
-                            for k in oob_service_item.routing_keys
-                        ]
-            else:
-                if connection.their_did:
-                    invitation = None
-                    did = connection.their_did
-                    (
-                        endpoint,
-                        recipient_keys,
-                        routing_keys,
-                    ) = await self.resolve_invitation(did)
-
-            async with self._profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(connection.my_did)
-
-            results = [
-                ConnectionTarget(
-                    did=connection.their_did,
-                    endpoint=endpoint,
-                    label=invitation.label if invitation else None,
-                    recipient_keys=recipient_keys,
-                    routing_keys=routing_keys,
-                    sender_key=my_info.verkey,
-                )
-            ]
-        else:
-            if not connection.their_did:
-                self._logger.debug("No target DID associated with connection")
-                return None
-
-            async with self._profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(connection.my_did)
-
-            results = await self.resolve_connection_targets(
-                connection.their_did, my_info.verkey, connection.their_label
+        ):  # invitation received or sending request
+            return await self._fetch_targets_for_connection_in_progress(
+                connection, my_info.verkey
             )
 
-        return results
+        if not connection.their_did:
+            self._logger.debug("No target DID associated with connection")
+            return None
+
+        return await self.resolve_connection_targets(
+            connection.their_did, my_info.verkey, connection.their_label
+        )
 
     def diddoc_connection_targets(
         self,
