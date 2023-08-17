@@ -21,8 +21,23 @@ jobs:
 
   publish:
     name: Publish
-    needs: tests
-    uses: ./.github/workflows/publish.yml
-    with:
-      tag: "nightly"
-      platform: "linux/amd64"
+    runs-on: "ubuntu-latest"
+    needs: [tests]
+    steps:
+      - uses: actions/checkout@v2
+      - name: print check_latest_commit
+        run: echo ${{ github.sha }}
+      - id: should_run
+        continue-on-error: true
+        name: check latest commit is less than a day
+        if: ${{ github.event_name == 'schedule' }}
+        run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+      - name: Get Date
+        id: date
+        run: echo "date::$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+      - name: Build And Publish
+        if: ${{ steps.outputs.should_run != 'false' }}
+        uses: ./.github/workflows/publish.yml
+        with:
+          tag: nightly-${{ steps.date.outputes.date }}
+          platform: "linux/amd64"
