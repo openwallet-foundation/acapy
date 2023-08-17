@@ -509,7 +509,7 @@ class BaseConnectionManager:
 
     def diddoc_connection_targets(
         self,
-        doc: pydid.DIDDocument,
+        doc: DIDDoc,
         sender_verkey: str,
         their_label: Optional[str] = None,
     ) -> Sequence[ConnectionTarget]:
@@ -520,9 +520,12 @@ class BaseConnectionManager:
             sender_verkey: The verkey we are using
             their_label: The connection label they are using
         """
-
+        if not doc:
+            raise BaseConnectionManagerError("No DIDDoc provided for connection target")
+        if not doc.did:
+            raise BaseConnectionManagerError("DIDDoc has no DID")
         if not doc.service:
-            raise BaseConnectionManagerError("No services defined by DID Doc")
+            raise BaseConnectionManagerError("No services defined by DIDDoc")
 
         targets = []
         for service in doc.service.values():
