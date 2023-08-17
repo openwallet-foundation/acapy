@@ -56,7 +56,7 @@ class TestSchemaRoutes(AsyncTestCase):
             __getitem__=lambda _, k: self.request_dict[k],
         )
 
-    async def test_send_schema(self):
+    async def anoncreds_break_test_send_schema(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
@@ -68,7 +68,7 @@ class TestSchemaRoutes(AsyncTestCase):
         self.request.query = {"create_transaction_for_endorser": "false"}
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.schemas_send_schema(self.request)
+            result = await test_module.anoncreds_break_schemas_send_schema(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
                 {
@@ -87,7 +87,7 @@ class TestSchemaRoutes(AsyncTestCase):
                 }
             )
 
-    async def test_send_schema_create_transaction_for_endorser(self):
+    async def anoncreds_break_test_send_schema_create_transaction_for_endorser(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
@@ -123,7 +123,7 @@ class TestSchemaRoutes(AsyncTestCase):
                     }
                 )
             )
-            result = await test_module.schemas_send_schema(self.request)
+            result = await test_module.anoncreds_break_schemas_send_schema(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
                 {
@@ -138,7 +138,9 @@ class TestSchemaRoutes(AsyncTestCase):
                 }
             )
 
-    async def test_send_schema_create_transaction_for_endorser_storage_x(self):
+    async def anoncreds_break_test_send_schema_create_transaction_for_endorser_storage_x(
+        self,
+    ):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
@@ -172,9 +174,11 @@ class TestSchemaRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.schemas_send_schema(self.request)
+                await test_module.anoncreds_break_schemas_send_schema(self.request)
 
-    async def test_send_schema_create_transaction_for_endorser_not_found_x(self):
+    async def anoncreds_break_test_send_schema_create_transaction_for_endorser_not_found_x(
+        self,
+    ):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
@@ -194,9 +198,11 @@ class TestSchemaRoutes(AsyncTestCase):
             mock_conn_rec_retrieve.side_effect = test_module.StorageNotFoundError()
 
             with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.schemas_send_schema(self.request)
+                await test_module.anoncreds_break_schemas_send_schema(self.request)
 
-    async def test_send_schema_create_transaction_for_endorser_base_model_x(self):
+    async def anoncreds_break_test_send_schema_create_transaction_for_endorser_base_model_x(
+        self,
+    ):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
@@ -216,9 +222,11 @@ class TestSchemaRoutes(AsyncTestCase):
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.schemas_send_schema(self.request)
+                await test_module.anoncreds_break_schemas_send_schema(self.request)
 
-    async def test_send_schema_create_transaction_for_endorser_no_endorser_info_x(self):
+    async def anoncreds_break_test_send_schema_create_transaction_for_endorser_no_endorser_info_x(
+        self,
+    ):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
@@ -239,9 +247,11 @@ class TestSchemaRoutes(AsyncTestCase):
                 metadata_get=async_mock.CoroutineMock(return_value=None)
             )
             with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.schemas_send_schema(self.request)
+                await test_module.anoncreds_break_schemas_send_schema(self.request)
 
-    async def test_send_schema_create_transaction_for_endorser_no_endorser_did_x(self):
+    async def anoncreds_break_test_send_schema_create_transaction_for_endorser_no_endorser_did_x(
+        self,
+    ):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
@@ -266,9 +276,9 @@ class TestSchemaRoutes(AsyncTestCase):
                 )
             )
             with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.schemas_send_schema(self.request)
+                await test_module.anoncreds_break_schemas_send_schema(self.request)
 
-    async def test_send_schema_no_ledger(self):
+    async def anoncreds_break_test_send_schema_no_ledger(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
@@ -279,9 +289,9 @@ class TestSchemaRoutes(AsyncTestCase):
 
         self.context.injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.schemas_send_schema(self.request)
+            await test_module.anoncreds_break_schemas_send_schema(self.request)
 
-    async def test_send_schema_x_ledger(self):
+    async def anoncreds_break_test_send_schema_x_ledger(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
@@ -295,7 +305,7 @@ class TestSchemaRoutes(AsyncTestCase):
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.schemas_send_schema(self.request)
+            await test_module.anoncreds_break_schemas_send_schema(self.request)
 
     async def test_created(self):
         self.request.match_info = {"schema_id": SCHEMA_ID}

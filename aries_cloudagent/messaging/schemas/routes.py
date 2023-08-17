@@ -1,6 +1,6 @@
 """Credential schema admin routes."""
 
-import json
+# import json
 from time import time
 
 # from asyncio import shield
