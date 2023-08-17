@@ -23,6 +23,8 @@ from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
     DID_POSTURE_EXAMPLE,
     DID_POSTURE_VALIDATE,
+    DISCLOSURES_EXAMPLE,
+    DISCLOSURES_VALIDATE,
     ENDPOINT_EXAMPLE,
     ENDPOINT_TYPE_EXAMPLE,
     ENDPOINT_TYPE_VALIDATE,
@@ -35,6 +37,10 @@ from ..messaging.valid import (
     INDY_RAW_PUBLIC_KEY_VALIDATE,
     JWT_EXAMPLE,
     JWT_VALIDATE,
+    SD_JWT_EXAMPLE,
+    SD_JWT_VALIDATE,
+    SD_LIST_EXAMPLE,
+    SD_LIST_VALIDATE,
     IndyDID,
     Uri,
 )
@@ -175,7 +181,13 @@ class JWSCreateSchema(OpenAPISchema):
 class SDJWSCreateSchema(JWSCreateSchema):
     """Request schema to create an sd-jws with a particular DID."""
 
-    sd_list = fields.List(fields.Str())
+    sd_list = fields.List(
+        fields.Str(
+            required=False,
+            validate=SD_LIST_VALIDATE,
+            metadata={"example": SD_LIST_EXAMPLE},
+        )
+    )
 
 
 class JWSVerifySchema(OpenAPISchema):
@@ -184,8 +196,14 @@ class JWSVerifySchema(OpenAPISchema):
     jwt = fields.Str(validate=JWT_VALIDATE, metadata={"example": JWT_EXAMPLE})
 
 
+class SDJWSVerifySchema(OpenAPISchema):
+    """Request schema to verify an sd-jws created from a DID."""
+
+    sd_jwt = fields.Str(validate=SD_JWT_VALIDATE, metadata={"example": SD_JWT_EXAMPLE})
+
+
 class JWSVerifyResponseSchema(OpenAPISchema):
-    """Response schema for verification result."""
+    """Response schema for JWT verification result."""
 
     valid = fields.Bool(required=True)
     error = fields.Str(required=False, metadata={"description": "Error text"})
@@ -195,6 +213,20 @@ class JWSVerifyResponseSchema(OpenAPISchema):
     )
     payload = fields.Dict(
         required=True, metadata={"description": "Payload from verified JWT"}
+    )
+
+
+class SDJWSVerifyResponseSchema(JWSVerifyResponseSchema):
+    """Response schema for SD-JWT verification result."""
+
+    disclosures = fields.List(
+        fields.List(
+            fields.Str(
+                required=False,
+                validate=DISCLOSURES_VALIDATE,
+                metadata={"example": DISCLOSURES_EXAMPLE},
+            )
+        )
     )
 
 
@@ -1016,8 +1048,8 @@ async def wallet_jwt_verify(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Verify a EdDSA sd-jws using did keys with a given JWS")
-@request_schema(JWSVerifySchema())
-@response_schema(JWSVerifyResponseSchema(), 200, description="")
+@request_schema(SDJWSVerifySchema())
+@response_schema(SDJWSVerifyResponseSchema(), 200, description="")
 async def wallet_sd_jwt_verify(request: web.BaseRequest):
     """
         Request handler for sd-jws validation using did.

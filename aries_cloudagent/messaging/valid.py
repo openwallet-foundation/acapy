@@ -200,6 +200,29 @@ class JWSHeaderKid(Regexp):
         )
 
 
+class SDList(Regexp):
+    """Validate SD List"""
+
+    EXAMPLE = [
+        "given_name",
+        "family_name",
+        "address",
+        "address.street_address",
+        "address.street_address.house_number",
+        "email",
+        "nationalities[1:3]",
+    ]
+    PATTERN = r".*"  # TODO: add Regex
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            SDList.PATTERN,
+            error="Value {input} is not a valid SDList",
+        )
+
+
 class JSONWebToken(Regexp):
     """Validate JSON Web Token."""
 
@@ -216,6 +239,69 @@ class JSONWebToken(Regexp):
         super().__init__(
             JSONWebToken.PATTERN,
             error="Value {input} is not a valid JSON Web token",
+        )
+
+
+class SDJSONWebToken(Regexp):
+    """Validate SD-JSON Web Token."""
+
+    EXAMPLE = (
+        "eyJhbGciOiJFZERTQSJ9."
+        "eyJhIjogIjAifQ."
+        "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+        "~WyJEM3BUSFdCYWNRcFdpREc2TWZKLUZnIiwgIkRFIl0"
+        "~WyJPMTFySVRjRTdHcXExYW9oRkd0aDh3IiwgIlNBIl0"
+        "~WyJkVmEzX1JlTGNsWTU0R1FHZm5oWlRnIiwgInVwZGF0ZWRfYXQiLCAxNTcwMDAwMDAwXQ"
+    )
+    PATTERN = r".*"  # TODO: add Regex
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            SDJSONWebToken.PATTERN,
+            error="Value {input} is not a valid SD-JSON Web token",
+        )
+
+
+class Disclosures(Regexp):
+    """Validate SD Disclosures."""
+
+    EXAMPLE = [
+        ["uR_7gCub2H8jqCebK974gg", "given_name", "John"],
+        ["pVNC8_UIAFubHCE8qd8Qag", "family_name", "Doe"],
+        [
+            "wn7kQK6gc1xjK2EUvdBx_w",
+            "address",
+            {
+                "_sd": [
+                    "62Z6rlJFKNagx_zCgTKdEKVGx5oeCGmFOBYP_V3nvXM",
+                    "BJfn94_yMmEe3SsqdWwaPtWL0K92Q2AEEOKCIW0_ijI",
+                    "W5Pb28JILuWXn3MzMybIREwEMo92ho07zAO_Zfp6UW4",
+                    "XNseAXkWgm9P5cc7D5RPu3mA8uYuFWtK9vxwTQQZVW8",
+                ]
+            },
+        ],
+        [
+            "QHp6MA7HoUE3Ajan3LCqqw",
+            "street_address",
+            {
+                "_sd": ["5sYxNNvht8a9g5JON9yQWf4eIyogMtV7_7Y1VWh9QGU"],
+                "street": "Main St",
+            },
+        ],
+        ["pFlIYzaDRUqagcTPlHD1-Q", "house_number", "123"],
+        ["pvyM3ymTZWjA4N6z_u7ufA", "email", "johndoe@example.com"],
+        ["P4vbBZ2_7t12LF1DKsSSMQ", "DE"],
+        ["jljUb3RcAszB__K8e0WP-Q", "SA"],
+    ]
+    PATTERN = r".*"  # TODO: add Regex
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            Disclosures.PATTERN, error="Value {input} is not a valid disclosure"
         )
 
 
@@ -800,8 +886,17 @@ INDY_REV_REG_SIZE_EXAMPLE = IndyRevRegSize.EXAMPLE
 JWS_HEADER_KID_VALIDATE = JWSHeaderKid()
 JWS_HEADER_KID_EXAMPLE = JWSHeaderKid.EXAMPLE
 
+# SD_LIST_VALIDATE = SDList()
+# SD_LIST_EXAMPLE = SDList().EXAMPLE
+
 JWT_VALIDATE = JSONWebToken()
 JWT_EXAMPLE = JSONWebToken.EXAMPLE
+
+SD_JWT_VALIDATE = SDJSONWebToken()
+SD_JWT_EXAMPLE = SDJSONWebToken.EXAMPLE
+
+DISCLOSURES_VALIDATE = Disclosures()
+DISCLOSURES_EXAMPLE = Disclosures().EXAMPLE
 
 DID_KEY_VALIDATE = DIDKey()
 DID_KEY_EXAMPLE = DIDKey.EXAMPLE
