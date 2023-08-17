@@ -45,8 +45,7 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
         self.ii_disclosures = []
 
     async def _create_signed_jws(self):
-        self.serialized_sd_jwt = ""
-        return await jwt_sign(
+        self.serialized_sd_jwt = await jwt_sign(
             self.profile,
             self.headers,
             self.sd_jwt_payload,
