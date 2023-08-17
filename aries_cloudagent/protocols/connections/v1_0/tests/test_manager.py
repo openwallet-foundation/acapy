@@ -9,6 +9,7 @@ from pydid.verification_method import (
     JsonWebKey2020,
 )
 
+from .. import manager as test_module
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....config.base import InjectionError
@@ -16,35 +17,34 @@ from .....connections.base_manager import BaseConnectionManagerError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
-from .....core.oob_processor import OobMessageProcessor
 from .....core.in_memory import InMemoryProfile
+from .....core.oob_processor import OobMessageProcessor
 from .....core.profile import ProfileSession
 from .....did.did_key import DIDKey
 from .....messaging.responder import BaseResponder, MockResponder
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.routing.v1_0.manager import RoutingManager
+from .....resolver.default.legacy_peer import LegacyPeerDIDResolver
 from .....resolver.did_resolver import DIDResolver
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo
-from .....wallet.did_method import SOV, DIDMethods
+from .....wallet.did_method import DIDMethods, SOV
 from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
+from .....wallet.util import b58_to_bytes, bytes_to_b64
 from ....coordinate_mediation.v1_0.manager import MediationManager
-from ....coordinate_mediation.v1_0.route_manager import RouteManager
 from ....coordinate_mediation.v1_0.messages.mediate_request import MediationRequest
 from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
+from ....coordinate_mediation.v1_0.route_manager import RouteManager
 from ....discovery.v2_0.manager import V20DiscoveryMgr
-
 from ..manager import ConnectionManager, ConnectionManagerError
-from .. import manager as test_module
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
 from ..messages.connection_response import ConnectionResponse
 from ..models.connection_detail import ConnectionDetail
-from .....wallet.util import bytes_to_b64, b58_to_bytes
 
 
 class TestConnectionManager(AsyncTestCase):
@@ -86,6 +86,8 @@ class TestConnectionManager(AsyncTestCase):
         self.route_manager.mediation_record_if_id = async_mock.CoroutineMock(
             return_value=None
         )
+        self.resolver = DIDResolver()
+        self.resolver.register_resolver(LegacyPeerDIDResolver())
 
         self.profile = InMemoryProfile.test_profile(
             {
@@ -101,6 +103,7 @@ class TestConnectionManager(AsyncTestCase):
                 OobMessageProcessor: self.oob_mock,
                 RouteManager: self.route_manager,
                 DIDMethods: DIDMethods(),
+                DIDResolver: self.resolver,
             },
         )
         self.context = self.profile.context
@@ -2116,7 +2119,6 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver = async_mock.MagicMock()
             self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
                 return_value=self.test_endpoint
             )
@@ -2188,7 +2190,6 @@ class TestConnectionManager(AsyncTestCase):
             )
             did_doc = builder.build()
 
-            self.resolver = async_mock.MagicMock()
             self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
                 return_value=self.test_endpoint
             )
@@ -2255,7 +2256,6 @@ class TestConnectionManager(AsyncTestCase):
                 ],
             }
             did_doc = DIDDocument.deserialize(did_doc_json)
-            self.resolver = async_mock.MagicMock()
             self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
                 return_value=self.test_endpoint
             )
@@ -2296,7 +2296,6 @@ class TestConnectionManager(AsyncTestCase):
             )
             builder.service.add(type_="LinkedData", service_endpoint=self.test_endpoint)
             did_doc = builder.build()
-            self.resolver = async_mock.MagicMock()
             self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
                 return_value=self.test_endpoint
             )
@@ -2345,7 +2344,6 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver = async_mock.MagicMock()
             self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
                 return_value=self.test_endpoint
             )
@@ -2408,7 +2406,6 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver = async_mock.MagicMock()
             self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
                 return_value=self.test_endpoint
             )
@@ -2471,7 +2468,6 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver = async_mock.MagicMock()
             self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
                 return_value=self.test_endpoint
             )
@@ -2533,7 +2529,6 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver = async_mock.MagicMock()
             self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
                 return_value=self.test_endpoint
             )
@@ -2608,7 +2603,6 @@ class TestConnectionManager(AsyncTestCase):
             )
             did_doc = builder.build()
 
-            self.resolver = async_mock.MagicMock()
             self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
             self.resolver.dereference = async_mock.CoroutineMock(
                 return_value=did_doc.verification_method[0]
@@ -2651,7 +2645,6 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_oob_invitation_svc_block_resolver(self):
         async with self.profile.session() as session:
-            self.resolver = async_mock.MagicMock()
             self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
                 return_value=self.test_endpoint
             )
@@ -2745,7 +2738,8 @@ class TestConnectionManager(AsyncTestCase):
             targets = await self.manager.fetch_connection_targets(mock_conn)
             assert len(targets) == 1
             target = targets[0]
-            assert target.did == mock_conn.their_did
+            # did:sov: dropped for this check
+            assert target.did[8:] == mock_conn.their_did
             assert target.endpoint == self.test_endpoint
             assert target.label == mock_conn.their_label
             assert target.recipient_keys == [self.test_verkey]
