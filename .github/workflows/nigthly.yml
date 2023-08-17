@@ -23,16 +23,15 @@ jobs:
     name: Setup Publish
     runs-on: ubuntu-latest
     outputs:
-      commits_today: ${{ steps.should_run.outputs.commits_today }}
+      commits_today: ${{ steps.commits.outputs.commits_today }}
       date: ${{ steps.date.outputs.date }}
     steps:
       - uses: actions/checkout@v2
       - name: print latest_commit
         run: echo ${{ github.sha }}
       - name: Get new commits
+        id: commits
         run: echo "commits_today=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_OUTPUT
-      - name: echo new commits
-        run: echo "$(git log --oneline --since '24 hours ago' | wc -l)"
       - name: Get Date
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
