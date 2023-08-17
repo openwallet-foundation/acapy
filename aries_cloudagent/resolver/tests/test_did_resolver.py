@@ -143,7 +143,7 @@ async def test_match_did_to_resolver_native_priority(profile):
             return_value=async_mock.MagicMock(
                 debug=async_mock.MagicMock(),
             ),
-        )
+        ),
     ):
         assert [native, non_native] == await resolver._match_did_to_resolver(
             profile, TEST_DID0
@@ -165,7 +165,7 @@ async def test_match_did_to_resolver_registration_order(profile):
             return_value=async_mock.MagicMock(
                 debug=async_mock.MagicMock(),
             ),
-        )
+        ),
     ):
         assert [
             native1,
