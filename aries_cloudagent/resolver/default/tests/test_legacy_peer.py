@@ -178,3 +178,4 @@ class TestLegacyPeerDIDResolver:
         }
         actual = test_module.LegacyDocCorrections.apply(input_doc)
         assert actual == expected
+        assert expected == test_module.LegacyDocCorrections.apply(expected)

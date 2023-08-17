@@ -81,7 +81,9 @@ class LegacyDocCorrections:
           "type": "did-communication",
           "priority": 0,
           "recipientKeys": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
-          "routingKeys": ["9NnKFUZoYcCqYC2PcaXH3cnaGsoRfyGgyEHbvbLJYh8j"],
+          "routingKeys": [
+              "did:key:z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7#z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7"
+          ],
           "serviceEndpoint": "http://bob:3000"
         }
       ]
@@ -131,6 +133,8 @@ class LegacyDocCorrections:
                 if "routingKeys" in service:
                     service["routingKeys"] = [
                         DIDKey.from_public_key_b58(key, ED25519).key_id
+                        if "did:key:" not in key
+                        else key
                         for key in service["routingKeys"]
                     ]
         return value
