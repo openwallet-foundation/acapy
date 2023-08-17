@@ -5,9 +5,10 @@ from typing import Any, List, Mapping, Optional
 from jsonpath_ng.ext import parse
 from sd_jwt.common import SDObj
 from sd_jwt.issuer import SDJWTIssuer
+from sd_jwt.verifier import SDJWTVerifier
 
 from ..core.profile import Profile
-from ..wallet.jwt import jwt_sign
+from ..wallet.jwt import JWTVerifyResult, jwt_sign, jwt_verify
 from ..core.error import BaseError
 
 
@@ -122,3 +123,43 @@ async def sd_jwt_sign(
     print(json.dumps(sd_jwt_issuer.sd_jwt_payload, indent=4))
 
     return sd_jwt_issuer.sd_jwt_issuance
+
+
+class SDJWTVerifierACAPy(SDJWTVerifier):
+    def __init__(
+        self,
+        profile: Profile,
+        sd_jwt_presentation: str,
+        serialization_format: str = "compact",
+    ):
+        self.profile = profile
+        self.sd_jwt_presentation = sd_jwt_presentation
+        self.jwt = ""
+        self._serialization_format = serialization_format
+
+    async def _verify_sd_jwt(self):
+        self.serialized_sd_jwt = ""
+        return await jwt_verify(
+            self.profile,
+            self.jwt,
+        )
+
+    def _parse_sd_jwt(self, sd_jwt):
+        if self._serialization_format == "compact":
+            (
+                self._unverified_input_sd_jwt,
+                *self._input_disclosures,
+                self._unverified_input_key_binding_jwt,
+            ) = self._split(sd_jwt)
+            return self._unverified_input_sd_jwt
+
+    async def verify(self):
+        self.jwt = self._parse_sd_jwt(self.sd_jwt_presentation)
+        self._create_hash_mappings(self._input_disclosures)
+        return await self._verify_sd_jwt()
+
+
+async def sd_jwt_verify(profile: Profile, sd_jwt_presentation: str) -> JWTVerifyResult:
+    sd_jwt_verifier = SDJWTVerifierACAPy(profile, sd_jwt_presentation)
+    verified = await sd_jwt_verifier.verify()
+    return verified.valid
