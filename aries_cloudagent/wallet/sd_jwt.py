@@ -1,14 +1,14 @@
 """Operations supporting SD-JWT creation and verification."""
 
 import json
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, NamedTuple, Optional
 from jsonpath_ng.ext import parse
 from sd_jwt.common import SDObj
 from sd_jwt.issuer import SDJWTIssuer
 from sd_jwt.verifier import SDJWTVerifier
 
 from ..core.profile import Profile
-from ..wallet.jwt import JWTVerifyResult, jwt_sign, jwt_verify
+from ..wallet.jwt import jwt_sign, jwt_verify
 from ..core.error import BaseError
 
 
@@ -125,21 +125,42 @@ async def sd_jwt_sign(
     return sd_jwt_issuer.sd_jwt_issuance
 
 
+class SDJWTVerifyResult(NamedTuple):
+    """Result from verifying SD-JWT"""
+
+    headers: Mapping[str, Any]
+    payload: Mapping[str, Any]
+    valid: bool
+    kid: str
+    disclosures: str
+    # TODO: figure out inheritance
+
+
 class SDJWTVerifierACAPy(SDJWTVerifier):
+    """SDJWTVerifier class for ACA-Py implementation."""
+
     def __init__(
         self,
         profile: Profile,
         sd_jwt_presentation: str,
         serialization_format: str = "compact",
     ):
+        """Initialize an SDJWTVerifierACAPy instance."""
         self.profile = profile
         self.sd_jwt_presentation = sd_jwt_presentation
         self._serialization_format = serialization_format
 
-    async def _verify_sd_jwt(self):
-        return await jwt_verify(
+    async def _verify_sd_jwt(self) -> SDJWTVerifyResult:
+        verified = await jwt_verify(
             self.profile,
             self.serialized_sd_jwt,
+        )
+        return SDJWTVerifyResult(
+            headers=verified.headers,
+            payload=verified.payload,
+            valid=verified.valid,
+            kid=verified.kid,
+            disclosures=self._disclosures_list,
         )
 
     def _parse_sd_jwt(self, sd_jwt):
@@ -150,14 +171,31 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
                 self._unverified_input_key_binding_jwt,
             ) = self._split(sd_jwt)
             return self._unverified_input_sd_jwt
+        # TOOD: what to do about the else?
+
+    def _create_disclosures_list(self) -> List:
+        disclosures_list = []
+        for disclosure in self._input_disclosures:
+            disclosures_list.append(
+                json.loads(self._base64url_decode(disclosure).decode("utf-8"))
+            )
+
+        return disclosures_list
 
     async def verify(self):
+        """Verify an sd-jwt."""
         self.serialized_sd_jwt = self._parse_sd_jwt(self.sd_jwt_presentation)
         self._create_hash_mappings(self._input_disclosures)
+        self._disclosures_list = self._create_disclosures_list()
         return await self._verify_sd_jwt()
 
 
-async def sd_jwt_verify(profile: Profile, sd_jwt_presentation: str) -> JWTVerifyResult:
+async def sd_jwt_verify(
+    profile: Profile, sd_jwt_presentation: str
+) -> SDJWTVerifyResult:
+    """
+    Verify sd-jwt using SDJWTVerifierACAPy.verify().
+    """
     sd_jwt_verifier = SDJWTVerifierACAPy(profile, sd_jwt_presentation)
     verified = await sd_jwt_verifier.verify()
-    return verified.valid
+    return verified
