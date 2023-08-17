@@ -136,9 +136,18 @@ async def test_match_did_to_resolver_native_priority(profile):
     non_native = MockResolver(["sov"], native=False)
     registry = [non_native, native]
     resolver = DIDResolver(registry)
-    assert [native, non_native] == await resolver._match_did_to_resolver(
-        profile, TEST_DID0
-    )
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(
+                debug=async_mock.MagicMock(),
+            ),
+        )
+    ):
+        assert [native, non_native] == await resolver._match_did_to_resolver(
+            profile, TEST_DID0
+        )
 
 
 @pytest.mark.asyncio
@@ -149,12 +158,21 @@ async def test_match_did_to_resolver_registration_order(profile):
     native4 = MockResolver(["sov"], native=True)
     registry = [native1, native2, non_native3, native4]
     resolver = DIDResolver(registry)
-    assert [
-        native1,
-        native2,
-        native4,
-        non_native3,
-    ] == await resolver._match_did_to_resolver(profile, TEST_DID0)
+    with async_mock.patch.object(
+        test_module,
+        "get_logger_inst",
+        async_mock.MagicMock(
+            return_value=async_mock.MagicMock(
+                debug=async_mock.MagicMock(),
+            ),
+        )
+    ):
+        assert [
+            native1,
+            native2,
+            native4,
+            non_native3,
+        ] == await resolver._match_did_to_resolver(profile, TEST_DID0)
 
 
 @pytest.mark.asyncio
