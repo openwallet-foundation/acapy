@@ -151,7 +151,7 @@ class AskarWallet(BaseWallet):
         method: DIDMethod,
         key_type: KeyType,
         seed: str = None,
-        did: str = None,
+        did: str = None, 
         metadata: dict = None,
         keypair: Key = None,
     ) -> DIDInfo:
@@ -190,51 +190,62 @@ class AskarWallet(BaseWallet):
             did = did_validation.validate_or_derive_did(
                 method, key_type, verkey_bytes, did
             )
-
-            try:
-                await self._session.handle.insert_key(
-                    verkey, keypair, metadata=json.dumps(metadata)
-                )
-            except AskarError as err:
-                if err.code == AskarErrorCode.DUPLICATE:
-                    # update metadata?
-                    pass
-                else:
-                    raise WalletError("Error inserting key") from err
-
-            item = await self._session.handle.fetch(CATEGORY_DID, did, for_update=True)
-            if item:
-                did_info = item.value_json
-                if did_info.get("verkey") != verkey:
-                    raise WalletDuplicateError("DID already present in wallet")
-                if did_info.get("metadata") != metadata:
-                    did_info["metadata"] = metadata
-                    await self._session.handle.replace(
-                        CATEGORY_DID, did, value_json=did_info, tags=item.tags
-                    )
-            else:
-                await self._session.handle.insert(
-                    CATEGORY_DID,
-                    did,
-                    value_json={
-                        "did": did,
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                        "metadata": metadata,
-                    },
-                    tags={
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                    },
-                )
-
         except AskarError as err:
             raise WalletError("Error when creating local DID") from err
 
+        return await self.store_local_did(method, key_type,verkey, did, metadata, keypair)
+    
+    async def store_local_did(
+        self,
+        method: DIDMethod,
+        key_type: KeyType,
+        verkey_b58: str,
+        did: str = None,
+        metadata: dict = None,
+        keypair: Key = None,
+    ) -> DIDInfo:
+        try:
+            await self._session.handle.insert_key(
+                verkey_b58, keypair, metadata=json.dumps(metadata)
+            )
+        except AskarError as err:
+            if err.code == AskarErrorCode.DUPLICATE:
+                # update metadata?
+                pass
+            else:
+                raise WalletError("Error inserting key") from err
+
+        item = await self._session.handle.fetch(CATEGORY_DID, did, for_update=True)
+        if item:
+            did_info = item.value_json
+            if did_info.get("verkey") != verkey_b58:
+                raise WalletDuplicateError("DID already present in wallet")
+            if did_info.get("metadata") != metadata:
+                did_info["metadata"] = metadata
+                await self._session.handle.replace(
+                    CATEGORY_DID, did, value_json=did_info, tags=item.tags
+                )
+        else:
+            await self._session.handle.insert(
+                CATEGORY_DID,
+                did,
+                value_json={
+                    "did": did,
+                    "method": method.method_name,
+                    "verkey": verkey_b58,
+                    "verkey_type": key_type.key_type,
+                    "metadata": metadata,
+                },
+                tags={
+                    "method": method.method_name,
+                    "verkey": verkey_b58,
+                    "verkey_type": key_type.key_type,
+                },
+            )
+
+
         return DIDInfo(
-            did=did, verkey=verkey, metadata=metadata, method=method, key_type=key_type
+            did=did, verkey=verkey_b58, metadata=metadata, method=method, key_type=key_type
         )
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:

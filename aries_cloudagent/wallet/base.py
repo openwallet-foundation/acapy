@@ -88,6 +88,33 @@ class BaseWallet(ABC):
         """
 
     @abstractmethod
+    async def store_local_did(
+        self,
+        method: DIDMethod,
+        key_type: KeyType,
+        verkey_b58: str,
+        seed: str = None,
+        did: str = None,
+        metadata: dict = None,
+        keypair: Key = None
+    ) -> DIDInfo:
+        """
+        Create and store a new local DID.
+
+        Args:
+            method: The method to use for the DID
+            key_type: The key type to use for the DID
+            verkey_b58: b58 encoded verkey
+            seed: Optional seed to use for DID
+            did: The DID to use
+            metadata: Metadata to store with DID
+
+        Returns:
+            The created `DIDInfo`
+
+        """
+
+    @abstractmethod
     async def create_local_did(
         self,
         method: DIDMethod,

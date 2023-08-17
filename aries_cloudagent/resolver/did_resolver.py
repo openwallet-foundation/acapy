@@ -10,8 +10,7 @@ from itertools import chain
 import logging
 from typing import List, Optional, Sequence, Text, Tuple, Union
 
-from pydid import DID, DIDError, DIDUrl, Resource
-import pydid
+from pydid import DIDDocument, DID, DIDError, DIDUrl, Resource, deserialize_document
 from pydid.doc.doc import BaseDIDDocument, IDNotFoundError
 
 from ..core.profile import Profile
@@ -69,7 +68,7 @@ class DIDResolver:
         profile: Profile,
         did: Union[str, DID],
         service_accept: Optional[Sequence[Text]] = None,
-    ) -> dict:
+    ) -> Union[dict,DIDDocument]:
         """Resolve a DID."""
         _, doc = await self._resolve(profile, did, service_accept)
         return doc
@@ -136,7 +135,7 @@ class DIDResolver:
 
         if not document:
             doc_dict = await self.resolve(profile, parsed.did)
-            document = pydid.deserialize_document(doc_dict)
+            document = deserialize_document(doc_dict)
 
         try:
             return document.dereference(parsed)

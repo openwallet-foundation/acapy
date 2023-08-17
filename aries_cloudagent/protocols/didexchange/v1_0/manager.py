@@ -25,6 +25,7 @@ from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
 from ....resolver.base import ResolverError
 from ....resolver.did_resolver import DIDResolver
+from ....resolver.default.peer import gen_did_peer_3, convert_to_did_peer_3_document
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -317,13 +318,13 @@ class DIDXManager(BaseConnectionManager):
                         ),
                         "recipient_keys": [],
                     }
-                    peer_did, peer_doc = create_peer_did_2(
+                    peer_did_2, peer_doc = create_peer_did_2(
                         bytes_to_b58(verkey_bytes), service=service
                     )
-
                     my_info = await wallet.create_local_did(
-                        PEER, ED25519, keypair=keypair, did=peer_did
+                        PEER, ED25519, keypair=keypair, did=peer_did_2
                     )
+
             else:  # use old unqualified dids
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
@@ -353,9 +354,7 @@ class DIDXManager(BaseConnectionManager):
             # Omit DID Doc attachment if we're using a public DID
             did_doc = None
             attach = None
-        elif my_info.did.startswith("did:peer:2"):
-            did_doc = resolve_peer_did(my_info.did)
-        else:
+        elif not my_info.did.startswith("did:peer:2"):
             did_doc = await self.create_did_document(
                 my_info,
                 conn_rec.inbound_connection_id,
@@ -364,7 +363,10 @@ class DIDXManager(BaseConnectionManager):
                     filter(None, [base_mediation_record, mediation_record])
                 ),
             )
-        
+        else:
+            did_doc = None
+            pass
+        attach = None
         if did_doc:
             attach = AttachDecorator.data_base64(did_doc.serialize())
             async with self.profile.session() as session:
@@ -514,9 +516,10 @@ class DIDXManager(BaseConnectionManager):
 
                 conn_rec = new_conn_rec
 
+        peer_did_3 = None
         # request DID doc describes requester DID
-        if request.did.startswith("did:peer:2"):
-            conn_did_doc = resolve_peer_did(request.did)
+        if request.did and request.did.startswith("did:peer:2"):
+            peer_did_3, conn_did_doc = gen_did_peer_3(request.did)
         else:
             if not (request.did_doc_attach and request.did_doc_attach.data):
                 raise DIDXManagerError(
@@ -527,17 +530,14 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
             if request.did != conn_did_doc.id:
-                if "did:peer:" in str(conn_did_doc.id) and "did:peer:" not in request.did:
+                if "did:peer:" in str(conn_did_doc.id) and "did:peer:" not in str(request.did):
                     self._logger.warning(
                         f"did doc was created from peerdid library, but sender did not send did:peer:, this is ok."
                     )
                 else:
-                    raise DIDXManagerError(
-                        (
+                    self._logger.error(
                             f"Connection DID {request.did} does not match "
                             f"DID Doc id {conn_did_doc.id}"
-                        ),
-                        error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
                     )
 
         await self.store_did_document(conn_did_doc)
@@ -550,7 +550,7 @@ class DIDXManager(BaseConnectionManager):
             conn_rec.their_label = request.label
             if alias:
                 conn_rec.alias = alias
-            conn_rec.their_did = request.did
+            conn_rec.their_did = peer_did_3 or request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
             conn_rec.request_id = request._id
             async with self.profile.session() as session:
@@ -651,19 +651,21 @@ class DIDXManager(BaseConnectionManager):
             )
         async with self.profile.session() as session:
             request = await conn_rec.retrieve_request(session)
+        did_doc = None 
 
         if conn_rec.my_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
-            if self.profile.settings.get("debug.send_peer_did", False):
+            if self.profile.settings.get("debug.send_peer_did", False) or conn_rec.their_did.startswith("did:peer:"):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
 
                     # for peer did, create did_doc first then save did after.
                     keypair = _create_keypair(ED25519, None)
                     verkey_bytes = keypair.get_public_bytes()
+                    verkey = bytes_to_b58(verkey_bytes)
 
                     # JS START  library did_doc construction
                     # use library did_doc construction
@@ -675,14 +677,16 @@ class DIDXManager(BaseConnectionManager):
                         "recipient_keys": [],
                     }
 
-                    peer_did, peer_doc = create_peer_did_2(
+                    dp2, dp2_doc = create_peer_did_2(
                         bytes_to_b58(verkey_bytes), service=service
                     )
-                    self._logger.warning(peer_did)
+                    dp3, dp3_doc = gen_did_peer_3(dp2)
+                    did_doc = dp3_doc
 
-                    my_info = await wallet.create_local_did(
-                        PEER, ED25519, keypair=keypair, did=peer_did
+                    my_info = await wallet.store_local_did(
+                        PEER, ED25519, verkey_b58=verkey, did=dp3, keypair=keypair
                     )
+
             else:  # use old unqualified dids
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
@@ -708,9 +712,7 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        if my_info.did.startswith("did:peer:2"):
-            did_doc = resolve_peer_did(my_info.did)
-        else:
+        if not did_doc:
             did_doc = await self.create_did_document(
                 my_info,
                 conn_rec.inbound_connection_id,
@@ -827,9 +829,13 @@ class DIDXManager(BaseConnectionManager):
             )
 
         their_did = response.did
-
-        if their_did.startswith("did:peer:2"):
-            conn_did_doc = resolve_peer_did(their_did)
+        # request DID doc describes requester DID
+        if response.did and response.did.startswith("did:peer:2"):
+            peer_did_3, conn_did_doc = gen_did_peer_3(response.did)
+            their_did = peer_did_3
+            #now that you have send did:peer:2 and gotten response, update conn.my_did
+            my_dp3, my_dp3_doc = gen_did_peer_3(conn_rec.my_did)
+            conn_rec.my_did = my_dp3
         else:
             if not response.did_doc_attach:
                 raise DIDXManagerError(
@@ -846,12 +852,10 @@ class DIDXManager(BaseConnectionManager):
                         f"legacy behaviour: Connection DID is unqualified {their_did}, but did doc did has did:sov {conn_did_doc.id}"
                     )
                 else:
-                    raise DIDXManagerError(
-                        (
+                    self._logger.error(
                             f"Connection DID {their_did} does not match "
                             f"DID Doc id {conn_did_doc.id}"
-                        ),
-                    )
+                        )
 
         await self.store_did_document(conn_did_doc)
 
