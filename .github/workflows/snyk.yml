@@ -3,6 +3,7 @@ on: push
 jobs:
   snyk:
     runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'hyperledger' }}
     steps:
     - uses: actions/checkout@v3
     - name: Build a Docker image
