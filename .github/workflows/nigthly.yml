@@ -40,8 +40,7 @@ jobs:
   publish:
     name: Publish
     needs: [setup_and_check_pub]
-    if: always()
-    # if: ${{ needs.setup_and_check_pub.outputs.commits_today > 0 }}
+    if: ${{ needs.setup_and_check_pub.outputs.commits_today > 0 }}
     uses: ./.github/workflows/publish.yml
     # strategy:
     #   matrix:
