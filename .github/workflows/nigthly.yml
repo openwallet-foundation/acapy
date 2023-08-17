@@ -6,18 +6,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  # tests:
-  #   if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
-  #   name: Tests
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: ["ubuntu-latest"]
-  #       python-version: ["3.9", "3.10"]
-  #   uses: ./.github/workflows/tests.yml
-  #   with:
-  #     python-version: ${{ matrix.python-version }}
-  #     os: ${{ matrix.os }}
+  tests:
+    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
+    name: Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.9", "3.10"]
+    uses: ./.github/workflows/tests.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
 
   setup_and_check_pub:
     name: Setup Publish
@@ -38,12 +38,12 @@ jobs:
 
   publish:
     name: Publish
-    needs: [setup_and_check_pub]
+    needs: [tests, setup_and_check_pub]
     if: needs.setup_and_check_pub.outputs.commits_today > 0
     uses: ./.github/workflows/publish.yml
-    # strategy:
-    #   matrix:
-    #     tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
+    strategy:
+      matrix:
+        tag: ["nightly-${{needs.setup_and_check_pub.outputs.date}}", nightly]
     with:
       tag: "nightly"
       platforms: "linux/amd64"
