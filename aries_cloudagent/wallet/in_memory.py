@@ -186,6 +186,18 @@ class InMemoryWallet(BaseWallet):
             key_type=local_did["key_type"],
         )
 
+    async def store_local_did(
+        self,
+        method: DIDMethod,
+        key_type: KeyType,
+        verkey_b58: str,
+        seed: str = None,
+        did: str = None,
+        metadata: dict = None,
+        keypair: Key = None
+    ) -> DIDInfo:
+        raise NotImplemented("NO db to insert into")
+
     async def create_local_did(
         self,
         method: DIDMethod,

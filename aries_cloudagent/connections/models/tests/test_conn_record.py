@@ -10,7 +10,7 @@ from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 
 from ..conn_record import ConnRecord
-from ..diddoc.diddoc import LegacyDIDDoc
+from ..diddoc.diddoc import LegacyDIDDoc, Service,PublicKey, PublicKeyType, DIDCommService
 
 
 class TestConnRecord(AsyncTestCase):
@@ -315,10 +315,13 @@ class TestConnRecord(AsyncTestCase):
             state=ConnRecord.State.INVITATION.rfc23,
         )
         connection_id = await record.save(self.session)
+        did_doc=LegacyDIDDoc(self.test_did)
+        did_doc.set(Service(self.test_did,"sv1","IndyAgent",[self.test_verkey],[],self.test_endpoint))
+        did_doc.set(PublicKey(self.test_did,"pk",self.test_verkey,PublicKeyType.ED25519_SIG_2018))
 
         req = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_did, did_doc=LegacyDIDDoc(self.test_did)
+                did=self.test_did, did_doc=did_doc
             ),
             label="abc123",
         )

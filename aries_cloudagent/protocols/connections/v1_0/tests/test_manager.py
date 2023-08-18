@@ -1791,7 +1791,6 @@ class TestConnectionManager(AsyncTestCase):
             their_did=self.test_target_did,
             state=ConnRecord.State.COMPLETED.rfc23,
         )
-
         x_did_doc = self.make_did_doc(
             did=self.test_target_did, verkey=self.test_target_verkey
         )

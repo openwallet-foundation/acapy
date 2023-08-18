@@ -1,5 +1,5 @@
 from unittest import mock, TestCase
-
+from peerdid.dids import resolve_peer_did
 from asynctest import TestCase as AsyncTestCase
 
 from ......wallet.key_type import ED25519
@@ -25,32 +25,8 @@ class TestConfig:
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        doc = LegacyDIDDoc(id=self.test_did)
-        controller = self.test_did
-        ident = "1"
-        pk_value = self.test_verkey
-        pk = PublicKey(
-            self.test_did,
-            ident,
-            pk_value,
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            False,
-        )
-        doc.set(pk)
-        recip_keys = [pk]
-        routing_keys = []
-        service = Service(
-            self.test_did,
-            "indy",
-            "IndyAgent",
-            recip_keys,
-            routing_keys,
-            self.test_endpoint,
-        )
-        doc.set(service)
-        return doc
-
+        did_peer_2 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"       
+        return resolve_peer_did(did_peer_2)
 
 class TestConnectionResponse(TestCase, TestConfig):
     def setUp(self):

@@ -28,313 +28,313 @@ from multiformats import multibase
 from .publickey import PublicKey, PublicKeyType
 from .service import Service
 from ....did.did_key import DIDKey, KeyTypes
-from .util import canon_did, canon_ref, ok_did, resource
+from .util import canon_did, canon_ref, ok_did, resource, upgrade_legacy_did_doc_to_peer_did
 from ....wallet.util import b58_to_bytes
 from ....utils.jwe import b64url, from_b64url, JweEnvelope, JweRecipient
 
 LOGGER = logging.getLogger(__name__)
 
 
-class UnqualifiedDIDDoc(DIDDocument):
-    """
-    DID document, grouping a DID with verification keys and services.
+# class UnqualifiedDIDDoc(DIDDocument):
+#     """
+#     DID document, grouping a DID with verification keys and services.
 
-    Retains DIDs as raw values (orientated toward indy-facing operations),
-    everything else as URIs (oriented toward W3C-facing operations).
-    """
+#     Retains DIDs as raw values (orientated toward indy-facing operations),
+#     everything else as URIs (oriented toward W3C-facing operations).
+#     """
 
-    # ACAPY USED UNQUALIFIED DIDS, allow them in DIDDoc's for now....
-    id: Union[DID, str] = ""
-    controller: Optional[List[Union[DID, str]]] = None
-
-
-class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
-    # TODO How much of this class can be destroyed....
-    @property
-    def did(self) -> str:
-        """Accessor for DID."""
-        return self.id
-
-    @did.setter
-    def did(self, value: str) -> None:
-        """
-        Set DID ('id' in DIDDoc context).
-
-        Args:
-            value: DID
-
-        Raises:
-            ValueError: for bad input DID.
-
-        """
-
-        self.id = canon_did(value) if value else None
+#     # ACAPY USED UNQUALIFIED DIDS, allow them in DIDDoc's for now....
+#     id: Union[DID, str] = ""
+#     controller: Optional[List[Union[DID, str]]] = None
 
 
+# class LegacyTESTDIDDoc(UnqualifiedDIDDoc):
+#     # TODO How much of this class can be destroyed....
+#     @property
+#     def did(self) -> str:
+#         """Accessor for DID."""
+#         return self.id
 
-    def to_json(self) -> str:
-        """
-        Dump current object as json (JSON-LD).
+#     @did.setter
+#     def did(self, value: str) -> None:
+#         """
+#         Set DID ('id' in DIDDoc context).
 
-        Returns:
-            json representation of current DIDDoc
+#         Args:
+#             value: DID
 
-        """
+#         Raises:
+#             ValueError: for bad input DID.
 
-        return json.dumps(self.serialize())
+#         """
 
-    def add_service_pubkeys(
-        self, service: dict, tags: Union[Sequence[str], str]
-    ) -> List[PublicKey]:
-        """
-        Add public keys specified in service. Return public keys so discovered.
-
-        Args:
-            service: service from DID document
-            tags: potential tags marking public keys of type of interest
-                (the standard is still coalescing)
-
-        Raises:
-            ValueError: for public key reference not present in DID document.
-
-        Returns: list of public keys from the document service specification
-
-        """
-
-        rv = []
-        for tag in [tags] if isinstance(tags, str) else list(tags):
-            for svc_key in service.get(tag, {}):
-                canon_key = canon_ref(self.did, svc_key)
-                pubkey = None
-
-                if "#" in svc_key:
-                    if canon_key in self.pubkey:
-                        pubkey = self.pubkey[canon_key]
-                    else:  # service key refers to another DID doc
-                        LOGGER.debug(
-                            "DID document %s has no public key %s", self.did, svc_key
-                        )
-                        raise ValueError(
-                            "DID document {} has no public key {}".format(
-                                self.did, svc_key
-                            )
-                        )
-                else:
-                    for existing_pubkey in self.pubkey.values():
-                        if existing_pubkey.value == svc_key:
-                            pubkey = existing_pubkey
-                            break
-                    else:
-                        pubkey = PublicKey(
-                            self.did,
-                            ident=svc_key[-9:-1],  # industrial-grade uniqueness
-                            value=svc_key,
-                        )
-                        self._pubkey[pubkey.id] = pubkey
-
-                if (
-                    pubkey and pubkey not in rv
-                ):  # perverse case: could specify same key multiple ways; append once
-                    rv.append(pubkey)
-
-        return rv
-
-    @classmethod
-    def deserialize(cls, did_doc: dict) -> "LegacyDIDDoc":
-        """
-        Construct DIDDoc object from dict representation.
-
-        Args:
-            did_doc: DIDDoc dict representation
-
-        Raises:
-            ValueError: for bad DID or missing mandatory item.
-
-        Returns: DIDDoc from input json
-
-        """
-        def make_didurl(id, not_found):
-            rv = None
-            if id:
-                if "#" in id:
-                    rv = id.split("#")[1]
-                else:
-                    rv = not_found
-            else: 
-                rv = not_found
+#         self.id = canon_did(value) if value else None
 
 
-            if rv[0] != "#":
-                rv = "#" + rv
 
-            return rv
+#     def to_json(self) -> str:
+#         """
+#         Dump current object as json (JSON-LD).
 
-        rv = None
-        new_did_doc = did_doc.copy()
+#         Returns:
+#             json representation of current DIDDoc
 
-        key_dict = {}
+#         """
 
-        if not DIDUrl.is_valid(new_did_doc["id"]):
-            new_did_doc["id"] = "did:sov:"+new_did_doc["id"]
+#         return json.dumps(self.serialize())
 
-        if "publicKey" in new_did_doc:
-            key_dict = {pk["id"]:pk for pk in new_did_doc["publicKey"]}
-            new_did_doc["verificationMethod"] = []
-            for i, pk in enumerate(new_did_doc.pop("publicKey")):
-                # replace publicKeys with VerificationMethod
-                pk["id"] = make_didurl(pk["id"],f"#vm-{i}")
+#     def add_service_pubkeys(
+#         self, service: dict, tags: Union[Sequence[str], str]
+#     ) -> List[PublicKey]:
+#         """
+#         Add public keys specified in service. Return public keys so discovered.
 
-                new_did_doc["verificationMethod"].append(pk)
+#         Args:
+#             service: service from DID document
+#             tags: potential tags marking public keys of type of interest
+#                 (the standard is still coalescing)
 
-        new_auth_list = []
-        if "verificationMethod" not in new_did_doc:
-            new_did_doc["verificationMethod"] = []
+#         Raises:
+#             ValueError: for public key reference not present in DID document.
 
-        for i, auth in enumerate(new_did_doc.get("authentication",[])):
-            if isinstance(auth,dict):
-                id = make_didurl(auth.get("id"),f"#vma-{i}")
+#         Returns: list of public keys from the document service specification
 
-                #create verificationmethod 
-                new_vm = {
-                        "id":id,
-                        "controller":new_did_doc["id"],
-                    }
-                new_vm.update({k:m for (k,m) in auth.items() if k not in ["id","controller"]})
-                new_did_doc["verificationMethod"].append(new_vm)
-                # and now reference it
-                new_auth_list.append(new_vm["id"])
+#         """
 
-            elif isinstance(auth, str):
-                new_auth_list.append(auth)
+#         rv = []
+#         for tag in [tags] if isinstance(tags, str) else list(tags):
+#             for svc_key in service.get(tag, {}):
+#                 canon_key = canon_ref(self.did, svc_key)
+#                 pubkey = None
+
+#                 if "#" in svc_key:
+#                     if canon_key in self.pubkey:
+#                         pubkey = self.pubkey[canon_key]
+#                     else:  # service key refers to another DID doc
+#                         LOGGER.debug(
+#                             "DID document %s has no public key %s", self.did, svc_key
+#                         )
+#                         raise ValueError(
+#                             "DID document {} has no public key {}".format(
+#                                 self.did, svc_key
+#                             )
+#                         )
+#                 else:
+#                     for existing_pubkey in self.pubkey.values():
+#                         if existing_pubkey.value == svc_key:
+#                             pubkey = existing_pubkey
+#                             break
+#                     else:
+#                         pubkey = PublicKey(
+#                             self.did,
+#                             ident=svc_key[-9:-1],  # industrial-grade uniqueness
+#                             value=svc_key,
+#                         )
+#                         self._pubkey[pubkey.id] = pubkey
+
+#                 if (
+#                     pubkey and pubkey not in rv
+#                 ):  # perverse case: could specify same key multiple ways; append once
+#                     rv.append(pubkey)
+
+#         return rv
+
+#     @classmethod
+#     def deserialize(cls, did_doc: dict) -> "LegacyDIDDoc":
+#         """
+#         Construct DIDDoc object from dict representation.
+
+#         Args:
+#             did_doc: DIDDoc dict representation
+
+#         Raises:
+#             ValueError: for bad DID or missing mandatory item.
+
+#         Returns: DIDDoc from input json
+
+#         """
+#         def make_didurl(id, not_found):
+#             rv = None
+#             if id:
+#                 if "#" in id:
+#                     rv = id.split("#")[1]
+#                 else:
+#                     rv = not_found
+#             else: 
+#                 rv = not_found
+
+
+#             if rv[0] != "#":
+#                 rv = "#" + rv
+
+#             return rv
+
+#         rv = None
+#         new_did_doc = did_doc.copy()
+
+#         key_dict = {}
+
+#         if not DIDUrl.is_valid(new_did_doc["id"]):
+#             new_did_doc["id"] = "did:sov:"+new_did_doc["id"]
+
+#         if "publicKey" in new_did_doc:
+#             key_dict = {pk["id"]:pk for pk in new_did_doc["publicKey"]}
+#             new_did_doc["verificationMethod"] = []
+#             for i, pk in enumerate(new_did_doc.pop("publicKey")):
+#                 # replace publicKeys with VerificationMethod
+#                 pk["id"] = make_didurl(pk["id"],f"#vm-{i}")
+
+#                 new_did_doc["verificationMethod"].append(pk)
+
+#         new_auth_list = []
+#         if "verificationMethod" not in new_did_doc:
+#             new_did_doc["verificationMethod"] = []
+
+#         for i, auth in enumerate(new_did_doc.get("authentication",[])):
+#             if isinstance(auth,dict):
+#                 id = make_didurl(auth.get("id"),f"#vma-{i}")
+
+#                 #create verificationmethod 
+#                 new_vm = {
+#                         "id":id,
+#                         "controller":new_did_doc["id"],
+#                     }
+#                 new_vm.update({k:m for (k,m) in auth.items() if k not in ["id","controller"]})
+#                 new_did_doc["verificationMethod"].append(new_vm)
+#                 # and now reference it
+#                 new_auth_list.append(new_vm["id"])
+
+#             elif isinstance(auth, str):
+#                 new_auth_list.append(auth)
         
-        new_did_doc["authentication"]=new_auth_list
+#         new_did_doc["authentication"]=new_auth_list
 
-        for i, service in enumerate(new_did_doc.get("service", [])):
-            if ";" in service.get("id",""):
-                # legacy DIDDoc behaviour
-                service["id"] = service["id"].replace(";", "#")
+#         for i, service in enumerate(new_did_doc.get("service", [])):
+#             if ";" in service.get("id",""):
+#                 # legacy DIDDoc behaviour
+#                 service["id"] = service["id"].replace(";", "#")
             
-            service["id"] = make_didurl(service.get("id"), f"#service{i}")
+#             service["id"] = make_didurl(service.get("id"), f"#service{i}")
 
-            if "recipientKeys" in service and new_did_doc["verificationMethod"]:
-                # must be referenced, not directly embedded
-                service["recipient_keys"] = [new_did_doc["verificationMethod"][0]["id"]]
-                service.pop("recipientKeys")
-            else:
-                service["recipient_keys"] = service.get("recipient_keys",[])
+#             if "recipientKeys" in service and new_did_doc["verificationMethod"]:
+#                 # must be referenced, not directly embedded
+#                 service["recipient_keys"] = [new_did_doc["verificationMethod"][0]["id"]]
+#                 service.pop("recipientKeys")
+#             else:
+#                 service["recipient_keys"] = service.get("recipient_keys",[])
 
-            if ";" in service.get("serviceEndpoint",""):
-                # this is trying to be a didUrl
-                service["serviceEndpoint"] = service["serviceEndpoint"].replace(";", "#")
-
-
-        rv = super().deserialize(new_did_doc)
-
-        for s in rv.service:
-            # if s is not a DIDCommService, errors will arise later... after serde it will become an UnknownService
-            assert isinstance(s, DIDCommService), s
-        return rv
-
-    # TIMO's algo, based on https://github.com/TimoGlastra/legacy-did-transformation
-    @classmethod
-    def deserialize3(cls, did_doc: dict) -> "LegacyDIDDoc":
-        """
-        Construct DIDDoc object from dict representation.
-
-        Args:
-            did_doc: DIDDoc dict representation
-
-        Raises:
-            ValueError: for bad DID or missing mandatory item.
-
-        Returns: DIDDoc from input json
-
-        """
-
-        did = "did:peer:2"
-        authenticationFingerprints = []
-        _resolved_legacy_authentication = None
-        resolved_legacy_authentication = None
-        #3
-        for legacy_auth in did_doc.get("authentication",[]) :
-            if legacy_auth["type"] not in ("Ed25519SignatureAuthentication2018","Ed25519VerificationKey2018"):
-                continue
-            key_type_name = None
-            auth_pk = legacy_auth.get('publicKey')
-            if legacy_auth["type"]  == "Ed25519SignatureAuthentication2018" and auth_pk:
-                pk_entry = [pk for pk in did_doc["publicKey"] if pk["id"] == auth_pk]
-                if not pk_entry:
-                  raise Exception("")
-                _resolved_legacy_authentication = pk_entry[0]
-                key_type_name = "x25519"
-            if legacy_auth["type"] == "Ed25519Signature2018":
-                _resolved_legacy_authentication = legacy_auth
-                key_type_name = "ed25519"
-            #3.iv
-            if not _resolved_legacy_authentication:
-                raise Exception(f"Could not find referenced key ${legacy_auth['publicKey']}")
-            else: 
-                resolved_legacy_authentication = _resolved_legacy_authentication
-
-            fingerprint = DIDKey.from_public_key_b58(resolved_legacy_authentication["publicKeyBase58"],KeyTypes().from_key_type(key_type_name)).fingerprint
+#             if ";" in service.get("serviceEndpoint",""):
+#                 # this is trying to be a didUrl
+#                 service["serviceEndpoint"] = service["serviceEndpoint"].replace(";", "#")
 
 
-            authenticationFingerprints.append(fingerprint)
+#         rv = super().deserialize(new_did_doc)
 
-        for legacy_pk in did_doc.get("publicKey", []):
-            if legacy_pk["type"] != "Ed25519VerificationKey2018":
-                continue
-            fingerprint = multibase.encode(
-                b58_to_bytes(legacy_pk["publicKeyBase58"]), "base58btc"
-            )
-            if fingerprint not in authenticationFingerprints:
-                authenticationFingerprints.append(fingerprint)
+#         for s in rv.service:
+#             # if s is not a DIDCommService, errors will arise later... after serde it will become an UnknownService
+#             assert isinstance(s, DIDCommService), s
+#         return rv
+
+#     # TIMO's algo, based on https://github.com/TimoGlastra/legacy-did-transformation
+#     @classmethod
+#     def deserialize3(cls, did_doc: dict) -> "LegacyDIDDoc":
+#         """
+#         Construct DIDDoc object from dict representation.
+
+#         Args:
+#             did_doc: DIDDoc dict representation
+
+#         Raises:
+#             ValueError: for bad DID or missing mandatory item.
+
+#         Returns: DIDDoc from input json
+
+#         """
+
+#         did = "did:peer:2"
+#         authenticationFingerprints = []
+#         _resolved_legacy_authentication = None
+#         resolved_legacy_authentication = None
+#         #3
+#         for legacy_auth in did_doc.get("authentication",[]) :
+#             if legacy_auth["type"] not in ("Ed25519SignatureAuthentication2018","Ed25519VerificationKey2018"):
+#                 continue
+#             key_type_name = None
+#             auth_pk = legacy_auth.get('publicKey')
+#             if legacy_auth["type"]  == "Ed25519SignatureAuthentication2018" and auth_pk:
+#                 pk_entry = [pk for pk in did_doc["publicKey"] if pk["id"] == auth_pk]
+#                 if not pk_entry:
+#                   raise Exception("")
+#                 _resolved_legacy_authentication = pk_entry[0]
+#                 key_type_name = "x25519"
+#             if legacy_auth["type"] == "Ed25519Signature2018":
+#                 _resolved_legacy_authentication = legacy_auth
+#                 key_type_name = "ed25519"
+#             #3.iv
+#             if not _resolved_legacy_authentication:
+#                 raise Exception(f"Could not find referenced key ${legacy_auth['publicKey']}")
+#             else: 
+#                 resolved_legacy_authentication = _resolved_legacy_authentication
+
+#             fingerprint = DIDKey.from_public_key_b58(resolved_legacy_authentication["publicKeyBase58"],KeyTypes().from_key_type(key_type_name)).fingerprint
+
+
+#             authenticationFingerprints.append(fingerprint)
+
+#         for legacy_pk in did_doc.get("publicKey", []):
+#             if legacy_pk["type"] != "Ed25519VerificationKey2018":
+#                 continue
+#             fingerprint = multibase.encode(
+#                 b58_to_bytes(legacy_pk["publicKeyBase58"]), "base58btc"
+#             )
+#             if fingerprint not in authenticationFingerprints:
+#                 authenticationFingerprints.append(fingerprint)
     
 
-        for fp in authenticationFingerprints:
-            did += f'.V{fp}'
+#         for fp in authenticationFingerprints:
+#             did += f'.V{fp}'
 
 
-        for service in did_doc.get("service",[]):
-            json_dict = {
-                "priority": service.get("priority"),
-                "routingKeys": service.get("routingKeys"),
-                "recipientKeys": service.get("recipientKeys"),
-                "serviceEndpoint": service.get("serviceEndpoint"),
-                "type": "IndyAgent"
-            }
-            #remove null
-            json_dict = {k:v for (k,v) in json_dict.items() if v }
+#         for service in did_doc.get("service",[]):
+#             json_dict = {
+#                 "priority": service.get("priority"),
+#                 "routingKeys": service.get("routingKeys"),
+#                 "recipientKeys": service.get("recipientKeys"),
+#                 "serviceEndpoint": service.get("serviceEndpoint"),
+#                 "type": "IndyAgent"
+#             }
+#             #remove null
+#             json_dict = {k:v for (k,v) in json_dict.items() if v }
 
-            encoded = encode_service(json_dict)
+#             encoded = encode_service(json_dict)
             
-            did+=encoded
-        #did complete
-        return resolve_peer_did(did)
+#             did+=encoded
+#         #did complete
+#         return resolve_peer_did(did)
 
-    @classmethod
-    def from_json(cls, did_doc_json: str) -> "LegacyDIDDoc":
-        """
-        Construct DIDDoc object from json representation.
+#     @classmethod
+#     def from_json(cls, did_doc_json: str) -> "LegacyDIDDoc":
+#         """
+#         Construct DIDDoc object from json representation.
 
-        Args:
-            did_doc_json: DIDDoc json representation
+#         Args:
+#             did_doc_json: DIDDoc json representation
 
-        Returns: DIDDoc from input json
+#         Returns: DIDDoc from input json
 
-        """
+#         """
 
-        return cls.deserialize(json.loads(did_doc_json))
+#         return cls.deserialize(json.loads(did_doc_json))
 
-    def __str__(self) -> str:
-        """Return string representation for abbreviated display."""
+#     def __str__(self) -> str:
+#         """Return string representation for abbreviated display."""
 
-        return f"LegacyDIDDoc({self.did})"
+#         return f"LegacyDIDDoc({self.did})"
 
-    def __repr__(self) -> str:
-        """Format LegacyDIDDoc for logging."""
+#     def __repr__(self) -> str:
+#         """Format LegacyDIDDoc for logging."""
 
-        return f"<LegacyDIDDoc did={self.did}>"
+#         return f"<LegacyDIDDoc did={self.did}>"
 
 
 class DIDDoc:
@@ -526,7 +526,7 @@ class DIDDoc:
         return rv
 
     @classmethod
-    def deserialize(cls, did_doc: dict) -> "DIDDoc":
+    def deserialize(cls, did_doc: dict) -> "DIDDocument":
         """
         Construct DIDDoc object from dict representation.
 
@@ -539,81 +539,9 @@ class DIDDoc:
         Returns: DIDDoc from input json
 
         """
+        return upgrade_legacy_did_doc_to_peer_did(json.dumps(did_doc))[1]
+        ## ANY ATTEMPTED DESERIALIZATION SHOULD RETURN DIDDocument
 
-        rv = None
-        if "id" in did_doc:
-            rv = DIDDoc(did_doc["id"])
-        else:
-            # heuristic: get DID to serve as DID document identifier from
-            # the first OK-looking public key
-            for section in ("publicKey", "authentication"):
-                if rv is None and section in did_doc:
-                    for key_spec in did_doc[section]:
-                        try:
-                            pubkey_did = canon_did(resource(key_spec.get("id", "")))
-                            if ok_did(pubkey_did):
-                                rv = DIDDoc(pubkey_did)
-                                break
-                        except ValueError:  # no identifier here, move on to next
-                            break
-            if rv is None:
-                LOGGER.debug("no identifier in DID document")
-                raise ValueError("No identifier in DID document")
-
-        for pubkey in did_doc.get(
-            "publicKey", {}
-        ):  # include all public keys, authentication pubkeys by reference
-            pubkey_type = PublicKeyType.get(pubkey["type"])
-            authn = any(
-                canon_ref(rv.did, ak.get("publicKey", ""))
-                == canon_ref(rv.did, pubkey["id"])
-                for ak in did_doc.get("authentication", {})
-                if isinstance(ak.get("publicKey", None), str)
-            )
-            key = PublicKey(  # initialization canonicalizes id
-                rv.did,
-                pubkey["id"],
-                pubkey[pubkey_type.specifier],
-                pubkey_type,
-                canon_did(pubkey["controller"]),
-                authn,
-            )
-            rv.pubkey[key.id] = key
-
-        for akey in did_doc.get(
-            "authentication", {}
-        ):  # include embedded authentication keys
-            if "publicKey" not in akey:  # not yet got it with public keys
-                pubkey_type = PublicKeyType.get(akey["type"])
-                key = PublicKey(  # initialization canonicalized id
-                    rv.did,
-                    akey["id"],
-                    akey[pubkey_type.specifier],
-                    pubkey_type,
-                    canon_did(akey["controller"]),
-                    True,
-                )
-                rv.pubkey[key.id] = key
-
-        for service in did_doc.get("service", {}):
-            endpoint = service["serviceEndpoint"]
-            svc = Service(  # initialization canonicalizes id
-                rv.did,
-                service.get(
-                    "id",
-                    canon_ref(
-                        rv.did, "assigned-service-{}".format(len(rv.service)), ";"
-                    ),
-                ),
-                service["type"],
-                rv.add_service_pubkeys(service, "recipientKeys"),
-                rv.add_service_pubkeys(service, ["mediatorKeys", "routingKeys"]),
-                canon_ref(rv.did, endpoint, ";") if ";" in endpoint else endpoint,
-                service.get("priority", None),
-            )
-            rv.service[svc.id] = svc
-        print(rv)
-        return rv
 
     @classmethod
     def from_json(cls, did_doc_json: str) -> "DIDDoc":
@@ -640,4 +568,4 @@ class DIDDoc:
         return f"<DIDDoc did={self.did}>"
 
 
-LegacyDIDDoc = LegacyTESTDIDDoc
+LegacyDIDDoc = DIDDoc

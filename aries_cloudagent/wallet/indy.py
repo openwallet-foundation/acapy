@@ -417,6 +417,18 @@ class IndySdkWallet(BaseWallet):
             key_type=key_type,
         )
 
+    async def store_local_did(
+        self,
+        method: DIDMethod,
+        key_type: KeyType,
+        verkey_b58: str,
+        seed: str = None,
+        did: str = None,
+        metadata: dict = None,
+        keypair: Key = None
+    ) -> DIDInfo:
+        raise NotImplemented()
+
     async def create_local_did(
         self,
         method: DIDMethod,

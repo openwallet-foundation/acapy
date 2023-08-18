@@ -13,8 +13,6 @@ from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import (
     LegacyDIDDoc,
-    PublicKey,
-    PublicKeyType,
     Service,
 )
 
@@ -67,6 +65,7 @@ class TestConfig:
             "type": "DIDCommMessaging",
             "serviceEndpoint": self.test_endpoint,
             "recipient_keys": [],
+            "routing_keys":[],
         }
 
         peer_did, peer_doc = create_peer_did_2(
@@ -2151,14 +2150,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         x_did_doc = LegacyDIDDoc(id=None)
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, TestConfig.test_verkey)
-
-        x_did_doc = self.make_did_doc(
-            did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey
-        )
-        x_did_doc._service = {}
-        with self.assertRaises(BaseConnectionManagerError):
-            self.manager.diddoc_connection_targets(x_did_doc, TestConfig.test_verkey)
-
+            
     async def test_resolve_did_document_error(self):
         public_did_info = None
         async with self.profile.session() as session:

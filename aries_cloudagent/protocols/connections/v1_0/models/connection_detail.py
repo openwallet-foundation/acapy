@@ -74,7 +74,7 @@ class ConnectionDetail(BaseModel):
         return self._did
 
     @property
-    def did_doc(self) -> LegacyDIDDoc:
+    def did_doc(self) -> DIDDocument:
         """
         Accessor for the connection DID Document.
 

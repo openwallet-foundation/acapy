@@ -5,7 +5,7 @@ For Connection, DIDExchange and OutOfBand Manager.
 """
 
 import logging
-from typing import Optional, List, Sequence, Tuple, Text
+from typing import Optional, List, Sequence, Tuple, Text, Union
 
 from multiformats import multibase, multicodec
 from pydid import (
@@ -123,25 +123,25 @@ class BaseConnectionManager:
                 raise BaseConnectionManagerError(
                     f"No services defined by routing DIDDoc: {router_id}"
                 )
-            for service in routing_doc.service.values():
-                if not service.endpoint:
+            for service in routing_doc.service:
+                if not service.service_endpoint:
                     raise BaseConnectionManagerError(
                         "Routing DIDDoc service has no service endpoint"
                     )
-                if not service.recip_keys:
+                if not service.recipient_keys:
                     raise BaseConnectionManagerError(
                         "Routing DIDDoc service has no recipient key(s)"
                     )
                 rk = PublicKey(
                     did_info.did,
                     f"routing-{router_idx}",
-                    service.recip_keys[0].value,
+                    service.recipient_keys[0],
                     PublicKeyType.ED25519_SIG_2018,
                     did_controller,
                     True,
                 )
                 routing_keys.append(rk)
-                svc_endpoints = [service.endpoint]
+                svc_endpoints = [service.service_endpoint]
                 break
             router_id = router.inbound_connection_id
 
@@ -175,7 +175,7 @@ class BaseConnectionManager:
             did_doc.set(service)
         return did_doc
 
-    async def store_did_document(self, did_doc: DIDDocument):
+    async def store_did_document(self, did_doc: Union[DIDDocument,LegacyDIDDoc]):
         """Store a DID document.
 
         Args:

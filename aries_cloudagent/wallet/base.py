@@ -99,7 +99,7 @@ class BaseWallet(ABC):
         keypair: Key = None
     ) -> DIDInfo:
         """
-        Create and store a new local DID.
+        Store a new local DID.
 
         Args:
             method: The method to use for the DID

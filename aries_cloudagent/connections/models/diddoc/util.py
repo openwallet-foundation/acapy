@@ -130,6 +130,7 @@ def create_peer_did_2(verkey: str, service: dict = None) -> Tuple[DID, DIDDocume
 
     did = create_peer_did_numalgo_2(enc_keys, sign_keys, service)
     doc = resolve_peer_did(did)
+
     return did, doc
 
 
@@ -140,9 +141,26 @@ def upgrade_legacy_did_doc_to_peer_did(json_str:str) -> Tuple[DID, DIDDocument]:
     public_key_b58 = doc_dict["publicKey"][0]["publicKeyBase58"]
     service = doc_dict["service"][0]
 
-    if service["type"] == "IndyAgent":
-        service["type"] =  "DIDCommMessaging"
-    if "id" in service["id"]:
-        del service["id"]
+    # if service["type"] == "IndyAgent":
+    #     service["type"] =  "DIDCommMessaging"
+    # if "id" in service:
+    #     del service["id"]
+
+
+    # # service["recipient_keys"] = service.get("recipient_keys",[]) or service.get("recipientKeys",[])
+    # service["recipient_keys"] = []
+    # if "recipientKeys" in service:
+    #     del service["recipientKeys"]
         
-    return create_peer_did_2(public_key_b58,service)
+    didcommv1_service = {
+        "type":"DIDCommMessaging",
+        "serviceEndpoint":service.get("service_endpoint",service.get("serviceEndpoint")),
+        "recipient_keys":service.get("recipient_keys",service.get("recipientKeys",[])),
+        "routing_keys":service.get("routing_keys",service.get("routingKeys",[])),
+        "accept":service.get("accept"),
+        "priority":service.get("priority"),
+
+    }
+    simplified_service = {k:v for k,v in didcommv1_service.items() if v}
+
+    return create_peer_did_2(public_key_b58,simplified_service)
