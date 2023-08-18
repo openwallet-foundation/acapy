@@ -207,8 +207,27 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_public_info = await wallet.get_public_did()
-            if not my_public_info:
-                raise WalletError("No public DID configured")
+                if not my_public_info:
+                    raise WalletError("No public DID configured")
+                if (
+                    my_public_info.did == their_public_did
+                    or f"did:sov:{my_public_info.did}" == their_public_did
+                ):
+                    raise DIDXManagerError(
+                        "Cannot connect to yourself through public DID"
+                    )
+                try:
+                    await ConnRecord.retrieve_by_did(
+                        session,
+                        their_did=their_public_did,
+                        my_did=my_public_info.did,
+                    )
+                    raise DIDXManagerError(
+                        "Connection already exists for their_did "
+                        f"{their_public_did} and my_did {my_public_info.did}"
+                    )
+                except StorageNotFoundError:
+                    pass
 
         conn_rec = ConnRecord(
             my_did=my_public_info.did
