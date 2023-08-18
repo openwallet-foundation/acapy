@@ -635,7 +635,7 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_public_did()
             if not my_info:
-                raise WalletError("No public DID configured")
+                raise DIDXManagerError("No public DID configured")
             conn_rec.my_did = my_info.did
             did = my_info.did
             if not did.startswith("did:"):
