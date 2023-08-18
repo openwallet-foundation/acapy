@@ -17,6 +17,10 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
+from aries_cloudagent.anoncreds.base import AnonCredsRegistrationError
+from aries_cloudagent.anoncreds.issuer import AnonCredsIssuerError
+
+from aries_cloudagent.anoncreds.revocation import AnonCredsRevocationError
 
 from ..admin.request_context import AdminRequestContext
 from ..connections.models.conn_record import ConnRecord
@@ -444,6 +448,12 @@ async def revoke(request: web.BaseRequest):
         The credential revocation details.
 
     """
+    #
+    # this is exactly what is in anoncreds /revocation/revoke.
+    # we cannot import the revoke function as it imports classes from here,
+    # so circular dependency.
+    # we will clean this up and DRY at some point.
+    #
     context: AdminRequestContext = request["context"]
     body = await request.json()
     cred_ex_id = body.get("cred_ex_id")
@@ -471,10 +481,10 @@ async def revoke(request: web.BaseRequest):
             await rev_manager.revoke_credential(**body)
     except (
         RevocationManagerError,
-        RevocationError,
+        AnonCredsRevocationError,
         StorageError,
-        IndyIssuerError,
-        LedgerError,
+        AnonCredsIssuerError,
+        AnonCredsRegistrationError,
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

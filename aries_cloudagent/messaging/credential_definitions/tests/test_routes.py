@@ -63,7 +63,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             __getitem__=lambda _, k: self.request_dict[k],
         )
 
-    async def test_send_credential_definition(self):
+    async def anoncreds_break_test_send_credential_definition(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -75,10 +75,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.request.query = {"create_transaction_for_endorser": "false"}
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = (
-                await test_module.credential_definitions_send_credential_definition(
-                    self.request
-                )
+            result = await test_module.anoncreds_break_credential_definitions_send_credential_definition(
+                self.request
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
@@ -88,7 +86,9 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 }
             )
 
-    async def test_send_credential_definition_create_transaction_for_endorser(self):
+    async def anoncreds_break_test_send_credential_definition_create_transaction_for_endorser(
+        self,
+    ):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -124,10 +124,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                     }
                 )
             )
-            result = (
-                await test_module.credential_definitions_send_credential_definition(
-                    self.request
-                )
+            result = await test_module.anoncreds_break_credential_definitions_send_credential_definition(
+                self.request
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
@@ -137,7 +135,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 }
             )
 
-    async def test_send_credential_definition_create_transaction_for_endorser_storage_x(
+    async def anoncreds_break_test_send_credential_definition_create_transaction_for_endorser_storage_x(
         self,
     ):
         self.request.json = async_mock.CoroutineMock(
@@ -173,11 +171,11 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.credential_definitions_send_credential_definition(
+                await test_module.anoncreds_break_credential_definitions_send_credential_definition(
                     self.request
                 )
 
-    async def test_send_credential_definition_create_transaction_for_endorser_not_found_x(
+    async def anoncreds_break_test_send_credential_definition_create_transaction_for_endorser_not_found_x(
         self,
     ):
         self.request.json = async_mock.CoroutineMock(
@@ -199,11 +197,11 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             mock_conn_rec_retrieve.side_effect = test_module.StorageNotFoundError()
 
             with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.credential_definitions_send_credential_definition(
+                await test_module.anoncreds_break_credential_definitions_send_credential_definition(
                     self.request
                 )
 
-    async def test_send_credential_definition_create_transaction_for_endorser_base_model_x(
+    async def anoncreds_break_test_send_credential_definition_create_transaction_for_endorser_base_model_x(
         self,
     ):
         self.request.json = async_mock.CoroutineMock(
@@ -225,11 +223,11 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.credential_definitions_send_credential_definition(
+                await test_module.anoncreds_break_credential_definitions_send_credential_definition(
                     self.request
                 )
 
-    async def test_send_credential_definition_create_transaction_for_endorser_no_endorser_info_x(
+    async def anoncreds_break_test_send_credential_definition_create_transaction_for_endorser_no_endorser_info_x(
         self,
     ):
         self.request.json = async_mock.CoroutineMock(
@@ -252,11 +250,11 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 metadata_get=async_mock.CoroutineMock(return_value=None)
             )
             with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.credential_definitions_send_credential_definition(
+                await test_module.anoncreds_break_credential_definitions_send_credential_definition(
                     self.request
                 )
 
-    async def test_send_credential_definition_create_transaction_for_endorser_no_endorser_did_x(
+    async def anoncreds_break_test_send_credential_definition_create_transaction_for_endorser_no_endorser_did_x(
         self,
     ):
         self.request.json = async_mock.CoroutineMock(
@@ -283,11 +281,11 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 )
             )
             with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.credential_definitions_send_credential_definition(
+                await test_module.anoncreds_break_credential_definitions_send_credential_definition(
                     self.request
                 )
 
-    async def test_send_credential_definition_no_ledger(self):
+    async def anoncreds_break_test_send_credential_definition_no_ledger(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -299,11 +297,11 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.context.injector.clear_binding(BaseLedger)
         self.profile_injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.credential_definitions_send_credential_definition(
+            await test_module.anoncreds_break_credential_definitions_send_credential_definition(
                 self.request
             )
 
-    async def test_send_credential_definition_ledger_x(self):
+    async def anoncreds_break_test_send_credential_definition_ledger_x(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -318,7 +316,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             side_effect=test_module.LedgerError("oops")
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.credential_definitions_send_credential_definition(
+            await test_module.anoncreds_break_credential_definitions_send_credential_definition(
                 self.request
             )
 
@@ -332,7 +330,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 {"credential_definition_ids": [CRED_DEF_ID]}
             )
 
-    async def test_get_credential_definition(self):
+    async def anoncreds_break_test_get_credential_definition(self):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
@@ -354,7 +352,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 }
             )
 
-    async def test_get_credential_definition_multitenant(self):
+    async def anoncreds_break_test_get_credential_definition_multitenant(self):
         self.profile_injector.bind_instance(
             BaseMultitenantManager,
             async_mock.MagicMock(MultitenantManager, autospec=True),
@@ -376,7 +374,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 }
             )
 
-    async def test_get_credential_definition_no_ledger(self):
+    async def anoncreds_break_test_get_credential_definition_no_ledger(self):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(

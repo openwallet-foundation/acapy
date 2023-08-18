@@ -45,7 +45,7 @@ def step_impl(context, issuer, schema_name):
     # confirm the cred def was actually created
     async_sleep(2.0)
     cred_def_saved = agent_container_GET(
-        agent["agent"], "/credential-definition/" + cred_def_id
+        agent["agent"], "/credential-definitions/" + cred_def_id
     )
     assert cred_def_saved
 
@@ -136,6 +136,11 @@ def step_impl(context, holder):
 
     # pause for a few seconds
     async_sleep(3.0)
+    cred_exchange = agent_container_GET(
+        agent["agent"], "/issue-credential-2.0/records/" + cred_ex_id
+    )
+    context.cred_exchange = cred_exchange
+    print("cred_exchange:", json.dumps(cred_exchange))
 
 
 @given('Using anoncreds, "{holder}" revokes the credential')

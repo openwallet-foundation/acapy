@@ -3,8 +3,6 @@
 import json
 from time import time
 
-# from asyncio import ensure_future, shield
-from asyncio import shield
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -16,14 +14,18 @@ from aiohttp_apispec import (
 )
 
 from marshmallow import fields
+from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
+from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
+
+from aries_cloudagent.wallet.base import BaseWallet
 
 from ...admin.request_context import AdminRequestContext
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
-from ...indy.issuer import IndyIssuer, IndyIssuerError
+
 from ...indy.models.cred_def import CredentialDefinitionSchema
-from ...ledger.base import BaseLedger
-from ...ledger.error import LedgerError
+
+from ...ledger.error import BadLedgerRequestError
 from ...ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
@@ -37,7 +39,6 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 from ...protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
 )
 
@@ -59,9 +60,6 @@ from .util import (
 
 
 from ..valid import UUIDFour
-from ...connections.models.conn_record import ConnRecord
-from ...storage.error import StorageNotFoundError
-from ..models.base import BaseModelError
 
 
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):
@@ -175,8 +173,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
-    write_ledger = not create_transaction_for_endorser
-    endorser_did = None
     connection_id = request.query.get("conn_id")
 
     body = await request.json()
@@ -186,92 +182,47 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
 
-    tag_query = {"schema_id": schema_id}
+    my_public_info = None
     async with profile.session() as session:
-        storage = session.inject(BaseStorage)
-        found = await storage.find_all_records(
-            type_filter=CRED_DEF_SENT_RECORD_TYPE,
-            tag_query=tag_query,
+        wallet = session.inject(BaseWallet)
+        my_public_info = await wallet.get_public_did()
+    if not my_public_info:
+        raise BadLedgerRequestError(
+            "Cannot publish credential definition without a public DID"
         )
-        if 0 < len(found):
-            # need to check the 'tag' value
-            for record in found:
-                cred_def_id = record.value
-                cred_def_id_parts = cred_def_id.split(":")
-                if tag == cred_def_id_parts[4]:
-                    raise web.HTTPBadRequest(
-                        reason=f"Cred def for {schema_id} {tag} already exists"
-                    )
 
-    # check if we need to endorse
-    if is_author_role(context.profile):
-        # authors cannot write to the ledger
-        write_ledger = False
-        create_transaction_for_endorser = True
-        if not connection_id:
-            # author has not provided a connection id, so determine which to use
-            connection_id = await get_endorser_connection_id(context.profile)
-            if not connection_id:
-                raise web.HTTPBadRequest(reason="No endorser connection found")
+    body = await request.json()
+    issuer_id = my_public_info.did
+    schema_id = body.get("schema_id")
+    tag = body.get("tag")
+    options = {}
+    if support_revocation:
+        options["support_revocation"] = True
+        options["revocation_registry_size"] = rev_reg_size
+    if create_transaction_for_endorser:
+        endorser_connection_id = await get_endorser_connection_id(context.profile)
+        if not endorser_connection_id:
+            raise web.HTTPBadRequest(reason="No endorser connection found")
 
-    if not write_ledger:
-        try:
-            async with profile.session() as session:
-                connection_record = await ConnRecord.retrieve_by_id(
-                    session, connection_id
-                )
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except BaseModelError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+        options["endorser_connection_id"] = endorser_connection_id
 
-        async with profile.session() as session:
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
-        if not endorser_info:
-            raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
-            )
-        if "endorser_did" not in endorser_info.keys():
-            raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
-            )
-        endorser_did = endorser_info["endorser_did"]
+    cred_def = body.get("credential_definition")
 
-    ledger = context.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    issuer = AnonCredsIssuer(context.profile)
+    result = await issuer.create_and_register_credential_definition(
+        issuer_id,
+        schema_id,
+        tag,
+        options=options,
+    )
 
-    issuer = context.inject(IndyIssuer)
-    try:  # even if in wallet, send it and raise if erroneously so
-        async with ledger:
-            (cred_def_id, cred_def, novel) = await shield(
-                ledger.create_and_send_credential_definition(
-                    issuer,
-                    schema_id,
-                    signature_type=None,
-                    tag=tag,
-                    support_revocation=support_revocation,
-                    write_ledger=write_ledger,
-                    endorser_did=endorser_did,
-                )
-            )
-
-    except (IndyIssuerError, LedgerError) as e:
-        raise web.HTTPBadRequest(reason=e.message) from e
-
-    issuer_did = cred_def_id.split(":")[0]
+    cred_def_id = result.credential_definition_state.credential_definition_id
+    novel = False  # no idea how to deterimine what to put here...
     meta_data = {
         "context": {
             "schema_id": schema_id,
             "cred_def_id": cred_def_id,
-            "issuer_did": issuer_did,
+            "issuer_did": issuer_id,
             "support_revocation": support_revocation,
             "novel": novel,
             "tag": tag,
@@ -293,11 +244,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 "credential_definition_id": cred_def_id,
             }
         )
-
-    # If the transaction is for the endorser, but the schema has already been created,
-    # then we send back the schema since the transaction will fail to be created.
-    elif "signed_txn" not in cred_def:
-        return web.json_response({"sent": {"credential_definition_id": cred_def_id}})
     else:
         meta_data["processing"]["auto_create_rev_reg"] = context.settings.get_value(
             "endorser.auto_create_rev_reg"
@@ -325,7 +271,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-            await outbound_handler(transaction_request, connection_id=connection_id)
+            await outbound_handler(
+                transaction_request, connection_id=endorser_connection_id
+            )
 
         return web.json_response(
             {
@@ -388,31 +336,20 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
     context: AdminRequestContext = request["context"]
     cred_def_id = request.match_info["cred_def_id"]
 
-    async with context.profile.session() as session:
-        multitenant_mgr = session.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
-        else:
-            ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-        cred_def_id,
-        txn_record_type=GET_CRED_DEF,
+    anon_creds_registry = context.inject(AnonCredsRegistry)
+    result = await anon_creds_registry.get_credential_definition(
+        context.profile, cred_def_id
     )
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
 
-    async with ledger:
-        cred_def = await ledger.get_credential_definition(cred_def_id)
+    anoncreds_cred_def = {
+        "ident": cred_def_id,
+        "schemaId": result.credential_definition.schema_id,
+        "typ": result.credential_definition.type,
+        "tag": result.credential_definition.tag,
+        "value": result.credential_definition.value.serialize(),
+    }
 
-    if ledger_id:
-        return web.json_response(
-            {"ledger_id": ledger_id, "credential_definition": cred_def}
-        )
-    else:
-        return web.json_response({"credential_definition": cred_def})
+    return web.json_response({"credential_definition": anoncreds_cred_def})
 
 
 @docs(
