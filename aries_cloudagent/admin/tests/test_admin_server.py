@@ -303,6 +303,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             logs.output
         )
 
+    @pytest.mark.skip(reason="async_case library not compatible with python 3.10")
     async def test_visit_insecure_mode(self):
         settings = {"admin.admin_insecure_mode": True, "task_queue": True}
         server = self.get_admin_server(settings)
