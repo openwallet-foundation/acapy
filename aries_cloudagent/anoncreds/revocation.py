@@ -967,7 +967,7 @@ class AnonCredsRevocation:
             failed_crids = set()
             max_cred_num = rev_reg_def.value.max_cred_num
             rev_info = rev_list_entry.value_json
-            cred_revoc_ids = rev_info["pending"] + (additional_crids or [])
+            cred_revoc_ids = (rev_info["pending"] or []) + (additional_crids or [])
             rev_list = RevList.deserialize(rev_info["rev_list"])
 
             for rev_id in cred_revoc_ids:

@@ -136,6 +136,11 @@ def step_impl(context, holder):
 
     # pause for a few seconds
     async_sleep(3.0)
+    cred_exchange = agent_container_GET(
+        agent["agent"], "/issue-credential-2.0/records/" + cred_ex_id
+    )
+    context.cred_exchange = cred_exchange
+    print("cred_exchange:", json.dumps(cred_exchange))
 
 
 @given('Using anoncreds, "{holder}" revokes the credential')

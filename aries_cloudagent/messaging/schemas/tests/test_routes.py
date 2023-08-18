@@ -307,15 +307,15 @@ class TestSchemaRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.anoncreds_break_schemas_send_schema(self.request)
 
-    async def test_created(self):
+    async def anoncreds_break_test_created(self):
         self.request.match_info = {"schema_id": SCHEMA_ID}
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.schemas_created(self.request)
+            result = await test_module.anoncreds_break_schemas_created(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with({"schema_ids": [SCHEMA_ID]})
 
-    async def test_get_schema(self):
+    async def anoncreds_break_test_get_schema(self):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
@@ -326,7 +326,7 @@ class TestSchemaRoutes(AsyncTestCase):
         )
         self.request.match_info = {"schema_id": SCHEMA_ID}
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.schemas_get_schema(self.request)
+            result = await test_module.anoncreds_break_schemas_get_schema(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
                 {
@@ -335,7 +335,7 @@ class TestSchemaRoutes(AsyncTestCase):
                 }
             )
 
-    async def test_get_schema_multitenant(self):
+    async def anoncreds_break_test_get_schema_multitenant(self):
         self.profile_injector.bind_instance(
             BaseMultitenantManager,
             async_mock.MagicMock(MultitenantManager, autospec=True),
@@ -346,7 +346,7 @@ class TestSchemaRoutes(AsyncTestCase):
             "get_ledger_for_identifier",
             async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
         ), async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = await test_module.schemas_get_schema(self.request)
+            result = await test_module.anoncreds_break_schemas_get_schema(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
                 {
@@ -355,7 +355,7 @@ class TestSchemaRoutes(AsyncTestCase):
                 }
             )
 
-    async def test_get_schema_on_seq_no(self):
+    async def anoncreds_break_test_get_schema_on_seq_no(self):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
@@ -372,7 +372,7 @@ class TestSchemaRoutes(AsyncTestCase):
                 {"schema": {"schema": "def", "signed_txn": "..."}}
             )
 
-    async def test_get_schema_no_ledger(self):
+    async def anoncreds_break_test_get_schema_no_ledger(self):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
@@ -388,9 +388,9 @@ class TestSchemaRoutes(AsyncTestCase):
 
         self.context.injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.schemas_get_schema(self.request)
+            await test_module.anoncreds_break_schemas_get_schema(self.request)
 
-    async def test_get_schema_x_ledger(self):
+    async def anoncreds_break_test_get_schema_x_ledger(self):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
@@ -405,7 +405,7 @@ class TestSchemaRoutes(AsyncTestCase):
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.schemas_get_schema(self.request)
+            await test_module.anoncreds_break_schemas_get_schema(self.request)
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()
