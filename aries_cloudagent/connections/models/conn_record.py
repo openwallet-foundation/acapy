@@ -294,9 +294,9 @@ class ConnRecord(BaseRecord):
     async def retrieve_by_did(
         cls,
         session: ProfileSession,
-        their_did: str = None,
-        my_did: str = None,
-        their_role: str = None,
+        their_did: Optional[str] = None,
+        my_did: Optional[str] = None,
+        their_role: Optional[str] = None,
     ) -> "ConnRecord":
         """Retrieve a connection record by target DID.
 

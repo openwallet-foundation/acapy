@@ -20,10 +20,14 @@ from pydid.verification_method import (
     JsonWebKey2020,
 )
 
+from ..cache.base import BaseCache
+from ..config.base import InjectionError
 from ..config.logging import get_logger_inst
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
+from ..multitenant.base import BaseMultitenantManager
+from ..protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
@@ -31,14 +35,20 @@ from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ..protocols.discovery.v2_0.manager import V20DiscoveryMgr
 from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ..resolver.base import ResolverError
 from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
-from ..storage.error import StorageNotFoundError
+from ..storage.error import StorageError, StorageNotFoundError
 from ..storage.record import StorageRecord
+from ..transport.inbound.receipt import MessageReceipt
 from ..wallet.base import BaseWallet
+from ..wallet.crypto import create_keypair, seed_to_did
 from ..wallet.did_info import DIDInfo
+from ..wallet.did_method import SOV
+from ..wallet.error import WalletNotFoundError
+from ..wallet.key_type import ED25519
 from ..wallet.util import b64_to_bytes, bytes_to_b58
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
@@ -72,9 +82,9 @@ class BaseConnectionManager:
     async def create_did_document(
         self,
         did_info: DIDInfo,
-        inbound_connection_id: str = None,
-        svc_endpoints: Sequence[str] = None,
-        mediation_records: List[MediationRecord] = None,
+        inbound_connection_id: Optional[str] = None,
+        svc_endpoints: Optional[Sequence[str]] = None,
+        mediation_records: Optional[List[MediationRecord]] = None,
     ) -> DIDDoc:
         """Create our DID doc for a given DID.
 
@@ -526,7 +536,7 @@ class BaseConnectionManager:
 
     async def fetch_connection_targets(
         self, connection: ConnRecord
-    ) -> Optional[Sequence[ConnectionTarget]]:
+    ) -> Sequence[ConnectionTarget]:
         """Get a list of connection targets from a `ConnRecord`.
 
         Args:
@@ -536,7 +546,7 @@ class BaseConnectionManager:
 
         if not connection.my_did:
             self._logger.debug("No local DID associated with connection")
-            return None
+            return []
 
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
@@ -553,11 +563,62 @@ class BaseConnectionManager:
 
         if not connection.their_did:
             self._logger.debug("No target DID associated with connection")
-            return None
+            return []
 
         return await self.resolve_connection_targets(
             connection.their_did, my_info.verkey, connection.their_label
         )
+
+    async def get_connection_targets(
+        self,
+        *,
+        connection_id: Optional[str] = None,
+        connection: Optional[ConnRecord] = None,
+    ):
+        """Create a connection target from a `ConnRecord`.
+
+        Args:
+            connection_id: The connection ID to search for
+            connection: The connection record itself, if already available
+        """
+        if connection_id is None and connection is None:
+            raise ValueError("Must supply either connection_id or connection")
+
+        if not connection_id:
+            assert connection
+            connection_id = connection.connection_id
+
+        cache = self._profile.inject_or(BaseCache)
+        cache_key = f"connection_target::{connection_id}"
+        if cache:
+            async with cache.acquire(cache_key) as entry:
+                if entry.result:
+                    targets = [
+                        ConnectionTarget.deserialize(row) for row in entry.result
+                    ]
+                else:
+                    if not connection:
+                        async with self._profile.session() as session:
+                            connection = await ConnRecord.retrieve_by_id(
+                                session, connection_id
+                            )
+
+                    targets = await self.fetch_connection_targets(connection)
+
+                    if connection.state == ConnRecord.State.COMPLETED.rfc160:
+                        # Only set cache if connection has reached completed state
+                        # Otherwise, a replica that participated early in exchange
+                        # may have bad data set in cache.
+                        await entry.set_result(
+                            [row.serialize() for row in targets], 3600
+                        )
+        else:
+            if not connection:
+                async with self._profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_id(session, connection_id)
+
+            targets = await self.fetch_connection_targets(connection)
+        return targets
 
     def diddoc_connection_targets(
         self,
@@ -608,3 +669,279 @@ class BaseConnectionManager:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
         return DIDDoc.from_json(record.value), record
+
+    async def find_connection(
+        self,
+        their_did: str,
+        my_did: Optional[str] = None,
+        my_verkey: Optional[str] = None,
+        auto_complete=False,
+    ) -> Optional[ConnRecord]:
+        """
+        Look up existing connection information for a sender verkey.
+
+        Args:
+            their_did: Their DID
+            my_did: My DID
+            my_verkey: My verkey
+            auto_complete: Should this connection automatically be promoted to active
+
+        Returns:
+            The located `ConnRecord`, if any
+
+        """
+        connection = None
+        if their_did:
+            try:
+                async with self._profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_did(
+                        session, their_did, my_did
+                    )
+            except StorageNotFoundError:
+                pass
+
+        if (
+            connection
+            and ConnRecord.State.get(connection.state) is ConnRecord.State.RESPONSE
+            and auto_complete
+        ):
+            connection.state = ConnRecord.State.COMPLETED.rfc160
+            async with self._profile.session() as session:
+                await connection.save(session, reason="Connection promoted to active")
+                if session.settings.get("auto_disclose_features"):
+                    discovery_mgr = V20DiscoveryMgr(self._profile)
+                    await discovery_mgr.proactive_disclose_features(
+                        connection_id=connection.connection_id
+                    )
+
+        if not connection and my_verkey:
+            try:
+                async with self._profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_invitation_key(
+                        session,
+                        my_verkey,
+                        their_role=ConnRecord.Role.REQUESTER.rfc160,
+                    )
+            except StorageError:
+                pass
+
+        return connection
+
+    async def find_inbound_connection(
+        self, receipt: MessageReceipt
+    ) -> Optional[ConnRecord]:
+        """
+        Deserialize an incoming message and further populate the request context.
+
+        Args:
+            receipt: The message receipt
+
+        Returns:
+            The `ConnRecord` associated with the expanded message, if any
+
+        """
+
+        cache_key = None
+        connection = None
+        resolved = False
+
+        if receipt.sender_verkey and receipt.recipient_verkey:
+            cache_key = (
+                f"connection_by_verkey::{receipt.sender_verkey}"
+                f"::{receipt.recipient_verkey}"
+            )
+            cache = self._profile.inject_or(BaseCache)
+            if cache:
+                async with cache.acquire(cache_key) as entry:
+                    if entry.result:
+                        cached = entry.result
+                        receipt.sender_did = cached["sender_did"]
+                        receipt.recipient_did_public = cached["recipient_did_public"]
+                        receipt.recipient_did = cached["recipient_did"]
+                        async with self._profile.session() as session:
+                            connection = await ConnRecord.retrieve_by_id(
+                                session, cached["id"]
+                            )
+                    else:
+                        connection = await self.resolve_inbound_connection(receipt)
+                        if connection:
+                            cache_val = {
+                                "id": connection.connection_id,
+                                "sender_did": receipt.sender_did,
+                                "recipient_did": receipt.recipient_did,
+                                "recipient_did_public": receipt.recipient_did_public,
+                            }
+                            await entry.set_result(cache_val, 3600)
+                        resolved = True
+
+        if not connection and not resolved:
+            connection = await self.resolve_inbound_connection(receipt)
+        return connection
+
+    async def resolve_inbound_connection(
+        self, receipt: MessageReceipt
+    ) -> Optional[ConnRecord]:
+        """
+        Populate the receipt DID information and find the related `ConnRecord`.
+
+        Args:
+            receipt: The message receipt
+
+        Returns:
+            The `ConnRecord` associated with the expanded message, if any
+
+        """
+
+        if receipt.sender_verkey:
+            try:
+                receipt.sender_did = await self.find_did_for_key(receipt.sender_verkey)
+            except StorageNotFoundError:
+                self._logger.warning(
+                    "No corresponding DID found for sender verkey: %s",
+                    receipt.sender_verkey,
+                )
+
+        if receipt.recipient_verkey:
+            try:
+                async with self._profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    my_info = await wallet.get_local_did_for_verkey(
+                        receipt.recipient_verkey
+                    )
+                receipt.recipient_did = my_info.did
+                if "posted" in my_info.metadata and my_info.metadata["posted"] is True:
+                    receipt.recipient_did_public = True
+            except InjectionError:
+                self._logger.warning(
+                    "Cannot resolve recipient verkey, no wallet defined by "
+                    "context: %s",
+                    receipt.recipient_verkey,
+                )
+            except WalletNotFoundError:
+                self._logger.warning(
+                    "No corresponding DID found for recipient verkey: %s",
+                    receipt.recipient_verkey,
+                )
+
+        return await self.find_connection(
+            receipt.sender_did, receipt.recipient_did, receipt.recipient_verkey, True
+        )
+
+    async def get_endpoints(self, conn_id: str) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Get connection endpoints.
+
+        Args:
+            conn_id: connection identifier
+
+        Returns:
+            Their endpoint for this connection
+
+        """
+        async with self._profile.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, conn_id)
+            wallet = session.inject(BaseWallet)
+            my_did_info = await wallet.get_local_did(connection.my_did)
+        my_endpoint = my_did_info.metadata.get(
+            "endpoint",
+            self._profile.settings.get("default_endpoint"),
+        )
+
+        conn_targets = await self.get_connection_targets(
+            connection_id=connection.connection_id,
+            connection=connection,
+        )
+        return (my_endpoint, conn_targets[0].endpoint)
+
+    async def create_static_connection(
+        self,
+        my_did: Optional[str] = None,
+        my_seed: Optional[str] = None,
+        their_did: Optional[str] = None,
+        their_seed: Optional[str] = None,
+        their_verkey: Optional[str] = None,
+        their_endpoint: Optional[str] = None,
+        their_label: Optional[str] = None,
+        alias: Optional[str] = None,
+        mediation_id: Optional[str] = None,
+    ) -> Tuple[DIDInfo, DIDInfo, ConnRecord]:
+        """
+        Register a new static connection (for use by the test suite).
+
+        Args:
+            my_did: override the DID used in the connection
+            my_seed: provide a seed used to generate our DID and keys
+            their_did: provide the DID used by the other party
+            their_seed: provide a seed used to generate their DID and keys
+            their_verkey: provide the verkey used by the other party
+            their_endpoint: their URL endpoint for routing messages
+            alias: an alias for this connection record
+
+        Returns:
+            Tuple: my DIDInfo, their DIDInfo, new `ConnRecord` instance
+
+        """
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            # seed and DID optional
+            my_info = await wallet.create_local_did(SOV, ED25519, my_seed, my_did)
+
+        # must provide their DID and verkey if the seed is not known
+        if (not their_did or not their_verkey) and not their_seed:
+            raise BaseConnectionManagerError(
+                "Either a verkey or seed must be provided for the other party"
+            )
+        if not their_did:
+            their_did = seed_to_did(their_seed)
+        if not their_verkey:
+            their_verkey_bin, _ = create_keypair(ED25519, their_seed.encode())
+            their_verkey = bytes_to_b58(their_verkey_bin)
+        their_info = DIDInfo(their_did, their_verkey, {}, method=SOV, key_type=ED25519)
+
+        # Create connection record
+        connection = ConnRecord(
+            invitation_mode=ConnRecord.INVITATION_MODE_STATIC,
+            my_did=my_info.did,
+            their_did=their_info.did,
+            their_label=their_label,
+            state=ConnRecord.State.COMPLETED.rfc160,
+            alias=alias,
+            connection_protocol=CONN_PROTO,
+        )
+        async with self._profile.session() as session:
+            await connection.save(session, reason="Created new static connection")
+            if session.settings.get("auto_disclose_features"):
+                discovery_mgr = V20DiscoveryMgr(self._profile)
+                await discovery_mgr.proactive_disclose_features(
+                    connection_id=connection.connection_id
+                )
+
+        # Routing
+        mediation_record = await self._route_manager.mediation_record_if_id(
+            self._profile, mediation_id, or_default=True
+        )
+
+        multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
+        wallet_id = self._profile.settings.get("wallet.id")
+
+        base_mediation_record = None
+        if multitenant_mgr and wallet_id:
+            base_mediation_record = await multitenant_mgr.get_default_mediator()
+
+        await self._route_manager.route_static(
+            self._profile, connection, mediation_record
+        )
+
+        # Synthesize their DID doc
+        did_doc = await self.create_did_document(
+            their_info,
+            None,
+            [their_endpoint or ""],
+            mediation_records=list(
+                filter(None, [base_mediation_record, mediation_record])
+            ),
+        )
+
+        await self.store_did_document(did_doc)
+
+        return my_info, their_info, connection
