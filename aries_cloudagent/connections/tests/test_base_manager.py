@@ -9,11 +9,8 @@ from pydid.doc.builder import ServiceBuilder
 from pydid.verification_method import (
     Ed25519VerificationKey2018,
     Ed25519VerificationKey2020,
+    EcdsaSecp256k1VerificationKey2019,
     JsonWebKey2020,
-)
-
-from aries_cloudagent.protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
 )
 
 from .. import base_manager as test_module
@@ -30,6 +27,15 @@ from ...did.did_key import DIDKey
 from ...messaging.responder import BaseResponder, MockResponder
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
+from ...protocols.connections.v1_0.messages.connection_invitation import (
+    ConnectionInvitation,
+)
+from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
+    MediationRecord,
+)
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ...protocols.discovery.v2_0.manager import V20DiscoveryMgr
+from ...resolver.default.key import KeyDIDResolver
 from ...resolver.default.legacy_peer import LegacyPeerDIDResolver
 from ...resolver.did_resolver import DIDResolver
 from ...storage.error import StorageNotFoundError
@@ -40,11 +46,6 @@ from ...wallet.error import WalletNotFoundError
 from ...wallet.in_memory import InMemoryWallet
 from ...wallet.key_type import ED25519
 from ...wallet.util import b58_to_bytes, bytes_to_b64
-from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
-    MediationRecord,
-)
-from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
-from ...protocols.discovery.v2_0.manager import V20DiscoveryMgr
 from ..base_manager import BaseConnectionManager
 
 
@@ -89,6 +90,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         )
         self.resolver = DIDResolver()
         self.resolver.register_resolver(LegacyPeerDIDResolver())
+        self.resolver.register_resolver(KeyDIDResolver())
 
         self.profile = InMemoryProfile.test_profile(
             {
@@ -1113,15 +1115,157 @@ class TestBaseConnectionManager(AsyncTestCase):
             assert target.routing_keys == []
             assert target.sender_key == local_did.verkey
 
+    async def test_verification_methods_for_service(self):
+        did = "did:sov:" + self.test_did
+        doc_builder = DIDDocumentBuilder(did)
+        vm = doc_builder.verification_method.add(
+            Ed25519VerificationKey2018,
+            public_key_base58=self.test_verkey,
+        )
+        route_key = DIDKey.from_public_key_b58(self.test_verkey, ED25519)
+        service = doc_builder.service.add(
+            type_="did-communication",
+            service_endpoint=self.test_endpoint,
+            recipient_keys=[vm.id],
+            routing_keys=[route_key.key_id],
+        )
+        doc = doc_builder.build()
+        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+            return_value=(doc, doc.service)
+        )
+        recip, routing = await self.manager.verification_methods_for_service(
+            doc, service
+        )
+        assert recip == [vm]
+        assert routing
+
+    async def test_resolve_connection_targets_empty(self):
+        """Test resolve connection targets."""
+        did = "did:sov:" + self.test_did
+        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+            return_value=(DIDDocument(id=DID(did)), [])
+        )
+        targets = await self.manager.resolve_connection_targets(did)
+        assert targets == []
+
     async def test_resolve_connection_targets(self):
         """Test resolve connection targets."""
-        service_builder = ServiceBuilder(DID(self.test_did))
+        did = "did:sov:" + self.test_did
+        doc_builder = DIDDocumentBuilder(did)
+        vm = doc_builder.verification_method.add(
+            Ed25519VerificationKey2018,
+            public_key_base58=self.test_verkey,
+        )
+        route_key = DIDKey.from_public_key_b58(self.test_verkey, ED25519)
+        doc_builder.service.add(
+            type_="did-communication",
+            service_endpoint=self.test_endpoint,
+            recipient_keys=[vm.id],
+            routing_keys=[route_key.key_id],
+        )
+        doc = doc_builder.build()
+        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+            return_value=(doc, doc.service)
+        )
+        targets = await self.manager.resolve_connection_targets(did)
+        assert targets
+        assert targets[0].routing_keys[0] == self.test_verkey
+
+    async def test_resolve_connection_targets_x_bad_reference(self):
+        """Test resolve connection targets."""
+        did = "did:sov:" + self.test_did
+        doc_builder = DIDDocumentBuilder(did)
+        vm = doc_builder.verification_method.add(
+            Ed25519VerificationKey2018,
+            public_key_base58=self.test_verkey,
+        )
+        doc_builder.service.add(
+            type_="did-communication",
+            service_endpoint=self.test_endpoint,
+            recipient_keys=[vm.id],
+            routing_keys=["did:example:123#some-random-id"],
+        )
+        doc = doc_builder.build()
+        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+            return_value=(doc, doc.service)
+        )
+        with self.assertLogs() as cm:
+            await self.manager.resolve_connection_targets(did)
+        assert cm.output and "Failed to resolve service" in cm.output[0]
+
+    async def test_resolve_connection_targets_x_bad_key_material(self):
+        did = "did:sov:" + self.test_did
+        doc_builder = DIDDocumentBuilder(did)
+        vm = doc_builder.verification_method.add(
+            Ed25519VerificationKey2020,
+            public_key_multibase=multibase.encode(
+                multicodec.wrap("secp256k1-pub", b58_to_bytes(self.test_verkey)),
+                "base58btc",
+            ),
+        )
+        route_key = DIDKey.from_public_key_b58(self.test_verkey, ED25519)
+        doc_builder.service.add(
+            type_="did-communication",
+            service_endpoint=self.test_endpoint,
+            recipient_keys=[vm.id],
+            routing_keys=[route_key.key_id],
+        )
+        doc = doc_builder.build()
+        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+            return_value=(doc, doc.service)
+        )
+        with self.assertRaises(BaseConnectionManagerError) as cm:
+            await self.manager.resolve_connection_targets(did)
+        assert "not supported" in str(cm.exception)
+
+    async def test_resolve_connection_targets_x_unsupported_key(self):
+        did = "did:sov:" + self.test_did
+        doc_builder = DIDDocumentBuilder(did)
+        vm = doc_builder.verification_method.add(
+            EcdsaSecp256k1VerificationKey2019,
+            public_key_hex="deadbeef",
+        )
+        route_key = DIDKey.from_public_key_b58(self.test_verkey, ED25519)
+        doc_builder.service.add(
+            type_="did-communication",
+            service_endpoint=self.test_endpoint,
+            recipient_keys=[vm.id],
+            routing_keys=[route_key.key_id],
+        )
+        doc = doc_builder.build()
+        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+            return_value=(doc, doc.service)
+        )
+        with self.assertRaises(BaseConnectionManagerError) as cm:
+            await self.manager.resolve_connection_targets(did)
+        assert "not supported" in str(cm.exception)
+
+    async def test_record_keys_for_public_did_empty(self):
+        did = "did:sov:" + self.test_did
+        service_builder = ServiceBuilder(DID(did))
         service_builder.add_didcomm(
             self.test_endpoint, recipient_keys=[], routing_keys=[]
         )
         self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
-            return_value=(None, service_builder.services)
+            return_value=(DIDDocument(id=DID(did)), service_builder.services)
         )
+        await self.manager.record_keys_for_public_did(did)
+
+    async def test_record_keys_for_public_did(self):
+        did = "did:sov:" + self.test_did
+        doc_builder = DIDDocumentBuilder(did)
+        vm = doc_builder.verification_method.add(
+            Ed25519VerificationKey2018,
+            public_key_base58=self.test_verkey,
+        )
+        doc_builder.service.add_didcomm(
+            self.test_endpoint, recipient_keys=[vm], routing_keys=[]
+        )
+        doc = doc_builder.build()
+        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+            return_value=(doc, doc.service)
+        )
+        await self.manager.record_keys_for_public_did(did)
 
     async def test_diddoc_connection_targets_diddoc_underspecified(self):
         with self.assertRaises(BaseConnectionManagerError):
@@ -1365,6 +1509,99 @@ class TestBaseConnectionManager(AsyncTestCase):
                 assert target.recipient_keys == conn_invite.recipient_keys
                 assert target.routing_keys == conn_invite.routing_keys
                 assert target.sender_key == local_did.verkey
+
+    async def test_get_connection_targets_from_cache(self):
+        async with self.profile.session() as session:
+            local_did = await session.wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+                seed=self.test_seed,
+                did=self.test_did,
+                metadata=None,
+            )
+
+            did_doc = self.make_did_doc(
+                did=self.test_target_did, verkey=self.test_target_verkey
+            )
+            await self.manager.store_did_document(did_doc)
+
+            mock_conn = async_mock.MagicMock(
+                my_did=self.test_did,
+                their_did=self.test_target_did,
+                connection_id="dummy",
+                their_role=ConnRecord.Role.RESPONDER.rfc23,
+                state=ConnRecord.State.COMPLETED.rfc160,
+            )
+
+            with async_mock.patch.object(
+                ConnectionTarget, "serialize", autospec=True
+            ) as mock_conn_target_ser, async_mock.patch.object(
+                ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+                self.manager, "fetch_connection_targets", async_mock.CoroutineMock()
+            ) as mock_fetch_connection_targets:
+                mock_fetch_connection_targets.return_value = [ConnectionTarget()]
+                mock_conn_rec_retrieve_by_id.return_value = mock_conn
+                mock_conn_target_ser.return_value = {"serialized": "value"}
+                targets = await self.manager.get_connection_targets(
+                    connection_id="dummy",
+                    connection=None,
+                )
+
+                cached_targets = await self.manager.get_connection_targets(
+                    connection_id="dummy",
+                    connection=None,
+                )
+                assert mock_fetch_connection_targets.call_count == 1
+
+    async def test_get_connection_targets_no_cache(self):
+        async with self.profile.session() as session:
+            local_did = await session.wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+                seed=self.test_seed,
+                did=self.test_did,
+                metadata=None,
+            )
+
+            did_doc = self.make_did_doc(
+                did=self.test_target_did, verkey=self.test_target_verkey
+            )
+            await self.manager.store_did_document(did_doc)
+
+            mock_conn = async_mock.MagicMock(
+                my_did=self.test_did,
+                their_did=self.test_target_did,
+                connection_id="dummy",
+                their_role=ConnRecord.Role.RESPONDER.rfc23,
+                state=ConnRecord.State.COMPLETED.rfc160,
+            )
+
+            with async_mock.patch.object(
+                ConnectionTarget, "serialize", autospec=True
+            ) as mock_conn_target_ser, async_mock.patch.object(
+                ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+                self.manager, "fetch_connection_targets", async_mock.CoroutineMock()
+            ) as mock_fetch_connection_targets:
+                mock_fetch_connection_targets.return_value = [ConnectionTarget()]
+                mock_conn_rec_retrieve_by_id.return_value = mock_conn
+                mock_conn_target_ser.return_value = {"serialized": "value"}
+                self.profile.context.injector.clear_binding(BaseCache)
+                targets = await self.manager.get_connection_targets(
+                    connection_id="dummy",
+                    connection=None,
+                )
+                assert targets
+                targets = await self.manager.get_connection_targets(
+                    connection_id=None,
+                    connection=mock_conn,
+                )
+                assert targets
+
+    async def test_get_connection_targets_no_conn_or_id(self):
+        with self.assertRaises(ValueError):
+            await self.manager.get_connection_targets()
 
     async def test_get_conn_targets_conn_invitation_no_cache(self):
         async with self.profile.session() as session:

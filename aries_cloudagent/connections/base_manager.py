@@ -507,25 +507,18 @@ class BaseConnectionManager:
                 sender_verkey,
             )
         else:  # sending implicit request
-            if connection.their_did:
-                # request is implicit; did isn't set if we've received an
-                # invitation, only the invitation key
-                invitation = None
-                did = connection.their_did
-                (
-                    endpoint,
-                    recipient_keys,
-                    routing_keys,
-                ) = await self.resolve_invitation(did)
-            else:
-                raise BaseConnectionManagerError(
-                    "Connection is in invalid state to fetch targets"
-                )
+            # request is implicit; did isn't set if we've received an
+            # invitation, only the invitation key
+            (
+                endpoint,
+                recipient_keys,
+                routing_keys,
+            ) = await self.resolve_invitation(connection.their_did)
             targets = [
                 ConnectionTarget(
                     did=connection.their_did,
                     endpoint=endpoint,
-                    label=invitation.label if invitation else None,
+                    label=None,
                     recipient_keys=recipient_keys,
                     routing_keys=routing_keys,
                     sender_key=sender_verkey,
@@ -593,6 +586,7 @@ class BaseConnectionManager:
         if cache:
             async with cache.acquire(cache_key) as entry:
                 if entry.result:
+                    self._logger.debug("Connection targets retrieved from cache")
                     targets = [
                         ConnectionTarget.deserialize(row) for row in entry.result
                     ]
@@ -609,8 +603,14 @@ class BaseConnectionManager:
                         # Only set cache if connection has reached completed state
                         # Otherwise, a replica that participated early in exchange
                         # may have bad data set in cache.
+                        self._logger.debug("Caching connection targets")
                         await entry.set_result(
                             [row.serialize() for row in targets], 3600
+                        )
+                    else:
+                        self._logger.debug(
+                            "Not caching connection targets for connection in "
+                            f"state ({connection.state})"
                         )
         else:
             if not connection:
