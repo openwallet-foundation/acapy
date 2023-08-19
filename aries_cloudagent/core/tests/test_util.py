@@ -1,4 +1,4 @@
-from async_case import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...cache.base import BaseCache
 from ...cache.in_memory import InMemoryCache
