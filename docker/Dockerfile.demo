@@ -13,15 +13,13 @@ RUN mkdir -p bin && curl -L -o bin/jq \
 # Add and install Indy Agent code
 RUN pip install --no-cache-dir poetry
 
-ADD ./README.md pyproject.toml ./poetry.lock ./
+ADD README.md pyproject.toml poetry.lock ./
 
 RUN poetry install --no-root --no-directory --only main,askar,bbs,dev
 
 ADD aries_cloudagent ./aries_cloudagent
 ADD bin ./bin
-ADD README.md ./
 ADD scripts ./scripts
-ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
