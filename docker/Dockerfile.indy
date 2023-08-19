@@ -192,7 +192,7 @@ ADD ./README.md pyproject.toml ./poetry.lock ./
 
 USER root
 RUN pip install --no-cache-dir poetry
-RUN poetry install --no-root --no-directory --only main,askar,bbs,dev,test
+RUN poetry install --no-root --no-directory --only main,askar,bbs,dev,indy,test
 
 ADD --chown=indy:root . .
 USER indy

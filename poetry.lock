@@ -2212,6 +2212,22 @@ files = [
 ]
 
 [[package]]
+name = "python3-indy"
+version = "1.16.0.post286"
+description = "This is the official SDK for Hyperledger Indy (https://www.hyperledger.org/projects), which provides a distributed-ledger-based foundation for self-sovereign identity (https://sovrin.org). The major artifact of the SDK is a c-callable library."
+optional = false
+python-versions = "*"
+files = [
+    {file = "python3-indy-1.16.0-post-286.tar.gz", hash = "sha256:80e6a4241134ea3ef8b2554cffb11e504978f87edb004a1c965ec6eb063449a4"},
+]
+
+[package.dependencies]
+base58 = "*"
+
+[package.extras]
+test = ["base58", "pytest (<3.7)", "pytest-asyncio (==0.10.0)"]
+
+[[package]]
 name = "pytz"
 version = "2021.1"
 description = "World timezone definitions, modern and historical"
@@ -2829,4 +2845,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "c6acff810afba27e0f85bfe42cf4a5304394d4715bf741dd6283262f59de5030"
+content-hash = "3bc6c1800d155a94349864864ce68f82c1ca1320e3379a52228c133e73f9bd8f"

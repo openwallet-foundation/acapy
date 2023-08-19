@@ -68,7 +68,7 @@ indy-vdr="~0.3.3"
 [tool.poetry.group.bbs.dependencies]
 ursa-bbs-signatures="~1.0.1"
 
-[tool.poetrygroup.indy.dependencies]
+[tool.poetry.group.indy.dependencies]
 python3-indy="^1.11.1"
 
 # [tool.poetry.group.uvloop.dependencies]
