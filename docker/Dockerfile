@@ -5,8 +5,8 @@ WORKDIR /src
 
 ADD . .
 
-RUN pip install setuptools wheel
-RUN python setup.py sdist bdist_wheel
+RUN pip install --no-cache-dir poetry
+RUN poetry build
 
 FROM python:${python_version}-slim-bullseye AS main
 

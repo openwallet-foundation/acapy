@@ -1,0 +1,96 @@
+[tool.poetry]
+name = "aries_cloudagent"
+version = "0.10.0-rc0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+packages = [{include = "aries_cloudagent"}]
+classifiers = [
+            "Programming Language :: Python :: 3",
+            "License :: OSI Approved :: Apache Software License",
+	    "Operating System :: OS Independent",
+]
+repository = "https://github.com/hyperledger/aries-cloudagent-python"
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+aiohttp="~3.8.1"
+aiohttp-apispec="~2.2.1"
+aiohttp-cors="~0.7.0"
+aioredis="~2.0.0"
+apispec="~3.3.0"
+async-timeout="~4.0.2"
+base58="~2.1.0"
+ConfigArgParse="~1.5.3"
+deepmerge="~0.3.0"
+ecdsa="~0.16.1"
+jsonpath_ng="1.5.2"
+Markdown="~3.1.1"
+markupsafe="2.0.1"
+marshmallow="~3.20.1"
+msgpack="~1.0"
+multiformats="~0.2.1"
+nest_asyncio="~1.5.5"
+packaging="~23.1"
+portalocker="~2.7.0"
+prompt_toolkit=">=2.0.9,<2.1.0"
+pydid="~0.3.6"
+pyjwt="~2.8.0"
+pyld="~2.0.3"
+pynacl="~1.5.0"
+python-dateutil="~2.8.1"
+python-json-logger="~2.0.7"
+pytz="~2021.1"
+pyyaml="~6.0.1"
+qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
+requests="~2.31.0"
+rlp="1.2.0"
+unflatten="~0.1"
+asyncpg = ">=0.25.0,<0.26.0"
+web-py = ">=0.62,<1.0"
+pygments = ">=2.10,<3.0"
+
+[tool.poetry.group.test.dependencies]
+asynctest="0.13.0"
+pytest="~7.4.0"
+pytest-asyncio="0.14.0"
+pytest-cov="2.10.1"
+pytest-flake8="1.1.1"
+mock="~4.0"
+
+[tool.poetry.group.askar.dependencies]
+aries-askar="~0.2.5"
+indy-credx="~1.0.0"
+indy-vdr="~0.3.3"
+
+[tool.poetry.group.bbs.dependencies]
+ursa-bbs-signatures="~1.0.1"
+
+[tool.poetrygroup.indy.dependencies]
+python3-indy="^1.11.1"
+
+# [tool.poetry.group.uvloop.dependencies]
+# uvloop = "^0.14.0"
+
+[tool.poetry.group.dev.dependencies]
+flake8="4.0.1"
+# flake8-rst-docstrings=0.0.8
+flake8-docstrings="~1.7.0"
+flake8-rst="0.7.2"
+pydocstyle="~6.3.0"
+pre-commit="~3.3.3"
+
+sphinx="1.8.4"
+sphinx-rtd-theme=">=0.4.3"
+
+ptvsd="4.3.2"
+pydevd="1.5.1"
+
+pydevd-pycharm="~193.6015.39"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
