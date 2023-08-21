@@ -98,9 +98,6 @@
       "url" : "https://github.com/hyperledger/aries-rfcs/tree/fa8dc4ea1e667eb07db8f9ffeaf074a4455697c0/features/0211-route-coordination"
     }
   }, {
-    "name" : "multitenancy",
-    "description" : "Multitenant wallet management"
-  }, {
     "name" : "out-of-band",
     "description" : "Out-of-band connections",
     "externalDocs" : {
@@ -142,6 +139,9 @@
       "url" : "https://github.com/hyperledger/indy-node/blob/master/design/anoncreds.md#schema"
     }
   }, {
+    "name" : "settings",
+    "description" : "Agent settings interface."
+  }, {
     "name" : "trustping",
     "description" : "Trust-ping over connection",
     "externalDocs" : {
@@ -155,9 +155,6 @@
       "description" : "Design",
       "url" : "https://github.com/hyperledger/indy-sdk/tree/master/docs/design/003-wallet-storage"
     }
-  } ],
-  "security" : [ {
-    "AuthorizationHeader" : [ ]
   } ],
   "paths" : {
     "/action-menu/{conn_id}/close" : {
@@ -329,7 +326,7 @@
           "description" : "Connection state",
           "required" : false,
           "type" : "string",
-          "enum" : [ "start", "invitation", "request", "abandoned", "error", "init", "response", "active", "completed" ]
+          "enum" : [ "response", "invitation", "start", "request", "completed", "abandoned", "active", "error", "init" ]
         }, {
           "name" : "their_did",
           "in" : "query",
@@ -1164,6 +1161,18 @@
           "required" : false,
           "type" : "string"
         }, {
+          "name" : "goal",
+          "in" : "query",
+          "description" : "A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "goal_code",
+          "in" : "query",
+          "description" : "A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message",
+          "required" : false,
+          "type" : "string"
+        }, {
           "name" : "mediation_id",
           "in" : "query",
           "description" : "Identifier for active mediation record to be used",
@@ -1309,6 +1318,35 @@
           "required" : false,
           "type" : "string",
           "pattern" : "^[A-Za-z0-9\\.\\-\\+]+://([A-Za-z0-9][.A-Za-z0-9-_]+[A-Za-z0-9])+(:[1-9][0-9]*)?(/[^?&#]+)?$"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ConnRecord"
+            }
+          }
+        }
+      }
+    },
+    "/didexchange/{conn_id}/reject" : {
+      "post" : {
+        "tags" : [ "did-exchange" ],
+        "summary" : "Abandon or reject a DID Exchange",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/DIDXRejectRequest"
+          }
+        }, {
+          "name" : "conn_id",
+          "in" : "path",
+          "description" : "Connection identifier",
+          "required" : true,
+          "type" : "string"
         } ],
         "responses" : {
           "200" : {
@@ -2038,6 +2076,13 @@
         "summary" : "Send issuer a credential request",
         "produces" : [ "application/json" ],
         "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/V10CredentialExchangeAutoRemoveRequest"
+          }
+        }, {
           "name" : "cred_ex_id",
           "in" : "path",
           "description" : "Credential exchange identifier",
@@ -2200,6 +2245,22 @@
         }
       }
     },
+    "/ledger/config" : {
+      "get" : {
+        "tags" : [ "ledger" ],
+        "summary" : "Fetch the multiple ledger configuration currently in use",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/LedgerConfigList"
+            }
+          }
+        }
+      }
+    },
     "/ledger/did-endpoint" : {
       "get" : {
         "tags" : [ "ledger" ],
@@ -2276,64 +2337,6 @@
         }
       }
     },
-    "/ledger/config" : {
-      "get" : {
-        "tags" : [ "ledger" ],
-        "summary" : "Fetch the multiple ledger configuration currently in use",
-        "produces" : [ "application/json" ],
-        "parameters" : [ ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "schema" : {
-              "$ref" : "#/definitions/LedgerConfigList"
-            }
-          }
-        }
-      }
-    },
-    "/ledger/get-write-ledgers" : {
-      "get" : {
-        "tags" : [ "ledger" ],
-        "summary" : "Fetch list of available write ledger",
-        "produces" : [ "application/json" ],
-        "parameters" : [ ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "example" : "ledger id"
-            }
-          }
-        }
-      }
-    },
-    "/ledger/set-write-ledger" : {
-      "put" : {
-        "tags" : [ "ledger" ],
-        "summary" : "Set write ledger",
-        "produces" : [ "application/json" ],
-        "parameters" : [ 
-          {
-            "name" : "ledger_id",
-            "in" : "path",
-            "description" : "Ledger identifier",
-            "required" : true,
-            "type" : "string"
-          }
-        ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "schema" : {
-              "$ref" : "#/definitions/WriteLedgerResponse"
-            }
-          }
-        }
-      }
-    },
     "/ledger/get-write-ledger" : {
       "get" : {
         "tags" : [ "ledger" ],
@@ -2344,7 +2347,23 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/WriteLedgerRequest"
+              "$ref" : "#/definitions/WriteLedger"
+            }
+          }
+        }
+      }
+    },
+    "/ledger/get-write-ledgers" : {
+      "get" : {
+        "tags" : [ "ledger" ],
+        "summary" : "Fetch list of available write ledgers",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ConfigurableWriteLedgers"
             }
           }
         }
@@ -2460,6 +2479,27 @@
         }
       }
     },
+    "/ledger/{ledger_id}/set-write-ledger" : {
+      "put" : {
+        "tags" : [ "ledger" ],
+        "summary" : "Set write ledger",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "ledger_id",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/WriteLedger"
+            }
+          }
+        }
+      }
+    },
     "/mediation/default-mediator" : {
       "get" : {
         "tags" : [ "mediation" ],
@@ -2505,7 +2545,7 @@
         }, {
           "name" : "role",
           "in" : "query",
-          "description" : "Filer on role, 'client' for keys         mediated by other agents, 'server' for keys         mediated by this agent",
+          "description" : "Filer on role, 'client' for keys     mediated by other agents, 'server' for keys     mediated by this agent",
           "required" : false,
           "type" : "string",
           "default" : "server",
@@ -2822,157 +2862,6 @@
             "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationRecord"
-            }
-          }
-        }
-      }
-    },
-    "/multitenancy/wallet" : {
-      "post" : {
-        "tags" : [ "multitenancy" ],
-        "summary" : "Create a subwallet",
-        "produces" : [ "application/json" ],
-        "parameters" : [ {
-          "in" : "body",
-          "name" : "body",
-          "required" : false,
-          "schema" : {
-            "$ref" : "#/definitions/CreateWalletRequest"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "schema" : {
-              "$ref" : "#/definitions/CreateWalletResponse"
-            }
-          }
-        }
-      }
-    },
-    "/multitenancy/wallet/{wallet_id}" : {
-      "get" : {
-        "tags" : [ "multitenancy" ],
-        "summary" : "Get a single subwallet",
-        "produces" : [ "application/json" ],
-        "parameters" : [ {
-          "name" : "wallet_id",
-          "in" : "path",
-          "description" : "Subwallet identifier",
-          "required" : true,
-          "type" : "string"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "schema" : {
-              "$ref" : "#/definitions/WalletRecord"
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "multitenancy" ],
-        "summary" : "Update a subwallet",
-        "produces" : [ "application/json" ],
-        "parameters" : [ {
-          "in" : "body",
-          "name" : "body",
-          "required" : false,
-          "schema" : {
-            "$ref" : "#/definitions/UpdateWalletRequest"
-          }
-        }, {
-          "name" : "wallet_id",
-          "in" : "path",
-          "description" : "Subwallet identifier",
-          "required" : true,
-          "type" : "string"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "schema" : {
-              "$ref" : "#/definitions/WalletRecord"
-            }
-          }
-        }
-      }
-    },
-    "/multitenancy/wallet/{wallet_id}/remove" : {
-      "post" : {
-        "tags" : [ "multitenancy" ],
-        "summary" : "Remove a subwallet",
-        "produces" : [ "application/json" ],
-        "parameters" : [ {
-          "in" : "body",
-          "name" : "body",
-          "required" : false,
-          "schema" : {
-            "$ref" : "#/definitions/RemoveWalletRequest"
-          }
-        }, {
-          "name" : "wallet_id",
-          "in" : "path",
-          "description" : "Subwallet identifier",
-          "required" : true,
-          "type" : "string"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "schema" : {
-              "$ref" : "#/definitions/MultitenantModuleResponse"
-            }
-          }
-        }
-      }
-    },
-    "/multitenancy/wallet/{wallet_id}/token" : {
-      "post" : {
-        "tags" : [ "multitenancy" ],
-        "summary" : "Get auth token for a subwallet",
-        "produces" : [ "application/json" ],
-        "parameters" : [ {
-          "in" : "body",
-          "name" : "body",
-          "required" : false,
-          "schema" : {
-            "$ref" : "#/definitions/CreateWalletTokenRequest"
-          }
-        }, {
-          "name" : "wallet_id",
-          "in" : "path",
-          "required" : true,
-          "type" : "string"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "schema" : {
-              "$ref" : "#/definitions/CreateWalletTokenResponse"
-            }
-          }
-        }
-      }
-    },
-    "/multitenancy/wallets" : {
-      "get" : {
-        "tags" : [ "multitenancy" ],
-        "summary" : "Query subwallets",
-        "produces" : [ "application/json" ],
-        "parameters" : [ {
-          "name" : "wallet_name",
-          "in" : "query",
-          "description" : "Wallet name",
-          "required" : false,
-          "type" : "string"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "",
-            "schema" : {
-              "$ref" : "#/definitions/WalletList"
             }
           }
         }
@@ -3604,7 +3493,7 @@
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/IndyPresSpec"
+            "$ref" : "#/definitions/V10PresentationSendRequest"
           }
         }, {
           "name" : "pres_ex_id",
@@ -3769,6 +3658,29 @@
         }
       }
     },
+    "/revocation/active-registry/{cred_def_id}/rotate" : {
+      "post" : {
+        "tags" : [ "revocation" ],
+        "summary" : "Rotate revocation registry",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "cred_def_id",
+          "in" : "path",
+          "description" : "Credential definition identifier",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/RevRegsCreated"
+            }
+          }
+        }
+      }
+    },
     "/revocation/clear-pending-revocations" : {
       "post" : {
         "tags" : [ "revocation" ],
@@ -3893,7 +3805,7 @@
           "description" : "Revocation registry state",
           "required" : false,
           "type" : "string",
-          "enum" : [ "init", "generated", "posted", "active", "full" ]
+          "enum" : [ "init", "generated", "posted", "active", "full", "decommissioned" ]
         } ],
         "responses" : {
           "200" : {
@@ -4379,34 +4291,36 @@
     "/settings" : {
       "get" : {
         "tags" : [ "settings" ],
-        "summary" : "Get profile settings or config",
+        "summary" : "Get the configurable settings associated with the profile.",
         "produces" : [ "application/json" ],
         "parameters" : [ ],
         "responses" : {
           "200" : {
-            "type" : "object",
-            "description" : "Settings for this wallet.",
-            "properties" : { }
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ProfileSettings"
+            }
           }
         }
       },
       "put" : {
         "tags" : [ "settings" ],
-        "summary" : "Update profile settings or config",
+        "summary" : "Update configurable settings associated with the profile.",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/UpdateProfileSettingsRequest"
+            "$ref" : "#/definitions/UpdateProfileSettings"
           }
         } ],
         "responses" : {
           "200" : {
-            "type" : "object",
-            "description" : "Settings for this wallet.",
-            "properties" : { }
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/ProfileSettings"
+            }
           }
         }
       }
@@ -4844,7 +4758,7 @@
           "description" : "DID of interest",
           "required" : true,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         } ],
         "responses" : {
           "200" : {
@@ -4881,7 +4795,7 @@
           "description" : "DID of interest",
           "required" : true,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         }, {
           "name" : "conn_id",
           "in" : "query",
@@ -4922,13 +4836,59 @@
           "description" : "DID of interest",
           "required" : true,
           "type" : "string",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         } ],
         "responses" : {
           "200" : {
             "description" : "",
             "schema" : {
               "$ref" : "#/definitions/DIDEndpoint"
+            }
+          }
+        }
+      }
+    },
+    "/wallet/jwt/sign" : {
+      "post" : {
+        "tags" : [ "wallet" ],
+        "summary" : "Create a EdDSA jws using did keys with a given payload",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/JWSCreate"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/WalletModuleResponse"
+            }
+          }
+        }
+      }
+    },
+    "/wallet/jwt/verify" : {
+      "post" : {
+        "tags" : [ "wallet" ],
+        "summary" : "Verify a EdDSA jws using did keys with a given JWS",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/JWSVerify"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/JWSVerifyResponse"
             }
           }
         }
@@ -4968,14 +4928,6 @@
           }
         }
       }
-    }
-  },
-  "securityDefinitions" : {
-    "AuthorizationHeader" : {
-      "description" : "Bearer token. Be sure to preprend token with 'Bearer '",
-      "type" : "apiKey",
-      "name" : "Authorization",
-      "in" : "header"
     }
   },
   "definitions" : {
@@ -5313,6 +5265,19 @@
         }
       }
     },
+    "ConfigurableWriteLedgers" : {
+      "type" : "object",
+      "properties" : {
+        "write_ledgers" : {
+          "type" : "array",
+          "description" : "List of configurable write ledgers identifiers",
+          "items" : {
+            "type" : "string",
+            "description" : "Ledgers identifiers"
+          }
+        }
+      }
+    },
     "ConnRecord" : {
       "type" : "object",
       "properties" : {
@@ -5445,9 +5410,9 @@
         },
         "did" : {
           "type" : "string",
-          "example" : "WgWxqztrNooG92RXvxSTWv",
+          "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "DID for connection invitation",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "imageUrl" : {
           "type" : "string",
@@ -5687,127 +5652,6 @@
           "type" : "string",
           "example" : "http://192.168.56.102:8020",
           "description" : "Connection endpoint"
-        }
-      }
-    },
-    "CreateWalletRequest" : {
-      "type" : "object",
-      "properties" : {
-        "image_url" : {
-          "type" : "string",
-          "example" : "https://aries.ca/images/sample.png",
-          "description" : "Image url for this wallet. This image url is publicized            (self-attested) to other agents as part of forming a connection."
-        },
-        "key_management_mode" : {
-          "type" : "string",
-          "example" : "managed",
-          "description" : "Key management method to use for this wallet.",
-          "enum" : [ "managed" ]
-        },
-        "label" : {
-          "type" : "string",
-          "example" : "Alice",
-          "description" : "Label for this wallet. This label is publicized            (self-attested) to other agents as part of forming a connection."
-        },
-        "wallet_dispatch_type" : {
-          "type" : "string",
-          "example" : "default",
-          "description" : "Webhook target dispatch type for this wallet.             default - Dispatch only to webhooks associated with this wallet.             base - Dispatch only to webhooks associated with the base wallet.             both - Dispatch to both webhook targets.",
-          "enum" : [ "default", "both", "base" ]
-        },
-        "wallet_key" : {
-          "type" : "string",
-          "example" : "MySecretKey123",
-          "description" : "Master key used for key derivation."
-        },
-        "wallet_key_derivation" : {
-          "type" : "string",
-          "example" : "RAW",
-          "description" : "Key derivation",
-          "enum" : [ "ARGON2I_MOD", "ARGON2I_INT", "RAW" ]
-        },
-        "wallet_name" : {
-          "type" : "string",
-          "example" : "MyNewWallet",
-          "description" : "Wallet name"
-        },
-        "wallet_type" : {
-          "type" : "string",
-          "example" : "indy",
-          "description" : "Type of the wallet to create",
-          "enum" : [ "askar", "in_memory", "indy" ]
-        },
-        "wallet_webhook_urls" : {
-          "type" : "array",
-          "description" : "List of Webhook URLs associated with this subwallet",
-          "items" : {
-            "type" : "string",
-            "example" : "http://localhost:8022/webhooks",
-            "description" : "Optional webhook URL to receive webhook messages"
-          }
-        }
-      }
-    },
-    "CreateWalletResponse" : {
-      "type" : "object",
-      "required" : [ "key_management_mode", "wallet_id" ],
-      "properties" : {
-        "created_at" : {
-          "type" : "string",
-          "example" : "2021-12-31T23:59:59Z",
-          "description" : "Time of record creation",
-          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
-        },
-        "key_management_mode" : {
-          "type" : "string",
-          "description" : "Mode regarding management of wallet key",
-          "enum" : [ "managed", "unmanaged" ]
-        },
-        "settings" : {
-          "type" : "object",
-          "description" : "Settings for this wallet.",
-          "properties" : { }
-        },
-        "state" : {
-          "type" : "string",
-          "example" : "active",
-          "description" : "Current record state"
-        },
-        "token" : {
-          "type" : "string",
-          "example" : "eyJhbGciOiJFZERTQSJ9.eyJhIjogIjAifQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
-          "description" : "Authorization token to authenticate wallet requests"
-        },
-        "updated_at" : {
-          "type" : "string",
-          "example" : "2021-12-31T23:59:59Z",
-          "description" : "Time of last record update",
-          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
-        },
-        "wallet_id" : {
-          "type" : "string",
-          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "Wallet record ID"
-        }
-      }
-    },
-    "CreateWalletTokenRequest" : {
-      "type" : "object",
-      "properties" : {
-        "wallet_key" : {
-          "type" : "string",
-          "example" : "MySecretKey123",
-          "description" : "Master key used for key derivation. Only required for             unamanged wallets."
-        }
-      }
-    },
-    "CreateWalletTokenResponse" : {
-      "type" : "object",
-      "properties" : {
-        "token" : {
-          "type" : "string",
-          "example" : "eyJhbGciOiJFZERTQSJ9.eyJhIjogIjAifQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
-          "description" : "Authorization token to authenticate wallet requests"
         }
       }
     },
@@ -6355,6 +6199,16 @@
         }
       }
     },
+    "DIDXRejectRequest" : {
+      "type" : "object",
+      "properties" : {
+        "reason" : {
+          "type" : "string",
+          "example" : "Request rejected",
+          "description" : "Reason for rejecting the DID Exchange"
+        }
+      }
+    },
     "DIDXRequest" : {
       "type" : "object",
       "required" : [ "label" ],
@@ -6378,6 +6232,16 @@
         },
         "did_doc~attach" : {
           "$ref" : "#/definitions/DIDXRequest_did_docattach"
+        },
+        "goal" : {
+          "type" : "string",
+          "example" : "To issue a Faber College Graduate credential",
+          "description" : "A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message"
+        },
+        "goal_code" : {
+          "type" : "string",
+          "example" : "issue-vc",
+          "description" : "A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message"
         },
         "label" : {
           "type" : "string",
@@ -7803,6 +7667,16 @@
             "$ref" : "#/definitions/AttachmentDef"
           }
         },
+        "goal" : {
+          "type" : "string",
+          "example" : "To issue a Faber College Graduate credential",
+          "description" : "A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message"
+        },
+        "goal_code" : {
+          "type" : "string",
+          "example" : "issue-vc",
+          "description" : "A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message"
+        },
         "handshake_protocols" : {
           "type" : "array",
           "items" : {
@@ -7859,6 +7733,16 @@
           "items" : {
             "type" : "string"
           }
+        },
+        "goal" : {
+          "type" : "string",
+          "example" : "To issue a Faber College Graduate credential",
+          "description" : "A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message"
+        },
+        "goal_code" : {
+          "type" : "string",
+          "example" : "issue-vc",
+          "description" : "A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message"
         },
         "handshake_protocols" : {
           "type" : "array",
@@ -8118,6 +8002,69 @@
           "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
+        }
+      }
+    },
+    "JWSCreate" : {
+      "type" : "object",
+      "required" : [ "payload" ],
+      "properties" : {
+        "did" : {
+          "type" : "string",
+          "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
+          "description" : "DID of interest",
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
+        },
+        "headers" : {
+          "type" : "object",
+          "properties" : { }
+        },
+        "payload" : {
+          "type" : "object",
+          "properties" : { }
+        },
+        "verificationMethod" : {
+          "type" : "string",
+          "example" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+          "description" : "Information used for proof verification",
+          "pattern" : "\\w+:(\\/?\\/?)[^\\s]+"
+        }
+      }
+    },
+    "JWSVerify" : {
+      "type" : "object",
+      "properties" : {
+        "jwt" : {
+          "type" : "string",
+          "example" : "eyJhbGciOiJFZERTQSJ9.eyJhIjogIjAifQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+          "pattern" : "^[-_a-zA-Z0-9]*\\.[-_a-zA-Z0-9]*\\.[-_a-zA-Z0-9]*$"
+        }
+      }
+    },
+    "JWSVerifyResponse" : {
+      "type" : "object",
+      "required" : [ "headers", "kid", "payload", "valid" ],
+      "properties" : {
+        "error" : {
+          "type" : "string",
+          "description" : "Error text"
+        },
+        "headers" : {
+          "type" : "object",
+          "description" : "Headers from verified JWT.",
+          "properties" : { }
+        },
+        "kid" : {
+          "type" : "string",
+          "description" : "kid of signer"
+        },
+        "payload" : {
+          "type" : "object",
+          "description" : "Payload from verified JWT",
+          "properties" : { }
+        },
+        "valid" : {
+          "type" : "boolean"
         }
       }
     },
@@ -8696,9 +8643,6 @@
         }
       }
     },
-    "MultitenantModuleResponse" : {
-      "type" : "object"
-    },
     "OobRecord" : {
       "type" : "object",
       "required" : [ "invi_msg_id", "invitation", "oob_id", "state" ],
@@ -8888,6 +8832,21 @@
         }
       }
     },
+    "ProfileSettings" : {
+      "type" : "object",
+      "properties" : {
+        "settings" : {
+          "type" : "object",
+          "example" : {
+            "debug.invite_public" : true,
+            "log.level" : "INFO",
+            "public_invites" : false
+          },
+          "description" : "Profile settings dict",
+          "properties" : { }
+        }
+      }
+    },
     "ProtocolDescriptor" : {
       "type" : "object",
       "required" : [ "pid" ],
@@ -9017,9 +8976,9 @@
         },
         "did" : {
           "type" : "string",
-          "example" : "WgWxqztrNooG92RXvxSTWv",
+          "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
           "description" : "DID for connection invitation",
-          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         },
         "imageUrl" : {
           "type" : "string",
@@ -9057,16 +9016,6 @@
           "type" : "string",
           "example" : "http://192.168.56.101:8020",
           "description" : "Service endpoint at which to reach this agent"
-        }
-      }
-    },
-    "RemoveWalletRequest" : {
-      "type" : "object",
-      "properties" : {
-        "wallet_key" : {
-          "type" : "string",
-          "example" : "MySecretKey123",
-          "description" : "Master key used for key derivation. Only required for             unmanaged wallets."
         }
       }
     },
@@ -9700,7 +9649,7 @@
             "example" : {
               "@id" : "143c458d-1b1c-40c7-ab85-4d16808ddf0a",
               "data" : {
-                "json" : "{\"endorser\": \"V4SGRU86Z58d6TV7PBUe6f\",\"identifier\": \"LjgpST2rjsoxYegQDRm7EL\",\"operation\": {\"data\": {\"attr_names\": [\"first_name\", \"last_name\"],\"name\": \"test_schema\",\"version\": \"2.1\",},\"type\": \"101\",},\"protocolVersion\": 2,\"reqId\": 1597766666168851000,\"signatures\": {\"LjgpST2rjsox\": \"4ATKMn6Y9sTgwqaGTm7py2c2M8x1EVDTWKZArwyuPgjU\"},\"taaAcceptance\": {\"mechanism\": \"manual\",\"taaDigest\": \"f50fe2c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62\",\"time\": 1597708800,}}"
+                "json" : "{\"endorser\": \"V4SGRU86Z58d6TV7PBUe6f\",\"identifier\": \"LjgpST2rjsoxYegQDRm7EL\",\"operation\": {\"data\": {\"attr_names\": [\"first_name\", \"last_name\"],\"name\": \"test_schema\",\"version\": \"2.1\",},\"type\": \"101\",},\"protocolVersion\": 2,\"reqId\": 1597766666168851000,\"signatures\": {\"LjgpST2rjsox\": \"4ATKMn6Y9sTgwqaGTm7py2c2M8x1EVDTWKZArwyuPgjU\"}, \"taaAcceptance\": {\"mechanism\": \"manual\",\"taaDigest\": \"f50fe2c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62\",\"time\": 1597708800,}}"
               },
               "mime-type" : "application/json"
             },
@@ -9839,33 +9788,18 @@
         }
       }
     },
-    "UpdateWalletRequest" : {
+    "UpdateProfileSettings" : {
       "type" : "object",
       "properties" : {
-        "image_url" : {
-          "type" : "string",
-          "example" : "https://aries.ca/images/sample.png",
-          "description" : "Image url for this wallet. This image url is publicized            (self-attested) to other agents as part of forming a connection."
-        },
-        "label" : {
-          "type" : "string",
-          "example" : "Alice",
-          "description" : "Label for this wallet. This label is publicized            (self-attested) to other agents as part of forming a connection."
-        },
-        "wallet_dispatch_type" : {
-          "type" : "string",
-          "example" : "default",
-          "description" : "Webhook target dispatch type for this wallet.             default - Dispatch only to webhooks associated with this wallet.             base - Dispatch only to webhooks associated with the base wallet.             both - Dispatch to both webhook targets.",
-          "enum" : [ "default", "both", "base" ]
-        },
-        "wallet_webhook_urls" : {
-          "type" : "array",
-          "description" : "List of Webhook URLs associated with this subwallet",
-          "items" : {
-            "type" : "string",
-            "example" : "http://localhost:8022/webhooks",
-            "description" : "Optional webhook URL to receive webhook messages"
-          }
+        "extra_settings" : {
+          "type" : "object",
+          "example" : {
+            "ACAPY_INVITE_PUBLIC" : true,
+            "log-level" : "INFO",
+            "public-invites" : false
+          },
+          "description" : "Agent config key-value pairs",
+          "properties" : { }
         }
       }
     },
@@ -10089,6 +10023,15 @@
           "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
+        }
+      }
+    },
+    "V10CredentialExchangeAutoRemoveRequest" : {
+      "type" : "object",
+      "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
         }
       }
     },
@@ -10364,6 +10307,10 @@
       "type" : "object",
       "required" : [ "proof_request" ],
       "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "auto_verify" : {
           "type" : "boolean",
           "example" : false,
@@ -10390,6 +10337,11 @@
           "type" : "boolean",
           "example" : false,
           "description" : "Prover choice to auto-present proof as verifier requests"
+        },
+        "auto_remove" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Verifier choice to remove this presentation exchange record when complete"
         },
         "auto_verify" : {
           "type" : "boolean",
@@ -10504,6 +10456,10 @@
           "type" : "boolean",
           "description" : "Whether to respond automatically to presentation requests, building and presenting requested proof"
         },
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "comment" : {
           "type" : "string",
           "description" : "Human-readable comment",
@@ -10525,10 +10481,52 @@
         }
       }
     },
+    "V10PresentationSendRequest" : {
+      "type" : "object",
+      "required" : [ "requested_attributes", "requested_predicates", "self_attested_attributes" ],
+      "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
+        "requested_attributes" : {
+          "type" : "object",
+          "description" : "Nested object mapping proof request attribute referents to requested-attribute specifiers",
+          "additionalProperties" : {
+            "$ref" : "#/definitions/IndyRequestedCredsRequestedAttr"
+          }
+        },
+        "requested_predicates" : {
+          "type" : "object",
+          "description" : "Nested object mapping proof request predicate referents to requested-predicate specifiers",
+          "additionalProperties" : {
+            "$ref" : "#/definitions/IndyRequestedCredsRequestedPred"
+          }
+        },
+        "self_attested_attributes" : {
+          "type" : "object",
+          "description" : "Self-attested attributes to build into proof",
+          "additionalProperties" : {
+            "type" : "string",
+            "example" : "self_attested_value",
+            "description" : "Self-attested attribute values to use in requested-credentials structure for proof construction"
+          }
+        },
+        "trace" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Whether to trace event (default false)"
+        }
+      }
+    },
     "V10PresentationSendRequestRequest" : {
       "type" : "object",
       "required" : [ "connection_id", "proof_request" ],
       "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "auto_verify" : {
           "type" : "boolean",
           "example" : false,
@@ -10557,6 +10555,10 @@
     "V10PresentationSendRequestToProposal" : {
       "type" : "object",
       "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "auto_verify" : {
           "type" : "boolean",
           "example" : false,
@@ -10626,6 +10628,12 @@
         },
         "filter" : {
           "$ref" : "#/definitions/V20CredBoundOfferRequest_filter"
+        },
+        "replacement_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Optional identifier used to manage credential replacement",
+          "x-nullable" : true
         },
         "trace" : {
           "type" : "boolean",
@@ -11076,6 +11084,12 @@
         "filter" : {
           "$ref" : "#/definitions/V20CredBoundOfferRequest_filter"
         },
+        "replacement_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Optional identifier used to manage credential replacement",
+          "x-nullable" : true
+        },
         "trace" : {
           "type" : "boolean",
           "description" : "Record trace information, based on agent configuration"
@@ -11110,6 +11124,12 @@
         },
         "filter" : {
           "$ref" : "#/definitions/V20CredBoundOfferRequest_filter"
+        },
+        "replacement_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Optional identifier used to manage credential replacement",
+          "x-nullable" : true
         },
         "trace" : {
           "type" : "boolean",
@@ -11247,6 +11267,10 @@
     "V20CredRequestRequest" : {
       "type" : "object",
       "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "holder_did" : {
           "type" : "string",
           "example" : "did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
@@ -11352,6 +11376,12 @@
         "filter" : {
           "$ref" : "#/definitions/V20CredBoundOfferRequest_filter"
         },
+        "replacement_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Optional identifier used to manage credential replacement",
+          "x-nullable" : true
+        },
         "trace" : {
           "type" : "boolean",
           "description" : "Record trace information, based on agent configuration"
@@ -11400,6 +11430,10 @@
       "type" : "object",
       "required" : [ "presentation_request" ],
       "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "auto_verify" : {
           "type" : "boolean",
           "example" : false,
@@ -11426,6 +11460,11 @@
           "type" : "boolean",
           "example" : false,
           "description" : "Prover choice to auto-present proof as verifier requests"
+        },
+        "auto_remove" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Verifier choice to remove this presentation exchange record when complete"
         },
         "auto_verify" : {
           "type" : "boolean",
@@ -11618,6 +11657,10 @@
           "type" : "boolean",
           "description" : "Whether to respond automatically to presentation requests, building and presenting requested proof"
         },
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "comment" : {
           "type" : "string",
           "description" : "Human-readable comment",
@@ -11692,6 +11735,10 @@
       "type" : "object",
       "required" : [ "connection_id", "presentation_request" ],
       "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "auto_verify" : {
           "type" : "boolean",
           "example" : false,
@@ -11720,6 +11767,10 @@
     "V20PresSpecByFormatRequest" : {
       "type" : "object",
       "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "dif" : {
           "$ref" : "#/definitions/V20PresSpecByFormatRequest_dif"
         },
@@ -11738,6 +11789,10 @@
     "V20PresentationSendRequestToProposal" : {
       "type" : "object",
       "properties" : {
+        "auto_remove" : {
+          "type" : "boolean",
+          "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)"
+        },
         "auto_verify" : {
           "type" : "boolean",
           "example" : false,
@@ -11930,82 +11985,14 @@
         }
       }
     },
-    "WalletList" : {
-      "type" : "object",
-      "properties" : {
-        "results" : {
-          "type" : "array",
-          "description" : "List of wallet records",
-          "items" : {
-            "$ref" : "#/definitions/WalletRecord"
-          }
-        }
-      }
-    },
     "WalletModuleResponse" : {
       "type" : "object"
     },
-    "WalletRecord" : {
-      "type" : "object",
-      "required" : [ "key_management_mode", "wallet_id" ],
-      "properties" : {
-        "created_at" : {
-          "type" : "string",
-          "example" : "2021-12-31T23:59:59Z",
-          "description" : "Time of record creation",
-          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
-        },
-        "key_management_mode" : {
-          "type" : "string",
-          "description" : "Mode regarding management of wallet key",
-          "enum" : [ "managed", "unmanaged" ]
-        },
-        "settings" : {
-          "type" : "object",
-          "description" : "Settings for this wallet.",
-          "properties" : { }
-        },
-        "state" : {
-          "type" : "string",
-          "example" : "active",
-          "description" : "Current record state"
-        },
-        "updated_at" : {
-          "type" : "string",
-          "example" : "2021-12-31T23:59:59Z",
-          "description" : "Time of last record update",
-          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
-        },
-        "wallet_id" : {
-          "type" : "string",
-          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "Wallet record ID"
-        }
-      }
-    },
-    "WriteLedgerRequest" : {
+    "WriteLedger" : {
       "type" : "object",
       "properties" : {
         "ledger_id" : {
           "type" : "string"
-        }
-      }
-    },
-    "WriteLedgerResponse" : {
-      "type" : "object",
-      "properties" : {
-        "write_ledger" : {
-          "type" : "string"
-        }
-      }
-    },
-    "UpdateProfileSettingsRequest" : {
-      "type" : "object",
-      "properties" : {
-        "extra_settings" : {
-          "type" : "object",
-          "description" : "Settings or config to update.",
-          "properties" : { }
         }
       }
     },
