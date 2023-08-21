@@ -261,47 +261,6 @@ class SDJSONWebToken(Regexp):
         )
 
 
-class Disclosures(Regexp):
-    """Validate SD Disclosures."""
-
-    EXAMPLE = [
-        ["uR_7gCub2H8jqCebK974gg", "given_name", "John"],
-        ["pVNC8_UIAFubHCE8qd8Qag", "family_name", "Doe"],
-        [
-            "wn7kQK6gc1xjK2EUvdBx_w",
-            "address",
-            {
-                "_sd": [
-                    "62Z6rlJFKNagx_zCgTKdEKVGx5oeCGmFOBYP_V3nvXM",
-                    "BJfn94_yMmEe3SsqdWwaPtWL0K92Q2AEEOKCIW0_ijI",
-                    "W5Pb28JILuWXn3MzMybIREwEMo92ho07zAO_Zfp6UW4",
-                    "XNseAXkWgm9P5cc7D5RPu3mA8uYuFWtK9vxwTQQZVW8",
-                ]
-            },
-        ],
-        [
-            "QHp6MA7HoUE3Ajan3LCqqw",
-            "street_address",
-            {
-                "_sd": ["5sYxNNvht8a9g5JON9yQWf4eIyogMtV7_7Y1VWh9QGU"],
-                "street": "Main St",
-            },
-        ],
-        ["pFlIYzaDRUqagcTPlHD1-Q", "house_number", "123"],
-        ["pvyM3ymTZWjA4N6z_u7ufA", "email", "johndoe@example.com"],
-        ["P4vbBZ2_7t12LF1DKsSSMQ", "DE"],
-        ["jljUb3RcAszB__K8e0WP-Q", "SA"],
-    ]
-    PATTERN = r".*"  # TODO: add Regex
-
-    def __init__(self):
-        """Initialize the instance."""
-
-        super().__init__(
-            Disclosures.PATTERN, error="Value {input} is not a valid disclosure"
-        )
-
-
 class DIDKey(Regexp):
     """Validate value against DID key specification."""
 
@@ -891,9 +850,6 @@ JWT_EXAMPLE = JSONWebToken.EXAMPLE
 
 SD_JWT_VALIDATE = SDJSONWebToken()
 SD_JWT_EXAMPLE = SDJSONWebToken.EXAMPLE
-
-DISCLOSURES_VALIDATE = Disclosures()
-DISCLOSURES_EXAMPLE = Disclosures().EXAMPLE
 
 DID_KEY_VALIDATE = DIDKey()
 DID_KEY_EXAMPLE = DIDKey.EXAMPLE

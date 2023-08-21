@@ -23,8 +23,6 @@ from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
     DID_POSTURE_EXAMPLE,
     DID_POSTURE_VALIDATE,
-    DISCLOSURES_EXAMPLE,
-    DISCLOSURES_VALIDATE,
     ENDPOINT_EXAMPLE,
     ENDPOINT_TYPE_EXAMPLE,
     ENDPOINT_TYPE_VALIDATE,
@@ -219,15 +217,7 @@ class JWSVerifyResponseSchema(OpenAPISchema):
 class SDJWSVerifyResponseSchema(JWSVerifyResponseSchema):
     """Response schema for SD-JWT verification result."""
 
-    disclosures = fields.List(
-        fields.List(
-            fields.Str(
-                required=False,
-                validate=DISCLOSURES_VALIDATE,
-                metadata={"example": DISCLOSURES_EXAMPLE},
-            )
-        )
-    )
+    disclosures = fields.List(fields.List(fields.Str()))  # TODO: check
 
 
 class DIDEndpointSchema(OpenAPISchema):
