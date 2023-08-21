@@ -222,7 +222,10 @@ class BaseConnectionManager:
         record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
         async with self._profile.session() as session:
             storage: BaseStorage = session.inject(BaseStorage)
-            await storage.add_record(record)
+            try:
+                await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
+            except StorageNotFoundError:
+                await storage.add_record(record)
 
     async def find_did_for_key(self, key: str) -> str:
         """Find the DID previously associated with a key.
