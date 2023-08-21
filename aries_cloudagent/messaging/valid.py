@@ -204,15 +204,12 @@ class SDList(Regexp):
     """Validate SD List"""
 
     EXAMPLE = [
-        "given_name",
-        "family_name",
+        "name",
         "address",
         "address.street_address",
-        "address.street_address.house_number",
-        "email",
         "nationalities[1:3]",
     ]
-    PATTERN = r".*"  # TODO: add Regex
+    PATTERN = r"[a-z0-9:\[\]_\.@?\(\)]"  # TODO: check
 
     def __init__(self):
         """Initialize the instance."""
@@ -886,8 +883,8 @@ INDY_REV_REG_SIZE_EXAMPLE = IndyRevRegSize.EXAMPLE
 JWS_HEADER_KID_VALIDATE = JWSHeaderKid()
 JWS_HEADER_KID_EXAMPLE = JWSHeaderKid.EXAMPLE
 
-# SD_LIST_VALIDATE = SDList()
-# SD_LIST_EXAMPLE = SDList().EXAMPLE
+SD_LIST_VALIDATE = SDList()
+SD_LIST_EXAMPLE = SDList().EXAMPLE
 
 JWT_VALIDATE = JSONWebToken()
 JWT_EXAMPLE = JSONWebToken.EXAMPLE

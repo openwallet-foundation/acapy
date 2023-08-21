@@ -1002,7 +1002,7 @@ async def wallet_sd_jwt_sign(request: web.BaseRequest):
     verification_method = body.get("verificationMethod")
     headers = body.get("headers", {})
     payload = body.get("payload", {})
-    sd_list = body.get("sd)list", [])
+    sd_list = body.get("sd_list", [])
 
     try:
         sd_jws = await sd_jwt_sign(
