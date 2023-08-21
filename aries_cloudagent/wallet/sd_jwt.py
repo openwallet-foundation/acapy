@@ -95,7 +95,7 @@ async def sd_jwt_sign(
         jsonpath_expression = parse(f"$.{sd}")
         matches = jsonpath_expression.find(payload)
         if len(matches) < 1:
-            raise SDJWTError("Claim for {sd} not found in payload.")
+            raise SDJWTError(f"Claim for {sd} not found in payload.")
         else:
             for match in matches:
                 if type(match.context.value) is list:
