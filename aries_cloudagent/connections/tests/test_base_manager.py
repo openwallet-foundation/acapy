@@ -396,6 +396,9 @@ class TestBaseConnectionManager(AsyncTestCase):
         await self.manager.add_key_for_did(
             did=self.test_target_did, key=self.test_target_verkey
         )
+        await self.manager.add_key_for_did(
+            did=self.test_target_did, key=self.test_target_verkey
+        )
 
         did = await self.manager.find_did_for_key(key=self.test_target_verkey)
         assert did == self.test_target_did
