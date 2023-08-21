@@ -994,15 +994,11 @@ class IndySdkLedger(BaseLedger):
 
         Anything more accurate is a privacy concern.
         """
-<<<<<<< Updated upstream
-        return int(datetime.combine(date.today(), datetime.min.time(), timezone.utc).timestamp())
-=======
         return int(
             datetime.combine(
                 date.today(), datetime.min.time(), datetime.timezone.utc
             ).timestamp()
         )
->>>>>>> Stashed changes
 
     async def accept_txn_author_agreement(
         self, taa_record: dict, mechanism: str, accept_time: int = None
