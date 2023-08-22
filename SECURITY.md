@@ -1,4 +1,4 @@
-# Security Policy
+# Hyperledger Aries Security Policy
 
 ## About this document
 
