@@ -112,7 +112,7 @@ test = [
 ]
 
 [tool.poetry.scripts]
-aca-py = "bin.aca-py:main"
+aca-py = "bin.aca_py:main"
 
 [build-system]
 requires = ["poetry-core"]
