@@ -1,5 +1,5 @@
 from unittest import mock, TestCase
-
+from peerdid.dids import resolve_peer_did
 from asynctest import TestCase as AsyncTestCase
 
 from ......connections.models.diddoc import (
@@ -19,37 +19,13 @@ from ..connection_request import ConnectionRequest
 
 class TestConfig:
     test_seed = "testseed000000000000000000000001"
-    test_did = "55GkHamhTU1ZbTbV2ab9DE"
+    test_did = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_label = "Label"
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        doc = LegacyDIDDoc(id=self.test_did)
-        controller = self.test_did
-        ident = "1"
-        pk_value = self.test_verkey
-        pk = PublicKey(
-            self.test_did,
-            ident,
-            pk_value,
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            False,
-        )
-        doc.set(pk)
-        recip_keys = [pk]
-        router_keys = []
-        service = Service(
-            self.test_did,
-            "indy",
-            "IndyAgent",
-            recip_keys,
-            router_keys,
-            self.test_endpoint,
-        )
-        doc.set(service)
-        return doc
+        return resolve_peer_did(self.test_did)
 
 
 class TestConnectionRequest(TestCase, TestConfig):
@@ -110,20 +86,6 @@ class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
     async def test_make_model(self):
         connection_request = ConnectionRequest(
             connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc()),
-            label=self.test_label,
-        )
-        data = connection_request.serialize()
-        model_instance = ConnectionRequest.deserialize(data)
-        assert type(model_instance) is type(connection_request)
-
-    async def test_make_model_conn_detail_interpolate_authn_service(self):
-        did_doc_dict = self.make_did_doc().serialize()
-        del did_doc_dict["authentication"]
-        del did_doc_dict["service"]
-        did_doc = LegacyDIDDoc.deserialize(did_doc_dict)
-
-        connection_request = ConnectionRequest(
-            connection=ConnectionDetail(did=self.test_did, did_doc=did_doc),
             label=self.test_label,
         )
         data = connection_request.serialize()

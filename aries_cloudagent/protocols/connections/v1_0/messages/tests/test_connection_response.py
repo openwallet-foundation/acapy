@@ -20,13 +20,12 @@ from ..connection_response import ConnectionResponse
 
 class TestConfig:
     test_seed = "testseed000000000000000000000001"
-    test_did = "55GkHamhTU1ZbTbV2ab9DE"
+    test_did = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        did_peer_2 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"       
-        return resolve_peer_did(did_peer_2)
+        return resolve_peer_did(self.test_did)
 
 class TestConnectionResponse(TestCase, TestConfig):
     def setUp(self):

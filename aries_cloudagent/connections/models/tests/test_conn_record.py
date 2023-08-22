@@ -1,5 +1,5 @@
 from asynctest import TestCase as AsyncTestCase
-
+from peerdid.dids import resolve_peer_did
 from ....core.in_memory import InMemoryProfile
 from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
@@ -18,7 +18,7 @@ class TestConnRecord(AsyncTestCase):
         self.session = InMemoryProfile.test_session()
 
         self.test_seed = "testseed000000000000000000000001"
-        self.test_did = "55GkHamhTU1ZbTbV2ab9DE"
+        self.test_did = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"
         self.test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
         self.test_endpoint = "http://localhost"
 
@@ -315,9 +315,7 @@ class TestConnRecord(AsyncTestCase):
             state=ConnRecord.State.INVITATION.rfc23,
         )
         connection_id = await record.save(self.session)
-        did_doc=LegacyDIDDoc(self.test_did)
-        did_doc.set(Service(self.test_did,"sv1","IndyAgent",[self.test_verkey],[],self.test_endpoint))
-        did_doc.set(PublicKey(self.test_did,"pk",self.test_verkey,PublicKeyType.ED25519_SIG_2018))
+        did_doc=resolve_peer_did(self.test_did)
 
         req = ConnectionRequest(
             connection=ConnectionDetail(
@@ -338,7 +336,7 @@ class TestConnRecord(AsyncTestCase):
 
         req = ConnectionRequest(
             connection=ConnectionDetail(
-                did=self.test_did, did_doc=LegacyDIDDoc(self.test_did)
+                did=self.test_did, did_doc=resolve_peer_did(self.test_did)
             ),
             label="abc123",
         )

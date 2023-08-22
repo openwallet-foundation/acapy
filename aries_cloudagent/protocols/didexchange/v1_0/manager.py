@@ -337,10 +337,6 @@ class DIDXManager(BaseConnectionManager):
                     )
             conn_rec.my_did = my_info.did
 
-        # Idempotent; if routing has already been set up, no action taken
-        await self._route_manager.route_connection_as_invitee(
-            self.profile, conn_rec, mediation_record
-        )
 
         # Create connection request message
         if my_endpoint:
@@ -542,7 +538,7 @@ class DIDXManager(BaseConnectionManager):
                             f"Connection DID {request.did} does not match "
                             f"DID Doc id {conn_did_doc.id}"
                     )
-
+                    raise DIDXManagerError("does not match")
         await self.store_did_document(conn_did_doc)
 
         if conn_rec:  # request is against explicit invitation
@@ -661,7 +657,7 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
-            if self.profile.settings.get("debug.send_peer_did", False) or conn_rec.their_did.startswith("did:peer:"):
+            if self.profile.settings.get("debug.send_peer_did", False) or (conn_rec.their_did and conn_rec.their_did.startswith("did:peer:")):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
 
