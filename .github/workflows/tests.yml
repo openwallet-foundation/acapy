@@ -22,9 +22,9 @@ jobs:
           python-version: ${{ inputs.python-version }}
           cache: 'pip'
           cache-dependency-path: 'requirements*.txt'
-      - name: Run image
-        uses: abatilo/actions-poetry@v2
       - name: Install the project dependencies
-        run: poetry install -E "askar bbs"
+        run: |
+          pip install poetry
+          poetry install -E "askar bbs test"
       - name: Tests
         run: poetry run pytest
