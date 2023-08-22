@@ -2,9 +2,10 @@
 
 ## About this document
 
-The approach to Security Vulnerability reporting at the Hyperledger Foundation
-can be found
-[here](https://toc.hyperledger.org/governing-documents/security.html). Please
+This document defines how security vulnerability reporting is handled in the
+Hyperledger Aries project. The approach aligns with the [Hyperledger
+Foundation's Security Vulnerability Reporting
+policy](https://toc.hyperledger.org/governing-documents/security.html). Please
 review that document to understand the basis of the security reporting for
 Hyperledger Aries.
 
@@ -14,10 +15,11 @@ up-to-date information on the latest recommendations related to vulnerability
 disclosures, please visit the [GitHub of that working
 group](https://github.com/ossf/wg-vulnerability-disclosures).
 
-If you are already familiar with the security policies of this project, and
-ready to report a vulnerability, please jump to [Report Intakes](#report-intakes).
+If you are already familiar with the security policies of Hyperledger Aries, and
+ready to report a vulnerability, please jump to [Report
+Intakes](#report-intakes).
 
-## Outline:
+## Outline
 
 This document has the following sections:
 
