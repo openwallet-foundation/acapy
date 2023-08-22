@@ -52,36 +52,36 @@ asyncpg = ">=0.25.0,<0.26.0"
 web-py = ">=0.62,<1.0"
 pygments = ">=2.10,<3.0"
 
-[tool.poetry.group.test.dependencies]
-asynctest="0.13.0"
-pytest="~7.4.0"
-pytest-asyncio="0.14.0"
-pytest-cov="2.10.1"
-pytest-flake8="1.1.1"
-mock="~4.0"
+# [tool.poetry.group.test.dependencies]
+asynctest= { version = "0.13.0", optional = true }
+pytest= { version = "~7.4.0", optional = true }
+pytest-asyncio= { version = "0.14.0", optional = true }
+pytest-cov= { version = "2.10.1", optional = true }
+pytest-flake8= { version = "1.1.1", optional = true }
+mock= { version = "~4.0", optional = true }
 
-[tool.poetry.group.askar.dependencies]
-aries-askar="~0.2.5"
-indy-credx="~1.0.0"
-indy-vdr="~0.3.3"
+# [tool.poetry.group.askar.dependencies]
+aries-askar= { version = "~0.2.5", optional = true }
+indy-credx= { version = "~1.0.0", optional = true }
+indy-vdr= { version = "~0.3.3", optional = true }
 
-[tool.poetry.group.bbs.dependencies]
-ursa-bbs-signatures="~1.0.1"
+# [tool.poetry.group.bbs.dependencies]
+ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
-[tool.poetry.group.indy.dependencies]
-python3-indy="^1.11.1"
+# [tool.poetry.group.indy.dependencies]
+python3-indy= { version = "^1.11.1", optional = true }
 
 # [tool.poetry.group.uvloop.dependencies]
-# uvloop = "^0.14.0"
+# uvloop = { version =  "^0.14.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 flake8="4.0.1"
 # flake8-rst-docstrings=0.0.8
 flake8-docstrings="~1.7.0"
 flake8-rst="0.7.2"
-pydocstyle="~6.3.0"
 pre-commit="~3.3.3"
 
+pydocstyle="~6.3.0"
 sphinx="1.8.4"
 sphinx-rtd-theme=">=0.4.3"
 
@@ -90,7 +90,26 @@ pydevd="1.5.1"
 
 pydevd-pycharm="~193.6015.39"
 
-
+[tool.poetry.extras]
+askar = [
+      "aries-askar",
+      "indy-credx",
+      "indy-vdr"
+]
+bbs = [
+    "ursa-bbs-signatures"
+]
+indy = [
+     "python3-indy"
+]
+test = [
+     "asynctest",
+     "pytest",
+     "pytest-asyncio",
+     "pytest-cov",
+     "pytest-flake8",
+     "mock"
+]
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

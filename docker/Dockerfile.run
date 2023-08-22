@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir poetry
 
 ADD ./README.md pyproject.toml ./poetry.lock ./
 
-RUN poetry install --no-root --no-directory --only main,askar,bbs,dev
+RUN poetry install --no-root --no-directory -E "askar bbs"
 
 RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
 ADD aries_cloudagent/version.py aries_cloudagent/version.py
