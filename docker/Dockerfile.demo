@@ -10,7 +10,7 @@ RUN mkdir -p bin && curl -L -o bin/jq \
 	https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && \
 	chmod ug+x bin/jq
 
-# Add and install Indy Agent code
+# Add and install Aries Agent code
 RUN pip install --no-cache-dir poetry
 
 ADD README.md pyproject.toml poetry.lock ./
