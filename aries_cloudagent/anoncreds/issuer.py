@@ -275,6 +275,45 @@ class AnonCredsIssuer:
                 "Error checking for credential definition"
             ) from err
 
+    async def fix_cred_def_wallet_record(
+        self,
+        cred_def_id: str,
+        issuer_did: str,
+    ) -> CredDef:
+        """
+        Store an existing credential definition if on the ledger and not in the wallet.
+
+        Args:
+            cred_def_id: the ID of the credential definition
+            issuer_id: the ID of the issuer creating the credential definition
+        Returns:
+            CredDef: the result of the credential definition creation
+
+        """
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        ledger_creddef = await anoncreds_registry.get_credential_definition(
+            self.profile, cred_def_id
+        )
+        ledger_schema = await anoncreds_registry.get_schema_for_cred_def(
+            self.profile, ledger_creddef
+        )
+        cred_def_ids = await self.get_created_credential_definitions()
+        if cred_def_id not in cred_def_ids:
+            await self.create_and_register_credential_definition(
+                issuer_id=issuer_did,
+                schema_id=ledger_schema.schema_id,
+                tag=None,
+                signature_type=None,
+                options=None,
+                cred_def_id=cred_def_id,
+            )
+            # refetch it and return it
+            ledger_creddef = await anoncreds_registry.get_credential_definition(
+                self.profile, cred_def_id
+            )
+
+        return ledger_creddef.credential_definition
+
     async def create_and_register_credential_definition(
         self,
         issuer_id: str,
@@ -282,6 +321,7 @@ class AnonCredsIssuer:
         tag: Optional[str] = None,
         signature_type: Optional[str] = None,
         options: Optional[dict] = None,
+        cred_def_id: str = None,
     ) -> CredDefResult:
         """
         Create a new credential definition and store it in the wallet.
@@ -292,9 +332,10 @@ class AnonCredsIssuer:
             tag: the tag to use for the credential definition
             signature_type: the signature type to use for the credential definition
             options: any additional options to use when creating the credential definition
-
+            cred_def_id: if populated, cred def is registered but not in wallet
         Returns:
             CredDefResult: the result of the credential definition creation
+            None: if cred_def_id is populated
 
         """
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
@@ -328,20 +369,26 @@ class AnonCredsIssuer:
             )
             cred_def_json = cred_def.to_json()
 
-            # Register the cred def
-            result = await anoncreds_registry.register_credential_definition(
-                self.profile,
-                schema_result,
-                CredDef.from_native(cred_def),
-                options,
-            )
+            # Register the cred def (if not already registered)
+            if not cred_def_id:
+                result = await anoncreds_registry.register_credential_definition(
+                    self.profile,
+                    schema_result,
+                    CredDef.from_native(cred_def),
+                    options,
+                )
+                ident = (
+                    result.credential_definition_state.credential_definition_id
+                    or result.job_id
+                )
+                state = result.credential_definition_state.state
+            else:
+                ident = cred_def_id
+                state = STATE_FINISHED
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating credential definition") from err
 
         # Store the cred def and it's components
-        ident = (
-            result.credential_definition_state.credential_definition_id or result.job_id
-        )
         if not ident:
             raise AnonCredsIssuerError("cred def id or job id required")
 
@@ -357,7 +404,7 @@ class AnonCredsIssuer:
                         "issuer_id": issuer_id,
                         "schema_name": schema_result.schema.name,
                         "schema_version": schema_result.schema.version,
-                        "state": result.credential_definition_state.state,
+                        "state": state,
                         "epoch": str(int(time())),
                         # TODO We need to keep track of these but tags probably
                         # isn't ideal. This suggests that a full record object
@@ -366,16 +413,21 @@ class AnonCredsIssuer:
                         "max_cred_num": str(max_cred_num),
                     },
                 )
-                await txn.handle.insert(
-                    CATEGORY_CRED_DEF_PRIVATE,
-                    ident,
-                    cred_def_private.to_json_buffer(),
-                )
-                await txn.handle.insert(
-                    CATEGORY_CRED_DEF_KEY_PROOF, ident, key_proof.to_json_buffer()
-                )
+                if not cred_def_id:
+                    await txn.handle.insert(
+                        CATEGORY_CRED_DEF_PRIVATE,
+                        ident,
+                        cred_def_private.to_json_buffer(),
+                    )
+                    await txn.handle.insert(
+                        CATEGORY_CRED_DEF_KEY_PROOF, ident, key_proof.to_json_buffer()
+                    )
                 await txn.commit()
-            if result.credential_definition_state.state == STATE_FINISHED:
+            if (
+                not cred_def_id
+                and result.credential_definition_state.state == STATE_FINISHED
+            ):
+                # this is a brand new cred def record
                 await self.notify(
                     CredDefFinishedEvent.with_payload(
                         schema_id, ident, issuer_id, support_revocation, max_cred_num
@@ -383,8 +435,8 @@ class AnonCredsIssuer:
                 )
         except AskarError as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
-
-        return result
+        if not cred_def_id:
+            return result
 
     async def finish_cred_def(self, job_id: str, cred_def_id: str):
         """Finish a cred def."""

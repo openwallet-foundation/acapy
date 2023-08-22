@@ -290,7 +290,7 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
     # check storage and store if needed
     issuer = AnonCredsIssuer(context.profile)
     schema_ids = await issuer.get_created_schemas()
-    if schema_id in schema_ids:
+    if schema_id not in schema_ids:
         # we need to store it...
         await issuer._store_schema(
             SchemaResult(
