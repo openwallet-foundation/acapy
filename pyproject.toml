@@ -110,6 +110,10 @@ test = [
      "pytest-flake8",
      "mock"
 ]
+
+[tool.poetry.scripts]
+aca-py = "bin.aca-py:main"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
