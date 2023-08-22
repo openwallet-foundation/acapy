@@ -7,15 +7,15 @@ RUN apt-get update && apt-get install -y curl && apt-get clean
 
 RUN pip install --no-cache-dir poetry
 
-ADD ./README.md pyproject.toml ./poetry.lock ./
+ADD . .
 
-RUN poetry install --no-root --no-directory -E "askar bbs"
+RUN poetry install -E "askar bbs"
 
-RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
+RUN mkdir -p aries_cloudagent && touch aries_cloudagent/__init__.py
 ADD aries_cloudagent/version.py aries_cloudagent/version.py
 ADD bin ./bin
 
-RUN mkdir logs && chmod -R ug+rw logs
+RUN mkdir -p logs && chmod -R ug+rw logs
 ADD aries_cloudagent ./aries_cloudagent
 
 ENTRYPOINT ["/bin/bash", "-c", "poetry run aca-py \"$@\"", "--"]
