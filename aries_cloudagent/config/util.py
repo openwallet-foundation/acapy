@@ -15,7 +15,12 @@ def common_config(settings: Mapping[str, Any]):
     log_config = settings.get("log.config")
     log_level = settings.get("log.level") or os.getenv("LOG_LEVEL")
     log_file = settings.get("log.file")
-    LoggingConfigurator.configure(log_config, log_level, log_file)
+    log_interval = settings.get("log.handler_interval")
+    log_at_when = settings.get("log.handler_when")
+    log_bak_count = settings.get("log.handler_bakcount")
+    LoggingConfigurator.configure(
+        log_config, log_level, log_file, log_interval, log_bak_count, log_at_when
+    )
 
 
 class BoundedInt:

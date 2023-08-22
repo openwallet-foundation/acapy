@@ -47,6 +47,11 @@ class FaberAgent(AriesAgent):
         endorser_role: str = None,
         revocation: bool = False,
         anoncreds_legacy_revocation: str = None,
+        log_file: str = None,
+        log_handler_config: str = None,
+        log_fmt_pattern: str = None,
+        log_json_fmt: bool = False,
+        log_level: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -58,6 +63,11 @@ class FaberAgent(AriesAgent):
             endorser_role=endorser_role,
             revocation=revocation,
             anoncreds_legacy_revocation=anoncreds_legacy_revocation,
+            log_file=log_file,
+            log_handler_config=log_handler_config,
+            log_fmt_pattern=log_fmt_pattern,
+            log_json_fmt=log_json_fmt,
+            log_level=log_level,
             **kwargs,
         )
         self.connection_id = None
@@ -403,6 +413,11 @@ async def main(args):
             aip=faber_agent.aip,
             endorser_role=faber_agent.endorser_role,
             anoncreds_legacy_revocation=faber_agent.anoncreds_legacy_revocation,
+            log_file=faber_agent.log_file,
+            log_handler_config=faber_agent.log_handler_config,
+            log_fmt_pattern=faber_agent.log_fmt_pattern,
+            log_json_fmt=faber_agent.log_json_fmt,
+            log_level=faber_agent.log_level,
         )
 
         faber_schema_name = "degree schema"

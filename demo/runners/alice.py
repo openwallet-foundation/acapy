@@ -36,6 +36,11 @@ class AliceAgent(AriesAgent):
         no_auto: bool = False,
         aip: int = 20,
         endorser_role: str = None,
+        log_file: str = None,
+        log_handler_config: str = None,
+        log_fmt_pattern: str = None,
+        log_json_fmt: bool = False,
+        log_level: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -47,6 +52,11 @@ class AliceAgent(AriesAgent):
             seed=None,
             aip=aip,
             endorser_role=endorser_role,
+            log_file=log_file,
+            log_handler_config=log_handler_config,
+            log_fmt_pattern=log_fmt_pattern,
+            log_json_fmt=log_json_fmt,
+            log_level=log_level,
             **kwargs,
         )
         self.connection_id = None
@@ -130,6 +140,11 @@ async def main(args):
             wallet_type=alice_agent.wallet_type,
             aip=alice_agent.aip,
             endorser_role=alice_agent.endorser_role,
+            log_file=alice_agent.log_file,
+            log_handler_config=alice_agent.log_handler_config,
+            log_fmt_pattern=alice_agent.log_fmt_pattern,
+            log_json_fmt=alice_agent.log_json_fmt,
+            log_level=alice_agent.log_level,
         )
 
         await alice_agent.initialize(the_agent=agent)

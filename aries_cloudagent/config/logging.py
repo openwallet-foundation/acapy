@@ -11,7 +11,7 @@ from random import randint
 import re
 import sys
 import time as mod_time
-from typing import Optional, TextIO, TYPE_CHECKING
+from typing import Optional, TextIO, Tuple, TYPE_CHECKING
 
 import pkg_resources
 from portalocker import LOCK_EX, lock, unlock
@@ -60,6 +60,9 @@ class LoggingConfigurator:
         logging_config_path: str = None,
         log_level: str = None,
         log_file: str = None,
+        log_interval: int = None,
+        log_bak_count: int = None,
+        log_at_when: str = None,
     ):
         """Configure logger.
 
@@ -83,9 +86,11 @@ class LoggingConfigurator:
 
         if log_file:
             logging.root.handlers.clear()
-            logging.root.handlers.append(
-                logging.FileHandler(log_file, encoding="utf-8")
+            timed_file_handler, std_out_handler = get_log_file_handlers(
+                log_file, log_interval, log_bak_count, log_at_when
             )
+            logging.root.handlers.append(timed_file_handler)
+            logging.root.handlers.append(std_out_handler)
 
         if log_level:
             log_level = log_level.upper()
@@ -514,6 +519,29 @@ LOG_FORMAT_STREAM_PATTERN = (
 )
 
 
+def get_log_file_handlers(
+    log_file_name: str,
+    log_interval: int = None,
+    log_bak_count: int = None,
+    log_at_when: str = None,
+) -> Tuple[TimedRotatingFileMultiProcessHandler, logging.StreamHandler]:
+    """Get TimedRotatingFileMultiProcessHandler and StreamHandler log handlers."""
+    file_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)).replace(
+            "aries_cloudagent/config", ""
+        ),
+        log_file_name,
+    )
+    timed_file_handler = TimedRotatingFileMultiProcessHandler(
+        filename=file_path,
+        interval=log_interval or 7,
+        when=log_at_when or "d",
+        backupCount=log_bak_count or 1,
+    )
+    std_out_handler = logging.StreamHandler(sys.stdout)
+    return (timed_file_handler, std_out_handler)
+
+
 def clear_prev_handlers(logger: logging.Logger) -> logging.Logger:
     """Remove all handler classes associated with logger instance."""
     iter_count = 0
@@ -526,36 +554,41 @@ def clear_prev_handlers(logger: logging.Logger) -> logging.Logger:
 
 def get_logger_inst(profile: "Profile", logger_name) -> logging.Logger:
     """Return a logger instance with provided name and handlers."""
-    did_ident = get_did_ident(profile)
-    if did_ident:
-        logger_name = f"{logger_name}_{did_ident}"
-    return get_logger_with_handlers(
-        settings=profile.settings,
-        logger=logging.getLogger(logger_name),
-        did_ident=did_ident,
-        interval=profile.settings.get("log.handler_interval") or 7,
-        backup_count=profile.settings.get("log.handler_bakcount") or 1,
-        at_when=profile.settings.get("log.handler_when") or "d",
-    )
+    if not profile.settings.get("log.file"):
+        return logging.getLogger(logger_name)
+    else:
+        did_ident = get_did_ident(profile)
+        if did_ident:
+            logger_name = f"{logger_name}_{did_ident}"
+        return get_logger_with_handlers(
+            settings=profile.settings,
+            logger=logging.getLogger(logger_name),
+            did_ident=did_ident,
+            interval=profile.settings.get("log.handler_interval") or 7,
+            backup_count=profile.settings.get("log.handler_bakcount") or 1,
+            at_when=profile.settings.get("log.handler_when") or "d",
+        )
 
 
 def get_did_ident(profile: "Profile") -> Optional[str]:
-    """Get public did identifier for logging, if applicable."""
-    did_ident = None
-    if profile.settings.get("log.file"):
+    """Get public did identifier for logging."""
 
-        async def _fetch_did() -> Optional[str]:
-            async with profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                req_did_info: DIDInfo = await wallet.get_public_did()
-                if not req_did_info:
-                    req_did_info: DIDInfo = (await wallet.get_local_dids())[0]
-                if req_did_info:
-                    did_ident = req_did_info.did
-                return did_ident
+    async def _fetch_did() -> Optional[str]:
+        async with profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            public_did_info: DIDInfo = await wallet.get_public_did()
+            req_did_info = None
+            _did = None
+            if not public_did_info:
+                local_did_info: DIDInfo = await wallet.get_local_dids()
+                if local_did_info:
+                    req_did_info = local_did_info[0]
+            if req_did_info:
+                _did = req_did_info.did
+            return _did
 
-        loop = asyncio.get_event_loop()
-        did_ident = loop.run_until_complete(_fetch_did())
+    loop = asyncio.get_event_loop()
+    did_ident = loop.run_until_complete(_fetch_did())
     return did_ident
 
 
@@ -568,61 +601,48 @@ def get_logger_with_handlers(
     did_ident: str = None,
 ) -> logging.Logger:
     """Return logger instance with necessary handlers if required."""
-    if settings.get("log.file"):
-        # Clear handlers set previously for this logger instance
-        logger = clear_prev_handlers(logger)
-        # log file handler
-        file_path = settings.get("log.file")
-        file_handler = TimedRotatingFileMultiProcessHandler(
-            filename=file_path,
-            interval=interval,
-            when=at_when,
-            backupCount=backup_count,
-        )
-        if did_ident:
-            if settings.get("log.json_fmt"):
-                file_handler.setFormatter(
-                    jsonlogger.JsonFormatter(
-                        settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_ALIAS_PATTERN
-                    )
-                )
-            else:
-                file_handler.setFormatter(
-                    logging.Formatter(
-                        settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_ALIAS_PATTERN
-                    )
-                )
-        else:
-            if settings.get("log.json_fmt"):
-                file_handler.setFormatter(
-                    jsonlogger.JsonFormatter(
-                        settings.get("log.fmt_pattern")
-                        or LOG_FORMAT_FILE_NO_ALIAS_PATTERN
-                    )
-                )
-            else:
-                file_handler.setFormatter(
-                    logging.Formatter(
-                        settings.get("log.fmt_pattern")
-                        or LOG_FORMAT_FILE_NO_ALIAS_PATTERN
-                    )
-                )
-        logger.addHandler(file_handler)
-        # stream console handler
-        std_out_handler = logging.StreamHandler(sys.stdout)
-        std_out_handler.setFormatter(
-            logging.Formatter(
-                settings.get("log.fmt_pattern") or LOG_FORMAT_STREAM_PATTERN
-            )
-        )
-        logger.addHandler(std_out_handler)
-        if did_ident:
-            logger = logging.LoggerAdapter(logger, {"did": did_ident})
-    # set log level
-    logger_level = (
-        (settings.get("log.level")).upper()
-        if settings.get("log.level")
-        else logging.INFO
+    # Clear handlers set previously for this logger instance
+    logger = clear_prev_handlers(logger)
+    # log file handler
+    file_handler, std_out_handler = get_log_file_handlers(
+        settings.get("log.file"), interval, backup_count, at_when
     )
-    logger.setLevel(logger_level)
+    if did_ident:
+        if settings.get("log.json_fmt"):
+            file_handler.setFormatter(
+                jsonlogger.JsonFormatter(
+                    settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_ALIAS_PATTERN
+                )
+            )
+        else:
+            file_handler.setFormatter(
+                logging.Formatter(
+                    settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_ALIAS_PATTERN
+                )
+            )
+    else:
+        if settings.get("log.json_fmt"):
+            file_handler.setFormatter(
+                jsonlogger.JsonFormatter(
+                    settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_NO_ALIAS_PATTERN
+                )
+            )
+        else:
+            file_handler.setFormatter(
+                logging.Formatter(
+                    settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_NO_ALIAS_PATTERN
+                )
+            )
+    logger.addHandler(file_handler)
+    # stream console handler
+    std_out_handler.setFormatter(
+        logging.Formatter(settings.get("log.fmt_pattern") or LOG_FORMAT_STREAM_PATTERN)
+    )
+    logger.addHandler(std_out_handler)
+    if did_ident:
+        logger = logging.LoggerAdapter(logger, {"did": did_ident})
+    # set log level
+    if settings.get("log.level"):
+        logger_level = settings.get("log.level").upper()
+        logger.setLevel(logger_level)
     return logger

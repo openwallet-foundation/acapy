@@ -138,6 +138,11 @@ class DemoAgent:
         arg_file: str = None,
         endorser_role: str = None,
         extra_args=None,
+        log_file: str = None,
+        log_handler_config: str = None,
+        log_fmt_pattern: str = None,
+        log_json_fmt: bool = False,
+        log_level: str = None,
         **params,
     ):
         self.ident = ident
@@ -169,6 +174,11 @@ class DemoAgent:
         self.mediator_request_id = None
         self.aip = aip
         self.arg_file = arg_file
+        self.log_file = log_file
+        self.log_handler_config = log_handler_config
+        self.log_fmt_pattern = log_fmt_pattern
+        self.log_json_fmt = log_json_fmt
+        self.log_level = log_level
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -345,6 +355,32 @@ class DemoAgent:
             "--public-invites",
             # ("--log-level", "debug"),
         ]
+        if self.log_file:
+            result.extend(
+                [
+                    ("--log-file", self.log_file),
+                ]
+            )
+        if self.log_handler_config:
+            result.extend(
+                [
+                    ("--log-handler-config", self.log_handler_config),
+                ]
+            )
+        if self.log_fmt_pattern:
+            result.extend(
+                [
+                    ("--log-fmt-pattern", self.log_fmt_pattern),
+                ]
+            )
+        if self.log_level:
+            result.extend(
+                [
+                    ("--log-level", self.log_level),
+                ]
+            )
+        if self.log_json_fmt:
+            result.append("--log-json-fmt")
         if self.aip == 20:
             result.append("--emit-new-didcomm-prefix")
         if self.multitenant:
