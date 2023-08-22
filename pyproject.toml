@@ -52,27 +52,16 @@ asyncpg = ">=0.25.0,<0.26.0"
 web-py = ">=0.62,<1.0"
 pygments = ">=2.10,<3.0"
 
-# [tool.poetry.group.test.dependencies]
-asynctest= { version = "0.13.0", optional = true }
-pytest= { version = "~7.4.0", optional = true }
-pytest-asyncio= { version = "0.14.0", optional = true }
-pytest-cov= { version = "2.10.1", optional = true }
-pytest-flake8= { version = "1.1.1", optional = true }
-mock= { version = "~4.0", optional = true }
-
-# [tool.poetry.group.askar.dependencies]
+# askar
 aries-askar= { version = "~0.2.5", optional = true }
 indy-credx= { version = "~1.0.0", optional = true }
 indy-vdr= { version = "~0.3.3", optional = true }
 
-# [tool.poetry.group.bbs.dependencies]
+# bbs
 ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
-# [tool.poetry.group.indy.dependencies]
+# indy
 python3-indy= { version = "^1.11.1", optional = true }
-
-# [tool.poetry.group.uvloop.dependencies]
-# uvloop = { version =  "^0.14.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 flake8="4.0.1"
@@ -89,6 +78,14 @@ ptvsd="4.3.2"
 pydevd="1.5.1"
 
 pydevd-pycharm="~193.6015.39"
+
+# testing
+asynctest= "0.13.0"
+pytest= "~7.4.0"
+pytest-asyncio= "0.14.0"
+pytest-cov= "2.10.1"
+pytest-flake8= "1.1.1"
+mock= "~4.0"
 
 [tool.poetry.extras]
 askar = [
