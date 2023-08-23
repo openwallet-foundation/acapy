@@ -40,14 +40,11 @@ class TestLoggingConfigurator(AsyncTestCase):
             test_module.LoggingConfigurator.configure()
 
     def test_configure_default_file(self):
-        log_file = NamedTemporaryFile()
         with async_mock.patch.object(
             test_module, "load_resource", async_mock.MagicMock()
         ) as mock_load:
             mock_load.return_value = None
-            test_module.LoggingConfigurator.configure(
-                log_level="ERROR", log_file=log_file.name
-            )
+            test_module.LoggingConfigurator.configure(log_level="ERROR")
 
     @async_mock.patch.object(test_module, "load_resource", autospec=True)
     @async_mock.patch.object(test_module, "fileConfig", autospec=True)
@@ -106,15 +103,7 @@ class TestLoggingConfigurator(AsyncTestCase):
         logger = test_module.get_logger_with_handlers(
             settings=profile.settings,
             logger=logger,
-            at_when="m",
-            interval=1,
-            backup_count=1,
-        )
-        assert logger
-        logger = test_module.get_logger_with_handlers(
-            settings=profile.settings,
-            logger=logger,
-            did_ident="tenant_did_123",
+            ident="tenant_did_123",
             at_when="m",
             interval=1,
             backup_count=1,

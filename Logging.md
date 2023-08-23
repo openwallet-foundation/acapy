@@ -19,7 +19,7 @@ Other log levels fall back to `WARNING`.
 Example:
 
 ```sh
-./bin/aca-py start --log-level debug --log-file acapy.log --log-handler-config "d;7;1" --log-fmt-pattern "%(asctime)s [%(did)s] %(filename)s %(lineno)d %(message)s" --log-json-fmt
+./bin/aca-py start --log-level debug --log-file acapy.log --log-handler-config "d;7;1" --log-fmt-pattern "%(asctime)s %(wallet_id)s %(filename)s %(lineno)d %(message)s" --log-json-fmt
 ```
 
 ## Environment Variables
