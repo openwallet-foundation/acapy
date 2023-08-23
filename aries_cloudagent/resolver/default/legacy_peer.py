@@ -3,13 +3,12 @@
 Resolution is performed by looking up a stored DID Document.
 """
 
-from collections.abc import Awaitable
 from copy import deepcopy
 from dataclasses import asdict, dataclass
-import functools
 import logging
-from typing import Callable, Optional, Sequence, Text, TypeVar
-from typing_extensions import ParamSpec
+from typing import Optional, Sequence, Text, Union
+
+from pydid import DID
 
 from ...cache.base import BaseCache
 from ...config.injection_context import InjectionContext
@@ -23,18 +22,6 @@ from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class RetrieveResult:
-    """Entry in the peer DID cache."""
-
-    is_local: bool
-    doc: Optional[dict] = None
-
-
-T = TypeVar("T")
-P = ParamSpec("P")
 
 
 class LegacyDocCorrections:
@@ -94,7 +81,9 @@ class LegacyDocCorrections:
           "type": "did-communication",
           "priority": 0,
           "recipientKeys": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
-          "routingKeys": ["9NnKFUZoYcCqYC2PcaXH3cnaGsoRfyGgyEHbvbLJYh8j"],
+          "routingKeys": [
+              "did:key:z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7#z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7"
+          ],
           "serviceEndpoint": "http://bob:3000"
         }
       ]
@@ -144,6 +133,8 @@ class LegacyDocCorrections:
                 if "routingKeys" in service:
                     service["routingKeys"] = [
                         DIDKey.from_public_key_b58(key, ED25519).key_id
+                        if "did:key:" not in key
+                        else key
                         for key in service["routingKeys"]
                     ]
         return value
@@ -163,6 +154,14 @@ class LegacyDocCorrections:
         return value
 
 
+@dataclass
+class RetrieveResult:
+    """Entry in the peer DID cache."""
+
+    is_local: bool
+    doc: Optional[dict] = None
+
+
 class LegacyPeerDIDResolver(BaseDIDResolver):
     """Resolve legacy peer DIDs."""
 
@@ -173,36 +172,10 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
     async def setup(self, context: InjectionContext):
         """Perform required setup for the resolver."""
 
-    def _cached_resource(
-        self,
-        profile: Profile,
-        key: str,
-        retrieve: Callable[P, Awaitable[RetrieveResult]],
-        ttl: Optional[int] = None,
-    ) -> Callable[P, Awaitable[RetrieveResult]]:
-        """Get a cached resource."""
-
-        @functools.wraps(retrieve)
-        async def _wrapped(*args: P.args, **kwargs: P.kwargs):
-            cache = profile.inject_or(BaseCache)
-            if cache:
-                async with cache.acquire(key) as entry:
-                    if entry.result:
-                        value = RetrieveResult(**entry.result)
-                    else:
-                        value = await retrieve(*args, **kwargs)
-                        await entry.set_result(asdict(value), ttl)
-            else:
-                value = await retrieve(*args, **kwargs)
-
-            return value
-
-        return _wrapped
-
-    async def _fetch_did_document(self, profile: Profile, did: str):
+    async def _fetch_did_document(self, profile: Profile, did: str) -> RetrieveResult:
         """Fetch DID from wallet if available.
 
-        This is the method to be used with _cached_resource to enable caching.
+        This is the method to be used with fetch_did_document to enable caching.
         """
         conn_mgr = BaseConnectionManager(profile)
         if did.startswith("did:sov:"):
@@ -217,15 +190,26 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
 
         return to_cache
 
-    async def fetch_did_document(self, profile: Profile, did: str):
+    async def fetch_did_document(
+        self, profile: Profile, did: str, *, ttl: Optional[int] = None
+    ):
         """Fetch DID from wallet if available.
 
         Return value is cached.
         """
-        cache_key = f"legacy_peer_did_resolver::{did}"
-        return await self._cached_resource(
-            profile, cache_key, self._fetch_did_document, ttl=3600
-        )(profile, did)
+        cache_key = f"resolver::LegacyPeerDIDResolver::{did}"
+        cache = profile.inject_or(BaseCache)
+        if cache:
+            async with cache.acquire(cache_key) as entry:
+                if entry.result:
+                    result = RetrieveResult(**entry.result)
+                else:
+                    result = await self._fetch_did_document(profile, did)
+                    await entry.set_result(asdict(result), ttl or self.DEFAULT_TTL)
+        else:
+            result = await self._fetch_did_document(profile, did)
+
+        return result
 
     async def supports(self, profile: Profile, did: str) -> bool:
         """Return whether this resolver supports the given DID.
@@ -251,6 +235,19 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
             return result.is_local
         else:
             return False
+
+    async def resolve(
+        self,
+        profile: Profile,
+        did: Union[str, DID],
+        service_accept: Optional[Sequence[Text]] = None,
+    ) -> dict:
+        """Resolve a Legacy Peer DID to a DID document by fetching from the wallet.
+
+        This overrides the default resolve method so we can take care of caching
+        ourselves since we use it for the supports method as well.
+        """
+        return await self._resolve(profile, str(did), service_accept)
 
     async def _resolve(
         self,
