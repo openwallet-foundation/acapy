@@ -5,7 +5,7 @@ Resolution is performed using the IndyLedger class.
 
 import re
 from hashlib import sha256
-from typing import Optional, Pattern, Sequence, Text, Union, Tuple
+from typing import Optional, Pattern, Sequence, Text, Union, Tuple, Dict, List
 
 from peerdid.dids import is_peer_did, PEER_DID_PATTERN, resolve_peer_did, DID, MalformedPeerDIDError, DIDDocument, DIDUrl
 from peerdid.keys import to_multibase, MultibaseFormat
@@ -97,16 +97,25 @@ def gen_did_peer_3(peer_did_2 : Union[str,DID]) -> Tuple[DID,DIDDocument]:
     convert_to_did_peer_3_document(dp3,doc)
     return dp3, doc
 
-
-def _replace_all_values(dict,org,new):
-    for k,v in dict.items():
+def _replace_all_values(input,org,new):
+    for k,v in input.items():
+        typ = type(v)
         if isinstance(v,type(dict)):
             _replace_all_values(v,org,new)    
-        if isinstance(v,type(list)):
-            for i in v:
-                _replace_all_values(i,org,new)            
-        elif isinstance(v,type(str)) or isinstance(v,DID) or isinstance(v,DIDUrl):
-            dict[k] = v.replace(org,new,1)
+        if isinstance(v,List):
+            for i,item in enumerate(v):
+                if isinstance(item,type(dict)):
+                    _replace_all_values(item,org,new)            
+                elif isinstance(item,str) or isinstance(item,DID) or isinstance(item,DIDUrl):
+                    v.pop(i)
+                    v.append(item.replace(org,new,1))
+                elif hasattr(item,"__dict__"):
+                    _replace_all_values(item.__dict__,org,new) 
+                else:
+                    pass
+                 
+        elif isinstance(v,str) or isinstance(v,DID) or isinstance(v,DIDUrl):
+            input[k] = v.replace(org,new,1)
         else:
             pass
 

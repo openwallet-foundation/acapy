@@ -1,29 +1,16 @@
 """DID Peer class and resolver methods."""
-import json
 
 from enum import Enum
 from typing import Union, Optional
-from io import BytesIO
-from peerdid import dids, keys
 
-from ..connections.models.diddoc import LegacyDIDDoc, DIDPeerDoc
-from ..messaging.valid import PeerDID
-from ..wallet.util import multi_hash_encode, multi_base_encode
 
+DID_COMM_V1_SERVICE_TYPE = "did-communication"
 
 class PeerDidNumAlgo(Enum):
     INCEPTION_KEY_WITHOUT_DOC = 0
     GENESIS_DOC = 1
     MULTIPLE_INCEPTION_KEY_WITHOUT_DOC = 2
 
-
-def get_did_from_did_doc(did_doc: Union[LegacyDIDDoc, DIDPeerDoc]) -> str:
-    # use lib functions
-    pass
-
-
-def is_valid_peer_did(did: str) -> bool:
-    return bool(PeerDID.PATTERN.match(did))
 
 
 def get_num_algo_from_peer_did(did: str) -> Optional[PeerDidNumAlgo]:
@@ -37,17 +24,3 @@ def get_num_algo_from_peer_did(did: str) -> Optional[PeerDidNumAlgo]:
     else:
         return None
 
-
-def create_peer_did_2(verkey: bytes, service: dict) -> "DIDPeerDoc":
-    enc_keys = [keys.X25519KeyAgreementKey(verkey)]
-    sign_keys = [keys.Ed25519VerificationKey(verkey)]
-
-    service = {
-        "type": "DIDCommMessaging",
-        "serviceEndpoint": "https://example.com/endpoint1",
-        "routingKeys": ["did:example:somemediator#somekey1"],
-        "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
-    }
-
-    var = dids.create_peer_did_numalgo_2(enc_keys, sign_keys, service)
-    print(var)

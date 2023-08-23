@@ -127,16 +127,22 @@ def create_peer_did_2(verkey: str, service_endpoint: str) -> Tuple[DID, DIDDocum
     """verkey must by base58"""
 
     enc_keys = [X25519KeyAgreementKey.from_base58(verkey)]
-    sign_keys = [Ed25519VerificationKey.from_base58(verkey,ident="#signkey")]
+    sign_keys = [Ed25519VerificationKey.from_base58(verkey)]
 
     service = {
         "type": DID_COMM_V1_SERVICE_TYPE,
         "serviceEndpoint": service_endpoint,
-        "recipient_keys": sign_keys[0].ident,
+        "recipient_keys": [sign_keys[0].ident],
     }
     try:
         did = create_peer_did_numalgo_2(enc_keys, sign_keys, service)
         doc = resolve_peer_did(did)
+        ## WORKAROUND LIBRARY NOT REREFERENCING RECEIPIENT_KEY
+        signing_keys = [vm for vm in doc.verification_method or [] if vm.type == "Ed25519VerificationKey2020"]
+        if doc.service[0].recipient_keys and signing_keys:
+            doc.service[0].__dict__["recipient_keys"]=[signing_keys[0].id]
+        else:
+            raise Exception("no recipient_key signing_key pair")
     except Exception as e:
         raise ValueError ("pydantic validation error:" + str(e))
     return did, doc
