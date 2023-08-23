@@ -1,7 +1,6 @@
 """Credential definition admin routes."""
 
 import json
-from time import time
 
 
 from aiohttp import web
@@ -14,23 +13,19 @@ from aiohttp_apispec import (
 )
 
 from marshmallow import fields
-from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
-from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
+from ...anoncreds.issuer import AnonCredsIssuer
+from ...anoncreds.registry import AnonCredsRegistry
 
-from aries_cloudagent.wallet.base import BaseWallet
+from ...wallet.base import BaseWallet
 
 from ...admin.request_context import AdminRequestContext
-from ...core.event_bus import Event, EventBus
-from ...core.profile import Profile
+
 
 from ...indy.models.cred_def import CredentialDefinitionSchema
 
 from ...ledger.error import BadLedgerRequestError
-from ...ledger.multiple_ledger.ledger_requests_executor import (
-    GET_CRED_DEF,
-    IndyLedgerRequestsExecutor,
-)
-from ...multitenant.base import BaseMultitenantManager
+
+
 from ...protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
@@ -42,8 +37,7 @@ from ...protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
 )
 
-from ...revocation.indy import IndyRevocation
-from ...storage.base import BaseStorage, StorageRecord
+
 from ...storage.error import StorageError
 
 from ..models.openapi import OpenAPISchema
@@ -52,9 +46,6 @@ from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID
 
 from .util import (
     CredDefQueryStringSchema,
-    CRED_DEF_TAGS,
-    CRED_DEF_SENT_RECORD_TYPE,
-    EVENT_LISTENER_PATTERN,
     notify_cred_def_event,
 )
 
@@ -301,19 +292,18 @@ async def credential_definitions_created(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    issuer = AnonCredsIssuer(context.profile)
 
-    session = await context.session()
-    storage = session.inject(BaseStorage)
-    found = await storage.find_all_records(
-        type_filter=CRED_DEF_SENT_RECORD_TYPE,
-        tag_query={
-            tag: request.query[tag] for tag in CRED_DEF_TAGS if tag in request.query
-        },
+    # can no longer search/filter by cred def id
+    cred_def_ids = await issuer.get_created_credential_definitions(
+        issuer_id=request.query.get("issuer_did"),
+        schema_issuer_id=request.query.get("schema_issuer_did"),
+        schema_id=request.query.get("schema_id"),
+        schema_name=request.query.get("schema_name"),
+        schema_version=request.query.get("schema_version"),
     )
 
-    return web.json_response(
-        {"credential_definition_ids": [record.value for record in found]}
-    )
+    return web.json_response({"credential_definition_ids": cred_def_ids})
 
 
 @docs(
@@ -352,152 +342,6 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
     return web.json_response({"credential_definition": anoncreds_cred_def})
 
 
-@docs(
-    tags=["credential-definition"],
-    summary="Writes a credential definition non-secret record to the wallet",
-)
-@match_info_schema(CredDefIdMatchInfoSchema())
-@response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
-async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseRequest):
-    """
-    Request handler for fixing a credential definition wallet non-secret record.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The credential definition details.
-
-    """
-    context: AdminRequestContext = request["context"]
-
-    cred_def_id = request.match_info["cred_def_id"]
-
-    async with context.profile.session() as session:
-        storage = session.inject(BaseStorage)
-        multitenant_mgr = session.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
-        else:
-            ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-        cred_def_id,
-        txn_record_type=GET_CRED_DEF,
-    )
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
-
-    async with ledger:
-        cred_def = await ledger.get_credential_definition(cred_def_id)
-        cred_def_id_parts = cred_def_id.split(":")
-        schema_seq_no = cred_def_id_parts[3]
-        schema_response = await ledger.get_schema(schema_seq_no)
-        schema_id = schema_response["id"]
-        iss_did = cred_def_id_parts[0]
-
-        # check if the record exists, if not add it
-        found = await storage.find_all_records(
-            type_filter=CRED_DEF_SENT_RECORD_TYPE,
-            tag_query={
-                "cred_def_id": cred_def_id,
-            },
-        )
-        if 0 == len(found):
-            await add_cred_def_non_secrets_record(
-                session.profile, schema_id, iss_did, cred_def_id
-            )
-
-    if ledger_id:
-        return web.json_response(
-            {"ledger_id": ledger_id, "credential_definition": cred_def}
-        )
-    else:
-        return web.json_response({"credential_definition": cred_def})
-
-
-def register_events(event_bus: EventBus):
-    """Subscribe to any events we need to support."""
-    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_cred_def_event)
-
-
-async def on_cred_def_event(profile: Profile, event: Event):
-    """Handle any events we need to support."""
-    schema_id = event.payload["context"]["schema_id"]
-    cred_def_id = event.payload["context"]["cred_def_id"]
-    issuer_did = event.payload["context"]["issuer_did"]
-
-    # after the ledger record is written, write the wallet non-secrets record
-    await add_cred_def_non_secrets_record(profile, schema_id, issuer_did, cred_def_id)
-
-    # check if we need to kick off the revocation registry setup
-    meta_data = event.payload
-    support_revocation = meta_data["context"]["support_revocation"]
-    novel = meta_data["context"]["novel"]
-    rev_reg_size = (
-        meta_data["context"].get("rev_reg_size", None) if support_revocation else None
-    )
-    auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
-    create_pending_rev_reg = meta_data["processing"].get(
-        "create_pending_rev_reg", False
-    )
-    endorser_connection_id = (
-        meta_data["endorser"].get("connection_id", None)
-        if "endorser" in meta_data
-        else None
-    )
-    if support_revocation and novel and auto_create_rev_reg:
-        # this kicks off the revocation registry creation process, which is 3 steps:
-        # 1 - create revocation registry (ledger transaction may require endorsement)
-        # 2 - upload tails file
-        # 3 - create revocation entry (ledger transaction may require endorsement)
-        # For a cred def we also automatically create a second "pending" revocation
-        # registry, so when the first one fills up we can continue to issue credentials
-        # without a delay
-        revoc = IndyRevocation(profile)
-        await revoc.init_issuer_registry(
-            cred_def_id,
-            rev_reg_size,
-            create_pending_rev_reg=create_pending_rev_reg,
-            endorser_connection_id=endorser_connection_id,
-        )
-
-
-async def add_cred_def_non_secrets_record(
-    profile: Profile, schema_id: str, issuer_did: str, credential_definition_id: str
-):
-    """
-    Write the wallet non-secrets record for cred def (already written to the ledger).
-
-    Note that the cred def private key signing informtion must already exist in the
-    wallet.
-
-    Args:
-        schema_id: The schema id (or stringified sequence number)
-        issuer_did: The DID of the issuer
-        credential_definition_id: The credential definition id
-
-    """
-    schema_id_parts = schema_id.split(":")
-    cred_def_tags = {
-        "schema_id": schema_id,
-        "schema_issuer_did": schema_id_parts[0],
-        "schema_name": schema_id_parts[-2],
-        "schema_version": schema_id_parts[-1],
-        "issuer_did": issuer_did,
-        "cred_def_id": credential_definition_id,
-        "epoch": str(int(time())),
-    }
-    record = StorageRecord(
-        CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
-    )
-    async with profile.session() as session:
-        storage = session.inject(BaseStorage)
-        await storage.add_record(record)
-
-
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
@@ -515,10 +359,6 @@ async def register(app: web.Application):
                 "/credential-definitions/{cred_def_id}",
                 credential_definitions_get_credential_definition,
                 allow_head=False,
-            ),
-            web.post(
-                "/credential-definitions/{cred_def_id}/write_record",
-                credential_definitions_fix_cred_def_wallet_record,
             ),
         ]
     )

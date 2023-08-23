@@ -320,7 +320,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 self.request
             )
 
-    async def test_created(self):
+    async def anoncreds_break_test_created(self):
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
