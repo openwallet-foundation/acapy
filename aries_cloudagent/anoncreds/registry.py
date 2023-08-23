@@ -78,19 +78,6 @@ class AnonCredsRegistry:
         resolver = await self._resolver_for_identifier(schema_id)
         return await resolver.get_schema(profile, schema_id)
 
-    async def get_schema_for_cred_def(
-        self,
-        profile: Profile,
-        cred_def: GetCredDefResult,
-    ) -> GetSchemaResult:
-        """Get a schema from the registry."""
-        resolver = await self._resolver_for_identifier(
-            cred_def.credential_definition_id
-        )
-        return await resolver.get_schema(
-            profile, cred_def.credential_definition.schema_id
-        )
-
     async def register_schema(
         self,
         profile: Profile,

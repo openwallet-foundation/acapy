@@ -13,12 +13,10 @@ from marshmallow import fields
 from marshmallow.validate import Regexp
 
 from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
-from aries_cloudagent.anoncreds.models.anoncreds_schema import SchemaResult, SchemaState
 from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.wallet.base import BaseWallet
 
 from ...admin.request_context import AdminRequestContext
-from ...core.event_bus import EventBus
 from ...indy.models.schema import SchemaSchema
 from ...ledger.error import BadLedgerRequestError
 from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
@@ -266,61 +264,6 @@ async def schemas_get_schema(request: web.BaseRequest):
         return web.json_response({"schema": schema})
 
 
-@docs(tags=["schema"], summary="Writes a schema non-secret record to the wallet")
-@match_info_schema(SchemaIdMatchInfoSchema())
-@response_schema(SchemaGetResultSchema(), 200, description="")
-async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
-    """
-    Request handler for fixing a schema's wallet non-secrets records.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The schema details.
-
-    """
-    context: AdminRequestContext = request["context"]
-    schema_id = request.match_info["schema_id"]
-
-    anoncreds_registry = context.inject(AnonCredsRegistry)
-    # fetch from ledger
-    result = await anoncreds_registry.get_schema(context.profile, schema_id)
-
-    # check storage and store if needed
-    issuer = AnonCredsIssuer(context.profile)
-    schema_ids = await issuer.get_created_schemas()
-    if schema_id not in schema_ids:
-        # we need to store it...
-        await issuer._store_schema(
-            SchemaResult(
-                job_id=None,
-                schema_state=SchemaState(
-                    state=SchemaState.STATE_FINISHED,
-                    schema_id=schema_id,
-                    schema=result.schema,
-                ),
-            )
-        )
-
-    # convert to expected type...
-    schema = {
-        "ver": "1.0",
-        "id": result.schema_id,
-        "name": result.schema.name,
-        "version": result.schema.version,
-        "attrNames": result.schema.attr_names,
-        "seqNo": result.schema_metadata["seqNo"],
-    }
-
-    return web.json_response({"schema": schema})
-
-
-def register_events(event_bus: EventBus):
-    """Subscribe to any events we need to support."""
-    pass
-
-
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
@@ -328,9 +271,6 @@ async def register(app: web.Application):
             web.post("/schemas", schemas_send_schema),
             web.get("/schemas/created", schemas_created, allow_head=False),
             web.get("/schemas/{schema_id}", schemas_get_schema, allow_head=False),
-            web.post(
-                "/schemas/{schema_id}/write_record", schemas_fix_schema_wallet_record
-            ),
         ]
     )
 

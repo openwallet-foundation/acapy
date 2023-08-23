@@ -13,10 +13,10 @@ from aiohttp_apispec import (
 )
 
 from marshmallow import fields
-from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
-from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
+from ...anoncreds.issuer import AnonCredsIssuer
+from ...anoncreds.registry import AnonCredsRegistry
 
-from aries_cloudagent.wallet.base import BaseWallet
+from ...wallet.base import BaseWallet
 
 from ...admin.request_context import AdminRequestContext
 
@@ -342,50 +342,6 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
     return web.json_response({"credential_definition": anoncreds_cred_def})
 
 
-@docs(
-    tags=["credential-definition"],
-    summary="Writes a credential definition non-secret record to the wallet",
-)
-@match_info_schema(CredDefIdMatchInfoSchema())
-@response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
-async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseRequest):
-    """
-    Request handler for fixing a credential definition wallet non-secret record.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The credential definition details.
-
-    """
-    context: AdminRequestContext = request["context"]
-
-    cred_def_id = request.match_info["cred_def_id"]
-
-    my_public_info = None
-    async with context.profile.session() as session:
-        wallet = session.inject(BaseWallet)
-        my_public_info = await wallet.get_public_did()
-    if not my_public_info:
-        raise BadLedgerRequestError(
-            "Cannot publish credential definition without a public DID"
-        )
-
-    issuer = AnonCredsIssuer(context.profile)
-    result = await issuer.fix_cred_def_wallet_record(cred_def_id, my_public_info.did)
-
-    anoncreds_cred_def = {
-        "ident": cred_def_id,
-        "schemaId": result.schema_id,
-        "typ": result.type,
-        "tag": result.tag,
-        "value": result.value.serialize(),
-    }
-
-    return web.json_response({"credential_definition": anoncreds_cred_def})
-
-
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
@@ -403,10 +359,6 @@ async def register(app: web.Application):
                 "/credential-definitions/{cred_def_id}",
                 credential_definitions_get_credential_definition,
                 allow_head=False,
-            ),
-            web.post(
-                "/credential-definitions/{cred_def_id}/write_record",
-                credential_definitions_fix_cred_def_wallet_record,
             ),
         ]
     )
