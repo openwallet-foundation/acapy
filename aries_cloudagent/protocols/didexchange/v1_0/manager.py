@@ -46,6 +46,7 @@ from .messages.problem_report import DIDXProblemReport, ProblemReportReason
 from .messages.request import DIDXRequest
 from .messages.response import DIDXResponse
 
+DID_COMM_V1_SERVICE_TYPE = "did-communication"
 
 class DIDXManagerError(BaseError):
     """Connection error."""
@@ -312,7 +313,7 @@ class DIDXManager(BaseConnectionManager):
                     # JS START  library did_doc construction
                     # use library did_doc construction
                     service = {
-                        "type": "DIDCommMessaging",
+                        "type": DID_COMM_V1_SERVICE_TYPE,
                         "serviceEndpoint": self.profile.settings.get(
                             "default_endpoint"
                         ),
@@ -669,7 +670,7 @@ class DIDXManager(BaseConnectionManager):
                     # JS START  library did_doc construction
                     # use library did_doc construction
                     service = {
-                        "type": "DIDCommMessaging",
+                        "type": DID_COMM_V1_SERVICE_TYPE,
                         "serviceEndpoint": self.profile.settings.get(
                             "default_endpoint"
                         ),

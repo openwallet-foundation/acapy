@@ -62,7 +62,7 @@ class TestConfig:
     def make_did_doc(self, did, verkey):
         # for peer did, create did_doc first then save did after.
         service = {
-            "type": "DIDCommMessaging",
+            "type": "did-communication",
             "serviceEndpoint": self.test_endpoint,
             "recipient_keys": [],
             "routing_keys":[],
@@ -505,6 +505,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert request.did_doc_attach is None
 
     async def test_receive_request_explicit_public_did(self):
+        
+        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
@@ -551,7 +553,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 self.manager,
                 "verify_diddoc",
                 async_mock.CoroutineMock(
-                    return_value=LegacyDIDDoc(id=TestConfig.test_did)
+                    return_value=test_did_doc
                 ),
             ), async_mock.patch.object(
                 self.manager, "create_did_document", async_mock.CoroutineMock()
@@ -926,6 +928,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "Public invitations are not enabled" in str(context.exception)
 
     async def test_receive_request_public_did_no_auto_accept(self):
+        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
@@ -966,7 +970,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 self.manager,
                 "verify_diddoc",
                 async_mock.CoroutineMock(
-                    return_value=LegacyDIDDoc(id=TestConfig.test_did)
+                    return_value=test_did_doc
                 ),
             ):
                 mock_conn_record = async_mock.MagicMock(
@@ -1004,6 +1008,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert not messages
 
     async def test_receive_request_implicit_public_did_not_enabled(self):
+        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
@@ -1045,7 +1050,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 self.manager,
                 "verify_diddoc",
                 async_mock.CoroutineMock(
-                    return_value=LegacyDIDDoc(id=TestConfig.test_did)
+                    return_value=test_did_doc
                 ),
             ):
                 mock_did_posture.get = async_mock.MagicMock(
@@ -1069,6 +1074,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "Unsolicited connection requests" in str(context.exception)
 
     async def test_receive_request_implicit_public_did(self):
+        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
@@ -1113,7 +1120,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 self.manager,
                 "verify_diddoc",
                 async_mock.CoroutineMock(
-                    return_value=LegacyDIDDoc(id=TestConfig.test_did)
+                    return_value=test_did_doc
                 ),
             ):
                 mock_did_posture.get = async_mock.MagicMock(
@@ -1153,6 +1160,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_receive_request_peer_did(self):
+        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
@@ -1203,7 +1212,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 self.manager,
                 "verify_diddoc",
                 async_mock.CoroutineMock(
-                    return_value=LegacyDIDDoc(id=TestConfig.test_did)
+                    return_value=test_did_doc
                 ),
             ):
                 mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(

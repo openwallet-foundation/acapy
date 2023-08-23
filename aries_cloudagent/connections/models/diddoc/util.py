@@ -26,6 +26,7 @@ from pydid.did import DID_PATTERN
 from peerdid.dids import DID, DIDDocument, create_peer_did_numalgo_2, resolve_peer_did
 from peerdid.keys import X25519KeyAgreementKey, Ed25519VerificationKey
 
+DID_COMM_V1_SERVICE_TYPE = "did-communication"
 
 def resource(ref: str, delimiter: str = None) -> str:
     """
@@ -128,9 +129,13 @@ def create_peer_did_2(verkey: str, service: dict = None) -> Tuple[DID, DIDDocume
     enc_keys = [X25519KeyAgreementKey.from_base58(verkey)]
     sign_keys = [Ed25519VerificationKey.from_base58(verkey)]
 
-    did = create_peer_did_numalgo_2(enc_keys, sign_keys, service)
-    doc = resolve_peer_did(did)
+    service.setdefault("recipient_keys",[])
 
+    try:
+        did = create_peer_did_numalgo_2(enc_keys, sign_keys, service)
+        doc = resolve_peer_did(did)
+    except Exception as e:
+        raise ValueError ("pydantic validation error:" + str(e))
     return did, doc
 
 
@@ -141,19 +146,15 @@ def upgrade_legacy_did_doc_to_peer_did(json_str:str) -> Tuple[DID, DIDDocument]:
     public_key_b58 = doc_dict["publicKey"][0]["publicKeyBase58"]
     service = doc_dict["service"][0]
 
-    # if service["type"] == "IndyAgent":
-    #     service["type"] =  "DIDCommMessaging"
-    # if "id" in service:
-    #     del service["id"]
+    if "id" in service:
+        del service["id"]
 
 
-    # # service["recipient_keys"] = service.get("recipient_keys",[]) or service.get("recipientKeys",[])
-    # service["recipient_keys"] = []
-    # if "recipientKeys" in service:
-    #     del service["recipientKeys"]
+    #remove a key that is already being included
+    service["recipient_keys"] = [k for k in service.get("recipient_keys",[]) if k != public_key_b58]
         
     didcommv1_service = {
-        "type":"DIDCommMessaging",
+        "type":DID_COMM_V1_SERVICE_TYPE,
         "serviceEndpoint":service.get("service_endpoint",service.get("serviceEndpoint")),
         "recipient_keys":service.get("recipient_keys",service.get("recipientKeys",[])),
         "routing_keys":service.get("routing_keys",service.get("routingKeys",[])),

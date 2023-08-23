@@ -509,7 +509,7 @@ class BaseConnectionManager:
                     endpoint=service.service_endpoint,
                     label=their_label,
                     recipient_keys=recipient_verkeys,
-                    routing_keys=[key.value for key in (service.routing_keys or ())],
+                    routing_keys=[key.value for key in (service.dict().get("routing_keys",[]))],
                     sender_key=sender_verkey,
                 )
             )
