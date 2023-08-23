@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Optional
+from typing import Optional, List
 
 import pydid
 from pydid import BaseDIDDocument as ResolvedDocument
@@ -309,19 +309,12 @@ class DIDXManager(BaseConnectionManager):
                     # for peer did, create did_doc first then save did after.
                     keypair = _create_keypair(ED25519, None)
                     verkey_bytes = keypair.get_public_bytes()
-
+                    verkey = bytes_to_b58(verkey_bytes)
                     # JS START  library did_doc construction
                     # use library did_doc construction
-                    service = {
-                        "type": DID_COMM_V1_SERVICE_TYPE,
-                        "serviceEndpoint": self.profile.settings.get(
-                            "default_endpoint"
-                        ),
-                        "recipient_keys": [],
-                    }
-                    peer_did_2, peer_doc = create_peer_did_2(
-                        bytes_to_b58(verkey_bytes), service=service
-                    )
+                    service_endpoint = my_endpoint or self.profile.settings["default_endpoint"]
+                    peer_did_2, peer_doc = create_peer_did_2(verkey, service_endpoint)
+                    
                     dp3,dp3_doc = gen_did_peer_3(peer_did_2)
 
                     my_info = await wallet.create_local_did(
@@ -338,16 +331,7 @@ class DIDXManager(BaseConnectionManager):
                     )
             conn_rec.my_did = my_info.did
 
-
-        # Create connection request message
-        if my_endpoint:
-            my_endpoints = [my_endpoint]
-        else:
-            my_endpoints = []
-            default_endpoint = self.profile.settings.get("default_endpoint")
-            if default_endpoint:
-                my_endpoints.append(default_endpoint)
-            my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
+        my_endpoints = self.produce_endpoints_list(my_endpoint)
 
         # request DID doc describes requester DID
         if use_public_did:
@@ -667,18 +651,10 @@ class DIDXManager(BaseConnectionManager):
                     verkey_bytes = keypair.get_public_bytes()
                     verkey = bytes_to_b58(verkey_bytes)
 
-                    # JS START  library did_doc construction
-                    # use library did_doc construction
-                    service = {
-                        "type": DID_COMM_V1_SERVICE_TYPE,
-                        "serviceEndpoint": self.profile.settings.get(
-                            "default_endpoint"
-                        ),
-                        "recipient_keys": [],
-                    }
-
+                    service_endpoint = my_endpoint or self.profile.settings["default_endpoint"]
+                    
                     dp2, dp2_doc = create_peer_did_2(
-                        bytes_to_b58(verkey_bytes), service=service
+                        verkey, service_endpoint=service_endpoint
                     )
                     dp3, dp3_doc = gen_did_peer_3(dp2)
                     did_doc = dp3_doc
@@ -702,15 +678,7 @@ class DIDXManager(BaseConnectionManager):
             self.profile, conn_rec, mediation_record
         )
 
-        # Create connection response message
-        if my_endpoint:
-            my_endpoints = [my_endpoint]
-        else:
-            my_endpoints = []
-            default_endpoint = self.profile.settings.get("default_endpoint")
-            if default_endpoint:
-                my_endpoints.append(default_endpoint)
-            my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
+        my_endpoints = self.produce_endpoints_list(my_endpoint)
 
         if not did_doc:
             did_doc = await self.create_did_document(
@@ -1067,3 +1035,15 @@ class DIDXManager(BaseConnectionManager):
 
         first_didcomm_service, *_ = didcomm_services
         return first_didcomm_service.id
+
+    def produce_endpoints_list(self, my_endpoint:Optional[str]) -> List[str]:
+            # Create connection request message
+        if my_endpoint:
+            my_endpoints = [my_endpoint]
+        else:
+            my_endpoints = []
+            default_endpoint = self.profile.settings.get("default_endpoint")
+            if default_endpoint:
+                my_endpoints.append(default_endpoint)
+            my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
+        return my_endpoints

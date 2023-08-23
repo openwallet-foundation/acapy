@@ -123,14 +123,17 @@ def ok_did(token: str) -> bool:
         return False
 
 
-def create_peer_did_2(verkey: str, service: dict = None) -> Tuple[DID, DIDDocument]:
+def create_peer_did_2(verkey: str, service_endpoint: str) -> Tuple[DID, DIDDocument]:
     """verkey must by base58"""
 
     enc_keys = [X25519KeyAgreementKey.from_base58(verkey)]
-    sign_keys = [Ed25519VerificationKey.from_base58(verkey)]
+    sign_keys = [Ed25519VerificationKey.from_base58(verkey,ident="#signkey")]
 
-    service.setdefault("recipient_keys",[])
-
+    service = {
+        "type": DID_COMM_V1_SERVICE_TYPE,
+        "serviceEndpoint": service_endpoint,
+        "recipient_keys": sign_keys[0].ident,
+    }
     try:
         did = create_peer_did_numalgo_2(enc_keys, sign_keys, service)
         doc = resolve_peer_did(did)
