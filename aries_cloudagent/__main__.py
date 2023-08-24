@@ -63,7 +63,9 @@ def run(args):
 
     run_command(command, args)
 
+
 def script_main():
+    """Run the main function as a script for poetry."""
     main(sys.argv)
 
 
