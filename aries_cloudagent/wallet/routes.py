@@ -40,6 +40,7 @@ from ..messaging.valid import (
     SD_LIST_EXAMPLE,
     SD_LIST_VALIDATE,
     IndyDID,
+    StrOrDictField,
     Uri,
 )
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
@@ -217,7 +218,20 @@ class JWSVerifyResponseSchema(OpenAPISchema):
 class SDJWSVerifyResponseSchema(JWSVerifyResponseSchema):
     """Response schema for SD-JWT verification result."""
 
-    disclosures = fields.List(fields.List(fields.Str()))  # TODO: check
+    disclosures = fields.List(
+        fields.List(StrOrDictField()),
+        metadata={
+            "description": "Disclosure arrays associated with the SD-JWT",
+            "example": [
+                ["fx1iT_mETjGiC-JzRARnVg", "name", "Alice"],
+                [
+                    "n4-t3mlh8jSS6yMIT7QHnA",
+                    "street_address",
+                    {"_sd": ["kLZrLK7enwfqeOzJ9-Ss88YS3mhjOAEk9lr_ix2Heng"]},
+                ],
+            ],
+        },
+    )
 
 
 class DIDEndpointSchema(OpenAPISchema):

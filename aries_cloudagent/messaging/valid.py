@@ -209,7 +209,7 @@ class SDList(Regexp):
         "address.street_address",
         "nationalities[1:3]",
     ]
-    PATTERN = r"[a-z0-9:\[\]_\.@?\(\)]"  # TODO: check
+    PATTERN = r"[a-z0-9:\[\]_\.@?\(\)]"
 
     def __init__(self):
         """Initialize the instance."""
