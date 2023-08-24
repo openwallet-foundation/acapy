@@ -66,9 +66,9 @@ def run(args):
 
 def main(args):
     """Execute default entry point."""
-    if __name__ == "__main__":
-        init_debug(args)
-        run(args)
+    init_debug(args)
+    run(args)
 
 
-main(sys.argv)
+if __name__ == "__main__":
+    main(sys.argv)
