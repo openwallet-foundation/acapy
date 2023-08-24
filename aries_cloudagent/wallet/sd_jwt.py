@@ -164,8 +164,18 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
                 *self._input_disclosures,
                 self._unverified_input_key_binding_jwt,
             ) = self._split(sd_jwt)
-            return self._unverified_input_sd_jwt
-        # TOOD: what to do about the else?
+        else:
+            # if the SD-JWT is in JSON format, parse the json and extract the disclosures.
+            self._unverified_input_sd_jwt = sd_jwt
+            self._unverified_input_sd_jwt_parsed = json.loads(sd_jwt)
+            self._input_disclosures = self._unverified_input_sd_jwt_parsed[
+                self.JWS_KEY_DISCLOSURES
+            ]
+            self._unverified_input_key_binding_jwt = (
+                self._unverified_input_sd_jwt_parsed.get(self.JWS_KEY_KB_JWT, "")
+            )
+
+        return self._unverified_input_sd_jwt
 
     def _create_disclosures_list(self) -> List:
         disclosures_list = []
