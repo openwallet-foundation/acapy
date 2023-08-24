@@ -64,11 +64,11 @@ def run(args):
     run_command(command, args)
 
 
-def main(args):
+def main():
     """Execute default entry point."""
-    init_debug(args)
-    run(args)
+    init_debug(sys.argv)
+    run(sys.argv)
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
