@@ -201,7 +201,7 @@ class AskarWallet(BaseWallet):
         key_type: KeyType,
         verkey_b58: str,
         did: str = None,
-        metadata: dict = None,
+        metadata: dict = {},
         keypair: Key = None,
     ) -> DIDInfo:
         try:

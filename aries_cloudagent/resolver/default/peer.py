@@ -11,7 +11,7 @@ from peerdid.dids import is_peer_did, PEER_DID_PATTERN, resolve_peer_did, DID, M
 from peerdid.keys import to_multibase, MultibaseFormat
 
 from ...connections.base_manager import BaseConnectionManager
-
+from ...connections.models.diddoc.util import resolve_peer_did_with_service_key_reference
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ...messaging.valid import DIDKey as DIDKeyType
@@ -93,7 +93,7 @@ def gen_did_peer_3(peer_did_2 : Union[str,DID]) -> Tuple[DID,DIDDocument]:
     content = to_multibase(sha256(peer_did_2.lstrip("did:peer:2").encode()).digest(),MultibaseFormat.BASE58)
     dp3 = DID("did:peer:3"+content)
 
-    doc = resolve_peer_did(peer_did_2)
+    doc = resolve_peer_did_with_service_key_reference(peer_did_2)
     convert_to_did_peer_3_document(dp3,doc)
     return dp3, doc
 

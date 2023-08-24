@@ -460,6 +460,7 @@ class BaseConnectionManager:
     def resolve_verkey_references(
         self, did_doc: DIDDocument, values_or_refs=List[str]
     ) -> List[str]:
+        """resolve verkey_references in DIDDocument and return a list of b58 encoded verkeys"""
         result = []
         resource = None
         for vor in values_or_refs:
@@ -471,7 +472,15 @@ class BaseConnectionManager:
 
             if issubclass(resource.__class__, VerificationMethod):
                 # insert material of verificationmethod
-                result.append(resource.material)
+                vk = multibase.decode(resource.material)
+        
+                if len(vk) == 32:  # No multicodec prefix
+                    vk = bytes_to_b58(vk)
+                else:
+                    codec, key = multicodec.unwrap(vk)
+                    if codec == multicodec.multicodec("ed25519-pub"):
+                        vk = bytes_to_b58(key)
+                result.append(vk)
             else:
                 # if the reference is to another type of object, log an error
                 self._logger.error(
