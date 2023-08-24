@@ -142,6 +142,7 @@ class LegacyDocCorrections:
 
     @staticmethod
     def qualified(did_or_did_url: str) -> str:
+        """Make sure DID or DID URL is fully qualified."""
         if not did_or_did_url.startswith("did:"):
             return f"did:sov:{did_or_did_url}"
         return did_or_did_url
