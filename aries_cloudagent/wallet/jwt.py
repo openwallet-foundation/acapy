@@ -2,13 +2,15 @@
 
 import json
 import logging
-from typing import Any, Mapping, NamedTuple, Optional
+from typing import Any, Mapping, Optional
 
+from marshmallow import fields
 from pydid import DIDUrl, Resource, VerificationMethod
 
 from ..core.profile import Profile
 from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMethod
 from ..messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
+from ..messaging.models.base import BaseModel, BaseModelSchema
 from ..resolver.did_resolver import DIDResolver
 from .default_verification_key_strategy import BaseVerificationKeyStrategy
 from .base import BaseWallet
@@ -88,13 +90,44 @@ async def jwt_sign(
     return f"{encoded_headers}.{encoded_payload}.{sig}"
 
 
-class JWTVerifyResult(NamedTuple):
+class JWTVerifyResult(BaseModel):
     """Result from verify."""
 
-    headers: Mapping[str, Any]
-    payload: Mapping[str, Any]
-    valid: bool
-    kid: str
+    class Meta:
+        """JWTVerifyResult metadata."""
+
+        schema_class = "JWTVerifyResultSchema"
+
+    def __init__(
+        self,
+        headers: Mapping[str, Any],
+        payload: Mapping[str, Any],
+        valid: bool,
+        kid: str,
+    ):
+        self.headers = headers
+        self.payload = payload
+        self.valid = valid
+        self.kid = kid
+
+
+class JWTVerifyResultSchema(BaseModelSchema):
+    """JWTVerifyResult schema"""
+
+    class Meta:
+        """JWTVerifyResultSchema metadata."""
+
+        model_class = JWTVerifyResult
+
+    headers = fields.Dict(
+        required=True, metadata={"description": "Headers from verified JWT."}
+    )
+    payload = fields.Dict(
+        required=True, metadata={"description": "Payload from verified JWT"}
+    )
+    valid = fields.Bool(required=True)
+    kid = fields.Str(required=True, metadata={"description": "kid of signer"})
+    error = fields.Str(required=False, metadata={"description": "Error text"})
 
 
 async def resolve_public_key_by_kid_for_verify(profile: Profile, kid: str) -> str:

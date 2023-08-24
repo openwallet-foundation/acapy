@@ -1073,15 +1073,7 @@ async def wallet_sd_jwt_verify(request: web.BaseRequest):
     except ResolverError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    return web.json_response(
-        {
-            "valid": result.valid,
-            "headers": result.headers,
-            "payload": result.payload,
-            "kid": result.kid,
-            "disclosures": result.disclosures,
-        }
-    )
+    return web.json_response(result.serialize())
 
 
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")

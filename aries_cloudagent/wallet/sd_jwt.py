@@ -2,14 +2,16 @@
 
 import json
 from typing import Any, List, Mapping, Optional
+from marshmallow import fields
 from jsonpath_ng.ext import parse
 from sd_jwt.common import SDObj
 from sd_jwt.issuer import SDJWTIssuer
 from sd_jwt.verifier import SDJWTVerifier
 
 from ..core.profile import Profile
-from ..wallet.jwt import JWTVerifyResult, jwt_sign, jwt_verify
+from ..wallet.jwt import JWTVerifyResult, JWTVerifyResultSchema, jwt_sign, jwt_verify
 from ..core.error import BaseError
+from ..messaging.valid import StrOrDictField
 
 
 class SDJWTError(BaseError):
@@ -123,10 +125,50 @@ async def sd_jwt_sign(
 class SDJWTVerifyResult(JWTVerifyResult):
     """Result from verifying SD-JWT"""
 
-    disclosures: list
+    class Meta:
+        """SDJWTVerifyResult metadata."""
 
-    def add_disclosures(self, disclosures):
+        schema_class = "SDJWTVerifyResultSchema"
+
+    def __init__(
+        self,
+        headers,
+        payload,
+        valid,
+        kid,
+        disclosures,
+    ):
+        super().__init__(
+            headers,
+            payload,
+            valid,
+            kid,
+        )
         self.disclosures = disclosures
+
+
+class SDJWTVerifyResultSchema(JWTVerifyResultSchema):
+    """SDJWTVerifyResult schema"""
+
+    class Meta:
+        """SDJWTVerifyResultSchema metadata."""
+
+        model_class = SDJWTVerifyResult
+
+    disclosures = fields.List(
+        fields.List(StrOrDictField()),
+        metadata={
+            "description": "Disclosure arrays associated with the SD-JWT",
+            "example": [
+                ["fx1iT_mETjGiC-JzRARnVg", "name", "Alice"],
+                [
+                    "n4-t3mlh8jSS6yMIT7QHnA",
+                    "street_address",
+                    {"_sd": ["kLZrLK7enwfqeOzJ9-Ss88YS3mhjOAEk9lr_ix2Heng"]},
+                ],
+            ],
+        },
+    )
 
 
 class SDJWTVerifierACAPy(SDJWTVerifier):
@@ -148,14 +190,13 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
             self.profile,
             self.serialized_sd_jwt,
         )
-        sd_jwt_verify_result = SDJWTVerifyResult(
+        return SDJWTVerifyResult(
             headers=verified.headers,
             payload=verified.payload,
             valid=verified.valid,
             kid=verified.kid,
+            disclosures=self._disclosures_list,
         )
-        sd_jwt_verify_result.add_disclosures(self._disclosures_list)
-        return sd_jwt_verify_result
 
     def _parse_sd_jwt(self, sd_jwt):
         if self._serialization_format == "compact":

@@ -157,7 +157,7 @@ class TestSDJWT:
         verified = await sd_jwt_verify(profile, signed)
         assert isinstance(verified, SDJWTVerifyResult)
         assert verified.valid
-        assert "address" not in verified
+        assert "address" not in verified.payload
         assert verified.payload["_sd"]
         assert verified.payload["_sd_alg"]
         for disclosure in verified.disclosures:
