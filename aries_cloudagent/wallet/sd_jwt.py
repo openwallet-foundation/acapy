@@ -1,14 +1,14 @@
 """Operations supporting SD-JWT creation and verification."""
 
 import json
-from typing import Any, List, Mapping, NamedTuple, Optional
+from typing import Any, List, Mapping, Optional
 from jsonpath_ng.ext import parse
 from sd_jwt.common import SDObj
 from sd_jwt.issuer import SDJWTIssuer
 from sd_jwt.verifier import SDJWTVerifier
 
 from ..core.profile import Profile
-from ..wallet.jwt import jwt_sign, jwt_verify
+from ..wallet.jwt import JWTVerifyResult, jwt_sign, jwt_verify
 from ..core.error import BaseError
 
 
@@ -120,20 +120,17 @@ async def sd_jwt_sign(
         verification_method=verification_method,
     )
     await sd_jwt_issuer.issue()
-    print(json.dumps(sd_jwt_issuer.sd_jwt_payload, indent=4))
 
     return sd_jwt_issuer.sd_jwt_issuance
 
 
-class SDJWTVerifyResult(NamedTuple):
+class SDJWTVerifyResult(JWTVerifyResult):
     """Result from verifying SD-JWT"""
 
-    headers: Mapping[str, Any]
-    payload: Mapping[str, Any]
-    valid: bool
-    kid: str
-    disclosures: str
-    # TODO: figure out inheritance
+    disclosures: list
+
+    def add_disclosures(self, disclosures):
+        self.disclosures = disclosures
 
 
 class SDJWTVerifierACAPy(SDJWTVerifier):
@@ -155,13 +152,14 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
             self.profile,
             self.serialized_sd_jwt,
         )
-        return SDJWTVerifyResult(
+        sd_jwt_verify_result = SDJWTVerifyResult(
             headers=verified.headers,
             payload=verified.payload,
             valid=verified.valid,
             kid=verified.kid,
-            disclosures=self._disclosures_list,
         )
+        sd_jwt_verify_result.add_disclosures(self._disclosures_list)
+        return sd_jwt_verify_result
 
     def _parse_sd_jwt(self, sd_jwt):
         if self._serialization_format == "compact":
