@@ -13,7 +13,6 @@ RUN poetry install -E "askar bbs"
 
 RUN mkdir -p aries_cloudagent && touch aries_cloudagent/__init__.py
 ADD aries_cloudagent/version.py aries_cloudagent/version.py
-ADD bin ./bin
 
 RUN mkdir -p logs && chmod -R ug+rw logs
 ADD aries_cloudagent ./aries_cloudagent

@@ -18,7 +18,6 @@ ADD README.md pyproject.toml poetry.lock ./
 RUN poetry install --no-root --no-directory -E "askar bbs"
 
 ADD aries_cloudagent ./aries_cloudagent
-ADD bin ./bin
 ADD scripts ./scripts
 
 RUN pip3 install --no-cache-dir -e .
