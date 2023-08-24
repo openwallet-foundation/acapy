@@ -109,7 +109,7 @@ test = [
 ]
 
 [tool.poetry.scripts]
-aca-py = "aries_cloudagent.__main__:main"
+aca-py = "aries_cloudagent.__main__:script_main"
 
 [build-system]
 requires = ["poetry-core"]
