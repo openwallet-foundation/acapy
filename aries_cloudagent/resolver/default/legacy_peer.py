@@ -6,7 +6,7 @@ Resolution is performed by looking up a stored DID Document.
 from copy import deepcopy
 from dataclasses import asdict, dataclass
 import logging
-from typing import Optional, Sequence, Text, Union
+from typing import List, Optional, Sequence, Text, Union
 
 from pydid import DID
 
@@ -118,7 +118,8 @@ class LegacyDocCorrections:
             for service in value["service"]:
                 if "type" in service and service["type"] == "IndyAgent":
                     service["type"] = "did-communication"
-                    service["id"] = service["id"].replace(";indy", "#didcomm")
+                    if ";" in service["id"]:
+                        service["id"] = value["id"] + "#didcomm"
         return value
 
     @staticmethod
@@ -139,6 +140,73 @@ class LegacyDocCorrections:
                     ]
         return value
 
+    @staticmethod
+    def qualified(did_or_did_url: str) -> str:
+        if not did_or_did_url.startswith("did:"):
+            return f"did:sov:{did_or_did_url}"
+        return did_or_did_url
+
+    @classmethod
+    def fully_qualified_ids_and_controllers(cls, value: dict) -> dict:
+        """Make sure IDs and controllers are fully qualified."""
+
+        def _make_qualified(value: dict) -> dict:
+            if "id" in value:
+                ident = value["id"]
+                value["id"] = cls.qualified(ident)
+            if "controller" in value:
+                controller = value["controller"]
+                value["controller"] = cls.qualified(controller)
+            return value
+
+        value = _make_qualified(value)
+        vms = []
+        for verification_method in value.get("verificationMethod", []):
+            vms.append(_make_qualified(verification_method))
+
+        services = []
+        for service in value.get("service", []):
+            services.append(_make_qualified(service))
+
+        auths = []
+        for authn in value.get("authentication", []):
+            if isinstance(authn, dict):
+                auths.append(_make_qualified(authn))
+            elif isinstance(authn, str):
+                auths.append(cls.qualified(authn))
+            else:
+                raise ValueError("Unexpected authentication value type")
+
+        value["authentication"] = auths
+        value["verificationMethod"] = vms
+        value["service"] = services
+        return value
+
+    @staticmethod
+    def remove_verification_method(
+        vms: List[dict], public_key_base58: str
+    ) -> List[dict]:
+        """Remove the verification method with the given key."""
+        return [vm for vm in vms if vm["publicKeyBase58"] != public_key_base58]
+
+    @classmethod
+    def remove_routing_keys_from_verification_method(cls, value: dict) -> dict:
+        """Remove routing keys from verification methods.
+
+        This was an old convention; routing keys were added to the public keys
+        of the doc even though they're usually not owned by the doc sender.
+
+        This correction should be applied before turning the routing keys into
+        did keys.
+        """
+        vms = value.get("verificationMethod", [])
+        for service in value.get("service", []):
+            if "routingKeys" in service:
+                for routing_key in service["routingKeys"]:
+                    vms = cls.remove_verification_method(vms, routing_key)
+        value["verificationMethod"] = vms
+        return value
+
     @classmethod
     def apply(cls, value: dict) -> dict:
         """Apply all corrections to the given DID document."""
@@ -146,7 +214,9 @@ class LegacyDocCorrections:
         for correction in (
             cls.public_key_is_verification_method,
             cls.authentication_is_list_of_verification_methods_and_refs,
+            cls.fully_qualified_ids_and_controllers,
             cls.didcomm_services_use_updated_conventions,
+            cls.remove_routing_keys_from_verification_method,
             cls.didcomm_services_recip_keys_are_refs_routing_keys_are_did_key,
         ):
             value = correction(value)
