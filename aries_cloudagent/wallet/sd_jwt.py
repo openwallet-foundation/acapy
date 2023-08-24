@@ -101,14 +101,10 @@ async def sd_jwt_sign(
                 if type(match.context.value) is list:
                     match.context.value.remove(match.value)
                     match.context.value.append(SDObj(match.value))
-                elif type(match.context.value) is str or int or dict or bool:
+                else:
                     match.context.value[
                         SDObj(str(match.path))
                     ] = match.context.value.pop(str(match.path))
-                else:
-                    raise SDJWTError(
-                        f"Unrecognized type {type(match.context.value)} for {match.path}"
-                    )
 
     sd_jwt_issuer = SDJWTIssuerACAPy(
         user_claims=payload,
