@@ -40,7 +40,7 @@ from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ..resolver.base import ResolverError
 from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
-from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.error import StorageDuplicateError, StorageError, StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..transport.inbound.receipt import MessageReceipt
 from ..wallet.base import BaseWallet
@@ -226,6 +226,12 @@ class BaseConnectionManager:
                 await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
             except StorageNotFoundError:
                 await storage.add_record(record)
+            except StorageDuplicateError:
+                self._logger.warning(
+                    "Key already associated with DID: %s; this is likely caused by "
+                    "routing keys being erroneously stored in the past",
+                    key,
+                )
 
     async def find_did_for_key(self, key: str) -> str:
         """Find the DID previously associated with a key.
