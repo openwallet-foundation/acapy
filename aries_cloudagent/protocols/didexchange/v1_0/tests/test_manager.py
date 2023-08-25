@@ -59,23 +59,14 @@ class TestConfig:
     test_target_did = "did:peer:2.Ez6LSkBNr2dHSFmSnauLjReSsfzaX1wo5Vo4L6msUPPxKCrxx.Vz6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya.SeyJ0IjoiZG0iLCJzIjoiaHR0cDovL2xvY2FsaG9zdCIsInJlY2lwaWVudF9rZXlzIjpbXSwicm91dGluZ19rZXlzIjpbXX0"
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
-    def make_did_doc(self, did, verkey):
+    def make_did_doc(self, did, verkey) -> DIDDocument:
         # for peer did, create did_doc first then save did after.
-        service = {
-            "type": "did-communication",
-            "serviceEndpoint": self.test_endpoint,
-            "recipient_keys": [],
-            "routing_keys":[],
-        }
-
         peer_did, peer_doc = create_peer_did_2(
-            self.test_verkey, service=service
+            self.test_verkey, self.test_endpoint
         )
 
         self.test_did = peer_did
         return resolve_peer_did(self.test_did)
-
-
 
 
 class TestDidExchangeManager(AsyncTestCase, TestConfig):

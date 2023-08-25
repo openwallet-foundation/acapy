@@ -302,7 +302,7 @@ class DIDXManager(BaseConnectionManager):
                 my_info = await wallet.get_local_did(conn_rec.my_did)
         else:
             # Create new DID for connection
-            if self.profile.settings.get("debug.send_peer_did", True):
+            if self.profile.settings.get("debug.send_peer_did", False):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
 
@@ -504,6 +504,8 @@ class DIDXManager(BaseConnectionManager):
         # request DID doc describes requester DID
         if request.did and request.did.startswith("did:peer:2"):
             peer_did_3, conn_did_doc = gen_did_peer_3(request.did)
+            await self.store_did_document(conn_did_doc)
+
         else:
             if not (request.did_doc_attach and request.did_doc_attach.data):
                 raise DIDXManagerError(
@@ -524,7 +526,7 @@ class DIDXManager(BaseConnectionManager):
                             f"DID Doc id {conn_did_doc.id}"
                     )
                     raise DIDXManagerError("does not match")
-        await self.store_did_document(conn_did_doc)
+            await self.store_did_document_with_different_id(conn_did_doc,request.did)
 
         if conn_rec:  # request is against explicit invitation
             auto_accept = (
@@ -823,7 +825,7 @@ class DIDXManager(BaseConnectionManager):
                         f"DID Doc id {conn_did_doc.id}"
                     )
 
-        await self.store_did_document(conn_did_doc)
+        await self.store_did_document_with_different_id(conn_did_doc,their_did)
 
         conn_rec.their_did = their_did
         conn_rec.state = ConnRecord.State.RESPONSE.rfc23

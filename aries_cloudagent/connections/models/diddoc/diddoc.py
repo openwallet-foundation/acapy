@@ -526,7 +526,7 @@ class DIDDoc:
         return rv
 
     @classmethod
-    def deserialize(cls, did_doc: dict) -> Union["DIDDocument", "DIDDoc"]:
+    def deserialize(cls, did_doc: dict, upgrade:bool=False) -> Union["DIDDocument", "DIDDoc"]:
         """
         Construct DIDDoc object from dict representation.
 
@@ -540,11 +540,13 @@ class DIDDoc:
 
         """
         try:
-            return upgrade_legacy_did_doc_to_peer_did(json.dumps(did_doc))[1]
-            ## ANY ATTEMPTED DESERIALIZATION SHOULD RETURN DIDDocument
+            if upgrade:
+                ## ANY ATTEMPTED DESERIALIZATION SHOULD RETURN DIDDocument
+                return upgrade_legacy_did_doc_to_peer_did(json.dumps(did_doc))[1]
         
         except Exception as e: 
             LOGGER.error("COULD NOT DESERAILZE AS DIDDocument , FALL BACK TO LEGACY DESERIZLATION")
+        finally:
             rv = None
             if "id" in did_doc:
                 rv = DIDDoc(did_doc["id"])

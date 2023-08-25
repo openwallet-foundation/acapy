@@ -122,6 +122,19 @@ def ok_did(token: str) -> bool:
     except ValueError:
         return False
 
+def resolve_peer_did_with_service_key_reference(peer_did_2: Union[str,DID]) -> DIDDocument:
+    try:
+        doc = resolve_peer_did(peer_did_2)
+        ## WORKAROUND LIBRARY NOT REREFERENCING RECEIPIENT_KEY
+        services = doc.service
+        signing_keys = [vm for vm in doc.verification_method or [] if vm.type == "Ed25519VerificationKey2020"]
+        if services and signing_keys:
+            services[0].__dict__["recipient_keys"]=[signing_keys[0].id]
+        else:
+            raise Exception("no recipient_key signing_key pair")
+    except Exception as e:
+        raise ValueError ("pydantic validation error:" + str(e))
+    return doc
 
 def create_peer_did_2(verkey: str, service_endpoint: str) -> Tuple[DID, DIDDocument]:
     """verkey must by base58"""
@@ -138,42 +151,10 @@ def create_peer_did_2(verkey: str, service_endpoint: str) -> Tuple[DID, DIDDocum
     doc = resolve_peer_did_with_service_key_reference(did)
     return did, doc
 
-def resolve_peer_did_with_service_key_reference(peer_did_2: Union[str,DID]) -> DIDDocument:
-    try:
-        doc = resolve_peer_did(peer_did_2)
-        ## WORKAROUND LIBRARY NOT REREFERENCING RECEIPIENT_KEY
-        services = doc.service
-        signing_keys = [vm for vm in doc.verification_method or [] if vm.type == "Ed25519VerificationKey2020"]
-        if services and signing_keys:
-            services[0].__dict__["recipient_keys"]=[signing_keys[0].id]
-        else:
-            raise Exception("no recipient_key signing_key pair")
-    except Exception as e:
-        raise ValueError ("pydantic validation error:" + str(e))
-    return doc
-
 def upgrade_legacy_did_doc_to_peer_did(json_str:str) -> Tuple[DID, DIDDocument]:
     doc_dict = json.loads(json_str)
 
     public_key_b58 = doc_dict["publicKey"][0]["publicKeyBase58"]
     service = doc_dict["service"][0]
 
-    if "id" in service:
-        del service["id"]
-
-
-    #remove a key that is already being included
-    service["recipient_keys"] = [k for k in service.get("recipient_keys",[]) if k != public_key_b58]
-        
-    didcommv1_service = {
-        "type":DID_COMM_V1_SERVICE_TYPE,
-        "serviceEndpoint":service.get("service_endpoint",service.get("serviceEndpoint")),
-        "recipient_keys":service.get("recipient_keys",service.get("recipientKeys",[])),
-        "routing_keys":service.get("routing_keys",service.get("routingKeys",[])),
-        "accept":service.get("accept"),
-        "priority":service.get("priority"),
-
-    }
-    simplified_service = {k:v for k,v in didcommv1_service.items() if v}
-
-    return create_peer_did_2(public_key_b58,simplified_service)
+    return create_peer_did_2(public_key_b58,service.get("service_endpoint",service["serviceEndpoint"]))

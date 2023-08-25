@@ -13,6 +13,7 @@ from pydid import (
     DIDDocument,
     DIDCommService,
     VerificationMethod,
+    DID
 )
 import pydid
 from pydid.verification_method import (
@@ -175,7 +176,15 @@ class BaseConnectionManager:
             did_doc.set(service)
         return did_doc
 
-    async def store_did_document(self, did_doc: Union[DIDDocument,LegacyDIDDoc]):
+    async def store_did_document(self, did_doc: DIDDocument):
+        return await self._store_did_document(did_doc,did_doc.id)
+
+    
+    async def store_did_document_with_different_id(self, did_doc: DIDDocument, unqualified_did:str):
+        """TO HANDLE LEGACY CONNECTION UNQUALIFIED DIDS WITH NEW DIDDocuments """
+        return await self._store_did_document(did_doc,unqualified_did)
+
+    async def _store_did_document(self, did_doc: Union[DIDDocument,LegacyDIDDoc], storage_id: Union[str,DID]):
         """Store a DID document.
 
         Args:
@@ -184,12 +193,12 @@ class BaseConnectionManager:
         assert did_doc.id
 
         try:
-            stored_doc, record = await self.fetch_did_document(did_doc.id)
+            stored_doc, record = await self.fetch_did_document(storage_id)
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
                 did_doc.to_json(),
-                {"did": did_doc.id},
+                {"did": storage_id},
             )
             async with self._profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)
@@ -198,20 +207,20 @@ class BaseConnectionManager:
             async with self._profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)
                 await storage.update_record(
-                    record, did_doc.to_json(), {"did": did_doc.id}
+                    record, did_doc.to_json(), {"did": storage_id}
                 )
-        await self.remove_keys_for_did(did_doc.id)
+        await self.remove_keys_for_did(storage_id)
         if hasattr(did_doc, "pubkey"):
             for key in did_doc.pubkey.values():
-                if key.controller == did_doc.id:
-                    await self.add_key_for_did(did_doc.id, key.value)
+                if key.controller == storage_id:
+                    await self.add_key_for_did(storage_id, key.value)
         if hasattr(did_doc, "verification_method"):
             for vm in did_doc.verification_method or []:
-                if vm.controller == did_doc.id:
+                if vm.controller == storage_id:
                     if vm.public_key_base58:
-                        await self.add_key_for_did(did_doc.id, vm.public_key_base58)
+                        await self.add_key_for_did(storage_id, vm.public_key_base58)
                     if vm.public_key_multibase:
-                        await self.add_key_for_did(did_doc.id, bytes_to_b58(multibase.decode(vm.public_key_multibase)))
+                        await self.add_key_for_did(storage_id, bytes_to_b58(multibase.decode(vm.public_key_multibase)))
                     elif vm.material:
                         self._logger.error(
                             "VerificationMethod material exists, but no in base58, not saving key"
