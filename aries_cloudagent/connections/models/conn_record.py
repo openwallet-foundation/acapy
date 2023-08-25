@@ -9,8 +9,8 @@ from marshmallow import fields, validate
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    INDY_DID_EXAMPLE,
-    INDY_DID_VALIDATE,
+    ANY_DID_OR_UNQUALIFIED_EXAMPLE,
+    ANY_DID_OR_UNQUALIFIED_VALIDATE,
     INDY_RAW_PUBLIC_KEY_EXAMPLE,
     INDY_RAW_PUBLIC_KEY_VALIDATE,
     UUID4_EXAMPLE,
@@ -648,15 +648,15 @@ class ConnRecordSchema(BaseRecordSchema):
     )
     my_did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Our DID for connection", "example": INDY_DID_EXAMPLE},
+        validate=ANY_DID_OR_UNQUALIFIED_VALIDATE,
+        metadata={"description": "Our DID for connection", "example": ANY_DID_OR_UNQUALIFIED_EXAMPLE},
     )
     their_did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
+        validate=ANY_DID_OR_UNQUALIFIED_VALIDATE,
         metadata={
             "description": "Their DID for connection",
-            "example": INDY_DID_EXAMPLE,
+            "example": ANY_DID_OR_UNQUALIFIED_EXAMPLE,
         },
     )
     their_label = fields.Str(
