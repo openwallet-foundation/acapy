@@ -201,7 +201,7 @@ class JWSHeaderKid(Regexp):
 
 
 class NonSDList(Regexp):
-    """Validate NonSD List"""
+    """Validate NonSD List."""
 
     EXAMPLE = [
         "name",

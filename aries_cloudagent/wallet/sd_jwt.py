@@ -69,9 +69,7 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
 
 
 def create_json_paths(it, current_path="", path_list=None):
-    """
-    Create a json path for each element of the payload.
-    """
+    """Create a json path for each element of the payload."""
     if path_list is None:
         path_list = []
 
@@ -129,9 +127,7 @@ def separate_list_splices(non_sd_list):
 
 
 def create_sd_list(payload, non_sd_list):
-    """
-    Create a list of claims which will be selectively disclosable.
-    """
+    """Create a list of claims which will be selectively disclosable."""
     flattened_payload = create_json_paths(payload)
     separated_non_sd_list = separate_list_splices(non_sd_list)
     sd_list = [
@@ -188,7 +184,7 @@ async def sd_jwt_sign(
 
 
 class SDJWTVerifyResult(JWTVerifyResult):
-    """Result from verifying SD-JWT"""
+    """Result from verifying SD-JWT."""
 
     class Meta:
         """SDJWTVerifyResult metadata."""
@@ -203,6 +199,7 @@ class SDJWTVerifyResult(JWTVerifyResult):
         kid,
         disclosures,
     ):
+        """Initialize an SDJWTVerifyResult instance."""
         super().__init__(
             headers,
             payload,
@@ -213,7 +210,7 @@ class SDJWTVerifyResult(JWTVerifyResult):
 
 
 class SDJWTVerifyResultSchema(JWTVerifyResultSchema):
-    """SDJWTVerifyResult schema"""
+    """SDJWTVerifyResult schema."""
 
     class Meta:
         """SDJWTVerifyResultSchema metadata."""
@@ -303,9 +300,7 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
 async def sd_jwt_verify(
     profile: Profile, sd_jwt_presentation: str
 ) -> SDJWTVerifyResult:
-    """
-    Verify sd-jwt using SDJWTVerifierACAPy.verify().
-    """
+    """Verify sd-jwt using SDJWTVerifierACAPy.verify()."""
     sd_jwt_verifier = SDJWTVerifierACAPy(profile, sd_jwt_presentation)
     verified = await sd_jwt_verifier.verify()
     return verified

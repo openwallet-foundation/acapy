@@ -105,6 +105,7 @@ class JWTVerifyResult(BaseModel):
         valid: bool,
         kid: str,
     ):
+        """Initialize a JWTVerifyResult instance."""
         self.headers = headers
         self.payload = payload
         self.valid = valid
@@ -112,7 +113,7 @@ class JWTVerifyResult(BaseModel):
 
 
 class JWTVerifyResultSchema(BaseModelSchema):
-    """JWTVerifyResult schema"""
+    """JWTVerifyResult schema."""
 
     class Meta:
         """JWTVerifyResultSchema metadata."""
