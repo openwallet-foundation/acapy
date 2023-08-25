@@ -86,6 +86,10 @@ RUN mkdir -p \
 RUN chown -R $user:root $HOME/.indy_client $HOME/.aries_cloudagent && \
     chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache $HOME/.indy_client
 
+# Create /home/indy and symlink .indy_client folder for backwards compatibility with artifacts created on older indy-based images.
+RUN mkdir -p /home/indy
+RUN ln -s /home/aries/.indy_client /home/indy/.indy_client
+
 # Install ACA-py from the wheel as $user,
 # and ensure the permissions on the python 'site-packages' and $HOME/.local folders are set correctly.
 USER $user
