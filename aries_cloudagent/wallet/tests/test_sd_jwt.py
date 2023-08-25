@@ -16,7 +16,10 @@ def create_address_payload():
             "locality": "Anytown",
             "region": "Anystate",
             "country": "US",
-        }
+        },
+        "iss": "https://example.com/issuer",
+        "iat": 1683000000,
+        "exp": 1883000000,
     }
 
 
@@ -49,25 +52,22 @@ class TestSDJWT:
             "birthdate": "1940-01-01",
             "updated_at": 1570000000,
             "nationalities": ["US", "DE", "SA"],
+            "iss": "https://example.com/issuer",
+            "iat": 1683000000,
+            "exp": 1883000000,
         }
-        sd_list = [
-            "address",
-            "address.street_address",
-            "address.street_address.house_number",
-            "address.locality",
-            "address.region",
-            "address.country",
+        non_sd_list = [
             "given_name",
             "family_name",
-            "email",
-            "phone_number",
-            "phone_number_verified",
-            "birthdate",
-            "updated_at",
-            "nationalities[1:3]",
+            "nationalities",
         ]
         signed = await sd_jwt_sign(
-            profile, self.headers, payload, sd_list, did_info.did, verification_method
+            profile,
+            self.headers,
+            payload,
+            non_sd_list,
+            did_info.did,
+            verification_method,
         )
         assert signed
 
@@ -79,12 +79,19 @@ class TestSDJWT:
     ):
         did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
         verification_method = None
-        sd_list = ["address"]
+        non_sd_list = [
+            "address.street_address",
+            "address.street_address.house_number",
+            "address.street_address.street",
+            "address.locality",
+            "address.region",
+            "address.country",
+        ]
         signed = await sd_jwt_sign(
             profile,
             self.headers,
             create_address_payload,
-            sd_list,
+            non_sd_list,
             did_info.did,
             verification_method,
         )
@@ -94,10 +101,14 @@ class TestSDJWT:
         assert isinstance(verified, SDJWTVerifyResult)
         assert verified.valid
         assert verified.payload["_sd"]
-        assert len(verified.payload["_sd"]) >= len(sd_list)
         assert verified.payload["_sd_alg"]
-        for disclosure in verified.disclosures:
-            assert disclosure[1] in sd_list
+        assert verified.disclosures[0][1] == "address"
+        assert verified.disclosures[0][2] == {
+            "street_address": "123 Main St",
+            "locality": "Anytown",
+            "region": "Anystate",
+            "country": "US",
+        }
 
     @pytest.mark.asyncio
     async def test_nested_structure(
@@ -105,18 +116,13 @@ class TestSDJWT:
     ):
         did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
         verification_method = None
-        sd_list = [
-            "address.street_address",
-            "address.locality",
-            "address.region",
-            "address.country",
-        ]
+        non_sd_list = ["address"]
 
         signed = await sd_jwt_sign(
             profile,
             self.headers,
             create_address_payload,
-            sd_list,
+            non_sd_list,
             did_info.did,
             verification_method,
         )
@@ -125,10 +131,10 @@ class TestSDJWT:
         verified = await sd_jwt_verify(profile, signed)
         assert isinstance(verified, SDJWTVerifyResult)
         assert verified.valid
-        assert len(verified.payload["address"]["_sd"]) >= len(sd_list)
+        assert len(verified.payload["address"]["_sd"]) >= 4
         assert verified.payload["_sd_alg"]
-        for disclosure in verified.disclosures:
-            assert f"address.{disclosure[1]}" in sd_list
+        sd_claims = ["street_address", "region", "locality", "country"]
+        assert sorted(sd_claims) == sorted([claim[1] for claim in verified.disclosures])
 
     @pytest.mark.asyncio
     async def test_recursive_nested_structure(
@@ -136,19 +142,13 @@ class TestSDJWT:
     ):
         did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
         verification_method = None
-        sd_list = [
-            "address",
-            "address.street_address",
-            "address.locality",
-            "address.region",
-            "address.country",
-        ]
+        non_sd_list = []
 
         signed = await sd_jwt_sign(
             profile,
             self.headers,
             create_address_payload,
-            sd_list,
+            non_sd_list,
             did_info.did,
             verification_method,
         )
@@ -160,22 +160,28 @@ class TestSDJWT:
         assert "address" not in verified.payload
         assert verified.payload["_sd"]
         assert verified.payload["_sd_alg"]
+        sd_claims = ["street_address", "region", "locality", "country"]
         for disclosure in verified.disclosures:
             if disclosure[1] == "address":
                 assert isinstance(disclosure[2], dict)
-                assert len(disclosure[2]["_sd"]) >= len(sd_list) - 1
+                assert len(disclosure[2]["_sd"]) >= 4
             else:
-                assert f"address.{disclosure[1]}" in sd_list
+                assert disclosure[1] in sd_claims
 
     @pytest.mark.asyncio
     async def test_list_splice(self, profile, in_memory_wallet):
         did_info = await in_memory_wallet.create_local_did(KEY, ED25519, self.seed)
         payload = {"nationalities": ["US", "DE", "SA"]}
         verification_method = None
-        sd_list = ["nationalities[1:3]"]
+        non_sd_list = ["nationalities", "nationalities[1:3]"]
 
         signed = await sd_jwt_sign(
-            profile, self.headers, payload, sd_list, did_info.did, verification_method
+            profile,
+            self.headers,
+            payload,
+            non_sd_list,
+            did_info.did,
+            verification_method,
         )
         assert signed
 
@@ -189,6 +195,4 @@ class TestSDJWT:
             else:
                 assert nationality in payload["nationalities"]
         assert verified.payload["_sd_alg"]
-        spliced = [element.value for element in payload["nationalities"][1:3]]
-        for disclosure in verified.disclosures:
-            assert disclosure[1] in spliced
+        assert verified.disclosures[0][1] == "US"
