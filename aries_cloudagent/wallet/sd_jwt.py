@@ -64,6 +64,36 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
         self._create_combined()
 
 
+def create_json_paths(it, current_path="", path_list=None):
+    """
+    Create a json path for each element of the payload.
+    """
+    if path_list is None:
+        path_list = []
+
+    if type(it) is dict:
+        for k, v in it.items():
+            new_key = f"{current_path}.{k}" if current_path else k
+            path_list.append(new_key)
+
+            if isinstance(v, dict):
+                create_json_paths(v, new_key, path_list)
+            elif isinstance(v, list):
+                for i, e in enumerate(v):
+                    if isinstance(e, (dict, list)):
+                        create_json_paths(e, f"{new_key}[{i}]", path_list)
+                    else:
+                        path_list.append(f"{new_key}[{i}]")
+    elif type(it) is list:
+        for i, e in enumerate(it):
+            if isinstance(e, (dict, list)):
+                create_json_paths(e, f"{current_path}[{i}]", path_list)
+            else:
+                path_list.append(f"{current_path}[{i}]")
+
+    return path_list
+
+
 def sort_sd_list(sd_list):
     """
     Sorts sd_list.
