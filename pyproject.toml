@@ -2,7 +2,7 @@
 name = "aries_cloudagent"
 version = "0.10.0-rc0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Hyperledger Aries <aries@lists.hyperledger.org>"]
 license = "Apache-2.0"
 readme = "README.md"
 packages = [{include = "aries_cloudagent"}]
@@ -98,14 +98,6 @@ bbs = [
 ]
 indy = [
      "python3-indy"
-]
-test = [
-     "asynctest",
-     "pytest",
-     "pytest-asyncio",
-     "pytest-cov",
-     "pytest-flake8",
-     "mock"
 ]
 
 [tool.poetry.scripts]

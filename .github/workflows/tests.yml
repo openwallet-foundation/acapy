@@ -25,6 +25,6 @@ jobs:
       - name: Install the project dependencies
         run: |
           pip install poetry
-          poetry install -E "askar bbs test"
+          poetry install -E "askar bbs"
       - name: Tests
         run: poetry run pytest

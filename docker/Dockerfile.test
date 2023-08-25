@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir poetry
 
 ADD ./README.md pyproject.toml ./poetry.lock ./
 
-RUN poetry install --no-root --no-directory -E "askar bbs test"
+RUN poetry install --no-root --no-directory -E "askar bbs"
 
 ADD . .
 
