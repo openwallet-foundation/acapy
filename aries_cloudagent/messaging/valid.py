@@ -200,8 +200,8 @@ class JWSHeaderKid(Regexp):
         )
 
 
-class SDList(Regexp):
-    """Validate SD List"""
+class NonSDList(Regexp):
+    """Validate NonSD List"""
 
     EXAMPLE = [
         "name",
@@ -215,8 +215,8 @@ class SDList(Regexp):
         """Initialize the instance."""
 
         super().__init__(
-            SDList.PATTERN,
-            error="Value {input} is not a valid SDList",
+            NonSDList.PATTERN,
+            error="Value {input} is not a valid NonSDList",
         )
 
 
@@ -842,8 +842,8 @@ INDY_REV_REG_SIZE_EXAMPLE = IndyRevRegSize.EXAMPLE
 JWS_HEADER_KID_VALIDATE = JWSHeaderKid()
 JWS_HEADER_KID_EXAMPLE = JWSHeaderKid.EXAMPLE
 
-SD_LIST_VALIDATE = SDList()
-SD_LIST_EXAMPLE = SDList().EXAMPLE
+NON_SD_LIST_VALIDATE = NonSDList()
+NON_SD_LIST_EXAMPLE = NonSDList().EXAMPLE
 
 JWT_VALIDATE = JSONWebToken()
 JWT_EXAMPLE = JSONWebToken.EXAMPLE

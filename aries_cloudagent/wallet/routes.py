@@ -37,8 +37,8 @@ from ..messaging.valid import (
     JWT_VALIDATE,
     SD_JWT_EXAMPLE,
     SD_JWT_VALIDATE,
-    SD_LIST_EXAMPLE,
-    SD_LIST_VALIDATE,
+    NON_SD_LIST_EXAMPLE,
+    NON_SD_LIST_VALIDATE,
     IndyDID,
     StrOrDictField,
     Uri,
@@ -180,11 +180,11 @@ class JWSCreateSchema(OpenAPISchema):
 class SDJWSCreateSchema(JWSCreateSchema):
     """Request schema to create an sd-jws with a particular DID."""
 
-    sd_list = fields.List(
+    non_sd_list = fields.List(
         fields.Str(
             required=False,
-            validate=SD_LIST_VALIDATE,
-            metadata={"example": SD_LIST_EXAMPLE},
+            validate=NON_SD_LIST_VALIDATE,
+            metadata={"example": NON_SD_LIST_EXAMPLE},
         )
     )
 
@@ -999,6 +999,7 @@ async def wallet_sd_jwt_sign(request: web.BaseRequest):
         "did": "did:example:123",
         "verificationMethod": "did:example:123#keys-1"
         with did and verification being mutually exclusive.
+        "non_sd_list": []
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
@@ -1006,11 +1007,11 @@ async def wallet_sd_jwt_sign(request: web.BaseRequest):
     verification_method = body.get("verificationMethod")
     headers = body.get("headers", {})
     payload = body.get("payload", {})
-    sd_list = body.get("sd_list", [])
+    non_sd_list = body.get("non_sd_list", [])
 
     try:
         sd_jws = await sd_jwt_sign(
-            context.profile, headers, payload, sd_list, did, verification_method
+            context.profile, headers, payload, non_sd_list, did, verification_method
         )
     except ValueError as err:
         raise web.HTTPBadRequest(reason="Bad did or verification method") from err
