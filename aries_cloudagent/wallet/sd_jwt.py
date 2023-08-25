@@ -144,7 +144,7 @@ async def sd_jwt_sign(
     profile: Profile,
     headers: Mapping[str, Any],
     payload: Mapping[str, Any],
-    non_sd_list: List,
+    non_sd_list: List = [],
     did: Optional[str] = None,
     verification_method: Optional[str] = None,
 ) -> str:
