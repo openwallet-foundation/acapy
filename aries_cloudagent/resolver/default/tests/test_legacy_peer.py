@@ -179,3 +179,125 @@ class TestLegacyPeerDIDResolver:
         actual = test_module.LegacyDocCorrections.apply(input_doc)
         assert actual == expected
         assert expected == test_module.LegacyDocCorrections.apply(expected)
+
+    def test_corrections_bifold(self):
+        input_doc = {
+            "@context": "https://w3id.org/did/v1",
+            "publicKey": [
+                {
+                    "id": "PkWfCgY4SSAYeSoaWx3RFP#1",
+                    "controller": "PkWfCgY4SSAYeSoaWx3RFP",
+                    "type": "Ed25519VerificationKey2018",
+                    "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
+                }
+            ],
+            "service": [
+                {
+                    "id": "PkWfCgY4SSAYeSoaWx3RFP#IndyAgentService",
+                    "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
+                    "type": "IndyAgent",
+                    "priority": 0,
+                    "recipientKeys": ["DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K"],
+                    "routingKeys": ["cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd"],
+                }
+            ],
+            "authentication": [
+                {
+                    "publicKey": "PkWfCgY4SSAYeSoaWx3RFP#1",
+                    "type": "Ed25519SignatureAuthentication2018",
+                }
+            ],
+            "id": "PkWfCgY4SSAYeSoaWx3RFP",
+        }
+        expected = {
+            "@context": "https://w3id.org/did/v1",
+            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+            "verificationMethod": [
+                {
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
+                    "type": "Ed25519VerificationKey2018",
+                    "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                    "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
+                }
+            ],
+            "authentication": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
+            "service": [
+                {
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#IndyAgentService",
+                    "type": "did-communication",
+                    "priority": 0,
+                    "recipientKeys": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
+                    "routingKeys": [
+                        "did:key:z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1#z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1"
+                    ],
+                    "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
+                }
+            ],
+        }
+        actual = test_module.LegacyDocCorrections.apply(input_doc)
+        assert actual == expected
+        assert expected == test_module.LegacyDocCorrections.apply(expected)
+
+    def test_corrections_stored(self):
+        input_doc = {
+            "@context": "https://w3id.org/did/v1",
+            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+            "publicKey": [
+                {
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
+                    "type": "Ed25519VerificationKey2018",
+                    "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                    "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
+                },
+                {
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#QPUs2fFT",
+                    "type": "Ed25519VerificationKey2018",
+                    "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                    "publicKeyBase58": "cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd",
+                },
+            ],
+            "authentication": [
+                {
+                    "type": "Ed25519SignatureAuthentication2018",
+                    "publicKey": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
+                }
+            ],
+            "service": [
+                {
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP;PkWfCgY4SSAYeSoaWx3RFP#IndyAgentService",
+                    "type": "IndyAgent",
+                    "priority": 0,
+                    "recipientKeys": ["DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K"],
+                    "routingKeys": ["cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd"],
+                    "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
+                }
+            ],
+        }
+        expected = {
+            "@context": "https://w3id.org/did/v1",
+            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+            "verificationMethod": [
+                {
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
+                    "type": "Ed25519VerificationKey2018",
+                    "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                    "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
+                }
+            ],
+            "authentication": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
+            "service": [
+                {
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#didcomm",
+                    "type": "did-communication",
+                    "priority": 0,
+                    "recipientKeys": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
+                    "routingKeys": [
+                        "did:key:z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1#z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1"
+                    ],
+                    "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
+                }
+            ],
+        }
+        actual = test_module.LegacyDocCorrections.apply(input_doc)
+        assert actual == expected
+        assert expected == test_module.LegacyDocCorrections.apply(expected)
