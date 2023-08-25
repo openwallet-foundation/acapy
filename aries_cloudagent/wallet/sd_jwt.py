@@ -125,24 +125,36 @@ def separate_list_splices(non_sd_list):
     return non_sd_list
 
 
+def create_sd_list(payload, non_sd_list):
+    """
+    Create a list of claims which will be selectively disclosable.
+    """
+    flattened_payload = create_json_paths(payload)
+    separated_non_sd_list = separate_list_splices(non_sd_list)
+    sd_list = [
+        claim for claim in flattened_payload if claim not in separated_non_sd_list
+    ]
+    return sort_sd_list(sd_list)
+
+
 async def sd_jwt_sign(
     profile: Profile,
     headers: Mapping[str, Any],
     payload: Mapping[str, Any],
-    sd_list: List,
+    non_sd_list: List,
     did: Optional[str] = None,
     verification_method: Optional[str] = None,
 ) -> str:
     """
     Sign sd-jwt.
 
-    Use sd_list to wrap selectively disclosable claims with
-    SDObj within payload, create SDJWTIssuerACAPy object, and
-    call SDJWTIssuerACAPy.issue().
+    Use non_sd_list and json paths for payload elements to create a list of
+    claims that can be selectively disclosable. Use this list to wrap
+    selectively disclosable claims with SDObj within payload,
+    create SDJWTIssuerACAPy object, and call SDJWTIssuerACAPy.issue().
     """
-
-    sorted_sd_list = sort_sd_list(sd_list)
-    for sd in sorted_sd_list:
+    sd_list = create_sd_list(payload, non_sd_list)
+    for sd in sd_list:
         jsonpath_expression = parse(f"$.{sd}")
         matches = jsonpath_expression.find(payload)
         if len(matches) < 1:
