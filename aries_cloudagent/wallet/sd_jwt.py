@@ -1,6 +1,7 @@
 """Operations supporting SD-JWT creation and verification."""
 
 import json
+import re
 from typing import Any, List, Mapping, Optional
 from marshmallow import fields
 from jsonpath_ng.ext import parse
@@ -104,6 +105,24 @@ def sort_sd_list(sd_list):
     nested_claim_sort = [(len(sd.split(".")), sd) for sd in sd_list]
     nested_claim_sort.sort(reverse=True)
     return [sd[1] for sd in nested_claim_sort]
+
+
+def separate_list_splices(non_sd_list):
+    """
+    Separate list splices in the non_sd_list into individual indices.
+
+    This is necessary in order to properly construct the inverse of
+    the claims which should not be selectively disclosable in the case
+    of list splices.
+    """
+    for item in non_sd_list:
+        if ":" in item:
+            split = re.split(r"\[|\]|:", item)
+            for i in range(int(split[1]), int(split[2])):
+                non_sd_list.append(f"{split[0]}[{i}]")
+            non_sd_list.remove(item)
+
+    return non_sd_list
 
 
 async def sd_jwt_sign(
