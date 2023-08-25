@@ -207,8 +207,27 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_public_info = await wallet.get_public_did()
-            if not my_public_info:
-                raise WalletError("No public DID configured")
+                if not my_public_info:
+                    raise WalletError("No public DID configured")
+                if (
+                    my_public_info.did == their_public_did
+                    or f"did:sov:{my_public_info.did}" == their_public_did
+                ):
+                    raise DIDXManagerError(
+                        "Cannot connect to yourself through public DID"
+                    )
+                try:
+                    await ConnRecord.retrieve_by_did(
+                        session,
+                        their_did=their_public_did,
+                        my_did=my_public_info.did,
+                    )
+                    raise DIDXManagerError(
+                        "Connection already exists for their_did "
+                        f"{their_public_did} and my_did {my_public_info.did}"
+                    )
+                except StorageNotFoundError:
+                    pass
 
         conn_rec = ConnRecord(
             my_did=my_public_info.did
@@ -316,6 +335,9 @@ class DIDXManager(BaseConnectionManager):
             # Omit DID Doc attachment if we're using a public DID
             did_doc = None
             attach = None
+            did = conn_rec.my_did
+            if not did.startswith("did:"):
+                did = f"did:sov:{did}"
         else:
             did_doc = await self.create_did_document(
                 my_info,
@@ -329,6 +351,7 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 await attach.data.sign(my_info.verkey, wallet)
+            did = conn_rec.my_did
 
         if conn_rec.their_public_did is not None:
             qualified_did = conn_rec.their_public_did
@@ -344,7 +367,7 @@ class DIDXManager(BaseConnectionManager):
 
         request = DIDXRequest(
             label=my_label,
-            did=conn_rec.my_did,
+            did=did,
             did_doc_attach=attach,
             goal_code=goal_code,
             goal=goal,
@@ -474,23 +497,28 @@ class DIDXManager(BaseConnectionManager):
                 conn_rec = new_conn_rec
 
         # request DID doc describes requester DID
-        if not (request.did_doc_attach and request.did_doc_attach.data):
-            raise DIDXManagerError(
-                "DID Doc attachment missing or has no data: "
-                "cannot connect to public DID"
+        if request.did_doc_attach and request.did_doc_attach.data:
+            self._logger.debug("Received DID Doc attachment in request")
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
+                await self.store_did_document(conn_did_doc)
+            if request.did != conn_did_doc.did:
+                raise DIDXManagerError(
+                    (
+                        f"Connection DID {request.did} does not match "
+                        f"DID Doc id {conn_did_doc.did}"
+                    ),
+                    error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                )
+        else:
+            if request.did is None:
+                raise DIDXManagerError("No DID in request")
+
+            self._logger.debug(
+                "No DID Doc attachment in request; doc will be resolved from DID"
             )
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
-        if request.did != conn_did_doc.did:
-            raise DIDXManagerError(
-                (
-                    f"Connection DID {request.did} does not match "
-                    f"DID Doc id {conn_did_doc.did}"
-                ),
-                error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
-            )
-        await self.store_did_document(conn_did_doc)
+            await self.record_keys_for_public_did(request.did)
 
         if conn_rec:  # request is against explicit invitation
             auto_accept = (
@@ -511,13 +539,7 @@ class DIDXManager(BaseConnectionManager):
             # request is against implicit invitation on public DID
             if not self.profile.settings.get("requests_through_public_did"):
                 raise DIDXManagerError(
-                    "Unsolicited connection requests to " "public DID is not enabled"
-                )
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(
-                    method=SOV,
-                    key_type=ED25519,
+                    "Unsolicited connection requests to public DID is not enabled"
                 )
 
             auto_accept = bool(
@@ -529,7 +551,7 @@ class DIDXManager(BaseConnectionManager):
             )
 
             conn_rec = ConnRecord(
-                my_did=my_info.did,
+                my_did=None,  # Defer DID creation until create_response
                 accept=(
                     ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL
                 ),
@@ -563,6 +585,7 @@ class DIDXManager(BaseConnectionManager):
         conn_rec: ConnRecord,
         my_endpoint: Optional[str] = None,
         mediation_id: Optional[str] = None,
+        use_public_did: Optional[bool] = None,
     ) -> DIDXResponse:
         """
         Create a connection response for a received connection request.
@@ -606,6 +629,17 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
+            did = my_info.did
+        elif use_public_did:
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.get_public_did()
+            if not my_info:
+                raise DIDXManagerError("No public DID configured")
+            conn_rec.my_did = my_info.did
+            did = my_info.did
+            if not did.startswith("did:"):
+                did = f"did:sov:{did}"
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -614,6 +648,7 @@ class DIDXManager(BaseConnectionManager):
                     key_type=ED25519,
                 )
             conn_rec.my_did = my_info.did
+            did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
@@ -630,19 +665,25 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        did_doc = await self.create_did_document(
-            my_info,
-            conn_rec.inbound_connection_id,
-            my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
-        )
-        attach = AttachDecorator.data_base64(did_doc.serialize())
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            await attach.data.sign(conn_rec.invitation_key, wallet)
-        response = DIDXResponse(did=my_info.did, did_doc_attach=attach)
+        if use_public_did:
+            # Omit DID Doc attachment if we're using a public DID
+            did_doc = None
+            attach = None
+        else:
+            did_doc = await self.create_did_document(
+                my_info,
+                conn_rec.inbound_connection_id,
+                my_endpoints,
+                mediation_records=list(
+                    filter(None, [base_mediation_record, mediation_record])
+                ),
+            )
+            attach = AttachDecorator.data_base64(did_doc.serialize())
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                await attach.data.sign(conn_rec.invitation_key, wallet)
+
+        response = DIDXResponse(did=did, did_doc_attach=attach)
         # Assign thread information
         response.assign_thread_from(request)
         response.assign_trace_from(request)
@@ -744,19 +785,26 @@ class DIDXManager(BaseConnectionManager):
             )
 
         their_did = response.did
-        if not response.did_doc_attach:
-            raise DIDXManagerError("No DIDDoc attached; cannot connect to public DID")
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            conn_did_doc = await self.verify_diddoc(
-                wallet, response.did_doc_attach, conn_rec.invitation_key
+        if response.did_doc_attach:
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                conn_did_doc = await self.verify_diddoc(
+                    wallet, response.did_doc_attach, conn_rec.invitation_key
+                )
+            if their_did != conn_did_doc.did:
+                raise DIDXManagerError(
+                    f"Connection DID {their_did} "
+                    f"does not match DID doc id {conn_did_doc.did}"
+                )
+            await self.store_did_document(conn_did_doc)
+        else:
+            if response.did is None:
+                raise DIDXManagerError("No DID in response")
+
+            self._logger.debug(
+                "No DID Doc attachment in response; doc will be resolved from DID"
             )
-        if their_did != conn_did_doc.did:
-            raise DIDXManagerError(
-                f"Connection DID {their_did} "
-                f"does not match DID doc id {conn_did_doc.did}"
-            )
-        await self.store_did_document(conn_did_doc)
+            await self.record_keys_for_public_did(response.did)
 
         conn_rec.their_did = their_did
         conn_rec.state = ConnRecord.State.RESPONSE.rfc23

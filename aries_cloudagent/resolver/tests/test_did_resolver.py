@@ -9,6 +9,7 @@ import pytest
 from asynctest import mock as async_mock
 from pydid import DID, DIDDocument, VerificationMethod, BasicDIDDocument
 
+from ...core.in_memory import InMemoryProfile
 from ..base import (
     BaseDIDResolver,
     DIDMethodNotSupported,
@@ -98,7 +99,7 @@ def resolver():
 
 @pytest.fixture
 def profile():
-    yield async_mock.MagicMock()
+    yield InMemoryProfile.test_profile()
 
 
 def test_create_resolver(resolver):

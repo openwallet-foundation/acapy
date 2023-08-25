@@ -146,6 +146,9 @@ class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
             "example": UUID4_EXAMPLE,
         },
     )
+    use_public_did = fields.Boolean(
+        required=False, metadata={"description": "Use public DID for this connection"}
+    )
 
 
 class DIDXConnIdMatchInfoSchema(OpenAPISchema):
@@ -351,6 +354,7 @@ async def didx_accept_request(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
+    use_public_did = json.loads(request.query.get("use_public_did", "null"))
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
@@ -361,6 +365,7 @@ async def didx_accept_request(request: web.BaseRequest):
             conn_rec=conn_rec,
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
+            use_public_did=use_public_did,
         )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
