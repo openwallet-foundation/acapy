@@ -7,9 +7,9 @@ from multiformats import multibase, multicodec
 from pydid import DID, DIDDocument, DIDDocumentBuilder
 from pydid.doc.builder import ServiceBuilder
 from pydid.verification_method import (
+    EcdsaSecp256k1VerificationKey2019,
     Ed25519VerificationKey2018,
     Ed25519VerificationKey2020,
-    EcdsaSecp256k1VerificationKey2019,
     JsonWebKey2020,
 )
 
@@ -38,7 +38,9 @@ from ...protocols.discovery.v2_0.manager import V20DiscoveryMgr
 from ...resolver.default.key import KeyDIDResolver
 from ...resolver.default.legacy_peer import LegacyPeerDIDResolver
 from ...resolver.did_resolver import DIDResolver
+from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
+from ...storage.record import StorageRecord
 from ...transport.inbound.receipt import MessageReceipt
 from ...wallet.base import DIDInfo
 from ...wallet.did_method import DIDMethods, SOV
@@ -403,6 +405,64 @@ class TestBaseConnectionManager(AsyncTestCase):
         did = await self.manager.find_did_for_key(key=self.test_target_verkey)
         assert did == self.test_target_did
         await self.manager.remove_keys_for_did(self.test_target_did)
+
+    async def test_store_did_document_with_routing_keys(self):
+        """Regression test for ensuring agents with the same mediator can connect."""
+
+        # Replicate old behavior where routing keys could be stored multiple times
+        routing_key = "cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd"
+        async with self.profile.session() as session:
+            for _ in range(3):
+                record = StorageRecord(
+                    self.manager.RECORD_TYPE_DID_KEY,
+                    routing_key,
+                    {"did": "bogus", "key": routing_key},
+                )
+                storage = session.inject(BaseStorage)
+                await storage.add_record(record)
+
+        # The DIDDoc class will turn the routing key into a publicKey entry.
+        # This is NOT the correct behavior for normalizing DID Documents.
+        # Unforunately, it's been doing it for a long time; to accomodate
+        # stored records, we need to make sure we can handle duplicate records
+        # where they shouldn't actually be.
+        # These records were never used or else we would have seen errors raised
+        # by find_did_for_key compaining of duplicate records.
+        doc_with_routing_keys = DIDDoc.deserialize(
+            {
+                "@context": "https://w3id.org/did/v1",
+                "publicKey": [
+                    {
+                        "id": "YQwDgq9vdAbB3fk1tkeXmg#1",
+                        "controller": "YQwDgq9vdAbB3fk1tkeXmg",
+                        "type": "Ed25519VerificationKey2018",
+                        "publicKeyBase58": "J81x9zdJa8CGSbTYpoYQaNrV6yv13M1Lgz4tmkNPKwZn",
+                    }
+                ],
+                "service": [
+                    {
+                        "id": "YQwDgq9vdAbB3fk1tkeXmg#IndyAgentService",
+                        "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
+                        "type": "IndyAgent",
+                        "priority": 0,
+                        "recipientKeys": [
+                            "J81x9zdJa8CGSbTYpoYQaNrV6yv13M1Lgz4tmkNPKwZn"
+                        ],
+                        "routingKeys": ["cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd"],
+                    }
+                ],
+                "authentication": [
+                    {
+                        "publicKey": "YQwDgq9vdAbB3fk1tkeXmg#1",
+                        "type": "Ed25519SignatureAuthentication2018",
+                    }
+                ],
+                "id": "YQwDgq9vdAbB3fk1tkeXmg",
+            }
+        )
+        with self.assertLogs(level="WARNING") as context:
+            await self.manager.store_did_document(doc_with_routing_keys)
+        assert context.output and "Key already associated with DID" in context.output[0]
 
     async def test_fetch_connection_targets_no_my_did(self):
         mock_conn = async_mock.MagicMock()
