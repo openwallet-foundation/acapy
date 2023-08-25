@@ -184,7 +184,7 @@ class BaseConnectionManager:
         """TO HANDLE LEGACY CONNECTION UNQUALIFIED DIDS WITH NEW DIDDocuments """
         return await self._store_did_document(did_doc,unqualified_did)
 
-    async def _store_did_document(self, did_doc: Union[DIDDocument,LegacyDIDDoc], storage_id: Union[str,DID]):
+    async def _store_did_document(self, did_doc: DIDDocument, storage_id: Union[str,DID]):
         """Store a DID document.
 
         Args:
@@ -216,11 +216,20 @@ class BaseConnectionManager:
                     await self.add_key_for_did(storage_id, key.value)
         if hasattr(did_doc, "verification_method"):
             for vm in did_doc.verification_method or []:
-                if vm.controller == storage_id:
+                if vm.controller == did_doc.id:
                     if vm.public_key_base58:
                         await self.add_key_for_did(storage_id, vm.public_key_base58)
                     if vm.public_key_multibase:
-                        await self.add_key_for_did(storage_id, bytes_to_b58(multibase.decode(vm.public_key_multibase)))
+                        pk = multibase.decode(vm.public_key_multibase)
+                        if len(pk) == 32:  # No multicodec prefix
+                            pk = bytes_to_b58(pk)
+                        else:
+                            codec, key = multicodec.unwrap(pk)
+                            if codec == multicodec.multicodec("ed25519-pub"):
+                                pk = bytes_to_b58(key)
+                            else: 
+                                continue
+                        await self.add_key_for_did(storage_id, pk)
                     elif vm.material:
                         self._logger.error(
                             "VerificationMethod material exists, but no in base58, not saving key"
