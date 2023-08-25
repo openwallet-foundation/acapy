@@ -15,6 +15,9 @@ from ..core.error import BaseError
 from ..messaging.valid import StrOrDictField
 
 
+CLAIMS_NEVER_SD = ["iss", "iat", "exp", "cnf"]
+
+
 class SDJWTError(BaseError):
     """SD-JWT Error."""
 
@@ -161,13 +164,14 @@ async def sd_jwt_sign(
             raise SDJWTError(f"Claim for {sd} not found in payload.")
         else:
             for match in matches:
-                if type(match.context.value) is list:
-                    match.context.value.remove(match.value)
-                    match.context.value.append(SDObj(match.value))
-                else:
-                    match.context.value[
-                        SDObj(str(match.path))
-                    ] = match.context.value.pop(str(match.path))
+                if str(match.path) not in CLAIMS_NEVER_SD:
+                    if type(match.context.value) is list:
+                        match.context.value.remove(match.value)
+                        match.context.value.append(SDObj(match.value))
+                    else:
+                        match.context.value[
+                            SDObj(str(match.path))
+                        ] = match.context.value.pop(str(match.path))
 
     sd_jwt_issuer = SDJWTIssuerACAPy(
         user_claims=payload,
