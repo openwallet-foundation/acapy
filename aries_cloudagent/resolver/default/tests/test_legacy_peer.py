@@ -350,3 +350,57 @@ class TestLegacyPeerDIDResolver:
         actual = test_module.LegacyDocCorrections.apply(input_doc)
         assert actual == expected
         assert expected == test_module.LegacyDocCorrections.apply(expected)
+
+    def test_corrections_stored_findy(self):
+        input_doc = {
+            "@context": "https://w3id.org/did/v1",
+            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
+            "publicKey": [
+                {
+                    "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#1",
+                    "type": "Ed25519VerificationKey2018",
+                    "controller": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
+                    "publicKeyBase58": "3dtu2WWtd5ELwRTJEPzmEJUYEp8Qq36N2QA24g9tFXK9",
+                }
+            ],
+            "authentication": [
+                {
+                    "type": "Ed25519SignatureAuthentication2018",
+                    "publicKey": "did:sov:5qXMeLdyWEQhieFUBNw5ux#1",
+                }
+            ],
+            "service": [
+                {
+                    "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
+                    "type": "IndyAgent",
+                    "priority": None,
+                    "recipientKeys": ["3dtu2WWtd5ELwRTJEPzmEJUYEp8Qq36N2QA24g9tFXK9"],
+                    "serviceEndpoint": "http://172.17.0.1:9031/a2a/5b6dyY6PndLaCnWxZbeEYW/5b6dyY6PndLaCnWxZbeEYW/2f6aae0c-6b04-40ff-a25e-faecaea39f83",
+                }
+            ],
+        }
+        expected = {
+            "@context": "https://w3id.org/did/v1",
+            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
+            "verificationMethod": [
+                {
+                    "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#1",
+                    "type": "Ed25519VerificationKey2018",
+                    "controller": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
+                    "publicKeyBase58": "3dtu2WWtd5ELwRTJEPzmEJUYEp8Qq36N2QA24g9tFXK9",
+                }
+            ],
+            "authentication": ["did:sov:5qXMeLdyWEQhieFUBNw5ux#1"],
+            "service": [
+                {
+                    "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#didcomm",
+                    "type": "did-communication",
+                    "priority": None,
+                    "recipientKeys": ["did:sov:5qXMeLdyWEQhieFUBNw5ux#1"],
+                    "serviceEndpoint": "http://172.17.0.1:9031/a2a/5b6dyY6PndLaCnWxZbeEYW/5b6dyY6PndLaCnWxZbeEYW/2f6aae0c-6b04-40ff-a25e-faecaea39f83",
+                }
+            ],
+        }
+        actual = test_module.LegacyDocCorrections.apply(input_doc)
+        assert actual == expected
+        assert expected == test_module.LegacyDocCorrections.apply(expected)

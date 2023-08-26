@@ -120,6 +120,8 @@ class LegacyDocCorrections:
                     service["type"] = "did-communication"
                     if ";" in service["id"]:
                         service["id"] = value["id"] + "#didcomm"
+                    if "#" not in service["id"]:
+                        service["id"] += "#didcomm"
         return value
 
     @staticmethod
