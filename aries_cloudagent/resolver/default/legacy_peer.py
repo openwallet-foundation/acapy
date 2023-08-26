@@ -123,14 +123,27 @@ class LegacyDocCorrections:
         return value
 
     @staticmethod
+    def recip_base58_to_ref(vms: List[dict], recip: str) -> str:
+        """Convert base58 public key to ref."""
+        for vm in vms:
+            if "publicKeyBase58" in vm and vm["publicKeyBase58"] == recip:
+                return vm["id"]
+        return recip
+
+    @classmethod
     def didcomm_services_recip_keys_are_refs_routing_keys_are_did_key(
+        cls,
         value: dict,
     ) -> dict:
         """Update DIDComm service recips to use refs and routingKeys to use did:key."""
+        vms = value.get("verificationMethod", [])
         if "service" in value:
             for service in value["service"]:
                 if "type" in service and service["type"] == "did-communication":
-                    service["recipientKeys"] = [f"{value['id']}#1"]
+                    service["recipientKeys"] = [
+                        cls.recip_base58_to_ref(vms, recip)
+                        for recip in service.get("recipientKeys", [])
+                    ]
                 if "routingKeys" in service:
                     service["routingKeys"] = [
                         DIDKey.from_public_key_b58(key, ED25519).key_id

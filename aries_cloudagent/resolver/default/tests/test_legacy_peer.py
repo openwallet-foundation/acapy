@@ -301,3 +301,52 @@ class TestLegacyPeerDIDResolver:
         actual = test_module.LegacyDocCorrections.apply(input_doc)
         assert actual == expected
         assert expected == test_module.LegacyDocCorrections.apply(expected)
+
+    def test_corrections_stored_afgo(self):
+        input_doc = {
+            "@context": "https://w3id.org/did/v1",
+            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
+            "publicKey": [
+                {
+                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW",
+                    "type": "Ed25519VerificationKey2018",
+                    "controller": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
+                    "publicKeyBase58": "gMxdVMyF8RakaptxFsDzHAxfQ5iEKZkCEQcSwsDbSWf",
+                }
+            ],
+            "authentication": [],
+            "service": [
+                {
+                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA;0f555a80-c950-4b2c-b8ec-632c72ffd780",
+                    "type": "IndyAgent",
+                    "priority": 0,
+                    "recipientKeys": ["gMxdVMyF8RakaptxFsDzHAxfQ5iEKZkCEQcSwsDbSWf"],
+                    "serviceEndpoint": "http://172.17.0.1:9031",
+                }
+            ],
+        }
+        expected = {
+            "@context": "https://w3id.org/did/v1",
+            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
+            "verificationMethod": [
+                {
+                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW",
+                    "type": "Ed25519VerificationKey2018",
+                    "controller": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
+                    "publicKeyBase58": "gMxdVMyF8RakaptxFsDzHAxfQ5iEKZkCEQcSwsDbSWf",
+                }
+            ],
+            "authentication": [],
+            "service": [
+                {
+                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#didcomm",
+                    "type": "did-communication",
+                    "priority": 0,
+                    "recipientKeys": ["did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW"],
+                    "serviceEndpoint": "http://172.17.0.1:9031",
+                }
+            ],
+        }
+        actual = test_module.LegacyDocCorrections.apply(input_doc)
+        assert actual == expected
+        assert expected == test_module.LegacyDocCorrections.apply(expected)
