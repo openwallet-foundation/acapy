@@ -1,9 +1,10 @@
 import json
 
+from typing import Tuple
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
-from pydid import DIDDocument
-from peerdid.dids import DIDDocument, resolve_peer_did
+from pydid import DIDDocument, DID
+from peerdid.dids import resolve_peer_did
 
 from .. import manager as test_module
 from .....cache.base import BaseCache
@@ -59,14 +60,14 @@ class TestConfig:
     test_target_did = "did:peer:2.Ez6LSkBNr2dHSFmSnauLjReSsfzaX1wo5Vo4L6msUPPxKCrxx.Vz6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya.SeyJ0IjoiZG0iLCJzIjoiaHR0cDovL2xvY2FsaG9zdCIsInJlY2lwaWVudF9rZXlzIjpbXSwicm91dGluZ19rZXlzIjpbXX0"
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
-    def make_did_doc(self, did, verkey) -> DIDDocument:
+    def make_did_doc(self, verkey) -> Tuple[DID, DIDDocument]:
         # for peer did, create did_doc first then save did after.
         peer_did, peer_doc = create_peer_did_2(
             self.test_verkey, self.test_endpoint
         )
 
         self.test_did = peer_did
-        return resolve_peer_did(self.test_did)
+        return peer_did, resolve_peer_did(self.test_did)
 
 
 class TestDidExchangeManager(AsyncTestCase, TestConfig):
@@ -145,8 +146,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
     async def test_verify_diddoc(self):
         async with self.profile.session() as session:
-            did_doc = self.make_did_doc(
-                TestConfig.test_target_did,
+            did, did_doc = self.make_did_doc(
                 TestConfig.test_target_verkey,
             )
             did_doc_attach = AttachDecorator.data_base64(did_doc.serialize())
@@ -497,10 +497,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
     async def test_receive_request_explicit_public_did(self):
         
-        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+        did, test_did_doc = self.make_did_doc(self.test_verkey)
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
-                did=TestConfig.test_did,
+                did=did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
                         signed=async_mock.MagicMock(
@@ -602,7 +602,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
                 conn_rec = await self.manager.receive_request(
                     request=mock_request,
-                    recipient_did=TestConfig.test_did,
+                    recipient_did=did,
                     recipient_verkey=None,
                     my_endpoint=None,
                     alias=None,
@@ -919,11 +919,11 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "Public invitations are not enabled" in str(context.exception)
 
     async def test_receive_request_public_did_no_auto_accept(self):
-        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+        did, test_did_doc = self.make_did_doc(self.test_verkey)
 
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
-                did=TestConfig.test_did,
+                did=did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
                         signed=async_mock.MagicMock(
@@ -987,7 +987,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
                 conn_rec = await self.manager.receive_request(
                     request=mock_request,
-                    recipient_did=TestConfig.test_did,
+                    recipient_did=did,
                     recipient_verkey=None,
                     my_endpoint=TestConfig.test_endpoint,
                     alias="Alias",
@@ -999,10 +999,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert not messages
 
     async def test_receive_request_implicit_public_did_not_enabled(self):
-        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+        did, test_did_doc = self.make_did_doc(self.test_verkey)
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
-                did=TestConfig.test_did,
+                did=did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
                         verify=async_mock.CoroutineMock(return_value=True),
@@ -1057,7 +1057,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 with self.assertRaises(DIDXManagerError) as context:
                     await self.manager.receive_request(
                         request=mock_request,
-                        recipient_did=TestConfig.test_did,
+                        recipient_did=did,
                         my_endpoint=None,
                         alias=None,
                         auto_accept_implicit=None,
@@ -1065,11 +1065,11 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "Unsolicited connection requests" in str(context.exception)
 
     async def test_receive_request_implicit_public_did(self):
-        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+        did, test_did_doc = self.make_did_doc(self.test_verkey)
 
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
-                did=TestConfig.test_did,
+                did=did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
                         verify=async_mock.CoroutineMock(return_value=True),
@@ -1093,7 +1093,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 method=SOV,
                 key_type=ED25519,
                 seed=None,
-                did=TestConfig.test_did,
+                did=did,
             )
 
             self.profile.context.update_settings({"public_invites": True})
@@ -1151,11 +1151,11 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_receive_request_peer_did(self):
-        test_did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+        did, test_did_doc = self.make_did_doc(self.test_verkey)
 
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
-                did=TestConfig.test_did,
+                did=did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
                         signed=async_mock.MagicMock(
@@ -1167,7 +1167,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             mock_conn = async_mock.MagicMock(
-                my_did=TestConfig.test_did,
+                my_did=did,
                 their_did=TestConfig.test_target_did,
                 invitation_key=TestConfig.test_verkey,
                 connection_id="dummy",
@@ -1233,7 +1233,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
                 conn_rec = await self.manager.receive_request(
                     request=mock_request,
-                    recipient_did=TestConfig.test_did,
+                    recipient_did=did,
                     recipient_verkey=TestConfig.test_verkey,
                     my_endpoint=TestConfig.test_endpoint,
                     alias="Alias",
@@ -1498,7 +1498,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
     async def test_accept_response_find_by_thread_id(self):
-        did_doc = self.make_did_doc(self.test_did, self.test_verkey)
+        did, did_doc = self.make_did_doc(self.test_verkey)
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
         mock_response.did = TestConfig.test_target_did
@@ -1532,7 +1532,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
             mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
                 did=TestConfig.test_target_did,
-                my_did=TestConfig.test_did,
+                my_did=did,
                 did_doc_attach=async_mock.MagicMock(
                     data=async_mock.MagicMock(
                         verify=async_mock.CoroutineMock(return_value=True),
@@ -1933,17 +1933,17 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         assert "unrecognized problem report" in str(context.exception)
 
     async def test_did_key_storage(self):
+        did, did_doc = self.make_did_doc(
+            verkey=TestConfig.test_target_verkey
+        )
         did_info = DIDInfo(
-            TestConfig.test_did,
+            did,
             TestConfig.test_verkey,
             None,
             method=SOV,
             key_type=ED25519,
         )
 
-        did_doc = self.make_did_doc(
-            did=TestConfig.test_target_did, verkey=TestConfig.test_target_verkey
-        )
 
         await self.manager.add_key_for_did(
             did=TestConfig.test_target_did, key=TestConfig.test_target_verkey
@@ -1954,9 +1954,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         await self.manager.remove_keys_for_did(TestConfig.test_target_did)
 
     async def test_diddoc_connection_targets_diddoc(self):
-        did_doc = self.make_did_doc(
-            TestConfig.test_target_did,
-            TestConfig.test_target_verkey,
+        did, did_doc = self.make_did_doc(
+            TestConfig.test_target_verkey
         )
         targets = self.manager.diddoc_connection_targets(
             did_doc,
