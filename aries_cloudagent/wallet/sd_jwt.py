@@ -1,6 +1,5 @@
 """Operations supporting SD-JWT creation and verification."""
 
-import json
 import re
 from typing import Any, List, Mapping, Optional
 from marshmallow import fields
@@ -66,6 +65,7 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
         self._assemble_sd_jwt_payload()
         await self._create_signed_jws()
         self._create_combined()
+        return self.sd_jwt_issuance
 
 
 def create_json_paths(it, current_path="", path_list=None) -> List:
@@ -169,7 +169,7 @@ async def sd_jwt_sign(
                             SDObj(str(match.path))
                         ] = match.context.value.pop(str(match.path))
 
-    sd_jwt_issuer = SDJWTIssuerACAPy(
+    return await SDJWTIssuerACAPy(
         user_claims=payload,
         issuer_key=None,
         holder_key=None,
@@ -177,10 +177,7 @@ async def sd_jwt_sign(
         headers=headers,
         did=did,
         verification_method=verification_method,
-    )
-    await sd_jwt_issuer.issue()
-
-    return sd_jwt_issuer.sd_jwt_issuance
+    ).issue()
 
 
 class SDJWTVerifyResult(JWTVerifyResult):
@@ -250,7 +247,7 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
     async def _verify_sd_jwt(self) -> SDJWTVerifyResult:
         verified = await jwt_verify(
             self.profile,
-            self.serialized_sd_jwt,
+            self._unverified_input_sd_jwt,
         )
         return SDJWTVerifyResult(
             headers=verified.headers,
@@ -260,40 +257,11 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
             disclosures=self._disclosures_list,
         )
 
-    def _parse_sd_jwt(self, sd_jwt):
-        if self._serialization_format == "compact":
-            (
-                self._unverified_input_sd_jwt,
-                *self._input_disclosures,
-                self._unverified_input_key_binding_jwt,
-            ) = self._split(sd_jwt)
-        else:
-            # if the SD-JWT is in JSON format, parse the json and extract the disclosures.
-            self._unverified_input_sd_jwt = sd_jwt
-            self._unverified_input_sd_jwt_parsed = json.loads(sd_jwt)
-            self._input_disclosures = self._unverified_input_sd_jwt_parsed[
-                self.JWS_KEY_DISCLOSURES
-            ]
-            self._unverified_input_key_binding_jwt = (
-                self._unverified_input_sd_jwt_parsed.get(self.JWS_KEY_KB_JWT, "")
-            )
-
-        return self._unverified_input_sd_jwt
-
-    def _create_disclosures_list(self) -> List:
-        disclosures_list = []
-        for disclosure in self._input_disclosures:
-            disclosures_list.append(
-                json.loads(self._base64url_decode(disclosure).decode("utf-8"))
-            )
-
-        return disclosures_list
-
-    async def verify(self):
+    async def verify(self) -> SDJWTVerifyResult:
         """Verify an sd-jwt."""
-        self.serialized_sd_jwt = self._parse_sd_jwt(self.sd_jwt_presentation)
+        self._parse_sd_jwt(self.sd_jwt_presentation)
         self._create_hash_mappings(self._input_disclosures)
-        self._disclosures_list = self._create_disclosures_list()
+        self._disclosures_list = list(self._hash_to_decoded_disclosure.values())
         return await self._verify_sd_jwt()
 
 
