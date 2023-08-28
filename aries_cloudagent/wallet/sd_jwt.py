@@ -51,7 +51,7 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
         self._serialization_format = serialization_format
         self.ii_disclosures = []
 
-    async def _create_signed_jws(self):
+    async def _create_signed_jws(self) -> str:
         self.serialized_sd_jwt = await jwt_sign(
             self.profile,
             self.headers,
@@ -60,7 +60,7 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
             self.verification_method,
         )
 
-    async def issue(self):
+    async def issue(self) -> str:
         """Issue an sd-jwt."""
         self._check_for_sd_claim(self._user_claims)
         self._assemble_sd_jwt_payload()
@@ -68,7 +68,7 @@ class SDJWTIssuerACAPy(SDJWTIssuer):
         self._create_combined()
 
 
-def create_json_paths(it, current_path="", path_list=None):
+def create_json_paths(it, current_path="", path_list=None) -> List:
     """Create a json path for each element of the payload."""
     if path_list is None:
         path_list = []
@@ -96,7 +96,7 @@ def create_json_paths(it, current_path="", path_list=None):
     return path_list
 
 
-def sort_sd_list(sd_list):
+def sort_sd_list(sd_list) -> List:
     """
     Sorts sd_list.
 
@@ -108,7 +108,7 @@ def sort_sd_list(sd_list):
     return [sd[1] for sd in nested_claim_sort]
 
 
-def separate_list_splices(non_sd_list):
+def separate_list_splices(non_sd_list) -> List:
     """
     Separate list splices in the non_sd_list into individual indices.
 
@@ -126,7 +126,7 @@ def separate_list_splices(non_sd_list):
     return non_sd_list
 
 
-def create_sd_list(payload, non_sd_list):
+def create_sd_list(payload, non_sd_list) -> List:
     """Create a list of claims which will be selectively disclosable."""
     flattened_payload = create_json_paths(payload)
     separated_non_sd_list = separate_list_splices(non_sd_list)
