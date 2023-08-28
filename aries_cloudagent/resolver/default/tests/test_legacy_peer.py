@@ -1,6 +1,7 @@
 """Test LegacyPeerDIDResolver."""
 
 from asynctest import mock as async_mock
+import pydid
 import pytest
 
 from .. import legacy_peer as test_module
@@ -122,285 +123,298 @@ class TestLegacyPeerDIDResolver:
             result = await resolver.resolve(profile, TEST_DID0)
             assert result == doc
 
-    def test_corrections_examples(self):
-        input_doc = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
-            "publicKey": [
+    @pytest.mark.parametrize(
+        ("input_doc", "expected"),
+        [
+            (  # Examples
                 {
-                    "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
-                    "publicKeyBase58": "AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG",
-                }
-            ],
-            "authentication": [
-                {
-                    "type": "Ed25519SignatureAuthentication2018",
-                    "publicKey": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1",
-                }
-            ],
-            "service": [
-                {
-                    "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ;indy",
-                    "type": "IndyAgent",
-                    "priority": 0,
-                    "recipientKeys": ["AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG"],
-                    "routingKeys": ["9NnKFUZoYcCqYC2PcaXH3cnaGsoRfyGgyEHbvbLJYh8j"],
-                    "serviceEndpoint": "http://bob:3000",
-                }
-            ],
-        }
-        expected = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
-            "verificationMethod": [
-                {
-                    "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
-                    "publicKeyBase58": "AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG",
-                }
-            ],
-            "authentication": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
-            "service": [
-                {
-                    "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#didcomm",
-                    "type": "did-communication",
-                    "priority": 0,
-                    "recipientKeys": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
-                    "routingKeys": [
-                        "did:key:z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7#z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7"
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
+                    "publicKey": [
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
+                            "publicKeyBase58": "AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG",
+                        }
                     ],
-                    "serviceEndpoint": "http://bob:3000",
-                }
-            ],
-        }
-        actual = test_module.LegacyDocCorrections.apply(input_doc)
-        assert actual == expected
-        assert expected == test_module.LegacyDocCorrections.apply(expected)
-
-    def test_corrections_bifold(self):
-        input_doc = {
-            "@context": "https://w3id.org/did/v1",
-            "publicKey": [
-                {
-                    "id": "PkWfCgY4SSAYeSoaWx3RFP#1",
-                    "controller": "PkWfCgY4SSAYeSoaWx3RFP",
-                    "type": "Ed25519VerificationKey2018",
-                    "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
-                }
-            ],
-            "service": [
-                {
-                    "id": "PkWfCgY4SSAYeSoaWx3RFP#IndyAgentService",
-                    "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
-                    "type": "IndyAgent",
-                    "priority": 0,
-                    "recipientKeys": ["DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K"],
-                    "routingKeys": ["cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd"],
-                }
-            ],
-            "authentication": [
-                {
-                    "publicKey": "PkWfCgY4SSAYeSoaWx3RFP#1",
-                    "type": "Ed25519SignatureAuthentication2018",
-                }
-            ],
-            "id": "PkWfCgY4SSAYeSoaWx3RFP",
-        }
-        expected = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
-            "verificationMethod": [
-                {
-                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
-                    "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
-                }
-            ],
-            "authentication": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
-            "service": [
-                {
-                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#IndyAgentService",
-                    "type": "did-communication",
-                    "priority": 0,
-                    "recipientKeys": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
-                    "routingKeys": [
-                        "did:key:z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1#z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1"
+                    "authentication": [
+                        {
+                            "type": "Ed25519SignatureAuthentication2018",
+                            "publicKey": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1",
+                        }
                     ],
-                    "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
-                }
-            ],
-        }
-        actual = test_module.LegacyDocCorrections.apply(input_doc)
-        assert actual == expected
-        assert expected == test_module.LegacyDocCorrections.apply(expected)
-
-    def test_corrections_stored(self):
-        input_doc = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
-            "publicKey": [
-                {
-                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
-                    "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
+                    "service": [
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ;indy",
+                            "type": "IndyAgent",
+                            "priority": 0,
+                            "recipientKeys": [
+                                "AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG"
+                            ],
+                            "routingKeys": [
+                                "9NnKFUZoYcCqYC2PcaXH3cnaGsoRfyGgyEHbvbLJYh8j"
+                            ],
+                            "serviceEndpoint": "http://bob:3000",
+                        }
+                    ],
                 },
                 {
-                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#QPUs2fFT",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
-                    "publicKeyBase58": "cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd",
-                },
-            ],
-            "authentication": [
-                {
-                    "type": "Ed25519SignatureAuthentication2018",
-                    "publicKey": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
-                }
-            ],
-            "service": [
-                {
-                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP;PkWfCgY4SSAYeSoaWx3RFP#IndyAgentService",
-                    "type": "IndyAgent",
-                    "priority": 0,
-                    "recipientKeys": ["DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K"],
-                    "routingKeys": ["cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd"],
-                    "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
-                }
-            ],
-        }
-        expected = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
-            "verificationMethod": [
-                {
-                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
-                    "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
-                }
-            ],
-            "authentication": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
-            "service": [
-                {
-                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#didcomm",
-                    "type": "did-communication",
-                    "priority": 0,
-                    "recipientKeys": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
-                    "routingKeys": [
-                        "did:key:z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1#z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1"
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
+                    "verificationMethod": [
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
+                            "publicKeyBase58": "AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG",
+                        }
                     ],
-                    "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
-                }
-            ],
-        }
-        actual = test_module.LegacyDocCorrections.apply(input_doc)
-        assert actual == expected
-        assert expected == test_module.LegacyDocCorrections.apply(expected)
-
-    def test_corrections_stored_afgo(self):
-        input_doc = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
-            "publicKey": [
+                    "authentication": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
+                    "service": [
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#didcomm",
+                            "type": "did-communication",
+                            "priority": 0,
+                            "recipientKeys": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
+                            "routingKeys": [
+                                "did:key:z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7#z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7"
+                            ],
+                            "serviceEndpoint": "http://bob:3000",
+                        }
+                    ],
+                },
+            ),
+            (  # Stored findy doc
                 {
-                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
-                    "publicKeyBase58": "gMxdVMyF8RakaptxFsDzHAxfQ5iEKZkCEQcSwsDbSWf",
-                }
-            ],
-            "authentication": [],
-            "service": [
-                {
-                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA;0f555a80-c950-4b2c-b8ec-632c72ffd780",
-                    "type": "IndyAgent",
-                    "priority": 0,
-                    "recipientKeys": ["gMxdVMyF8RakaptxFsDzHAxfQ5iEKZkCEQcSwsDbSWf"],
-                    "serviceEndpoint": "http://172.17.0.1:9031",
-                }
-            ],
-        }
-        expected = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
-            "verificationMethod": [
-                {
-                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
-                    "publicKeyBase58": "gMxdVMyF8RakaptxFsDzHAxfQ5iEKZkCEQcSwsDbSWf",
-                }
-            ],
-            "authentication": [],
-            "service": [
-                {
-                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#didcomm",
-                    "type": "did-communication",
-                    "priority": 0,
-                    "recipientKeys": ["did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW"],
-                    "serviceEndpoint": "http://172.17.0.1:9031",
-                }
-            ],
-        }
-        actual = test_module.LegacyDocCorrections.apply(input_doc)
-        assert actual == expected
-        assert expected == test_module.LegacyDocCorrections.apply(expected)
-
-    def test_corrections_stored_findy(self):
-        input_doc = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
-            "publicKey": [
-                {
-                    "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#1",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
-                    "publicKeyBase58": "3dtu2WWtd5ELwRTJEPzmEJUYEp8Qq36N2QA24g9tFXK9",
-                }
-            ],
-            "authentication": [
-                {
-                    "type": "Ed25519SignatureAuthentication2018",
-                    "publicKey": "did:sov:5qXMeLdyWEQhieFUBNw5ux#1",
-                }
-            ],
-            "service": [
-                {
+                    "@context": "https://w3id.org/did/v1",
                     "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
-                    "type": "IndyAgent",
-                    "priority": None,
-                    "recipientKeys": ["3dtu2WWtd5ELwRTJEPzmEJUYEp8Qq36N2QA24g9tFXK9"],
-                    "serviceEndpoint": "http://172.17.0.1:9031/a2a/5b6dyY6PndLaCnWxZbeEYW/5b6dyY6PndLaCnWxZbeEYW/2f6aae0c-6b04-40ff-a25e-faecaea39f83",
-                }
-            ],
-        }
-        expected = {
-            "@context": "https://w3id.org/did/v1",
-            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
-            "verificationMethod": [
+                    "publicKey": [
+                        {
+                            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#1",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
+                            "publicKeyBase58": "3dtu2WWtd5ELwRTJEPzmEJUYEp8Qq36N2QA24g9tFXK9",
+                        }
+                    ],
+                    "authentication": [
+                        {
+                            "type": "Ed25519SignatureAuthentication2018",
+                            "publicKey": "did:sov:5qXMeLdyWEQhieFUBNw5ux#1",
+                        }
+                    ],
+                    "service": [
+                        {
+                            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
+                            "type": "IndyAgent",
+                            "priority": None,
+                            "recipientKeys": [
+                                "3dtu2WWtd5ELwRTJEPzmEJUYEp8Qq36N2QA24g9tFXK9"
+                            ],
+                            "serviceEndpoint": "http://172.17.0.1:9031/a2a/5b6dyY6PndLaCnWxZbeEYW/5b6dyY6PndLaCnWxZbeEYW/2f6aae0c-6b04-40ff-a25e-faecaea39f83",
+                        }
+                    ],
+                },
                 {
-                    "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#1",
-                    "type": "Ed25519VerificationKey2018",
-                    "controller": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
-                    "publicKeyBase58": "3dtu2WWtd5ELwRTJEPzmEJUYEp8Qq36N2QA24g9tFXK9",
-                }
-            ],
-            "authentication": ["did:sov:5qXMeLdyWEQhieFUBNw5ux#1"],
-            "service": [
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
+                    "verificationMethod": [
+                        {
+                            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#1",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:5qXMeLdyWEQhieFUBNw5ux",
+                            "publicKeyBase58": "3dtu2WWtd5ELwRTJEPzmEJUYEp8Qq36N2QA24g9tFXK9",
+                        }
+                    ],
+                    "authentication": ["did:sov:5qXMeLdyWEQhieFUBNw5ux#1"],
+                    "service": [
+                        {
+                            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#didcomm",
+                            "type": "did-communication",
+                            "recipientKeys": ["did:sov:5qXMeLdyWEQhieFUBNw5ux#1"],
+                            "serviceEndpoint": "http://172.17.0.1:9031/a2a/5b6dyY6PndLaCnWxZbeEYW/5b6dyY6PndLaCnWxZbeEYW/2f6aae0c-6b04-40ff-a25e-faecaea39f83",
+                        }
+                    ],
+                },
+            ),
+            (  # Stored afgo doc
                 {
-                    "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#didcomm",
-                    "type": "did-communication",
-                    "priority": None,
-                    "recipientKeys": ["did:sov:5qXMeLdyWEQhieFUBNw5ux#1"],
-                    "serviceEndpoint": "http://172.17.0.1:9031/a2a/5b6dyY6PndLaCnWxZbeEYW/5b6dyY6PndLaCnWxZbeEYW/2f6aae0c-6b04-40ff-a25e-faecaea39f83",
-                }
-            ],
-        }
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
+                    "publicKey": [
+                        {
+                            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
+                            "publicKeyBase58": "gMxdVMyF8RakaptxFsDzHAxfQ5iEKZkCEQcSwsDbSWf",
+                        }
+                    ],
+                    "authentication": [],
+                    "service": [
+                        {
+                            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA;0f555a80-c950-4b2c-b8ec-632c72ffd780",
+                            "type": "IndyAgent",
+                            "priority": 0,
+                            "recipientKeys": [
+                                "gMxdVMyF8RakaptxFsDzHAxfQ5iEKZkCEQcSwsDbSWf"
+                            ],
+                            "serviceEndpoint": "http://172.17.0.1:9031",
+                        }
+                    ],
+                },
+                {
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
+                    "verificationMethod": [
+                        {
+                            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:1H6d1WS29Bcfr7Bb9tZxA",
+                            "publicKeyBase58": "gMxdVMyF8RakaptxFsDzHAxfQ5iEKZkCEQcSwsDbSWf",
+                        }
+                    ],
+                    "authentication": [],
+                    "service": [
+                        {
+                            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#didcomm",
+                            "type": "did-communication",
+                            "priority": 0,
+                            "recipientKeys": ["did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW"],
+                            "serviceEndpoint": "http://172.17.0.1:9031",
+                        }
+                    ],
+                },
+            ),
+            (  # Stored doc with routing keys
+                {
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                    "publicKey": [
+                        {
+                            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                            "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
+                        },
+                        {
+                            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#QPUs2fFT",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                            "publicKeyBase58": "cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd",
+                        },
+                    ],
+                    "authentication": [
+                        {
+                            "type": "Ed25519SignatureAuthentication2018",
+                            "publicKey": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
+                        }
+                    ],
+                    "service": [
+                        {
+                            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP;PkWfCgY4SSAYeSoaWx3RFP#IndyAgentService",
+                            "type": "IndyAgent",
+                            "priority": 0,
+                            "recipientKeys": [
+                                "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K"
+                            ],
+                            "routingKeys": [
+                                "cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd"
+                            ],
+                            "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
+                        }
+                    ],
+                },
+                {
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                    "verificationMethod": [
+                        {
+                            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                            "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
+                        }
+                    ],
+                    "authentication": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
+                    "service": [
+                        {
+                            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#didcomm",
+                            "type": "did-communication",
+                            "priority": 0,
+                            "recipientKeys": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
+                            "routingKeys": [
+                                "did:key:z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1#z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1"
+                            ],
+                            "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
+                        }
+                    ],
+                },
+            ),
+            (  # Stored bifold doc
+                {
+                    "@context": "https://w3id.org/did/v1",
+                    "publicKey": [
+                        {
+                            "id": "PkWfCgY4SSAYeSoaWx3RFP#1",
+                            "controller": "PkWfCgY4SSAYeSoaWx3RFP",
+                            "type": "Ed25519VerificationKey2018",
+                            "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
+                        }
+                    ],
+                    "service": [
+                        {
+                            "id": "PkWfCgY4SSAYeSoaWx3RFP#IndyAgentService",
+                            "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
+                            "type": "IndyAgent",
+                            "priority": 0,
+                            "recipientKeys": [
+                                "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K"
+                            ],
+                            "routingKeys": [
+                                "cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd"
+                            ],
+                        }
+                    ],
+                    "authentication": [
+                        {
+                            "publicKey": "PkWfCgY4SSAYeSoaWx3RFP#1",
+                            "type": "Ed25519SignatureAuthentication2018",
+                        }
+                    ],
+                    "id": "PkWfCgY4SSAYeSoaWx3RFP",
+                },
+                {
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                    "verificationMethod": [
+                        {
+                            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#1",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:PkWfCgY4SSAYeSoaWx3RFP",
+                            "publicKeyBase58": "DQBMbzLmAK5iyiuPnqNvfkx3CQ2iTJ2sKz98utvdET4K",
+                        }
+                    ],
+                    "authentication": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
+                    "service": [
+                        {
+                            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#IndyAgentService",
+                            "type": "did-communication",
+                            "priority": 0,
+                            "recipientKeys": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
+                            "routingKeys": [
+                                "did:key:z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1#z6Mkf4aAGBvBA8Eq2Qy714sspCPoj8uUupJpeaHLDkq3aUF1"
+                            ],
+                            "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
+                        }
+                    ],
+                },
+            ),
+        ],
+    )
+    def test_corrections(self, input_doc: dict, expected: dict):
         actual = test_module.LegacyDocCorrections.apply(input_doc)
         assert actual == expected
         assert expected == test_module.LegacyDocCorrections.apply(expected)
+        doc = pydid.deserialize_document(actual)
+        assert doc.service
+        assert isinstance(doc.service[0], pydid.DIDCommService)

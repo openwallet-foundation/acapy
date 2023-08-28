@@ -122,6 +122,8 @@ class LegacyDocCorrections:
                         service["id"] = value["id"] + "#didcomm"
                     if "#" not in service["id"]:
                         service["id"] += "#didcomm"
+                    if "priority" in service and service["priority"] is None:
+                        service.pop("priority")
         return value
 
     @staticmethod
