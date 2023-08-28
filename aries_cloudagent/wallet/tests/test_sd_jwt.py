@@ -1,3 +1,5 @@
+from base64 import urlsafe_b64decode
+import json
 import pytest
 
 from ...wallet.did_method import KEY
@@ -41,10 +43,7 @@ class TestSDJWT:
             "phone_number": "+1-202-555-0101",
             "phone_number_verified": True,
             "address": {
-                "street_address": {
-                    "house_number": "123",
-                    "street": "Main St",
-                },
+                "street_address": "123 Main St",
                 "locality": "Anytown",
                 "region": "Anystate",
                 "country": "US",
@@ -59,7 +58,7 @@ class TestSDJWT:
         non_sd_list = [
             "given_name",
             "family_name",
-            "nationalities",
+            "birthdate",
         ]
         signed = await sd_jwt_sign(
             profile,
@@ -71,7 +70,30 @@ class TestSDJWT:
         )
         assert signed
 
-        assert await sd_jwt_verify(profile, signed)
+        # Separate the jwt from the disclosures
+        signed_sd_jwt = signed.split("~")[0]
+
+        # Determine which selectively disclosable attributes to reveal
+        revealed = ["sub", "phone_number", "phone_number_verified"]
+
+        for disclosure in signed.split("~")[1:-1]:
+            # Decode the disclosures
+            padded = f"{disclosure}{'=' * divmod(len(disclosure),4)[1]}"
+            decoded = json.loads(urlsafe_b64decode(padded).decode("utf-8"))
+            # Add the disclosures associated with the claims to be revealed
+            if decoded[1] in revealed:
+                signed_sd_jwt = signed_sd_jwt + "~" + disclosure
+
+        verified = await sd_jwt_verify(profile, f"{signed_sd_jwt}~")
+        assert verified.valid
+        # Validate that the non-selectively disclosable claims are visible in the payload
+        assert verified.payload["given_name"] == payload["given_name"]
+        assert verified.payload["family_name"] == payload["family_name"]
+        assert verified.payload["birthdate"] == payload["birthdate"]
+        # Validate that the revealed claims are in the disclosures
+        assert sorted(revealed) == sorted(
+            [disclosure[1] for disclosure in verified.disclosures]
+        )
 
     @pytest.mark.asyncio
     async def test_flat_structure(
@@ -81,8 +103,6 @@ class TestSDJWT:
         verification_method = None
         non_sd_list = [
             "address.street_address",
-            "address.street_address.house_number",
-            "address.street_address.street",
             "address.locality",
             "address.region",
             "address.country",
