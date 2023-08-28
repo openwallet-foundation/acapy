@@ -73,7 +73,7 @@ def create_json_paths(it, current_path="", path_list=None) -> List:
     if path_list is None:
         path_list = []
 
-    if type(it) is dict:
+    if isinstance(it, dict):
         for k, v in it.items():
             new_key = f"{current_path}.{k}" if current_path else k
             path_list.append(new_key)
@@ -86,7 +86,7 @@ def create_json_paths(it, current_path="", path_list=None) -> List:
                         create_json_paths(e, f"{new_key}[{i}]", path_list)
                     else:
                         path_list.append(f"{new_key}[{i}]")
-    elif type(it) is list:
+    elif isinstance(it, list):
         for i, e in enumerate(it):
             if isinstance(e, (dict, list)):
                 create_json_paths(e, f"{current_path}[{i}]", path_list)
@@ -161,7 +161,7 @@ async def sd_jwt_sign(
         else:
             for match in matches:
                 if str(match.path) not in CLAIMS_NEVER_SD:
-                    if type(match.context.value) is list:
+                    if isinstance(match.context.value, list):
                         match.context.value.remove(match.value)
                         match.context.value.append(SDObj(match.value))
                     else:
