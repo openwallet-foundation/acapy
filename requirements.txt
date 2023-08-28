@@ -30,4 +30,4 @@ qrcode[pil]~=6.1
 requests~=2.31.0
 rlp==1.2.0
 unflatten~=0.1
-git+https://github.com/danielfett/sd-jwt.git@main
+git+https://github.com/openwallet-foundation-labs/sd-jwt-python.git@main
