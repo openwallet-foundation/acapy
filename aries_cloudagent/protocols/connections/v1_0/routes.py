@@ -28,6 +28,7 @@ from ....messaging.valid import (
     INDY_RAW_PUBLIC_KEY_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
+    GENERIC_DID_VALIDATE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
@@ -248,7 +249,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     )
     my_did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
+        validate=GENERIC_DID_VALIDATE,
         metadata={"description": "My DID", "example": INDY_DID_EXAMPLE},
     )
     state = fields.Str(
@@ -260,12 +261,12 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     )
     their_did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
+        validate=GENERIC_DID_VALIDATE,
         metadata={"description": "Their DID", "example": INDY_DID_EXAMPLE},
     )
     their_public_did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
+        validate=GENERIC_DID_VALIDATE,
         metadata={"description": "Their Public DID", "example": INDY_DID_EXAMPLE},
     )
     their_role = fields.Str(

@@ -9,8 +9,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import ANY_DID_OR_UNQUALIFIED_EXAMPLE, ANY_DID_OR_UNQUALIFIED_VALIDATE
-
+from .....messaging.valid import GENERIC_DID_EXAMPLE, GENERIC_DID_VALIDATE
 from ..message_types import DIDX_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.request_handler.DIDXRequestHandler"
@@ -76,11 +75,8 @@ class DIDXRequestSchema(AgentMessageSchema):
         },
     )
     did = fields.Str(
-        validate=ANY_DID_OR_UNQUALIFIED_VALIDATE,
-        metadata={
-            "description": "DID of exchange", 
-            "example": ANY_DID_OR_UNQUALIFIED_EXAMPLE
-        }
+        validate=GENERIC_DID_VALIDATE,
+        metadata={"description": "DID of exchange", "example": GENERIC_DID_EXAMPLE},
     )
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,

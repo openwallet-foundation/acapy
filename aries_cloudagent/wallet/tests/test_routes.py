@@ -1,7 +1,7 @@
 import mock as async_mock
 import pytest
 from aiohttp.web import HTTPForbidden
-from async_case import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile

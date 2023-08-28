@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from async_case import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase
 import mock as async_mock
 
 from ...core.in_memory import InMemoryProfile

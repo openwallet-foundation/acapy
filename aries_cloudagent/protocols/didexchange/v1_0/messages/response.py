@@ -1,5 +1,6 @@
 """Represents a DID exchange response message under RFC 23."""
 
+from typing import Optional
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -7,8 +8,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import ANY_DID_OR_UNQUALIFIED_EXAMPLE, ANY_DID_OR_UNQUALIFIED_VALIDATE
-
+from .....messaging.valid import GENERIC_DID_EXAMPLE, GENERIC_DID_VALIDATE
 from ..message_types import DIDX_RESPONSE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.response_handler.DIDXResponseHandler"
@@ -28,7 +28,7 @@ class DIDXResponse(AgentMessage):
         self,
         *,
         did: str = None,
-        did_doc_attach: AttachDecorator = None,
+        did_doc_attach: Optional[AttachDecorator] = None,
         **kwargs,
     ):
         """
@@ -53,8 +53,8 @@ class DIDXResponseSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     did = fields.Str(
-        validate=ANY_DID_OR_UNQUALIFIED_VALIDATE,
-        metadata={"description": "DID of exchange", "example": ANY_DID_OR_UNQUALIFIED_EXAMPLE},
+        validate=GENERIC_DID_VALIDATE,
+        metadata={"description": "DID of exchange", "example": GENERIC_DID_EXAMPLE},
     )
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
