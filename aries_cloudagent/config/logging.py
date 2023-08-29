@@ -95,12 +95,18 @@ class LoggingConfigurator:
         log_json_fmt: bool = False,
     ):
         """
-        Configure logger.
+        Configure logger with time rotated file and stream log handlers.
 
         :param logging_config_path: str: (Default value = None) Optional path to
             custom logging config
 
         :param log_level: str: (Default value = None)
+        :param log_file: str: (Default value = None)
+        :param log_interval: int: (Default value = None)
+        :param log_bak_count: int: (Default value = None)
+        :param log_at_when: str: (Default value = None)
+        :param log_fmt_pattern: str: (Default value = None)
+        :param log_json_fmt: bool: (Default value = None)
         """
         if logging_config_path is not None:
             config_path = logging_config_path
@@ -551,7 +557,7 @@ def get_log_file_handlers(
     log_bak_count: int = None,
     log_at_when: str = None,
 ) -> Tuple[TimedRotatingFileMultiProcessHandler, logging.StreamHandler]:
-    """Get TimedRotatingFileMultiProcessHandler log handler."""
+    """Get TimedRotatingFileMultiProcessHandler and StreamHandler."""
     file_path = os.path.join(
         os.path.dirname(os.path.realpath(__file__)).replace(
             "aries_cloudagent/config", ""
@@ -573,7 +579,7 @@ def get_adapted_logger_inst(
     log_file: str = None,
     wallet_id: str = None,
 ) -> logging.Logger:
-    """Get adapted logger instance, if applicable."""
+    """Get adapted logger, formatted with wallet_id if applicable."""
     _logger = None
     if log_file and wallet_id:
         _logger = logging.LoggerAdapter(logger, {"wallet_id": wallet_id})
