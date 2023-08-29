@@ -8,7 +8,7 @@ from typing import Iterable, List, Optional, cast, Tuple
 import jwt
 
 from ..config.injection_context import InjectionContext
-from ..config.logging import get_logger_inst
+from ..config.logging import get_adapted_logger_inst
 from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
 from ..protocols.coordinate_mediation.v1_0.manager import (
@@ -23,6 +23,8 @@ from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.models.wallet_record import WalletRecord
 from .error import WalletKeyMissingError
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MultitenantManagerError(BaseError):
@@ -41,9 +43,10 @@ class BaseMultitenantManager(ABC):
         self._profile = profile
         if not profile:
             raise MultitenantManagerError("Missing profile")
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
 
     @property

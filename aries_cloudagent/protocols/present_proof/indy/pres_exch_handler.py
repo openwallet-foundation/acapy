@@ -5,7 +5,7 @@ import time
 
 from typing import Union, Tuple
 
-from ....config.logging import get_logger_inst
+from ....config.logging import get_adapted_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
@@ -22,6 +22,8 @@ from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
 from ..v2_0.models.pres_exchange import V20PresExRecord
 
+LOGGER = logging.getLogger(__name__)
+
 
 class IndyPresExchHandlerError(BaseError):
     """Base class for Indy Presentation Exchange related errors."""
@@ -37,9 +39,10 @@ class IndyPresExchHandler:
         """Initialize PresExchange Handler."""
         super().__init__()
         self._profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
 
     async def return_presentation(

@@ -7,10 +7,12 @@ from typing import Tuple
 
 from indy_credx import CredxError, Presentation
 
-from ...config.logging import get_logger_inst
 from ...core.profile import Profile
+from ...config.logging import get_adapted_logger_inst
 
 from ..verifier import IndyVerifier, PresVerifyMsg
+
+LOGGER = logging.getLogger(__name__)
 
 
 class IndyCredxVerifier(IndyVerifier):
@@ -24,9 +26,10 @@ class IndyCredxVerifier(IndyVerifier):
 
         """
         self.profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self.profile.settings.get("log.file"),
+            wallet_id=self.profile.settings.get("wallet.id"),
         )
 
     async def verify_presentation(

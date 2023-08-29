@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
-from ...config.logging import get_logger_inst
+from ...config.logging import get_adapted_logger_inst
 from ...core.profile import Profile, ProfileSession
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.revocation import (
@@ -43,6 +43,7 @@ from .issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation_registry import RevocationRegistry
 
 DEFAULT_REGISTRY_SIZE = 1000
+LOGGER = logging.getLogger(__name__)
 
 
 @total_ordering
@@ -183,9 +184,10 @@ class IssuerRevRegRecord(BaseRecord):
 
     async def generate_registry(self, profile: Profile):
         """Create the revocation registry definition and tails file."""
-        _logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         if not self.tag:
             self.tag = self._id or str(uuid.uuid4())
@@ -288,9 +290,10 @@ class IssuerRevRegRecord(BaseRecord):
         endorser_did: str = None,
     ) -> dict:
         """Send a registry entry to the ledger."""
-        _logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         if not (
             self.revoc_reg_id
@@ -371,9 +374,10 @@ class IssuerRevRegRecord(BaseRecord):
     ) -> Tuple[dict, dict, dict]:
         """Fix the ledger entry to match wallet-recorded credentials."""
         # get rev reg delta (revocations published to ledger)
-        _logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         ledger = profile.inject(BaseLedger)
         async with ledger:

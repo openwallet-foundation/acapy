@@ -14,7 +14,25 @@ def common_config(settings: Mapping[str, Any]):
     # Set up logging
     log_config = settings.get("log.config")
     log_level = settings.get("log.level") or os.getenv("LOG_LEVEL")
-    LoggingConfigurator.configure(log_config, log_level)
+    log_file = settings.get("log.file")
+    log_interval = settings.get("log.handler_interval")
+    log_bak_count = settings.get("log.handler_bakcount")
+    log_at_when = settings.get("log.handler_when")
+    log_fmt_pattern = settings.get("log.fmt_pattern")
+    log_json_fmt = settings.get("log.json_fmt")
+    if not log_file:
+        LoggingConfigurator.configure(log_config, log_level)
+    else:
+        LoggingConfigurator.configure_per_tenant(
+            log_config,
+            log_level,
+            log_file,
+            log_interval,
+            log_bak_count,
+            log_at_when,
+            log_fmt_pattern,
+            log_json_fmt,
+        )
 
 
 class BoundedInt:

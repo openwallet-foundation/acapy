@@ -1,8 +1,6 @@
 """Credential request message handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
@@ -31,13 +29,15 @@ class V20CredRequestHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
+        profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
-        _logger.debug("V20CredRequestHandler called with context %s", context)
+        self._logger.debug("V20CredRequestHandler called with context %s", context)
         assert isinstance(context.message, V20CredRequest)
-        _logger.info(
+        self._logger.info(
             "Received v2.0 credential request message: %s",
             context.message.serialize(as_string=True),
         )
@@ -58,7 +58,6 @@ class V20CredRequestHandler(BaseHandler):
                 " request"
             )
 
-        profile = context.profile
         cred_manager = V20CredManager(profile)
         cred_ex_record = await cred_manager.receive_request(
             context.message, context.connection_record, oob_record
@@ -90,7 +89,7 @@ class V20CredRequestHandler(BaseHandler):
                 StorageError,
                 V20CredManagerError,
             ) as err:
-                _logger.exception(err)
+                self._logger.exception(err)
                 async with profile.session() as session:
                     await cred_ex_record.save_error_state(
                         session,

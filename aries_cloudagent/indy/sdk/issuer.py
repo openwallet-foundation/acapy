@@ -8,7 +8,7 @@ import indy.anoncreds
 import indy.blob_storage
 from indy.error import AnoncredsRevocationRegistryFullError, IndyError, ErrorCode
 
-from ...config.logging import get_logger_inst
+from ...config.logging import get_adapted_logger_inst
 from ...indy.sdk.profile import IndySdkProfile
 from ...messaging.util import encode
 from ...storage.error import StorageError
@@ -24,6 +24,8 @@ from ..issuer import (
 from .error import IndyErrorHandler
 from .util import create_tails_reader, create_tails_writer
 
+LOGGER = logging.getLogger(__name__)
+
 
 class IndySdkIssuer(IndyIssuer):
     """Indy-SDK issuer implementation."""
@@ -36,9 +38,10 @@ class IndySdkIssuer(IndyIssuer):
 
         """
         self.profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self.profile.settings.get("log.file"),
+            wallet_id=self.profile.settings.get("wallet.id"),
         )
 
     async def create_schema(

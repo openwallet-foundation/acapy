@@ -1,8 +1,6 @@
 """Refused transaction response handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -24,11 +22,13 @@ class RefusedTransactionResponseHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
+        profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
-        _logger.debug(
+        self._logger.debug(
             f"RefusedTransactionResponseHandler called with context {context}"
         )
         assert isinstance(context.message, RefusedTransactionResponse)
@@ -40,4 +40,4 @@ class RefusedTransactionResponseHandler(BaseHandler):
         try:
             await mgr.receive_refuse_response(context.message)
         except TransactionManagerError:
-            _logger.exception("Error receiving refused transaction response")
+            self._logger.exception("Error receiving refused transaction response")

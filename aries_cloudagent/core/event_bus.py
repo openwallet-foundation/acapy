@@ -19,7 +19,7 @@ from typing import (
 )
 from functools import partial
 
-from ..config.logging import get_logger_inst
+from ..config.logging import get_adapted_logger_inst
 
 if TYPE_CHECKING:  # To avoid circular import error
     from .profile import Profile
@@ -99,9 +99,10 @@ class EventBus:
         # TODO don't block notifier until subscribers have all been called?
         # TODO trigger each processor but don't await?
         # TODO log errors but otherwise ignore?
-        _logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         _logger.debug("Notifying subscribers: %s", event)
 
@@ -173,9 +174,10 @@ class EventBus:
 
         async def _handle_single_event(profile, event):
             """Handle the single event."""
-            _logger: logging.Logger = get_logger_inst(
-                profile=profile,
-                logger_name=__name__,
+            _logger = get_adapted_logger_inst(
+                logger=LOGGER,
+                log_file=profile.settings.get("log.file"),
+                wallet_id=profile.settings.get("wallet.id"),
             )
             _logger.debug(
                 "wait_for_event event listener with event %s and profile %s",

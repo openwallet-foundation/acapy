@@ -33,7 +33,12 @@ class TestInvitationRequestHandler(AsyncTestCase):
 
     async def test_handle(self):
         handler = test_module.InvitationRequestHandler()
-
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         responder = MockResponder()
         inv_req = InvitationRequest(responder=responder, message="Hello")
 
@@ -44,6 +49,12 @@ class TestInvitationRequestHandler(AsyncTestCase):
 
     async def test_handle_auto_accept(self):
         handler = test_module.InvitationRequestHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         self.context.update_settings({"auto_accept_intro_invitation_requests": True})
 
         conn_invitation = ConnectionInvitation(
@@ -75,6 +86,12 @@ class TestInvitationRequestHandler(AsyncTestCase):
 
     async def test_handle_not_ready(self):
         handler = test_module.InvitationRequestHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         self.context.connection_ready = False
 
         with self.assertRaises(HandlerException):

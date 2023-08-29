@@ -4,7 +4,7 @@ import asyncio
 import logging
 from typing import Sequence
 
-from ....config.logging import get_logger_inst
+from ....config.logging import get_adapted_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....storage.error import (
@@ -14,7 +14,7 @@ from ....storage.error import (
 
 from .models.route_record import RouteRecord
 
-
+LOGGER = logging.getLogger(__name__)
 RECIP_ROUTE_PAUSE = 0.1
 RECIP_ROUTE_RETRY = 10
 
@@ -41,9 +41,10 @@ class RoutingManager:
         self._profile = profile
         if not profile:
             raise RoutingManagerError("Missing profile")
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
 
     async def get_recipient(self, recip_verkey: str) -> RouteRecord:

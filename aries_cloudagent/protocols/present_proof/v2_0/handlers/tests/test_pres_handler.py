@@ -32,6 +32,12 @@ class TestV20PresHandler(AsyncTestCase):
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
             handler = test_module.V20PresHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -63,6 +69,12 @@ class TestV20PresHandler(AsyncTestCase):
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
             handler = test_module.V20PresHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -103,14 +115,12 @@ class TestV20PresHandler(AsyncTestCase):
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
             handler = test_module.V20PresHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
-
-            with async_mock.patch.object(
-                test_module,
-                "get_logger_inst",
-                async_mock.MagicMock(
-                    return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
-                ),
-            ) as mock_log_exc:
-                await handler.handle(request_context, responder)
-                mock_log_exc.assert_called_once()
+            await handler.handle(request_context, responder)
+            assert handler._logger.exception.call_count == 1

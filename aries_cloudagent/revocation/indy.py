@@ -3,7 +3,7 @@ import logging
 from typing import Optional, Sequence, Tuple
 from uuid import uuid4
 
-from ..config.logging import get_logger_inst
+from ..config.logging import get_adapted_logger_inst
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.multiple_ledger.ledger_requests_executor import (
@@ -28,6 +28,8 @@ from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.revocation_registry import RevocationRegistry
 from .util import notify_revocation_reg_init_event
 
+LOGGER = logging.getLogger(__name__)
+
 
 class IndyRevocation:
     """Class for managing Indy credential revocation."""
@@ -37,9 +39,10 @@ class IndyRevocation:
     def __init__(self, profile: Profile):
         """Initialize the IndyRevocation instance."""
         self._profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
 
     async def init_issuer_registry(

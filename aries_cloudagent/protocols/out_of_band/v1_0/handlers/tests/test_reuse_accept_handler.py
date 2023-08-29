@@ -43,6 +43,12 @@ class TestHandshakeReuseAcceptHandler:
         )
         request_context.message = HandshakeReuseAccept()
         handler = test_module.HandshakeReuseAcceptMessageHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         responder = MockResponder()
         await handler.handle(context=request_context, responder=responder)
         mock_oob_mgr.return_value.receive_reuse_accepted_message.assert_called_once_with(
@@ -62,6 +68,12 @@ class TestHandshakeReuseAcceptHandler:
         )
         request_context.message = HandshakeReuseAccept()
         handler = test_module.HandshakeReuseAcceptMessageHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         responder = MockResponder()
         await handler.handle(context=request_context, responder=responder)
         assert mock_oob_mgr.return_value._logger.exception.called_once_("error")

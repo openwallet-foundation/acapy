@@ -1,8 +1,6 @@
 """Connection request handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ....coordinate_mediation.v1_0.manager import MediationManager
@@ -22,14 +20,14 @@ class ConnectionRequestHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
-        )
-        _logger.debug(f"ConnectionRequestHandler called with context {context}")
-        assert isinstance(context.message, ConnectionRequest)
-
         profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
+        )
+        self._logger.debug(f"ConnectionRequestHandler called with context {context}")
+        assert isinstance(context.message, ConnectionRequest)
         mgr = ConnectionManager(profile)
 
         mediation_id = None
@@ -54,9 +52,9 @@ class ConnectionRequestHandler(BaseHandler):
                     response, connection_id=connection.connection_id
                 )
             else:
-                _logger.debug("Connection request will await acceptance")
+                self._logger.debug("Connection request will await acceptance")
         except ConnectionManagerError as e:
-            _logger.exception("Error receiving connection request")
+            self._logger.exception("Error receiving connection request")
             if e.error_code:
                 targets = None
                 if context.message.connection and context.message.connection.did_doc:
@@ -66,7 +64,9 @@ class ConnectionRequestHandler(BaseHandler):
                             context.message_receipt.recipient_verkey,
                         )
                     except ConnectionManagerError:
-                        _logger.exception("Error parsing DIDDoc for problem report")
+                        self._logger.exception(
+                            "Error parsing DIDDoc for problem report"
+                        )
                 await responder.send_reply(
                     ConnectionProblemReport(problem_code=e.error_code, explain=str(e)),
                     target_list=targets,

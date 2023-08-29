@@ -9,8 +9,8 @@ from collections import OrderedDict
 from typing import Optional, Tuple, Mapping, List
 
 from ...cache.base import BaseCache
-from ...config.logging import get_logger_inst
 from ...core.profile import Profile
+from ...config.logging import get_adapted_logger_inst
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.crypto import did_is_self_certified
@@ -23,6 +23,8 @@ from ..merkel_validation.domain_txn_handler import (
 from ..merkel_validation.trie import SubTrie
 
 from .base_manager import BaseMultipleLedgerManager, MultipleLedgerManagerError
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MultiIndyLedgerManager(BaseMultipleLedgerManager):
@@ -53,9 +55,10 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         self.endorser_map = endorser_map
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self.profile.settings.get("log.file"),
+            wallet_id=self.profile.settings.get("wallet.id"),
         )
 
     async def get_write_ledgers(self) -> List[str]:

@@ -8,7 +8,7 @@ import pydid
 from pydid import BaseDIDDocument as ResolvedDocument
 from pydid import DIDCommService
 
-from ....config.logging import get_logger_inst
+from ....config.logging import get_adapted_logger_inst
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.diddoc import DIDDoc
@@ -40,6 +40,8 @@ from .messages.problem_report import DIDXProblemReport, ProblemReportReason
 from .messages.request import DIDXRequest
 from .messages.response import DIDXResponse
 
+LOGGER = logging.getLogger(__name__)
+
 
 class DIDXManagerError(BaseError):
     """Connection error."""
@@ -55,9 +57,10 @@ class DIDXManager(BaseConnectionManager):
             profile: The profile for this did exchange manager
         """
         self._profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
         super().__init__(self._profile)
 

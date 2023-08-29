@@ -1,8 +1,6 @@
 """Action menu request message handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -23,14 +21,16 @@ class MenuRequestHandler(BaseHandler):
             context: request context
             responder: responder callback
         """
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
+        profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
-        _logger.debug("MenuRequestHandler called with context %s", context)
+        self._logger.debug("MenuRequestHandler called with context %s", context)
         assert isinstance(context.message, MenuRequest)
 
-        _logger.info("Received action menu request")
+        self._logger.info("Received action menu request")
 
         service: BaseMenuService = context.inject_or(BaseMenuService)
         if service:

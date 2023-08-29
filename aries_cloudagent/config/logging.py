@@ -10,7 +10,7 @@ from random import randint
 import re
 import sys
 import time as mod_time
-from typing import TextIO, TYPE_CHECKING
+from typing import Tuple, TextIO
 
 import pkg_resources
 from portalocker import LOCK_EX, lock, unlock
@@ -19,13 +19,14 @@ from pythonjsonlogger import jsonlogger
 from ..config.settings import Settings
 from ..version import __version__
 from .banner import Banner
-from .base import BaseSettings
-
-if TYPE_CHECKING:  # To avoid circular import error
-    from ..core.profile import Profile
-
 
 DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
+LOG_FORMAT_FILE_ALIAS_PATTERN = (
+    "%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
+)
+LOG_FORMAT_STREAM_PATTERN = (
+    "%(asctime)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
+)
 
 
 def load_resource(path: str, encoding: str = None) -> TextIO:
@@ -77,6 +78,59 @@ class LoggingConfigurator:
         else:
             logging.basicConfig(level=logging.WARNING)
             logging.root.warning(f"Logging config file not found: {config_path}")
+        if log_level:
+            log_level = log_level.upper()
+            logging.root.setLevel(log_level)
+
+    @classmethod
+    def configure_per_tenant(
+        cls,
+        logging_config_path: str = None,
+        log_level: str = None,
+        log_file: str = None,
+        log_interval: int = None,
+        log_bak_count: int = None,
+        log_at_when: str = None,
+        log_fmt_pattern: str = None,
+        log_json_fmt: bool = False,
+    ):
+        """
+        Configure logger.
+
+        :param logging_config_path: str: (Default value = None) Optional path to
+            custom logging config
+
+        :param log_level: str: (Default value = None)
+        """
+        if logging_config_path is not None:
+            config_path = logging_config_path
+        else:
+            config_path = DEFAULT_LOGGING_CONFIG_PATH
+
+        log_config = load_resource(config_path, "utf-8")
+        if log_config:
+            with log_config:
+                fileConfig(log_config, disable_existing_loggers=False)
+        else:
+            logging.basicConfig(level=logging.WARNING)
+            logging.root.warning(f"Logging config file not found: {config_path}")
+        if log_file:
+            logging.root.handlers.clear()
+            timed_file_handler, std_out_handler = get_log_file_handlers(
+                log_file, log_interval, log_bak_count, log_at_when
+            )
+            file_handler_pattern = log_fmt_pattern
+            if not file_handler_pattern:
+                file_handler_pattern = LOG_FORMAT_FILE_ALIAS_PATTERN
+            if log_json_fmt:
+                timed_file_handler.setFormatter(
+                    jsonlogger.JsonFormatter(file_handler_pattern)
+                )
+            else:
+                timed_file_handler.setFormatter(logging.Formatter(file_handler_pattern))
+            std_out_handler.setFormatter(logging.Formatter(LOG_FORMAT_STREAM_PATTERN))
+            logging.root.handlers.append(timed_file_handler)
+            logging.root.handlers.append(std_out_handler)
         if log_level:
             log_level = log_level.upper()
             logging.root.setLevel(log_level)
@@ -491,17 +545,12 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         self.release()
 
 
-LOG_FORMAT_FILE_ALIAS_PATTERN = (
-    "%(asctime)s %(wallet_id)s %(levelname)s %(filename)s %(lineno)d %(message)s"
-)
-
-
-def get_log_file_handler(
+def get_log_file_handlers(
     log_file_name: str,
     log_interval: int = None,
     log_bak_count: int = None,
     log_at_when: str = None,
-) -> TimedRotatingFileMultiProcessHandler:
+) -> Tuple[TimedRotatingFileMultiProcessHandler, logging.StreamHandler]:
     """Get TimedRotatingFileMultiProcessHandler log handler."""
     file_path = os.path.join(
         os.path.dirname(os.path.realpath(__file__)).replace(
@@ -515,62 +564,19 @@ def get_log_file_handler(
         when=log_at_when or "d",
         backupCount=log_bak_count or 1,
     )
-    return timed_file_handler
+    std_out_handler = logging.StreamHandler(sys.stdout)
+    return (timed_file_handler, std_out_handler)
 
 
-def clear_prev_handlers(logger: logging.Logger) -> logging.Logger:
-    """Remove all handler classes associated with logger instance."""
-    iter_count = 0
-    num_handlers = len(logger.handlers)
-    while iter_count < num_handlers:
-        logger.removeHandler(logger.handlers[0])
-        iter_count = iter_count + 1
-    return logger
-
-
-def get_logger_inst(profile: "Profile", logger_name) -> logging.Logger:
-    """Return a logger instance with provided name and handlers."""
-    if not profile.settings.get("log.file"):
-        return logging.getLogger(logger_name)
-    else:
-        wallet_id = profile.settings.get("wallet.id")
-        logger_name = f"{logger_name}_{wallet_id}"
-        return get_logger_with_handlers(
-            settings=profile.settings,
-            logger=logging.getLogger(logger_name),
-            ident=wallet_id,
-            interval=profile.settings.get("log.handler_interval") or 7,
-            backup_count=profile.settings.get("log.handler_bakcount") or 1,
-            at_when=profile.settings.get("log.handler_when") or "d",
-        )
-
-
-def get_logger_with_handlers(
-    settings: BaseSettings,
+def get_adapted_logger_inst(
     logger: logging.Logger,
-    ident: str,
-    at_when: str = None,
-    interval: int = None,
-    backup_count: int = None,
+    log_file: str = None,
+    wallet_id: str = None,
 ) -> logging.Logger:
-    """Return logger instance with necessary handlers if required."""
-    # Clear handlers set previously for this logger instance
-    logger = clear_prev_handlers(logger)
-    # log file handler
-    file_handler = get_log_file_handler(
-        settings.get("log.file"), interval, backup_count, at_when
-    )
-    file_handler_pattern = settings.get("log.fmt_pattern")
-    if not file_handler_pattern:
-        file_handler_pattern = LOG_FORMAT_FILE_ALIAS_PATTERN
-    if settings.get("log.json_fmt"):
-        file_handler.setFormatter(jsonlogger.JsonFormatter(file_handler_pattern))
+    """Get adapted logger instance, if applicable."""
+    _logger = None
+    if log_file and wallet_id:
+        _logger = logging.LoggerAdapter(logger, {"wallet_id": wallet_id})
     else:
-        file_handler.setFormatter(logging.Formatter(file_handler_pattern))
-    logger.addHandler(file_handler)
-    logger = logging.LoggerAdapter(logger, {"wallet_id": ident})
-    # set log level
-    if settings.get("log.level"):
-        logger_level = settings.get("log.level").upper()
-        logger.setLevel(logger_level)
-    return logger
+        _logger = logger
+    return _logger

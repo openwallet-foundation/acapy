@@ -28,6 +28,12 @@ class TestV20PresProblemReportHandler(AsyncTestCase):
                 }
             )
             handler = test_module.V20PresProblemReportHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -57,6 +63,12 @@ class TestV20PresProblemReportHandler(AsyncTestCase):
                 }
             )
             handler = test_module.V20PresProblemReportHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 

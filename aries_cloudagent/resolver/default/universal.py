@@ -7,11 +7,12 @@ from typing import Iterable, Optional, Pattern, Sequence, Union, Text
 import aiohttp
 
 from ...config.injection_context import InjectionContext
-from ...config.logging import get_logger_inst
+from ...config.logging import get_adapted_logger_inst
 from ...core.profile import Profile
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
 DEFAULT_ENDPOINT = "https://dev.uniresolver.io/1.0"
+LOGGER = logging.getLogger(__name__)
 
 
 def _compile_supported_did_regex(patterns: Iterable[Union[str, Pattern]]):
@@ -84,9 +85,10 @@ class UniversalResolver(BaseDIDResolver):
         service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve DID through remote universal resolver."""
-        _logger: logging.Logger = get_logger_inst(
-            profile=_profile,
-            logger_name=__name__,
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=_profile.settings.get("log.file"),
+            wallet_id=_profile.settings.get("wallet.id"),
         )
         async with aiohttp.ClientSession(headers=self.__default_headers) as session:
             async with session.get(f"{self._endpoint}/identifiers/{did}") as resp:

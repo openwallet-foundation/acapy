@@ -2,7 +2,7 @@
 import logging
 import re
 
-from ....config.logging import get_logger_inst
+from ....config.logging import get_adapted_logger_inst
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
@@ -13,6 +13,8 @@ from ....revocation.util import (
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from .models.rev_notification_record import RevNotificationRecord
+
+LOGGER = logging.getLogger(__name__)
 
 
 def register_events(event_bus: EventBus):
@@ -29,9 +31,10 @@ def register_events(event_bus: EventBus):
 
 async def on_revocation_published(profile: Profile, event: Event):
     """Handle issuer revoke event."""
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     _logger.debug("Sending notification of revocation to recipient: %s", event.payload)
 

@@ -31,6 +31,12 @@ class TestV20PresAckHandler(AsyncTestCase):
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
             handler = test_module.V20PresAckHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -52,6 +58,12 @@ class TestV20PresAckHandler(AsyncTestCase):
             request_context.message = V20PresAck()
             request_context.connection_ready = False
             handler = test_module.V20PresAckHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)
@@ -73,6 +85,12 @@ class TestV20PresAckHandler(AsyncTestCase):
 
         request_context.message = V20PresAck()
         handler = test_module.V20PresAckHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         responder = MockResponder()
         with self.assertRaises(test_module.HandlerException) as err:
             await handler.handle(request_context, responder)

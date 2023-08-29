@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 import logging
 from typing import List, Optional, Tuple
 
-from ....config.logging import get_logger_inst
+from ....config.logging import get_adapted_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
@@ -22,6 +22,8 @@ from .manager import MediationManager
 from .messages.keylist_update import KeylistUpdate
 from .models.mediation_record import MediationRecord
 from .normalization import normalize_from_did_key
+
+LOGGER = logging.getLogger(__name__)
 
 
 class RouteManagerError(Exception):
@@ -127,9 +129,10 @@ class RouteManager(ABC):
         mediation_record: Optional[MediationRecord] = None,
     ) -> Optional[KeylistUpdate]:
         """Set up routing for a new connection when we are the invitee."""
-        _logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         _logger.debug("Routing connection as invitee")
         my_info = await self.get_or_create_my_did(profile, conn_record)
@@ -144,9 +147,10 @@ class RouteManager(ABC):
         mediation_record: Optional[MediationRecord] = None,
     ) -> Optional[KeylistUpdate]:
         """Set up routing for a new connection when we are the inviter."""
-        _logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         _logger.debug("Routing connection as inviter")
         my_info = await self.get_or_create_my_did(profile, conn_record)

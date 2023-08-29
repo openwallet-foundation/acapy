@@ -12,7 +12,7 @@ import prompt_toolkit
 from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
 
-from ..config.logging import get_logger_inst
+from ..config.logging import get_adapted_logger_inst
 from ..config.settings import Settings
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
@@ -129,9 +129,10 @@ async def ledger_config(
     """Perform Indy ledger configuration."""
 
     session = await profile.session()
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     ledger = session.inject_or(BaseLedger)
     if not ledger:
@@ -256,9 +257,10 @@ async def accept_taa(
 
     mechanisms = taa_info["aml_record"]["aml"]
     mechanism = None
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     taa_acceptance_mechanism = profile.settings.get("ledger.taa_acceptance_mechanism")
     taa_acceptance_version = profile.settings.get("ledger.taa_acceptance_version")

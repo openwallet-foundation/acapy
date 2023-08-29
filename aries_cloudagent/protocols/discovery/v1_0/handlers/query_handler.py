@@ -1,8 +1,6 @@
 """Handler for incoming query messages."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -18,13 +16,14 @@ class QueryHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
-        )
-        _logger.debug("QueryHandler called with context %s", context)
-        assert isinstance(context.message, Query)
         profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
+        )
+        self._logger.debug("QueryHandler called with context %s", context)
+        assert isinstance(context.message, Query)
         mgr = V10DiscoveryMgr(profile)
         reply = await mgr.receive_query(context.message)
         reply.assign_thread_from(context.message)

@@ -1,8 +1,6 @@
 """Credential proposal message handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -30,13 +28,15 @@ class V20CredProposalHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
+        profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
-        _logger.debug("V20CredProposalHandler called with context %s", context)
+        self._logger.debug("V20CredProposalHandler called with context %s", context)
         assert isinstance(context.message, V20CredProposal)
-        _logger.info(
+        self._logger.info(
             "Received v2.0 credential proposal message: %s",
             context.message.serialize(as_string=True),
         )
@@ -49,7 +49,6 @@ class V20CredProposalHandler(BaseHandler):
                 "Connectionless not supported for credential proposal"
             )
 
-        profile = context.profile
         cred_manager = V20CredManager(profile)
         cred_ex_record = await cred_manager.receive_proposal(
             context.message, context.connection_record.connection_id
@@ -79,7 +78,7 @@ class V20CredProposalHandler(BaseHandler):
                 StorageError,
                 V20CredManagerError,
             ) as err:
-                _logger.exception("Error responding to credential proposal")
+                self._logger.exception("Error responding to credential proposal")
                 async with profile.session() as session:
                     await cred_ex_record.save_error_state(
                         session,

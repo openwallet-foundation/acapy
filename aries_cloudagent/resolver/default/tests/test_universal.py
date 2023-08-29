@@ -17,19 +17,9 @@ from ..universal import UniversalResolver
 @pytest.fixture
 async def resolver():
     """Resolver fixture."""
-    with async_mock.patch.object(
-        test_module,
-        "get_logger_inst",
-        async_mock.MagicMock(
-            return_value=async_mock.MagicMock(
-                debug=async_mock.MagicMock(),
-            ),
-        ),
-    ):
-        yield UniversalResolver(
-            endpoint="https://example.com",
-            supported_did_regex=re.compile("^did:sov:.*$"),
-        )
+    yield UniversalResolver(
+        endpoint="https://example.com", supported_did_regex=re.compile("^did:sov:.*$")
+    )
 
 
 @pytest.fixture

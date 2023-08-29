@@ -7,7 +7,7 @@ from enum import Enum
 from time import time
 from typing import Mapping, Tuple
 
-from ..config.logging import get_logger_inst
+from ..config.logging import get_adapted_logger_inst
 from ..core.profile import Profile
 from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
@@ -124,9 +124,10 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
             pres: indy proof request
             rev_reg_defs: rev reg defs by rev reg id, augmented with transaction times
         """
-        _logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         msgs = []
         now = int(time())

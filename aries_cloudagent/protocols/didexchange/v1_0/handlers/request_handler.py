@@ -3,9 +3,8 @@
 from aries_cloudagent.protocols.didexchange.v1_0.messages.problem_report import (
     DIDXProblemReport,
 )
-import logging
 
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ....coordinate_mediation.v1_0.manager import MediationManager
@@ -23,14 +22,14 @@ class DIDXRequestHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
-        )
-        _logger.debug(f"DIDXRequestHandler called with context {context}")
-        assert isinstance(context.message, DIDXRequest)
-
         profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
+        )
+        self._logger.debug(f"DIDXRequestHandler called with context {context}")
+        assert isinstance(context.message, DIDXRequest)
         mgr = DIDXManager(profile)
 
         mediation_id = None
@@ -65,10 +64,10 @@ class DIDXRequestHandler(BaseHandler):
                 async with context.session() as session:
                     await conn_rec.save(session, reason="Sent connection response")
             else:
-                _logger.debug("DID exchange request will await acceptance")
+                self._logger.debug("DID exchange request will await acceptance")
 
         except DIDXManagerError as e:
-            _logger.exception("Error receiving RFC 23 connection request")
+            self._logger.exception("Error receiving RFC 23 connection request")
             if e.error_code:
                 targets = None
                 if context.message.did_doc_attach:
@@ -78,7 +77,9 @@ class DIDXRequestHandler(BaseHandler):
                             context.message_receipt.recipient_verkey,
                         )
                     except DIDXManagerError:
-                        _logger.exception("Error parsing DIDDoc for problem report")
+                        self._logger.exception(
+                            "Error parsing DIDDoc for problem report"
+                        )
                 await responder.send_reply(
                     DIDXProblemReport(
                         description={"en": e.message, "code": e.error_code}

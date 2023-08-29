@@ -1,8 +1,6 @@
 """Credential issue message handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -30,13 +28,15 @@ class V20CredIssueHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
+        profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
-        _logger.debug("V20CredIssueHandler called with context %s", context)
+        self._logger.debug("V20CredIssueHandler called with context %s", context)
         assert isinstance(context.message, V20CredIssue)
-        _logger.info(
+        self._logger.info(
             "Received v2.0 credential issue message: %s",
             context.message.serialize(as_string=True),
         )
@@ -81,7 +81,7 @@ class V20CredIssueHandler(BaseHandler):
                 V20CredManagerError,
             ) as err:
                 # treat failure to store as mangled on receipt hence protocol error
-                _logger.exception("Error storing issued credential")
+                self._logger.exception("Error storing issued credential")
                 if cred_ex_record:
                     async with context.profile.session() as session:
                         await cred_ex_record.save_error_state(

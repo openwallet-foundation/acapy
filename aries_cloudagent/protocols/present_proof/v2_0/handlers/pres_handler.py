@@ -1,8 +1,6 @@
 """Presentation message handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -30,13 +28,15 @@ class V20PresHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
+        profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
-        _logger.debug("V20PresHandler called with context %s", context)
+        self._logger.debug("V20PresHandler called with context %s", context)
         assert isinstance(context.message, V20Pres)
-        _logger.info(
+        self._logger.info(
             "Received presentation message: %s",
             context.message.serialize(as_string=True),
         )
@@ -77,7 +77,7 @@ class V20PresHandler(BaseHandler):
             try:
                 await pres_manager.verify_pres(pres_ex_record, responder)
             except (BaseModelError, LedgerError, StorageError) as err:
-                _logger.exception(err)
+                self._logger.exception(err)
                 if pres_ex_record:
                     async with context.profile.session() as session:
                         await pres_ex_record.save_error_state(

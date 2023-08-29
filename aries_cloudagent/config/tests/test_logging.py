@@ -46,6 +46,29 @@ class TestLoggingConfigurator(AsyncTestCase):
             mock_load.return_value = None
             test_module.LoggingConfigurator.configure(log_level="ERROR")
 
+    def test_configure_per_tenant(self):
+        mock_log_handlers = (
+            async_mock.MagicMock(setFormatter=async_mock.MagicMock()),
+            async_mock.MagicMock(setFormatter=async_mock.MagicMock()),
+        )
+        with async_mock.patch.object(
+            test_module, "logging", autospec=True
+        ), async_mock.patch.object(
+            test_module, "load_resource", async_mock.MagicMock()
+        ) as mock_load, async_mock.patch.object(
+            test_module,
+            "get_log_file_handlers",
+            async_mock.MagicMock(return_value=mock_log_handlers),
+        ):
+            mock_load.return_value = None
+            test_module.LoggingConfigurator.configure_per_tenant(
+                log_level="ERROR",
+                log_file="test.log",
+                log_interval=1,
+                log_json_fmt=True,
+                log_at_when="m",
+            )
+
     @async_mock.patch.object(test_module, "load_resource", autospec=True)
     @async_mock.patch.object(test_module, "fileConfig", autospec=True)
     def test_configure_path(self, mock_file_config, mock_load_resource):
@@ -96,76 +119,14 @@ class TestLoggingConfigurator(AsyncTestCase):
         ) as mock_res_stream:
             test_module.load_resource("abc:def", encoding=None)
 
-    def test_get_logger_with_handlers(self):
-        profile = InMemoryProfile.test_profile()
-        profile.settings["log.file"] = "test_file.log"
-        logger = logging.getLogger(__name__)
-        logger = test_module.get_logger_with_handlers(
-            settings=profile.settings,
-            logger=logger,
-            ident="tenant_did_123",
-            at_when="m",
-            interval=1,
-            backup_count=1,
-        )
-        assert logger
-
-    async def test_get_logger_inst(self):
-        profile = InMemoryProfile.test_profile()
-        logger = test_module.get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
-        )
-        assert logger
-        # public did
-        profile.settings["log.file"] = "test_file.log"
-        profile.context.injector.bind_instance(DIDMethods, DIDMethods())
-        async with profile.session() as session:
-            wallet: BaseWallet = session.inject_or(BaseWallet)
-            await wallet.create_local_did(
-                SOV,
-                ED25519,
-                did="DJGEjaMunDtFtBVrn1qJMT",
+    def test_get_log_file_handlers(self):
+        with async_mock.patch.object(
+            test_module, "TimedRotatingFileMultiProcessHandler", async_mock.MagicMock()
+        ) as mock_file_handler, async_mock.patch.object(
+            test_module.logging, "StreamHandler", async_mock.MagicMock()
+        ) as mock_stream_handler:
+            ret_file_handler, ret_stream_handler = test_module.get_log_file_handlers(
+                "test.log", 1, 1, "m"
             )
-            await wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
-        logger = test_module.get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
-        )
-        # public did, json_fmt, pattern
-        profile.settings["log.file"] = "test_file.log"
-        profile.settings["log.json_fmt"] = True
-        profile.settings[
-            "log.fmt_pattern"
-        ] = "%(asctime)s [%(did)s] %(lineno)d %(message)s"
-        logger = test_module.get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
-        )
-        assert logger
-        # not public did
-        profile = InMemoryProfile.test_profile()
-        profile.settings["log.file"] = "test_file.log"
-        profile.settings["log.json_fmt"] = False
-        profile.context.injector.bind_instance(DIDMethods, DIDMethods())
-        async with profile.session() as session:
-            wallet: BaseWallet = session.inject_or(BaseWallet)
-            await wallet.create_local_did(
-                SOV,
-                ED25519,
-                did="DJGEjaMunDtFtBVrn1qJMT",
-            )
-        logger = test_module.get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
-        )
-        assert logger
-        # not public did, json_fmt, pattern
-        profile.settings["log.file"] = "test_file.log"
-        profile.settings["log.json_fmt"] = True
-        profile.settings["log.fmt_pattern"] = "%(asctime)s %(lineno)d %(message)s"
-        logger = test_module.get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
-        )
-        assert logger
+        assert ret_file_handler
+        assert ret_stream_handler

@@ -5,7 +5,7 @@ from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields, validate
 
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....core.profile import ProfileSession
 from .....indy.models.cred import IndyCredential, IndyCredentialSchema
 from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSchema
@@ -24,6 +24,8 @@ from ..messages.credential_exchange_webhook import V10CredentialExchangeWebhook
 from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
 from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
 from . import UNENCRYPTED_TAGS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V10CredentialExchange(BaseExchangeRecord):
@@ -205,9 +207,11 @@ class V10CredentialExchange(BaseExchangeRecord):
             log_params: Additional parameters to log
             override: Override configured logging regimen, print to stderr instead
         """
-        _logger: logging.Logger = get_logger_inst(
-            profile=session.profile,
-            logger_name=__name__,
+        profile = session.profile
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         if self._last_state == state:  # already done
             return

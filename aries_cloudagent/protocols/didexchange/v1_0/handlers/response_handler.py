@@ -3,9 +3,8 @@
 from aries_cloudagent.protocols.didexchange.v1_0.messages.problem_report import (
     DIDXProblemReport,
 )
-import logging
 
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -28,21 +27,21 @@ class DIDXResponseHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
-        )
-        _logger.debug(f"DIDXResponseHandler called with context {context}")
-        assert isinstance(context.message, DIDXResponse)
-
         profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
+        )
+        self._logger.debug(f"DIDXResponseHandler called with context {context}")
+        assert isinstance(context.message, DIDXResponse)
         mgr = DIDXManager(profile)
         try:
             conn_rec = await mgr.accept_response(
                 context.message, context.message_receipt
             )
         except DIDXManagerError as e:
-            _logger.exception("Error receiving DID exchange response")
+            self._logger.exception("Error receiving DID exchange response")
             if e.error_code:
                 targets = None
                 if context.message.did_doc_attach:
@@ -52,7 +51,9 @@ class DIDXResponseHandler(BaseHandler):
                             context.message_receipt.recipient_verkey,
                         )
                     except DIDXManagerError:
-                        _logger.exception("Error parsing DIDDoc for problem report")
+                        self._logger.exception(
+                            "Error parsing DIDDoc for problem report"
+                        )
                 await responder.send_reply(
                     DIDXProblemReport(
                         description={"en": e.message, "code": e.error_code}

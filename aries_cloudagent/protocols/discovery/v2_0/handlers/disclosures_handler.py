@@ -1,8 +1,6 @@
 """Handler for incoming disclose messages."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -19,17 +17,18 @@ class DisclosuresHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
+        profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
-        _logger.debug("DiscloseHandler called with context %s", context)
+        self._logger.debug("DiscloseHandler called with context %s", context)
         assert isinstance(context.message, Disclosures)
         if not context.connection_ready:
             raise HandlerException(
                 "Received disclosures message from inactive connection"
             )
-        profile = context.profile
         mgr = V20DiscoveryMgr(profile)
         await mgr.receive_disclose(
             context.message, connection_id=context.connection_record.connection_id

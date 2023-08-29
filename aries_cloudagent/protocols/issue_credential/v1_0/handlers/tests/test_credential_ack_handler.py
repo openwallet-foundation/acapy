@@ -34,6 +34,12 @@ class TestCredentialAckHandler(AsyncTestCase):
             request_context.message = CredentialAck()
             request_context.connection_ready = True
             handler = test_module.CredentialAckHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -60,6 +66,12 @@ class TestCredentialAckHandler(AsyncTestCase):
             request_context.message = CredentialAck()
             request_context.connection_ready = False
             handler = test_module.CredentialAckHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)
@@ -88,6 +100,12 @@ class TestCredentialAckHandler(AsyncTestCase):
             request_context.message = CredentialAck()
             request_context.connection_ready = False
             handler = test_module.CredentialAckHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)

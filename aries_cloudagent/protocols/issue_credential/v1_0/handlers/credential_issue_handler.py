@@ -1,8 +1,6 @@
 """Credential issue message handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -30,14 +28,15 @@ class CredentialIssueHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
-        )
         profile = context.profile
-        _logger.debug("CredentialHandler called with context %s", context)
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
+        )
+        self._logger.debug("CredentialHandler called with context %s", context)
         assert isinstance(context.message, CredentialIssue)
-        _logger.info(
+        self._logger.info(
             "Received credential message: %s", context.message.serialize(as_string=True)
         )
 
@@ -83,7 +82,7 @@ class CredentialIssueHandler(BaseHandler):
                 StorageError,
             ) as err:
                 # treat failure to store as mangled on receipt hence protocol error
-                _logger.exception("Error storing issued credential")
+                self._logger.exception("Error storing issued credential")
                 if cred_ex_record:
                     async with profile.session() as session:
                         await cred_ex_record.save_error_state(

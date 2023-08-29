@@ -5,17 +5,19 @@ import logging
 
 from typing import Tuple, Optional, Sequence
 
-from ....config.logging import get_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....core.protocol_registry import ProtocolRegistry
 from ....core.goal_code_registry import GoalCodeRegistry
+from ....config.logging import get_adapted_logger_inst
 from ....storage.error import StorageNotFoundError
 from ....messaging.responder import BaseResponder
 
 from .messages.disclosures import Disclosures
 from .messages.queries import QueryItem, Queries
 from .models.discovery_record import V20DiscoveryExchangeRecord
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V20DiscoveryMgrError(BaseError):
@@ -32,9 +34,10 @@ class V20DiscoveryMgr:
             profile: The profile for this manager
         """
         self._profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
 
     @property

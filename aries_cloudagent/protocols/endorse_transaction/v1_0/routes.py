@@ -15,8 +15,8 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
+from ....config.logging import get_adapted_logger_inst
 from ....connections.models.conn_record import ConnRecord
-from ....config.logging import get_logger_inst
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
 from ....core.util import SHUTDOWN_EVENT_PATTERN, STARTUP_EVENT_PATTERN
@@ -36,6 +36,8 @@ from .manager import TransactionManager, TransactionManagerError
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
 from .transaction_jobs import TransactionJob
 from .util import get_endorser_connection_id, is_author_role
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TransactionListSchema(OpenAPISchema):
@@ -718,9 +720,10 @@ def register_events(event_bus: EventBus):
 
 async def on_startup_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     # auto setup is only for authors
     if not is_author_role(profile):

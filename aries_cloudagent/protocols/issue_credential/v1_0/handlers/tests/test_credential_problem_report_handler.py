@@ -32,6 +32,12 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
                 }
             )
             handler = test_module.CredentialProblemReportHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -62,6 +68,12 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
                 }
             )
             handler = test_module.CredentialProblemReportHandler()
+            handler._logger = async_mock.MagicMock(
+                error=async_mock.MagicMock(),
+                info=async_mock.MagicMock(),
+                warning=async_mock.MagicMock(),
+                debug=async_mock.MagicMock(),
+            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -84,6 +96,12 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
             }
         )
         handler = test_module.CredentialProblemReportHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         responder = MockResponder()
 
         with self.assertRaises(test_module.HandlerException) as err:
@@ -105,6 +123,12 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
             }
         )
         handler = test_module.CredentialProblemReportHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         responder = MockResponder()
 
         with self.assertRaises(test_module.HandlerException) as err:

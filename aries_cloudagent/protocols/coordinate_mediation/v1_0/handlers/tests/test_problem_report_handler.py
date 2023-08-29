@@ -42,5 +42,11 @@ class TestCMProblemReportHandler:
             }
         )
         handler = test_module.CMProblemReportHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         responder = MockResponder()
         await handler.handle(context=request_context, responder=responder)

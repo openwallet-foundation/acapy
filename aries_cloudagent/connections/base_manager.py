@@ -20,7 +20,7 @@ from pydid.verification_method import (
 )
 from ..cache.base import BaseCache
 from ..config.base import InjectionError
-from ..config.logging import get_logger_inst
+from ..config.logging import get_adapted_logger_inst
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
@@ -52,6 +52,8 @@ from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
 from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 
+LOGGER = logging.getLogger(__name__)
+
 
 class BaseConnectionManagerError(BaseError):
     """BaseConnectionManager error."""
@@ -71,9 +73,10 @@ class BaseConnectionManager:
         """
         self._profile = profile
         self._route_manager = profile.inject(RouteManager)
-        self._logger: logging.Logger = get_logger_inst(
-            profile=self._profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
 
     async def create_did_document(

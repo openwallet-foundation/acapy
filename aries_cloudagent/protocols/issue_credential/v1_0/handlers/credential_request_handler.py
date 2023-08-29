@@ -1,8 +1,6 @@
 """Credential request message handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
@@ -31,14 +29,15 @@ class CredentialRequestHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
-        )
         profile = context.profile
-        _logger.debug("CredentialRequestHandler called with context %s", context)
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
+        )
+        self._logger.debug("CredentialRequestHandler called with context %s", context)
         assert isinstance(context.message, CredentialRequest)
-        _logger.info(
+        self._logger.info(
             "Received credential request message: %s",
             context.message.serialize(as_string=True),
         )
@@ -94,7 +93,7 @@ class CredentialRequestHandler(BaseHandler):
                     LedgerError,
                     StorageError,
                 ) as err:
-                    _logger.exception("Error responding to credential request")
+                    self._logger.exception("Error responding to credential request")
                     if cred_ex_record:
                         async with profile.session() as session:
                             await cred_ex_record.save_error_state(
@@ -115,7 +114,7 @@ class CredentialRequestHandler(BaseHandler):
                     perf_counter=r_time,
                 )
             else:
-                _logger.warning(
+                self._logger.warning(
                     "Operation set for auto-issue but credential exchange record "
                     f"{cred_ex_record.credential_exchange_id} "
                     "has no attribute values"

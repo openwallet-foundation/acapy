@@ -34,6 +34,12 @@ class TestHandshakeReuseHandler:
         mock_oob_mgr.return_value.receive_reuse_message = async_mock.CoroutineMock()
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         request_context.connection_record = ConnRecord()
         responder = MockResponder()
         await handler.handle(request_context, responder)
@@ -51,6 +57,12 @@ class TestHandshakeReuseHandler:
         mock_oob_mgr.return_value.receive_reuse_message.return_value = reuse_accepted
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         request_context.connection_record = ConnRecord()
         responder = MockResponder()
         await handler.handle(request_context, responder)
@@ -69,6 +81,12 @@ class TestHandshakeReuseHandler:
         )
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         request_context.connection_record = ConnRecord()
         responder = MockResponder()
         await handler.handle(request_context, responder)

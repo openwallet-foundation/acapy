@@ -7,11 +7,11 @@ from typing import Mapping, Optional, Sequence, Union, Text
 import uuid
 
 from ....messaging.decorators.service_decorator import ServiceDecorator
-from ....config.logging import get_logger_inst
 from ....core.event_bus import EventBus
 from ....core.util import get_version_from_message
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
+from ....config.logging import get_adapted_logger_inst
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
@@ -40,6 +40,7 @@ from .models.oob_record import OobRecord
 from .messages.service import Service
 from .message_types import DEFAULT_VERSION
 
+LOGGER = logging.getLogger(__name__)
 REUSE_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse"
 REUSE_ACCEPTED_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse_accepted"
 
@@ -62,9 +63,10 @@ class OutOfBandManager(BaseConnectionManager):
             profile: The profile for this out of band manager
         """
         self._profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
         super().__init__(self._profile)
 

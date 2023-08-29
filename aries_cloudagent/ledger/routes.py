@@ -15,7 +15,7 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
-from ..config.logging import get_logger_inst
+from ..config.logging import get_adapted_logger_inst
 from ..connections.models.conn_record import ConnRecord
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
@@ -67,6 +67,8 @@ from .multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from .util import notify_register_did_event
+
+LOGGER = logging.getLogger(__name__)
 
 
 class LedgerModulesResultSchema(OpenAPISchema):
@@ -645,6 +647,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     async with context.profile.session() as session:
         ledger = session.inject_or(BaseLedger)
         if not ledger:
@@ -654,9 +657,10 @@ async def ledger_accept_taa(request: web.BaseRequest):
             raise web.HTTPForbidden(reason=reason)
 
     accept_input = await request.json()
-    _logger: logging.Logger = get_logger_inst(
-        profile=context.profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     _logger.info(">>> accepting TAA with: %s", accept_input)
     async with ledger:

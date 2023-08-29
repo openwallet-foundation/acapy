@@ -16,7 +16,7 @@ from indy.error import ErrorCode, IndyError
 
 from ..cache.base import BaseCache
 from ..config.base import BaseInjector, BaseProvider, BaseSettings
-from ..config.logging import get_logger_inst
+from ..config.logging import get_adapted_logger_inst
 from ..indy.sdk.error import IndyErrorHandler
 from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
@@ -277,9 +277,10 @@ class IndySdkLedger(BaseLedger):
         """
         self.pool = pool
         self.profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self.profile.settings.get("log.file"),
+            wallet_id=self.profile.settings.get("wallet.id"),
         )
 
     @property

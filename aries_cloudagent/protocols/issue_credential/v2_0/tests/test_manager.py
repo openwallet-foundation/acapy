@@ -1280,29 +1280,33 @@ class TestV20CredManager(AsyncTestCase):
             trace=False,
             auto_remove=True,
         )
-        mock_logger_inst = async_mock.MagicMock(
-            exception=async_mock.MagicMock(),
+        mock_logger = async_mock.MagicMock(
             warning=async_mock.MagicMock(),
+            exception=async_mock.MagicMock(),
         )
+        self.profile.settings["log.file"] = "test.log"
+        self.profile.settings["wallet.id"] = "test123"
         with async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save_ex, async_mock.patch.object(
             V20CredExRecord, "delete_record", autospec=True
         ) as mock_delete_ex, async_mock.patch.object(
             test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=mock_logger_inst,
-            ),
-        ) as mock_logger:
+            "get_adapted_logger_inst",
+            async_mock.MagicMock(return_value=mock_logger),
+        ):
             mock_delete_ex.side_effect = test_module.StorageError()
-            (_, ack) = await self.manager.send_cred_ack(stored_exchange)
+            manager = V20CredManager(self.profile)
+            (_, ack) = await manager.send_cred_ack(stored_exchange)
             assert ack._thread
-            mock_logger_inst.exception.call_count == 1  # cover exception log-and-continue
-            mock_logger_inst.warning.call_count == 1  # no BaseResponder
+            assert (
+                mock_logger.exception.call_count == 1
+            )  # cover exception log-and-continue
+            assert mock_logger.warning.call_count == 1  # no BaseResponder
+
             mock_responder = MockResponder()  # cover with responder
             self.context.injector.bind_instance(BaseResponder, mock_responder)
-            (cx_rec, ack) = await self.manager.send_cred_ack(stored_exchange)
+            (cx_rec, ack) = await manager.send_cred_ack(stored_exchange)
             assert ack._thread
             assert cx_rec.state == V20CredExRecord.STATE_DONE
 

@@ -1,8 +1,6 @@
 """Connection response handler."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -25,21 +23,21 @@ class ConnectionResponseHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
-        )
-        _logger.debug(f"ConnectionResponseHandler called with context {context}")
-        assert isinstance(context.message, ConnectionResponse)
-
         profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
+        )
+        self._logger.debug(f"ConnectionResponseHandler called with context {context}")
+        assert isinstance(context.message, ConnectionResponse)
         mgr = ConnectionManager(profile)
         try:
             connection = await mgr.accept_response(
                 context.message, context.message_receipt
             )
         except ConnectionManagerError as e:
-            _logger.exception("Error receiving connection response")
+            self._logger.exception("Error receiving connection response")
             if e.error_code:
                 targets = None
                 if context.message.connection and context.message.connection.did_doc:
@@ -49,7 +47,9 @@ class ConnectionResponseHandler(BaseHandler):
                             context.message_receipt.recipient_verkey,
                         )
                     except ConnectionManagerError:
-                        _logger.exception("Error parsing DIDDoc for problem report")
+                        self._logger.exception(
+                            "Error parsing DIDDoc for problem report"
+                        )
                 await responder.send_reply(
                     ConnectionProblemReport(problem_code=e.error_code, explain=str(e)),
                     target_list=targets,

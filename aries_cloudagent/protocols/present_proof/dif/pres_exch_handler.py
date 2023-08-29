@@ -21,9 +21,9 @@ from typing import Sequence, Optional, Tuple, Union, Dict, List
 from unflatten import unflatten
 from uuid import uuid4
 
-from ....config.logging import get_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile
+from ....config.logging import get_adapted_logger_inst
 from ....storage.vc_holder.vc_record import VCRecord
 from ....vc.ld_proofs import (
     Ed25519Signature2018,
@@ -59,6 +59,7 @@ from .pres_exch import (
     PresentationSubmission,
 )
 
+LOGGER = logging.getLogger(__name__)
 PRESENTATION_SUBMISSION_JSONLD_CONTEXT = (
     "https://identity.foundation/presentation-exchange/submission/v1"
 )
@@ -111,9 +112,10 @@ class DIFPresExchHandler:
             self.proof_type = proof_type
         self.is_holder = False
         self.reveal_doc_frame = reveal_doc
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self.profile.settings.get("log.file"),
+            wallet_id=self.profile.settings.get("wallet.id"),
         )
 
     async def _get_issue_suite(

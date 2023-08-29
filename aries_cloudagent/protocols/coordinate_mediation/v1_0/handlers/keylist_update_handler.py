@@ -1,8 +1,6 @@
 """Handler for keylist-update messages."""
 
-import logging
-
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
@@ -19,17 +17,19 @@ class KeylistUpdateHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle keylist-update messages."""
-        _logger: logging.Logger = get_logger_inst(
-            profile=context.profile,
-            logger_name=__name__,
+        profile = context.profile
+        self._logger = get_adapted_logger_inst(
+            logger=self._logger,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
-        _logger.debug("%s called with context %s", self.__class__.__name__, context)
+        self._logger.debug(
+            "%s called with context %s", self.__class__.__name__, context
+        )
         assert isinstance(context.message, KeylistUpdate)
 
         if not context.connection_ready:
             raise HandlerException("Cannot update routes: no active connection")
-
-        profile = context.profile
         mgr = MediationManager(profile)
         try:
             async with profile.session() as session:

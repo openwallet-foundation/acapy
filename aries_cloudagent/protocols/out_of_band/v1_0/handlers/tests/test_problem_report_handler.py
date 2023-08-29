@@ -13,8 +13,6 @@ from ...handlers import problem_report_handler as test_module
 from ...manager import OutOfBandManagerError
 from ...messages.problem_report import OOBProblemReport, ProblemReportReason
 
-from .. import problem_report_handler as test_module
-
 
 @pytest.fixture()
 async def request_context() -> RequestContext:
@@ -48,6 +46,12 @@ class TestOOBProblemReportHandler:
             }
         )
         handler = test_module.OOBProblemReportMessageHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         responder = MockResponder()
         await handler.handle(context=request_context, responder=responder)
         mock_oob_mgr.return_value.receive_problem_report.assert_called_once_with(
@@ -70,14 +74,12 @@ class TestOOBProblemReportHandler:
             }
         )
         handler = test_module.OOBProblemReportMessageHandler()
-        with async_mock.patch.object(
-            test_module,
-            "get_logger_inst",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(exception=async_mock.MagicMock()),
-            ),
-        ) as mock_exc_logger:
-            responder = MockResponder()
-            await handler.handle(context=request_context, responder=responder)
-
-        assert mock_exc_logger.called_once()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
+        responder = MockResponder()
+        await handler.handle(context=request_context, responder=responder)
+        assert handler._logger.exception.call_count == 1

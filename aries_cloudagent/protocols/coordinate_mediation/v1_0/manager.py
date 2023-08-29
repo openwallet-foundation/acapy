@@ -3,9 +3,9 @@ import json
 import logging
 from typing import Dict, Optional, Sequence, Tuple
 
-from ....config.logging import get_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
+from ....config.logging import get_adapted_logger_inst
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
@@ -28,6 +28,8 @@ from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
 from .normalization import normalize_from_did_key
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MediationManagerError(BaseError):
@@ -66,9 +68,10 @@ class MediationManager:
         self._profile = profile
         if not profile:
             raise MediationManagerError("Missing profile")
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
 
     # Role: Server {{{

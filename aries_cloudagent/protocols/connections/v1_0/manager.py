@@ -5,7 +5,7 @@ from typing import Optional, Sequence, Tuple, cast
 
 
 from ....core.oob_processor import OobMessageProcessor
-from ....config.logging import get_logger_inst
+from ....config.logging import get_adapted_logger_inst
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
@@ -26,6 +26,8 @@ from .messages.connection_response import ConnectionResponse
 from .messages.problem_report import ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 
+LOGGER = logging.getLogger(__name__)
+
 
 class ConnectionManagerError(BaseError):
     """Connection error."""
@@ -41,9 +43,10 @@ class ConnectionManager(BaseConnectionManager):
             profile: The profile for this connection manager
         """
         self._profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
         super().__init__(self._profile)
 

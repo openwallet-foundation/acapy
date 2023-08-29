@@ -5,7 +5,7 @@ from typing import Any, Mapping, Union
 
 from marshmallow import Schema, fields, validate
 
-from .....config.logging import get_logger_inst
+from .....config.logging import get_adapted_logger_inst
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUID4_EXAMPLE
@@ -16,6 +16,8 @@ from ..messages.pres_proposal import V20PresProposal, V20PresProposalSchema
 from ..messages.pres_request import V20PresRequest, V20PresRequestSchema
 from ..messages.pres_webhook import V20PresExRecordWebhook
 from . import UNENCRYPTED_TAGS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V20PresExRecord(BaseExchangeRecord):
@@ -161,9 +163,11 @@ class V20PresExRecord(BaseExchangeRecord):
             log_params: Additional parameters to log
             override: Override configured logging regimen, print to stderr instead
         """
-        _logger: logging.Logger = get_logger_inst(
-            profile=session.profile,
-            logger_name=__name__,
+        profile = session.profile
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         if self._last_state == state:  # already done
             return

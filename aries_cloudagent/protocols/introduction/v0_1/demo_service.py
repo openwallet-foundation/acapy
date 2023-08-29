@@ -3,7 +3,7 @@
 import json
 import logging
 
-from ....config.logging import get_logger_inst
+from ....config.logging import get_adapted_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import ProfileSession
 from ....storage.base import (
@@ -16,6 +16,8 @@ from .base_service import BaseIntroductionService, IntroductionError
 from .messages.forward_invitation import ForwardInvitation
 from .messages.invitation import Invitation as IntroInvitation
 from .messages.invitation_request import InvitationRequest as IntroInvitationRequest
+
+LOGGER = logging.getLogger(__name__)
 
 
 class DemoIntroductionService(BaseIntroductionService):
@@ -109,9 +111,11 @@ class DemoIntroductionService(BaseIntroductionService):
             outbound_handler: The outbound handler coroutine for sending a message
         """
         thread_id = invitation._thread_id
-        _logger: logging.Logger = get_logger_inst(
-            profile=session.profile,
-            logger_name=__name__,
+        profile = session.profile
+        _logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=profile.settings.get("log.file"),
+            wallet_id=profile.settings.get("wallet.id"),
         )
         tag_filter = {"target_connection_id": target_connection_id}
         storage = session.inject(BaseStorage)

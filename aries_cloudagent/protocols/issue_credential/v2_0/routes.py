@@ -16,7 +16,7 @@ from aiohttp_apispec import (
 from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
-from ....config.logging import get_logger_inst
+from ....config.logging import get_adapted_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....indy.holder import IndyHolderError
@@ -54,6 +54,8 @@ from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
 from .models.detail.indy import V20CredExRecordIndySchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
@@ -679,9 +681,10 @@ async def credential_exchange_send(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     outbound_handler = request["outbound_message_router"]
 
@@ -793,9 +796,10 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     outbound_handler = request["outbound_message_router"]
 
@@ -929,9 +933,10 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     body = await request.json()
 
@@ -1002,9 +1007,10 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     outbound_handler = request["outbound_message_router"]
 
@@ -1100,9 +1106,10 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     outbound_handler = request["outbound_message_router"]
 
@@ -1211,9 +1218,10 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     outbound_handler = request["outbound_message_router"]
 
@@ -1315,9 +1323,10 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     outbound_handler = request["outbound_message_router"]
 
@@ -1437,9 +1446,10 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     outbound_handler = request["outbound_message_router"]
 
@@ -1534,9 +1544,10 @@ async def credential_exchange_store(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger: logging.Logger = get_logger_inst(
-        profile=profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     outbound_handler = request["outbound_message_router"]
 

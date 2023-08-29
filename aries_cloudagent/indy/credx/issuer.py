@@ -21,7 +21,7 @@ from indy_credx import (
 )
 
 from ...askar.profile import AskarProfile
-from ...config.logging import get_logger_inst
+from ...config.logging import get_adapted_logger_inst
 
 from ..issuer import (
     IndyIssuer,
@@ -31,6 +31,7 @@ from ..issuer import (
     DEFAULT_SIGNATURE_TYPE,
 )
 
+LOGGER = logging.getLogger(__name__)
 CATEGORY_CRED_DEF = "credential_def"
 CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
 CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
@@ -53,9 +54,10 @@ class IndyCredxIssuer(IndyIssuer):
 
         """
         self._profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
 
     @property

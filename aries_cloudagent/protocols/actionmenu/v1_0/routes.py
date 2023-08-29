@@ -8,7 +8,7 @@ from aiohttp_apispec import docs, match_info_schema, request_schema, response_sc
 from marshmallow import fields
 
 from ....admin.request_context import AdminRequestContext
-from ....config.logging import get_logger_inst
+from ....config.logging import get_adapted_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -19,6 +19,8 @@ from .messages.menu_request import MenuRequest
 from .messages.perform import Perform
 from .models.menu_option import MenuOptionSchema
 from .util import MENU_RECORD_TYPE, retrieve_connection_menu, save_connection_menu
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ActionMenuModulesResultSchema(OpenAPISchema):
@@ -177,11 +179,13 @@ async def actionmenu_request(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     connection_id = request.match_info["conn_id"]
     outbound_handler = request["outbound_message_router"]
-    _logger: logging.Logger = get_logger_inst(
-        profile=context.profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     try:
         async with context.profile.session() as session:
@@ -210,12 +214,14 @@ async def actionmenu_send(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     connection_id = request.match_info["conn_id"]
     outbound_handler = request["outbound_message_router"]
     menu_json = await request.json()
-    _logger: logging.Logger = get_logger_inst(
-        profile=context.profile,
-        logger_name=__name__,
+    _logger = get_adapted_logger_inst(
+        logger=LOGGER,
+        log_file=profile.settings.get("log.file"),
+        wallet_id=profile.settings.get("wallet.id"),
     )
     _logger.debug("Received send-menu request: %s %s", connection_id, menu_json)
     try:

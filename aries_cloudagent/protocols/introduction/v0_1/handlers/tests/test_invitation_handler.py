@@ -39,7 +39,12 @@ class TestInvitationHandler(AsyncTestCase):
 
     async def test_handle(self):
         handler = test_module.InvitationHandler()
-
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         mock_conn_rec = async_mock.MagicMock(connection_id="dummy")
 
         responder = MockResponder()
@@ -60,12 +65,24 @@ class TestInvitationHandler(AsyncTestCase):
 
     async def test_handle_no_service(self):
         handler = test_module.InvitationHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
 
         with self.assertRaises(HandlerException):
             await handler.handle(self.context, None)
 
     async def test_handle_not_ready(self):
         handler = test_module.InvitationHandler()
+        handler._logger = async_mock.MagicMock(
+            error=async_mock.MagicMock(),
+            info=async_mock.MagicMock(),
+            warning=async_mock.MagicMock(),
+            debug=async_mock.MagicMock(),
+        )
         self.context.connection_ready = False
 
         with self.assertRaises(HandlerException):

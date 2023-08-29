@@ -18,7 +18,6 @@ from ..base import (
     ResolverType,
 )
 from ..did_resolver import DIDResolver
-from .. import did_resolver as test_module
 
 from . import DOC
 
@@ -90,20 +89,11 @@ class MockResolver(BaseDIDResolver):
 
 @pytest.fixture
 def resolver():
-    with async_mock.patch.object(
-        test_module,
-        "get_logger_inst",
-        async_mock.MagicMock(
-            return_value=async_mock.MagicMock(
-                debug=async_mock.MagicMock(),
-            ),
-        ),
-    ):
-        did_resolver_registry = []
-        for method in TEST_DID_METHODS:
-            resolver = MockResolver([method], DIDDocument.deserialize(DOC))
-            did_resolver_registry.append(resolver)
-        yield DIDResolver(did_resolver_registry)
+    did_resolver_registry = []
+    for method in TEST_DID_METHODS:
+        resolver = MockResolver([method], DIDDocument.deserialize(DOC))
+        did_resolver_registry.append(resolver)
+    return DIDResolver(did_resolver_registry)
 
 
 @pytest.fixture
@@ -123,7 +113,7 @@ async def test_match_did_to_resolver(profile, resolver, did, method):
 
 
 @pytest.mark.asyncio
-async def test_match_did_to_resolver_x_not_supported(resolver):
+async def test_match_did_to_resolver_x_not_supported(profile, resolver):
     with pytest.raises(DIDMethodNotSupported):
         await resolver._match_did_to_resolver(
             profile, "did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A"
@@ -136,18 +126,9 @@ async def test_match_did_to_resolver_native_priority(profile):
     non_native = MockResolver(["sov"], native=False)
     registry = [non_native, native]
     resolver = DIDResolver(registry)
-    with async_mock.patch.object(
-        test_module,
-        "get_logger_inst",
-        async_mock.MagicMock(
-            return_value=async_mock.MagicMock(
-                debug=async_mock.MagicMock(),
-            ),
-        ),
-    ):
-        assert [native, non_native] == await resolver._match_did_to_resolver(
-            profile, TEST_DID0
-        )
+    assert [native, non_native] == await resolver._match_did_to_resolver(
+        profile, TEST_DID0
+    )
 
 
 @pytest.mark.asyncio
@@ -158,21 +139,12 @@ async def test_match_did_to_resolver_registration_order(profile):
     native4 = MockResolver(["sov"], native=True)
     registry = [native1, native2, non_native3, native4]
     resolver = DIDResolver(registry)
-    with async_mock.patch.object(
-        test_module,
-        "get_logger_inst",
-        async_mock.MagicMock(
-            return_value=async_mock.MagicMock(
-                debug=async_mock.MagicMock(),
-            ),
-        ),
-    ):
-        assert [
-            native1,
-            native2,
-            native4,
-            non_native3,
-        ] == await resolver._match_did_to_resolver(profile, TEST_DID0)
+    assert [
+        native1,
+        native2,
+        native4,
+        non_native3,
+    ] == await resolver._match_did_to_resolver(profile, TEST_DID0)
 
 
 @pytest.mark.asyncio
@@ -235,13 +207,5 @@ async def test_resolve_did_x_not_found(profile):
     py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     cowsay_resolver_not_found = MockResolver(["cowsay"], resolved=DIDNotFound())
     resolver = DIDResolver([cowsay_resolver_not_found])
-    with async_mock.patch.object(
-        test_module,
-        "get_logger_inst",
-        async_mock.MagicMock(
-            return_value=async_mock.MagicMock(
-                debug=async_mock.MagicMock(),
-            ),
-        ),
-    ), pytest.raises(DIDNotFound):
+    with pytest.raises(DIDNotFound):
         await resolver.resolve(profile, py_did)

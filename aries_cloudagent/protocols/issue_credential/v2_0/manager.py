@@ -4,8 +4,8 @@ import logging
 
 from typing import Mapping, Optional, Tuple
 
-from ....config.logging import get_logger_inst
 from ....connections.models.conn_record import ConnRecord
+from ....config.logging import get_adapted_logger_inst
 from ....core.oob_processor import OobRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -22,6 +22,8 @@ from .messages.cred_request import V20CredRequest
 from .messages.inner.cred_preview import V20CredPreview
 from .models.cred_ex_record import V20CredExRecord
 
+LOGGER = logging.getLogger(__name__)
+
 
 class V20CredManagerError(BaseError):
     """Credential manager error under issue-credential protocol v2.0."""
@@ -37,9 +39,10 @@ class V20CredManager:
             profile: The profile instance for this credential manager
         """
         self._profile = profile
-        self._logger: logging.Logger = get_logger_inst(
-            profile=profile,
-            logger_name=__name__,
+        self._logger = get_adapted_logger_inst(
+            logger=LOGGER,
+            log_file=self._profile.settings.get("log.file"),
+            wallet_id=self._profile.settings.get("wallet.id"),
         )
 
     @property
