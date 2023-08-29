@@ -1,8 +1,8 @@
-# 0.10.0
+# 0.10.1
 
 ## August 29, 2023
 
-Release 0.10.0 contains a breaking change, an important fix for a regression
+Release 0.10.1 contains a breaking change, an important fix for a regression
 introduced in 0.8.2 that impacts certain deployments, and a number of fixes and
 updates. Included in the updates is a significant internal reorganization of the
 DID and connection management code that was done to enable more flexible uses of
@@ -11,6 +11,10 @@ messaging connections. The work also paves the way for coming updates related to
 support for `did:peer` DIDs for DIDComm. For details on the change see
 [PR \#2409], which includes some of the best pull request documentation ever
 created.
+
+Release 0.10.1 has the same contents as 0.10.0. An error on PyPi prevented the
+0.10.0 release from being properly uploaded because of an existing file of the same
+name. We immediately released 0.10.1 as a replacement.
 
 [PR \#2409]: https://github.com/hyperledger/aries-cloudagent-python/pull/2409
 
@@ -98,10 +102,19 @@ deleted from ACA-Py storage.
   - Enable Snyk scanning [\#2418](https://github.com/hyperledger/aries-cloudagent-python/pull/2418) [ryjones](https://github.com/ryjones)
   - Remove Indy tests from workflows [\#2415](https://github.com/hyperledger/aries-cloudagent-python/pull/2415) [dbluhm](https://github.com/dbluhm)
 - Release management pull requests
-  - 0.10.0-rc2 [\#2452](https://github.com/hyperledger/aries-cloudagent-python/pull/2452) [swcurran](https://github.com/swcurran)
+  - 0.10.1 [\#2454](https://github.com/hyperledger/aries-cloudagent-python/pull/2454) [swcurran](https://github.com/swcurran)
+  - 0.10.0 [\#2452](https://github.com/hyperledger/aries-cloudagent-python/pull/2452) [swcurran](https://github.com/swcurran)
   - 0.10.0-rc2 [\#2448](https://github.com/hyperledger/aries-cloudagent-python/pull/2448) [swcurran](https://github.com/swcurran)
   - 0.10.0-rc1 [\#2442](https://github.com/hyperledger/aries-cloudagent-python/pull/2442) [swcurran](https://github.com/swcurran)
   - 0.10.0-rc0 [\#2414](https://github.com/hyperledger/aries-cloudagent-python/pull/2414) [swcurran](https://github.com/swcurran)
+
+# 0.10.0
+
+## August 29, 2023
+
+Release 0.10.1 has the same contents as 0.10.0. An error on PyPi prevented the
+0.10.0 release from being properly uploaded because of an existing file of the
+same name. We immediately released 0.10.1 as a replacement.
 
 # 0.9.0
 
