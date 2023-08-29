@@ -228,7 +228,7 @@ class JSONWebToken(Regexp):
         "eyJhIjogIjAifQ."
         "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
     )
-    PATTERN = r"^[a-zA-Z0-9\+/=\._-]+\.[a-zA-Z0-9\+/=\._-]+\.[a-zA-Z0-9\+/=\._-]+$"
+    PATTERN = r"^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$"
 
     def __init__(self):
         """Initialize the instance."""
@@ -250,8 +250,7 @@ class SDJSONWebToken(Regexp):
         "~WyJPMTFySVRjRTdHcXExYW9oRkd0aDh3IiwgIlNBIl0"
         "~WyJkVmEzX1JlTGNsWTU0R1FHZm5oWlRnIiwgInVwZGF0ZWRfYXQiLCAxNTcwMDAwMDAwXQ"
     )
-    PATTERN = r"""^[a-zA-Z0-9\+/=\._-]+\.[a-zA-Z0-9\+/=\._-]+\.[a-zA-Z0-9\+/=\._-]+
-        (?:~[a-zA-Z0-9\+/=\._-]+)*~?$"""
+    PATTERN = r"^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:~[a-zA-Z0-9_-]+)*~?$"
 
     def __init__(self):
         """Initialize the instance."""
