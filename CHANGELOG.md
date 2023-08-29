@@ -1,6 +1,6 @@
-# 0.10.0-rc2
+# 0.10.0
 
-## August 25, 2023
+## August 29, 2023
 
 Release 0.10.0 contains a breaking change, an important fix for a regression
 introduced in 0.8.2 that impacts certain deployments, and a number of fixes and
@@ -62,6 +62,9 @@ deleted from ACA-Py storage.
   - fix: outbound send status missing on path [\#2393](https://github.com/hyperledger/aries-cloudagent-python/pull/2393) [dbluhm](https://github.com/dbluhm)
   - fix: keylist update response race condition [\#2391](https://github.com/hyperledger/aries-cloudagent-python/pull/2391) [dbluhm](https://github.com/dbluhm)
 - DID Handling and Connection Establishment Updates/Fixes
+  - fix: handle stored afgo and findy docs in corrections [\#2450](https://github.com/hyperledger/aries-cloudagent-python/pull/2450) [dbluhm](https://github.com/dbluhm)
+  - chore: relax connections filter DID format [\#2451](https://github.com/hyperledger/aries-cloudagent-python/pull/2451) [chumbert](https://github.com/chumbert)
+  - fix: ignore duplicate record errors on add key [\#2447](https://github.com/hyperledger/aries-cloudagent-python/pull/2447) [dbluhm](https://github.com/dbluhm)
   - fix: ignore duplicate record errors on add key [\#2447](https://github.com/hyperledger/aries-cloudagent-python/pull/2447) [dbluhm](https://github.com/dbluhm)
   - fix: more diddoc corrections [\#2446](https://github.com/hyperledger/aries-cloudagent-python/pull/2446) [dbluhm](https://github.com/dbluhm)
   - feat: resolve connection targets and permit connecting via public DID [\#2409](https://github.com/hyperledger/aries-cloudagent-python/pull/2409) [dbluhm](https://github.com/dbluhm)
@@ -95,6 +98,7 @@ deleted from ACA-Py storage.
   - Enable Snyk scanning [\#2418](https://github.com/hyperledger/aries-cloudagent-python/pull/2418) [ryjones](https://github.com/ryjones)
   - Remove Indy tests from workflows [\#2415](https://github.com/hyperledger/aries-cloudagent-python/pull/2415) [dbluhm](https://github.com/dbluhm)
 - Release management pull requests
+  - 0.10.0-rc2 [\#2452](https://github.com/hyperledger/aries-cloudagent-python/pull/2452) [swcurran](https://github.com/swcurran)
   - 0.10.0-rc2 [\#2448](https://github.com/hyperledger/aries-cloudagent-python/pull/2448) [swcurran](https://github.com/swcurran)
   - 0.10.0-rc1 [\#2442](https://github.com/hyperledger/aries-cloudagent-python/pull/2442) [swcurran](https://github.com/swcurran)
   - 0.10.0-rc0 [\#2414](https://github.com/hyperledger/aries-cloudagent-python/pull/2414) [swcurran](https://github.com/swcurran)
