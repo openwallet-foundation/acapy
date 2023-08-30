@@ -425,7 +425,7 @@ class AskarWallet(BaseWallet):
         endorser_did: str = None,
         routing_keys: List[str] = None,
     ):
-        """Update the endpoint for a DID in the wallet, send to ledger if public or posted.
+        """Update the endpoint for a DID in the wallet, send to ledger if posted.
 
         Args:
             did: DID for which to set endpoint
