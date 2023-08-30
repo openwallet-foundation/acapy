@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import call
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock, call
 

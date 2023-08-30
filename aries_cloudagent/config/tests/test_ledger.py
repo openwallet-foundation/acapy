@@ -695,7 +695,7 @@ class TestLedgerConfig(AsyncTestCase):
                 mock_ledger, mock_profile, taa_info, provision=False
             )
 
-    async def test_ledger_accept_taa_tty(self):
+    async def test_ledger_accept_taa(self):
         taa_info = {
             "taa_record": {"version": "1.0", "text": "Agreement"},
             "aml_record": {"aml": {"wallet_agreement": "", "on_file": ""}},

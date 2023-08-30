@@ -14,7 +14,6 @@ from .....didexchange.v1_0.messages.request import DIDXRequest
 
 from .. import invitation as test_module
 from ..invitation import HSProto, InvitationMessage, InvitationMessageSchema
-from ..invitation import InvitationMessage, InvitationMessageSchema
 from ..service import Service
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"

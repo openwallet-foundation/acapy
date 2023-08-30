@@ -6,7 +6,6 @@ from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 
 from ...indy.holder import IndyHolder
-from ...ledger.base import BaseLedger
 from ...storage.vc_holder.base import VCHolder
 from ...storage.vc_holder.vc_record import VCRecord
 
