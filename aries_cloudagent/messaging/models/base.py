@@ -133,7 +133,6 @@ class BaseModel(ABC):
         cls: Type[ModelType],
         obj,
     ) -> ModelType:
-        """Convert from JSON representation to a model instance."""
         ...
 
     @overload
@@ -144,7 +143,6 @@ class BaseModel(ABC):
         *,
         unknown: Optional[str] = None,
     ) -> ModelType:
-        """Convert from JSON representation to a model instance."""
         ...
 
     @overload
@@ -156,7 +154,6 @@ class BaseModel(ABC):
         none2none: Literal[False],
         unknown: Optional[str] = None,
     ) -> ModelType:
-        """Convert from JSON representation to a model instance."""
         ...
 
     @overload
@@ -168,7 +165,6 @@ class BaseModel(ABC):
         none2none: Literal[True],
         unknown: Optional[str] = None,
     ) -> Optional[ModelType]:
-        """Convert from JSON representation to a model instance."""
         ...
 
     @classmethod
@@ -214,7 +210,6 @@ class BaseModel(ABC):
         as_string: Literal[True],
         unknown: Optional[str] = None,
     ) -> str:
-        """Create a JSON-compatible dict representation of the model instance."""
         ...
 
     @overload
@@ -223,7 +218,6 @@ class BaseModel(ABC):
         *,
         unknown: Optional[str] = None,
     ) -> dict:
-        """Create a JSON-compatible dict representation of the model instance."""
         ...
 
     def serialize(
