@@ -190,7 +190,3 @@ _build/
 
 # Open API build
 open-api/.build
-
-# poetry
-poetry.lock
-pyproject.toml

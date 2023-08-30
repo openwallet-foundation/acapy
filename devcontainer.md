@@ -13,7 +13,10 @@ The primary use case for this `devcontainer` is for developing, debugging and un
 There are limitations running this devcontainer, such as all networking is within this container. This container has [docker-in-docker](https://github.com/microsoft/vscode-dev-containers/blob/main/script-library/docs/docker-in-docker.md) which allows running demos, building docker images, running `docker compose` all within this container.
 
 ### Files
-The `.devcontainer` folder contains the `devcontainer.json` file which defines this container. We are using a `Dockerfile` and `post-install.sh` to build and configure the container run image. The `Dockerfile` is simple but in place for simplifying image enhancements (ex. adding `poetry` to the image). The `post-install.sh` will install all the ACA-Py requirements and any additional steps (ex. adding additional development libraries).
+The `.devcontainer` folder contains the `devcontainer.json` file which defines this container. We are using a `Dockerfile` and `post-install.sh` to build and configure the container run image. The `Dockerfile` is simple but in place for simplifying image enhancements (ex. adding `poetry` to the image). The `post-install.sh` will install some additional development libraries (including for BDD support).
+
+### Poetry
+The Python libraries / dependencies are installed using [`poetry`](https://python-poetry.org). For the devcontainer, we *DO NOT* use virtual environments. This means you will not see or need venv prompts in the terminals and you will not need to run tasks through poetry (ie. `poetry run black .`). If you need to add new dependencies, you will need to add the dependency via poetry *AND* you should rebuild your devcontainer.
 
 ### Running docker-in-docker demos
 The following is an example of running the demos in this container using a local [von-network](https://github.com/bcgov/von-network/tree/main). You will have to connect to the local von-network using `host.docker.internal` not `localhost`.

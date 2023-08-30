@@ -64,11 +64,16 @@ def run(args):
     run_command(command, args)
 
 
+def script_main():
+    """Run the main function as a script for poetry."""
+    main(sys.argv)
+
+
 def main(args):
     """Execute default entry point."""
-    if __name__ == "__main__":
-        init_debug(args)
-        run(args)
+    init_debug(args)
+    run(args)
 
 
-main(sys.argv)
+if __name__ == "__main__":
+    script_main()
