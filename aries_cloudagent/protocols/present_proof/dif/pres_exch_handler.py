@@ -451,11 +451,11 @@ class DIFPresExchHandler:
         """Return VCRecord from a credential dict."""
         proofs = cred_dict.get("proof") or []
         proof_types = None
-        if type(proofs) is dict:
+        if isinstance(proofs, dict):
             proofs = [proofs]
         if proofs:
             proof_types = [proof.get("type") for proof in proofs]
-        contexts = [ctx for ctx in cred_dict.get("@context") if type(ctx) is str]
+        contexts = [ctx for ctx in cred_dict.get("@context") if isinstance(ctx, str)]
         if "@graph" in cred_dict:
             for enclosed_data in cred_dict.get("@graph"):
                 if (
@@ -470,14 +470,14 @@ class DIFPresExchHandler:
             given_id = str(uuid4())
         # issuer
         issuer = cred_dict.get("issuer")
-        if type(issuer) is dict:
+        if isinstance(issuer, dict):
             issuer = issuer.get("id")
 
         # subjects
         subject_ids = None
         subjects = cred_dict.get("credentialSubject")
         if subjects:
-            if type(subjects) is dict:
+            if isinstance(subjects, dict):
                 subjects = [subjects]
             subject_ids = [
                 subject.get("id") for subject in subjects if ("id" in subject)
@@ -487,7 +487,7 @@ class DIFPresExchHandler:
 
         # Schemas
         schemas = cred_dict.get("credentialSchema", [])
-        if type(schemas) is dict:
+        if isinstance(schemas, dict):
             schemas = [schemas]
         schema_ids = [schema.get("id") for schema in schemas]
         document_loader = self.profile.inject(DocumentLoader)

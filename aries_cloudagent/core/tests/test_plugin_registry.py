@@ -599,4 +599,4 @@ class TestPluginRegistry(AsyncTestCase):
             assert load_module.call_count == 4
 
     def test_repr(self):
-        assert type(repr(self.registry)) is str
+        assert isinstance(repr(self.registry), str)

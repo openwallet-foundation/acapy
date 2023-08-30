@@ -84,4 +84,4 @@ class TestMenu(TestCase, TestConfig):
     def test_make_model(self):
         data = self.menu.serialize()
         model_instance = Menu.deserialize(data)
-        assert type(model_instance) is type(self.menu)
+        assert isinstance(model_instance, type(self.menu))

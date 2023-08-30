@@ -43,4 +43,4 @@ class TestMenuRequest(TestCase):
     def test_make_model(self):
         data = self.menu_request.serialize()
         model_instance = MenuRequest.deserialize(data)
-        assert type(model_instance) is type(self.menu_request)
+        assert isinstance(model_instance, type(self.menu_request))

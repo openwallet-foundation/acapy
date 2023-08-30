@@ -9,5 +9,5 @@ class TestStorageRecord:
 
         assert record.type == record_type
         assert record.value == record_value
-        assert record.id and type(record.id) is str
+        assert record.id and isinstance(record.id, str)
         assert record.tags == {}
