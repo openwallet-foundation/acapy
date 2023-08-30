@@ -124,7 +124,7 @@ class DIDXManager(BaseConnectionManager):
             invitation_msg_id=invitation._id,
             their_label=invitation.label,
             their_role=ConnRecord.Role.RESPONDER.rfc23,
-            state=ConnRecord.State.INVITATION.rfc23,
+            state=ConnRecord.State.INVITATION.rfc160,
             accept=accept,
             alias=alias,
             their_public_did=their_public_did,
@@ -164,7 +164,7 @@ class DIDXManager(BaseConnectionManager):
                     connection_id=conn_rec.connection_id,
                 )
 
-                conn_rec.state = ConnRecord.State.REQUEST.rfc23
+                conn_rec.state = ConnRecord.State.REQUEST.rfc160
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Sent connection request")
         else:
@@ -249,7 +249,7 @@ class DIDXManager(BaseConnectionManager):
             use_public_did=bool(my_public_info),
         )
         conn_rec.request_id = request._id
-        conn_rec.state = ConnRecord.State.REQUEST.rfc23
+        conn_rec.state = ConnRecord.State.REQUEST.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Created connection request")
         responder = self.profile.inject_or(BaseResponder)
@@ -371,7 +371,7 @@ class DIDXManager(BaseConnectionManager):
 
         # Update connection state
         conn_rec.request_id = request._id
-        conn_rec.state = ConnRecord.State.REQUEST.rfc23
+        conn_rec.state = ConnRecord.State.REQUEST.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Created connection request")
 
@@ -428,7 +428,7 @@ class DIDXManager(BaseConnectionManager):
                 if recipient_verkey:
                     raise DIDXManagerError(
                         "No explicit invitation found for pairwise connection "
-                        f"in state {ConnRecord.State.INVITATION.rfc23}: "
+                        f"in state {ConnRecord.State.INVITATION.rfc160}: "
                         "a prior connection request may have updated the connection state"
                     )
         else:
@@ -467,7 +467,7 @@ class DIDXManager(BaseConnectionManager):
                 new_conn_rec = ConnRecord(
                     invitation_key=connection_key,
                     my_did=my_info.did,
-                    state=ConnRecord.State.REQUEST.rfc23,
+                    state=ConnRecord.State.REQUEST.rfc160,
                     accept=conn_rec.accept,
                     their_role=conn_rec.their_role,
                     connection_protocol=DIDX_PROTO,
@@ -523,7 +523,7 @@ class DIDXManager(BaseConnectionManager):
             if alias:
                 conn_rec.alias = alias
             conn_rec.their_did = request.did
-            conn_rec.state = ConnRecord.State.REQUEST.rfc23
+            conn_rec.state = ConnRecord.State.REQUEST.rfc160
             conn_rec.request_id = request._id
             async with self.profile.session() as session:
                 await conn_rec.save(
@@ -556,7 +556,7 @@ class DIDXManager(BaseConnectionManager):
                 invitation_key=connection_key,
                 invitation_msg_id=None,
                 request_id=request._id,
-                state=ConnRecord.State.REQUEST.rfc23,
+                state=ConnRecord.State.REQUEST.rfc160,
                 connection_protocol=DIDX_PROTO,
             )
             async with self.profile.session() as session:
@@ -613,7 +613,7 @@ class DIDXManager(BaseConnectionManager):
 
         if ConnRecord.State.get(conn_rec.state) is not ConnRecord.State.REQUEST:
             raise DIDXManagerError(
-                f"Connection not in state {ConnRecord.State.REQUEST.rfc23}"
+                f"Connection not in state {ConnRecord.State.REQUEST.rfc160}"
             )
         async with self.profile.session() as session:
             request = await conn_rec.retrieve_request(session)
@@ -799,7 +799,7 @@ class DIDXManager(BaseConnectionManager):
             await self.record_keys_for_public_did(response.did)
 
         conn_rec.their_did = their_did
-        conn_rec.state = ConnRecord.State.RESPONSE.rfc23
+        conn_rec.state = ConnRecord.State.RESPONSE.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Accepted connection response")
 
@@ -884,7 +884,7 @@ class DIDXManager(BaseConnectionManager):
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value,
             )
 
-        conn_rec.state = ConnRecord.State.COMPLETED.rfc23
+        conn_rec.state = ConnRecord.State.COMPLETED.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Received connection complete")
             if session.settings.get("auto_disclose_features"):
@@ -903,9 +903,9 @@ class DIDXManager(BaseConnectionManager):
     ) -> DIDXProblemReport:
         """Abandon an existing DID exchange."""
         state_to_reject_code = {
-            ConnRecord.State.INVITATION.rfc23
+            ConnRecord.State.INVITATION.rfc160
             + "-received": ProblemReportReason.INVITATION_NOT_ACCEPTED,
-            ConnRecord.State.REQUEST.rfc23
+            ConnRecord.State.REQUEST.rfc160
             + "-received": ProblemReportReason.REQUEST_NOT_ACCEPTED,
         }
         code = state_to_reject_code.get(conn_rec.rfc23_state)
