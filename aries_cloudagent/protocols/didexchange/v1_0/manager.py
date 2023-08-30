@@ -822,7 +822,7 @@ class DIDXManager(BaseConnectionManager):
         if responder:
             await responder.send_reply(complete, connection_id=conn_rec.connection_id)
 
-            conn_rec.state = ConnRecord.State.COMPLETED.rfc23
+            conn_rec.state = ConnRecord.State.COMPLETED.rfc160
             async with self.profile.session() as session:
                 await conn_rec.save(session, reason="Sent connection complete")
                 if session.settings.get("auto_disclose_features"):
