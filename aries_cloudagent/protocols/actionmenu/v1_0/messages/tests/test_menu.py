@@ -7,7 +7,7 @@ from ...models.menu_form_param import MenuFormParam
 from ...models.menu_option import MenuOption
 from ...message_types import MENU, PROTOCOL_PACKAGE
 
-from ..menu import Menu, MenuSchema
+from ..menu import Menu
 
 
 class TestConfig:

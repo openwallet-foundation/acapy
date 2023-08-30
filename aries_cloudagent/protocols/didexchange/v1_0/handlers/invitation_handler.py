@@ -15,8 +15,7 @@ class InvitationHandler(BaseHandler):
     """Handler class for connection invitation message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle connection invitation under RFC 23 (DID exchange).
+        """Handle connection invitation under RFC 23 (DID exchange).
 
         Args:
             context: Request context

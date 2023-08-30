@@ -1,11 +1,6 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......core.in_memory import InMemoryProfile
-from ......indy.models.pres_preview import (
-    IndyPresAttrSpec,
-    IndyPresPredSpec,
-    IndyPresPreview,
-)
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 

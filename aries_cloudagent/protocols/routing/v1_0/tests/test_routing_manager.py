@@ -9,7 +9,6 @@ from .....storage.error import (
     StorageError,
     StorageNotFoundError,
 )
-from .....storage.in_memory import InMemoryStorage
 from .....transport.inbound.receipt import MessageReceipt
 
 from ..manager import RoutingManager, RoutingManagerError, RouteNotFoundError

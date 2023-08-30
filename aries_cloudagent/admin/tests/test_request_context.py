@@ -1,4 +1,4 @@
-from asynctest import mock as asyn_mock, TestCase as AsyncTestCase
+from asynctest import TestCase as AsyncTestCase
 
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import ProfileSession

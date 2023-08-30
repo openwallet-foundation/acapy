@@ -12,8 +12,7 @@ from ..core.profile import Profile
 
 
 def random_seed() -> bytes:
-    """
-    Generate a random seed value.
+    """Generate a random seed value.
 
     Returns:
         A new random seed

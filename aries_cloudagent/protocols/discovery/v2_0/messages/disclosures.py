@@ -71,8 +71,7 @@ class Disclosures(AgentMessage):
         schema_class = "DisclosuresSchema"
 
     def __init__(self, *, disclosures: Sequence[Mapping] = None, **kwargs):
-        """
-        Initialize disclose message object.
+        """Initialize disclose message object.
 
         Args:
             disclosures: A mapping of protocol names to a dictionary of properties

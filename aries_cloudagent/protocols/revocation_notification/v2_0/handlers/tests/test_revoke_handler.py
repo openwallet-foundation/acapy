@@ -2,7 +2,6 @@
 
 import pytest
 
-from ......config.settings import Settings
 from ......core.event_bus import EventBus, MockEventBus
 from ......core.in_memory import InMemoryProfile
 from ......core.profile import Profile

@@ -93,8 +93,7 @@ class CachedProvider(BaseProvider):
         self._unique_settings_keys = unique_settings_keys
 
     def provide(self, config: BaseSettings, injector: BaseInjector):
-        """
-        Provide the object instance given a config and injector.
+        """Provide the object instance given a config and injector.
 
         Instances are cached keyed on a SHA256 digest of the relevant subset
         of settings.

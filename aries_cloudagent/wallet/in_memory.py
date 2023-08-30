@@ -27,8 +27,7 @@ class InMemoryWallet(BaseWallet):
     """In-memory wallet implementation."""
 
     def __init__(self, profile: InMemoryProfile):
-        """
-        Initialize an `InMemoryWallet` instance.
+        """Initialize an `InMemoryWallet` instance.
 
         Args:
             profile: The in-memory profile used to store state
@@ -42,8 +41,7 @@ class InMemoryWallet(BaseWallet):
         seed: str = None,
         metadata: dict = None,
     ) -> KeyInfo:
-        """
-        Create a new public/private signing keypair.
+        """Create a new public/private signing keypair.
 
         Args:
             seed: Seed to use for signing key
@@ -76,8 +74,7 @@ class InMemoryWallet(BaseWallet):
         )
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:
-        """
-        Fetch info for a signing keypair.
+        """Fetch info for a signing keypair.
 
         Args:
             verkey: The verification key of the keypair
@@ -99,8 +96,7 @@ class InMemoryWallet(BaseWallet):
         )
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
-        """
-        Replace the metadata associated with a signing keypair.
+        """Replace the metadata associated with a signing keypair.
 
         Args:
             verkey: The verification key of the keypair
@@ -115,8 +111,7 @@ class InMemoryWallet(BaseWallet):
         self.profile.keys[verkey]["metadata"] = metadata.copy() if metadata else {}
 
     async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
-        """
-        Begin key rotation for DID that wallet owns: generate new keypair.
+        """Begin key rotation for DID that wallet owns: generate new keypair.
 
         Args:
             did: signing DID
@@ -145,8 +140,7 @@ class InMemoryWallet(BaseWallet):
         return key_info.verkey
 
     async def rotate_did_keypair_apply(self, did: str) -> None:
-        """
-        Apply temporary keypair as main for DID that wallet owns.
+        """Apply temporary keypair as main for DID that wallet owns.
 
         Args:
             did: signing DID
@@ -193,8 +187,7 @@ class InMemoryWallet(BaseWallet):
         did: str = None,
         metadata: dict = None,
     ) -> DIDInfo:
-        """
-        Create and store a new local DID.
+        """Create and store a new local DID.
 
         Args:
             method: The method to use for the DID
@@ -244,8 +237,7 @@ class InMemoryWallet(BaseWallet):
         )
 
     def _get_did_info(self, did: str) -> DIDInfo:
-        """
-        Convert internal DID record to DIDInfo.
+        """Convert internal DID record to DIDInfo.
 
         Args:
             did: The DID to get info for
@@ -264,8 +256,7 @@ class InMemoryWallet(BaseWallet):
         )
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
-        """
-        Get list of defined local DIDs.
+        """Get list of defined local DIDs.
 
         Returns:
             A list of locally stored DIDs as `DIDInfo` instances
@@ -275,8 +266,7 @@ class InMemoryWallet(BaseWallet):
         return ret
 
     async def get_local_did(self, did: str) -> DIDInfo:
-        """
-        Find info for a local DID.
+        """Find info for a local DID.
 
         Args:
             did: The DID for which to get info
@@ -293,8 +283,7 @@ class InMemoryWallet(BaseWallet):
         return self._get_did_info(did)
 
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
-        """
-        Resolve a local DID from a verkey.
+        """Resolve a local DID from a verkey.
 
         Args:
             verkey: The verkey for which to get the local DID
@@ -312,8 +301,7 @@ class InMemoryWallet(BaseWallet):
         raise WalletNotFoundError("Verkey not found: {}".format(verkey))
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
-        """
-        Replace metadata for a local DID.
+        """Replace metadata for a local DID.
 
         Args:
             did: The DID for which to replace metadata
@@ -328,8 +316,7 @@ class InMemoryWallet(BaseWallet):
         self.profile.local_dids[did]["metadata"] = metadata.copy() if metadata else {}
 
     def _get_private_key(self, verkey: str) -> bytes:
-        """
-        Resolve private key for a wallet DID.
+        """Resolve private key for a wallet DID.
 
         Args:
             verkey: The verkey to lookup
@@ -352,8 +339,7 @@ class InMemoryWallet(BaseWallet):
         raise WalletError("Private key not found for verkey: {}".format(verkey))
 
     async def get_public_did(self) -> DIDInfo:
-        """
-        Retrieve the public DID.
+        """Retrieve the public DID.
 
         Returns:
             The currently public `DIDInfo`, if any
@@ -368,8 +354,7 @@ class InMemoryWallet(BaseWallet):
         return None
 
     async def set_public_did(self, did: Union[str, DIDInfo]) -> DIDInfo:
-        """
-        Assign the public DID.
+        """Assign the public DID.
 
         Returns:
             The updated `DIDInfo`
@@ -400,8 +385,7 @@ class InMemoryWallet(BaseWallet):
     async def sign_message(
         self, message: Union[List[bytes], bytes], from_verkey: str
     ) -> bytes:
-        """
-        Sign message(s) using the private key associated with a given verkey.
+        """Sign message(s) using the private key associated with a given verkey.
 
         Args:
             message: Message(s) bytes to sign
@@ -436,8 +420,7 @@ class InMemoryWallet(BaseWallet):
         from_verkey: str,
         key_type: KeyType,
     ) -> bool:
-        """
-        Verify a signature against the public key of the signer.
+        """Verify a signature against the public key of the signer.
 
         Args:
             message: Message(s) to verify
@@ -468,8 +451,7 @@ class InMemoryWallet(BaseWallet):
     async def pack_message(
         self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
     ) -> bytes:
-        """
-        Pack a message for one or more recipients.
+        """Pack a message for one or more recipients.
 
         Args:
             message: The message to pack
@@ -494,8 +476,7 @@ class InMemoryWallet(BaseWallet):
         return result
 
     async def unpack_message(self, enc_message: bytes) -> Tuple[str, str, str]:
-        """
-        Unpack a message.
+        """Unpack a message.
 
         Args:
             enc_message: The packed message bytes

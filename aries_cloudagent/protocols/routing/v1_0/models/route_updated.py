@@ -26,8 +26,7 @@ class RouteUpdated(BaseModel):
         result: str = None,
         **kwargs
     ):
-        """
-        Initialize a RouteUpdated instance.
+        """Initialize a RouteUpdated instance.
 
         Args:
             recipient_key: The recipient verkey of the route

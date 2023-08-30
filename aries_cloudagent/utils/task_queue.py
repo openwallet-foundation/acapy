@@ -66,8 +66,7 @@ class PendingTask:
         task_future: asyncio.Future = None,
         queued_time: float = None,
     ):
-        """
-        Initialize the pending task.
+        """Initialize the pending task.
 
         Args:
             coro: The coroutine to be run
@@ -127,8 +126,7 @@ class TaskQueue:
     def __init__(
         self, max_active: int = 0, timed: bool = False, trace_fn: Callable = None
     ):
-        """
-        Initialize the task queue.
+        """Initialize the task queue.
 
         Args:
             max_active: The maximum number of tasks to automatically run
@@ -183,8 +181,7 @@ class TaskQueue:
         return len(self.active_tasks) + len(self.pending_tasks)
 
     def __bool__(self) -> bool:
-        """
-        Support for the bool() builtin.
+        """Support for the bool() builtin.
 
         Return:
             True - the task queue exists even if there are no tasks
@@ -243,8 +240,7 @@ class TaskQueue:
                 break
 
     def add_pending(self, pending: PendingTask):
-        """
-        Add a task to the pending queue.
+        """Add a task to the pending queue.
 
         Args:
             pending: The `PendingTask` to add to the task queue
@@ -261,8 +257,7 @@ class TaskQueue:
         ident: str = None,
         timing: dict = None,
     ) -> asyncio.Task:
-        """
-        Register an active async task with an optional completion callback.
+        """Register an active async task with an optional completion callback.
 
         Args:
             task: The asyncio task instance
@@ -284,8 +279,7 @@ class TaskQueue:
         ident: str = None,
         timing: dict = None,
     ) -> asyncio.Task:
-        """
-        Start executing a coroutine as an async task, bypassing the pending queue.
+        """Start executing a coroutine as an async task, bypassing the pending queue.
 
         Args:
             coro: The coroutine to run
@@ -304,7 +298,7 @@ class TaskQueue:
             ident = coro_ident(coro)
         if self.timed:
             if not timing:
-                timing = dict()
+                timing = {}
             coro = coro_timed(coro, timing)
         task = self.loop.create_task(coro)
         return self.add_active(task, task_complete, ident, timing)
@@ -312,8 +306,7 @@ class TaskQueue:
     def put(
         self, coro: Coroutine, task_complete: Callable = None, ident: str = None
     ) -> PendingTask:
-        """
-        Add a new task to the queue, delaying execution if busy.
+        """Add a new task to the queue, delaying execution if busy.
 
         Args:
             coro: The coroutine to run

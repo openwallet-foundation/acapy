@@ -1,5 +1,4 @@
-"""
-Class to provide some common utilities.
+"""Class to provide some common utilities.
 
 For Connection, DIDExchange and OutOfBand Manager.
 """
@@ -66,8 +65,7 @@ class BaseConnectionManager:
     RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a BaseConnectionManager.
+        """Initialize a BaseConnectionManager.
 
         Args:
             session: The profile session for this presentation
@@ -310,8 +308,7 @@ class BaseConnectionManager:
     async def resolve_invitation(
         self, did: str, service_accept: Optional[Sequence[Text]] = None
     ) -> Tuple[str, List[str], List[str]]:
-        """
-        Resolve invitation with the DID Resolver.
+        """Resolve invitation with the DID Resolver.
 
         Args:
             did: Document ID to resolve
@@ -686,8 +683,7 @@ class BaseConnectionManager:
         my_verkey: Optional[str] = None,
         auto_complete=False,
     ) -> Optional[ConnRecord]:
-        """
-        Look up existing connection information for a sender verkey.
+        """Look up existing connection information for a sender verkey.
 
         Args:
             their_did: Their DID
@@ -739,8 +735,7 @@ class BaseConnectionManager:
     async def find_inbound_connection(
         self, receipt: MessageReceipt
     ) -> Optional[ConnRecord]:
-        """
-        Deserialize an incoming message and further populate the request context.
+        """Deserialize an incoming message and further populate the request context.
 
         Args:
             receipt: The message receipt
@@ -790,8 +785,7 @@ class BaseConnectionManager:
     async def resolve_inbound_connection(
         self, receipt: MessageReceipt
     ) -> Optional[ConnRecord]:
-        """
-        Populate the receipt DID information and find the related `ConnRecord`.
+        """Populate the receipt DID information and find the related `ConnRecord`.
 
         Args:
             receipt: The message receipt
@@ -837,8 +831,7 @@ class BaseConnectionManager:
         )
 
     async def get_endpoints(self, conn_id: str) -> Tuple[Optional[str], Optional[str]]:
-        """
-        Get connection endpoints.
+        """Get connection endpoints.
 
         Args:
             conn_id: connection identifier
@@ -874,8 +867,7 @@ class BaseConnectionManager:
         alias: Optional[str] = None,
         mediation_id: Optional[str] = None,
     ) -> Tuple[DIDInfo, DIDInfo, ConnRecord]:
-        """
-        Register a new static connection (for use by the test suite).
+        """Register a new static connection (for use by the test suite).
 
         Args:
             my_did: override the DID used in the connection

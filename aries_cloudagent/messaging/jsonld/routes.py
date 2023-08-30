@@ -63,8 +63,7 @@ class SignResponseSchema(OpenAPISchema):
 @request_schema(SignRequestSchema())
 @response_schema(SignResponseSchema(), 200, description="")
 async def sign(request: web.BaseRequest):
-    """
-    Request handler for signing a jsonld doc.
+    """Request handler for signing a jsonld doc.
 
     Args:
         request: aiohttp request object
@@ -124,8 +123,7 @@ class VerifyResponseSchema(OpenAPISchema):
 @request_schema(VerifyRequestSchema())
 @response_schema(VerifyResponseSchema(), 200, description="")
 async def verify(request: web.BaseRequest):
-    """
-    Request handler for signing a jsonld doc.
+    """Request handler for signing a jsonld doc.
 
     Args:
         request: aiohttp request object

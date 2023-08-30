@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ..cred_precis import IndyCredInfo, IndyCredInfoSchema
+from ..cred_precis import IndyCredInfo
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "preferences"

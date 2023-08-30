@@ -29,8 +29,7 @@ class TransactionAcknowledgement(V10Ack):
         ledger_response: dict = None,
         **kwargs,
     ):
-        """
-        Initialize a transaction acknowledgement object.
+        """Initialize a transaction acknowledgement object.
 
         Args:
             thread_id: Thread id of transaction record

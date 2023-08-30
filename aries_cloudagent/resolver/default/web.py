@@ -36,8 +36,7 @@ class WebDIDResolver(BaseDIDResolver):
         return DIDWeb.PATTERN
 
     def __transform_to_url(self, did):
-        """
-        Transform did to url.
+        """Transform did to url.
 
         according to
         https://w3c-ccg.github.io/did-method-web/#read-resolve

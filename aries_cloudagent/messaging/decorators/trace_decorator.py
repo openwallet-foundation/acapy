@@ -1,5 +1,4 @@
-"""
-A message decorator for trace events.
+"""A message decorator for trace events.
 
 A trace decorator identifies a responsibility on the processor
 to record information on message processing events.
@@ -36,8 +35,7 @@ class TraceReport(BaseModel):
         ellapsed_milli: int = None,
         outcome: str = None,
     ):
-        """
-        Initialize a TraceReport instance.
+        """Initialize a TraceReport instance.
 
         Args:
             msg_id: ...
@@ -61,8 +59,7 @@ class TraceReport(BaseModel):
 
     @property
     def msg_id(self):
-        """
-        Accessor for msg_id.
+        """Accessor for msg_id.
 
         Returns:
             The msg_id
@@ -72,8 +69,7 @@ class TraceReport(BaseModel):
 
     @property
     def thread_id(self):
-        """
-        Accessor for thread_id.
+        """Accessor for thread_id.
 
         Returns:
             The thread_id
@@ -83,8 +79,7 @@ class TraceReport(BaseModel):
 
     @property
     def traced_type(self):
-        """
-        Accessor for traced_type.
+        """Accessor for traced_type.
 
         Returns:
             The sender traced_type
@@ -94,8 +89,7 @@ class TraceReport(BaseModel):
 
     @property
     def timestamp(self):
-        """
-        Accessor for timestamp.
+        """Accessor for timestamp.
 
         Returns:
             The sender timestamp
@@ -105,8 +99,7 @@ class TraceReport(BaseModel):
 
     @property
     def str_time(self):
-        """
-        Accessor for str_time.
+        """Accessor for str_time.
 
         Returns:
             Formatted representation of the sender timestamp
@@ -116,8 +109,7 @@ class TraceReport(BaseModel):
 
     @property
     def handler(self):
-        """
-        Accessor for handler.
+        """Accessor for handler.
 
         Returns:
             The sender handler
@@ -127,8 +119,7 @@ class TraceReport(BaseModel):
 
     @property
     def ellapsed_milli(self):
-        """
-        Accessor for ellapsed_milli.
+        """Accessor for ellapsed_milli.
 
         Returns:
             The sender ellapsed_milli
@@ -138,8 +129,7 @@ class TraceReport(BaseModel):
 
     @property
     def outcome(self):
-        """
-        Accessor for outcome.
+        """Accessor for outcome.
 
         Returns:
             The sender outcome
@@ -163,8 +153,7 @@ class TraceDecorator(BaseModel):
         full_thread: bool = True,
         trace_reports: Sequence = None,
     ):
-        """
-        Initialize a TraceDecorator instance.
+        """Initialize a TraceDecorator instance.
 
         Args:
             target: The "target" can refer to a url (as above) or the term
@@ -185,8 +174,7 @@ class TraceDecorator(BaseModel):
 
     @property
     def target(self):
-        """
-        Accessor for trace target.
+        """Accessor for trace target.
 
         Returns:
             The target for tracing messages
@@ -196,8 +184,7 @@ class TraceDecorator(BaseModel):
 
     @property
     def full_thread(self):
-        """
-        Accessor for full_thread flag.
+        """Accessor for full_thread flag.
 
         Returns:
             The full_thread flag
@@ -207,8 +194,7 @@ class TraceDecorator(BaseModel):
 
     @property
     def trace_reports(self):
-        """
-        Set of trace reports for this message.
+        """Set of trace reports for this message.
 
         Returns:
             The trace reports that have been logged on this message/thread

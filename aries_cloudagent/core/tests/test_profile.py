@@ -39,7 +39,7 @@ class TestProfileSession(AsyncTestCase):
         await session.__aenter__()
 
         self.assertEqual(session.active, True)
-        session.context.injector.bind_instance(dict, dict())
+        session.context.injector.bind_instance(dict, {})
         assert session.inject_or(dict) is not None
         assert profile.inject_or(dict) is None
 

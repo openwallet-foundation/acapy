@@ -30,6 +30,7 @@ async def sign(
 
     Raises:
         LinkedDataProofException: When a jsonld url cannot be resolved, OR signing fails.
+
     Returns:
         dict: Signed document.
 

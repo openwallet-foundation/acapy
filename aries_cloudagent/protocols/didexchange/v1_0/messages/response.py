@@ -31,8 +31,7 @@ class DIDXResponse(AgentMessage):
         did_doc_attach: Optional[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize DID exchange response object under RFC 23.
+        """Initialize DID exchange response object under RFC 23.
 
         Args:
             image_url: Optional image URL for this response

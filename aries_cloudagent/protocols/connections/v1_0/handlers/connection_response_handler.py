@@ -16,8 +16,7 @@ class ConnectionResponseHandler(BaseHandler):
     """Handler class for connection responses."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle connection response.
+        """Handle connection response.
 
         Args:
             context: Request context

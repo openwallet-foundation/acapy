@@ -38,8 +38,7 @@ class V20CredOffer(AgentMessage):
         offers_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential offer object.
+        """Initialize credential offer object.
 
         Args:
             replacement_id: unique to issuer, to coordinate credential replacement
@@ -57,8 +56,7 @@ class V20CredOffer(AgentMessage):
         self.offers_attach = list(offers_attach) if offers_attach else []
 
     def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
-        """
-        Return attached offer.
+        """Return attached offer.
 
         Args:
             fmt: format of attachment in list to decode and return

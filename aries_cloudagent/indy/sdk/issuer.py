@@ -30,8 +30,7 @@ class IndySdkIssuer(IndyIssuer):
     """Indy-SDK issuer implementation."""
 
     def __init__(self, profile: IndySdkProfile):
-        """
-        Initialize an IndyIssuer instance.
+        """Initialize an IndyIssuer instance.
 
         Args:
             profile: IndySdkProfile instance
@@ -46,8 +45,7 @@ class IndySdkIssuer(IndyIssuer):
         schema_version: str,
         attribute_names: Sequence[str],
     ) -> Tuple[str, str]:
-        """
-        Create a new credential schema.
+        """Create a new credential schema.
 
         Args:
             origin_did: the DID issuing the credential definition
@@ -72,8 +70,7 @@ class IndySdkIssuer(IndyIssuer):
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
     ) -> bool:
-        """
-        Check whether a given credential definition ID is present in the wallet.
+        """Check whether a given credential definition ID is present in the wallet.
 
         Args:
             credential_definition_id: The credential definition ID to check
@@ -104,8 +101,7 @@ class IndySdkIssuer(IndyIssuer):
         tag: str = None,
         support_revocation: bool = False,
     ) -> Tuple[str, str]:
-        """
-        Create a new credential definition and store it in the wallet.
+        """Create a new credential definition and store it in the wallet.
 
         Args:
             origin_did: the DID issuing the credential definition
@@ -136,8 +132,7 @@ class IndySdkIssuer(IndyIssuer):
         return (credential_definition_id, credential_definition_json)
 
     async def create_credential_offer(self, credential_definition_id: str) -> str:
-        """
-        Create a credential offer for the given credential definition id.
+        """Create a credential offer for the given credential definition id.
 
         Args:
             credential_definition_id: The credential definition to create an offer for
@@ -164,10 +159,9 @@ class IndySdkIssuer(IndyIssuer):
         rev_reg_id: str = None,
         tails_file_path: str = None,
     ) -> Tuple[str, str]:
-        """
-        Create a credential.
+        """Create a credential.
 
-        Args
+        Args:
             schema: Schema to create credential for
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
@@ -249,8 +243,7 @@ class IndySdkIssuer(IndyIssuer):
         tails_file_path: str,
         cred_rev_ids: Sequence[str],
     ) -> Tuple[str, Sequence[str]]:
-        """
-        Revoke a set of credentials in a revocation registry.
+        """Revoke a set of credentials in a revocation registry.
 
         Args:
             cred_def_id: ID of the credential definition
@@ -320,8 +313,7 @@ class IndySdkIssuer(IndyIssuer):
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
     ) -> str:
-        """
-        Merge revocation registry deltas.
+        """Merge revocation registry deltas.
 
         Args:
             fro_delta: original delta in JSON format
@@ -345,8 +337,7 @@ class IndySdkIssuer(IndyIssuer):
         max_cred_num: int,
         tails_base_path: str,
     ) -> Tuple[str, str, str]:
-        """
-        Create a new revocation registry and store it in the wallet.
+        """Create a new revocation registry and store it in the wallet.
 
         Args:
             origin_did: the DID issuing the revocation registry

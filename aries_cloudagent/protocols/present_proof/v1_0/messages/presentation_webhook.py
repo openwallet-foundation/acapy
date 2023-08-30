@@ -25,8 +25,7 @@ class V10PresentationExchangeWebhook:
         self,
         **kwargs,
     ):
-        """
-        Initialize webhook object from V10PresentationExchange.
+        """Initialize webhook object from V10PresentationExchange.
 
         from a list of accepted attributes.
         """

@@ -123,7 +123,7 @@ class IssuerRevRegRecord(BaseRecord):
         self.tails_local_path = tails_local_path
         self.tails_public_uri = tails_public_uri
         self.pending_pub = (
-            sorted(list(set(pending_pub))) if pending_pub else []
+            sorted(set(pending_pub)) if pending_pub else []
         )  # order for eq comparison between instances
 
     @property

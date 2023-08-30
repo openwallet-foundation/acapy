@@ -17,8 +17,7 @@ class RouteUpdate(BaseModel):
     ACTION_DELETE = "delete"
 
     def __init__(self, *, recipient_key: str = None, action: str = None, **kwargs):
-        """
-        Initialize a RouteUpdate instance.
+        """Initialize a RouteUpdate instance.
 
         Args:
             recipient_key: The recipient verkey of the route

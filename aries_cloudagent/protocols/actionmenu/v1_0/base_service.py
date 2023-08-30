@@ -34,8 +34,7 @@ class BaseMenuService(ABC):
         connection: ConnRecord = None,
         thread_id: str = None,
     ) -> Menu:
-        """
-        Render the current menu.
+        """Render the current menu.
 
         Args:
             profile: The profile
@@ -52,8 +51,7 @@ class BaseMenuService(ABC):
         connection: ConnRecord = None,
         thread_id: str = None,
     ) -> AgentMessage:
-        """
-        Perform an action defined by the active menu.
+        """Perform an action defined by the active menu.
 
         Args:
             profile: The profile

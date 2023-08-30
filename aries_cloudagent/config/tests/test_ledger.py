@@ -1,5 +1,3 @@
-from os import remove
-from tempfile import NamedTemporaryFile
 import pytest
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
@@ -10,7 +8,6 @@ from ...ledger.error import LedgerError
 from ...wallet.base import BaseWallet
 
 from .. import ledger as test_module
-from ..injection_context import InjectionContext
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_GENESIS = "GENESIS"

@@ -19,8 +19,7 @@ class V20CredAttrSpec(BaseModel):
         schema_class = "V20CredAttrSpecSchema"
 
     def __init__(self, *, name: str, value: str, mime_type: str = None, **kwargs):
-        """
-        Initialize attribute preview object.
+        """Initialize attribute preview object.
 
         Args:
             name: attribute name
@@ -37,8 +36,7 @@ class V20CredAttrSpec(BaseModel):
 
     @staticmethod
     def list_plain(plain: dict) -> Sequence["V20CredAttrSpec"]:
-        """
-        Return a list of `V20CredAttrSpec` (copies), absent any MIME types.
+        """Return a list of `V20CredAttrSpec` (copies), absent any MIME types.
 
         Args:
             plain: dict mapping names to values
@@ -113,8 +111,7 @@ class V20CredPreview(BaseModel):
         attributes: Sequence[V20CredAttrSpec] = None,
         **kwargs,
     ):
-        """
-        Initialize credential preview object.
+        """Initialize credential preview object.
 
         Args:
             _type: formalism for Marshmallow model creation: ignored
@@ -140,8 +137,7 @@ class V20CredPreview(BaseModel):
         return DIDCommPrefix.qualify_current(V20CredPreview.Meta.message_type)
 
     def attr_dict(self, decode: bool = False):
-        """
-        Return name:value pair per attribute.
+        """Return name:value pair per attribute.
 
         Args:
             decode: whether first to decode attributes with MIME type
@@ -156,8 +152,7 @@ class V20CredPreview(BaseModel):
         }
 
     def mime_types(self):
-        """
-        Return per-attribute mapping from name to MIME type.
+        """Return per-attribute mapping from name to MIME type.
 
         Return empty dict if no attribute has MIME type.
 

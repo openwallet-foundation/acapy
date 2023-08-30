@@ -25,8 +25,7 @@ class AskarStoreConfig:
     KEY_DERIVATION_ARGON2I_MOD = "kdf:argon2i:mod"
 
     def __init__(self, config: dict = None):
-        """
-        Initialize a `AskarWallet` instance.
+        """Initialize a `AskarWallet` instance.
 
         Args:
             config: {name, key, seed, did, auto_recreate, auto_remove,
@@ -118,8 +117,7 @@ class AskarStoreConfig:
         return uri
 
     async def remove_store(self):
-        """
-        Remove an existing store.
+        """Remove an existing store.
 
         Raises:
             ProfileNotFoundError: If the wallet could not be found
@@ -136,8 +134,7 @@ class AskarStoreConfig:
             raise ProfileError("Error removing store") from err
 
     async def open_store(self, provision: bool = False) -> "AskarOpenStore":
-        """
-        Open a store, removing and/or creating it if so configured.
+        """Open a store, removing and/or creating it if so configured.
 
         Raises:
             ProfileNotFoundError: If the store is not found

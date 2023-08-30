@@ -1,5 +1,4 @@
-"""
-The Conductor.
+"""The Conductor.
 
 The conductor is responsible for coordinating messages that are received
 over the network, communicating with the ledger, passing messages to handlers,
@@ -86,16 +85,14 @@ DEFAULT_ACAPY_VERSION = "v0.7.5"
 
 
 class Conductor:
-    """
-    Conductor class.
+    """Conductor class.
 
     Class responsible for initializing concrete implementations
     of our require interfaces and routing inbound and outbound message data.
     """
 
     def __init__(self, context_builder: ContextBuilder) -> None:
-        """
-        Initialize an instance of Conductor.
+        """Initialize an instance of Conductor.
 
         Args:
             inbound_transports: Configuration for inbound transports
@@ -546,8 +543,7 @@ class Conductor:
         message: InboundMessage,
         can_respond: bool = False,
     ):
-        """
-        Route inbound messages.
+        """Route inbound messages.
 
         Args:
             context: The context associated with the inbound message
@@ -626,8 +622,7 @@ class Conductor:
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
     ) -> OutboundSendStatus:
-        """
-        Route an outbound message.
+        """Route an outbound message.
 
         Args:
             profile: The active profile for the request
@@ -646,8 +641,7 @@ class Conductor:
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
     ) -> OutboundSendStatus:
-        """
-        Route an outbound message.
+        """Route an outbound message.
 
         Args:
             profile: The active profile for the request
@@ -680,8 +674,7 @@ class Conductor:
         outbound: OutboundMessage,
         inbound: Optional[InboundMessage] = None,
     ) -> OutboundSendStatus:
-        """
-        Queue an outbound message for transport.
+        """Queue an outbound message for transport.
 
         Args:
             profile: The active profile
@@ -749,8 +742,7 @@ class Conductor:
         max_attempts: int = None,
         metadata: dict = None,
     ):
-        """
-        Route a webhook through the outbound transport manager.
+        """Route a webhook through the outbound transport manager.
 
         Args:
             topic: The webhook topic

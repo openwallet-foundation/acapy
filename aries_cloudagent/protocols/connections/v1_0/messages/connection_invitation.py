@@ -42,8 +42,7 @@ class ConnectionInvitation(AgentMessage):
         image_url: str = None,
         **kwargs,
     ):
-        """
-        Initialize connection invitation object.
+        """Initialize connection invitation object.
 
         Args:
             label: Optional label for connection invitation
@@ -62,8 +61,7 @@ class ConnectionInvitation(AgentMessage):
         self.image_url = image_url
 
     def to_url(self, base_url: str = None) -> str:
-        """
-        Convert an invitation to URL format for sharing.
+        """Convert an invitation to URL format for sharing.
 
         Returns:
             An invite url
@@ -76,8 +74,7 @@ class ConnectionInvitation(AgentMessage):
 
     @classmethod
     def from_url(cls, url: str) -> "ConnectionInvitation":
-        """
-        Parse a URL-encoded invitation into a `ConnectionInvitation` message.
+        """Parse a URL-encoded invitation into a `ConnectionInvitation` message.
 
         Args:
             url: Url to decode
@@ -162,8 +159,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Args:
             data: The data to validate

@@ -13,7 +13,6 @@ from pydid.verification_method import (
     JsonWebKey2020,
 )
 
-from .. import base_manager as test_module
 from ...cache.base import BaseCache
 from ...cache.in_memory import InMemoryCache
 from ...config.base import InjectionError

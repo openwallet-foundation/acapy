@@ -1,19 +1,16 @@
 import json
-import pytest
 
-from datetime import datetime, timezone
 from unittest import TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
-from ......messaging.util import str_to_datetime, str_to_epoch
 
 from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import ATTACHMENT_FORMAT, PRES_20
 
 from ..pres_format import V20PresFormat
-from ..pres import V20Pres, V20PresSchema
+from ..pres import V20Pres
 
 INDY_PROOF = json.loads(  # indy returns proof json-encoded: json-decode before base64
     """{

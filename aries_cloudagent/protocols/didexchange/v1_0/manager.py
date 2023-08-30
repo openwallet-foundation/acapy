@@ -48,8 +48,7 @@ class DIDXManager(BaseConnectionManager):
     """Class for managing connections under RFC 23 (DID exchange)."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a DIDXManager.
+        """Initialize a DIDXManager.
 
         Args:
             profile: The profile for this did exchange manager
@@ -60,8 +59,7 @@ class DIDXManager(BaseConnectionManager):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile.
+        """Accessor for the current profile.
 
         Returns:
             The profile for this did exchange manager
@@ -77,8 +75,7 @@ class DIDXManager(BaseConnectionManager):
         alias: Optional[str] = None,
         mediation_id: Optional[str] = None,
     ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band
-        """
-        Create a new connection record to track a received invitation.
+        """Create a new connection record to track a received invitation.
 
         Args:
             invitation: invitation to store
@@ -186,8 +183,7 @@ class DIDXManager(BaseConnectionManager):
         goal_code: str = None,
         goal: str = None,
     ) -> ConnRecord:
-        """
-        Create and send a request against a public DID only (no explicit invitation).
+        """Create and send a request against a public DID only (no explicit invitation).
 
         Args:
             their_public_did: public DID to which to request a connection
@@ -272,8 +268,7 @@ class DIDXManager(BaseConnectionManager):
         goal: Optional[str] = None,
         use_public_did: bool = False,
     ) -> DIDXRequest:
-        """
-        Create a new connection request for a previously-received invitation.
+        """Create a new connection request for a previously-received invitation.
 
         Args:
             conn_rec: The `ConnRecord` representing the invitation to accept
@@ -396,8 +391,7 @@ class DIDXManager(BaseConnectionManager):
         alias: Optional[str] = None,
         auto_accept_implicit: Optional[bool] = None,
     ) -> ConnRecord:
-        """
-        Receive and store a connection request.
+        """Receive and store a connection request.
 
         Args:
             request: The `DIDXRequest` to accept
@@ -587,8 +581,7 @@ class DIDXManager(BaseConnectionManager):
         mediation_id: Optional[str] = None,
         use_public_did: Optional[bool] = None,
     ) -> DIDXResponse:
-        """
-        Create a connection response for a received connection request.
+        """Create a connection response for a received connection request.
 
         Args:
             conn_rec: The `ConnRecord` with a pending connection request
@@ -716,8 +709,7 @@ class DIDXManager(BaseConnectionManager):
         response: DIDXResponse,
         receipt: MessageReceipt,
     ) -> ConnRecord:
-        """
-        Accept a connection response under RFC 23 (DID exchange).
+        """Accept a connection response under RFC 23 (DID exchange).
 
         Process a `DIDXResponse` message by looking up
         the connection request and setting up the pairwise connection.
@@ -846,8 +838,7 @@ class DIDXManager(BaseConnectionManager):
         complete: DIDXComplete,
         receipt: MessageReceipt,
     ) -> ConnRecord:
-        """
-        Accept a connection complete message under RFC 23 (DID exchange).
+        """Accept a connection complete message under RFC 23 (DID exchange).
 
         Process a `DIDXComplete` message by looking up
         the connection record and marking the exchange complete.
@@ -945,9 +936,9 @@ class DIDXManager(BaseConnectionManager):
         if not report.description:
             raise DIDXManagerError("Missing description in problem report")
 
-        if report.description.get("code") in set(
+        if report.description.get("code") in {
             reason.value for reason in ProblemReportReason
-        ):
+        }:
             self._logger.info("Problem report indicates connection is abandoned")
             async with self.profile.session() as session:
                 await conn_rec.abandon(

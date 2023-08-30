@@ -22,8 +22,7 @@ class Paginated(BaseModel):
         total: int = None,
         **kwargs
     ):
-        """
-        Initialize a Paginated instance.
+        """Initialize a Paginated instance.
 
         Args:
             start: The first record offset

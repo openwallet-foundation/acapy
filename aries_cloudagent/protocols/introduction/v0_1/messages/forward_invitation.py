@@ -27,8 +27,7 @@ class ForwardInvitation(AgentMessage):
     def __init__(
         self, *, invitation: ConnectionInvitation = None, message: str = None, **kwargs
     ):
-        """
-        Initialize invitation object.
+        """Initialize invitation object.
 
         Args:
             invitation: The connection invitation

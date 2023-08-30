@@ -2,7 +2,6 @@ from asynctest import TestCase, mock as async_mock
 
 from aries_cloudagent.wallet.key_type import ED25519
 
-from .....wallet.key_pair import KeyType
 
 from ...error import LinkedDataProofException
 

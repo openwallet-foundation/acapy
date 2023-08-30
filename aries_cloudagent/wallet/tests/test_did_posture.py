@@ -19,7 +19,7 @@ class TestDIDPosture(AsyncTestCase):
         )
         assert DIDPosture.WALLET_ONLY is DIDPosture.get({})
 
-        postures = [posture for posture in DIDPosture]
+        postures = list(DIDPosture)
         postures.sort(key=lambda p: p.ordinal)
         assert postures == [
             DIDPosture.PUBLIC,

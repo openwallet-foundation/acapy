@@ -26,8 +26,7 @@ class RouteUpdateRequest(AgentMessage):
         schema_class = "RouteUpdateRequestSchema"
 
     def __init__(self, *, updates: Sequence[RouteUpdate] = None, **kwargs):
-        """
-        Initialize a RouteUpdateRequest message instance.
+        """Initialize a RouteUpdateRequest message instance.
 
         Args:
             updates: A list of route updates

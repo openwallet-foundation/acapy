@@ -14,8 +14,7 @@ class MenuRequestHandler(BaseHandler):
     """Message handler class for action menu requests."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for action menu requests.
+        """Message handler logic for action menu requests.
 
         Args:
             context: request context

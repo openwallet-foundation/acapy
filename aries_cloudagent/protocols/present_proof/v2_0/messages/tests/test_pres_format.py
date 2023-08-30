@@ -1,12 +1,6 @@
 from unittest import TestCase
 
-from marshmallow import ValidationError
 
-from ......indy.models.pres_preview import (
-    IndyPresAttrSpec,
-    IndyPresPreview,
-    IndyPresPredSpec,
-)
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
 from ..pres_format import V20PresFormat

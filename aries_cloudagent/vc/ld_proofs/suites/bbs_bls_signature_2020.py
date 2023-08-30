@@ -76,7 +76,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         )
 
         # Encode statements as bytes
-        verify_data = list(map(lambda item: item.encode("utf-8"), verify_data))
+        verify_data = [item.encode("utf-8") for item in verify_data]
 
         # Sign statements
         proof = await self.sign(verify_data=verify_data, proof=proof)
@@ -99,7 +99,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
             )
 
             # Encode statements as bytes
-            verify_data = list(map(lambda item: item.encode("utf-8"), verify_data))
+            verify_data = [item.encode("utf-8") for item in verify_data]
 
             # Fetch verification method
             verification_method = self._get_verification_method(

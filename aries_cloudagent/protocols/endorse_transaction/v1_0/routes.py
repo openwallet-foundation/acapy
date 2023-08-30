@@ -144,8 +144,7 @@ class EndorserInfoSchema(OpenAPISchema):
 @querystring_schema(TransactionsListQueryStringSchema())
 @response_schema(TransactionListSchema(), 200)
 async def transactions_list(request: web.BaseRequest):
-    """
-    Request handler for searching transaction records.
+    """Request handler for searching transaction records.
 
     Args:
         request: aiohttp request object
@@ -174,8 +173,7 @@ async def transactions_list(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transactions_retrieve(request: web.BaseRequest):
-    """
-    Request handler for fetching a single transaction record.
+    """Request handler for fetching a single transaction record.
 
     Args:
         request: aiohttp request object
@@ -209,8 +207,7 @@ async def transactions_retrieve(request: web.BaseRequest):
 @request_schema(DateSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_create_request(request: web.BaseRequest):
-    """
-    Request handler for creating a new transaction record and request.
+    """Request handler for creating a new transaction record and request.
 
     Args:
         request: aiohttp request object
@@ -300,8 +297,7 @@ async def transaction_create_request(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def endorse_transaction_response(request: web.BaseRequest):
-    """
-    Request handler for creating an endorsed transaction response.
+    """Request handler for creating an endorsed transaction response.
 
     Args:
         request: aiohttp request object
@@ -372,8 +368,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def refuse_transaction_response(request: web.BaseRequest):
-    """
-    Request handler for creating a refused transaction response.
+    """Request handler for creating a refused transaction response.
 
     Args:
         request: aiohttp request object
@@ -439,8 +434,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def cancel_transaction(request: web.BaseRequest):
-    """
-    Request handler for cancelling a Transaction request.
+    """Request handler for cancelling a Transaction request.
 
     Args:
         request: aiohttp request object
@@ -504,8 +498,7 @@ async def cancel_transaction(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_resend(request: web.BaseRequest):
-    """
-    Request handler for resending a transaction request.
+    """Request handler for resending a transaction request.
 
     Args:
         request: aiohttp request object
@@ -569,8 +562,7 @@ async def transaction_resend(request: web.BaseRequest):
 @match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(TransactionJobsSchema(), 200)
 async def set_endorser_role(request: web.BaseRequest):
-    """
-    Request handler for assigning transaction jobs.
+    """Request handler for assigning transaction jobs.
 
     Args:
         request: aiohttp request object
@@ -610,8 +602,7 @@ async def set_endorser_role(request: web.BaseRequest):
 @match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(EndorserInfoSchema(), 200)
 async def set_endorser_info(request: web.BaseRequest):
-    """
-    Request handler for assigning endorser information.
+    """Request handler for assigning endorser information.
 
     Args:
         request: aiohttp request object
@@ -674,8 +665,7 @@ async def set_endorser_info(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_write(request: web.BaseRequest):
-    """
-    Request handler for writing an endorsed transaction to the ledger.
+    """Request handler for writing an endorsed transaction to the ledger.
 
     Args:
         request: aiohttp request object

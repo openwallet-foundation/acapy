@@ -76,8 +76,7 @@ class ProtocolRegistry:
         }
 
     def create_msg_types_for_minor_version(self, typesets, version_definition):
-        """
-        Return mapping of message type to module path for minor versions.
+        """Return mapping of message type to module path for minor versions.
 
         Args:
             typesets: Mappings of message types to register
@@ -149,8 +148,7 @@ class ProtocolRegistry:
         )
 
     def register_message_types(self, *typesets, version_definition=None):
-        """
-        Add new supported message types.
+        """Add new supported message types.
 
         Args:
             typesets: Mappings of message types to register
@@ -183,8 +181,7 @@ class ProtocolRegistry:
                     )
 
     def register_controllers(self, *controller_sets, version_definition=None):
-        """
-        Add new controllers.
+        """Add new controllers.
 
         Args:
             controller_sets: Mappings of message families to coroutines
@@ -194,8 +191,7 @@ class ProtocolRegistry:
             self._controllers.update(controlset)
 
     def resolve_message_class(self, message_type: str) -> type:
-        """
-        Resolve a message_type to a message class.
+        """Resolve a message_type to a message class.
 
         Given a message type identifier, this method
         returns the corresponding registered message class.

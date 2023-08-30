@@ -32,8 +32,7 @@ class TransactionRequest(AgentMessage):
         endorser_write_txn: bool = None,
         **kwargs,
     ):
-        """
-        Initialize the transaction request object.
+        """Initialize the transaction request object.
 
         Args:
             transaction_id: The transaction id of the transaction record

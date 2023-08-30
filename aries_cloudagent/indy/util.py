@@ -13,8 +13,7 @@ async def generate_pr_nonce() -> str:
 
 
 def indy_client_dir(subpath: str = None, create: bool = False) -> str:
-    """
-    Return '/'-terminated subdirectory of indy-client directory.
+    """Return '/'-terminated subdirectory of indy-client directory.
 
     Args:
         subpath: subpath within indy-client structure

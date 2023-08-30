@@ -1,5 +1,5 @@
 from tempfile import NamedTemporaryFile
-from weakref import ref, ReferenceType
+from weakref import ref
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 

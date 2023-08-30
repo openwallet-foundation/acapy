@@ -23,8 +23,7 @@ class MenuOption(BaseModel):
         disabled: bool = None,
         form: MenuForm = None,
     ):
-        """
-        Initialize a MenuOption instance.
+        """Initialize a MenuOption instance.
 
         Args:
             name: The menu option name (unique ID)

@@ -34,8 +34,7 @@ class CredentialIssue(AgentMessage):
         credentials_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential issue object.
+        """Initialize credential issue object.
 
         Args:
             comment: optional comment
@@ -47,8 +46,7 @@ class CredentialIssue(AgentMessage):
         self.credentials_attach = list(credentials_attach) if credentials_attach else []
 
     def indy_credential(self, index: int = 0):
-        """
-        Retrieve and decode indy credential from attachment.
+        """Retrieve and decode indy credential from attachment.
 
         Args:
             index: ordinal in attachment list to decode and return

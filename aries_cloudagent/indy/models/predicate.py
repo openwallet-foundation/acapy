@@ -70,8 +70,7 @@ class Predicate(Enum):
 
     @staticmethod
     def to_int(value: Any) -> int:
-        """
-        Cast a value as its equivalent int for indy predicate argument.
+        """Cast a value as its equivalent int for indy predicate argument.
 
         Raise ValueError for any input but int, stringified int, or boolean.
 

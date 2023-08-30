@@ -29,8 +29,7 @@ class MediationDeny(AgentMessage):
         recipient_terms: Sequence[str] = None,
         **kwargs,
     ):
-        """
-        Initialize mediation deny object.
+        """Initialize mediation deny object.
 
         Args:
             mediator_terms: Terms that were agreed by the recipient

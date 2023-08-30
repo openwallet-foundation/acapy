@@ -16,8 +16,7 @@ class HttpTransport(BaseInboundTransport):
     """Http Transport class."""
 
     def __init__(self, host: str, port: int, create_session, **kwargs) -> None:
-        """
-        Initialize an inbound HTTP transport instance.
+        """Initialize an inbound HTTP transport instance.
 
         Args:
             host: Host to listen on
@@ -41,8 +40,7 @@ class HttpTransport(BaseInboundTransport):
         return app
 
     async def start(self) -> None:
-        """
-        Start this transport.
+        """Start this transport.
 
         Raises:
             InboundTransportSetupError: If there was an error starting the webserver
@@ -67,8 +65,7 @@ class HttpTransport(BaseInboundTransport):
             self.site = None
 
     async def inbound_message_handler(self, request: web.BaseRequest):
-        """
-        Message handler for inbound messages.
+        """Message handler for inbound messages.
 
         Args:
             request: aiohttp request object
@@ -129,8 +126,7 @@ class HttpTransport(BaseInboundTransport):
         return web.Response(status=200)
 
     async def invite_message_handler(self, request: web.BaseRequest):
-        """
-        Message handler for invites.
+        """Message handler for invites.
 
         Args:
             request: aiohttp request object

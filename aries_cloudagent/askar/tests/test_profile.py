@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import pytest
 
 from asynctest import mock

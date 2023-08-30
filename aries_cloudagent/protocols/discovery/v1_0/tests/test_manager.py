@@ -10,7 +10,6 @@ from .....messaging.responder import BaseResponder, MockResponder
 
 from ....didcomm_prefix import DIDCommPrefix
 
-from .. import manager as test_module
 from ..manager import V10DiscoveryMgr
 from ..messages.disclose import Disclose
 from ..messages.query import Query

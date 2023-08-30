@@ -1,6 +1,4 @@
-import json
-
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from asynctest import TestCase as AsyncTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -8,7 +6,7 @@ from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 
 from ...messages.invitation import InvitationMessage
 
-from ..invitation import InvitationRecord, InvitationRecordSchema
+from ..invitation import InvitationRecord
 
 TEST_DID = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
 

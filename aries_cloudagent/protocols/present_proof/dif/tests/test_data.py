@@ -1,7 +1,5 @@
 """Data for DIFPresExchHandler."""
 import json
-from pyld import jsonld
-from pyld.jsonld import JsonLdProcessor
 
 from .....storage.vc_holder.vc_record import VCRecord
 

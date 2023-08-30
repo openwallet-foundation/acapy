@@ -14,8 +14,7 @@ class PingHandler(BaseHandler):
     """Ping handler class."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle ping message.
+        """Handle ping message.
 
         Args:
             context: Request context

@@ -45,8 +45,7 @@ class CredentialProposal(AgentMessage):
         issuer_did: str = None,
         **kwargs,
     ):
-        """
-        Initialize credential proposal object.
+        """Initialize credential proposal object.
 
         Args:
             comment: optional human-readable comment

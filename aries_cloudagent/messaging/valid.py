@@ -330,8 +330,7 @@ class IndyRawPublicKey(Regexp):
 
 
 class RoutingKey(Regexp):
-    """
-    Validate between indy or did key.
+    """Validate between indy or did key.
 
     Validate value against indy (Ed25519VerificationKey2018)
     raw public key or DID key specification.

@@ -31,7 +31,6 @@ from ..formats.handler import V20PresFormatHandlerError
 from ..formats.dif.handler import DIFPresFormatHandler
 from ..formats.dif.tests.test_handler import (
     DIF_PRES_REQUEST_B as DIF_PRES_REQ,
-    DIF_PRES_REQUEST_A as DIF_PRES_REQ_ALT,
     DIF_PRES,
 )
 from ..formats.indy import handler as test_indy_handler
@@ -544,7 +543,7 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec.initiator == V20PresExRecord.INITIATOR_SELF
             assert px_rec.role == V20PresExRecord.ROLE_PROVER
             assert px_rec.state == V20PresExRecord.STATE_PROPOSAL_SENT
-            assert px_rec.auto_remove == True
+            assert px_rec.auto_remove is True
 
     async def test_receive_proposal(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
@@ -762,7 +761,7 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec.initiator == V20PresExRecord.INITIATOR_SELF
             assert px_rec.role == V20PresExRecord.ROLE_VERIFIER
             assert px_rec.state == V20PresExRecord.STATE_REQUEST_SENT
-            assert px_rec.auto_remove == True
+            assert px_rec.auto_remove is True
 
     async def test_receive_pres_request(self):
         px_rec_in = V20PresExRecord()

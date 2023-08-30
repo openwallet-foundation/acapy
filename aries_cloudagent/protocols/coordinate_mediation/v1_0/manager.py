@@ -298,9 +298,7 @@ class MediationManager:
             Keylist: message to return to client
 
         """
-        keys = list(
-            map(lambda key: KeylistKey(recipient_key=key.recipient_key), keylist)
-        )
+        keys = [KeylistKey(recipient_key=key.recipient_key) for key in keylist]
         return Keylist(keys=keys, pagination=None)
 
     # }}}

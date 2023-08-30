@@ -37,8 +37,7 @@ class V20PresRequest(AgentMessage):
         request_presentations_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize presentation request object.
+        """Initialize presentation request object.
 
         Args:
             request_presentations_attach: proof request attachments
@@ -54,8 +53,7 @@ class V20PresRequest(AgentMessage):
         )
 
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
-        """
-        Return attached presentation request item.
+        """Return attached presentation request item.
 
         Args:
             fmt: format of attachment in list to decode and return

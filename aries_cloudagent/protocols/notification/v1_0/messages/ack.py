@@ -19,8 +19,7 @@ class V10Ack(AgentMessage):
         schema_class = "V10AckSchema"
 
     def __init__(self, status: str = None, **kwargs):
-        """
-        Initialize an explicit ack message instance.
+        """Initialize an explicit ack message instance.
 
         Args:
             status: Status (default OK)

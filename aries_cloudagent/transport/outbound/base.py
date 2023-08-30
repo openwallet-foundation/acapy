@@ -104,8 +104,7 @@ class BaseOutboundTransport(ABC):
         endpoint: str,
         metadata: dict = None,
     ):
-        """
-        Handle message.
+        """Handle message.
 
         Args:
             profile: the profile that produced the message

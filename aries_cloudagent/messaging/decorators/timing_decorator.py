@@ -1,5 +1,4 @@
-"""
-The timing decorator (~timing).
+"""The timing decorator (~timing).
 
 This decorator allows the timing of agent messages to be communicated
 and constrained.
@@ -33,8 +32,7 @@ class TimingDecorator(BaseModel):
         delay_milli: int = None,
         wait_until_time: Union[str, datetime] = None,
     ):
-        """
-        Initialize a TimingDecorator instance.
+        """Initialize a TimingDecorator instance.
 
         Args:
             in_time: The time the message was received

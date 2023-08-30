@@ -35,8 +35,7 @@ class ConnectionManager(BaseConnectionManager):
     """Class for managing connections."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a ConnectionManager.
+        """Initialize a ConnectionManager.
 
         Args:
             profile: The profile for this connection manager
@@ -47,8 +46,7 @@ class ConnectionManager(BaseConnectionManager):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile.
+        """Accessor for the current profile.
 
         Returns:
             The profile for this connection manager
@@ -69,8 +67,7 @@ class ConnectionManager(BaseConnectionManager):
         metadata: dict = None,
         mediation_id: str = None,
     ) -> Tuple[ConnRecord, ConnectionInvitation]:
-        """
-        Generate new connection invitation.
+        """Generate new connection invitation.
 
         This interaction represents an out-of-band communication channel. In the future
         and in practice, these sort of invitations will be received over any number of
@@ -247,8 +244,7 @@ class ConnectionManager(BaseConnectionManager):
         alias: Optional[str] = None,
         mediation_id: Optional[str] = None,
     ) -> ConnRecord:
-        """
-        Create a new connection record to track a received invitation.
+        """Create a new connection record to track a received invitation.
 
         Args:
             invitation: The `ConnectionInvitation` to store
@@ -329,8 +325,7 @@ class ConnectionManager(BaseConnectionManager):
         my_endpoint: str = None,
         mediation_id: str = None,
     ) -> ConnectionRequest:
-        """
-        Create a new connection request for a previously-received invitation.
+        """Create a new connection request for a previously-received invitation.
 
         Args:
             connection: The `ConnRecord` representing the invitation to accept
@@ -414,8 +409,7 @@ class ConnectionManager(BaseConnectionManager):
         request: ConnectionRequest,
         receipt: MessageReceipt,
     ) -> ConnRecord:
-        """
-        Receive and store a connection request.
+        """Receive and store a connection request.
 
         Args:
             request: The `ConnectionRequest` to accept
@@ -577,8 +571,7 @@ class ConnectionManager(BaseConnectionManager):
         my_endpoint: str = None,
         mediation_id: str = None,
     ) -> ConnectionResponse:
-        """
-        Create a connection response for a received connection request.
+        """Create a connection response for a received connection request.
 
         Args:
             connection: The `ConnRecord` with a pending connection request
@@ -692,8 +685,7 @@ class ConnectionManager(BaseConnectionManager):
     async def accept_response(
         self, response: ConnectionResponse, receipt: MessageReceipt
     ) -> ConnRecord:
-        """
-        Accept a connection response.
+        """Accept a connection response.
 
         Process a ConnectionResponse message by looking up
         the connection request and setting up the pairwise connection.

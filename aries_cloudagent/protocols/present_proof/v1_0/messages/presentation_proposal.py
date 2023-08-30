@@ -30,8 +30,7 @@ class PresentationProposal(AgentMessage):
         presentation_proposal: IndyPresPreview = None,
         **kwargs,
     ):
-        """
-        Initialize presentation proposal object.
+        """Initialize presentation proposal object.
 
         Args:
             comment: optional human-readable comment

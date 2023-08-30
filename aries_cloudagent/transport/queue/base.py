@@ -9,8 +9,7 @@ class BaseMessageQueue(ABC):
 
     @abstractmethod
     async def enqueue(self, message):
-        """
-        Enqueue a message.
+        """Enqueue a message.
 
         Args:
             message: The message to add to the end of the queue
@@ -22,8 +21,7 @@ class BaseMessageQueue(ABC):
 
     @abstractmethod
     async def dequeue(self, *, timeout: int = None):
-        """
-        Dequeue a message.
+        """Dequeue a message.
 
         Returns:
             The dequeued message, or None if a timeout occurs

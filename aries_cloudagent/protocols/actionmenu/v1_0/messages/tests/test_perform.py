@@ -4,7 +4,7 @@ from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import PERFORM, PROTOCOL_PACKAGE
 
-from ..perform import Perform, PerformSchema
+from ..perform import Perform
 
 
 class TestPerform(TestCase):

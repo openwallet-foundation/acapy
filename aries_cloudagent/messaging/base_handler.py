@@ -22,8 +22,7 @@ class BaseHandler(ABC):
 
     @abstractmethod
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Abstract method for handler logic.
+        """Abstract method for handler logic.
 
         Args:
             context: Request context object

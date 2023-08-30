@@ -1,7 +1,6 @@
 import pytest
 
-from .....core.event_bus import EventBus, MockEventBus, Event
-from .....messaging.base_handler import HandlerException
+from .....core.event_bus import EventBus, MockEventBus
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
 from .....transport.inbound.receipt import MessageReceipt

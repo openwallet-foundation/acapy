@@ -493,7 +493,7 @@ class TestPluginRegistry(AsyncTestCase):
                 None,  # message types
                 None,  # definition without versions attr
             ]
-            assert self.registry.register_plugin(self.blocked_module) == None
+            assert self.registry.register_plugin(self.blocked_module) is None
             assert self.blocked_module not in self.registry._plugins.keys()
 
     async def test_register_definitions_malformed(self):

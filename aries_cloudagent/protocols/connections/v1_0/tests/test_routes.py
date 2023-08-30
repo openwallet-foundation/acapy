@@ -100,7 +100,7 @@ class TestConnectionRoutes(AsyncTestCase):
                         "invitation_msg_id": "dummy_msg",
                     },
                     post_filter_positive={
-                        "their_role": [v for v in ConnRecord.Role.REQUESTER.value],
+                        "their_role": list(ConnRecord.Role.REQUESTER.value),
                         "connection_protocol": ConnRecord.Protocol.RFC_0160.aries_protocol,
                     },
                     alt=True,

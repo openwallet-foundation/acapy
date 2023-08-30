@@ -1,5 +1,4 @@
 import mock as async_mock
-import pytest
 from aiohttp.web import HTTPForbidden
 from unittest import IsolatedAsyncioTestCase
 

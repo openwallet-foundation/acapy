@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from asynctest import mock as async_mock

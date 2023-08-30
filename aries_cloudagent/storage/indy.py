@@ -31,8 +31,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
     """Indy Non-Secrets interface."""
 
     def __init__(self, wallet: IndyOpenWallet):
-        """
-        Initialize an `IndySdkStorage` instance.
+        """Initialize an `IndySdkStorage` instance.
 
         Args:
             wallet: The indy wallet instance to use
@@ -46,8 +45,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
         return self._wallet
 
     async def add_record(self, record: StorageRecord):
-        """
-        Add a new record to the store.
+        """Add a new record to the store.
 
         Args:
             record: `StorageRecord` to be stored
@@ -69,8 +67,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
     async def get_record(
         self, record_type: str, record_id: str, options: Mapping = None
     ) -> StorageRecord:
-        """
-        Fetch a record from the store by type and ID.
+        """Fetch a record from the store by type and ID.
 
         Args:
             record_type: The record type
@@ -119,8 +116,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
         )
 
     async def update_record(self, record: StorageRecord, value: str, tags: Mapping):
-        """
-        Update an existing stored record's value and tags.
+        """Update an existing stored record's value and tags.
 
         Args:
             record: `StorageRecord` to update
@@ -147,8 +143,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
             raise StorageError(str(x_indy))
 
     async def delete_record(self, record: StorageRecord):
-        """
-        Delete a record.
+        """Delete a record.
 
         Args:
             record: `StorageRecord` to delete
@@ -203,8 +198,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
         page_size: int = None,
         options: Mapping = None,
     ) -> "IndySdkStorageSearch":
-        """
-        Search stored records.
+        """Search stored records.
 
         Args:
             type_filter: Filter string
@@ -230,8 +224,7 @@ class IndySdkStorageSearch(BaseStorageSearchSession):
         page_size: int = None,
         options: Mapping = None,
     ):
-        """
-        Initialize a `IndySdkStorageSearch` instance.
+        """Initialize a `IndySdkStorageSearch` instance.
 
         Args:
             store: `BaseStorage` to search
@@ -249,8 +242,7 @@ class IndySdkStorageSearch(BaseStorageSearchSession):
         self.type_filter = type_filter
 
     async def fetch(self, max_count: int = None) -> Sequence[StorageRecord]:
-        """
-        Fetch the next list of results from the store.
+        """Fetch the next list of results from the store.
 
         Args:
             max_count: Max number of records to return. If not provided,

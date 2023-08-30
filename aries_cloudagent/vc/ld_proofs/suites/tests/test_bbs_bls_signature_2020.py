@@ -4,7 +4,6 @@ import pytest
 from aries_cloudagent.wallet.key_type import BLS12381G2
 
 from .....did.did_key import DIDKey
-from .....wallet.key_pair import KeyType
 from .....wallet.in_memory import InMemoryWallet
 from .....core.in_memory import InMemoryProfile
 from ....tests.document_loader import custom_document_loader

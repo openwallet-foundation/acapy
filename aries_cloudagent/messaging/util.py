@@ -104,8 +104,7 @@ def time_now() -> str:
 
 
 def encode(orig: Any) -> str:
-    """
-    Encode a credential value as an int.
+    """Encode a credential value as an int.
 
     Encode credential attribute value, purely stringifying any int32
     and leaving numeric int32 strings alone, but mapping any other
@@ -137,8 +136,7 @@ def encode(orig: Any) -> str:
 
 
 def canon(raw_attr_name: str) -> str:
-    """
-    Canonicalize input attribute name for indy proofs and credential offers.
+    """Canonicalize input attribute name for indy proofs and credential offers.
 
     Args:
         raw_attr_name: raw attribute name

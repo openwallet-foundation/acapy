@@ -23,8 +23,7 @@ class MenuFormParam(BaseModel):
         input_type: str = None,
         required: bool = None,
     ):
-        """
-        Initialize a MenuFormParam instance.
+        """Initialize a MenuFormParam instance.
 
         Args:
             name: The parameter name

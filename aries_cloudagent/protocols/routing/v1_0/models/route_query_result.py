@@ -14,8 +14,7 @@ class RouteQueryResult(BaseModel):
         schema_class = "RouteQueryResultSchema"
 
     def __init__(self, *, recipient_key: str = None, **kwargs):
-        """
-        Initialize a RouteQueryResult instance.
+        """Initialize a RouteQueryResult instance.
 
         Args:
             recipient_key: The recipient verkey of the route

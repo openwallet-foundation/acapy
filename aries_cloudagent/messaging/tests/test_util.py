@@ -1,7 +1,5 @@
-import re
-
 from datetime import datetime, timezone
-from unittest import mock, TestCase
+from unittest import TestCase
 
 from ..util import (
     canon,
@@ -9,7 +7,6 @@ from ..util import (
     datetime_to_str,
     encode,
     epoch_to_str,
-    I32_BOUND,
     str_to_datetime,
     str_to_epoch,
     time_now,

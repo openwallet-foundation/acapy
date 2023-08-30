@@ -1,7 +1,7 @@
 import json
 import requests
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from asynctest import TestCase as AsyncTestCase
 
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
@@ -9,7 +9,6 @@ from ...protocols.issue_credential.v1_0.models.credential_exchange import (
 )
 from ...transport.inbound.message import InboundMessage
 from ...transport.outbound.message import OutboundMessage
-from ...messaging.agent_message import AgentMessage
 
 from ...messaging.decorators.trace_decorator import TraceDecorator, TRACE_MESSAGE_TARGET
 from ...protocols.trustping.v1_0.messages.ping import Ping
@@ -190,7 +189,7 @@ class TestTracing(AsyncTestCase):
         trace = message._trace
         assert trace is not None
         assert trace.target == TRACE_MESSAGE_TARGET
-        assert trace.full_thread == True
+        assert trace.full_thread is True
         trace_reports = trace.trace_reports
         assert len(trace_reports) == 1
         trace_report = trace_reports[0]

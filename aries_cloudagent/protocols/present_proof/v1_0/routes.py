@@ -286,8 +286,7 @@ class V10PresExIdMatchInfoSchema(OpenAPISchema):
 @querystring_schema(V10PresentationExchangeListQueryStringSchema)
 @response_schema(V10PresentationExchangeListSchema(), 200, description="")
 async def presentation_exchange_list(request: web.BaseRequest):
-    """
-    Request handler for searching presentation exchange records.
+    """Request handler for searching presentation exchange records.
 
     Args:
         request: aiohttp request object
@@ -327,8 +326,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_retrieve(request: web.BaseRequest):
-    """
-    Request handler for fetching a single presentation exchange record.
+    """Request handler for fetching a single presentation exchange record.
 
     Args:
         request: aiohttp request object
@@ -376,8 +374,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 @querystring_schema(CredentialsFetchQueryStringSchema())
 @response_schema(IndyCredPrecisSchema(many=True), 200, description="")
 async def presentation_exchange_credentials_list(request: web.BaseRequest):
-    """
-    Request handler for searching applicable credential records.
+    """Request handler for searching applicable credential records.
 
     Args:
         request: aiohttp request object
@@ -453,8 +450,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
 @request_schema(V10PresentationProposalRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_send_proposal(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation proposal.
+    """Request handler for sending a presentation proposal.
 
     Args:
         request: aiohttp request object
@@ -537,8 +533,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
 @request_schema(V10PresentationCreateRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_create_request(request: web.BaseRequest):
-    """
-    Request handler for creating a free presentation request.
+    """Request handler for creating a free presentation request.
 
     The presentation request will not be bound to any proposal
     or existing connection.
@@ -615,8 +610,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
 @request_schema(V10PresentationSendRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_send_free_request(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation request free from any proposal.
+    """Request handler for sending a presentation request free from any proposal.
 
     Args:
         request: aiohttp request object
@@ -704,8 +698,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 @request_schema(V10PresentationSendRequestToProposalSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_send_bound_request(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation request bound to a proposal.
+    """Request handler for sending a presentation request bound to a proposal.
 
     Args:
         request: aiohttp request object
@@ -797,8 +790,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 @request_schema(V10PresentationSendRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), description="")
 async def presentation_exchange_send_presentation(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation.
+    """Request handler for sending a presentation.
 
     Args:
         request: aiohttp request object
@@ -911,8 +903,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentationExchangeSchema(), description="")
 async def presentation_exchange_verify_presentation(request: web.BaseRequest):
-    """
-    Request handler for verifying a presentation request.
+    """Request handler for verifying a presentation request.
 
     Args:
         request: aiohttp request object
@@ -986,8 +977,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
 @request_schema(V10PresentationProblemReportRequestSchema())
 @response_schema(V10PresentProofModuleResponseSchema(), 200, description="")
 async def presentation_exchange_problem_report(request: web.BaseRequest):
-    """
-    Request handler for sending problem report.
+    """Request handler for sending problem report.
 
     Args:
         request: aiohttp request object
@@ -1027,8 +1017,7 @@ async def presentation_exchange_problem_report(request: web.BaseRequest):
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentProofModuleResponseSchema(), description="")
 async def presentation_exchange_remove(request: web.BaseRequest):
-    """
-    Request handler for removing a presentation exchange record.
+    """Request handler for removing a presentation exchange record.
 
     Args:
         request: aiohttp request object

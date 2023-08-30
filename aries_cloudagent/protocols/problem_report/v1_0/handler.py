@@ -13,8 +13,7 @@ class ProblemReportHandler(BaseHandler):
     """Problem report handler class."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle problem report message.
+        """Handle problem report message.
 
         Args:
             context: Request context

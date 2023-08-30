@@ -30,8 +30,7 @@ def match_post_filter(
     positive: bool = True,
     alt: bool = False,
 ) -> bool:
-    """
-    Determine if a record value matches the post-filter.
+    """Determine if a record value matches the post-filter.
 
     Args:
         record: record to check
@@ -105,8 +104,7 @@ class BaseRecord(BaseModel):
 
     @classmethod
     def from_storage(cls, record_id: str, record: Mapping[str, Any]):
-        """
-        Initialize a record from its stored representation.
+        """Initialize a record from its stored representation.
 
         Args:
             record_id: The unique record identifier
@@ -167,8 +165,7 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def get_cached_key(cls, session: ProfileSession, cache_key: str):
-        """
-        Shortcut method to fetch a cached key value.
+        """Shortcut method to fetch a cached key value.
 
         Args:
             session: The profile session to use
@@ -184,8 +181,7 @@ class BaseRecord(BaseModel):
     async def set_cached_key(
         cls, session: ProfileSession, cache_key: str, value: Any, ttl=None
     ):
-        """
-        Shortcut method to set a cached key value.
+        """Shortcut method to set a cached key value.
 
         Args:
             session: The profile session to use
@@ -202,8 +198,7 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def clear_cached_key(cls, session: ProfileSession, cache_key: str):
-        """
-        Shortcut method to clear a cached key value, if any.
+        """Shortcut method to clear a cached key value, if any.
 
         Args:
             session: The profile session to use
@@ -224,8 +219,7 @@ class BaseRecord(BaseModel):
         *,
         for_update=False,
     ) -> RecordType:
-        """
-        Retrieve a stored record by ID.
+        """Retrieve a stored record by ID.
 
         Args:
             session: The profile session to use
@@ -248,8 +242,7 @@ class BaseRecord(BaseModel):
         *,
         for_update=False,
     ) -> RecordType:
-        """
-        Retrieve a record by tag filter.
+        """Retrieve a record by tag filter.
 
         Args:
             session: The profile session to use
@@ -295,8 +288,7 @@ class BaseRecord(BaseModel):
         post_filter_negative: dict = None,
         alt: bool = False,
     ) -> Sequence[RecordType]:
-        """
-        Query stored records.
+        """Query stored records.
 
         Args:
             session: The profile session to use
@@ -342,8 +334,7 @@ class BaseRecord(BaseModel):
         log_override: bool = False,
         event: bool = None,
     ) -> str:
-        """
-        Persist the record to storage.
+        """Persist the record to storage.
 
         Args:
             session: The profile session to use
@@ -391,8 +382,7 @@ class BaseRecord(BaseModel):
         last_state: Optional[str],
         event: bool = None,
     ):
-        """
-        Perform post-save actions.
+        """Perform post-save actions.
 
         Args:
             session: The profile session to use
@@ -407,8 +397,7 @@ class BaseRecord(BaseModel):
             await self.emit_event(session, self.serialize())
 
     async def delete_record(self, session: ProfileSession):
-        """
-        Remove the stored record.
+        """Remove the stored record.
 
         Args:
             session: The profile session to use
@@ -423,8 +412,7 @@ class BaseRecord(BaseModel):
             await storage.delete_record(self.storage_record)
 
     async def emit_event(self, session: ProfileSession, payload: Any = None):
-        """
-        Emit an event.
+        """Emit an event.
 
         Args:
             session: The profile session to use
@@ -497,8 +485,7 @@ class BaseRecord(BaseModel):
 
     @classmethod
     def get_attributes_by_prefix(cls, prefix: str, walk_mro: bool = True):
-        """
-        List all values for attributes with common prefix.
+        """List all values for attributes with common prefix.
 
         Args:
             prefix: Common prefix to look for

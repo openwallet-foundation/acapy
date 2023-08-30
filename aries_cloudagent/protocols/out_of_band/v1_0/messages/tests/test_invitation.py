@@ -11,7 +11,6 @@ from .....didcomm_prefix import DIDCommPrefix
 from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from .....didexchange.v1_0.messages.request import DIDXRequest
 
-from ...message_types import INVITATION
 
 from .. import invitation as test_module
 from ..invitation import HSProto, InvitationMessage, InvitationMessageSchema

@@ -12,8 +12,7 @@ class HandshakeReuseAcceptMessageHandler(BaseHandler):
     """Handler class for Handshake Reuse Accepted Message Handler under RFC 0434."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle Handshake Reuse Accepted Message Handler under RFC 0434.
+        """Handle Handshake Reuse Accepted Message Handler under RFC 0434.
 
         Args:
             context: Request context

@@ -703,8 +703,8 @@ class TestOobProcessor(AsyncTestCase):
             ),
         )
 
-        assert oob_record.attach_thread_id == None
-        assert oob_record.their_service == None
+        assert oob_record.attach_thread_id is None
+        assert oob_record.their_service is None
 
         oob_record.save.assert_not_called()
 

@@ -67,8 +67,7 @@ class Profile(ABC):
 
     @abstractmethod
     def transaction(self, context: InjectionContext = None) -> "ProfileSession":
-        """
-        Start a new interactive session with commit and rollback support.
+        """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.
@@ -79,8 +78,7 @@ class Profile(ABC):
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
     ) -> InjectType:
-        """
-        Get the provided instance of a given class identifier.
+        """Get the provided instance of a given class identifier.
 
         Args:
             cls: The base class to retrieve an instance of
@@ -98,8 +96,7 @@ class Profile(ABC):
         settings: Mapping[str, object] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
-        """
-        Get the provided instance of a given class identifier or default if not found.
+        """Get the provided instance of a given class identifier or default if not found.
 
         Args:
             base_cls: The base class to retrieve an instance of
@@ -174,8 +171,7 @@ class ProfileSession(ABC):
         """Dispose of the underlying session or transaction."""
 
     def __await__(self):
-        """
-        Coroutine magic method.
+        """Coroutine magic method.
 
         A session must be awaited or used as an async context manager.
         """
@@ -230,8 +226,7 @@ class ProfileSession(ABC):
         return self._profile
 
     async def commit(self):
-        """
-        Commit any updates performed within the transaction.
+        """Commit any updates performed within the transaction.
 
         If the current session is not a transaction, then nothing is performed.
         """
@@ -241,8 +236,7 @@ class ProfileSession(ABC):
         self._active = False
 
     async def rollback(self):
-        """
-        Roll back any updates performed within the transaction.
+        """Roll back any updates performed within the transaction.
 
         If the current session is not a transaction, then nothing is performed.
         """
@@ -256,8 +250,7 @@ class ProfileSession(ABC):
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
     ) -> InjectType:
-        """
-        Get the provided instance of a given class identifier.
+        """Get the provided instance of a given class identifier.
 
         Args:
             cls: The base class to retrieve an instance of
@@ -277,8 +270,7 @@ class ProfileSession(ABC):
         settings: Mapping[str, object] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
-        """
-        Get the provided instance of a given class identifier or default if not found.
+        """Get the provided instance of a given class identifier or default if not found.
 
         Args:
             base_cls: The base class to retrieve an instance of

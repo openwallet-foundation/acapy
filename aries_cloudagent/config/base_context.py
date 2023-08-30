@@ -11,8 +11,7 @@ class ContextBuilder(ABC):
     """Base injection context builder class."""
 
     def __init__(self, settings: Optional[Mapping[str, Any]] = None):
-        """
-        Initialize an instance of the context builder.
+        """Initialize an instance of the context builder.
 
         Args:
             settings: Mapping of configuration settings

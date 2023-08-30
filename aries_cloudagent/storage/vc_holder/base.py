@@ -11,8 +11,7 @@ class VCHolder(ABC):
 
     @abstractmethod
     async def store_credential(self, cred: VCRecord):
-        """
-        Add a new VC record to the store.
+        """Add a new VC record to the store.
 
         Args:
             cred: The VCRecord instance to store
@@ -23,8 +22,7 @@ class VCHolder(ABC):
 
     @abstractmethod
     async def retrieve_credential_by_id(self, record_id: str) -> VCRecord:
-        """
-        Fetch a VC record by its record ID.
+        """Fetch a VC record by its record ID.
 
         Raises:
             StorageNotFoundError: If the record is not found
@@ -33,8 +31,7 @@ class VCHolder(ABC):
 
     @abstractmethod
     async def retrieve_credential_by_given_id(self, given_id: str) -> VCRecord:
-        """
-        Fetch a VC record by its given ID ('id' property).
+        """Fetch a VC record by its given ID ('id' property).
 
         Raises:
             StorageNotFoundError: If the record is not found
@@ -43,8 +40,7 @@ class VCHolder(ABC):
 
     @abstractmethod
     async def delete_credential(self, cred: VCRecord):
-        """
-        Remove a previously-stored VC record.
+        """Remove a previously-stored VC record.
 
         Raises:
             StorageNotFoundError: If the record is not found
@@ -53,8 +49,7 @@ class VCHolder(ABC):
 
     @abstractmethod
     def build_type_or_schema_query(self, uri_list: Sequence[str]) -> dict:
-        """
-        Build and return backend-specific type_or_schema_query.
+        """Build and return backend-specific type_or_schema_query.
 
         Args:
             uri_list: List of schema uri from input_descriptor
@@ -72,8 +67,7 @@ class VCHolder(ABC):
         given_id: str = None,
         tag_query: Mapping = None,
     ) -> "VCRecordSearch":
-        """
-        Start a new VC record search.
+        """Start a new VC record search.
 
         Args:
             contexts: An inclusive list of JSON-LD contexts to match
@@ -88,8 +82,7 @@ class VCHolder(ABC):
         """
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -103,8 +96,7 @@ class VCRecordSearch(ABC):
 
     @abstractmethod
     async def fetch(self, max_count: int = None) -> Sequence[VCRecord]:
-        """
-        Fetch the next list of VC records from the store.
+        """Fetch the next list of VC records from the store.
 
         Args:
             max_count: Max number of records to return. If not provided,

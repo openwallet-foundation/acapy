@@ -48,8 +48,7 @@ class VCRecord(BaseModel):
         self.record_id = record_id or uuid4().hex
 
     def serialize(self, as_string=False) -> dict:
-        """
-        Create a JSON-compatible dict representation of the model instance.
+        """Create a JSON-compatible dict representation of the model instance.
 
         Args:
             as_string: Return a string of JSON instead of a dict
@@ -59,7 +58,7 @@ class VCRecord(BaseModel):
 
         """
 
-        list_coercion = VCRecord(**{k: v for k, v in vars(self).items()})
+        list_coercion = VCRecord(**dict(vars(self).items()))
         for k, v in vars(self).items():
             if isinstance(v, set):
                 setattr(list_coercion, k, list(v))

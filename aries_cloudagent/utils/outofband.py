@@ -10,8 +10,7 @@ from ..wallet.util import str_to_b64
 
 
 def serialize_outofband(message: AgentMessage, did: DIDInfo, endpoint: str) -> str:
-    """
-    Serialize the agent message as an out-of-band message.
+    """Serialize the agent message as an out-of-band message.
 
     Returns:
         An OOB message in URL format.

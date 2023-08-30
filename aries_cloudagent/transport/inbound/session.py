@@ -187,8 +187,7 @@ class InboundSession:
             pass  # No wallet found. Use the base session profile
 
     def process_inbound(self, message: InboundMessage):
-        """
-        Process an incoming message and update the session metadata as necessary.
+        """Process an incoming message and update the session metadata as necessary.
 
         Args:
             message: The inbound message instance
@@ -270,8 +269,7 @@ class InboundSession:
         )
 
     def accept_response(self, message: OutboundMessage) -> AcceptResult:
-        """
-        Try to queue an outbound message if it applies to this session.
+        """Try to queue an outbound message if it applies to this session.
 
         Returns: a tuple of (message buffered, retry later)
         """

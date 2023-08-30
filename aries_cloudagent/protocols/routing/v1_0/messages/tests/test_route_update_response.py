@@ -3,7 +3,7 @@ from unittest import mock, TestCase
 from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import PROTOCOL_PACKAGE, ROUTE_UPDATE_RESPONSE
-from ...models.route_updated import RouteUpdated, RouteUpdatedSchema
+from ...models.route_updated import RouteUpdated
 from ..route_update_response import RouteUpdateResponse
 
 

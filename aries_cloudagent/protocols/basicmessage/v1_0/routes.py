@@ -40,8 +40,7 @@ class BasicConnIdMatchInfoSchema(OpenAPISchema):
 @request_schema(SendMessageSchema())
 @response_schema(BasicMessageModuleResponseSchema(), 200, description="")
 async def connections_send_message(request: web.BaseRequest):
-    """
-    Request handler for sending a basic message to a connection.
+    """Request handler for sending a basic message to a connection.
 
     Args:
         request: aiohttp request object

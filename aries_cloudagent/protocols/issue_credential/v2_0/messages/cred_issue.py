@@ -36,8 +36,7 @@ class V20CredIssue(AgentMessage):
         credentials_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential issue object.
+        """Initialize credential issue object.
 
         Args:
             comment: optional comment
@@ -53,8 +52,7 @@ class V20CredIssue(AgentMessage):
         self.credentials_attach = list(credentials_attach) if credentials_attach else []
 
     def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
-        """
-        Return attached credential.
+        """Return attached credential.
 
         Args:
             fmt: format of attachment in list to decode and return
