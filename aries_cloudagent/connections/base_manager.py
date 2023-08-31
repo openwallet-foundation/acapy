@@ -201,7 +201,8 @@ class BaseConnectionManager:
             did_doc: The `LegacyDIDDoc` instance to persist
         """
         assert did_doc.id
-
+        if hasattr(did_doc, "pubkey"):
+            raise Exception("DID Doc should have been transformed to DIDDocument class before this")
         try:
             stored_doc, record = await self.fetch_did_document(storage_id)
         except StorageNotFoundError:
@@ -220,8 +221,6 @@ class BaseConnectionManager:
                     record, did_doc.to_json(), {"did": storage_id}
                 )
         await self.remove_keys_for_did(storage_id)
-        if hasattr(did_doc, "pubkey"):
-            raise Exception("DID Doc should have been transformed to DIDDocument class before")
         if hasattr(did_doc, "verification_method"):
             for vm in did_doc.verification_method or []:
                 if vm.controller == did_doc.id:
@@ -653,26 +652,20 @@ class BaseConnectionManager:
                             f"state ({connection.state})"
                         )
         else:
+            if not connection:
+                async with self._profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_id(session, connection_id)
+
             did_doc = None
             if not connection.their_did:
                 self._logger.debug("No target DID associated with connection")
                 return None
-            try:
-                did_doc, _ = await self.fetch_did_document(connection.their_did)
-
-            except StorageNotFoundError:
-                self._logger.warning(
-                    "did_document not found, checking with did:sov: prefix to manage legacy behaviour"
+            
+            did_doc, _ = await self.fetch_did_document(connection.their_did)
+            if not did_doc:
+                raise StorageNotFoundError(
+                    f"did_document not found with did {connection.their_did}"
                 )
-                did_doc, _ = await self.fetch_did_document(
-                    "did:sov:" + connection.their_did
-                )
-
-            finally:
-                if not did_doc:
-                    raise StorageNotFoundError(
-                        f"did_document not found with did {connection.their_did}"
-                    )
 
             async with self._profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -681,9 +674,6 @@ class BaseConnectionManager:
             results = self.diddoc_connection_targets(
                 did_doc, my_info.verkey, connection.their_label
             )
-            if not connection:
-                async with self._profile.session() as session:
-                    connection = await ConnRecord.retrieve_by_id(session, connection_id)
 
             targets = await self.fetch_connection_targets(connection)
         return targets
