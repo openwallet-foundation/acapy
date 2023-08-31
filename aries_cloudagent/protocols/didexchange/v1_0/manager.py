@@ -340,7 +340,7 @@ class DIDXManager(BaseConnectionManager):
                     my_info = await wallet.create_local_did(
                         PEER, ED25519, keypair=keypair, did=peer_did_2
                     )
-                    
+                    #SAVE THIS TO DB NOW, keypair not accessible later
                     dp3,dp3_doc = gen_did_peer_3(peer_did_2)
 
                     await wallet.create_local_did(PEER,ED25519, keypair=keypair,did=dp3)
@@ -847,31 +847,45 @@ class DIDXManager(BaseConnectionManager):
                 f" in state: {conn_rec.state}"
             )
 
-        their_did = response.did
-        # request DID doc describes requester DID
+
+        resolver = self._profile.inject(DIDResolver)
         if conn_rec.my_did.startswith("did:peer:2"):
+            #If origianlly sent did:peer:2, update to did:peer:3
             peer_did_3, my_dp3_doc = gen_did_peer_3(conn_rec.my_did)
             conn_rec.my_did = peer_did_3
-        elif response.did_doc_attach:
+
+        if response.did.startswith("did:peer:2"):
+            #if received did:peer:2, decompose and save did:peer:3 versions.
+            their_did, conn_did_doc = gen_did_peer_3(response.did)
+            
+        else:
+            their_did = response.did
+            conn_did_doc = None
+
+        
+        if response.did_doc_attach and not conn_did_doc:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                #TODO: need to store did:peer:3 as a local did when it was first created
 
                 conn_did_doc = await self.verify_diddoc(
                     wallet, response.did_doc_attach, conn_rec.invitation_key
                 )
-            if their_did != conn_did_doc.id:
-                if str("did:sov:" + their_did) == str(conn_did_doc.id):
-                    self._logger.warning(
-                        f"legacy behaviour: Connection DID is unqualified {their_did}, but did doc did has did:sov {conn_did_doc.id}"
-                    )
-                else:
-                    self._logger.error(
-                            f"Connection DID {their_did} does not match "
-                            f"DID Doc id {conn_did_doc.id}"
+                #if obsolete unqualified did_doc was provided, it has been replaced with compliant one based on did:peer:2
+                if their_did != conn_did_doc.id:
+                    if "did:peer:" in str(conn_did_doc.id) and "did:peer:" not in str(their_did):
+                        self._logger.warning(
+                            f"did doc was created from peerdid library, but sender did not send did:peer:, this is ok."
                         )
+                    else:
+                        self._logger.error(
+                                f"Connection DID {their_did} does not match "
+                                f"DID Doc id {conn_did_doc.id}"
+                        )
+                await self.store_did_document_with_different_id(conn_did_doc, their_did)
+        elif conn_did_doc:
+            async with self.profile.session() as session:
+                await self.store_did_document(conn_did_doc)
 
-            await self.store_did_document_with_different_id(conn_did_doc,their_did)
         else:
             if response.did is None:
                 raise DIDXManagerError("No DID in response")
