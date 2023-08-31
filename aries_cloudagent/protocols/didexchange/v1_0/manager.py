@@ -428,7 +428,7 @@ class DIDXManager(BaseConnectionManager):
                 if recipient_verkey:
                     raise DIDXManagerError(
                         "No explicit invitation found for pairwise connection "
-                        f"in state {ConnRecord.State.INVITATION.rfc160}: "
+                        f"in state {ConnRecord.State.INVITATION.rfc23}: "
                         "a prior connection request may have updated the connection state"
                     )
         else:
@@ -613,7 +613,7 @@ class DIDXManager(BaseConnectionManager):
 
         if ConnRecord.State.get(conn_rec.state) is not ConnRecord.State.REQUEST:
             raise DIDXManagerError(
-                f"Connection not in state {ConnRecord.State.REQUEST.rfc160}"
+                f"Connection not in state {ConnRecord.State.REQUEST.rfc23}"
             )
         async with self.profile.session() as session:
             request = await conn_rec.retrieve_request(session)
