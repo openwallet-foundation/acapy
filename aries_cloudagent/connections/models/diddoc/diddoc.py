@@ -104,7 +104,7 @@ class DIDDoc:
 
         return self._service
 
-    def set(self, item: Union[Service, PublicKey]) -> "DIDDoc":
+    def set(self, item: Union[Service, PublicKey]):
         """
         Add or replace service or public key; return current DIDDoc.
 
