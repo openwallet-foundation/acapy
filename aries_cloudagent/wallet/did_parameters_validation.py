@@ -1,7 +1,6 @@
 """Tooling to validate DID creation parameters."""
 
 from typing import Optional
-from pydid import DID, DIDDocument
 from aries_cloudagent.did.did_key import DIDKey
 from aries_cloudagent.wallet.did_method import (
     DIDMethods,

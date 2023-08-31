@@ -352,7 +352,7 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
         if result.is_local:
             assert result.doc
             if result.doc["verificationMethod"]:
-                "HAS ALREADY BEEN CONVERTED"
+                #HAS ALREADY BEEN CONVERTED
                 return result.doc
             return LegacyDocCorrections.apply(result.doc)
         else:
