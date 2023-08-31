@@ -221,9 +221,7 @@ class BaseConnectionManager:
                 )
         await self.remove_keys_for_did(storage_id)
         if hasattr(did_doc, "pubkey"):
-            for key in did_doc.pubkey.values():
-                if key.controller == storage_id:
-                    await self.add_key_for_did(storage_id, key.value)
+            raise Exception("DID Doc should have been transformed to DIDDocument class before")
         if hasattr(did_doc, "verification_method"):
             for vm in did_doc.verification_method or []:
                 if vm.controller == did_doc.id:
@@ -241,8 +239,8 @@ class BaseConnectionManager:
                                 continue
                         await self.add_key_for_did(storage_id, pk)
                     elif vm.material:
-                        self._logger.error(
-                            "VerificationMethod material exists, but no in base58, not saving key"
+                        self._logger.warning(
+                            "VerificationMethod material exists, but no in base58o or multibase, not saving key"
                         )
 
     async def add_key_for_did(self, did: str, key: str):
@@ -703,7 +701,7 @@ class BaseConnectionManager:
                 # add if not a reference
                 result.append(vor)
 
-            if issubclass(resource.__class__, VerificationMethod):
+            if isinstance(resource,VerificationMethod):
                 # insert material of verificationmethod
                 vk = multibase.decode(resource.material)
         
