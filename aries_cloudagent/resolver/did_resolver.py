@@ -68,7 +68,7 @@ class DIDResolver:
         profile: Profile,
         did: Union[str, DID],
         service_accept: Optional[Sequence[Text]] = None,
-    ) -> Union[dict,BaseDIDDocument]:
+    ) -> dict:
         """Resolve a DID."""
         _, doc = await self._resolve(profile, did, service_accept)
         return doc
