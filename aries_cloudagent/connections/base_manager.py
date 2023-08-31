@@ -9,9 +9,8 @@ from typing import List, Optional, Sequence, Text, Tuple, Union
 
 from multiformats import multibase, multicodec
 from pydid import (
-    BaseDIDDocument as ResolvedDocument,
+    BaseDIDDocument,
     DIDDocument,
-    DIDCommService,
     VerificationMethod,
     DID
 )
@@ -21,6 +20,7 @@ from pydid.verification_method import (
     Ed25519VerificationKey2020,
     JsonWebKey2020,
 )
+from pydid.service import DIDCommV1Service
 from pydid.did_url import DIDUrl
 
 from ..cache.base import BaseCache
@@ -186,15 +186,15 @@ class BaseConnectionManager:
             did_doc.set(service)
         return did_doc
 
-    async def store_did_document(self, did_doc: DIDDocument):
+    async def store_did_document(self, did_doc: BaseDIDDocument):
         return await self._store_did_document(did_doc,did_doc.id)
 
     
-    async def store_did_document_with_different_id(self, did_doc: DIDDocument, unqualified_did:str):
+    async def store_did_document_with_different_id(self, did_doc: BaseDIDDocument, unqualified_did:str):
         """TO HANDLE LEGACY CONNECTION UNQUALIFIED DIDS WITH NEW DIDDocuments """
         return await self._store_did_document(did_doc,unqualified_did)
 
-    async def _store_did_document(self, did_doc: DIDDocument, storage_id: Union[str,DID]):
+    async def _store_did_document(self, did_doc: BaseDIDDocument, storage_id: Union[str,DID]):
         """Store a DID document.
 
         Args:
@@ -286,7 +286,7 @@ class BaseConnectionManager:
 
     async def resolve_didcomm_services(
         self, did: str, service_accept: Optional[Sequence[Text]] = None
-    ) -> Tuple[ResolvedDocument, List[DIDCommService]]:
+    ) -> Tuple[BaseDIDDocument, List[DIDCommV1Service]]:
         """Resolve a DIDComm services for a given DID."""
         if not did.startswith("did:"):
             # DID is bare indy "nym"
@@ -296,7 +296,7 @@ class BaseConnectionManager:
         resolver = self._profile.inject(DIDResolver)
         try:
             doc_dict: dict = await resolver.resolve(self._profile, did, service_accept)
-            doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
+            doc: BaseDIDDocument = pydid.deserialize_document(doc_dict, strict=True)
         except ResolverError as error:
             raise BaseConnectionManagerError(
                 "Failed to resolve public DID in invitation"
@@ -308,14 +308,14 @@ class BaseConnectionManager:
             )
 
         didcomm_services = sorted(
-            [service for service in doc.service if isinstance(service, DIDCommService)],
+            [service for service in doc.service if isinstance(service, DIDCommV1Service)],
             key=lambda service: service.priority,
         )
 
         return doc, didcomm_services
 
     async def verification_methods_for_service(
-        self, doc: ResolvedDocument, service: DIDCommService
+        self, doc: BaseDIDDocument, service: DIDCommV1Service
     ) -> Tuple[List[VerificationMethod], List[VerificationMethod]]:
         """Dereference recipient and routing keys.
 
@@ -679,7 +679,7 @@ class BaseConnectionManager:
         return targets
 
     def resolve_verkey_references(
-        self, did_doc: DIDDocument, values_or_refs=List[str]
+        self, did_doc: BaseDIDDocument, values_or_refs=List[str]
     ) -> List[str]:
         """resolve verkey_references in DIDDocument and return a list of b58 encoded verkeys"""
         result = []
@@ -711,7 +711,7 @@ class BaseConnectionManager:
 
     def diddoc_connection_targets(
         self,
-        doc: DIDDocument,
+        doc: BaseDIDDocument,
         sender_verkey: str,
         their_label: Optional[str] = None,
     ) -> Sequence[ConnectionTarget]:
@@ -733,6 +733,8 @@ class BaseConnectionManager:
 
         targets = []
         for service in doc.service:
+            if not isinstance(service, DIDCommV1Service):
+                self._logger.warning("Unexpected service type in DIDDocument()")
             recipient_verkeys = self.resolve_verkey_references(
                 doc, service.recipient_keys
             )
@@ -748,7 +750,7 @@ class BaseConnectionManager:
             )
         return targets
 
-    async def fetch_did_document(self, did: str) -> Tuple[DIDDocument, StorageRecord]:
+    async def fetch_did_document(self, did: str) -> Tuple[BaseDIDDocument, StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
