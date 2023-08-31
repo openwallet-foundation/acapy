@@ -4,8 +4,7 @@ import asyncio
 import json
 import logging
 
-from typing import List, Sequence, Tuple, Union
-from pydid import DIDDocument
+from typing import List, Sequence, Tuple, Union, Optional
 
 from aries_askar import (
     AskarError,
@@ -150,10 +149,10 @@ class AskarWallet(BaseWallet):
         self,
         method: DIDMethod,
         key_type: KeyType,
-        seed: str = None,
-        did: str = None, 
-        metadata: dict = None,
-        keypair: Key = None,
+        seed: Optional[str] = None,
+        did: Optional[str] = None, 
+        metadata: Optional[dict] = None,
+        keypair: Optional[Key] = None,
     ) -> DIDInfo:
         """
         Create and store a new local DID.

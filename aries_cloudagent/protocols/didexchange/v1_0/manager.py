@@ -1068,7 +1068,7 @@ class DIDXManager(BaseConnectionManager):
         self,
         wallet: BaseWallet,
         attached: AttachDecorator,
-        invi_key: str = None,
+        invi_key: Optional[str] = None,
     ) -> ResolvedDocument:
         """Verify DIDDoc attachment and return signed data."""
 
