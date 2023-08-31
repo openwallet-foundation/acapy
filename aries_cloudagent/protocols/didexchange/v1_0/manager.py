@@ -903,9 +903,9 @@ class DIDXManager(BaseConnectionManager):
     ) -> DIDXProblemReport:
         """Abandon an existing DID exchange."""
         state_to_reject_code = {
-            ConnRecord.State.INVITATION.rfc160
+            ConnRecord.State.INVITATION.rfc23
             + "-received": ProblemReportReason.INVITATION_NOT_ACCEPTED,
-            ConnRecord.State.REQUEST.rfc160
+            ConnRecord.State.REQUEST.rfc23
             + "-received": ProblemReportReason.REQUEST_NOT_ACCEPTED,
         }
         code = state_to_reject_code.get(conn_rec.rfc23_state)
