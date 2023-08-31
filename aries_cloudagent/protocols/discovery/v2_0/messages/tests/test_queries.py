@@ -1,5 +1,4 @@
 from unittest import mock, TestCase
-from marshmallow import ValidationError
 
 from .....didcomm_prefix import DIDCommPrefix
 

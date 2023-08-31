@@ -183,8 +183,7 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
 @request_schema(InvitationCreateRequestSchema())
 @response_schema(InvitationRecordSchema(), description="")
 async def invitation_create(request: web.BaseRequest):
-    """
-    Request handler for creating a new connection invitation.
+    """Request handler for creating a new connection invitation.
 
     Args:
         request: aiohttp request object
@@ -245,8 +244,7 @@ async def invitation_create(request: web.BaseRequest):
 @request_schema(InvitationMessageSchema())
 @response_schema(OobRecordSchema(), 200, description="")
 async def invitation_receive(request: web.BaseRequest):
-    """
-    Request handler for receiving a new connection invitation.
+    """Request handler for receiving a new connection invitation.
 
     Args:
         request: aiohttp request object

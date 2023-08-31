@@ -4,10 +4,6 @@ import indy_vdr
 import pytest
 from asynctest import mock as async_mock
 
-from aries_cloudagent.messaging.valid import (
-    ENDPOINT_TYPE_EXAMPLE,
-    ENDPOINT_TYPE_VALIDATE,
-)
 
 from ...core.in_memory import InMemoryProfile
 from ...indy.issuer import IndyIssuer
@@ -15,7 +11,7 @@ from ...wallet.base import BaseWallet
 from ...wallet.did_info import DIDInfo
 from ...wallet.did_method import SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from ...wallet.did_posture import DIDPosture
-from ...wallet.key_type import ED25519, KeyType
+from ...wallet.key_type import ED25519
 from ..endpoint_type import EndpointType
 from ..indy_vdr import (
     BadLedgerRequestError,
@@ -813,7 +809,7 @@ class TestIndyVdrLedger:
         async with ledger:
             await ledger.register_nym(post_did.did, post_did.verkey)
         did = await wallet.get_local_did(post_did.did)
-        assert did.metadata["posted"] == True
+        assert did.metadata["posted"] is True
 
     @pytest.mark.asyncio
     async def test_register_nym_non_local(
@@ -1008,7 +1004,7 @@ class TestIndyVdrLedger:
 
     @pytest.mark.asyncio
     async def test_credential_definition_id2schema_id(self, ledger: IndyVdrLedger):
-        S_ID = f"55GkHamhTU1ZbTbV2ab9DE:2:favourite_drink:1.0"
+        S_ID = "55GkHamhTU1ZbTbV2ab9DE:2:favourite_drink:1.0"
         SEQ_NO = "9999"
 
         async with ledger:

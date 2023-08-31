@@ -18,8 +18,7 @@ class TransactionRequestHandler(BaseHandler):
     """Handler class for transaction request."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle transaction request.
+        """Handle transaction request.
 
         Args:
             context: Request context

@@ -36,8 +36,7 @@ class V20PresProposal(AgentMessage):
         proposals_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize pres proposal object.
+        """Initialize pres proposal object.
 
         Args:
             comment: optional human-readable comment
@@ -50,8 +49,7 @@ class V20PresProposal(AgentMessage):
         self.proposals_attach = list(proposals_attach) if proposals_attach else []
 
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
-        """
-        Return attached proposal item.
+        """Return attached proposal item.
 
         Args:
             fmt: format of attachment in list to decode and return

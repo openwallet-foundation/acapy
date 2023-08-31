@@ -30,8 +30,7 @@ class BaseWireFormat:
         session: ProfileSession,
         message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
-        """
-        Deserialize an incoming message and further populate the request context.
+        """Deserialize an incoming message and further populate the request context.
 
         Args:
             session: The profile session for providing wallet access
@@ -54,8 +53,7 @@ class BaseWireFormat:
         routing_keys: Sequence[str],
         sender_key: str,
     ) -> Union[str, bytes]:
-        """
-        Encode an outgoing message for transport.
+        """Encode an outgoing message for transport.
 
         Args:
             session: The profile session for providing wallet access
@@ -74,8 +72,7 @@ class BaseWireFormat:
 
     @abstractmethod
     def get_recipient_keys(self, message_body: Union[str, bytes]) -> List[str]:
-        """
-        Get all recipient keys from a wire message.
+        """Get all recipient keys from a wire message.
 
         Args:
             message_body: The body of the message
@@ -98,8 +95,7 @@ class JsonWireFormat(BaseWireFormat):
         session: ProfileSession,
         message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
-        """
-        Deserialize an incoming message and further populate the request context.
+        """Deserialize an incoming message and further populate the request context.
 
         Args:
             session: The profile session for providing wallet access
@@ -154,8 +150,7 @@ class JsonWireFormat(BaseWireFormat):
         routing_keys: Sequence[str],
         sender_key: str,
     ) -> Union[str, bytes]:
-        """
-        Encode an outgoing message for transport.
+        """Encode an outgoing message for transport.
 
         Args:
             session: The profile session for providing wallet access
@@ -174,8 +169,7 @@ class JsonWireFormat(BaseWireFormat):
         return message_json
 
     def get_recipient_keys(self, message_body: Union[str, bytes]) -> List[str]:
-        """
-        Get all recipient keys from a wire message.
+        """Get all recipient keys from a wire message.
 
         Args:
             message_body: The body of the message

@@ -1,4 +1,3 @@
-import pytest
 from asynctest import (
     mock as async_mock,
     TestCase as AsyncTestCase,

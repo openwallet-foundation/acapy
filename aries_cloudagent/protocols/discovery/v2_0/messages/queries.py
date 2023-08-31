@@ -62,8 +62,7 @@ class Queries(AgentMessage):
         schema_class = "QueriesSchema"
 
     def __init__(self, *, queries: Sequence[QueryItem] = None, **kwargs):
-        """
-        Initialize query message object.
+        """Initialize query message object.
 
         Args:
             query: The query string to match against supported message types

@@ -3,7 +3,7 @@ from unittest import mock, TestCase
 from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import PROTOCOL_PACKAGE, ROUTE_QUERY_REQUEST
-from ...models.paginate import Paginate, PaginateSchema
+from ...models.paginate import Paginate
 
 from ..route_query_request import RouteQueryRequest
 

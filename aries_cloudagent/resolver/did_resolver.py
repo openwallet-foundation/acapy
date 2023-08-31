@@ -1,5 +1,4 @@
-"""
-the did resolver.
+"""the did resolver.
 
 responsible for keeping track of all resolvers. more importantly
 retrieving did's from different sources provided by the method type.

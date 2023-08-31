@@ -32,8 +32,7 @@ class IndySdkVCHolder(VCHolder):
         return type_or_schema_query
 
     async def store_credential(self, cred: VCRecord):
-        """
-        Add a new VC record to the store.
+        """Add a new VC record to the store.
 
         Args:
             cred: The VCRecord instance to store
@@ -45,8 +44,7 @@ class IndySdkVCHolder(VCHolder):
         await self._store.add_record(record)
 
     async def retrieve_credential_by_id(self, record_id: str) -> VCRecord:
-        """
-        Fetch a VC record by its record ID.
+        """Fetch a VC record by its record ID.
 
         Raises:
             StorageNotFoundError: If the record is not found
@@ -56,8 +54,7 @@ class IndySdkVCHolder(VCHolder):
         return storage_to_vc_record(record)
 
     async def retrieve_credential_by_given_id(self, given_id: str) -> VCRecord:
-        """
-        Fetch a VC record by its given ID ('id' property).
+        """Fetch a VC record by its given ID ('id' property).
 
         Raises:
             StorageNotFoundError: If the record is not found
@@ -69,8 +66,7 @@ class IndySdkVCHolder(VCHolder):
         return storage_to_vc_record(record)
 
     async def delete_credential(self, cred: VCRecord):
-        """
-        Remove a previously-stored VC record.
+        """Remove a previously-stored VC record.
 
         Raises:
             StorageNotFoundError: If the record is not found
@@ -90,8 +86,7 @@ class IndySdkVCHolder(VCHolder):
         tag_query: Mapping = None,
         pd_uri_list: Sequence[str] = None,
     ) -> "VCRecordSearch":
-        """
-        Start a new VC record search.
+        """Start a new VC record search.
 
         Args:
             contexts: An inclusive list of JSON-LD contexts to match
@@ -144,8 +139,7 @@ class IndySdkVCRecordSearch(VCRecordSearch):
         await self._search.close()
 
     async def fetch(self, max_count: int = None) -> Sequence[VCRecord]:
-        """
-        Fetch the next list of VC records from the store.
+        """Fetch the next list of VC records from the store.
 
         Args:
             max_count: Max number of records to return. If not provided,

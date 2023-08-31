@@ -33,8 +33,7 @@ class ConnectionProblemReport(AgentMessage):
         schema_class = "ConnectionProblemReportSchema"
 
     def __init__(self, *, problem_code: str = None, explain: str = None, **kwargs):
-        """
-        Initialize a ProblemReport message instance.
+        """Initialize a ProblemReport message instance.
 
         Args:
             explain: The localized error explanation

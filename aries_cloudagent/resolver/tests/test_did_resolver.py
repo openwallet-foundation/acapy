@@ -6,7 +6,6 @@ import re
 
 import pytest
 
-from asynctest import mock as async_mock
 from pydid import DID, DIDDocument, VerificationMethod, BasicDIDDocument
 
 from ...core.in_memory import InMemoryProfile

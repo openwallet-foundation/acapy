@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from ...valid import UUID4_EXAMPLE
-from ..transport_decorator import TransportDecorator, TransportDecoratorSchema
+from ..transport_decorator import TransportDecorator
 
 
 class TestTransportDecorator(TestCase):

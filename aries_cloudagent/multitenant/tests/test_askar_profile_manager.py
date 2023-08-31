@@ -67,8 +67,8 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
                 wallet_config_settings_argument.get("wallet.name")
                 == self.DEFAULT_MULTIENANT_WALLET_NAME
             )
-            assert wallet_config_settings_argument.get("wallet.id") == None
-            assert wallet_config_settings_argument.get("auto_provision") == True
+            assert wallet_config_settings_argument.get("wallet.id") is None
+            assert wallet_config_settings_argument.get("auto_provision") is True
             assert wallet_config_settings_argument.get("wallet.type") == "askar"
             AskarProfile.assert_called_with(
                 sub_wallet_profile.opened, sub_wallet_profile_context, profile_id="test"
@@ -79,7 +79,7 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
             )
             assert sub_wallet_profile_context.settings.get("wallet.name") == "test_name"
             assert sub_wallet_profile_context.settings.get("wallet.type") == "test_type"
-            assert sub_wallet_profile_context.settings.get("mediation.open") == True
+            assert sub_wallet_profile_context.settings.get("mediation.open") is True
             assert (
                 sub_wallet_profile_context.settings.get("mediation.invite")
                 == "http://invite.com"
@@ -88,7 +88,7 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
                 sub_wallet_profile_context.settings.get("mediation.default_id")
                 == "24a96ef5"
             )
-            assert sub_wallet_profile_context.settings.get("mediation.clear") == True
+            assert sub_wallet_profile_context.settings.get("mediation.clear") is True
             assert (
                 sub_wallet_profile_context.settings.get("wallet.id")
                 == wallet_record.wallet_id

@@ -133,18 +133,14 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
 
         # Always reveal all the statements associated to the original proof
         # these are always the first statements in the normalized form
-        proof_reveal_indices = [indice for indice in range(number_of_proof_statements)]
+        proof_reveal_indices = list(range(number_of_proof_statements))
 
         # Reveal the statements indicated from the reveal document
-        document_reveal_indices = list(
-            map(
-                lambda reveal_statement: transformed_input_document_statements.index(
-                    reveal_statement
-                )
-                + number_of_proof_statements,
-                reveal_document_statements,
-            )
-        )
+        document_reveal_indices = [
+            transformed_input_document_statements.index(reveal_statement)
+            + number_of_proof_statements
+            for reveal_statement in reveal_document_statements
+        ]
 
         # Check there is not a mismatch
         if len(document_reveal_indices) != len(reveal_document_statements):

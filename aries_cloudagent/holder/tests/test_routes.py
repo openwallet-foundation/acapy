@@ -2,14 +2,10 @@ import json
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from ...config.injection_context import InjectionContext
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
-from ...wallet.base import BaseWallet
 
-from ...admin.request_context import AdminRequestContext
 from ...indy.holder import IndyHolder
-from ...ledger.base import BaseLedger
 from ...storage.vc_holder.base import VCHolder
 from ...storage.vc_holder.vc_record import VCRecord
 

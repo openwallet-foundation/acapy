@@ -11,8 +11,7 @@ async def indy_proof_req_preview2indy_requested_creds(
     *,
     holder: IndyHolder,
 ):
-    """
-    Build indy requested-credentials structure.
+    """Build indy requested-credentials structure.
 
     Given input proof request and presentation preview, use credentials in
     holder's wallet to build indy requested credentials structure for input

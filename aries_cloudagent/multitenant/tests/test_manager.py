@@ -125,15 +125,15 @@ class TestMultitenantManager(AsyncTestCase):
                 self.profile.context, wallet_record
             )
 
-            assert profile.settings.get("wallet.recreate") == False
-            assert profile.settings.get("wallet.seed") == None
-            assert profile.settings.get("wallet.rekey") == None
-            assert profile.settings.get("wallet.name") == None
-            assert profile.settings.get("wallet.type") == None
-            assert profile.settings.get("mediation.open") == None
-            assert profile.settings.get("mediation.invite") == None
-            assert profile.settings.get("mediation.default_id") == None
-            assert profile.settings.get("mediation.clear") == None
+            assert profile.settings.get("wallet.recreate") is False
+            assert profile.settings.get("wallet.seed") is None
+            assert profile.settings.get("wallet.rekey") is None
+            assert profile.settings.get("wallet.name") is None
+            assert profile.settings.get("wallet.type") is None
+            assert profile.settings.get("mediation.open") is None
+            assert profile.settings.get("mediation.invite") is None
+            assert profile.settings.get("mediation.default_id") is None
+            assert profile.settings.get("mediation.clear") is None
 
     async def test_get_wallet_profile_settings_reset_overwrite(self):
         wallet_record = WalletRecord(
@@ -164,15 +164,15 @@ class TestMultitenantManager(AsyncTestCase):
                 self.profile.context, wallet_record
             )
 
-            assert profile.settings.get("wallet.recreate") == True
+            assert profile.settings.get("wallet.recreate") is True
             assert profile.settings.get("wallet.seed") == "test_seed"
             assert profile.settings.get("wallet.rekey") == "test_rekey"
             assert profile.settings.get("wallet.name") == "test_name"
             assert profile.settings.get("wallet.type") == "test_type"
-            assert profile.settings.get("mediation.open") == True
+            assert profile.settings.get("mediation.open") is True
             assert profile.settings.get("mediation.invite") == "http://invite.com"
             assert profile.settings.get("mediation.default_id") == "24a96ef5"
-            assert profile.settings.get("mediation.clear") == True
+            assert profile.settings.get("mediation.clear") is True
 
     async def test_update_wallet_update_wallet_profile(self):
         with async_mock.patch.object(

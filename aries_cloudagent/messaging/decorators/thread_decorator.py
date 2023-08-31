@@ -1,5 +1,4 @@
-"""
-A message decorator for threads.
+"""A message decorator for threads.
 
 A thread decorator identifies a message that may require additional
 context from previous messages.
@@ -29,8 +28,7 @@ class ThreadDecorator(BaseModel):
         sender_order: int = None,
         received_orders: Mapping = None,
     ):
-        """
-        Initialize a ThreadDecorator instance.
+        """Initialize a ThreadDecorator instance.
 
         Args:
             thid: The ID of the message that serves as the
@@ -55,8 +53,7 @@ class ThreadDecorator(BaseModel):
 
     @property
     def thid(self):
-        """
-        Accessor for thread identifier.
+        """Accessor for thread identifier.
 
         Returns:
             This thread's `thid`
@@ -66,8 +63,7 @@ class ThreadDecorator(BaseModel):
 
     @property
     def pthid(self):
-        """
-        Accessor for parent thread identifier.
+        """Accessor for parent thread identifier.
 
         Returns:
             This thread's `pthid`
@@ -77,8 +73,7 @@ class ThreadDecorator(BaseModel):
 
     @pthid.setter
     def pthid(self, val: str):
-        """
-        Setter for parent thread identifier.
+        """Setter for parent thread identifier.
 
         Args:
             val: The new pthid
@@ -87,8 +82,7 @@ class ThreadDecorator(BaseModel):
 
     @property
     def received_orders(self) -> dict:
-        """
-        Get received orders.
+        """Get received orders.
 
         Returns:
             The highest sender_order value that the sender has seen from other
@@ -99,8 +93,7 @@ class ThreadDecorator(BaseModel):
 
     @property
     def sender_order(self) -> int:
-        """
-        Get sender order.
+        """Get sender order.
 
         Returns:
             A number that tells where this message fits in the sequence of all

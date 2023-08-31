@@ -1,5 +1,4 @@
-"""
-DID Document model support.
+"""DID Document model support.
 
 Copyright 2017-2019 Government of Canada
 Public Services and Procurement Canada - buyandsell.gc.ca

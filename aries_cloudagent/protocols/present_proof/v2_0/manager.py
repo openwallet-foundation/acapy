@@ -30,8 +30,7 @@ class V20PresManager:
     """Class for managing presentations."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a V20PresManager.
+        """Initialize a V20PresManager.
 
         Args:
             profile: The profile instance for this presentation manager
@@ -46,8 +45,7 @@ class V20PresManager:
         auto_present: bool = None,
         auto_remove: bool = None,
     ):
-        """
-        Create a presentation exchange record for input presentation proposal.
+        """Create a presentation exchange record for input presentation proposal.
 
         Args:
             connection_id: connection identifier
@@ -85,8 +83,7 @@ class V20PresManager:
     async def receive_pres_proposal(
         self, message: V20PresProposal, conn_record: ConnRecord
     ):
-        """
-        Receive a presentation proposal from message in context on manager creation.
+        """Receive a presentation proposal from message in context on manager creation.
 
         Returns:
             Presentation exchange record, created
@@ -116,8 +113,7 @@ class V20PresManager:
         request_data: dict = None,
         comment: str = None,
     ):
-        """
-        Create a presentation request bound to a proposal.
+        """Create a presentation request bound to a proposal.
 
         Args:
             pres_ex_record: Presentation exchange record for which
@@ -173,8 +169,7 @@ class V20PresManager:
         auto_verify: bool = None,
         auto_remove: bool = None,
     ):
-        """
-        Create a presentation exchange record for input presentation request.
+        """Create a presentation exchange record for input presentation request.
 
         Args:
             connection_id: connection identifier
@@ -208,8 +203,7 @@ class V20PresManager:
         return pres_ex_record
 
     async def receive_pres_request(self, pres_ex_record: V20PresExRecord):
-        """
-        Receive a presentation request.
+        """Receive a presentation request.
 
         Args:
             pres_ex_record: presentation exchange record with request to receive
@@ -233,8 +227,7 @@ class V20PresManager:
         *,
         comment: str = None,
     ) -> Tuple[V20PresExRecord, V20Pres]:
-        """
-        Create a presentation.
+        """Create a presentation.
 
         Args:
             pres_ex_record: record to update
@@ -323,8 +316,7 @@ class V20PresManager:
         connection_record: Optional[ConnRecord],
         oob_record: Optional[OobRecord],
     ):
-        """
-        Receive a presentation, from message in context on manager creation.
+        """Receive a presentation, from message in context on manager creation.
 
         Returns:
             presentation exchange record, retrieved and updated
@@ -385,8 +377,7 @@ class V20PresManager:
     async def verify_pres(
         self, pres_ex_record: V20PresExRecord, responder: Optional[BaseResponder] = None
     ):
-        """
-        Verify a presentation.
+        """Verify a presentation.
 
         Args:
             pres_ex_record: presentation exchange record
@@ -423,8 +414,7 @@ class V20PresManager:
     async def send_pres_ack(
         self, pres_ex_record: V20PresExRecord, responder: Optional[BaseResponder] = None
     ):
-        """
-        Send acknowledgement of presentation receipt.
+        """Send acknowledgement of presentation receipt.
 
         Args:
             pres_ex_record: presentation exchange record with thread id
@@ -456,8 +446,7 @@ class V20PresManager:
             )
 
     async def receive_pres_ack(self, message: V20PresAck, conn_record: ConnRecord):
-        """
-        Receive a presentation ack, from message in context on manager creation.
+        """Receive a presentation ack, from message in context on manager creation.
 
         Returns:
             presentation exchange record, retrieved and updated
@@ -489,8 +478,7 @@ class V20PresManager:
     async def receive_problem_report(
         self, message: V20PresProblemReport, connection_id: str
     ):
-        """
-        Receive problem report.
+        """Receive problem report.
 
         Returns:
             presentation exchange record, retrieved and updated

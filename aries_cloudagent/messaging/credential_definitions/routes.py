@@ -183,8 +183,7 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
 @querystring_schema(CredDefConnIdMatchInfoSchema())
 @response_schema(TxnOrCredentialDefinitionSendResultSchema(), 200, description="")
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
-    """
-    Request handler for sending a credential definition to the ledger.
+    """Request handler for sending a credential definition to the ledger.
 
     Args:
         request: aiohttp request object
@@ -371,8 +370,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 @querystring_schema(CredDefQueryStringSchema())
 @response_schema(CredentialDefinitionsCreatedResultSchema(), 200, description="")
 async def credential_definitions_created(request: web.BaseRequest):
-    """
-    Request handler for retrieving credential definitions that current agent created.
+    """Request handler for retrieving credential definitions that current agent created.
 
     Args:
         request: aiohttp request object
@@ -404,8 +402,7 @@ async def credential_definitions_created(request: web.BaseRequest):
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
-    """
-    Request handler for getting a credential definition from the ledger.
+    """Request handler for getting a credential definition from the ledger.
 
     Args:
         request: aiohttp request object
@@ -451,8 +448,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
 async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseRequest):
-    """
-    Request handler for fixing a credential definition wallet non-secret record.
+    """Request handler for fixing a credential definition wallet non-secret record.
 
     Args:
         request: aiohttp request object
@@ -560,8 +556,7 @@ async def on_cred_def_event(profile: Profile, event: Event):
 async def add_cred_def_non_secrets_record(
     profile: Profile, schema_id: str, issuer_did: str, credential_definition_id: str
 ):
-    """
-    Write the wallet non-secrets record for cred def (already written to the ledger).
+    """Write the wallet non-secrets record for cred def (already written to the ledger).
 
     Note that the cred def private key signing informtion must already exist in the
     wallet.

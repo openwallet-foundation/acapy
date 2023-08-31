@@ -33,8 +33,7 @@ class RouteQueryResponse(AgentMessage):
         paginated: Paginated = None,
         **kwargs,
     ):
-        """
-        Initialize a RouteQueryResponse message instance.
+        """Initialize a RouteQueryResponse message instance.
 
         Args:
             filter: Filter results according to specific field values

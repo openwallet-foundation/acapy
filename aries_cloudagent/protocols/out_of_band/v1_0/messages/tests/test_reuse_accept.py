@@ -1,14 +1,13 @@
 """Test Reuse Accept Message."""
 import pytest
 
-from asynctest import TestCase as AsyncTestCase
-from unittest import mock, TestCase
+from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ..reuse_accept import HandshakeReuseAccept, HandshakeReuseAcceptSchema
+from ..reuse_accept import HandshakeReuseAccept
 
 
 class TestReuseAcceptMessage(TestCase):

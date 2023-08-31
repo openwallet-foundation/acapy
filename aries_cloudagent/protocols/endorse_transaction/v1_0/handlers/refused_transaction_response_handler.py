@@ -15,8 +15,7 @@ class RefusedTransactionResponseHandler(BaseHandler):
     """Handler class for Refused transaction response."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle refused transaction response.
+        """Handle refused transaction response.
 
         Args:
             context: Request context

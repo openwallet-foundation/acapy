@@ -1,8 +1,5 @@
-import asyncio
 import json
 
-from copy import deepcopy
-from time import time
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
@@ -46,7 +43,6 @@ from . import (
     REV_REG_DEF,
     SCHEMA,
     SCHEMA_ID,
-    TEST_DID,
 )
 
 CRED_REQ = V20CredRequest(

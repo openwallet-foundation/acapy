@@ -1,5 +1,4 @@
-"""
-The Dispatcher.
+"""The Dispatcher.
 
 The dispatcher is responsible for coordinating data flow between handlers, providing
 lifecycle hook callbacks storing state for message threads, etc.
@@ -42,8 +41,7 @@ class ProblemReportParseError(MessageParseError):
 
 
 class Dispatcher:
-    """
-    Dispatcher class.
+    """Dispatcher class.
 
     Class responsible for dispatching messages to message handlers and responding
     to other agents.
@@ -102,8 +100,7 @@ class Dispatcher:
         send_outbound: Coroutine,
         complete: Callable = None,
     ) -> PendingTask:
-        """
-        Add a message to the processing queue for handling.
+        """Add a message to the processing queue for handling.
 
         Args:
             profile: The profile associated with the inbound message
@@ -126,8 +123,7 @@ class Dispatcher:
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
     ):
-        """
-        Configure responder and message context and invoke the message handler.
+        """Configure responder and message context and invoke the message handler.
 
         Args:
             profile: The profile associated with the inbound message
@@ -270,8 +266,7 @@ class Dispatcher:
     async def make_message(
         self, profile: Profile, parsed_msg: dict
     ) -> Tuple[BaseMessage, Optional[str]]:
-        """
-        Deserialize a message dict into the appropriate message instance.
+        """Deserialize a message dict into the appropriate message instance.
 
         Given a dict describing a message, this method
         returns an instance of the related message class.
@@ -332,8 +327,7 @@ class DispatcherResponder(BaseResponder):
         send_outbound: Coroutine,
         **kwargs,
     ):
-        """
-        Initialize an instance of `DispatcherResponder`.
+        """Initialize an instance of `DispatcherResponder`.
 
         Args:
             context: The request context of the incoming message
@@ -352,8 +346,7 @@ class DispatcherResponder(BaseResponder):
     async def create_outbound(
         self, message: Union[AgentMessage, BaseMessage, str, bytes], **kwargs
     ) -> OutboundMessage:
-        """
-        Create an OutboundMessage from a message body.
+        """Create an OutboundMessage from a message body.
 
         Args:
             message: The message payload
@@ -376,8 +369,7 @@ class DispatcherResponder(BaseResponder):
     async def send_outbound(
         self, message: OutboundMessage, **kwargs
     ) -> OutboundSendStatus:
-        """
-        Send outbound message.
+        """Send outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
@@ -406,8 +398,7 @@ class DispatcherResponder(BaseResponder):
         return await self._send(context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
-        """
-        Dispatch a webhook. DEPRECATED: use the event bus instead.
+        """Dispatch a webhook. DEPRECATED: use the event bus instead.
 
         Args:
             topic: the webhook topic identifier

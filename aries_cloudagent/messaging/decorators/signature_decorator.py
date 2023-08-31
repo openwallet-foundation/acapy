@@ -37,8 +37,7 @@ class SignatureDecorator(BaseModel):
         sig_data: str = None,
         signer: str = None,
     ):
-        """
-        Initialize a FieldSignature instance.
+        """Initialize a FieldSignature instance.
 
         Args:
             signature_type: Type of signature
@@ -55,8 +54,7 @@ class SignatureDecorator(BaseModel):
     async def create(
         cls, value, signer: str, wallet: BaseWallet, timestamp=None
     ) -> "SignatureDecorator":
-        """
-        Create a Signature.
+        """Create a Signature.
 
         Sign a field value and return a newly constructed `SignatureDecorator`
         representing the resulting signature.
@@ -86,8 +84,7 @@ class SignatureDecorator(BaseModel):
         )
 
     def decode(self) -> (object, int):
-        """
-        Decode the signature to its timestamp and value.
+        """Decode the signature to its timestamp and value.
 
         Returns:
             A tuple of (decoded message, timestamp)
@@ -98,8 +95,7 @@ class SignatureDecorator(BaseModel):
         return (json.loads(msg_bin[8:]), timestamp)
 
     async def verify(self, wallet: BaseWallet) -> bool:
-        """
-        Verify the signature against the signer's public key.
+        """Verify the signature against the signer's public key.
 
         Args:
             wallet: Wallet to use to verify signature

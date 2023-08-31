@@ -24,8 +24,7 @@ class MenuForm(BaseModel):
         params: Sequence[MenuFormParam] = None,
         submit_label: str = None,
     ):
-        """
-        Initialize a MenuForm instance.
+        """Initialize a MenuForm instance.
 
         Args:
             title: The menu form title

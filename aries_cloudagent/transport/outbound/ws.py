@@ -39,8 +39,7 @@ class WsTransport(BaseOutboundTransport):
         metadata: dict = None,
         api_key: str = None,
     ):
-        """
-        Handle message from queue.
+        """Handle message from queue.
 
         Args:
             profile: the profile that produced the message

@@ -1,5 +1,4 @@
-"""
-The transport decorator (~transport).
+"""The transport decorator (~transport).
 
 This decorator allows changes to agent response behaviour and queue status updates.
 """
@@ -25,8 +24,7 @@ class TransportDecorator(BaseModel):
         return_route_thread: str = None,
         queued_message_count: int = None,
     ):
-        """
-        Initialize a TransportDecorator instance.
+        """Initialize a TransportDecorator instance.
 
         Args:
             return_route: Set the return routing mode

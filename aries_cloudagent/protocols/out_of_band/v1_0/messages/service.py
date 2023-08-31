@@ -31,8 +31,7 @@ class Service(BaseModel):
         routing_keys: Sequence[str] = None,
         service_endpoint: str = None,
     ):
-        """
-        Initialize a Service instance.
+        """Initialize a Service instance.
 
         Args:
             id: An identifier for this service block

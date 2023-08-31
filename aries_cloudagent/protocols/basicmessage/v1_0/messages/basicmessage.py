@@ -34,8 +34,7 @@ class BasicMessage(AgentMessage):
         localization: str = None,
         **kwargs,
     ):
-        """
-        Initialize basic message object.
+        """Initialize basic message object.
 
         Args:
             sent_time: Time message was sent

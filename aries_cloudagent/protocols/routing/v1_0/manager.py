@@ -38,8 +38,7 @@ class RoutingManager:
     RECORD_TYPE = "forward_route"
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a RoutingManager.
+        """Initialize a RoutingManager.
 
         Args:
             profile: The profile instance for this manager
@@ -49,8 +48,7 @@ class RoutingManager:
             raise RoutingManagerError("Missing profile")
 
     async def get_recipient(self, recip_verkey: str) -> RouteRecord:
-        """
-        Resolve the recipient for a verkey.
+        """Resolve the recipient for a verkey.
 
         Args:
             recip_verkey: The verkey ("to") of the incoming Forward message
@@ -90,8 +88,7 @@ class RoutingManager:
     async def get_routes(
         self, client_connection_id: str = None, tag_filter: dict = None
     ) -> Sequence[RouteRecord]:
-        """
-        Fetch all routes associated with the current connection.
+        """Fetch all routes associated with the current connection.
 
         Args:
             client_connection_id: The ID of the connection record
@@ -135,8 +132,7 @@ class RoutingManager:
         recipient_key: str = None,
         internal_wallet_id: str = None,
     ) -> RouteRecord:
-        """
-        Create and store a new RouteRecord.
+        """Create and store a new RouteRecord.
 
         Args:
             client_connection_id: The ID of the connection record
@@ -167,8 +163,7 @@ class RoutingManager:
     async def update_routes(
         self, client_connection_id: str, updates: Sequence[RouteUpdate]
     ) -> Sequence[RouteUpdated]:
-        """
-        Update routes associated with the current connection.
+        """Update routes associated with the current connection.
 
         Args:
             client_connection_id: The ID of the connection record

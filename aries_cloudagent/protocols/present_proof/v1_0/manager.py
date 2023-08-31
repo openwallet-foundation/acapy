@@ -36,8 +36,7 @@ class PresentationManager:
     """Class for managing presentations."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a PresentationManager.
+        """Initialize a PresentationManager.
 
         Args:
             profile: The profile instance for this presentation manager
@@ -52,8 +51,7 @@ class PresentationManager:
         auto_present: bool = None,
         auto_remove: bool = None,
     ):
-        """
-        Create a presentation exchange record for input presentation proposal.
+        """Create a presentation exchange record for input presentation proposal.
 
         Args:
             connection_id: connection identifier
@@ -90,8 +88,7 @@ class PresentationManager:
     async def receive_proposal(
         self, message: PresentationProposal, connection_record: ConnRecord
     ):
-        """
-        Receive a presentation proposal from message in context on manager creation.
+        """Receive a presentation proposal from message in context on manager creation.
 
         Returns:
             Presentation exchange record, created
@@ -122,8 +119,7 @@ class PresentationManager:
         nonce: str = None,
         comment: str = None,
     ):
-        """
-        Create a presentation request bound to a proposal.
+        """Create a presentation request bound to a proposal.
 
         Args:
             presentation_exchange_record: Presentation exchange record for which
@@ -178,8 +174,7 @@ class PresentationManager:
         auto_verify: bool = None,
         auto_remove: bool = None,
     ):
-        """
-        Create a presentation exchange record for input presentation request.
+        """Create a presentation exchange record for input presentation request.
 
         Args:
             connection_id: connection identifier
@@ -215,8 +210,7 @@ class PresentationManager:
     async def receive_request(
         self, presentation_exchange_record: V10PresentationExchange
     ):
-        """
-        Receive a presentation request.
+        """Receive a presentation request.
 
         Args:
             presentation_exchange_record: presentation exchange record with
@@ -242,8 +236,7 @@ class PresentationManager:
         requested_credentials: dict,
         comment: str = None,
     ):
-        """
-        Create a presentation.
+        """Create a presentation.
 
         Args:
             presentation_exchange_record: Record to update
@@ -318,8 +311,7 @@ class PresentationManager:
         connection_record: Optional[ConnRecord],
         oob_record: Optional[OobRecord],
     ):
-        """
-        Receive a presentation, from message in context on manager creation.
+        """Receive a presentation, from message in context on manager creation.
 
         Returns:
             presentation exchange record, retrieved and updated
@@ -408,8 +400,7 @@ class PresentationManager:
         presentation_exchange_record: V10PresentationExchange,
         responder: Optional[BaseResponder] = None,
     ):
-        """
-        Verify a presentation.
+        """Verify a presentation.
 
         Args:
             presentation_exchange_record: presentation exchange record
@@ -457,8 +448,7 @@ class PresentationManager:
         presentation_exchange_record: V10PresentationExchange,
         responder: Optional[BaseResponder] = None,
     ):
-        """
-        Send acknowledgement of presentation receipt.
+        """Send acknowledgement of presentation receipt.
 
         Args:
             presentation_exchange_record: presentation exchange record with thread id
@@ -516,8 +506,7 @@ class PresentationManager:
     async def receive_presentation_ack(
         self, message: PresentationAck, connection_record: Optional[ConnRecord]
     ):
-        """
-        Receive a presentation ack, from message in context on manager creation.
+        """Receive a presentation ack, from message in context on manager creation.
 
         Returns:
             presentation exchange record, retrieved and updated
@@ -556,8 +545,7 @@ class PresentationManager:
     async def receive_problem_report(
         self, message: PresentationProblemReport, connection_id: str
     ):
-        """
-        Receive problem report.
+        """Receive problem report.
 
         Returns:
             presentation exchange record, retrieved and updated

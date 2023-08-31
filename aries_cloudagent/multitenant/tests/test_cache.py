@@ -59,7 +59,7 @@ def test_cleanup():
     cache.put("2", MockProfile())
 
     assert len(cache.profiles) == 1
-    assert cache.get("1") == None
+    assert cache.get("1") is None
 
 
 def test_cleanup_lru():

@@ -105,8 +105,7 @@ class ConnRecord(BaseRecord):
             return self is ConnRecord.Role.get(other)
 
     class State(Enum):
-        """
-        Collator for equivalent states between RFC 160 and RFC 23.
+        """Collator for equivalent states between RFC 160 and RFC 23.
 
         On the connection record, the state has to serve for both RFCs.
         Hence, internally, RFC23 requester/responder states collate to

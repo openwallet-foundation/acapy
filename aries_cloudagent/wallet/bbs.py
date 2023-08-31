@@ -54,8 +54,7 @@ def sign_messages_bls12381g2(messages: List[bytes], secret: bytes):
 def verify_signed_messages_bls12381g2(
     messages: List[bytes], signature: bytes, public_key: bytes
 ) -> bool:
-    """
-    Verify an ed25519 signed message according to a public verification key.
+    """Verify an ed25519 signed message according to a public verification key.
 
     Args:
         signed: The signed messages
@@ -84,8 +83,7 @@ def verify_signed_messages_bls12381g2(
 
 
 def create_bls12381g2_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
-    """
-    Create a public and private bls12381g2 keypair from a seed value.
+    """Create a public and private bls12381g2 keypair from a seed value.
 
     Args:
         seed: Seed for keypair

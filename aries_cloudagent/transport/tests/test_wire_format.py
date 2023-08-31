@@ -1,5 +1,3 @@
-import json
-
 from asynctest import TestCase as AsyncTestCase
 
 from ..wire_format import JsonWireFormat

@@ -385,8 +385,7 @@ async def upgrade(
 
 
 async def update_existing_records(profile: Profile):
-    """
-    Update existing records.
+    """Update existing records.
 
     Args:
         profile: Root profile

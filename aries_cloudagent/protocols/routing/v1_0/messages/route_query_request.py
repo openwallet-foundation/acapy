@@ -22,8 +22,7 @@ class RouteQueryRequest(AgentMessage):
         schema_class = "RouteQueryRequestSchema"
 
     def __init__(self, *, filter: dict = None, paginate: Paginate = None, **kwargs):
-        """
-        Initialize a RouteQueryRequest message instance.
+        """Initialize a RouteQueryRequest message instance.
 
         Args:
             filter: Filter results according to specific field values

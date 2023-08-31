@@ -18,8 +18,7 @@ class PresentationProposalHandler(BaseHandler):
     """Message handler class for presentation proposals."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for presentation proposals.
+        """Message handler logic for presentation proposals.
 
         Args:
             context: proposal context

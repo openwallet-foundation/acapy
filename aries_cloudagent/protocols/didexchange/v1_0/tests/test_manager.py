@@ -2082,7 +2082,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             conn_rec = await self.manager.accept_complete(mock_complete, receipt)
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
-    async def test_accept_complete(self):
+    async def test_accept_complete_with_disclose(self):
         mock_complete = async_mock.MagicMock()
         receipt = MessageReceipt(sender_did=TestConfig.test_target_did)
         self.context.update_settings({"auto_disclose_features": True})

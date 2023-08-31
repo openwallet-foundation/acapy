@@ -35,8 +35,7 @@ class V20CredExRecordWebhook:
         self,
         **kwargs,
     ):
-        """
-        Initialize webhook object from V20CredExRecord.
+        """Initialize webhook object from V20CredExRecord.
 
         from a list of accepted attributes.
         """

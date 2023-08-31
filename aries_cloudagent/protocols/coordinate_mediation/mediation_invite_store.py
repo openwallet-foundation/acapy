@@ -1,5 +1,4 @@
-"""
-Storage management for configuration-provided mediation invite.
+"""Storage management for configuration-provided mediation invite.
 
 Handle storage and retrieval of mediation invites provided through arguments.
 Enables having the mediation invite config be the same
@@ -30,8 +29,7 @@ class MediationInviteRecord(NamedTuple):
 
     @staticmethod
     def unused(invite: str) -> "MediationInviteRecord":
-        """
-        :param invite: invite string as provided by the mediator.
+        """:param invite: invite string as provided by the mediator.
 
         :return: An unused mediation invitation for the given invite string
         """
@@ -61,8 +59,7 @@ class MediationInviteStore:
     async def store(
         self, mediation_invite: MediationInviteRecord
     ) -> MediationInviteRecord:
-        """
-        Store the mediator's invite for further use when starting the agent.
+        """Store the mediator's invite for further use when starting the agent.
 
         Update the currently stored invite if one already exists.
         This assumes a new invite and as such, marks it as unused.
@@ -102,8 +99,7 @@ class MediationInviteStore:
     async def __update_mediation_record(
         self, provided_mediation_invitation: str
     ) -> MediationInviteRecord:
-        """
-        Update the stored invitation when a new invitation is provided.
+        """Update the stored invitation when a new invitation is provided.
 
         Stored value is only updated if `provided_mediation_invitation` has changed.
         Updated record is marked as unused.
@@ -121,8 +117,7 @@ class MediationInviteStore:
         return default_invite
 
     async def mark_default_invite_as_used(self):
-        """
-        Mark the currently stored invitation as used if one exists.
+        """Mark the currently stored invitation as used if one exists.
 
         :raises NoDefaultMediationInviteException:
             if trying to mark invite as used when there is no invite stored.
@@ -141,8 +136,7 @@ class MediationInviteStore:
     async def get_mediation_invite_record(
         self, provided_mediation_invitation: Optional[str]
     ) -> Optional[MediationInviteRecord]:
-        """
-        Provide the MediationInviteRecord to use/that was used for mediation.
+        """Provide the MediationInviteRecord to use/that was used for mediation.
 
         Returned record may have been used already.
 

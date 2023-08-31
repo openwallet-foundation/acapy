@@ -1,5 +1,3 @@
-from os import remove
-from tempfile import NamedTemporaryFile
 import pytest
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
@@ -10,7 +8,6 @@ from ...ledger.error import LedgerError
 from ...wallet.base import BaseWallet
 
 from .. import ledger as test_module
-from ..injection_context import InjectionContext
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
 TEST_GENESIS = "GENESIS"
@@ -698,7 +695,7 @@ class TestLedgerConfig(AsyncTestCase):
                 mock_ledger, mock_profile, taa_info, provision=False
             )
 
-    async def test_ledger_accept_taa_tty(self):
+    async def test_ledger_accept_taa(self):
         taa_info = {
             "taa_record": {"version": "1.0", "text": "Agreement"},
             "aml_record": {"aml": {"wallet_agreement": "", "on_file": ""}},

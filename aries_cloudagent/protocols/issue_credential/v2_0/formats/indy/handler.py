@@ -214,10 +214,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
-        schema_attrs = {attr for attr in schema["attrNames"]}
-        preview_attrs = {
-            attr for attr in cred_proposal_message.credential_preview.attr_dict()
-        }
+        schema_attrs = set(schema["attrNames"])
+        preview_attrs = set(cred_proposal_message.credential_preview.attr_dict())
         if preview_attrs != schema_attrs:
             raise V20CredFormatError(
                 f"Preview attributes {preview_attrs} "

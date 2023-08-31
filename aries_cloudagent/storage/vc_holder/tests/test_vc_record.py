@@ -145,7 +145,7 @@ class TestVCRecord(AsyncTestCase):
         assert record.proof_types == set(PROOF_TYPES)
         assert record.issuer_id == ISSUER_ID
         assert record.given_id == GIVEN_ID
-        assert record.record_id and type(record.record_id) is str
+        assert record.record_id and isinstance(record.record_id, str)
         assert record.cred_tags == CRED_TAGS
         assert record.cred_value == CRED_VALUE
 

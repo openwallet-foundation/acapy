@@ -93,8 +93,7 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Data must have exactly one of name or names; if names then restrictions are
         mandatory.
@@ -206,8 +205,7 @@ class IndyProofRequest(BaseModel):
         non_revoked: Mapping = None,
         **kwargs,
     ):
-        """
-        Initialize indy cred abstract object.
+        """Initialize indy cred abstract object.
 
         Args:
             schema_id: schema identifier

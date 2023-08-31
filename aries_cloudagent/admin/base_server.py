@@ -9,8 +9,7 @@ class BaseAdminServer(ABC):
 
     @abstractmethod
     async def start(self) -> None:
-        """
-        Start the webserver.
+        """Start the webserver.
 
         Raises:
             AdminSetupError: If there was an error starting the webserver

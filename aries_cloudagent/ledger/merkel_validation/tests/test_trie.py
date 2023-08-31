@@ -1,12 +1,10 @@
-import json
-
 from asynctest import TestCase
 
 from ..domain_txn_handler import (
     prepare_for_state_read,
     get_proof_nodes,
 )
-from ..hasher import TreeHasher, HexTreeHasher
+from ..hasher import HexTreeHasher
 from ..trie import SubTrie
 from ..merkel_verifier import MerkleVerifier
 

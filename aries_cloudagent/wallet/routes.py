@@ -369,8 +369,7 @@ def format_did_info(info: DIDInfo):
 @querystring_schema(DIDListQueryStringSchema())
 @response_schema(DIDListSchema, 200, description="")
 async def wallet_did_list(request: web.BaseRequest):
-    """
-    Request handler for searching wallet DIDs.
+    """Request handler for searching wallet DIDs.
 
     Args:
         request: aiohttp request object
@@ -477,8 +476,7 @@ async def wallet_did_list(request: web.BaseRequest):
 @request_schema(DIDCreateSchema())
 @response_schema(DIDResultSchema, 200, description="")
 async def wallet_create_did(request: web.BaseRequest):
-    """
-    Request handler for creating a new local DID in the wallet.
+    """Request handler for creating a new local DID in the wallet.
 
     Args:
         request: aiohttp request object
@@ -550,8 +548,7 @@ async def wallet_create_did(request: web.BaseRequest):
 @docs(tags=["wallet"], summary="Fetch the current public DID")
 @response_schema(DIDResultSchema, 200, description="")
 async def wallet_get_public_did(request: web.BaseRequest):
-    """
-    Request handler for fetching the current public DID.
+    """Request handler for fetching the current public DID.
 
     Args:
         request: aiohttp request object
@@ -581,8 +578,7 @@ async def wallet_get_public_did(request: web.BaseRequest):
 @querystring_schema(MediationIDSchema())
 @response_schema(DIDResultSchema, 200, description="")
 async def wallet_set_public_did(request: web.BaseRequest):
-    """
-    Request handler for setting the current public DID.
+    """Request handler for setting the current public DID.
 
     Args:
         request: aiohttp request object
@@ -796,8 +792,7 @@ async def promote_wallet_public_did(
 @querystring_schema(AttribConnIdMatchInfoSchema())
 @response_schema(WalletModuleResponseSchema(), description="")
 async def wallet_set_did_endpoint(request: web.BaseRequest):
-    """
-    Request handler for setting an endpoint for a DID.
+    """Request handler for setting an endpoint for a DID.
 
     Args:
         request: aiohttp request object
@@ -916,8 +911,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
 @request_schema(JWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
 async def wallet_jwt_sign(request: web.BaseRequest):
-    """
-        Request handler for jws creation using did.
+    """Request handler for jws creation using did.
 
     Args:
         "headers": { ... },
@@ -951,8 +945,7 @@ async def wallet_jwt_sign(request: web.BaseRequest):
 @request_schema(JWSVerifySchema())
 @response_schema(JWSVerifyResponseSchema(), 200, description="")
 async def wallet_jwt_verify(request: web.BaseRequest):
-    """
-        Request handler for jws validation using did.
+    """Request handler for jws validation using did.
 
     Args:
         "jwt": { ... }
@@ -981,8 +974,7 @@ async def wallet_jwt_verify(request: web.BaseRequest):
 @querystring_schema(DIDQueryStringSchema())
 @response_schema(DIDEndpointSchema, 200, description="")
 async def wallet_get_did_endpoint(request: web.BaseRequest):
-    """
-    Request handler for getting the current DID endpoint from the wallet.
+    """Request handler for getting the current DID endpoint from the wallet.
 
     Args:
         request: aiohttp request object
@@ -1015,8 +1007,7 @@ async def wallet_get_did_endpoint(request: web.BaseRequest):
 @querystring_schema(DIDQueryStringSchema())
 @response_schema(WalletModuleResponseSchema(), description="")
 async def wallet_rotate_did_keypair(request: web.BaseRequest):
-    """
-    Request handler for rotating local DID keypair.
+    """Request handler for rotating local DID keypair.
 
     Args:
         request: aiohttp request object

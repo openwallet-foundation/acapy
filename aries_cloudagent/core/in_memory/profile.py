@@ -18,8 +18,7 @@ WALLET_CLASS = DeferLoad("aries_cloudagent.wallet.in_memory.InMemoryWallet")
 
 
 class InMemoryProfile(Profile):
-    """
-    Provide access to in-memory profile management.
+    """Provide access to in-memory profile management.
 
     Used primarily for testing.
     """
@@ -54,8 +53,7 @@ class InMemoryProfile(Profile):
         return InMemoryProfileSession(self, context=context)
 
     def transaction(self, context: InjectionContext = None) -> "ProfileSession":
-        """
-        Start a new interactive session with commit and rollback support.
+        """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.

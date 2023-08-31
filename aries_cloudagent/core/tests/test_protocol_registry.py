@@ -296,4 +296,4 @@ class TestProtocolRegistry(AsyncTestCase):
             assert result is None
 
     def test_repr(self):
-        assert type(repr(self.registry)) is str
+        assert isinstance(repr(self.registry), str)

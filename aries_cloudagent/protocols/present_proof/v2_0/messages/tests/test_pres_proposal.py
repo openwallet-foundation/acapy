@@ -2,12 +2,6 @@ import pytest
 
 from unittest import TestCase
 
-from ......indy.models.pres_preview import (
-    IndyPresAttrSpec,
-    IndyPresPredSpec,
-    IndyPresPreview,
-    PRESENTATION_PREVIEW,
-)
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
 
@@ -18,7 +12,7 @@ from ...message_types import ATTACHMENT_FORMAT, PRES_20_PROPOSAL
 from ..pres_format import V20PresFormat
 from ..pres_proposal import V20PresProposal
 
-CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:12:tag1"
+CD_ID = "NcYxiDXkpYi6ov5FcYDi1e:3:CL:12:tag1"
 INDY_PROOF_REQ = [
     {
         "name": "proof-req",

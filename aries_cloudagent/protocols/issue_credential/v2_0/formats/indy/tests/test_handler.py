@@ -1,4 +1,3 @@
-import asyncio
 from copy import deepcopy
 from time import time
 import json
@@ -19,7 +18,6 @@ from .......indy.issuer import IndyIssuer
 from .......cache.in_memory import InMemoryCache
 from .......cache.base import BaseCache
 from .......storage.record import StorageRecord
-from .......storage.error import StorageNotFoundError
 from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......indy.holder import IndyHolder
@@ -41,7 +39,7 @@ from ....message_types import (
     CRED_20_ISSUE,
 )
 
-from ...handler import LOGGER, V20CredFormatError
+from ...handler import V20CredFormatError
 
 from ..handler import IndyCredFormatHandler
 from ..handler import LOGGER as INDY_LOGGER

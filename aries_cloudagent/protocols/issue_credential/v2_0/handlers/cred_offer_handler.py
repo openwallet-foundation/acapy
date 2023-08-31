@@ -21,8 +21,7 @@ class V20CredOfferHandler(BaseHandler):
     """Message handler class for credential offers."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for credential offers.
+        """Message handler logic for credential offers.
 
         Args:
             context: request context

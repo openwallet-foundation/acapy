@@ -6,10 +6,8 @@ from ......indy.models.pres_preview import (
     IndyPresPredSpec,
     IndyPresPreview,
 )
-from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 
-from ...message_types import PRESENTATION_PROPOSAL
 from ...messages.presentation_proposal import PresentationProposal
 
 from .. import presentation_exchange as test_module

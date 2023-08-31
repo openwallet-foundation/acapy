@@ -67,8 +67,7 @@ class InboundTransportManager:
             self.undelivered_queue = DeliveryQueue()
 
     def register(self, config: InboundTransportConfiguration) -> str:
-        """
-        Register transport module.
+        """Register transport module.
 
         Args:
             config: The inbound transport configuration
@@ -103,8 +102,7 @@ class InboundTransportManager:
     def register_transport(
         self, transport: BaseInboundTransport, transport_id: str
     ) -> str:
-        """
-        Register a new inbound transport class.
+        """Register a new inbound transport class.
 
         Args:
             transport: Transport instance to register
@@ -114,8 +112,7 @@ class InboundTransportManager:
         self.registered_transports[transport_id] = transport
 
     async def start_transport(self, transport_id: str):
-        """
-        Start a registered inbound transport.
+        """Start a registered inbound transport.
 
         Args:
             transport_id: ID for the inbound transport to start
@@ -149,8 +146,7 @@ class InboundTransportManager:
         client_info: dict = None,
         wire_format: BaseWireFormat = None,
     ):
-        """
-        Create a new inbound session.
+        """Create a new inbound session.
 
         Args:
             transport_type: The inbound transport identifier
@@ -184,8 +180,7 @@ class InboundTransportManager:
         message.dispatch_processing_complete()
 
     def closed_session(self, session: InboundSession):
-        """
-        Clean up a closed session.
+        """Clean up a closed session.
 
         Returns an undelivered message to the caller if possible.
         """
@@ -218,8 +213,7 @@ class InboundTransportManager:
         return accepted
 
     def return_undelivered(self, outbound: OutboundMessage) -> bool:
-        """
-        Add an undelivered message to the undelivered queue.
+        """Add an undelivered message to the undelivered queue.
 
         At this point the message could not be associated with an inbound
         session and could not be delivered via an outbound transport.
@@ -230,8 +224,7 @@ class InboundTransportManager:
         return False
 
     def process_undelivered(self, session: InboundSession):
-        """
-        Interact with undelivered queue to find applicable messages.
+        """Interact with undelivered queue to find applicable messages.
 
         Args:
             session: The inbound session

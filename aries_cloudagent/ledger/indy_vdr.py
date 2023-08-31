@@ -79,8 +79,7 @@ class IndyVdrLedgerPool:
         read_only: bool = False,
         socks_proxy: str = None,
     ):
-        """
-        Initialize an IndyLedger instance.
+        """Initialize an IndyLedger instance.
 
         Args:
             name: The pool ledger configuration name
@@ -259,8 +258,7 @@ class IndyVdrLedger(BaseLedger):
         pool: IndyVdrLedgerPool,
         profile: Profile,
     ):
-        """
-        Initialize an IndyVdrLedger instance.
+        """Initialize an IndyVdrLedger instance.
 
         Args:
             pool: The pool instance handling the raw ledger connection
@@ -297,8 +295,7 @@ class IndyVdrLedger(BaseLedger):
         return self.read_only
 
     async def __aenter__(self) -> "IndyVdrLedger":
-        """
-        Context manager entry.
+        """Context manager entry.
 
         Returns:
             The current instance
@@ -321,8 +318,7 @@ class IndyVdrLedger(BaseLedger):
         sign_did: DIDInfo = sentinel,
         write_ledger: bool = True,
     ) -> dict:
-        """
-        Sign and submit request to ledger.
+        """Sign and submit request to ledger.
 
         Args:
             request_json: The json string to submit
@@ -398,8 +394,7 @@ class IndyVdrLedger(BaseLedger):
         return schema_req
 
     async def get_schema(self, schema_id: str) -> dict:
-        """
-        Get a schema from the cache if available, otherwise fetch from the ledger.
+        """Get a schema from the cache if available, otherwise fetch from the ledger.
 
         Args:
             schema_id: The schema id (or stringified sequence number) to retrieve
@@ -416,8 +411,7 @@ class IndyVdrLedger(BaseLedger):
             return await self.fetch_schema_by_id(schema_id)
 
     async def fetch_schema_by_id(self, schema_id: str) -> dict:
-        """
-        Get schema from ledger.
+        """Get schema from ledger.
 
         Args:
             schema_id: The schema id (or stringified sequence number) to retrieve
@@ -463,8 +457,7 @@ class IndyVdrLedger(BaseLedger):
         return schema_data
 
     async def fetch_schema_by_seq_no(self, seq_no: int) -> dict:
-        """
-        Fetch a schema by its sequence number.
+        """Fetch a schema by its sequence number.
 
         Args:
             seq_no: schema ledger sequence number
@@ -517,8 +510,7 @@ class IndyVdrLedger(BaseLedger):
         return cred_def_req
 
     async def get_credential_definition(self, credential_definition_id: str) -> dict:
-        """
-        Get a credential definition from the cache if available, otherwise the ledger.
+        """Get a credential definition from the cache if available, otherwise the ledger.
 
         Args:
             credential_definition_id: The schema id of the schema to fetch cred def for
@@ -540,8 +532,7 @@ class IndyVdrLedger(BaseLedger):
         return await self.fetch_credential_definition(credential_definition_id)
 
     async def fetch_credential_definition(self, credential_definition_id: str) -> dict:
-        """
-        Get a credential definition from the ledger by id.
+        """Get a credential definition from the ledger by id.
 
         Args:
             credential_definition_id: The cred def id of the cred def to fetch
@@ -580,8 +571,7 @@ class IndyVdrLedger(BaseLedger):
         }
 
     async def credential_definition_id2schema_id(self, credential_definition_id):
-        """
-        From a credential definition, get the identifier for its schema.
+        """From a credential definition, get the identifier for its schema.
 
         Args:
             credential_definition_id: The identifier of the credential definition
@@ -754,8 +744,7 @@ class IndyVdrLedger(BaseLedger):
         write_ledger: bool = True,
         endorser_did: str = None,
     ) -> Tuple[bool, dict]:
-        """
-        Register a nym on the ledger.
+        """Register a nym on the ledger.
 
         Args:
             did: DID to register on the ledger.
@@ -799,8 +788,7 @@ class IndyVdrLedger(BaseLedger):
         return True, None
 
     async def get_nym_role(self, did: str) -> Role:
-        """
-        Return the role of the input public DID's NYM on the ledger.
+        """Return the role of the input public DID's NYM on the ledger.
 
         Args:
             did: DID to query for role on the ledger.
@@ -843,8 +831,7 @@ class IndyVdrLedger(BaseLedger):
         return response_json
 
     async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
-        """
-        Rotate keypair for public DID: create new key, submit to ledger, update wallet.
+        """Rotate keypair for public DID: create new key, submit to ledger, update wallet.
 
         Args:
             next_seed: seed for incoming ed25519 keypair (default random)
@@ -973,7 +960,7 @@ class IndyVdrLedger(BaseLedger):
                     TAA_ACCEPTED_RECORD_TYPE, tag_filter
                 )
             if found:
-                records = list(json.loads(record.value) for record in found)
+                records = [json.loads(record.value) for record in found]
                 records.sort(key=lambda v: v["time"], reverse=True)
                 acceptance = records[0]
             else:
@@ -1036,8 +1023,7 @@ class IndyVdrLedger(BaseLedger):
     async def get_revoc_reg_delta(
         self, revoc_reg_id: str, timestamp_from=0, timestamp_to=None
     ) -> Tuple[dict, int]:
-        """
-        Look up a revocation registry delta by ID.
+        """Look up a revocation registry delta by ID.
 
         :param revoc_reg_id revocation registry id
         :param timestamp_from from time. a total number of seconds from Unix Epoch

@@ -1,6 +1,5 @@
 import json
 
-from datetime import datetime, timezone
 from unittest import TestCase
 
 from .....didcomm_prefix import DIDCommPrefix

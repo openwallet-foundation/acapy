@@ -4,7 +4,6 @@ import pytest
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import Profile
 from ...messaging.responder import BaseResponder, MockResponder
-from ...messaging.responder import BaseResponder, MockResponder
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )

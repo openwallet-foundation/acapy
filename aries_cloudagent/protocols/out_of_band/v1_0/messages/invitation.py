@@ -126,8 +126,7 @@ class InvitationMessage(AgentMessage):
         goal: Optional[Text] = None,
         **kwargs,
     ):
-        """
-        Initialize invitation message object.
+        """Initialize invitation message object.
 
         Args:
             requests_attach: request attachments
@@ -152,8 +151,7 @@ class InvitationMessage(AgentMessage):
         return AttachDecorator.data_json(mapping=message, ident="request-0")
 
     def to_url(self, base_url: str = None) -> str:
-        """
-        Convert an invitation message to URL format for sharing.
+        """Convert an invitation message to URL format for sharing.
 
         Returns:
             An invite url
@@ -175,8 +173,7 @@ class InvitationMessage(AgentMessage):
 
     @classmethod
     def from_url(cls, url: str) -> "InvitationMessage":
-        """
-        Parse a URL-encoded invitation into an `InvitationMessage` instance.
+        """Parse a URL-encoded invitation into an `InvitationMessage` instance.
 
         Args:
             url: Url to decode
@@ -296,8 +293,7 @@ class InvitationMessageSchema(AgentMessageSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Args:
             data: The data to validate

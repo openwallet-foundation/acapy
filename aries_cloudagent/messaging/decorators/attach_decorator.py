@@ -1,5 +1,4 @@
-"""
-A message decorator for attachments.
+"""A message decorator for attachments.
 
 An attach decorator embeds content or specifies appended content.
 """
@@ -136,8 +135,7 @@ class AttachDecoratorData1JWSSchema(BaseModelSchema):
 
 
 class AttachDecoratorDataJWS(BaseModel):
-    """
-    Detached JSON Web Signature for inclusion in attach decorator data.
+    """Detached JSON Web Signature for inclusion in attach decorator data.
 
     May hold one signature in flattened format, or multiple signatures in the
     "signatures" member.
@@ -247,8 +245,7 @@ class AttachDecoratorData(BaseModel):
         base64_: str = None,
         json_: Union[Sequence[dict], dict] = None,
     ):
-        """
-        Initialize decorator data.
+        """Initialize decorator data.
 
         Specify content for one of:
 
@@ -310,8 +307,7 @@ class AttachDecoratorData(BaseModel):
         )
 
     def header_map(self, idx: int = 0, jose: bool = True) -> Mapping:
-        """
-        Accessor for header info at input index, default 0 or unique for singly-signed.
+        """Accessor for header info at input index, default 0 or unique for singly-signed.
 
         Args:
             idx: index of interest, zero-based (default 0)
@@ -354,8 +350,7 @@ class AttachDecoratorData(BaseModel):
         verkeys: Union[str, Sequence[str]],
         wallet: BaseWallet,
     ):
-        """
-        Sign base64 data value of attachment.
+        """Sign base64 data value of attachment.
 
         Args:
             verkeys: verkey(s) of the signing party (in raw or DID key format)
@@ -432,8 +427,7 @@ class AttachDecoratorData(BaseModel):
             self.jws_ = AttachDecoratorDataJWS.deserialize(jws)
 
     async def verify(self, wallet: BaseWallet, signer_verkey: str = None) -> bool:
-        """
-        Verify the signature(s).
+        """Verify the signature(s).
 
         Args:
             wallet: Wallet to use to verify signature
@@ -553,8 +547,7 @@ class AttachDecorator(BaseModel):
         data: AttachDecoratorData,
         **kwargs,
     ):
-        """
-        Initialize an AttachDecorator instance.
+        """Initialize an AttachDecorator instance.
 
         The attachment decorator allows for embedding or appending
         content to a message.
@@ -579,8 +572,7 @@ class AttachDecorator(BaseModel):
 
     @property
     def content(self) -> Union[Mapping, Tuple[Sequence[str], str]]:
-        """
-        Return attachment content.
+        """Return attachment content.
 
         Returns:
             data attachment, decoded if necessary and json-loaded, or data links
@@ -610,8 +602,7 @@ class AttachDecorator(BaseModel):
         lastmod_time: str = None,
         byte_count: int = None,
     ):
-        """
-        Create `AttachDecorator` instance on base64-encoded data from input mapping.
+        """Create `AttachDecorator` instance on base64-encoded data from input mapping.
 
         Given mapping, JSON dump, base64-encode, and embed
         it as data; mark `application/json` MIME type.
@@ -648,8 +639,7 @@ class AttachDecorator(BaseModel):
         lastmod_time: str = None,
         byte_count: int = None,
     ):
-        """
-        Create `AttachDecorator` instance on json-encoded data from input mapping.
+        """Create `AttachDecorator` instance on json-encoded data from input mapping.
 
         Given message object (dict), JSON dump, and embed
         it as data; mark `application/json` MIME type.
@@ -686,8 +676,7 @@ class AttachDecorator(BaseModel):
         lastmod_time: str = None,
         byte_count: int = None,
     ):
-        """
-        Create `AttachDecorator` instance on json-encoded data from input mapping.
+        """Create `AttachDecorator` instance on json-encoded data from input mapping.
 
         Given message object (dict), JSON dump, and embed
         it as data; mark `application/json` MIME type.

@@ -29,8 +29,7 @@ class KeylistQuery(AgentMessage):
         paginate: KeylistQueryPaginate = None,
         **kwargs,
     ):
-        """
-        Initialize keylist query object.
+        """Initialize keylist query object.
 
         Args:
             filter: Filter for query

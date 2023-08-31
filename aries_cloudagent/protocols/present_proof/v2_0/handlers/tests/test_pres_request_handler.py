@@ -1,5 +1,4 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
-from copy import deepcopy
 
 from ......core.oob_processor import OobMessageProcessor
 from ......indy.holder import IndyHolder

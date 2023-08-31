@@ -1,5 +1,4 @@
-"""
-DID Document Service classes.
+"""DID Document Service classes.
 
 Copyright 2017-2019 Government of Canada
 Public Services and Procurement Canada - buyandsell.gc.ca
@@ -25,8 +24,7 @@ from .publickey import PublicKey
 
 
 class Service:
-    """
-    Service specification to embed in DID document.
+    """Service specification to embed in DID document.
 
     Retains DIDs as raw values (orientated toward indy-facing operations),
     everything else as URIs (oriented toward W3C-facing operations).
@@ -42,8 +40,7 @@ class Service:
         endpoint: str,
         priority: int = 0,
     ):
-        """
-        Initialize the Service instance.
+        """Initialize the Service instance.
 
         Retain service specification particulars.
 

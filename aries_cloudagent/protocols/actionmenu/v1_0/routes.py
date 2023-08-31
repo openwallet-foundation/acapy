@@ -96,8 +96,7 @@ class ActionMenuFetchResultSchema(OpenAPISchema):
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_close(request: web.BaseRequest):
-    """
-    Request handler for closing the menu associated with a connection.
+    """Request handler for closing the menu associated with a connection.
 
     Args:
         request: aiohttp request object
@@ -124,8 +123,7 @@ async def actionmenu_close(request: web.BaseRequest):
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuFetchResultSchema(), 200, description="")
 async def actionmenu_fetch(request: web.BaseRequest):
-    """
-    Request handler for fetching the previously-received menu for a connection.
+    """Request handler for fetching the previously-received menu for a connection.
 
     Args:
         request: aiohttp request object
@@ -144,8 +142,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 @request_schema(PerformRequestSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_perform(request: web.BaseRequest):
-    """
-    Request handler for performing a menu action.
+    """Request handler for performing a menu action.
 
     Args:
         request: aiohttp request object
@@ -174,8 +171,7 @@ async def actionmenu_perform(request: web.BaseRequest):
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_request(request: web.BaseRequest):
-    """
-    Request handler for requesting a menu from the connection target.
+    """Request handler for requesting a menu from the connection target.
 
     Args:
         request: aiohttp request object
@@ -205,8 +201,7 @@ async def actionmenu_request(request: web.BaseRequest):
 @request_schema(SendMenuSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_send(request: web.BaseRequest):
-    """
-    Request handler for requesting a menu from the connection target.
+    """Request handler for requesting a menu from the connection target.
 
     Args:
         request: aiohttp request object

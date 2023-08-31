@@ -36,8 +36,7 @@ class V20CredRequest(AgentMessage):
         requests_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential request object.
+        """Initialize credential request object.
 
         Args:
             requests_attach: requests attachments
@@ -52,8 +51,7 @@ class V20CredRequest(AgentMessage):
         self.requests_attach = list(requests_attach) if requests_attach else []
 
     def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
-        """
-        Return attached credential request.
+        """Return attached credential request.
 
         Args:
             fmt: format of attachment in list to decode and return

@@ -32,7 +32,7 @@ class TestKeyType(TestCase):
         assert (
             key_types.from_multicodec_name(BLS12381G1G2_MULTICODEC_NAME) == BLS12381G1G2
         )
-        assert key_types.from_multicodec_name("non-existing") == None
+        assert key_types.from_multicodec_name("non-existing") is None
 
     def test_from_key_type(self):
         key_types = KeyTypes()
@@ -41,7 +41,7 @@ class TestKeyType(TestCase):
         assert key_types.from_key_type(BLS12381G1_KEY_NAME) == BLS12381G1
         assert key_types.from_key_type(BLS12381G2_KEY_NAME) == BLS12381G2
         assert key_types.from_key_type(BLS12381G1G2_KEY_NAME) == BLS12381G1G2
-        assert key_types.from_key_type("non-existing") == None
+        assert key_types.from_key_type("non-existing") is None
 
     def test_from_multicodec_prefix(self):
         key_types = KeyTypes()
@@ -52,7 +52,7 @@ class TestKeyType(TestCase):
         assert (
             key_types.from_multicodec_prefix(BLS12381G1G2_PREFIX_BYTES) == BLS12381G1G2
         )
-        assert key_types.from_multicodec_prefix(b"\xef\x01") == None
+        assert key_types.from_multicodec_prefix(b"\xef\x01") is None
 
     def test_from_prefixed_bytes(self):
         key_types = KeyTypes()
@@ -90,7 +90,7 @@ class TestKeyType(TestCase):
             key_types.from_prefixed_bytes(
                 b"".join([b"\xef\x01", b"other-random-bytes"])
             )
-            == None
+            is None
         )
 
     def test_properties(self):

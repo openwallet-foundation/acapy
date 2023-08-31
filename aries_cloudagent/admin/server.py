@@ -117,8 +117,7 @@ class AdminResponder(BaseResponder):
         send: Coroutine,
         **kwargs,
     ):
-        """
-        Initialize an instance of `AdminResponder`.
+        """Initialize an instance of `AdminResponder`.
 
         Args:
             send: Function to send outbound message
@@ -135,8 +134,7 @@ class AdminResponder(BaseResponder):
     async def send_outbound(
         self, message: OutboundMessage, **kwargs
     ) -> OutboundSendStatus:
-        """
-        Send outbound message.
+        """Send outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
@@ -147,8 +145,7 @@ class AdminResponder(BaseResponder):
         return await self._send(profile, message)
 
     async def send_webhook(self, topic: str, payload: dict):
-        """
-        Dispatch a webhook. DEPRECATED: use the event bus instead.
+        """Dispatch a webhook. DEPRECATED: use the event bus instead.
 
         Args:
             topic: the webhook topic identifier
@@ -240,8 +237,7 @@ class AdminServer(BaseAdminServer):
         task_queue: TaskQueue = None,
         conductor_stats: Coroutine = None,
     ):
-        """
-        Initialize an AdminServer instance.
+        """Initialize an AdminServer instance.
 
         Args:
             host: Host to listen on
@@ -510,8 +506,7 @@ class AdminServer(BaseAdminServer):
         return app
 
     async def start(self) -> None:
-        """
-        Start the webserver.
+        """Start the webserver.
 
         Raises:
             AdminSetupError: If there was an error starting the webserver
@@ -523,7 +518,7 @@ class AdminServer(BaseAdminServer):
             for k, v in raw.items():
                 if isinstance(v, dict):
                     raw[k] = sort_dict(v)
-            return dict(sorted([item for item in raw.items()], key=lambda x: x[0]))
+            return dict(sorted(raw.items(), key=lambda x: x[0]))
 
         self.app = await self.make_application()
         runner = web.AppRunner(self.app)
@@ -560,7 +555,7 @@ class AdminServer(BaseAdminServer):
                 method_spec["parameters"].sort(
                     key=lambda p: (p["in"], not p["required"], p["name"])
                 )
-        for path in sorted([p for p in swagger_dict["paths"]]):
+        for path in sorted(swagger_dict["paths"]):
             swagger_dict["paths"][path] = swagger_dict["paths"].pop(path)
 
         # order definitions alphabetically by dict key
@@ -622,8 +617,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Fetch the list of loaded plugins")
     @response_schema(AdminModulesSchema(), 200, description="")
     async def plugins_handler(self, request: web.BaseRequest):
-        """
-        Request handler for the loaded plugins list.
+        """Request handler for the loaded plugins list.
 
         Args:
             request: aiohttp request object
@@ -639,8 +633,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Fetch the server configuration")
     @response_schema(AdminConfigSchema(), 200, description="")
     async def config_handler(self, request: web.BaseRequest):
-        """
-        Request handler for the server configuration.
+        """Request handler for the server configuration.
 
         Args:
             request: aiohttp request object
@@ -678,8 +671,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Fetch the server status")
     @response_schema(AdminStatusSchema(), 200, description="")
     async def status_handler(self, request: web.BaseRequest):
-        """
-        Request handler for the server status information.
+        """Request handler for the server status information.
 
         Args:
             request: aiohttp request object
@@ -700,8 +692,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Reset statistics")
     @response_schema(AdminResetSchema(), 200, description="")
     async def status_reset_handler(self, request: web.BaseRequest):
-        """
-        Request handler for resetting the timing statistics.
+        """Request handler for resetting the timing statistics.
 
         Args:
             request: aiohttp request object
@@ -722,8 +713,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Liveliness check")
     @response_schema(AdminStatusLivelinessSchema(), 200, description="")
     async def liveliness_handler(self, request: web.BaseRequest):
-        """
-        Request handler for liveliness check.
+        """Request handler for liveliness check.
 
         Args:
             request: aiohttp request object
@@ -741,8 +731,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Readiness check")
     @response_schema(AdminStatusReadinessSchema(), 200, description="")
     async def readiness_handler(self, request: web.BaseRequest):
-        """
-        Request handler for liveliness check.
+        """Request handler for liveliness check.
 
         Args:
             request: aiohttp request object
@@ -760,8 +749,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Shut down server")
     @response_schema(AdminShutdownSchema(), description="")
     async def shutdown_handler(self, request: web.BaseRequest):
-        """
-        Request handler for server shutdown.
+        """Request handler for server shutdown.
 
         Args:
             request: aiohttp request object

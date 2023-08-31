@@ -4,13 +4,11 @@ from asynctest import mock as async_mock
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......storage.base import BaseStorage
 from ......protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 
 from ...messages.invitation import Invitation
-from ...messages.invitation_request import InvitationRequest
 
 from .. import invitation_handler as test_module
 

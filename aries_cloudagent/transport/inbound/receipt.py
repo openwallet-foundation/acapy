@@ -43,8 +43,7 @@ class MessageReceipt:
 
     @property
     def connection_id(self) -> str:
-        """
-        Accessor for the pairwise connection identifier.
+        """Accessor for the pairwise connection identifier.
 
         Returns:
             This context's connection identifier
@@ -54,8 +53,7 @@ class MessageReceipt:
 
     @connection_id.setter
     def connection_id(self, connection_id: bool):
-        """
-        Setter for the pairwise connection identifier.
+        """Setter for the pairwise connection identifier.
 
         Args:
             connection_id: This context's new connection identifier
@@ -65,8 +63,7 @@ class MessageReceipt:
 
     @property
     def direct_response_mode(self) -> str:
-        """
-        Accessor for the requested direct response mode.
+        """Accessor for the requested direct response mode.
 
         Returns:
             This context's requested direct response mode
@@ -81,8 +78,7 @@ class MessageReceipt:
 
     @property
     def direct_response_requested(self) -> str:
-        """
-        Accessor for the the state of the direct response mode.
+        """Accessor for the the state of the direct response mode.
 
         Returns:
             This context's requested direct response mode
@@ -92,8 +88,7 @@ class MessageReceipt:
 
     @property
     def in_time(self) -> str:
-        """
-        Accessor for the datetime the message was received.
+        """Accessor for the datetime the message was received.
 
         Returns:
             This context's received time
@@ -103,8 +98,7 @@ class MessageReceipt:
 
     @in_time.setter
     def in_time(self, in_time: datetime):
-        """
-        Setter for the datetime the message was received.
+        """Setter for the datetime the message was received.
 
         Args:
             in_time: This context's new received time
@@ -114,8 +108,7 @@ class MessageReceipt:
 
     @property
     def raw_message(self) -> str:
-        """
-        Accessor for the raw message text.
+        """Accessor for the raw message text.
 
         Returns:
             The raw message text
@@ -125,8 +118,7 @@ class MessageReceipt:
 
     @raw_message.setter
     def raw_message(self, message: str):
-        """
-        Setter for the raw message text.
+        """Setter for the raw message text.
 
         Args:
             message: The new message text
@@ -136,8 +128,7 @@ class MessageReceipt:
 
     @property
     def recipient_did(self) -> str:
-        """
-        Accessor for the recipient DID which corresponds with the verkey.
+        """Accessor for the recipient DID which corresponds with the verkey.
 
         Returns:
             The recipient DID
@@ -147,8 +138,7 @@ class MessageReceipt:
 
     @recipient_did.setter
     def recipient_did(self, did: str):
-        """
-        Setter for the recipient DID which corresponds with the verkey.
+        """Setter for the recipient DID which corresponds with the verkey.
 
         Args:
             did: The new recipient DID
@@ -158,8 +148,7 @@ class MessageReceipt:
 
     @property
     def recipient_did_public(self) -> bool:
-        """
-        Check if the recipient did is public.
+        """Check if the recipient did is public.
 
         Indicates whether the message is associated with
         a public (ledger) recipient DID.
@@ -172,8 +161,7 @@ class MessageReceipt:
 
     @recipient_did_public.setter
     def recipient_did_public(self, public: bool):
-        """
-        Setter for the flag indicating the recipient DID is public.
+        """Setter for the flag indicating the recipient DID is public.
 
         Args:
             public: A boolean value to indicate if the recipient DID is public
@@ -183,8 +171,7 @@ class MessageReceipt:
 
     @property
     def recipient_verkey(self) -> str:
-        """
-        Accessor for the recipient verkey key used to pack the incoming request.
+        """Accessor for the recipient verkey key used to pack the incoming request.
 
         Returns:
             The recipient verkey
@@ -194,8 +181,7 @@ class MessageReceipt:
 
     @recipient_verkey.setter
     def recipient_verkey(self, verkey: str):
-        """
-        Setter for the recipient public key used to pack the incoming request.
+        """Setter for the recipient public key used to pack the incoming request.
 
         Args:
             verkey: This context's recipient's verkey
@@ -205,8 +191,7 @@ class MessageReceipt:
 
     @property
     def sender_did(self) -> str:
-        """
-        Accessor for the sender DID which corresponds with the verkey.
+        """Accessor for the sender DID which corresponds with the verkey.
 
         Returns:
             The sender did
@@ -216,8 +201,7 @@ class MessageReceipt:
 
     @sender_did.setter
     def sender_did(self, did: str):
-        """
-        Setter for the sender DID which corresponds with the verkey.
+        """Setter for the sender DID which corresponds with the verkey.
 
         Args:
             The new sender did
@@ -227,8 +211,7 @@ class MessageReceipt:
 
     @property
     def sender_verkey(self) -> str:
-        """
-        Accessor for the sender public key used to pack the incoming request.
+        """Accessor for the sender public key used to pack the incoming request.
 
         Returns:
             This context's sender's verkey
@@ -238,8 +221,7 @@ class MessageReceipt:
 
     @sender_verkey.setter
     def sender_verkey(self, verkey: str):
-        """
-        Setter for the sender public key used to pack the incoming request.
+        """Setter for the sender public key used to pack the incoming request.
 
         Args:
             verkey: This context's sender's verkey
@@ -249,8 +231,7 @@ class MessageReceipt:
 
     @property
     def thread_id(self) -> str:
-        """
-        Accessor for the identifier of the message thread.
+        """Accessor for the identifier of the message thread.
 
         Returns:
             The delivery thread ID
@@ -260,8 +241,7 @@ class MessageReceipt:
 
     @thread_id.setter
     def thread_id(self, thread: str):
-        """
-        Setter for the message thread identifier.
+        """Setter for the message thread identifier.
 
         Args:
             thread: The new thread identifier
@@ -271,8 +251,7 @@ class MessageReceipt:
 
     @property
     def parent_thread_id(self) -> Optional[str]:
-        """
-        Accessor for the identifier of the message parent thread.
+        """Accessor for the identifier of the message parent thread.
 
         Returns:
             The delivery parent thread ID
@@ -282,8 +261,7 @@ class MessageReceipt:
 
     @parent_thread_id.setter
     def parent_thread_id(self, thread: Optional[str]):
-        """
-        Setter for the message parent thread identifier.
+        """Setter for the message parent thread identifier.
 
         Args:
             thread: The new parent thread identifier
@@ -292,8 +270,7 @@ class MessageReceipt:
         self._parent_thread_id = thread
 
     def __repr__(self) -> str:
-        """
-        Provide a human readable representation of this object.
+        """Provide a human readable representation of this object.
 
         Returns:
             A human readable representation of this object

@@ -38,6 +38,10 @@ async def store():
     # await profile.close()
 
 
+# TODO: Ignore "Undefined name `indy`" errors; these tests should be revisited
+# ruff: noqa: F821
+
+
 @pytest.mark.askar
 class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
     """Tests for Askar storage."""

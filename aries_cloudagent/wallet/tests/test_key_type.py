@@ -45,5 +45,5 @@ class TestDidMethod(TestCase):
         assert method.supported_key_types == SOV_SUPPORTED_KEY_TYPES
         assert method.supports_rotation is True
 
-        assert method.supports_key_type(ED25519) == True
-        assert method.supports_key_type(BLS12381G2) == False
+        assert method.supports_key_type(ED25519) is True
+        assert method.supports_key_type(BLS12381G2) is False

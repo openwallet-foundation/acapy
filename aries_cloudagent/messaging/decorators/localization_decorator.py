@@ -22,8 +22,7 @@ class LocalizationDecorator(BaseModel):
         localizable: Sequence[str] = None,
         catalogs: Sequence[str] = None,
     ):
-        """
-        Initialize a LocalizationDecorator instance.
+        """Initialize a LocalizationDecorator instance.
 
         Args:
             locale: The locale of this message

@@ -24,8 +24,7 @@ from .bbs import (
 
 
 def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]:
-    """
-    Create a public and private keypair from a seed value.
+    """Create a public and private keypair from a seed value.
 
     Args:
         key_type: The type of key to generate
@@ -49,8 +48,7 @@ def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]
 
 
 def create_ed25519_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
-    """
-    Create a public and private ed25519 keypair from a seed value.
+    """Create a public and private ed25519 keypair from a seed value.
 
     Args:
         seed: Seed for keypair
@@ -66,8 +64,7 @@ def create_ed25519_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
 
 
 def seed_to_did(seed: str) -> str:
-    """
-    Derive a DID from a seed value.
+    """Derive a DID from a seed value.
 
     Args:
         seed: The seed to derive
@@ -83,8 +80,7 @@ def seed_to_did(seed: str) -> str:
 
 
 def did_is_self_certified(did: str, verkey: str) -> bool:
-    """
-    Check if the DID is self certified.
+    """Check if the DID is self certified.
 
     Args:
         did: DID string
@@ -107,8 +103,7 @@ def sign_pk_from_sk(secret: bytes) -> bytes:
 
 
 def validate_seed(seed: Union[str, bytes]) -> bytes:
-    """
-    Convert a seed parameter to standard format and check length.
+    """Convert a seed parameter to standard format and check length.
 
     Args:
         seed: The seed to validate
@@ -134,8 +129,7 @@ def validate_seed(seed: Union[str, bytes]) -> bytes:
 def sign_message(
     message: Union[List[bytes], bytes], secret: bytes, key_type: KeyType
 ) -> bytes:
-    """
-    Sign message(s) using a private signing key.
+    """Sign message(s) using a private signing key.
 
     Args:
         message: The message(s) to sign
@@ -185,8 +179,7 @@ def verify_signed_message(
     verkey: bytes,
     key_type: KeyType,
 ) -> bool:
-    """
-    Verify a signed message according to a public verification key.
+    """Verify a signed message according to a public verification key.
 
     Args:
         message: The message(s) to verify
@@ -222,8 +215,7 @@ def verify_signed_message(
 def verify_signed_message_ed25519(
     message: bytes, signature: bytes, verkey: bytes
 ) -> bool:
-    """
-    Verify an ed25519 signed message according to a public verification key.
+    """Verify an ed25519 signed message according to a public verification key.
 
     Args:
         message: The message to verify
@@ -247,8 +239,7 @@ def add_pack_recipients(
     to_verkeys: Sequence[bytes],
     from_secret: bytes = None,
 ):
-    """
-    Assemble the recipients block of a packed message.
+    """Assemble the recipients block of a packed message.
 
     Args:
         wrapper: The envelope to add recipients to
@@ -301,8 +292,7 @@ def ed25519_pk_to_curve25519(public_key: bytes) -> bytes:
 def encrypt_plaintext(
     message: str, add_data: bytes, key: bytes
 ) -> Tuple[bytes, bytes, bytes]:
-    """
-    Encrypt the payload of a packed message.
+    """Encrypt the payload of a packed message.
 
     Args:
         message: Message to encrypt
@@ -327,8 +317,7 @@ def encrypt_plaintext(
 def decrypt_plaintext(
     ciphertext: bytes, recips_bin: bytes, nonce: bytes, key: bytes
 ) -> str:
-    """
-    Decrypt the payload of a packed message.
+    """Decrypt the payload of a packed message.
 
     Args:
         ciphertext:
@@ -349,8 +338,7 @@ def decrypt_plaintext(
 def encode_pack_message(
     message: str, to_verkeys: Sequence[bytes], from_secret: bytes = None
 ) -> bytes:
-    """
-    Assemble a packed message for a set of recipients, optionally including the sender.
+    """Assemble a packed message for a set of recipients, optionally including the sender.
 
     Args:
         message: The message to pack
@@ -381,8 +369,7 @@ def encode_pack_message(
 def decode_pack_message(
     enc_message: bytes, find_key: Callable
 ) -> Tuple[str, Optional[str], str]:
-    """
-    Decode a packed message.
+    """Decode a packed message.
 
     Disassemble and unencrypt a packed message, returning the message content,
     verification key of the sender (if available), and verification key of the
@@ -422,8 +409,7 @@ def decode_pack_message(
 
 
 def decode_pack_message_outer(enc_message: bytes) -> Tuple[dict, dict, bool]:
-    """
-    Decode the outer wrapper of a packed message and extract the recipients.
+    """Decode the outer wrapper of a packed message and extract the recipients.
 
     Args:
         enc_message: The encrypted message
@@ -447,8 +433,7 @@ def decode_pack_message_outer(enc_message: bytes) -> Tuple[dict, dict, bool]:
 
 
 def decode_pack_message_payload(wrapper: JweEnvelope, payload_key: bytes) -> str:
-    """
-    Decode the payload of a packed message once the CEK is known.
+    """Decode the payload of a packed message once the CEK is known.
 
     Args:
         wrapper: The decoded message wrapper
@@ -463,8 +448,7 @@ def decode_pack_message_payload(wrapper: JweEnvelope, payload_key: bytes) -> str
 
 
 def extract_pack_recipients(recipients: Sequence[JweRecipient]) -> dict:
-    """
-    Extract the pack message recipients into a dict indexed by verkey.
+    """Extract the pack message recipients into a dict indexed by verkey.
 
     Args:
         recipients: Recipients to locate
@@ -500,8 +484,7 @@ def extract_pack_recipients(recipients: Sequence[JweRecipient]) -> dict:
 
 
 def extract_payload_key(sender_cek: dict, recip_secret: bytes) -> Tuple[bytes, str]:
-    """
-    Extract the payload key from pack recipient details.
+    """Extract the payload key from pack recipient details.
 
     Returns: A tuple of the CEK and sender verkey
     """

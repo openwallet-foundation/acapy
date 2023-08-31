@@ -25,8 +25,7 @@ class ClassLoader:
 
     @classmethod
     def load_module(cls, mod_path: str, package: str = None) -> ModuleType:
-        """
-        Load a module by its absolute path.
+        """Load a module by its absolute path.
 
         Args:
             mod_path: the absolute or relative module path
@@ -80,8 +79,7 @@ class ClassLoader:
         default_module: Optional[str] = None,
         package: Optional[str] = None,
     ):
-        """
-        Resolve a complete class path (ie. typing.Dict) to the class itself.
+        """Resolve a complete class path (ie. typing.Dict) to the class itself.
 
         Args:
             class_name: the class name
@@ -124,8 +122,7 @@ class ClassLoader:
 
     @classmethod
     def load_subclass_of(cls, base_class: Type, mod_path: str, package: str = None):
-        """
-        Resolve an implementation of a base path within a module.
+        """Resolve an implementation of a base path within a module.
 
         Args:
             base_class: the base class being implemented

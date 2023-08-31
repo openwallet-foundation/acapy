@@ -25,8 +25,7 @@ class V20PresExRecordWebhook:
         self,
         **kwargs,
     ):
-        """
-        Initialize webhook object from V20PresExRecord.
+        """Initialize webhook object from V20PresExRecord.
 
         from a list of accepted attributes.
         """

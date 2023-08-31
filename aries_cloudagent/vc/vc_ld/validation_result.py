@@ -23,8 +23,7 @@ class PresentationVerificationResult:
         self.errors = errors
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class

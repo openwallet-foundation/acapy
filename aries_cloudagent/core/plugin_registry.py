@@ -37,7 +37,7 @@ class PluginRegistry:
     def validate_version(self, version_list, module_name):
         """Validate version dict format."""
 
-        is_list = type(version_list) is list
+        is_list = isinstance(version_list, list)
 
         # Must be a list
         if not is_list:
@@ -51,7 +51,7 @@ class PluginRegistry:
                 "Versions list must define at least one version module"
             )
 
-        if not all(type(v) is dict for v in version_list):
+        if not all(isinstance(v, dict) for v in version_list):
             raise ProtocolDefinitionValidationError(
                 "Element of versions definition list is not of type dict"
             )
@@ -60,13 +60,15 @@ class PluginRegistry:
             # Dicts must have correct format
 
             try:
-                type(version_dict["major_version"]) is int and type(
-                    version_dict["minimum_minor_version"]
-                ) is int and type(
-                    version_dict["current_minor_version"]
-                ) is int and type(
-                    version_dict["path"]
-                ) is str
+                if not (
+                    isinstance(version_dict["major_version"], int)
+                    and isinstance(version_dict["minimum_minor_version"], int)
+                    and isinstance(version_dict["current_minor_version"], int)
+                    and isinstance(version_dict["path"], str)
+                ):
+                    raise ProtocolDefinitionValidationError(
+                        "Unexpected types in version definition"
+                    )
             except KeyError as e:
                 raise ProtocolDefinitionValidationError(
                     f"Element of versions definition list is missing an attribute: {e}"

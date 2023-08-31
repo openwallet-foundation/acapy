@@ -34,8 +34,7 @@ class V20Pres(AgentMessage):
         presentations_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize presentation object.
+        """Initialize presentation object.
 
         Args:
             presentations_attach: attachments
@@ -50,8 +49,7 @@ class V20Pres(AgentMessage):
         )
 
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
-        """
-        Return attached presentation item.
+        """Return attached presentation item.
 
         Args:
             fmt: format of attachment in list to decode and return

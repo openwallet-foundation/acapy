@@ -45,8 +45,7 @@ class TransactionManager:
     """Class for managing transactions."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a TransactionManager.
+        """Initialize a TransactionManager.
 
         Args:
             session: The Profile Session for this transaction manager
@@ -56,8 +55,7 @@ class TransactionManager:
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current Profile.
+        """Accessor for the current Profile.
 
         Returns:
             The Profile for this transaction manager
@@ -68,8 +66,7 @@ class TransactionManager:
     async def create_record(
         self, messages_attach: str, connection_id: str, meta_data: dict = None
     ):
-        """
-        Create a new Transaction Record.
+        """Create a new Transaction Record.
 
         Args:
             messages_attach: messages to attach, JSON-dumped
@@ -121,8 +118,7 @@ class TransactionManager:
         author_goal_code: str = None,
         signer_goal_code: str = None,
     ):
-        """
-        Create a new Transaction Request.
+        """Create a new Transaction Request.
 
         Args:
             transaction: The transaction from which the request is created.
@@ -174,8 +170,7 @@ class TransactionManager:
         return transaction, transaction_request
 
     async def receive_request(self, request: TransactionRequest, connection_id: str):
-        """
-        Receive a Transaction request.
+        """Receive a Transaction request.
 
         Args:
             request: A Transaction Request
@@ -216,8 +211,7 @@ class TransactionManager:
         state: str,
         use_endorser_did: str = None,
     ):
-        """
-        Create a response to endorse a transaction.
+        """Create a response to endorse a transaction.
 
         Args:
             transaction: The transaction record which would be endorsed.
@@ -358,8 +352,7 @@ class TransactionManager:
         return transaction, endorsed_transaction_response
 
     async def receive_endorse_response(self, response: EndorsedTransactionResponse):
-        """
-        Update the transaction record with the endorsed response.
+        """Update the transaction record with the endorsed response.
 
         Args:
             response: The Endorsed Transaction Response
@@ -403,8 +396,7 @@ class TransactionManager:
     async def complete_transaction(
         self, transaction: TransactionRecord, endorser: bool = False
     ):
-        """
-        Complete a transaction.
+        """Complete a transaction.
 
         This is the final state where the received ledger transaction
         is written to the ledger.
@@ -488,8 +480,7 @@ class TransactionManager:
     async def receive_transaction_acknowledgement(
         self, response: TransactionAcknowledgement, connection_id: str
     ):
-        """
-        Update the transaction record after receiving the transaction acknowledgement.
+        """Update the transaction record after receiving the transaction acknowledgement.
 
         Args:
             response: The transaction acknowledgement
@@ -541,8 +532,7 @@ class TransactionManager:
     async def create_refuse_response(
         self, transaction: TransactionRecord, state: str, refuser_did: str
     ):
-        """
-        Create a response to refuse a transaction.
+        """Create a response to refuse a transaction.
 
         Args:
             transaction: The transaction record which would be refused
@@ -589,8 +579,7 @@ class TransactionManager:
         return transaction, refused_transaction_response
 
     async def receive_refuse_response(self, response: RefusedTransactionResponse):
-        """
-        Update the transaction record with a refused response.
+        """Update the transaction record with a refused response.
 
         Args:
             response: The refused transaction response
@@ -614,8 +603,7 @@ class TransactionManager:
         return transaction
 
     async def cancel_transaction(self, transaction: TransactionRecord, state: str):
-        """
-        Cancel a Transaction Request.
+        """Cancel a Transaction Request.
 
         Args:
             transaction: The transaction record which would be cancelled
@@ -648,8 +636,7 @@ class TransactionManager:
     async def receive_cancel_transaction(
         self, response: CancelTransaction, connection_id: str
     ):
-        """
-        Update the transaction record to cancel a transaction request.
+        """Update the transaction record to cancel a transaction request.
 
         Args:
             response: The cancel transaction response
@@ -668,8 +655,7 @@ class TransactionManager:
         return transaction
 
     async def transaction_resend(self, transaction: TransactionRecord, state: str):
-        """
-        Resend a transaction request.
+        """Resend a transaction request.
 
         Args:
             transaction: The transaction record which needs to be resend
@@ -703,8 +689,7 @@ class TransactionManager:
     async def receive_transaction_resend(
         self, response: TransactionResend, connection_id: str
     ):
-        """
-        Update the transaction with a resend request.
+        """Update the transaction with a resend request.
 
         Args:
             response: The Resend transaction response
@@ -723,8 +708,7 @@ class TransactionManager:
         return transaction
 
     async def set_transaction_my_job(self, record: ConnRecord, transaction_my_job: str):
-        """
-        Set transaction_my_job.
+        """Set transaction_my_job.
 
         Args:
             record: The connection record in which to set transaction jobs
@@ -750,8 +734,7 @@ class TransactionManager:
     async def set_transaction_their_job(
         self, tx_job_received: TransactionJobToSend, receipt: MessageReceipt
     ):
-        """
-        Set transaction_their_job.
+        """Set transaction_their_job.
 
         Args:
             tx_job_received: The transaction job that is received from the other agent
@@ -780,8 +763,7 @@ class TransactionManager:
         ledger_response: dict = None,
         connection_record: ConnRecord = None,
     ):
-        """
-        Store record in wallet, and kick off any required post-processing.
+        """Store record in wallet, and kick off any required post-processing.
 
         Args:
             transaction: The transaction from which the schema/cred_def

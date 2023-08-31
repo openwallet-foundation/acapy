@@ -14,8 +14,7 @@ class Paginate(BaseModel):
         schema_class = "PaginateSchema"
 
     def __init__(self, *, limit: int = None, offset: int = None, **kwargs):
-        """
-        Initialize a Paginate instance.
+        """Initialize a Paginate instance.
 
         Args:
             limit: Limit the number of requested records

@@ -1,5 +1,3 @@
-import asyncio
-
 from asynctest import TestCase as AsyncTestCase
 
 from ..error import BaseError

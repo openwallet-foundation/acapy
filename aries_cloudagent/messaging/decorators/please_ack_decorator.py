@@ -21,8 +21,7 @@ class PleaseAckDecorator(BaseModel):
         message_id: str = None,
         on: Sequence[str] = None,
     ):
-        """
-        Initialize a PleaseAckDecorator instance.
+        """Initialize a PleaseAckDecorator instance.
 
         Args:
             message_id: identifier of message to acknowledge, if not current message

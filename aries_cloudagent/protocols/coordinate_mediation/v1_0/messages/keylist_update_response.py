@@ -30,8 +30,7 @@ class KeylistUpdateResponse(AgentMessage):
         updated: Sequence[KeylistUpdated] = None,
         **kwargs,
     ):
-        """
-        Initialize keylist update object.
+        """Initialize keylist update object.
 
         Args:
             updates: Update rules for keylist update request
