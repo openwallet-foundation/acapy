@@ -656,25 +656,6 @@ class BaseConnectionManager:
                 async with self._profile.session() as session:
                     connection = await ConnRecord.retrieve_by_id(session, connection_id)
 
-            did_doc = None
-            if not connection.their_did:
-                self._logger.debug("No target DID associated with connection")
-                return None
-            
-            did_doc, _ = await self.fetch_did_document(connection.their_did)
-            if not did_doc:
-                raise StorageNotFoundError(
-                    f"did_document not found with did {connection.their_did}"
-                )
-
-            async with self._profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(connection.my_did)
-
-            results = self.diddoc_connection_targets(
-                did_doc, my_info.verkey, connection.their_label
-            )
-
             targets = await self.fetch_connection_targets(connection)
         return targets
 

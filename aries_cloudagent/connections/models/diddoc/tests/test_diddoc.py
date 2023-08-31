@@ -494,3 +494,4 @@ class TestDIDDoc(AsyncTestCase):
         #    pubkey0.did,
         #    pubkey0.id,
         #    repr(pubkey0)))
+        
