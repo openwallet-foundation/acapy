@@ -764,10 +764,9 @@ class BaseConnectionManager:
         try:
             return DIDDocument.from_json(record.value), record
         except Exception as e: 
-
-            self._logger.warning("EXCEPTION LOADING DID_DOC")
+            self._logger.warning("Exception loading did_doc")
             self._logger.warning(str(e))
-            self._logger.warning("Attemping conversion to peer_did_2 and document")
+            self._logger.warning("Attemping conversion to peer_did_2, and corresponding document")
             did = upgrade_legacy_did_doc_to_peer_did(record.value)
 
             resolver = self._profile.inject(DIDResolver)
@@ -779,7 +778,6 @@ class BaseConnectionManager:
             self._logger.warning("Update successful.")
             return doc, record
 
-        return DIDDoc.from_json(record.value), record
 
     async def find_connection(
         self,
