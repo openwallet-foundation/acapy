@@ -124,15 +124,12 @@ class DIDResolver:
         # TODO Use cached DID Docs when possible
         try:
             parsed = DIDUrl.parse(did_url)
-            if not parsed.did:
-                raise ValueError("Invalid DID URL")
+            if not parsed.did and not document:
+                raise ValueError("No DID found or Document provided")
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)
             ) from err
-
-        if document and parsed.did != document.id:
-            document = None
 
         if not document:
             doc_dict = await self.resolve(profile, parsed.did)

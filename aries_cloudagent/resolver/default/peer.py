@@ -11,11 +11,9 @@ from peerdid.dids import is_peer_did, PEER_DID_PATTERN, resolve_peer_did, DID, M
 from peerdid.keys import to_multibase, MultibaseFormat
 
 from ...connections.base_manager import BaseConnectionManager
-from ...connections.models.diddoc.util import resolve_peer_did_with_service_key_reference
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ...messaging.valid import DIDKey as DIDKeyType
-
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 
 
@@ -46,11 +44,14 @@ class PeerDID2Resolver(BaseDIDResolver):
         except Exception as e:
             raise DIDNotFound(f"peer_did is not formatted correctly: {did}") from e
         if peer_did:
-            did_doc = resolve_peer_did(did)
+            did_doc = self.resolve_peer_did_with_service_key_reference(did)
         else:
-            raise DIDNotFound(f"did is not a peer did: {did}") from e
+            raise DIDNotFound(f"did is not a peer did: {did}")
 
         return did_doc.dict()
+
+    def resolve_peer_did_with_service_key_reference(self, peer_did_2: Union[str,DID]) -> DIDDocument:
+        return _resolve_peer_did_with_service_key_reference(peer_did_2)
 
 
 
@@ -80,10 +81,23 @@ class PeerDID3Resolver(BaseDIDResolver):
             # retrieve did_doc from storage using did:peer:3 
             did_doc, rec = await BaseConnectionManager(profile).fetch_did_document(did=did)
         else:
-            raise DIDNotFound(f"did is not a peer did: {did}") from e
+            raise DIDNotFound(f"did is not a peer did: {did}")
 
         return did_doc.dict()
 
+def _resolve_peer_did_with_service_key_reference(peer_did_2: Union[str,DID]) -> DIDDocument:
+    try:
+        doc = resolve_peer_did(peer_did_2)
+        ## WORKAROUND LIBRARY NOT REREFERENCING RECEIPIENT_KEY
+        services = doc.service
+        signing_keys = [vm for vm in doc.verification_method or [] if vm.type == "Ed25519VerificationKey2020"]
+        if services and signing_keys:
+            services[0].__dict__["recipient_keys"]=[signing_keys[0].id]
+        else:
+            raise Exception("no recipient_key signing_key pair")
+    except Exception as e:
+        raise ValueError ("pydantic validation error:" + str(e))
+    return doc
 
 
 def gen_did_peer_3(peer_did_2 : Union[str,DID]) -> Tuple[DID,DIDDocument]:
@@ -93,7 +107,7 @@ def gen_did_peer_3(peer_did_2 : Union[str,DID]) -> Tuple[DID,DIDDocument]:
     content = to_multibase(sha256(peer_did_2.lstrip("did:peer:2").encode()).digest(),MultibaseFormat.BASE58)
     dp3 = DID("did:peer:3"+content)
 
-    doc = resolve_peer_did_with_service_key_reference(peer_did_2)
+    doc = _resolve_peer_did_with_service_key_reference(peer_did_2)
     convert_to_did_peer_3_document(dp3,doc)
     return dp3, doc
 

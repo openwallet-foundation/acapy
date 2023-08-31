@@ -539,88 +539,89 @@ class DIDDoc:
         Returns: DIDDoc from input json
 
         """
-        try:
-            if upgrade:
-                ## ANY ATTEMPTED DESERIALIZATION SHOULD RETURN DIDDocument
-                return upgrade_legacy_did_doc_to_peer_did(json.dumps(did_doc))[1]
+        # try:
+        #     if upgrade:
+        #         ## ANY ATTEMPTED DESERIALIZATION SHOULD RETURN DIDDocument
+        #         return upgrade_legacy_did_doc_to_peer_did(json.dumps(did_doc))
+            
         
-        except Exception as e: 
-            LOGGER.error("COULD NOT DESERAILZE AS DIDDocument , FALL BACK TO LEGACY DESERIZLATION")
-        finally:
-            rv = None
-            if "id" in did_doc:
-                rv = DIDDoc(did_doc["id"])
-            else:
-                # heuristic: get DID to serve as DID document identifier from
-                # the first OK-looking public key
-                for section in ("publicKey", "authentication"):
-                    if rv is None and section in did_doc:
-                        for key_spec in did_doc[section]:
-                            try:
-                                pubkey_did = canon_did(resource(key_spec.get("id", "")))
-                                if ok_did(pubkey_did):
-                                    rv = DIDDoc(pubkey_did)
-                                    break
-                            except ValueError:  # no identifier here, move on to next
+        # except Exception as e: 
+        #     LOGGER.error("COULD NOT DESERAILZE AS DIDDocument , FALL BACK TO LEGACY DESERIZLATION")
+        # finally:
+        rv = None
+        if "id" in did_doc:
+            rv = DIDDoc(did_doc["id"])
+        else:
+            # heuristic: get DID to serve as DID document identifier from
+            # the first OK-looking public key
+            for section in ("publicKey", "authentication"):
+                if rv is None and section in did_doc:
+                    for key_spec in did_doc[section]:
+                        try:
+                            pubkey_did = canon_did(resource(key_spec.get("id", "")))
+                            if ok_did(pubkey_did):
+                                rv = DIDDoc(pubkey_did)
                                 break
-                if rv is None:
-                    LOGGER.debug("no identifier in DID document")
-                    raise ValueError("No identifier in DID document")
+                        except ValueError:  # no identifier here, move on to next
+                            break
+            if rv is None:
+                LOGGER.debug("no identifier in DID document")
+                raise ValueError("No identifier in DID document")
 
-            for pubkey in did_doc.get(
-                "publicKey", {}
-            ):  # include all public keys, authentication pubkeys by reference
-                pubkey_type = PublicKeyType.get(pubkey["type"])
-                authn = any(
-                    canon_ref(rv.did, ak.get("publicKey", ""))
-                    == canon_ref(rv.did, pubkey["id"])
-                    for ak in did_doc.get("authentication", {})
-                    if isinstance(ak.get("publicKey", None), str)
-                )
-                key = PublicKey(  # initialization canonicalizes id
+        for pubkey in did_doc.get(
+            "publicKey", {}
+        ):  # include all public keys, authentication pubkeys by reference
+            pubkey_type = PublicKeyType.get(pubkey["type"])
+            authn = any(
+                canon_ref(rv.did, ak.get("publicKey", ""))
+                == canon_ref(rv.did, pubkey["id"])
+                for ak in did_doc.get("authentication", {})
+                if isinstance(ak.get("publicKey", None), str)
+            )
+            key = PublicKey(  # initialization canonicalizes id
+                rv.did,
+                pubkey["id"],
+                pubkey[pubkey_type.specifier],
+                pubkey_type,
+                canon_did(pubkey["controller"]),
+                authn,
+            )
+            rv.pubkey[key.id] = key
+
+        for akey in did_doc.get(
+            "authentication", {}
+        ):  # include embedded authentication keys
+            if "publicKey" not in akey:  # not yet got it with public keys
+                pubkey_type = PublicKeyType.get(akey["type"])
+                key = PublicKey(  # initialization canonicalized id
                     rv.did,
-                    pubkey["id"],
-                    pubkey[pubkey_type.specifier],
+                    akey["id"],
+                    akey[pubkey_type.specifier],
                     pubkey_type,
-                    canon_did(pubkey["controller"]),
-                    authn,
+                    canon_did(akey["controller"]),
+                    True,
                 )
                 rv.pubkey[key.id] = key
 
-            for akey in did_doc.get(
-                "authentication", {}
-            ):  # include embedded authentication keys
-                if "publicKey" not in akey:  # not yet got it with public keys
-                    pubkey_type = PublicKeyType.get(akey["type"])
-                    key = PublicKey(  # initialization canonicalized id
-                        rv.did,
-                        akey["id"],
-                        akey[pubkey_type.specifier],
-                        pubkey_type,
-                        canon_did(akey["controller"]),
-                        True,
-                    )
-                    rv.pubkey[key.id] = key
-
-            for service in did_doc.get("service", {}):
-                endpoint = service["serviceEndpoint"]
-                svc = Service(  # initialization canonicalizes id
-                    rv.did,
-                    service.get(
-                        "id",
-                        canon_ref(
-                            rv.did, "assigned-service-{}".format(len(rv.service)), ";"
-                        ),
+        for service in did_doc.get("service", {}):
+            endpoint = service["serviceEndpoint"]
+            svc = Service(  # initialization canonicalizes id
+                rv.did,
+                service.get(
+                    "id",
+                    canon_ref(
+                        rv.did, "assigned-service-{}".format(len(rv.service)), ";"
                     ),
-                    service["type"],
-                    rv.add_service_pubkeys(service, "recipientKeys"),
-                    rv.add_service_pubkeys(service, ["mediatorKeys", "routingKeys"]),
-                    canon_ref(rv.did, endpoint, ";") if ";" in endpoint else endpoint,
-                    service.get("priority", None),
-                )
-                rv.service[svc.id] = svc
+                ),
+                service["type"],
+                rv.add_service_pubkeys(service, "recipientKeys"),
+                rv.add_service_pubkeys(service, ["mediatorKeys", "routingKeys"]),
+                canon_ref(rv.did, endpoint, ";") if ";" in endpoint else endpoint,
+                service.get("priority", None),
+            )
+            rv.service[svc.id] = svc
 
-            return rv
+        return rv
 
 
 

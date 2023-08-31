@@ -723,7 +723,7 @@ class BaseConnectionManager:
 
     def diddoc_connection_targets(
         self,
-        doc: DIDDoc,
+        doc: DIDDocument,
         sender_verkey: str,
         their_label: Optional[str] = None,
     ) -> Sequence[ConnectionTarget]:
@@ -769,14 +769,21 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
+            
             # JSload into LegacyDIDDoc, converting old DIDDoc classes into DIDDocument compliant objects
         try:
             return DIDDocument.from_json(record.value), record
         except Exception as e: 
+
             self._logger.warning("EXCEPTION LOADING DID_DOC")
             self._logger.warning(str(e))
             self._logger.warning("Attemping conversion to peer_did_2 and document")
-            did,doc = upgrade_legacy_did_doc_to_peer_did(record.value)
+            did = upgrade_legacy_did_doc_to_peer_did(record.value)
+
+            resolver = self._profile.inject(DIDResolver)
+            doc_dict: dict = await resolver.resolve(self._profile, did)
+            doc = pydid.deserialize_document(doc_dict, strict=True)
+
             self._logger.warning("conversion complete, updating record in wallet with complaint record")
             await self.store_did_document(doc)
             self._logger.warning("Update successful.")
