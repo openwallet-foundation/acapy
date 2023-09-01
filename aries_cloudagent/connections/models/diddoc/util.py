@@ -23,7 +23,7 @@ from typing import Tuple, Union
 from base58 import b58decode
 from urllib.parse import urlparse
 from pydid.did import DID_PATTERN
-from peerdid.dids import DID, DIDDocument, create_peer_did_numalgo_2, resolve_peer_did
+from peerdid.dids import DID, DIDDocument, create_peer_did_numalgo_2
 from peerdid.keys import X25519KeyAgreementKey, Ed25519VerificationKey
 
 DID_COMM_V1_SERVICE_TYPE = "did-communication"

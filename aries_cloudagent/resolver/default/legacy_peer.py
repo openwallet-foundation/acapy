@@ -351,7 +351,7 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
         result = await self.fetch_did_document(profile, did)
         if result.is_local:
             assert result.doc
-            if result.doc["verificationMethod"]:
+            if result.doc.get("verificationMethod"):
                 #HAS ALREADY BEEN CONVERTED
                 return result.doc
             return LegacyDocCorrections.apply(result.doc)

@@ -4,7 +4,6 @@ from typing import Tuple
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from pydid import DIDDocument, DID
-from peerdid.dids import resolve_peer_did
 
 from .. import manager as test_module
 from .....cache.base import BaseCache
@@ -14,7 +13,6 @@ from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import (
     LegacyDIDDoc,
-    Service,
 )
 
 from .....connections.models.diddoc.util import create_peer_did_2
@@ -30,6 +28,7 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....resolver.base import ResolverError
+from .....resolver.default.peer import _resolve_peer_did_with_service_key_reference
 from .....resolver.did_resolver import DIDResolver
 from .....resolver.tests import DOC
 from .....storage.error import StorageNotFoundError
@@ -51,23 +50,18 @@ from ..manager import DIDXManager, DIDXManagerError
 from ..messages.problem_report import DIDXProblemReport, ProblemReportReason
 
 
-class TestConfig:
-    test_seed = "testseed000000000000000000000001"
-    test_did = "did:peer:2.Ez6LSdtxAxcBFffFN2JggyFPCpyFSRMGUWNDmTkqstqM3ZqCi.Vz6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL.SeyJ0IjoiZG0iLCJzIjoiaHR0cDovL2xvY2FsaG9zdCIsInJlY2lwaWVudF9rZXlzIjpbXSwicm91dGluZ19rZXlzIjpbXX0"
+class TestConfig:    
+    test_did = "did:peer:2.Ez6LSdtxAxcBFffFN2JggyFPCpyFSRMGUWNDmTkqstqM3ZqCi.Vz6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2xvY2FsaG9zdCIsInJlY2lwaWVudF9rZXlzIjpbIiNzaWdua2V5Il19"
+    #test_did created from test_verkey and test_endpoint
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_endpoint = "http://localhost"
 
     test_target_did = "did:peer:2.Ez6LSkBNr2dHSFmSnauLjReSsfzaX1wo5Vo4L6msUPPxKCrxx.Vz6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya.SeyJ0IjoiZG0iLCJzIjoiaHR0cDovL2xvY2FsaG9zdCIsInJlY2lwaWVudF9rZXlzIjpbXSwicm91dGluZ19rZXlzIjpbXX0"
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
-    def make_did_doc(self, verkey) -> Tuple[DID, DIDDocument]:
+    def make_did_doc(self, verkey) -> Tuple[str, DIDDocument]:
         # for peer did, create did_doc first then save did after.
-        peer_did, peer_doc = create_peer_did_2(
-            self.test_verkey, self.test_endpoint
-        )
-
-        self.test_did = peer_did
-        return peer_did, resolve_peer_did(self.test_did)
+        return self.test_did, _resolve_peer_did_with_service_key_reference(self.test_did)
 
 
 class TestDidExchangeManager(AsyncTestCase, TestConfig):
@@ -688,6 +682,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "No explicit invitation found" in str(context.exception)
 
     async def test_receive_request_public_did_no_did_doc_attachment(self):
+        did_doc = self.make_did_doc(self.test_verkey)
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
@@ -717,7 +712,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             with async_mock.patch.object(
                 test_module, "ConnRecord", async_mock.MagicMock()
             ) as mock_conn_rec_cls, async_mock.patch.object(
-                test_module, "DIDDoc", autospec=True
+                test_module, "DIDDocument", autospec=True
             ) as mock_did_doc, async_mock.patch.object(
                 test_module, "DIDPosture", autospec=True
             ) as mock_did_posture, async_mock.patch.object(
@@ -727,7 +722,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             ) as mock_response, async_mock.patch.object(
                 self.manager,
                 "verify_diddoc",
-                async_mock.CoroutineMock(return_value=DIDDoc(TestConfig.test_did)),
+                async_mock.CoroutineMock(return_value=did_doc),
             ), async_mock.patch.object(
                 self.manager, "create_did_document", async_mock.CoroutineMock()
             ) as mock_create_did_doc, async_mock.patch.object(
@@ -903,6 +898,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "is not public" in str(context.exception)
 
     async def test_receive_request_public_did_x_wrong_did(self):
+        did_doc = self.make_did_doc(self.test_verkey)
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
@@ -935,7 +931,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 self.manager,
                 "verify_diddoc",
                 async_mock.CoroutineMock(
-                    return_value=LegacyDIDDoc(id="did:sov:LjgpST2rjsoxYegQDRm7EL")
+                    return_value=did_doc
                 ),
             ):
                 mock_conn_record = async_mock.MagicMock(
@@ -972,6 +968,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "does not match" in str(context.exception)
 
     async def test_receive_request_public_did_x_did_doc_attach_bad_sig(self):
+        did_doc = self.make_did_doc(self.test_verkey)
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
@@ -1444,6 +1441,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     )
 
     async def test_create_response(self):
+        did_doc = self.make_did_doc(self.test_verkey)
+
         conn_rec = ConnRecord(
             connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23
         )
@@ -1453,7 +1452,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_retrieve_req, async_mock.patch.object(
             conn_rec, "save", async_mock.CoroutineMock()
         ) as mock_save, async_mock.patch.object(
-            test_module, "LegacyDIDDoc", autospec=True
+            test_module, "DIDDocument", autospec=True
         ) as mock_did_doc, async_mock.patch.object(
             test_module, "AttachDecorator", autospec=True
         ) as mock_attach_deco, async_mock.patch.object(
@@ -2098,24 +2097,18 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def test_accept_complete(self):
         mock_complete = async_mock.MagicMock()
         receipt = MessageReceipt(sender_did=TestConfig.test_target_did)
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id:
-            mock_conn_retrieve_by_req_id.return_value.save = async_mock.CoroutineMock()
-            conn_rec = await self.manager.accept_complete(mock_complete, receipt)
-            assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
-
-    async def test_accept_complete(self):
-        mock_complete = async_mock.MagicMock()
-        receipt = MessageReceipt(sender_did=TestConfig.test_target_did)
         self.context.update_settings({"auto_disclose_features": True})
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
             V20DiscoveryMgr, "proactive_disclose_features", async_mock.CoroutineMock()
-        ) as mock_proactive_disclose_features:
+        ) as mock_proactive_disclose_features, async_mock.patch.object(
+            InMemoryWallet, "get_local_did", autospec=True
+        ) as mock_wallet_get_local_did:
+
+            mock_wallet_get_local_did.return_value = True
             mock_conn_retrieve_by_req_id.return_value.save = async_mock.CoroutineMock()
+            mock_conn_retrieve_by_req_id.return_value.my_did = TestConfig.test_did
             conn_rec = await self.manager.accept_complete(mock_complete, receipt)
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
             mock_proactive_disclose_features.assert_called_once()
