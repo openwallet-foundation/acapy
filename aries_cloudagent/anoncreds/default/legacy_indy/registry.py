@@ -491,10 +491,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Turn a sequence of indexes into a full state bit array."""
         return [1 if index in indexes else 0 for index in range(1, size + 1)]
 
-    async def get_revocation_list(
-        self, profile: Profile, rev_reg_def_id: str, timestamp: int
-    ) -> GetRevListResult:
-        """Get a revocation list from the registry."""
+    async def _get_ledger(self, profile: Profile, rev_reg_def_id: str):
         async with profile.session() as session:
             multitenant_mgr = session.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
@@ -512,6 +509,14 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 reason += ": missing wallet-type?"
             raise AnonCredsResolutionError(reason)
 
+        return ledger_id, ledger
+
+    async def get_revocation_registry_delta(
+        self, profile: Profile, rev_reg_def_id: str, timestamp: None
+    ) -> Tuple[dict, int]:
+        """Fetch the revocation registry delta."""
+        ledger_id, ledger = await self._get_ledger(profile, rev_reg_def_id)
+
         async with ledger:
             delta, timestamp = await ledger.get_revoc_reg_delta(
                 rev_reg_def_id, timestamp_to=timestamp
@@ -522,8 +527,20 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     f"Revocation list not found for rev reg def: {rev_reg_def_id}",
                     {"ledger_id": ledger_id},
                 )
+        LOGGER.debug("Retrieved delta: %s", delta)
+        return delta, timestamp
 
-            LOGGER.debug("Retrieved delta: %s", delta)
+    async def get_revocation_list(
+        self, profile: Profile, rev_reg_def_id: str, timestamp: int
+    ) -> GetRevListResult:
+        """Get the revocation registry list."""
+        _, ledger = await self._get_ledger(profile, rev_reg_def_id)
+
+        delta, timestamp = await self.get_revocation_registry_delta(
+            profile, rev_reg_def_id, timestamp
+        )
+
+        async with ledger:
             max_cred_num = await self._get_or_fetch_rev_reg_def_max_cred_num(
                 profile, ledger, rev_reg_def_id
             )

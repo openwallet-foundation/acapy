@@ -1,6 +1,6 @@
 """DID Web Registry."""
 import re
-from typing import Optional, Pattern, Sequence
+from typing import Optional, Pattern, Sequence, Tuple
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
@@ -91,6 +91,12 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self, profile: Profile, revocation_registry_id: str, timestamp: int
     ) -> GetRevListResult:
         """Get a revocation list from the registry."""
+        raise NotImplementedError()
+
+    async def get_revocation_registry_delta(
+        self, profile: Profile, rev_reg_def_id: str, timestamp: None
+    ) -> Tuple[dict, int]:
+        """Get a revocation registry delta."""
         raise NotImplementedError()
 
     async def register_revocation_list(

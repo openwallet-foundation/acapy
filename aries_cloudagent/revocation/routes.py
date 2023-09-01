@@ -6,6 +6,7 @@ import os
 import shutil
 from asyncio import shield
 import re
+import uuid
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -17,10 +18,16 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
-from aries_cloudagent.anoncreds.base import AnonCredsRegistrationError
-from aries_cloudagent.anoncreds.issuer import AnonCredsIssuerError
-
-from aries_cloudagent.anoncreds.revocation import AnonCredsRevocationError
+from ..anoncreds.base import (
+    AnonCredsObjectNotFound,
+    AnonCredsRegistrationError,
+    AnonCredsResolutionError,
+)
+from ..anoncreds.issuer import AnonCredsIssuerError
+from ..anoncreds.registry import AnonCredsRegistry
+from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
+from ..askar.profile import AskarProfile
+from ..indy.models.revocation import IndyRevRegDef
 
 from ..admin.request_context import AdminRequestContext
 from ..connections.models.conn_record import ConnRecord
@@ -30,8 +37,6 @@ from ..indy.issuer import IndyIssuerError
 from ..ledger.base import BaseLedger
 from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..ledger.error import LedgerError
-from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
@@ -50,14 +55,9 @@ from ..protocols.endorse_transaction.v1_0.manager import (
 from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
-from ..protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
-    get_endorser_connection_id,
-)
-from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
 
-from .error import RevocationError, RevocationNotSupportedError
+from .error import RevocationError
 from .indy import IndyRevocation
 from .manager import RevocationManager, RevocationManagerError
 from .models.issuer_cred_rev_record import (
@@ -505,6 +505,12 @@ async def publish_revocations(request: web.BaseRequest):
         Credential revocation ids published as revoked by revocation registry id.
 
     """
+    #
+    # this is exactly what is in anoncreds /revocation/publish-revocations.
+    # we cannot import the function as it imports classes from here,
+    # so circular dependency.
+    # we will clean this up and DRY at some point.
+    #
     context: AdminRequestContext = request["context"]
     body = await request.json()
     rrid2crid = body.get("rrid2crid")
@@ -515,85 +521,15 @@ async def publish_revocations(request: web.BaseRequest):
         rev_reg_resp = await rev_manager.publish_pending_revocations(
             rrid2crid,
         )
-    except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
+    except (
+        RevocationError,
+        StorageError,
+        AnonCredsIssuerError,
+        AnonCredsRevocationError,
+    ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"rrid2crid": rev_reg_resp})
-
-
-@docs(tags=["revocation"], summary="Clear pending revocations")
-@request_schema(ClearPendingRevocationsRequestSchema())
-@response_schema(PublishRevocationsSchema(), 200, description="")
-async def clear_pending_revocations(request: web.BaseRequest):
-    """
-    Request handler for clearing pending revocations.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        Credential revocation ids still pending revocation by revocation registry id.
-
-    """
-    context: AdminRequestContext = request["context"]
-    body = await request.json()
-    purge = body.get("purge")
-
-    rev_manager = RevocationManager(context.profile)
-
-    try:
-        results = await rev_manager.clear_pending_revocations(purge)
-    except StorageError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({"rrid2crid": results})
-
-
-@docs(tags=["revocation"], summary="Creates a new revocation registry")
-@request_schema(RevRegCreateRequestSchema())
-@response_schema(RevRegResultSchema(), 200, description="")
-async def create_rev_reg(request: web.BaseRequest):
-    """
-    Request handler to create a new revocation registry.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The issuer revocation registry record
-
-    """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-    body = await request.json()
-
-    credential_definition_id = body.get("credential_definition_id")
-    max_cred_num = body.get("max_cred_num")
-
-    # check we published this cred def
-    async with profile.session() as session:
-        storage = session.inject(BaseStorage)
-
-        found = await storage.find_all_records(
-            type_filter=CRED_DEF_SENT_RECORD_TYPE,
-            tag_query={"cred_def_id": credential_definition_id},
-        )
-    if not found:
-        raise web.HTTPNotFound(
-            reason=f"Not issuer of credential definition id {credential_definition_id}"
-        )
-
-    try:
-        revoc = IndyRevocation(profile)
-        issuer_rev_reg_rec = await revoc.init_issuer_registry(
-            credential_definition_id,
-            max_cred_num=max_cred_num,
-            notify=False,
-        )
-    except RevocationNotSupportedError as e:
-        raise web.HTTPBadRequest(reason=e.message) from e
-    await shield(issuer_rev_reg_rec.generate_registry(profile))
-
-    return web.json_response({"result": issuer_rev_reg_rec.serialize()})
 
 
 @docs(
@@ -655,16 +591,58 @@ async def get_rev_reg(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
+    profile: AskarProfile = context.profile
     rev_reg_id = request.match_info["rev_reg_id"]
-
-    try:
-        revoc = IndyRevocation(context.profile)
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
+    rev_reg = await _get_issuer_rev_reg_record(profile, rev_reg_id)
 
     return web.json_response({"result": rev_reg.serialize()})
+
+
+async def _get_issuer_rev_reg_record(
+    profile: AskarProfile, rev_reg_id
+) -> IssuerRevRegRecord:
+    # fetch rev reg def from anoncreds
+    try:
+        revocation = AnonCredsRevocation(profile)
+        rev_reg_def = await revocation.get_created_revocation_registry_definition(
+            rev_reg_id
+        )
+        if rev_reg_def is None:
+            raise web.HTTPNotFound(reason="No rev reg def found")
+        # looking good, so grab some other data
+        state = await revocation.get_created_revocation_registry_definition_state(
+            rev_reg_id
+        )
+        pending_pubs = await revocation.get_pending_revocations(rev_reg_id)
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
+
+    # transform
+    result = IssuerRevRegRecord(
+        record_id=uuid.uuid4(),
+        state=state,
+        cred_def_id=rev_reg_def.cred_def_id,
+        error_msg=None,
+        issuer_did=rev_reg_def.issuer_id,
+        max_cred_num=rev_reg_def.value.max_cred_num,
+        revoc_def_type="CL_ACCUM",
+        revoc_reg_id=rev_reg_id,
+        revoc_reg_def=IndyRevRegDef(
+            ver="1.0",
+            id_=rev_reg_id,
+            revoc_def_type="CL_ACCUM",
+            tag=rev_reg_def.tag,
+            cred_def_id=rev_reg_def.cred_def_id,
+            value=None,
+        ),
+        revoc_reg_entry=None,
+        tag=rev_reg_def.tag,
+        tails_hash=rev_reg_def.value.tails_hash,
+        tails_local_path=rev_reg_def.value.tails_location,
+        tails_public_uri=None,
+        pending_pub=pending_pubs,
+    )
+    return result
 
 
 @docs(
@@ -749,15 +727,19 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        Detailes of revoked credentials from ledger
+        Details of revoked credentials from ledger
 
     """
     context: AdminRequestContext = request["context"]
-
     rev_reg_id = request.match_info["rev_reg_id"]
-
-    revoc = IndyRevocation(context.profile)
-    rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
+    profile: AskarProfile = context.profile
+    try:
+        revocation = AnonCredsRegistry(profile)
+        rev_reg_delta = await revocation.get_revocation_registry_delta(
+            profile, rev_reg_id
+        )
+    except (AnonCredsObjectNotFound, AnonCredsResolutionError) as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
 
     return web.json_response(
         {
@@ -895,36 +877,6 @@ async def get_cred_rev_record(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Get current active revocation registry by credential definition id",
-)
-@match_info_schema(RevocationCredDefIdMatchInfoSchema())
-@response_schema(RevRegResultSchema(), 200, description="")
-async def get_active_rev_reg(request: web.BaseRequest):
-    """
-    Request handler to get current active revocation registry by cred def id.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The revocation registry identifier
-
-    """
-    context: AdminRequestContext = request["context"]
-
-    cred_def_id = request.match_info["cred_def_id"]
-
-    try:
-        revoc = IndyRevocation(context.profile)
-        rev_reg = await revoc.get_active_issuer_rev_reg_record(cred_def_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-
-    return web.json_response({"result": rev_reg.serialize()})
-
-
-@docs(
-    tags=["revocation"],
     summary="Download tails file",
     produces=["application/octet-stream"],
 )
@@ -941,17 +893,25 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
         The tails file in FileResponse
 
     """
+    #
+    # there is no equivalent of this in anoncreds.
+    # do we need it there or is this only for tranisition.
+    #
     context: AdminRequestContext = request["context"]
-
+    profile: AskarProfile = context.profile
     rev_reg_id = request.match_info["rev_reg_id"]
-
     try:
-        revoc = IndyRevocation(context.profile)
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
+        revocation = AnonCredsRevocation(profile)
+        rev_reg_def = await revocation.get_created_revocation_registry_definition(
+            rev_reg_id
+        )
+        if rev_reg_def is None:
+            raise web.HTTPNotFound(reason="No rev reg def found")
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
 
-    return web.FileResponse(path=rev_reg.tails_local_path, status=200)
+    tails_local_path = rev_reg_def.value.tails_location
+    return web.FileResponse(path=tails_local_path, status=200)
 
 
 @docs(
@@ -968,254 +928,29 @@ async def upload_tails_file(request: web.BaseRequest):
         request: aiohttp request object
 
     """
+    #
+    # this is exactly what is in anoncreds /revocation/upload-tails-file.
+    # we cannot import the function as it imports classes from here,
+    # so circular dependency.
+    # we will clean this up and DRY at some point.
+    #
     context: AdminRequestContext = request["context"]
-
+    profile: AskarProfile = context.profile
     rev_reg_id = request.match_info["rev_reg_id"]
     try:
-        revoc = IndyRevocation(context.profile)
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
+        revocation = AnonCredsRevocation(profile)
+        rev_reg_def = await revocation.get_created_revocation_registry_definition(
+            rev_reg_id
+        )
+        if rev_reg_def is None:
+            raise web.HTTPNotFound(reason="No rev reg def found")
 
-    if not rev_reg.has_local_tails_file:
-        raise web.HTTPNotFound(reason=f"No local tails file for rev reg {rev_reg_id}")
+        await revocation.upload_tails_file(rev_reg_def)
 
-    try:
-        await rev_reg.upload_tails_file(context.profile)
-    except RevocationError as e:
-        raise web.HTTPInternalServerError(reason=str(e))
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
 
     return web.json_response({})
-
-
-@docs(
-    tags=["revocation"],
-    summary="Send revocation registry definition to ledger",
-)
-@match_info_schema(RevRegIdMatchInfoSchema())
-@querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
-@querystring_schema(RevRegConnIdMatchInfoSchema())
-@response_schema(TxnOrRevRegResultSchema(), 200, description="")
-async def send_rev_reg_def(request: web.BaseRequest):
-    """
-    Request handler to send revocation registry definition by rev reg id to ledger.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The issuer revocation registry record
-
-    """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-    outbound_handler = request["outbound_message_router"]
-    rev_reg_id = request.match_info["rev_reg_id"]
-    create_transaction_for_endorser = json.loads(
-        request.query.get("create_transaction_for_endorser", "false")
-    )
-    write_ledger = not create_transaction_for_endorser
-    endorser_did = None
-    connection_id = request.query.get("conn_id")
-
-    # check if we need to endorse
-    if is_author_role(profile):
-        # authors cannot write to the ledger
-        write_ledger = False
-        create_transaction_for_endorser = True
-        if not connection_id:
-            # author has not provided a connection id, so determine which to use
-            connection_id = await get_endorser_connection_id(profile)
-            if not connection_id:
-                raise web.HTTPBadRequest(reason="No endorser connection found")
-
-    if not write_ledger:
-        try:
-            async with profile.session() as session:
-                connection_record = await ConnRecord.retrieve_by_id(
-                    session, connection_id
-                )
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except BaseModelError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        async with profile.session() as session:
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
-        if not endorser_info:
-            raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
-            )
-        if "endorser_did" not in endorser_info.keys():
-            raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
-            )
-        endorser_did = endorser_info["endorser_did"]
-
-    try:
-        revoc = IndyRevocation(profile)
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-
-        rev_reg_resp = await rev_reg.send_def(
-            profile,
-            write_ledger=write_ledger,
-            endorser_did=endorser_did,
-        )
-        LOGGER.debug("published rev reg definition: %s", rev_reg_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except RevocationError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    if not create_transaction_for_endorser:
-        return web.json_response({"result": rev_reg.serialize()})
-
-    else:
-        transaction_mgr = TransactionManager(profile)
-        try:
-            transaction = await transaction_mgr.create_record(
-                messages_attach=rev_reg_resp["result"], connection_id=connection_id
-            )
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        # if auto-request, send the request to the endorser
-        if context.settings.get_value("endorser.auto_request"):
-            try:
-                (
-                    transaction,
-                    transaction_request,
-                ) = await transaction_mgr.create_request(
-                    transaction=transaction,
-                    # TODO see if we need to parameterize these params
-                    # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
-                )
-            except (StorageError, TransactionManagerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-            await outbound_handler(transaction_request, connection_id=connection_id)
-
-        return web.json_response({"txn": transaction.serialize()})
-
-
-@docs(
-    tags=["revocation"],
-    summary="Send revocation registry entry to ledger",
-)
-@match_info_schema(RevRegIdMatchInfoSchema())
-@querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
-@querystring_schema(RevRegConnIdMatchInfoSchema())
-@response_schema(RevRegResultSchema(), 200, description="")
-async def send_rev_reg_entry(request: web.BaseRequest):
-    """
-    Request handler to send rev reg entry by registry id to ledger.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The revocation registry record
-
-    """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-    outbound_handler = request["outbound_message_router"]
-    create_transaction_for_endorser = json.loads(
-        request.query.get("create_transaction_for_endorser", "false")
-    )
-    write_ledger = not create_transaction_for_endorser
-    endorser_did = None
-    connection_id = request.query.get("conn_id")
-    rev_reg_id = request.match_info["rev_reg_id"]
-
-    # check if we need to endorse
-    if is_author_role(profile):
-        # authors cannot write to the ledger
-        write_ledger = False
-        create_transaction_for_endorser = True
-        if not connection_id:
-            # author has not provided a connection id, so determine which to use
-            connection_id = await get_endorser_connection_id(profile)
-            if not connection_id:
-                raise web.HTTPBadRequest(reason="No endorser connection found")
-
-    if not write_ledger:
-        async with profile.session() as session:
-            try:
-                connection_record = await ConnRecord.retrieve_by_id(
-                    session, connection_id
-                )
-            except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-            except BaseModelError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
-        if not endorser_info:
-            raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
-            )
-        if "endorser_did" not in endorser_info.keys():
-            raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
-            )
-        endorser_did = endorser_info["endorser_did"]
-
-    try:
-        revoc = IndyRevocation(profile)
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        rev_entry_resp = await rev_reg.send_entry(
-            profile,
-            write_ledger=write_ledger,
-            endorser_did=endorser_did,
-        )
-        LOGGER.debug("published registry entry: %s", rev_reg_id)
-
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except RevocationError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    if not create_transaction_for_endorser:
-        return web.json_response({"result": rev_reg.serialize()})
-
-    else:
-        transaction_mgr = TransactionManager(profile)
-        try:
-            transaction = await transaction_mgr.create_record(
-                messages_attach=rev_entry_resp["result"],
-                connection_id=connection_id,
-            )
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        # if auto-request, send the request to the endorser
-        if context.settings.get_value("endorser.auto_request"):
-            try:
-                (
-                    transaction,
-                    transaction_request,
-                ) = await transaction_mgr.create_request(
-                    transaction=transaction,
-                    # TODO see if we need to parameterize these params
-                    # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
-                )
-            except (StorageError, TransactionManagerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-            await outbound_handler(transaction_request, connection_id=connection_id)
-
-        return web.json_response({"txn": transaction.serialize()})
 
 
 @docs(
@@ -1237,22 +972,22 @@ async def update_rev_reg(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    profile = context.profile
+    profile: AskarProfile = context.profile
+    rev_reg_id = request.match_info["rev_reg_id"]
     body = await request.json()
     tails_public_uri = body.get("tails_public_uri")
-
-    rev_reg_id = request.match_info["rev_reg_id"]
-
     try:
-        revoc = IndyRevocation(profile)
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        await rev_reg.set_tails_file_public_uri(profile, tails_public_uri)
+        revocation = AnonCredsRevocation(profile)
+        rev_reg_def = await revocation.set_tails_file_public_uri(
+            rev_reg_id, tails_public_uri
+        )
+        if rev_reg_def is None:
+            raise web.HTTPNotFound(reason="No rev reg def found")
 
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except RevocationError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
 
+    rev_reg = await _get_issuer_rev_reg_record(profile, rev_reg_id)
     return web.json_response({"result": rev_reg.serialize()})
 
 
@@ -1272,21 +1007,20 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    profile = context.profile
+    profile: AskarProfile = context.profile
     rev_reg_id = request.match_info["rev_reg_id"]
     state = request.query.get("state")
 
     try:
-        revoc = IndyRevocation(profile)
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        async with profile.session() as session:
-            await rev_reg.set_state(session, state)
+        revocation = AnonCredsRevocation(profile)
+        rev_reg_def = await revocation.set_rev_reg_state(rev_reg_id, state)
+        if rev_reg_def is None:
+            raise web.HTTPNotFound(reason="No rev reg def found")
 
-        LOGGER.debug("set registry %s state: %s", rev_reg_id, state)
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
 
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-
+    rev_reg = await _get_issuer_rev_reg_record(profile, rev_reg_id)
     return web.json_response({"result": rev_reg.serialize()})
 
 
@@ -1562,10 +1296,6 @@ async def register(app: web.Application):
         [
             web.post("/revocation/revoke", revoke),
             web.post("/revocation/publish-revocations", publish_revocations),
-            web.post(
-                "/revocation/clear-pending-revocations",
-                clear_pending_revocations,
-            ),
             web.get(
                 "/revocation/credential-record", get_cred_rev_record, allow_head=False
             ),
@@ -1575,11 +1305,6 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.get("/revocation/registry/{rev_reg_id}", get_rev_reg, allow_head=False),
-            web.get(
-                "/revocation/active-registry/{cred_def_id}",
-                get_active_rev_reg,
-                allow_head=False,
-            ),
             web.get(
                 "/revocation/registry/{rev_reg_id}/issued",
                 get_rev_reg_issued_count,
@@ -1595,9 +1320,6 @@ async def register(app: web.Application):
                 get_rev_reg_indy_recs,
                 allow_head=False,
             ),
-            web.post("/revocation/create-registry", create_rev_reg),
-            web.post("/revocation/registry/{rev_reg_id}/definition", send_rev_reg_def),
-            web.post("/revocation/registry/{rev_reg_id}/entry", send_rev_reg_entry),
             web.patch("/revocation/registry/{rev_reg_id}", update_rev_reg),
             web.put("/revocation/registry/{rev_reg_id}/tails-file", upload_tails_file),
             web.get(

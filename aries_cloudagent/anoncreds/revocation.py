@@ -282,6 +282,22 @@ class AnonCredsRevocation:
         # entry.name was stored as the credential_definition's ID
         return [entry.name for entry in rev_reg_defs]
 
+    async def get_created_revocation_registry_definition_state(
+        self,
+        rev_reg_def_id: str,
+    ) -> Optional[str]:
+        """Retrieve rev reg def by ID from rev reg defs previously created."""
+        async with self.profile.session() as session:
+            rev_reg_def_entry = await session.handle.fetch(
+                CATEGORY_REV_REG_DEF,
+                name=rev_reg_def_id,
+            )
+
+        if rev_reg_def_entry:
+            return rev_reg_def_entry.tags.get("state")
+
+        return None
+
     async def get_created_revocation_registry_definition(
         self,
         rev_reg_def_id: str,
@@ -1140,3 +1156,11 @@ class AnonCredsRevocation:
             value_json=value,
             tags=tags,
         )
+
+    async def set_tails_file_public_uri(self, rev_reg_id, tails_public_uri):
+        """Update Revocation Registy tails file public uri."""
+        pass
+
+    async def set_rev_reg_state(self, rev_reg_id, state):
+        """Update Revocation Registy state."""
+        pass

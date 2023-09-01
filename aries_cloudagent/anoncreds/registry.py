@@ -1,6 +1,6 @@
 """AnonCreds Registry."""
 import logging
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Tuple
 
 
 from ..core.profile import Profile
@@ -146,6 +146,15 @@ class AnonCredsRegistry:
         """Get a revocation list from the registry."""
         resolver = await self._resolver_for_identifier(rev_reg_def_id)
         return await resolver.get_revocation_list(profile, rev_reg_def_id, timestamp)
+
+    async def get_revocation_registry_delta(
+        self, profile: Profile, rev_reg_def_id: str, timestamp: None
+    ) -> Tuple[dict, int]:
+        """Get a revocation registry delta."""
+        resolver = await self._resolver_for_identifier(rev_reg_def_id)
+        return await resolver.get_revocation_registry_delta(
+            profile, rev_reg_def_id, timestamp
+        )
 
     async def register_revocation_list(
         self,
