@@ -129,6 +129,9 @@ class DIDResolver:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)
             ) from err
+        
+        if document and parsed.did and parsed.did != document.id:
+            document=None
 
         if not document:
             doc_dict = await self.resolve(profile, parsed.did)
