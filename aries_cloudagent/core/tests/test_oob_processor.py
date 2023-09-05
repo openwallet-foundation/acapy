@@ -171,7 +171,7 @@ class TestOobProcessor(AsyncTestCase):
             )
 
     async def test_find_oob_target_for_outbound_message_oob_not_found(self):
-        message = JsonUtil.dumps({})
+        message = "{}"
         outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
 
         with async_mock.patch.object(
@@ -213,7 +213,7 @@ class TestOobProcessor(AsyncTestCase):
             "retrieve_by_tag_filter",
             async_mock.CoroutineMock(return_value=mock_oob),
         ):
-            message = JsonUtil.dumps({})
+            message = "{}"
             outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
             await self.oob_processor.find_oob_target_for_outbound_message(
                 self.profile, outbound

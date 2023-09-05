@@ -338,7 +338,7 @@ class TestValid(TestCase):
             with self.assertRaises(ValidationError):
                 INDY_WQL_VALIDATE(non_wql)
 
-        INDY_WQL_VALIDATE(JsonUtil.dumps({}))
+        INDY_WQL_VALIDATE("{}")
         INDY_WQL_VALIDATE(JsonUtil.dumps({"a": "1234"}))
         INDY_WQL_VALIDATE(JsonUtil.dumps({"a": "1234", "b": {"$not": "0"}}))
         INDY_WQL_VALIDATE(JsonUtil.dumps({"$or": {"a": "1234", "b": "0"}}))

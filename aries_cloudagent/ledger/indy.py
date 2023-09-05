@@ -196,7 +196,7 @@ class IndySdkLedgerPool:
         with IndyErrorHandler(
             f"Exception opening pool ledger {self.name}", LedgerConfigError
         ):
-            pool_config = JsonUtil.dumps({})
+            pool_config = "{}"
             if self.socks_proxy is not None:
                 pool_config = JsonUtil.dumps({"socks_proxy": self.socks_proxy})
                 LOGGER.debug("Open pool with config: %s", pool_config)

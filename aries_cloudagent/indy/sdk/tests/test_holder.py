@@ -178,7 +178,7 @@ class TestIndySdkHolder(AsyncTestCase):
 
         credentials = await self.holder.get_credentials(0, SIZE, {})
         mock_search_credentials.assert_called_once_with(
-            self.wallet.handle, JsonUtil.dumps({})
+            self.wallet.handle, "{}"
         )
 
         assert mock_fetch_credentials.call_count == 2
@@ -320,7 +320,7 @@ class TestIndySdkHolder(AsyncTestCase):
         )
 
         mock_prover_search_credentials_for_proof_req.assert_called_once_with(
-            self.wallet.handle, JsonUtil.dumps(PRES_REQ), JsonUtil.dumps({})
+            self.wallet.handle, JsonUtil.dumps(PRES_REQ), "{}"
         )
 
     @async_mock.patch("indy.anoncreds.prover_get_credential")
@@ -500,7 +500,7 @@ class TestIndySdkHolder(AsyncTestCase):
             self.wallet.master_secret_id,
             JsonUtil.dumps("schemas"),
             JsonUtil.dumps("credential_definitions"),
-            JsonUtil.dumps({}),
+            "{}",
         )
 
         assert JsonUtil.loads(presentation_json) == {}
