@@ -3,6 +3,7 @@
 import binascii
 from aries_cloudagent.utils.json import JsonUtil
 from collections import OrderedDict
+from json.decoder import JSONDecodeError
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from marshmallow import Schema, ValidationError, fields
@@ -122,7 +123,7 @@ class JweEnvelope:
         """Decode a JWE envelope from a JSON string or bytes value."""
         try:
             return cls._deserialize(JweSchema().loads(message))
-        except json.JSONDecodeError:
+        except JSONDecodeError:
             raise ValidationError("Invalid JWE: not JSON")
 
     @classmethod
@@ -135,7 +136,7 @@ class JweEnvelope:
         protected_b64 = parsed[IDENT_PROTECTED]
         try:
             protected: dict = JsonUtil.loads(from_b64url(protected_b64))
-        except json.JSONDecodeError:
+        except JSONDecodeError:
             raise ValidationError(
                 "Invalid JWE: invalid JSON for protected headers"
             ) from None

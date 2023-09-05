@@ -2,6 +2,7 @@
 
 from aries_cloudagent.utils.json import JsonUtil
 import re
+from json.decoder import JSONDecodeError
 
 from base58 import alphabet
 
@@ -509,7 +510,7 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
 
         try:
             JsonUtil.loads(value)
-        except (json.JSONDecodeError, TypeError):
+        except (JSONDecodeError, TypeError):
             raise ValidationError(message)
 
         return value
@@ -537,7 +538,7 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
 
         try:
             JsonUtil.loads(value)
-        except (json.JSONDecodeError, TypeError):
+        except (JSONDecodeError, TypeError):
             raise ValidationError(message)
 
         return value

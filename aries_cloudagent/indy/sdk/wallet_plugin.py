@@ -4,6 +4,7 @@ import logging
 import platform
 from aries_cloudagent.utils.json import JsonUtil
 from ctypes import cdll, c_char_p
+from json.decoder import JSONDecodeError
 
 EXTENSION = {"darwin": ".dylib", "linux": ".so", "win32": ".dll", "windows": ".dll"}
 LOADED = False
@@ -27,7 +28,7 @@ def load_postgres_plugin(storage_config, storage_creds, raise_exc=False):
         try:
             JsonUtil.loads(storage_config)
             JsonUtil.loads(storage_creds)
-        except json.decoder.JSONDecodeError:
+        except JSONDecodeError:
             LOGGER.error(
                 "Invalid stringified JSON input, check storage_config and storage_creds"
             )

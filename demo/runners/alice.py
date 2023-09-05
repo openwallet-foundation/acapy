@@ -5,6 +5,7 @@ from aries_cloudagent.utils.json import JsonUtil
 import logging
 import os
 import sys
+from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -96,7 +97,7 @@ async def input_invitation(agent_container):
             try:
                 details = JsonUtil.loads(details)
                 break
-            except json.JSONDecodeError as e:
+            except JSONDecodeError as e:
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):

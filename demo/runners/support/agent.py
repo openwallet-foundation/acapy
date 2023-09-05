@@ -10,6 +10,7 @@ import random
 import subprocess
 import sys
 import yaml
+from json.decoder import JSONDecodeError
 
 from timeit import default_timer
 
@@ -898,7 +899,7 @@ class DemoAgent:
             if not text:
                 try:
                     return JsonUtil.loads(resp_text)
-                except json.JSONDecodeError as e:
+                except JSONDecodeError as e:
                     raise Exception(f"Error decoding JSON: {resp_text}") from e
             return resp_text
 
@@ -1104,7 +1105,7 @@ class DemoAgent:
         try:
             status = JsonUtil.loads(status_text)
             ok = isinstance(status, dict) and "version" in status
-        except json.JSONDecodeError:
+        except JSONDecodeError:
             pass
         if not ok:
             raise Exception(
