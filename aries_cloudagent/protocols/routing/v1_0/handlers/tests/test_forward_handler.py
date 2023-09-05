@@ -63,7 +63,7 @@ class TestForwardHandler(AsyncTestCase):
             messages = responder.messages
             assert len(messages) == 1
             (result, target) = messages[0]
-            assert json.loads(result) == self.context.message.msg
+            assert JsonUtil.loads(result) == self.context.message.msg
             assert target["connection_id"] == "dummy"
 
     async def test_handle_receipt_no_recipient_verkey(self):

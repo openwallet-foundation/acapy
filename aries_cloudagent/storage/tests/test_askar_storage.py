@@ -68,8 +68,8 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
                     "key": await AskarWallet.generate_wallet_key(),
                     "key_derivation_method": "RAW",
                     "storage_type": "postgres_storage",
-                    "storage_config": json.dumps({"url": "dummy"}),
-                    "storage_creds": json.dumps(
+                    "storage_config": JsonUtil.dumps({"url": "dummy"}),
+                    "storage_creds": JsonUtil.dumps(
                         {
                             "account": "postgres",
                             "password": "mysecretpassword",
@@ -86,7 +86,7 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
                 None,
                 StorageRecord(
                     type="connection",
-                    value=json.dumps(
+                    value=JsonUtil.dumps(
                         {
                             "initiator": "self",
                             "invitation_key": "9XgL7Y4TBTJyVJdomT6axZGUFg9npxcrXnRT4CG8fWYg",
@@ -108,7 +108,7 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
                 ),
                 StorageRecord(
                     type=None,
-                    value=json.dumps(
+                    value=JsonUtil.dumps(
                         {
                             "initiator": "self",
                             "invitation_key": "9XgL7Y4TBTJyVJdomT6axZGUFg9npxcrXnRT4CG8fWYg",
@@ -182,7 +182,7 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
 
                 rec = StorageRecord(
                     type="connection",
-                    value=json.dumps(
+                    value=JsonUtil.dumps(
                         {
                             "initiator": "self",
                             "invitation_key": "9XgL7Y4TBTJyVJdomT6axZGUFg9npxcrXnRT4CG8fWYg",
@@ -231,8 +231,8 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
                     "key": await AskarWallet.generate_wallet_key(),
                     "key_derivation_method": "RAW",
                     "storage_type": "postgres_storage",
-                    "storage_config": json.dumps({"url": "dummy"}),
-                    "storage_creds": json.dumps(
+                    "storage_config": JsonUtil.dumps({"url": "dummy"}),
+                    "storage_creds": JsonUtil.dumps(
                         {
                             "account": "postgres",
                             "password": "mysecretpassword",
@@ -320,7 +320,7 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
         # add and then fetch a record
         record = StorageRecord(
             type="connection",
-            value=json.dumps(
+            value=JsonUtil.dumps(
                 {
                     "initiator": "self",
                     "invitation_key": "9XgL7Y4TBTJyVJdomT6axZGUFg9npxcrXnRT4CG8fWYg",

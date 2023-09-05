@@ -162,7 +162,7 @@ def ecdh_1pu_encrypt(
                 ("enc", enc_id),
                 ("apu", apu),
                 ("apv", apv),
-                ("epk", json.loads(epk.get_jwk_public())),
+                ("epk", JsonUtil.loads(epk.get_jwk_public())),
                 ("skid", sender_kid),
             ]
         )

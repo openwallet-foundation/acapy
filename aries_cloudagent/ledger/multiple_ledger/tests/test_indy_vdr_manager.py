@@ -178,7 +178,7 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait:
             mock_build_get_nym_req.return_value = async_mock.MagicMock()
-            mock_submit.return_value = json.dumps(GET_NYM_INDY_VDR_REPLY)
+            mock_submit.return_value = JsonUtil.dumps(GET_NYM_INDY_VDR_REPLY)
             mock_wait.return_value = mock_submit.return_value
             (
                 ledger_id,
@@ -215,7 +215,7 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait:
             mock_build_get_nym_req.return_value = async_mock.MagicMock()
-            mock_submit.return_value = json.dumps(GET_NYM_INDY_VDR_REPLY)
+            mock_submit.return_value = JsonUtil.dumps(GET_NYM_INDY_VDR_REPLY)
             mock_wait.return_value = mock_submit.return_value
             (
                 ledger_id,
@@ -238,7 +238,7 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
         get_nym_reply = deepcopy(GET_NYM_INDY_VDR_REPLY)
-        get_nym_reply["data"] = json.dumps(
+        get_nym_reply["data"] = JsonUtil.dumps(
             {
                 "dest": "Av63wJYM7xYR4AiygYq4c3",
                 "identifier": "V4SGRU86Z58d6TV7PBUe6f",
@@ -283,7 +283,7 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait:
             mock_build_get_nym_req.return_value = async_mock.MagicMock()
-            mock_submit.return_value = json.dumps(get_nym_reply)
+            mock_submit.return_value = JsonUtil.dumps(get_nym_reply)
             mock_wait.return_value = mock_submit.return_value
             assert not await self.manager._get_ledger_by_did(
                 "test_prod_1", "Av63wJYM7xYR4AiygYq4c3"
@@ -353,7 +353,7 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait:
             mock_build_get_nym_req.return_value = async_mock.MagicMock()
-            mock_submit.return_value = json.dumps(GET_NYM_INDY_VDR_REPLY)
+            mock_submit.return_value = JsonUtil.dumps(GET_NYM_INDY_VDR_REPLY)
             mock_wait.return_value = mock_submit.return_value
             (
                 ledger_id,

@@ -338,10 +338,10 @@ class TestValid(TestCase):
             with self.assertRaises(ValidationError):
                 INDY_WQL_VALIDATE(non_wql)
 
-        INDY_WQL_VALIDATE(json.dumps({}))
-        INDY_WQL_VALIDATE(json.dumps({"a": "1234"}))
-        INDY_WQL_VALIDATE(json.dumps({"a": "1234", "b": {"$not": "0"}}))
-        INDY_WQL_VALIDATE(json.dumps({"$or": {"a": "1234", "b": "0"}}))
+        INDY_WQL_VALIDATE(JsonUtil.dumps({}))
+        INDY_WQL_VALIDATE(JsonUtil.dumps({"a": "1234"}))
+        INDY_WQL_VALIDATE(JsonUtil.dumps({"a": "1234", "b": {"$not": "0"}}))
+        INDY_WQL_VALIDATE(JsonUtil.dumps({"$or": {"a": "1234", "b": "0"}}))
 
     def test_indy_extra_wql(self):
         non_xwqls = [
@@ -363,9 +363,9 @@ class TestValid(TestCase):
             with self.assertRaises(ValidationError):
                 INDY_EXTRA_WQL_VALIDATE(non_xwql)
 
-        INDY_EXTRA_WQL_VALIDATE(json.dumps({"uuid0": {"name::ident::marker": "1"}}))
+        INDY_EXTRA_WQL_VALIDATE(JsonUtil.dumps({"uuid0": {"name::ident::marker": "1"}}))
         INDY_EXTRA_WQL_VALIDATE(
-            json.dumps(
+            JsonUtil.dumps(
                 {
                     "uuid0": {"attr::ident::marker": "1"},
                     "uuid1": {"attr::member::value": "655321"},

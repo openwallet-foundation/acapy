@@ -63,7 +63,7 @@ class IndySdkIssuer(IndyIssuer):
                 origin_did,
                 schema_name,
                 schema_version,
-                json.dumps(attribute_names),
+                JsonUtil.dumps(attribute_names),
             )
         return (schema_id, schema_json)
 
@@ -124,10 +124,10 @@ class IndySdkIssuer(IndyIssuer):
             ) = await indy.anoncreds.issuer_create_and_store_credential_def(
                 self.profile.wallet.handle,
                 origin_did,
-                json.dumps(schema),
+                JsonUtil.dumps(schema),
                 tag or DEFAULT_CRED_DEF_TAG,
                 signature_type or DEFAULT_SIGNATURE_TYPE,
-                json.dumps({"support_revocation": support_revocation}),
+                JsonUtil.dumps({"support_revocation": support_revocation}),
             )
         return (credential_definition_id, credential_definition_json)
 
@@ -204,9 +204,9 @@ class IndySdkIssuer(IndyIssuer):
                 _,  # rev_reg_delta_json only for ISSUANCE_ON_DEMAND, excluded by design
             ) = await indy.anoncreds.issuer_create_credential(
                 self.profile.wallet.handle,
-                json.dumps(credential_offer),
-                json.dumps(credential_request),
-                json.dumps(encoded_values),
+                JsonUtil.dumps(credential_offer),
+                JsonUtil.dumps(credential_request),
+                JsonUtil.dumps(encoded_values),
                 rev_reg_id,
                 tails_reader_handle,
             )
@@ -367,7 +367,7 @@ class IndySdkIssuer(IndyIssuer):
                 revoc_def_type,
                 tag,
                 cred_def_id,
-                json.dumps(
+                JsonUtil.dumps(
                     {
                         "issuance_type": "ISSUANCE_BY_DEFAULT",
                         "max_cred_num": max_cred_num,

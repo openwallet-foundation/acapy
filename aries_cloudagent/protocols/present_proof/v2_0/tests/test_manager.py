@@ -456,7 +456,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
         self.holder.get_credential = async_mock.CoroutineMock(
-            return_value=json.dumps(
+            return_value=JsonUtil.dumps(
                 {
                     "schema_id": S_ID,
                     "cred_def_id": CD_ID,
@@ -467,7 +467,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = async_mock.CoroutineMock(
-            return_value=json.dumps(
+            return_value=JsonUtil.dumps(
                 {
                     "witness": {"omega": "1 ..."},
                     "rev_reg": {"accum": "21 ..."},
@@ -1029,7 +1029,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
         self.holder.get_credential = async_mock.CoroutineMock(
-            return_value=json.dumps(
+            return_value=JsonUtil.dumps(
                 {
                     "schema_id": S_ID,
                     "cred_def_id": CD_ID,
@@ -1115,7 +1115,7 @@ class TestV20PresManager(AsyncTestCase):
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
         self.holder.get_credential = async_mock.CoroutineMock(
-            return_value=json.dumps(
+            return_value=JsonUtil.dumps(
                 {
                     "schema_id": S_ID,
                     "cred_def_id": CD_ID,
@@ -1201,7 +1201,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
         self.holder.get_credential = async_mock.CoroutineMock(
-            return_value=json.dumps(
+            return_value=JsonUtil.dumps(
                 {
                     "schema_id": S_ID,
                     "cred_def_id": CD_ID,
@@ -1212,7 +1212,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = async_mock.CoroutineMock(
-            return_value=json.dumps(
+            return_value=JsonUtil.dumps(
                 {
                     "witness": {"omega": "1 ..."},
                     "rev_reg": {"accum": "21 ..."},

@@ -51,7 +51,7 @@ class IndySdkWallet(BaseWallet):
         self.opened: IndyOpenWallet = opened
 
     def __did_info_from_indy_info(self, info):
-        metadata = json.loads(info["metadata"]) if info["metadata"] else {}
+        metadata = JsonUtil.loads(info["metadata"]) if info["metadata"] else {}
         did: str = info["did"]
         verkey = info["verkey"]
 
@@ -92,7 +92,7 @@ class IndySdkWallet(BaseWallet):
         if seed:
             args["seed"] = bytes_to_b64(validate_seed(seed))
         try:
-            verkey = await indy.crypto.create_key(self.opened.handle, json.dumps(args))
+            verkey = await indy.crypto.create_key(self.opened.handle, JsonUtil.dumps(args))
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
                 raise WalletDuplicateError("Verification key already present in wallet")
@@ -101,7 +101,7 @@ class IndySdkWallet(BaseWallet):
             ) from x_indy
 
         await indy.crypto.set_key_metadata(
-            self.opened.handle, verkey, json.dumps(metadata)
+            self.opened.handle, verkey, JsonUtil.dumps(metadata)
         )
 
         return verkey
@@ -173,7 +173,7 @@ class IndySdkWallet(BaseWallet):
 
             return KeyInfo(
                 verkey=verkey,
-                metadata=json.loads(metadata) if metadata else {},
+                metadata=JsonUtil.loads(metadata) if metadata else {},
                 key_type=ED25519,
             )
         except IndyError as x_indy:
@@ -249,7 +249,7 @@ class IndySdkWallet(BaseWallet):
         # All ed25519 keys are handled by indy
         if key_info.key_type == ED25519:
             await indy.crypto.set_key_metadata(
-                self.opened.handle, verkey, json.dumps(metadata)
+                self.opened.handle, verkey, JsonUtil.dumps(metadata)
             )
         # All other (only bls12381g2 atm) are handled outside of indy
         else:
@@ -282,7 +282,7 @@ class IndySdkWallet(BaseWallet):
             verkey = await indy.did.replace_keys_start(
                 self.opened.handle,
                 did,
-                json.dumps(
+                JsonUtil.dumps(
                     {"seed": bytes_to_b64(validate_seed(next_seed))}
                     if next_seed
                     else {}
@@ -343,7 +343,7 @@ class IndySdkWallet(BaseWallet):
         # did method when retrieving
         if method != SOV:
             cfg["method_name"] = method.method_name
-        did_json = json.dumps(cfg)
+        did_json = JsonUtil.dumps(cfg)
         # crypto_type, cid - optional parameters skipped
         try:
             did, verkey = await indy.did.create_and_store_my_did(
@@ -467,7 +467,7 @@ class IndySdkWallet(BaseWallet):
         """
         # retrieve indy dids
         info_json = await indy.did.list_my_dids_with_meta(self.opened.handle)
-        info = json.loads(info_json)
+        info = JsonUtil.loads(info_json)
         ret = []
         for did in info:
             ret.append(self.__did_info_from_indy_info(did))
@@ -510,7 +510,7 @@ class IndySdkWallet(BaseWallet):
             raise IndyErrorHandler.wrap_error(
                 x_indy, "Wallet {} error".format(self.opened.name), WalletError
             ) from x_indy
-        info = json.loads(info_json)
+        info = JsonUtil.loads(info_json)
         return self.__did_info_from_indy_info(info)
 
     async def __get_keypair_local_did(
@@ -597,7 +597,7 @@ class IndySdkWallet(BaseWallet):
         if did_info.key_type == ED25519:
             try:
                 await indy.did.set_did_metadata(
-                    self.opened.handle, did, json.dumps(metadata)
+                    self.opened.handle, did, JsonUtil.dumps(metadata)
                 )
             except IndyError as x_indy:
                 raise IndyErrorHandler.wrap_error(
@@ -643,7 +643,7 @@ class IndySdkWallet(BaseWallet):
                     StorageRecord(
                         type=RECORD_TYPE_CONFIG,
                         id=RECORD_NAME_PUBLIC_DID,
-                        value=json.dumps({"did": public_did}),
+                        value=JsonUtil.dumps({"did": public_did}),
                     )
                 )
             except StorageDuplicateError:
@@ -652,7 +652,7 @@ class IndySdkWallet(BaseWallet):
                     RECORD_TYPE_CONFIG, RECORD_NAME_PUBLIC_DID
                 )
         if public_item:
-            public_did = json.loads(public_item.value)["did"]
+            public_did = JsonUtil.loads(public_item.value)["did"]
             if public_did:
                 try:
                     public_info = await self.get_local_did(public_did)
@@ -688,7 +688,7 @@ class IndySdkWallet(BaseWallet):
                     id=RECORD_NAME_PUBLIC_DID,
                     value="{}",
                 ),
-                value=json.dumps({"did": info.did}),
+                value=JsonUtil.dumps({"did": info.did}),
                 tags=None,
             )
             public = info
@@ -902,7 +902,7 @@ class IndySdkWallet(BaseWallet):
             )
         except IndyError:
             raise WalletError("Exception when unpacking message")
-        unpacked = json.loads(unpacked_json)
+        unpacked = JsonUtil.loads(unpacked_json)
         message = unpacked["message"]
         to_verkey = unpacked.get("recipient_verkey", None)
         from_verkey = unpacked.get("sender_verkey", None)

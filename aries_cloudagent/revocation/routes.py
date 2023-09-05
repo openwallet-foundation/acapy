@@ -869,7 +869,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 
     apply_ledger_update_json = request.query.get("apply_ledger_update", "false")
     LOGGER.debug(">>> apply_ledger_update_json = %s", apply_ledger_update_json)
-    apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
+    apply_ledger_update = JsonUtil.loads(request.query.get("apply_ledger_update", "false"))
 
     rev_reg_record = None
     genesis_transactions = None
@@ -1087,7 +1087,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
     profile = context.profile
     outbound_handler = request["outbound_message_router"]
     rev_reg_id = request.match_info["rev_reg_id"]
-    create_transaction_for_endorser = json.loads(
+    create_transaction_for_endorser = JsonUtil.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
     write_ledger = not create_transaction_for_endorser
@@ -1204,7 +1204,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     profile = context.profile
     outbound_handler = request["outbound_message_router"]
-    create_transaction_for_endorser = json.loads(
+    create_transaction_for_endorser = JsonUtil.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
     write_ledger = not create_transaction_for_endorser

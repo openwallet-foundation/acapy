@@ -105,7 +105,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
             ["name", "moniker"],
         )
         assert s_id == SCHEMA_ID
-        schema = json.loads(schema_json)
+        schema = JsonUtil.loads(schema_json)
         schema["seqNo"] = SCHEMA_TXN
 
         assert (
@@ -121,16 +121,16 @@ class TestIndyCredxIssuance(AsyncTestCase):
         )
         assert cd_id == CRED_DEF_ID
         assert await self.issuer.credential_definition_in_wallet(cd_id)
-        cred_def = json.loads(cred_def_json)
+        cred_def = JsonUtil.loads(cred_def_json)
 
         cred_offer_json = await self.issuer.create_credential_offer(cd_id)
-        cred_offer = json.loads(cred_offer_json)
+        cred_offer = JsonUtil.loads(cred_offer_json)
 
         cred_req_json, cred_req_meta_json = await self.holder.create_credential_request(
             cred_offer, cred_def, TEST_DID
         )
-        cred_req = json.loads(cred_req_json)
-        cred_req_meta = json.loads(cred_req_meta_json)
+        cred_req = JsonUtil.loads(cred_req_json)
+        cred_req_meta = JsonUtil.loads(cred_req_meta_json)
 
         cred_json, cred_rev_id = await self.issuer.create_credential(
             schema,
@@ -141,13 +141,13 @@ class TestIndyCredxIssuance(AsyncTestCase):
             tails_file_path=None,
         )
         assert cred_rev_id is None
-        cred_data = json.loads(cred_json)
+        cred_data = JsonUtil.loads(cred_json)
 
         cred_id = await self.holder.store_credential(cred_def, cred_data, cred_req_meta)
 
         found = await self.holder.get_credential(cred_id)
         assert found
-        stored_cred = json.loads(found)
+        stored_cred = JsonUtil.loads(found)
 
         assert not await self.holder.get_mime_type(cred_id, "name")
 
@@ -185,7 +185,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
             {cd_id: cred_def},
             rev_states=None,
         )
-        pres = json.loads(pres_json)
+        pres = JsonUtil.loads(pres_json)
 
         assert await self.verifier.verify_presentation(
             PRES_REQ_NON_REV, pres, {s_id: schema}, {cd_id: cred_def}, {}, {}
@@ -206,7 +206,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
             ["name", "moniker"],
         )
         assert s_id == SCHEMA_ID
-        schema = json.loads(schema_json)
+        schema = JsonUtil.loads(schema_json)
         schema["seqNo"] = SCHEMA_TXN
 
         assert (
@@ -221,7 +221,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
             TEST_DID, schema, support_revocation=True
         )
         assert cd_id == CRED_DEF_ID
-        cred_def = json.loads(cred_def_json)
+        cred_def = JsonUtil.loads(cred_def_json)
         self.ledger.get_credential_definition.return_value = cred_def
 
         with tempfile.TemporaryDirectory() as tmp_path:
@@ -233,12 +233,12 @@ class TestIndyCredxIssuance(AsyncTestCase):
                 TEST_DID, cd_id, "CL_ACCUM", "0", 10, tmp_path
             )
             assert reg_id == REV_REG_ID
-            reg_def = json.loads(reg_def_json)
-            reg_entry = json.loads(reg_entry_json)
+            reg_def = JsonUtil.loads(reg_def_json)
+            reg_entry = JsonUtil.loads(reg_entry_json)
             tails_path = reg_def["value"]["tailsLocation"]
 
             cred_offer_json = await self.issuer.create_credential_offer(cd_id)
-            cred_offer = json.loads(cred_offer_json)
+            cred_offer = JsonUtil.loads(cred_offer_json)
 
             (
                 cred_req_json,
@@ -246,8 +246,8 @@ class TestIndyCredxIssuance(AsyncTestCase):
             ) = await self.holder.create_credential_request(
                 cred_offer, cred_def, TEST_DID
             )
-            cred_req = json.loads(cred_req_json)
-            cred_req_meta = json.loads(cred_req_meta_json)
+            cred_req = JsonUtil.loads(cred_req_json)
+            cred_req_meta = JsonUtil.loads(cred_req_meta_json)
 
             cred_json, cred_rev_id = await self.issuer.create_credential(
                 schema,
@@ -258,7 +258,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
                 tails_file_path=tails_path,
             )
             assert cred_rev_id == "1"
-            cred_data = json.loads(cred_json)
+            cred_data = JsonUtil.loads(cred_json)
 
             cred_id = await self.holder.store_credential(
                 cred_def,
@@ -269,7 +269,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
 
             found = await self.holder.get_credential(cred_id)
             assert found
-            stored_cred = json.loads(found)
+            stored_cred = JsonUtil.loads(found)
 
             creds = await self.holder.get_credentials(None, None, None)
             assert len(creds) == 1
@@ -298,14 +298,14 @@ class TestIndyCredxIssuance(AsyncTestCase):
             rev_state_json = await self.holder.create_revocation_state(
                 cred_rev_id, reg_def, reg_entry, rev_state_time, tails_path
             )
-            rev_state_init = json.loads(rev_state_json)
+            rev_state_init = JsonUtil.loads(rev_state_json)
             rev_delta_init = {"ver": "1.0", "value": rev_state_init["rev_reg"]}
 
             (rev_delta_2_json, skipped_ids) = await self.issuer.revoke_credentials(
                 cd_id, reg_id, tails_path, (1,)
             )
             assert not skipped_ids
-            rev_delta_2 = json.loads(rev_delta_2_json)
+            rev_delta_2 = JsonUtil.loads(rev_delta_2_json)
 
             merged = await self.issuer.merge_revocation_registry_deltas(
                 rev_delta_init, rev_delta_2
@@ -326,7 +326,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
             {cd_id: cred_def},
             rev_states={reg_id: {rev_state_time: rev_state_init}},
         )
-        pres = json.loads(pres_json)
+        pres = JsonUtil.loads(pres_json)
 
         reg_def["txnTime"] = rev_state_time
         assert await self.verifier.verify_presentation(

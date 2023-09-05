@@ -14,7 +14,7 @@ async def create_tails_reader(tails_file_path: str) -> int:
     if not tails_file_path.exists():
         raise FileNotFoundError("Tails file does not exist.")
 
-    tails_reader_config = json.dumps(
+    tails_reader_config = JsonUtil.dumps(
         {
             "base_dir": str(tails_file_path.parent.absolute()),
             "file": str(tails_file_path.name),
@@ -25,5 +25,5 @@ async def create_tails_reader(tails_file_path: str) -> int:
 
 async def create_tails_writer(tails_base_dir: str) -> int:
     """Get a handle for the blob_storage file writer."""
-    tails_writer_config = json.dumps({"base_dir": tails_base_dir, "uri_pattern": ""})
+    tails_writer_config = JsonUtil.dumps({"base_dir": tails_base_dir, "uri_pattern": ""})
     return await indy.blob_storage.open_writer("default", tails_writer_config)

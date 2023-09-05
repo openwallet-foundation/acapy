@@ -47,11 +47,11 @@ class TestForwardSchema(TestCase):
 
     def test_make_model_str(self):
         MSG = {"some": "msg"}
-        message = Forward(to="to", msg=json.dumps(MSG))
+        message = Forward(to="to", msg=JsonUtil.dumps(MSG))
         data = message.serialize()
         model_instance = Forward.deserialize(data)
         assert isinstance(model_instance, Forward)
 
         assert {"msg": MSG} == ForwardSchema().handle_str_message(
-            data={"msg": json.dumps(MSG)}
+            data={"msg": JsonUtil.dumps(MSG)}
         )

@@ -37,7 +37,7 @@ def step_impl(context, n):
     extra_args = None
     if BDD_EXTRA_AGENT_ARGS:
         print("Got extra args:", BDD_EXTRA_AGENT_ARGS)
-        extra_args = json.loads(BDD_EXTRA_AGENT_ARGS)
+        extra_args = JsonUtil.loads(BDD_EXTRA_AGENT_ARGS)
 
     context.active_agents = {}
     for row in context.table:

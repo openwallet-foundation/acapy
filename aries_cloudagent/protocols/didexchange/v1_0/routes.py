@@ -257,7 +257,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
     alias = request.query.get("alias") or None
-    use_public_did = json.loads(request.query.get("use_public_did", "null"))
+    use_public_did = JsonUtil.loads(request.query.get("use_public_did", "null"))
     goal_code = request.query.get("goal_code") or None
     goal = request.query.get("goal") or None
 
@@ -304,7 +304,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
     body = await request.json()
     alias = request.query.get("alias")
     my_endpoint = request.query.get("my_endpoint")
-    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    auto_accept = JsonUtil.loads(request.query.get("auto_accept", "null"))
     mediation_id = request.query.get("mediation_id") or None
 
     profile = context.profile
@@ -350,7 +350,7 @@ async def didx_accept_request(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
-    use_public_did = json.loads(request.query.get("use_public_did", "null"))
+    use_public_did = JsonUtil.loads(request.query.get("use_public_did", "null"))
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)

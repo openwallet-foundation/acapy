@@ -41,7 +41,7 @@ async def jws_sign(session, verify_data, verkey):
 
     header = {"alg": "EdDSA", "b64": False, "crit": ["b64"]}
 
-    encoded_header = b64encode(json.dumps(header))
+    encoded_header = b64encode(JsonUtil.dumps(header))
 
     jws_to_sign = create_jws(encoded_header, verify_data)
 
@@ -66,7 +66,7 @@ async def jws_verify(session, verify_data, signature, public_key):
     """Detatched jws verify handling."""
 
     encoded_header, _, encoded_signature = signature.partition("..")
-    decoded_header = json.loads(b64decode(encoded_header))
+    decoded_header = JsonUtil.loads(b64decode(encoded_header))
 
     verify_jws_header(decoded_header)
 

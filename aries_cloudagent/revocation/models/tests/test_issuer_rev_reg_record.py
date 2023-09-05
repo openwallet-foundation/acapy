@@ -97,8 +97,8 @@ class TestIssuerRevRegRecord(AsyncTestCase):
 
         issuer.create_and_store_revocation_registry.return_value = (
             REV_REG_ID,
-            json.dumps(REV_REG_DEF),
-            json.dumps(REV_REG_ENTRY),
+            JsonUtil.dumps(REV_REG_DEF),
+            JsonUtil.dumps(REV_REG_ENTRY),
         )
 
         with async_mock.patch.object(

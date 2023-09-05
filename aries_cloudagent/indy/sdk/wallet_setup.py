@@ -69,7 +69,7 @@ class IndyWalletConfig:
             "storage_type": self.storage_type,
         }
         if self.storage_config is not None:
-            ret["storage_config"] = json.loads(self.storage_config)
+            ret["storage_config"] = JsonUtil.loads(self.storage_config)
         return ret
 
     @property
@@ -81,7 +81,7 @@ class IndyWalletConfig:
         # if self.rekey_derivation_method:
         #     ret["rekey_derivation_method"] = self.rekey_derivation_method
         if self.storage_creds is not None:
-            ret["storage_credentials"] = json.loads(self.storage_creds)
+            ret["storage_credentials"] = JsonUtil.loads(self.storage_creds)
         return ret
 
     async def create_wallet(self) -> "IndyOpenWallet":
@@ -100,8 +100,8 @@ class IndyWalletConfig:
                 pass
         try:
             await indy.wallet.create_wallet(
-                config=json.dumps(self.wallet_config),
-                credentials=json.dumps(self.wallet_access),
+                config=JsonUtil.dumps(self.wallet_config),
+                credentials=JsonUtil.dumps(self.wallet_access),
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletAlreadyExistsError:
@@ -133,8 +133,8 @@ class IndyWalletConfig:
         """
         try:
             await indy.wallet.delete_wallet(
-                config=json.dumps(self.wallet_config),
-                credentials=json.dumps(self.wallet_access),
+                config=JsonUtil.dumps(self.wallet_config),
+                credentials=JsonUtil.dumps(self.wallet_access),
             )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletNotFoundError:
@@ -162,8 +162,8 @@ class IndyWalletConfig:
         while True:
             try:
                 handle = await indy.wallet.open_wallet(
-                    config=json.dumps(self.wallet_config),
-                    credentials=json.dumps(self.wallet_access),
+                    config=JsonUtil.dumps(self.wallet_config),
+                    credentials=JsonUtil.dumps(self.wallet_access),
                 )
                 # if self.rekey:
                 #     self.key = self.rekey

@@ -142,7 +142,7 @@ class RevocationManager:
                     txn, issuer_rr_rec.record_id, for_update=True
                 )
                 if delta_json:
-                    issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
+                    issuer_rr_upd.revoc_reg_entry = JsonUtil.loads(delta_json)
                 await issuer_rr_upd.clear_pending(txn, crids)
                 await txn.commit()
             await self.set_cred_revoked_state(rev_reg_id, crids)
@@ -234,7 +234,7 @@ class RevocationManager:
                         txn, issuer_rr_rec.record_id, for_update=True
                     )
                     if delta_json:
-                        issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
+                        issuer_rr_upd.revoc_reg_entry = JsonUtil.loads(delta_json)
                     await issuer_rr_upd.clear_pending(txn, crids)
                     await txn.commit()
                 await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)

@@ -277,9 +277,9 @@ class TestAskarDidCommV2:
         ):
             _ = await test_module.unpack_message(session, message_invalid)
 
-        message_unknown_alg = json.dumps(
+        message_unknown_alg = JsonUtil.dumps(
             {
-                "protected": b64url(json.dumps({"alg": "NOT-SUPPORTED"})),
+                "protected": b64url(JsonUtil.dumps({"alg": "NOT-SUPPORTED"})),
                 "recipients": [{"header": {"kid": "bob"}, "encrypted_key": "MTIzNA"}],
                 "iv": "MTIzNA",
                 "ciphertext": "MTIzNA",
@@ -293,9 +293,9 @@ class TestAskarDidCommV2:
         ):
             _ = await test_module.unpack_message(session, message_unknown_alg)
 
-        message_unknown_recip = json.dumps(
+        message_unknown_recip = JsonUtil.dumps(
             {
-                "protected": b64url(json.dumps({"alg": "ECDH-ES+A128KW"})),
+                "protected": b64url(JsonUtil.dumps({"alg": "ECDH-ES+A128KW"})),
                 "recipients": [{"header": {"kid": "bob"}, "encrypted_key": "MTIzNA"}],
                 "iv": "MTIzNA",
                 "ciphertext": "MTIzNA",
@@ -322,9 +322,9 @@ class TestAskarDidCommV2:
         # for now at least, insert the sender public key so it can be resolved
         await session.insert_key("alice_pk", alice_pk, tags={"kid": ALICE_KID})
 
-        message_1pu_no_skid = json.dumps(
+        message_1pu_no_skid = JsonUtil.dumps(
             {
-                "protected": b64url(json.dumps({"alg": "ECDH-1PU+A128KW"})),
+                "protected": b64url(JsonUtil.dumps({"alg": "ECDH-1PU+A128KW"})),
                 "recipients": [{"header": {"kid": BOB_KID}, "encrypted_key": "MTIzNA"}],
                 "iv": "MTIzNA",
                 "ciphertext": "MTIzNA",
@@ -338,10 +338,10 @@ class TestAskarDidCommV2:
         ):
             _ = await test_module.unpack_message(session, message_1pu_no_skid)
 
-        message_1pu_unknown_skid = json.dumps(
+        message_1pu_unknown_skid = JsonUtil.dumps(
             {
                 "protected": b64url(
-                    json.dumps({"alg": "ECDH-1PU+A128KW", "skid": "UNKNOWN"})
+                    JsonUtil.dumps({"alg": "ECDH-1PU+A128KW", "skid": "UNKNOWN"})
                 ),
                 "recipients": [{"header": {"kid": BOB_KID}, "encrypted_key": "MTIzNA"}],
                 "iv": "MTIzNA",
@@ -356,10 +356,10 @@ class TestAskarDidCommV2:
         ):
             _ = await test_module.unpack_message(session, message_1pu_unknown_skid)
 
-        message_1pu_apu_invalid = json.dumps(
+        message_1pu_apu_invalid = JsonUtil.dumps(
             {
                 "protected": b64url(
-                    json.dumps({"alg": "ECDH-1PU+A128KW", "skid": "A", "apu": "A"})
+                    JsonUtil.dumps({"alg": "ECDH-1PU+A128KW", "skid": "A", "apu": "A"})
                 ),
                 "recipients": [{"header": {"kid": BOB_KID}, "encrypted_key": "MTIzNA"}],
                 "iv": "MTIzNA",
@@ -374,10 +374,10 @@ class TestAskarDidCommV2:
         ):
             _ = await test_module.unpack_message(session, message_1pu_apu_invalid)
 
-        message_1pu_apu_mismatch = json.dumps(
+        message_1pu_apu_mismatch = JsonUtil.dumps(
             {
                 "protected": b64url(
-                    json.dumps(
+                    JsonUtil.dumps(
                         {
                             "alg": "ECDH-1PU+A128KW",
                             "skid": ALICE_KID,

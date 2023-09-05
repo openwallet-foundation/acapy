@@ -499,5 +499,5 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     document_loader=self._profile.inject(DocumentLoader),
                     challenge=challenge,
                 )
-            pres_ex_record.verified = json.dumps(pres_ver_result.verified)
+            pres_ex_record.verified = JsonUtil.dumps(pres_ver_result.verified)
             return pres_ex_record

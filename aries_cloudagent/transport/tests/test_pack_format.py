@@ -59,7 +59,7 @@ class TestPackWireFormat(AsyncTestCase):
         ) as mock_unpack:
             mock_unpack.return_value = "{missing-brace"
             with self.assertRaises(WireFormatParseError) as context:
-                await serializer.parse_message(self.session, json.dumps(x_message))
+                await serializer.parse_message(self.session, JsonUtil.dumps(x_message))
         assert "Message JSON parsing failed" in str(context.exception)
 
         serializer = PackWireFormat()
@@ -67,9 +67,9 @@ class TestPackWireFormat(AsyncTestCase):
         with async_mock.patch.object(
             serializer, "unpack", async_mock.CoroutineMock()
         ) as mock_unpack:
-            mock_unpack.return_value = json.dumps([1, 2, 3])
+            mock_unpack.return_value = JsonUtil.dumps([1, 2, 3])
             with self.assertRaises(WireFormatParseError) as context:
-                await serializer.parse_message(self.session, json.dumps(x_message))
+                await serializer.parse_message(self.session, JsonUtil.dumps(x_message))
         assert "Message JSON result is not an object" in str(context.exception)
 
         with self.assertRaises(WireFormatParseError):
@@ -101,7 +101,7 @@ class TestPackWireFormat(AsyncTestCase):
 
         mock_wallet = async_mock.MagicMock(
             pack_message=async_mock.CoroutineMock(
-                side_effect=[json.dumps("message").encode("utf-8"), WalletError()]
+                side_effect=[JsonUtil.dumps("message").encode("utf-8"), WalletError()]
             )
         )
         session = InMemoryProfile.test_session(bind={BaseWallet: mock_wallet})
@@ -116,7 +116,7 @@ class TestPackWireFormat(AsyncTestCase):
 
     async def test_unpacked(self):
         serializer = PackWireFormat()
-        message_json = json.dumps(self.test_message)
+        message_json = JsonUtil.dumps(self.test_message)
         message_dict, delivery = await serializer.parse_message(
             self.session, message_json
         )
@@ -130,7 +130,7 @@ class TestPackWireFormat(AsyncTestCase):
 
         message = self.test_message.copy()
         message.pop("@type")
-        message_json = json.dumps(message)
+        message_json = JsonUtil.dumps(message)
 
         message_dict, delivery = await serializer.parse_message(
             self.session, message_json
@@ -146,12 +146,12 @@ class TestPackWireFormat(AsyncTestCase):
         recipient_keys = (local_did.verkey,)
         routing_keys = ()
         sender_key = local_did.verkey
-        message_json = json.dumps(self.test_message)
+        message_json = JsonUtil.dumps(self.test_message)
 
         packed_json = await serializer.encode_message(
             self.session, message_json, recipient_keys, routing_keys, sender_key
         )
-        packed = json.loads(packed_json)
+        packed = JsonUtil.loads(packed_json)
 
         assert isinstance(packed, dict) and "protected" in packed
         assert serializer.get_recipient_keys(packed_json) == list(recipient_keys)
@@ -166,7 +166,7 @@ class TestPackWireFormat(AsyncTestCase):
         assert delivery.thread_id == self.test_thread_id
         assert delivery.direct_response_mode == "all"
 
-        plain_json = json.dumps("plain")
+        plain_json = JsonUtil.dumps("plain")
         assert (
             await serializer.encode_message(self.session, plain_json, None, None, None)
             == plain_json
@@ -183,12 +183,12 @@ class TestPackWireFormat(AsyncTestCase):
         recipient_keys = (local_did.verkey,)
         routing_keys = (router_did.verkey,)
         sender_key = local_did.verkey
-        message_json = json.dumps(self.test_message)
+        message_json = JsonUtil.dumps(self.test_message)
 
         packed_json = await serializer.encode_message(
             self.session, message_json, recipient_keys, routing_keys, sender_key
         )
-        packed = json.loads(packed_json)
+        packed = JsonUtil.loads(packed_json)
 
         assert isinstance(packed, dict) and "protected" in packed
 
@@ -203,14 +203,14 @@ class TestPackWireFormat(AsyncTestCase):
         recip_keys = ["kid1", "kid2", "kid3"]
         enc_message = {
             "protected": b64encode(
-                json.dumps(
+                JsonUtil.dumps(
                     {"recipients": [{"header": {"kid": k}} for k in recip_keys]}
                 ).encode("utf-8")
             ).decode()
         }
 
         serializer = PackWireFormat()
-        actual_recip_keys = serializer.get_recipient_keys(json.dumps(enc_message))
+        actual_recip_keys = serializer.get_recipient_keys(JsonUtil.dumps(enc_message))
 
         self.assertEqual(recip_keys, actual_recip_keys)
 
@@ -220,4 +220,4 @@ class TestPackWireFormat(AsyncTestCase):
         serializer = PackWireFormat()
 
         with self.assertRaises(RecipientKeysError):
-            serializer.get_recipient_keys(json.dumps(enc_message))
+            serializer.get_recipient_keys(JsonUtil.dumps(enc_message))

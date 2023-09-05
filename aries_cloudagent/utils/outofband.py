@@ -23,5 +23,5 @@ def serialize_outofband(message: AgentMessage, did: DIDInfo, endpoint: str) -> s
         "routingKeys": [],
         "serviceEndpoint": endpoint,
     }
-    d_m = quote(str_to_b64(json.dumps(body)))
+    d_m = quote(str_to_b64(JsonUtil.dumps(body)))
     return urljoin(endpoint, "?d_m={}".format(d_m))

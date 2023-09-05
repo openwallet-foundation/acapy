@@ -411,7 +411,7 @@ class Conductor:
                     public=context.settings.get("debug.invite_public", False),
                     multi_use=context.settings.get("debug.invite_multi_use", False),
                     hs_protos=[HSProto.RFC23],
-                    metadata=json.loads(
+                    metadata=JsonUtil.loads(
                         context.settings.get("debug.invite_metadata_json", "{}")
                     ),
                 )
@@ -434,7 +434,7 @@ class Conductor:
                     my_label=context.settings.get("debug.invite_label"),
                     public=context.settings.get("debug.invite_public", False),
                     multi_use=context.settings.get("debug.invite_multi_use", False),
-                    metadata=json.loads(
+                    metadata=JsonUtil.loads(
                         context.settings.get("debug.invite_metadata_json", "{}")
                     ),
                 )

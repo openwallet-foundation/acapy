@@ -397,7 +397,7 @@ class TestTransactionManager(AsyncTestCase):
 
         transaction_record.state = TransactionRecord.STATE_REQUEST_RECEIVED
         transaction_record.thread_id = self.test_author_transaction_id
-        transaction_record.messages_attach[0]["data"]["json"] = json.dumps(
+        transaction_record.messages_attach[0]["data"]["json"] = JsonUtil.dumps(
             {
                 "did": "test",
                 "verkey": "test",
@@ -481,7 +481,7 @@ class TestTransactionManager(AsyncTestCase):
         )
         self.ledger.get_indy_storage = future
         self.ledger.txn_submit = async_mock.CoroutineMock(
-            return_value=json.dumps(
+            return_value=JsonUtil.dumps(
                 {
                     "result": {
                         "txn": {"type": "101", "metadata": {"from": TEST_DID}},

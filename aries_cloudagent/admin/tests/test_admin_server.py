@@ -403,7 +403,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             f"http://127.0.0.1:{self.port}/status/config",
             headers={"x-api-key": "test-api-key"},
         ) as response:
-            config = json.loads(await response.text())["config"]
+            config = JsonUtil.loads(await response.text())["config"]
             assert "admin.admin_insecure_mode" in config
             assert all(
                 k not in config

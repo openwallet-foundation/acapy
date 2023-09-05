@@ -212,7 +212,7 @@ async def credentials_get(request: web.BaseRequest):
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    credential_json = json.loads(credential)
+    credential_json = JsonUtil.loads(credential)
     return web.json_response(credential_json)
 
 
@@ -332,7 +332,7 @@ async def credentials_list(request: web.BaseRequest):
 
     # url encoded json wql
     encoded_wql = request.query.get("wql") or "{}"
-    wql = json.loads(encoded_wql)
+    wql = JsonUtil.loads(encoded_wql)
 
     # defaults
     start = int(start) if isinstance(start, str) else 0

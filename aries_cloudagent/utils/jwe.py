@@ -134,7 +134,7 @@ class JweEnvelope:
     def _deserialize(cls, parsed: Mapping[str, Any]) -> "JweEnvelope":
         protected_b64 = parsed[IDENT_PROTECTED]
         try:
-            protected: dict = json.loads(from_b64url(protected_b64))
+            protected: dict = JsonUtil.loads(from_b64url(protected_b64))
         except json.JSONDecodeError:
             raise ValidationError(
                 "Invalid JWE: invalid JSON for protected headers"
@@ -230,7 +230,7 @@ class JweEnvelope:
 
     def to_json(self) -> str:
         """Serialize the JWE envelope to a JSON string."""
-        return json.dumps(self.serialize())
+        return JsonUtil.dumps(self.serialize())
 
     def add_recipient(self, recip: JweRecipient):
         """Add a recipient to the JWE envelope."""
@@ -250,7 +250,7 @@ class JweEnvelope:
                 protected[IDENT_RECIPIENTS] = recipients
             else:
                 raise ValidationError("Missing message recipients")
-        self.protected_b64 = b64url(json.dumps(protected))
+        self.protected_b64 = b64url(JsonUtil.dumps(protected))
 
     @property
     def protected_bytes(self) -> bytes:

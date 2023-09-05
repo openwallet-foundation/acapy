@@ -101,12 +101,12 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         if all_exist_endpoints:
             all_exist_endpoints[endpoint_type.indy] = endpoint
             all_exist_endpoints["routingKeys"] = routing_keys
-            attr_json = json.dumps({"endpoint": all_exist_endpoints})
+            attr_json = JsonUtil.dumps({"endpoint": all_exist_endpoints})
 
         else:
             endpoint_dict = {endpoint_type.indy: endpoint}
             endpoint_dict["routingKeys"] = routing_keys
-            attr_json = json.dumps({"endpoint": endpoint_dict})
+            attr_json = JsonUtil.dumps({"endpoint": endpoint_dict})
 
         return attr_json
 
@@ -315,7 +315,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                 )
             except IndyIssuerError as err:
                 raise LedgerError(err.message) from err
-            schema_def = json.loads(schema_json)
+            schema_def = JsonUtil.loads(schema_json)
 
             schema_req = await self._create_schema_request(
                 public_info,
@@ -337,7 +337,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
                 try:
                     # parse sequence number out of response
-                    seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
+                    seq_no = JsonUtil.loads(resp)["result"]["txnMetadata"]["seqNo"]
                     schema_def["seqNo"] = seq_no
                 except KeyError as err:
                     raise LedgerError(
@@ -464,7 +464,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                 except IndyIssuerError as err:
                     raise LedgerError(err.message) from err
 
-                credential_definition_json = json.dumps(ledger_cred_def)
+                credential_definition_json = JsonUtil.dumps(ledger_cred_def)
                 break
             else:  # no such cred def on ledger
                 try:
@@ -513,7 +513,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             if not write_ledger:
                 return (credential_definition_id, {"signed_txn": resp}, novel)
 
-        return (credential_definition_id, json.loads(credential_definition_json), novel)
+        return (credential_definition_id, JsonUtil.loads(credential_definition_json), novel)
 
     @abstractmethod
     async def _create_credential_definition_request(

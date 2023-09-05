@@ -48,7 +48,7 @@ class TestRevocationManager(AsyncTestCase):
         issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
         issuer.revoke_credentials = async_mock.CoroutineMock(
             return_value=(
-                json.dumps(
+                JsonUtil.dumps(
                     {
                         "ver": "1.0",
                         "value": {
@@ -207,7 +207,7 @@ class TestRevocationManager(AsyncTestCase):
             )
 
             issuer.revoke_credentials = async_mock.CoroutineMock(
-                side_effect=[(json.dumps(delta), []) for delta in deltas]
+                side_effect=[(JsonUtil.dumps(delta), []) for delta in deltas]
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -266,7 +266,7 @@ class TestRevocationManager(AsyncTestCase):
             )
 
             issuer.revoke_credentials = async_mock.CoroutineMock(
-                side_effect=[(json.dumps(delta), []) for delta in deltas]
+                side_effect=[(JsonUtil.dumps(delta), []) for delta in deltas]
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -326,7 +326,7 @@ class TestRevocationManager(AsyncTestCase):
             )
 
             issuer.revoke_credentials = async_mock.CoroutineMock(
-                side_effect=[(json.dumps(delta), []) for delta in deltas]
+                side_effect=[(JsonUtil.dumps(delta), []) for delta in deltas]
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 

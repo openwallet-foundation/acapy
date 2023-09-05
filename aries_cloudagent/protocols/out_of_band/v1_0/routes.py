@@ -207,8 +207,8 @@ async def invitation_create(request: web.BaseRequest):
     goal_code = body.get("goal_code")
     goal = body.get("goal")
 
-    multi_use = json.loads(request.query.get("multi_use", "false"))
-    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    multi_use = JsonUtil.loads(request.query.get("multi_use", "false"))
+    auto_accept = JsonUtil.loads(request.query.get("auto_accept", "null"))
 
     profile = context.profile
     oob_mgr = OutOfBandManager(profile)
@@ -264,10 +264,10 @@ async def invitation_receive(request: web.BaseRequest):
     oob_mgr = OutOfBandManager(profile)
 
     body = await request.json()
-    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    auto_accept = JsonUtil.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
     # By default, try to use an existing connection
-    use_existing_conn = json.loads(request.query.get("use_existing_connection", "true"))
+    use_existing_conn = JsonUtil.loads(request.query.get("use_existing_connection", "true"))
     mediation_id = request.query.get("mediation_id")
     try:
         invitation = InvitationMessage.deserialize(body)

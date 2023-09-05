@@ -168,7 +168,7 @@ def step_impl(context, holder):
 
     # get the required revocation info from the last credential exchange
     cred_exchange = context.cred_exchange
-    print("cred_exchange:", json.dumps(cred_exchange))
+    print("cred_exchange:", JsonUtil.dumps(cred_exchange))
 
     cred_ex_id = (
         cred_exchange["cred_ex_id"]

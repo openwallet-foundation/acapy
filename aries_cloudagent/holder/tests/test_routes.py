@@ -50,7 +50,7 @@ class TestHolderRoutes(AsyncTestCase):
             IndyHolder,
             async_mock.MagicMock(
                 get_credential=async_mock.CoroutineMock(
-                    return_value=json.dumps({"hello": "world"})
+                    return_value=JsonUtil.dumps({"hello": "world"})
                 )
             ),
         )

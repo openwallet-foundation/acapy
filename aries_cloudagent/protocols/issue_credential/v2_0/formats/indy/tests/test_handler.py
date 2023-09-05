@@ -390,7 +390,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         await self.session.storage.add_record(cred_def_record)
 
         self.issuer.create_credential_offer = async_mock.CoroutineMock(
-            return_value=json.dumps(INDY_OFFER)
+            return_value=JsonUtil.dumps(INDY_OFFER)
         )
 
         (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
@@ -456,7 +456,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         await self.session.storage.add_record(cred_def_record)
 
         self.issuer.create_credential_offer = async_mock.CoroutineMock(
-            return_value=json.dumps(INDY_OFFER)
+            return_value=JsonUtil.dumps(INDY_OFFER)
         )
 
         (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
@@ -518,7 +518,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         await self.session.storage.add_record(cred_def_record)
 
         self.issuer.create_credential_offer = async_mock.CoroutineMock(
-            return_value=json.dumps(INDY_OFFER)
+            return_value=JsonUtil.dumps(INDY_OFFER)
         )
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
@@ -542,7 +542,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         self.issuer.create_credential_offer = async_mock.CoroutineMock(
-            return_value=json.dumps(INDY_OFFER)
+            return_value=JsonUtil.dumps(INDY_OFFER)
         )
 
         with self.assertRaises(V20CredFormatError) as context:
@@ -583,7 +583,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
 
         cred_req_meta = {}
         self.holder.create_credential_request = async_mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
+            return_value=(JsonUtil.dumps(INDY_CRED_REQ), JsonUtil.dumps(cred_req_meta))
         )
 
         (cred_format, attachment) = await self.handler.create_request(
@@ -722,7 +722,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
 
         cred_rev_id = "1000"
         self.issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), cred_rev_id)
+            return_value=(JsonUtil.dumps(INDY_CRED), cred_rev_id)
         )
 
         with async_mock.patch.object(
@@ -810,7 +810,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         self.issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), None)
+            return_value=(JsonUtil.dumps(INDY_CRED), None)
         )
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value=CRED_DEF_NR
@@ -908,7 +908,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         self.issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), cred_rev_id)
+            return_value=(JsonUtil.dumps(INDY_CRED), cred_rev_id)
         )
 
         with async_mock.patch.object(
@@ -968,7 +968,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         self.issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), cred_rev_id)
+            return_value=(JsonUtil.dumps(INDY_CRED), cred_rev_id)
         )
 
         with async_mock.patch.object(
@@ -1141,7 +1141,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         self.holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
         stored_cred = {"stored": "cred"}
         self.holder.get_credential = async_mock.CoroutineMock(
-            return_value=json.dumps(stored_cred)
+            return_value=JsonUtil.dumps(stored_cred)
         )
 
         with async_mock.patch.object(

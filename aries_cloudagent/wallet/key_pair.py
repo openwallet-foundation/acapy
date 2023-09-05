@@ -49,7 +49,7 @@ class KeyPairStorageManager:
         }
         record = StorageRecord(
             KEY_PAIR_STORAGE_TYPE,
-            json.dumps(data),
+            JsonUtil.dumps(data),
             {**tags, "verkey": verkey, "key_type": key_type.key_type},
             uuid.uuid4().hex,
         )
@@ -75,7 +75,7 @@ class KeyPairStorageManager:
         record = await self._store.find_record(
             KEY_PAIR_STORAGE_TYPE, {"verkey": verkey}
         )
-        data = json.loads(record.value)
+        data = JsonUtil.loads(record.value)
 
         return data
 
@@ -85,7 +85,7 @@ class KeyPairStorageManager:
             KEY_PAIR_STORAGE_TYPE, tag_query
         )
 
-        return [json.loads(record.value) for record in records]
+        return [JsonUtil.loads(record.value) for record in records]
 
     async def delete_key_pair(self, verkey: str):
         """Remove a previously-stored key pair record.
@@ -109,7 +109,7 @@ class KeyPairStorageManager:
         record = await self._store.find_record(
             KEY_PAIR_STORAGE_TYPE, {"verkey": verkey}
         )
-        data = json.loads(record.value)
+        data = JsonUtil.loads(record.value)
         data["metadata"] = metadata
 
-        await self._store.update_record(record, json.dumps(data), record.tags)
+        await self._store.update_record(record, JsonUtil.dumps(data), record.tags)

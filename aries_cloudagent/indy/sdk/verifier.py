@@ -69,12 +69,12 @@ class IndySdkVerifier(IndyVerifier):
         LOGGER.debug(f">>> for pres_req: {pres_req}")
         try:
             verified = await indy.anoncreds.verifier_verify_proof(
-                json.dumps(pres_req),
-                json.dumps(pres),
-                json.dumps(schemas),
-                json.dumps(credential_definitions),
-                json.dumps(rev_reg_defs),
-                json.dumps(rev_reg_entries),
+                JsonUtil.dumps(pres_req),
+                JsonUtil.dumps(pres),
+                JsonUtil.dumps(schemas),
+                JsonUtil.dumps(credential_definitions),
+                JsonUtil.dumps(rev_reg_defs),
+                JsonUtil.dumps(rev_reg_entries),
             )
         except IndyError as err:
             s = str(err)

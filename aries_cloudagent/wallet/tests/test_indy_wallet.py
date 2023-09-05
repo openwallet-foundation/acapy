@@ -302,8 +302,8 @@ class TestWalletCompat:
         Coverage through mock framework.
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",
@@ -350,8 +350,8 @@ class TestWalletCompat:
         Coverage through mock framework: raise on creation of existing wallet
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",
@@ -396,8 +396,8 @@ class TestWalletCompat:
         Coverage through mock framework: raise on creation outlier
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",
@@ -445,8 +445,8 @@ class TestWalletCompat:
         Coverage through mock framework: exception on removal.
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",
@@ -498,8 +498,8 @@ class TestWalletCompat:
         Coverage through mock framework: missing created wallet.
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",
@@ -548,8 +548,8 @@ class TestWalletCompat:
         Coverage through mock framework: missing wallet on open.
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",
@@ -596,8 +596,8 @@ class TestWalletCompat:
         Coverage through mock framework: indy thinks wallet is open, aca-py does not.
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",
@@ -644,8 +644,8 @@ class TestWalletCompat:
         Coverage through mock framework: outlier on wallet open.
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",
@@ -692,8 +692,8 @@ class TestWalletCompat:
         Coverage through mock framework: outlier on master secret creation
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",
@@ -742,8 +742,8 @@ class TestWalletCompat:
         Coverage through mock framework: open, master secret exists (OK).
         """
         wallet_key = await IndySdkWallet.generate_wallet_key()
-        storage_config_json = json.dumps({"url": "dummy"})
-        storage_creds_json = json.dumps(
+        storage_config_json = JsonUtil.dumps({"url": "dummy"})
+        storage_creds_json = JsonUtil.dumps(
             {
                 "account": "postgres",
                 "password": "mysecretpassword",

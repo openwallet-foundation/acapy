@@ -9,7 +9,7 @@ from ...message_types import ATTACH_DECO_IDS, PRESENTATION
 
 from ..presentation import Presentation
 
-INDY_PROOF = json.loads(
+INDY_PROOF = JsonUtil.loads(
     """{
         "proof": {
             "proofs": [
@@ -1681,7 +1681,7 @@ class TestPresentation(TestCase):
 
     def test_deserialize(self):
         """Test deserialization."""
-        dump = json.dumps(
+        dump = JsonUtil.dumps(
             {
                 "@type": DIDCommPrefix.qualify_current(PRESENTATION),
                 "comment": "Hello World",

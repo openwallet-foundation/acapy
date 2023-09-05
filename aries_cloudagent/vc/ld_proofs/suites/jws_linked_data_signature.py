@@ -136,14 +136,14 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         """Decode header."""
         header = None
         try:
-            header = json.loads(b64_to_str(encoded_header, urlsafe=True))
+            header = JsonUtil.loads(b64_to_str(encoded_header, urlsafe=True))
         except Exception:
             raise LinkedDataProofException("Could not parse JWS header.")
         return header
 
     def _encode_header(self, header: dict) -> str:
         """Encode header."""
-        return str_to_b64(json.dumps(header), urlsafe=True, pad=False)
+        return str_to_b64(JsonUtil.dumps(header), urlsafe=True, pad=False)
 
     def _create_jws(self, *, encoded_header: str, verify_data: bytes) -> bytes:
         """Compose JWS."""

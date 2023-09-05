@@ -490,7 +490,7 @@ class RFC3339DateTime(Regexp):
 class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
     """Validate value as potential WQL query."""
 
-    EXAMPLE = json.dumps({"attr::name::value": "Alex"})
+    EXAMPLE = JsonUtil.dumps({"attr::name::value": "Alex"})
     PATTERN = r"^{.*}$"
 
     def __init__(self):
@@ -508,7 +508,7 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
         message = f"Value {value} is not a valid WQL query"
 
         try:
-            json.loads(value)
+            JsonUtil.loads(value)
         except (json.JSONDecodeError, TypeError):
             raise ValidationError(message)
 
@@ -518,7 +518,7 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
 class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
     """Validate value as potential extra WQL query in cred search for proof req."""
 
-    EXAMPLE = json.dumps({"0_drink_uuid": {"attr::drink::value": "martini"}})
+    EXAMPLE = JsonUtil.dumps({"0_drink_uuid": {"attr::drink::value": "martini"}})
     PATTERN = r'^{\s*".*?"\s*:\s*{.*?}\s*(,\s*".*?"\s*:\s*{.*?}\s*)*\s*}$'
 
     def __init__(self):
@@ -536,7 +536,7 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
         message = f"Value {value} is not a valid extra WQL query"
 
         try:
-            json.loads(value)
+            JsonUtil.loads(value)
         except (json.JSONDecodeError, TypeError):
             raise ValidationError(message)
 

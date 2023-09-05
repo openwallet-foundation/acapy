@@ -377,7 +377,7 @@ class TestConnectionRoutes(AsyncTestCase):
             await test_module.connections_create_invitation(self.request)
             mock_conn_mgr.return_value.create_invitation.assert_called_once_with(
                 **{
-                    key: json.loads(value) if key != "alias" else value
+                    key: JsonUtil.loads(value) if key != "alias" else value
                     for key, value in self.request.query.items()
                 },
                 my_label=None,

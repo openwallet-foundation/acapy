@@ -119,7 +119,7 @@ class JsonWireFormat(BaseWireFormat):
             raise WireFormatParseError("Message body is empty")
 
         try:
-            message_dict = json.loads(message_json)
+            message_dict = JsonUtil.loads(message_json)
         except ValueError:
             raise WireFormatParseError("Message JSON parsing failed")
         if not isinstance(message_dict, dict):

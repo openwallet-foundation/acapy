@@ -300,7 +300,7 @@ class TestCredentialManager(AsyncTestCase):
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
-                return_value=json.dumps(INDY_OFFER)
+                return_value=JsonUtil.dumps(INDY_OFFER)
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -382,7 +382,7 @@ class TestCredentialManager(AsyncTestCase):
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
-                return_value=json.dumps(INDY_OFFER)
+                return_value=JsonUtil.dumps(INDY_OFFER)
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -440,7 +440,7 @@ class TestCredentialManager(AsyncTestCase):
             get_cached_key.return_value = None
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
             issuer.create_credential_offer = async_mock.CoroutineMock(
-                return_value=json.dumps(INDY_OFFER)
+                return_value=JsonUtil.dumps(INDY_OFFER)
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -652,7 +652,7 @@ class TestCredentialManager(AsyncTestCase):
             cred_req_meta = {}
             holder = async_mock.MagicMock()
             holder.create_credential_request = async_mock.CoroutineMock(
-                return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
+                return_value=(JsonUtil.dumps(INDY_CRED_REQ), JsonUtil.dumps(cred_req_meta))
             )
             self.context.injector.bind_instance(IndyHolder, holder)
 
@@ -723,7 +723,7 @@ class TestCredentialManager(AsyncTestCase):
             cred_req_meta = {}
             holder = async_mock.MagicMock()
             holder.create_credential_request = async_mock.CoroutineMock(
-                return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
+                return_value=(JsonUtil.dumps(INDY_CRED_REQ), JsonUtil.dumps(cred_req_meta))
             )
             self.context.injector.bind_instance(IndyHolder, holder)
 
@@ -910,7 +910,7 @@ class TestCredentialManager(AsyncTestCase):
         cred = {"indy": "credential"}
         cred_rev_id = "1000"
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(cred), cred_rev_id)
+            return_value=(JsonUtil.dumps(cred), cred_rev_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -997,7 +997,7 @@ class TestCredentialManager(AsyncTestCase):
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(cred), None)
+            return_value=(JsonUtil.dumps(cred), None)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -1068,7 +1068,7 @@ class TestCredentialManager(AsyncTestCase):
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(cred), stored_exchange.revocation_id)
+            return_value=(JsonUtil.dumps(cred), stored_exchange.revocation_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
 
@@ -1172,7 +1172,7 @@ class TestCredentialManager(AsyncTestCase):
         cred = {"indy": "credential"}
         cred_rev_id = "1"
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(cred), cred_rev_id)
+            return_value=(JsonUtil.dumps(cred), cred_rev_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
         self.context.injector.bind_instance(
@@ -1238,7 +1238,7 @@ class TestCredentialManager(AsyncTestCase):
         cred = {"indy": "credential"}
         cred_rev_id = "1"
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(cred), cred_rev_id)
+            return_value=(JsonUtil.dumps(cred), cred_rev_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
         self.context.injector.bind_instance(
@@ -1337,7 +1337,7 @@ class TestCredentialManager(AsyncTestCase):
         holder = async_mock.MagicMock()
         holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
         holder.get_credential = async_mock.CoroutineMock(
-            return_value=json.dumps(INDY_CRED_INFO)
+            return_value=JsonUtil.dumps(INDY_CRED_INFO)
         )
         self.context.injector.bind_instance(IndyHolder, holder)
         self.context.injector.bind_instance(
@@ -1446,7 +1446,7 @@ class TestCredentialManager(AsyncTestCase):
         holder = async_mock.MagicMock()
         holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
         holder.get_credential = async_mock.CoroutineMock(
-            return_value=json.dumps(cred_info_no_rev)
+            return_value=JsonUtil.dumps(cred_info_no_rev)
         )
         self.context.injector.bind_instance(IndyHolder, holder)
         self.context.injector.bind_instance(

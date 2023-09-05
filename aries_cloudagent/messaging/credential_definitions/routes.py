@@ -196,7 +196,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
-    create_transaction_for_endorser = json.loads(
+    create_transaction_for_endorser = JsonUtil.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
     write_ledger = not create_transaction_for_endorser

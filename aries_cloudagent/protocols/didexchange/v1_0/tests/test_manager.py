@@ -1715,7 +1715,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
-                        return_value=json.dumps({"dummy": "did-doc"})
+                        return_value=JsonUtil.dumps({"dummy": "did-doc"})
                     )
                 ),
             )
@@ -1745,7 +1745,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                         verify=async_mock.CoroutineMock(return_value=True),
                         signed=async_mock.MagicMock(
                             decode=async_mock.MagicMock(
-                                return_value=json.dumps({"dummy": "did-doc"})
+                                return_value=JsonUtil.dumps({"dummy": "did-doc"})
                             )
                         ),
                     )
@@ -1773,7 +1773,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
-                        return_value=json.dumps({"dummy": "did-doc"})
+                        return_value=JsonUtil.dumps({"dummy": "did-doc"})
                     )
                 ),
             )
@@ -1806,7 +1806,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                         verify=async_mock.CoroutineMock(return_value=True),
                         signed=async_mock.MagicMock(
                             decode=async_mock.MagicMock(
-                                return_value=json.dumps({"dummy": "did-doc"})
+                                return_value=JsonUtil.dumps({"dummy": "did-doc"})
                             )
                         ),
                     )
@@ -1835,7 +1835,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
-                        return_value=json.dumps({"dummy": "did-doc"})
+                        return_value=JsonUtil.dumps({"dummy": "did-doc"})
                     )
                 ),
             )
@@ -1863,7 +1863,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                         verify=async_mock.CoroutineMock(return_value=True),
                         signed=async_mock.MagicMock(
                             decode=async_mock.MagicMock(
-                                return_value=json.dumps({"dummy": "did-doc"})
+                                return_value=JsonUtil.dumps({"dummy": "did-doc"})
                             )
                         ),
                     )
@@ -1887,7 +1887,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
-                        return_value=json.dumps({"dummy": "did-doc"})
+                        return_value=JsonUtil.dumps({"dummy": "did-doc"})
                     )
                 ),
             )
@@ -1917,7 +1917,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
-                        return_value=json.dumps({"dummy": "did-doc"})
+                        return_value=JsonUtil.dumps({"dummy": "did-doc"})
                     )
                 ),
             )
@@ -2028,7 +2028,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 verify=async_mock.CoroutineMock(return_value=True),
                 signed=async_mock.MagicMock(
                     decode=async_mock.MagicMock(
-                        return_value=json.dumps({"dummy": "did-doc"})
+                        return_value=JsonUtil.dumps({"dummy": "did-doc"})
                     )
                 ),
             )
@@ -2055,7 +2055,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                         verify=async_mock.CoroutineMock(return_value=True),
                         signed=async_mock.MagicMock(
                             decode=async_mock.MagicMock(
-                                return_value=json.dumps({"dummy": "did-doc"})
+                                return_value=JsonUtil.dumps({"dummy": "did-doc"})
                             )
                         ),
                     )

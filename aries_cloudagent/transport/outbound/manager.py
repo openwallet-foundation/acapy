@@ -302,7 +302,7 @@ class OutboundTransportManager:
             queued.api_key = api_key
         queued.endpoint = f"{endpoint}/topic/{topic}/"
         queued.metadata = metadata
-        queued.payload = json.dumps(payload)
+        queued.payload = JsonUtil.dumps(payload)
         queued.state = QueuedOutboundMessage.STATE_PENDING
         queued.retries = 4 if max_attempts is None else max_attempts - 1
         self.outbound_new.append(queued)

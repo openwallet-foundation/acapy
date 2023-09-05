@@ -69,7 +69,7 @@ def tracing_enabled(context, message) -> bool:
             if "~trace" in message:
                 return True
             if "trace" in message:
-                msg = json.loads(message)
+                msg = JsonUtil.loads(message)
                 return msg.get("trace")
         elif isinstance(message, OutboundMessage):
             if message.payload and isinstance(message.payload, AgentMessage):
@@ -96,12 +96,12 @@ def decode_inbound_message(message):
             return message.payload
         elif message.payload and isinstance(message.payload, str):
             try:
-                return json.loads(message.payload)
+                return JsonUtil.loads(message.payload)
             except Exception:
                 pass
     elif message and isinstance(message, str):
         try:
-            return json.loads(message)
+            return JsonUtil.loads(message)
         except Exception:
             pass
 
@@ -199,7 +199,7 @@ def trace_event(
             "ellapsed_milli": int(1000 * (ret - perf_counter)) if perf_counter else 0,
             "outcome": str(outcome),
         }
-        event_str = json.dumps(event)
+        event_str = JsonUtil.dumps(event)
 
         try:
             # check our target - if we get this far we know we are logging the event

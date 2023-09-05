@@ -82,7 +82,7 @@ PRES_PREVIEW_ATTR_NAMES = IndyPresPreview(
         ),
     ]
 )
-INDY_PROOF_REQ = json.loads(
+INDY_PROOF_REQ = JsonUtil.loads(
     f"""{{
     "name": "proof-req",
     "version": "1.0",
@@ -119,7 +119,7 @@ INDY_PROOF_REQ = json.loads(
     }}
 }}"""
 )
-INDY_PROOF_REQ_ATTR_NAMES = json.loads(
+INDY_PROOF_REQ_ATTR_NAMES = JsonUtil.loads(
     f"""{{
     "name": "proof-req",
     "version": "1.0",
@@ -243,7 +243,7 @@ class TestIndyPresAttrSpec(TestCase):
 
     def test_deserialize(self):
         """Test deserialization."""
-        dump = json.dumps(
+        dump = JsonUtil.dumps(
             {
                 "name": "PLAYER",
                 "cred_def_id": CD_ID["score"],
@@ -255,7 +255,7 @@ class TestIndyPresAttrSpec(TestCase):
         assert type(attr_spec) == IndyPresAttrSpec
         assert canon(attr_spec.name) == "player"
 
-        dump = json.dumps(
+        dump = JsonUtil.dumps(
             {
                 "name": "PLAYER",
                 "cred_def_id": CD_ID["score"],
@@ -292,7 +292,7 @@ class TestIndyPresPredSpec(TestCase):
 
     def test_deserialize(self):
         """Test deserialization."""
-        dump = json.dumps(
+        dump = JsonUtil.dumps(
             {
                 "name": "HIGH SCORE",
                 "cred_def_id": CD_ID["score"],

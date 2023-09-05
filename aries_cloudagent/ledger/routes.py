@@ -290,7 +290,7 @@ async def register_ledger_nym(request: web.BaseRequest):
     if role == "reset":  # indy: empty to reset, null for regular user
         role = ""  # visually: confusing - correct 'reset' to empty string here
 
-    create_transaction_for_endorser = json.loads(
+    create_transaction_for_endorser = JsonUtil.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
     write_ledger = not create_transaction_for_endorser
@@ -352,7 +352,7 @@ async def register_ledger_nym(request: web.BaseRequest):
                 if not public_info:
                     write_ledger_nym_transaction = False
                     success = False
-                    txn = {"signed_txn": json.dumps(meta_data)}
+                    txn = {"signed_txn": JsonUtil.dumps(meta_data)}
             if write_ledger_nym_transaction:
                 (success, txn) = await ledger.register_nym(
                     did,

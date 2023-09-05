@@ -2591,7 +2591,7 @@ def get_test_data():
     for pd in pd_json_list:
         pd_list.append(
             (
-                PresentationDefinition.deserialize(json.loads(pd[0])),
+                PresentationDefinition.deserialize(JsonUtil.loads(pd[0])),
                 pd[1],
             )
         )

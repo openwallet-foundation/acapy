@@ -366,7 +366,7 @@ class IndyVdrLedger(BaseLedger):
                 del wallet
 
         if not write_ledger:
-            return json.loads(request.body)
+            return JsonUtil.loads(request.body)
 
         try:
             request_result = await self.pool.handle.submit_request(request)
@@ -608,7 +608,7 @@ class IndyVdrLedger(BaseLedger):
 
         response = await self._submit(nym_req, sign_did=public_info)
         data_json = response["data"]
-        return json.loads(data_json)["verkey"] if data_json else None
+        return JsonUtil.loads(data_json)["verkey"] if data_json else None
 
     async def get_all_endpoints_for_did(self, did: str) -> dict:
         """Fetch all endpoints for a ledger DID.
@@ -630,7 +630,7 @@ class IndyVdrLedger(BaseLedger):
         data_json = response["data"]
 
         if data_json:
-            endpoints = json.loads(data_json).get("endpoint", None)
+            endpoints = JsonUtil.loads(data_json).get("endpoint", None)
         else:
             endpoints = None
 
@@ -661,7 +661,7 @@ class IndyVdrLedger(BaseLedger):
         response = await self._submit(attrib_req, sign_did=public_info)
         data_json = response["data"]
         if data_json:
-            endpoint = json.loads(data_json).get("endpoint", None)
+            endpoint = JsonUtil.loads(data_json).get("endpoint", None)
             address = endpoint.get(endpoint_type.indy, None) if endpoint else None
         else:
             address = None
@@ -802,7 +802,7 @@ class IndyVdrLedger(BaseLedger):
             raise LedgerError("Exception when building get-nym request") from err
 
         response = await self._submit(nym_req)
-        nym_data = json.loads(response["data"])
+        nym_data = JsonUtil.loads(response["data"])
         if not nym_data:
             raise BadLedgerRequestError(f"DID {did} is not public")
 
@@ -853,7 +853,7 @@ class IndyVdrLedger(BaseLedger):
             raise LedgerError("Exception when building nym request") from err
 
         response = await self._submit(get_nym_req)
-        data = json.loads(response["data"])
+        data = JsonUtil.loads(response["data"])
         if not data:
             raise BadLedgerRequestError(
                 f"Ledger has no public DID for wallet {self.profile.name}"
@@ -938,7 +938,7 @@ class IndyVdrLedger(BaseLedger):
         }
         record = StorageRecord(
             TAA_ACCEPTED_RECORD_TYPE,
-            json.dumps(acceptance),
+            JsonUtil.dumps(acceptance),
             {"pool_name": self.pool_name},
         )
         async with self.profile.session() as session:
@@ -960,7 +960,7 @@ class IndyVdrLedger(BaseLedger):
                     TAA_ACCEPTED_RECORD_TYPE, tag_filter
                 )
             if found:
-                records = [json.loads(record.value) for record in found]
+                records = [JsonUtil.loads(record.value) for record in found]
                 records.sort(key=lambda v: v["time"], reverse=True)
                 acceptance = records[0]
             else:
@@ -1087,7 +1087,7 @@ class IndyVdrLedger(BaseLedger):
             )
         try:
             request = ledger.build_revoc_reg_def_request(
-                did_info.did, json.dumps(revoc_reg_def)
+                did_info.did, JsonUtil.dumps(revoc_reg_def)
             )
             if endorser_did and not write_ledger:
                 request.set_endorser(endorser_did)
@@ -1123,7 +1123,7 @@ class IndyVdrLedger(BaseLedger):
             )
         try:
             request = ledger.build_revoc_reg_entry_request(
-                did_info.did, revoc_reg_id, revoc_def_type, json.dumps(revoc_reg_entry)
+                did_info.did, revoc_reg_id, revoc_def_type, JsonUtil.dumps(revoc_reg_entry)
             )
             if endorser_did and not write_ledger:
                 request.set_endorser(endorser_did)
@@ -1187,4 +1187,4 @@ class IndyVdrLedger(BaseLedger):
         if write_ledger:
             # match the format returned by indy sdk
             resp = {"op": "REPLY", "result": resp}
-        return json.dumps(resp)
+        return JsonUtil.dumps(resp)

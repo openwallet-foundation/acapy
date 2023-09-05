@@ -73,8 +73,8 @@ def print_lexer(
 
 def print_json(data, label: str = None, prefix: str = None, indent: int = 2):
     if isinstance(data, str):
-        data = json.loads(data)
-    data = json.dumps(data, indent=2)
+        data = JsonUtil.loads(data)
+    data = JsonUtil.dumps(data, indent=2)
     prefix_str = prefix or ""
     print_lexer(data, JsonLdLexer(), label=label, prefix=prefix_str, indent=indent)
 

@@ -372,9 +372,9 @@ class TestJSONLDRoutes(AsyncTestCase):
                     "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
                 },
             }
-            mock_response.side_effect = lambda x: json.dumps(x)
+            mock_response.side_effect = lambda x: JsonUtil.dumps(x)
             result = await test_module.verify(self.request)
-            assert "error" in json.loads(result)
+            assert "error" in JsonUtil.loads(result)
 
         with async_mock.patch.object(
             jsonld, "compact", async_mock.MagicMock()
@@ -414,9 +414,9 @@ class TestJSONLDRoutes(AsyncTestCase):
                     "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
                 },
             }
-            mock_response.side_effect = lambda x: json.dumps(x)
+            mock_response.side_effect = lambda x: JsonUtil.dumps(x)
             result = await test_module.verify(self.request)
-            assert "error" in json.loads(result)
+            assert "error" in JsonUtil.loads(result)
 
         self.context.session_inject[BaseWallet] = None
         with self.assertRaises(test_module.web.HTTPForbidden):
@@ -485,9 +485,9 @@ class TestJSONLDRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.MagicMock()
         ) as mock_response:
-            mock_response.side_effect = lambda x: json.dumps(x)
+            mock_response.side_effect = lambda x: JsonUtil.dumps(x)
             result = await test_module.sign(self.request)
-            assert "error" in json.loads(result)
+            assert "error" in JsonUtil.loads(result)
 
         # compact, expand take a LONG TIME: do them once above, mock for error cases
         posted_request = deepcopy(POSTED_REQUEST)
@@ -501,9 +501,9 @@ class TestJSONLDRoutes(AsyncTestCase):
         ) as mock_response:
             mock_expand.return_value = [async_mock.MagicMock()]
             mock_compact.return_value = {}  # drop all attributes
-            mock_response.side_effect = lambda x: json.dumps(x)
+            mock_response.side_effect = lambda x: JsonUtil.dumps(x)
             result = await test_module.sign(self.request)
-            assert "error" in json.loads(result)
+            assert "error" in JsonUtil.loads(result)
 
         self.context.session_inject[BaseWallet] = None
         with self.assertRaises(test_module.web.HTTPForbidden):

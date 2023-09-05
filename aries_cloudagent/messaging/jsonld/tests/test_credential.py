@@ -35,7 +35,7 @@ class TestCredential(AsyncTestCase):
 
     async def test_verify_jws_header(self):
         test_module.verify_jws_header(
-            json.loads(
+            JsonUtil.loads(
                 test_module.b64decode(
                     "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19"
                 )
@@ -44,7 +44,7 @@ class TestCredential(AsyncTestCase):
 
         with self.assertRaises(test_module.BadJWSHeaderError):
             test_module.verify_jws_header(
-                json.loads(
+                JsonUtil.loads(
                     test_module.b64decode(  # {... "b64": True ...}
                         "eyJhbGciOiJFZERTQSIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXX0="
                     )

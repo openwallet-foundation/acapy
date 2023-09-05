@@ -74,7 +74,7 @@ class IndyPresExchHandler:
         for reft in requested_referents:
             credential_id = requested_referents[reft]["cred_id"]
             if credential_id not in credentials:
-                credentials[credential_id] = json.loads(
+                credentials[credential_id] = JsonUtil.loads(
                     await holder.get_credential(credential_id)
                 )
         # remove any timestamps that cannot correspond to non-revoc intervals
@@ -180,7 +180,7 @@ class IndyPresExchHandler:
             rev_reg = revocation_registries[rev_reg_id]
             tails_local_path = await rev_reg.get_or_fetch_local_tails_path()
             try:
-                revocation_states[rev_reg_id][delta_timestamp] = json.loads(
+                revocation_states[rev_reg_id][delta_timestamp] = JsonUtil.loads(
                     await holder.create_revocation_state(
                         credentials[credential_id]["cred_rev_id"],
                         rev_reg.reg_def,
@@ -212,7 +212,7 @@ class IndyPresExchHandler:
             cred_defs,
             revocation_states,
         )
-        indy_proof = json.loads(indy_proof_json)
+        indy_proof = JsonUtil.loads(indy_proof_json)
         return indy_proof
 
     async def process_pres_identifiers(

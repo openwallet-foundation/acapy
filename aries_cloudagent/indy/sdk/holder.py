@@ -61,8 +61,8 @@ class IndySdkHolder(IndyHolder):
             ) = await indy.anoncreds.prover_create_credential_req(
                 self.wallet.handle,
                 holder_did,
-                json.dumps(credential_offer),
-                json.dumps(credential_definition),
+                JsonUtil.dumps(credential_offer),
+                JsonUtil.dumps(credential_definition),
                 self.wallet.master_secret_id,
             )
 
@@ -106,10 +106,10 @@ class IndySdkHolder(IndyHolder):
             credential_id = await indy.anoncreds.prover_store_credential(
                 wallet_handle=self.wallet.handle,
                 cred_id=credential_id,
-                cred_req_metadata_json=json.dumps(credential_request_metadata),
-                cred_json=json.dumps(credential_data),
-                cred_def_json=json.dumps(credential_definition),
-                rev_reg_def_json=json.dumps(rev_reg_def) if rev_reg_def else None,
+                cred_req_metadata_json=JsonUtil.dumps(credential_request_metadata),
+                cred_json=JsonUtil.dumps(credential_data),
+                cred_def_json=JsonUtil.dumps(credential_definition),
+                rev_reg_def_json=JsonUtil.dumps(rev_reg_def) if rev_reg_def else None,
             )
 
         if credential_attr_mime_types:
@@ -150,7 +150,7 @@ class IndySdkHolder(IndyHolder):
                 "Error fetching credentials from wallet", IndyHolderError
             ):
                 while len(creds) < cardinality:
-                    batch = json.loads(
+                    batch = JsonUtil.loads(
                         await indy.anoncreds.prover_fetch_credentials(
                             search_handle, CHUNK
                         )
@@ -167,7 +167,7 @@ class IndySdkHolder(IndyHolder):
                 search_handle,
                 record_count,
             ) = await indy.anoncreds.prover_search_credentials(
-                self.wallet.handle, json.dumps(wql)
+                self.wallet.handle, JsonUtil.dumps(wql)
             )
 
             if start > 0:
@@ -208,7 +208,7 @@ class IndySdkHolder(IndyHolder):
                 IndyHolderError,
             ):
                 while not limit or len(creds) < limit:
-                    batch = json.loads(
+                    batch = JsonUtil.loads(
                         await indy.anoncreds.prover_fetch_credentials_for_proof_req(
                             search_handle, reft, CHUNK
                         )
@@ -225,8 +225,8 @@ class IndySdkHolder(IndyHolder):
                 await (
                     indy.anoncreds.prover_search_credentials_for_proof_req(
                         self.wallet.handle,
-                        json.dumps(presentation_request),
-                        json.dumps(extra_query),
+                        JsonUtil.dumps(presentation_request),
+                        JsonUtil.dumps(extra_query),
                     )
                 )
             )
@@ -310,7 +310,7 @@ class IndySdkHolder(IndyHolder):
             credential_id: Credential id to check
 
         """
-        cred = json.loads(await self.get_credential(credential_id))
+        cred = JsonUtil.loads(await self.get_credential(credential_id))
         rev_reg_id = cred["rev_reg_id"]
 
         if rev_reg_id:
@@ -425,12 +425,12 @@ class IndySdkHolder(IndyHolder):
         with IndyErrorHandler("Error when constructing proof", IndyHolderError):
             presentation_json = await indy.anoncreds.prover_create_proof(
                 self.wallet.handle,
-                json.dumps(presentation_request),
-                json.dumps(requested_credentials),
+                JsonUtil.dumps(presentation_request),
+                JsonUtil.dumps(requested_credentials),
                 self.wallet.master_secret_id,
-                json.dumps(schemas),
-                json.dumps(credential_definitions),
-                json.dumps(rev_states) if rev_states else "{}",
+                JsonUtil.dumps(schemas),
+                JsonUtil.dumps(credential_definitions),
+                JsonUtil.dumps(rev_states) if rev_states else "{}",
             )
 
         return presentation_json
@@ -462,9 +462,9 @@ class IndySdkHolder(IndyHolder):
             tails_file_reader = await create_tails_reader(tails_file_path)
             rev_state_json = await indy.anoncreds.create_revocation_state(
                 tails_file_reader,
-                rev_reg_def_json=json.dumps(rev_reg_def),
+                rev_reg_def_json=JsonUtil.dumps(rev_reg_def),
                 cred_rev_id=cred_rev_id,
-                rev_reg_delta_json=json.dumps(rev_reg_delta),
+                rev_reg_delta_json=JsonUtil.dumps(rev_reg_delta),
                 timestamp=timestamp,
             )
 

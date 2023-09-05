@@ -32,7 +32,7 @@ class TestKeyPairStorageManager(AsyncTestCase):
 
         assert record
 
-        value = json.loads(record.value)
+        value = JsonUtil.loads(record.value)
 
         assert record.tags == {"verkey": verkey, "key_type": ED25519.key_type}
         assert value["verkey"] == verkey
@@ -94,7 +94,7 @@ class TestKeyPairStorageManager(AsyncTestCase):
 
         record = await self.store.find_record(KEY_PAIR_STORAGE_TYPE, {"verkey": verkey})
         assert record
-        value = json.loads(record.value)
+        value = JsonUtil.loads(record.value)
 
         assert value["metadata"] == {"some": "data"}
 
@@ -102,7 +102,7 @@ class TestKeyPairStorageManager(AsyncTestCase):
 
         record = await self.store.find_record(KEY_PAIR_STORAGE_TYPE, {"verkey": verkey})
         assert record
-        value = json.loads(record.value)
+        value = JsonUtil.loads(record.value)
 
         assert value["metadata"] == {"some_other": "data"}
 

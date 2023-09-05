@@ -82,7 +82,7 @@ class DemoIntroductionService(BaseIntroductionService):
 
         record = StorageRecord(
             type=DemoIntroductionService.RECORD_TYPE,
-            value=json.dumps({"thread_id": msg._id, "state": "pending"}),
+            value=JsonUtil.dumps({"thread_id": msg._id, "state": "pending"}),
             tags={
                 "init_connection_id": init_connection_id,
                 "target_connection_id": target_connection_id,
@@ -120,7 +120,7 @@ class DemoIntroductionService(BaseIntroductionService):
 
         found = False
         for row in records:
-            value = json.loads(row.value)
+            value = JsonUtil.loads(row.value)
             if value["thread_id"] == thread_id and value["state"] == "pending":
                 msg = ForwardInvitation(
                     invitation=invitation.invitation, message=invitation.message
@@ -129,7 +129,7 @@ class DemoIntroductionService(BaseIntroductionService):
                 msg.assign_trace_from(invitation)
 
                 value["state"] = "complete"
-                await storage.update_record(row, json.dumps(value), row.tags)
+                await storage.update_record(row, JsonUtil.dumps(value), row.tags)
 
                 init_connection_id = row.tags["init_connection_id"]
                 await outbound_handler(msg, connection_id=init_connection_id)

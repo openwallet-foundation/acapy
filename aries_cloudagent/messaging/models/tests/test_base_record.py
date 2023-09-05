@@ -169,7 +169,7 @@ class TestBaseRecord(AsyncTestCase):
         record_value = {"created_at": time_now(), "updated_at": time_now()}
         tag_filter = {"tag": "filter"}
         stored = StorageRecord(
-            BaseRecordImpl.RECORD_TYPE, json.dumps(record_value), {}, record_id
+            BaseRecordImpl.RECORD_TYPE, JsonUtil.dumps(record_value), {}, record_id
         )
 
         mock_storage.find_all_records.return_value = [stored]
@@ -189,7 +189,7 @@ class TestBaseRecord(AsyncTestCase):
         record_value = {"created_at": time_now(), "updated_at": time_now()}
         tag_filter = {"tag": "filter"}
         stored = StorageRecord(
-            BaseRecordImpl.RECORD_TYPE, json.dumps(record_value), {}, record_id
+            BaseRecordImpl.RECORD_TYPE, JsonUtil.dumps(record_value), {}, record_id
         )
 
         mock_storage.find_all_records.return_value = [stored]
@@ -214,7 +214,7 @@ class TestBaseRecord(AsyncTestCase):
         post_filter_neg_alt = {"a": ["three", "no, five"]}
         stored = StorageRecord(
             ARecordImpl.RECORD_TYPE,
-            json.dumps(record_value),
+            JsonUtil.dumps(record_value),
             {"code": "red"},
             record_id,
         )

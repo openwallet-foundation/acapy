@@ -406,7 +406,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
 
     # url encoded json extra_query
     encoded_extra_query = request.query.get("extra_query") or "{}"
-    extra_query = json.loads(encoded_extra_query)
+    extra_query = JsonUtil.loads(encoded_extra_query)
 
     # defaults
     start = int(start) if isinstance(start, str) else 0

@@ -153,7 +153,7 @@ class IndySdkLedgerPool:
         )
         with open(txn_path, "w") as genesis_file:
             genesis_file.write(genesis_transactions)
-        pool_config = json.dumps({"genesis_txn": txn_path})
+        pool_config = JsonUtil.dumps({"genesis_txn": txn_path})
 
         if await self.check_pool_config():
             if recreate:
@@ -196,9 +196,9 @@ class IndySdkLedgerPool:
         with IndyErrorHandler(
             f"Exception opening pool ledger {self.name}", LedgerConfigError
         ):
-            pool_config = json.dumps({})
+            pool_config = JsonUtil.dumps({})
             if self.socks_proxy is not None:
-                pool_config = json.dumps({"socks_proxy": self.socks_proxy})
+                pool_config = JsonUtil.dumps({"socks_proxy": self.socks_proxy})
                 LOGGER.debug("Open pool with config: %s", pool_config)
             self.handle = await indy.pool.open_pool_ledger(self.name, pool_config)
         self.opened = True
@@ -421,7 +421,7 @@ class IndySdkLedger(BaseLedger):
         if sign and not write_ledger:
             return request_result_json
 
-        request_result = json.loads(request_result_json)
+        request_result = JsonUtil.loads(request_result_json)
 
         operation = request_result.get("op", "")
 
@@ -520,7 +520,7 @@ class IndySdkLedger(BaseLedger):
             )
 
         response_json = await self._submit(request_json, sign_did=public_info)
-        response = json.loads(response_json)
+        response = JsonUtil.loads(response_json)
         if not response["result"]["seqNo"]:
             # schema not found
             return None
@@ -530,7 +530,7 @@ class IndySdkLedger(BaseLedger):
                 response_json
             )
 
-        parsed_response = json.loads(parsed_schema_json)
+        parsed_response = JsonUtil.loads(parsed_schema_json)
         if parsed_response and self.pool.cache:
             await self.pool.cache.set(
                 [f"schema::{schema_id}", f"schema::{response['result']['seqNo']}"],
@@ -554,7 +554,7 @@ class IndySdkLedger(BaseLedger):
         request_json = await indy.ledger.build_get_txn_request(
             None, None, seq_no=seq_no
         )
-        response = json.loads(await self._submit(request_json))
+        response = JsonUtil.loads(await self._submit(request_json))
 
         # transaction data format assumes node protocol >= 1.4 (circa 2018-07)
         data_txn = (response["result"].get("data", {}) or {}).get("txn", {})
@@ -631,7 +631,7 @@ class IndySdkLedger(BaseLedger):
                     _,
                     parsed_credential_definition_json,
                 ) = await indy.ledger.parse_get_cred_def_response(response_json)
-                parsed_response = json.loads(parsed_credential_definition_json)
+                parsed_response = JsonUtil.loads(parsed_credential_definition_json)
             except IndyError as error:
                 if error.error_code == ErrorCode.LedgerNotFound:
                     parsed_response = None
@@ -676,8 +676,8 @@ class IndySdkLedger(BaseLedger):
         with IndyErrorHandler("Exception building nym request", LedgerError):
             request_json = await indy.ledger.build_get_nym_request(public_did, nym)
         response_json = await self._submit(request_json, sign_did=public_info)
-        data_json = (json.loads(response_json))["result"]["data"]
-        return full_verkey(did, json.loads(data_json)["verkey"]) if data_json else None
+        data_json = (JsonUtil.loads(response_json))["result"]["data"]
+        return full_verkey(did, JsonUtil.loads(data_json)["verkey"]) if data_json else None
 
     async def get_all_endpoints_for_did(self, did: str) -> dict:
         """Fetch all endpoints for a ledger DID.
@@ -693,10 +693,10 @@ class IndySdkLedger(BaseLedger):
                 public_did, nym, "endpoint", None, None
             )
         response_json = await self._submit(request_json, sign_did=public_info)
-        data_json = json.loads(response_json)["result"]["data"]
+        data_json = JsonUtil.loads(response_json)["result"]["data"]
 
         if data_json:
-            endpoints = json.loads(data_json).get("endpoint", None)
+            endpoints = JsonUtil.loads(data_json).get("endpoint", None)
         else:
             endpoints = None
 
@@ -722,9 +722,9 @@ class IndySdkLedger(BaseLedger):
                 public_did, nym, "endpoint", None, None
             )
         response_json = await self._submit(request_json, sign_did=public_info)
-        data_json = json.loads(response_json)["result"]["data"]
+        data_json = JsonUtil.loads(response_json)["result"]["data"]
         if data_json:
-            endpoint = json.loads(data_json).get("endpoint", None)
+            endpoint = JsonUtil.loads(data_json).get("endpoint", None)
             address = endpoint.get(endpoint_type.indy, None) if endpoint else None
         else:
             address = None
@@ -863,8 +863,8 @@ class IndySdkLedger(BaseLedger):
             request_json = await indy.ledger.build_get_nym_request(public_did, did)
 
         response_json = await self._submit(request_json)
-        response = json.loads(response_json)
-        nym_data = json.loads(response["result"]["data"])
+        response = JsonUtil.loads(response_json)
+        nym_data = JsonUtil.loads(response["result"]["data"])
         if not nym_data:
             raise BadLedgerRequestError(f"DID {did} is not public")
 
@@ -911,7 +911,7 @@ class IndySdkLedger(BaseLedger):
             request_json = await indy.ledger.build_get_nym_request(public_did, nym)
 
         response_json = await self._submit(request_json)
-        data = json.loads((json.loads(response_json))["result"]["data"])
+        data = JsonUtil.loads((JsonUtil.loads(response_json))["result"]["data"])
         if not data:
             raise BadLedgerRequestError(
                 f"Ledger has no public DID for wallet {self.profile.name}"
@@ -922,7 +922,7 @@ class IndySdkLedger(BaseLedger):
             txn_req_json = await indy.ledger.build_get_txn_request(None, None, seq_no)
 
         txn_resp_json = await self._submit(txn_req_json)
-        txn_resp = json.loads(txn_resp_json)
+        txn_resp = JsonUtil.loads(txn_resp_json)
         txn_resp_data = txn_resp["result"]["data"]
         if not txn_resp_data:
             raise BadLedgerRequestError(
@@ -953,13 +953,13 @@ class IndySdkLedger(BaseLedger):
             public_did, None, None
         )
         response_json = await self._submit(get_aml_req, sign_did=public_info)
-        aml_found = (json.loads(response_json))["result"]["data"]
+        aml_found = (JsonUtil.loads(response_json))["result"]["data"]
 
         get_taa_req = await indy.ledger.build_get_txn_author_agreement_request(
             public_did, None
         )
         response_json = await self._submit(get_taa_req, sign_did=public_info)
-        taa_found = (json.loads(response_json))["result"]["data"]
+        taa_found = (JsonUtil.loads(response_json))["result"]["data"]
         taa_required = bool(taa_found and taa_found["text"])
         if taa_found:
             taa_found["digest"] = self.taa_digest(
@@ -998,7 +998,7 @@ class IndySdkLedger(BaseLedger):
         }
         record = StorageRecord(
             TAA_ACCEPTED_RECORD_TYPE,
-            json.dumps(acceptance),
+            JsonUtil.dumps(acceptance),
             {"pool_name": self.pool.name},
         )
         storage = await self.get_indy_storage()
@@ -1030,7 +1030,7 @@ class IndySdkLedger(BaseLedger):
             tag_filter = {"pool_name": self.pool.name}
             found = await storage.find_all_records(TAA_ACCEPTED_RECORD_TYPE, tag_filter)
             if found:
-                records = [json.loads(record.value) for record in found]
+                records = [JsonUtil.loads(record.value) for record in found]
                 records.sort(key=lambda v: v["time"], reverse=True)
                 acceptance = records[0]
             else:
@@ -1053,8 +1053,8 @@ class IndySdkLedger(BaseLedger):
                 found_id,
                 found_def_json,
             ) = await indy.ledger.parse_get_revoc_reg_def_response(response_json)
-            found_def = json.loads(found_def_json)
-            found_def["txnTime"] = json.loads(response_json)["result"]["txnTime"]
+            found_def = JsonUtil.loads(found_def_json)
+            found_def["txnTime"] = JsonUtil.loads(response_json)["result"]["txnTime"]
 
         except IndyError as e:
             LOGGER.error(
@@ -1087,7 +1087,7 @@ class IndySdkLedger(BaseLedger):
                 )
                 raise e
         assert found_id == revoc_reg_id
-        return json.loads(found_reg_json), ledger_timestamp
+        return JsonUtil.loads(found_reg_json), ledger_timestamp
 
     async def get_revoc_reg_delta(
         self, revoc_reg_id: str, fro=0, to=None
@@ -1124,7 +1124,7 @@ class IndySdkLedger(BaseLedger):
                 delta_timestamp,
             ) = await indy.ledger.parse_get_revoc_reg_delta_response(response_json)
             assert found_id == revoc_reg_id
-        return json.loads(found_delta_json), delta_timestamp
+        return JsonUtil.loads(found_delta_json), delta_timestamp
 
     async def send_revoc_reg_def(
         self,
@@ -1147,7 +1147,7 @@ class IndySdkLedger(BaseLedger):
             )
         with IndyErrorHandler("Exception building rev reg def", LedgerError):
             request_json = await indy.ledger.build_revoc_reg_def_request(
-                did_info.did, json.dumps(revoc_reg_def)
+                did_info.did, JsonUtil.dumps(revoc_reg_def)
             )
 
         if endorser_did and not write_ledger:
@@ -1182,7 +1182,7 @@ class IndySdkLedger(BaseLedger):
             )
         with IndyErrorHandler("Exception building rev reg entry", LedgerError):
             request_json = await indy.ledger.build_revoc_reg_entry_request(
-                did_info.did, revoc_reg_id, revoc_def_type, json.dumps(revoc_reg_entry)
+                did_info.did, revoc_reg_id, revoc_def_type, JsonUtil.dumps(revoc_reg_entry)
             )
 
         if endorser_did and not write_ledger:

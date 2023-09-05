@@ -52,7 +52,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
 
         """
         validate_record(record)
-        tags_json = json.dumps(record.tags) if record.tags else None
+        tags_json = JsonUtil.dumps(record.tags) if record.tags else None
         try:
             await non_secrets.add_wallet_record(
                 self._wallet.handle, record.type, record.id, record.value, tags_json
@@ -90,7 +90,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
             raise StorageError("Record ID not provided")
         if not options:
             options = {}
-        options_json = json.dumps(
+        options_json = JsonUtil.dumps(
             {
                 "retrieveType": False,
                 "retrieveValue": True,
@@ -107,7 +107,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
                     f"{record_type} record not found: {record_id}"
                 ) from x_indy
             raise StorageError(str(x_indy)) from x_indy
-        result = json.loads(result_json)
+        result = JsonUtil.loads(result_json)
         return StorageRecord(
             type=record_type,
             id=result["id"],
@@ -129,7 +129,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
 
         """
         validate_record(record)
-        tags_json = json.dumps(tags) if tags else "{}"
+        tags_json = JsonUtil.dumps(tags) if tags else "{}"
         try:
             await non_secrets.update_wallet_record_value(
                 self._wallet.handle, record.type, record.id, value
@@ -266,7 +266,7 @@ class IndySdkStorageSearch(BaseStorageSearchSession):
         except IndyError as x_indy:
             raise StorageSearchError(str(x_indy)) from x_indy
 
-        results = json.loads(result_json)
+        results = JsonUtil.loads(result_json)
         ret = []
         if results["records"]:
             for row in results["records"]:
@@ -289,8 +289,8 @@ class IndySdkStorageSearch(BaseStorageSearchSession):
         if self._handle:
             return
 
-        query_json = json.dumps(self.tag_query or {})
-        options_json = json.dumps(
+        query_json = JsonUtil.dumps(self.tag_query or {})
+        options_json = JsonUtil.dumps(
             {
                 "retrieveRecords": True,
                 "retrieveTotalCount": False,

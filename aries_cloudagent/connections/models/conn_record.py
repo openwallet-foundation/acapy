@@ -444,7 +444,7 @@ class ConnRecord(BaseRecord):
             self.RECORD_TYPE_INVITATION,
             {"connection_id": self.connection_id},
         )
-        ser = json.loads(result.value)
+        ser = JsonUtil.loads(result.value)
         return (
             ConnectionInvitation
             if DIDCommPrefix.unqualify(ser["@type"]) == CONNECTION_INVITATION
@@ -485,7 +485,7 @@ class ConnRecord(BaseRecord):
         result = await storage.find_record(
             self.RECORD_TYPE_REQUEST, {"connection_id": self.connection_id}
         )
-        ser = json.loads(result.value)
+        ser = JsonUtil.loads(result.value)
         return (
             ConnectionRequest
             if DIDCommPrefix.unqualify(ser["@type"]) == CONNECTION_REQUEST
@@ -563,7 +563,7 @@ class ConnRecord(BaseRecord):
                 self.RECORD_TYPE_METADATA,
                 {"key": key, "connection_id": self.connection_id},
             )
-            return json.loads(record.value)
+            return JsonUtil.loads(record.value)
         except StorageNotFoundError:
             return default
 
@@ -576,7 +576,7 @@ class ConnRecord(BaseRecord):
             value (Any): value to set
         """
         assert self.connection_id
-        value = json.dumps(value)
+        value = JsonUtil.dumps(value)
         storage: BaseStorage = session.inject(BaseStorage)
         try:
             record = await storage.find_record(
@@ -626,7 +626,7 @@ class ConnRecord(BaseRecord):
             self.RECORD_TYPE_METADATA,
             {"connection_id": self.connection_id},
         )
-        return {record.tags["key"]: json.loads(record.value) for record in records}
+        return {record.tags["key"]: JsonUtil.loads(record.value) for record in records}
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

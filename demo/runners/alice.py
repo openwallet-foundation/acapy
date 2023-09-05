@@ -94,7 +94,7 @@ async def input_invitation(agent_container):
 
         if details:
             try:
-                details = json.loads(details)
+                details = JsonUtil.loads(details)
                 break
             except json.JSONDecodeError as e:
                 log_msg("Invalid invitation:", str(e))

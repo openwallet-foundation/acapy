@@ -33,7 +33,7 @@ class Forward(AgentMessage):
         super().__init__(**kwargs)
         self.to = to
         if isinstance(msg, str):
-            msg = json.loads(msg)
+            msg = JsonUtil.loads(msg)
         self.msg = msg
 
 
@@ -50,7 +50,7 @@ class ForwardSchema(AgentMessageSchema):
     def handle_str_message(self, data, **kwargs):
         """Accept string value for msg, as produced by previous implementation."""
         if "msg" in data and isinstance(data["msg"], str):
-            data["msg"] = json.loads(data["msg"])
+            data["msg"] = JsonUtil.loads(data["msg"])
         return data
 
     to = fields.Str(required=True)

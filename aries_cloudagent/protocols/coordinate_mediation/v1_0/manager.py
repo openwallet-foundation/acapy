@@ -89,7 +89,7 @@ class MediationManager:
                 record_type=self.ROUTING_DID_RECORD_TYPE,
                 record_id=self.ROUTING_DID_RECORD_TYPE,
             )
-            info = json.loads(record.value)
+            info = JsonUtil.loads(record.value)
             info.update(record.tags)
             did_info = await wallet.get_local_did(record.tags["did"])
 
@@ -116,7 +116,7 @@ class MediationManager:
         )
         record = StorageRecord(
             type=self.ROUTING_DID_RECORD_TYPE,
-            value=json.dumps({"verkey": info.verkey, "metadata": info.metadata}),
+            value=JsonUtil.dumps({"verkey": info.verkey, "metadata": info.metadata}),
             tags={"did": info.did},
             id=self.ROUTING_DID_RECORD_TYPE,
         )

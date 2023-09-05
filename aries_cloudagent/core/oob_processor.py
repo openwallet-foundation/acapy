@@ -89,7 +89,7 @@ class OobMessageProcessor:
                 their_service = ServiceDecorator.deserialize(oob_record.their_service)
 
                 # Attach ~service decorator so other message can respond
-                message = json.loads(outbound_message.payload)
+                message = JsonUtil.loads(outbound_message.payload)
                 if not message.get("~service"):
                     logger.debug(
                         "Setting our service on the message ~service %s",
@@ -102,7 +102,7 @@ class OobMessageProcessor:
                     "pthid": oob_record.invi_msg_id,
                 }
 
-                outbound_message.payload = json.dumps(message)
+                outbound_message.payload = JsonUtil.dumps(message)
 
                 logger.debug("Sending oob message payload %s", outbound_message.payload)
 
@@ -339,7 +339,7 @@ class OobMessageProcessor:
             )
 
         message = supported_messages[0]
-        message_str = json.dumps(message)
+        message_str = JsonUtil.dumps(message)
 
         async with profile.session() as session:
             message_dict, receipt = await self.wire_format.parse_message(

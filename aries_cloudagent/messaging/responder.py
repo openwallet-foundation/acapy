@@ -65,7 +65,7 @@ class BaseResponder(ABC):
             # TODO DIDComm version selection
             serialized = message.serialize()
             # TODO serialized format selection?
-            payload = json.dumps(serialized)
+            payload = JsonUtil.dumps(serialized)
             enc_payload = None
             if not reply_thread_id:
                 reply_thread_id = message._thread_id
@@ -94,7 +94,7 @@ class BaseResponder(ABC):
             msg_type = message._message_type
             msg_id = message._id
         else:
-            msg_dict = json.loads(message)
+            msg_dict = JsonUtil.loads(message)
             msg_type = msg_dict.get("@type")
             msg_id = msg_dict.get("@id")
         return await self.send_outbound(
@@ -134,7 +134,7 @@ class BaseResponder(ABC):
             msg_type = message._message_type
             msg_id = message._id
         else:
-            msg_dict = json.loads(message)
+            msg_dict = JsonUtil.loads(message)
             msg_type = msg_dict.get("@type")
             msg_id = msg_dict.get("@id")
         return await self.send_outbound(

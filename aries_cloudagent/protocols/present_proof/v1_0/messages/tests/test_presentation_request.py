@@ -15,7 +15,7 @@ from ..presentation_request import PresentationRequest
 NOW_8601 = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
 NOW_EPOCH = str_to_epoch(NOW_8601)
 CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
-INDY_PROOF_REQ = json.loads(
+INDY_PROOF_REQ = JsonUtil.loads(
     f"""{{
     "name": "proof-req",
     "version": "1.0",
@@ -90,7 +90,7 @@ class TestPresentationRequest(TestCase):
 
     def test_deserialize(self):
         """Test deserialization."""
-        dump = json.dumps(
+        dump = JsonUtil.dumps(
             {
                 "@type": DIDCommPrefix.qualify_current(PRESENTATION_REQUEST),
                 "comment": "Hello World",

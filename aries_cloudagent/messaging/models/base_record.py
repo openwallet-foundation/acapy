@@ -128,7 +128,7 @@ class BaseRecord(BaseModel):
         """Accessor for a `StorageRecord` representing this record."""
 
         return StorageRecord(
-            self.RECORD_TYPE, json.dumps(self.value), self.tags, self._id
+            self.RECORD_TYPE, JsonUtil.dumps(self.value), self.tags, self._id
         )
 
     @property
@@ -230,7 +230,7 @@ class BaseRecord(BaseModel):
         result = await storage.get_record(
             cls.RECORD_TYPE, record_id, {"forUpdate": for_update, "retrieveTags": False}
         )
-        vals = json.loads(result.value)
+        vals = JsonUtil.loads(result.value)
         return cls.from_storage(record_id, vals)
 
     @classmethod
@@ -259,7 +259,7 @@ class BaseRecord(BaseModel):
         )
         found = None
         for record in rows:
-            vals = json.loads(record.value)
+            vals = JsonUtil.loads(record.value)
             if match_post_filter(vals, post_filter, alt=False):
                 if found:
                     raise StorageDuplicateError(
@@ -307,7 +307,7 @@ class BaseRecord(BaseModel):
         )
         result = []
         for record in rows:
-            vals = json.loads(record.value)
+            vals = JsonUtil.loads(record.value)
             if match_post_filter(
                 vals,
                 post_filter_positive,

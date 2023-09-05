@@ -355,7 +355,7 @@ class IndyCredxHolder(IndyHolder):
 
         """
         cred = await self._get_credential(credential_id)
-        return json.dumps(_make_cred_info(credential_id, cred))
+        return JsonUtil.dumps(_make_cred_info(credential_id, cred))
 
     async def _get_credential(self, credential_id: str) -> Credential:
         """Get an unencoded Credential instance from the store."""

@@ -320,7 +320,7 @@ class AttachDecoratorData(BaseModel):
         headers = {}
         sig = self.jws if self.jws.signature else self.jws.signatures[idx]
         if sig.protected:
-            headers.update(json.loads(b64_to_str(sig.protected, urlsafe=True)))
+            headers.update(JsonUtil.loads(b64_to_str(sig.protected, urlsafe=True)))
         if jose:
             headers.update(sig.header.serialize())
         return headers
@@ -362,7 +362,7 @@ class AttachDecoratorData(BaseModel):
             """Build protected header."""
 
             return str_to_b64(
-                json.dumps(
+                JsonUtil.dumps(
                     {
                         "alg": "EdDSA",
                         "kid": did_key(verkey),
@@ -443,7 +443,7 @@ class AttachDecoratorData(BaseModel):
         for sig in [self.jws] if self.signatures == 1 else self.jws.signatures:
             b64_protected = sig.protected
             b64_sig = sig.signature
-            protected = json.loads(b64_to_str(b64_protected, urlsafe=True))
+            protected = JsonUtil.loads(b64_to_str(b64_protected, urlsafe=True))
             assert "jwk" in protected and protected["jwk"].get("kty") == "OKP"
 
             sign_input = (b64_protected + "." + b64_payload).encode("ascii")
@@ -580,7 +580,7 @@ class AttachDecorator(BaseModel):
 
         """
         if hasattr(self.data, "base64_"):
-            return json.loads(b64_to_bytes(self.data.base64))
+            return JsonUtil.loads(b64_to_bytes(self.data.base64))
         elif hasattr(self.data, "json_"):
             return self.data.json
         elif hasattr(self.data, "links_"):
@@ -624,7 +624,7 @@ class AttachDecorator(BaseModel):
             lastmod_time=lastmod_time,
             byte_count=byte_count,
             data=AttachDecoratorData(
-                base64_=bytes_to_b64(json.dumps(mapping).encode())
+                base64_=bytes_to_b64(JsonUtil.dumps(mapping).encode())
             ),
         )
 

@@ -25,7 +25,7 @@ class TestJwe(TestCase):
             }
         )
         message = {
-            "protected": b64url(json.dumps(protected)),
+            "protected": b64url(JsonUtil.dumps(protected)),
             "unprotected": UNPROTECTED.copy(),
             "iv": b64url(IV),
             "ciphertext": b64url(CIPHERTEXT),
@@ -60,7 +60,7 @@ class TestJwe(TestCase):
             }
         )
         message = {
-            "protected": b64url(json.dumps(protected)),
+            "protected": b64url(JsonUtil.dumps(protected)),
             "unprotected": UNPROTECTED.copy(),
             "iv": b64url(IV),
             "ciphertext": b64url(CIPHERTEXT),
@@ -102,7 +102,7 @@ class TestJwe(TestCase):
         loaded = JweEnvelope.from_json(message)
 
         # check in flattened form
-        prot = json.loads(from_b64url(loaded.protected_b64))
+        prot = JsonUtil.loads(from_b64url(loaded.protected_b64))
         assert "encrypted_key" in prot
 
         assert loaded.protected == PARAMS

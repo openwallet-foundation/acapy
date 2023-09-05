@@ -110,7 +110,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "genesis_transactions"
         )
         mock_create_config.assert_called_once_with(
-            "name", json.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
+            "name", JsonUtil.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
         )
         assert ledger.did_to_nym(ledger.nym_to_did(self.test_did)) == self.test_did
 
@@ -171,7 +171,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_open.assert_called_once_with(GENESIS_TRANSACTION_PATH, "w")
         mock_delete_config.assert_called_once_with("name")
         mock_create_config.assert_called_once_with(
-            "name", json.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
+            "name", JsonUtil.dumps({"genesis_txn": GENESIS_TRANSACTION_PATH})
         )
 
     @async_mock.patch("indy.pool.set_protocol_version")
@@ -283,7 +283,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-        mock_indy_multi_sign.return_value = json.dumps({"endorsed": "content"})
+        mock_indy_multi_sign.return_value = JsonUtil.dumps({"endorsed": "content"})
         mock_sign_submit.return_value = '{"op": "REPLY"}'
 
         mock_wallet = async_mock.MagicMock()
@@ -314,7 +314,7 @@ class TestIndySdkLedger(AsyncTestCase):
                     taa_accept=False,
                     write_ledger=False,
                 )
-                assert json.loads(result_json) == {"endorsed": "content"}
+                assert JsonUtil.loads(result_json) == {"endorsed": "content"}
 
                 await ledger.txn_submit(  # cover txn_submit()
                     request_json="{}",
@@ -497,7 +497,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-        mock_indy_multi_sign.return_value = json.dumps({"endorsed": "content"})
+        mock_indy_multi_sign.return_value = JsonUtil.dumps({"endorsed": "content"})
         mock_indy_open.return_value = 1
 
         mock_wallet = async_mock.MagicMock()
@@ -508,18 +508,18 @@ class TestIndySdkLedger(AsyncTestCase):
         ) as mock_wallet_get_public_did:
             mock_wallet_get_public_did.return_value = None
             with self.assertRaises(ClosedPoolError):
-                await ledger.txn_endorse(request_json=json.dumps({"...": "..."}))
+                await ledger.txn_endorse(request_json=JsonUtil.dumps({"...": "..."}))
 
             async with ledger:
                 with self.assertRaises(BadLedgerRequestError):
-                    await ledger.txn_endorse(request_json=json.dumps({"...": "..."}))
+                    await ledger.txn_endorse(request_json=JsonUtil.dumps({"...": "..."}))
 
                 mock_wallet_get_public_did.return_value = self.test_did_info
 
                 endorsed_json = await ledger.txn_endorse(
-                    request_json=json.dumps({"...": "..."})
+                    request_json=JsonUtil.dumps({"...": "..."})
                 )
-                assert json.loads(endorsed_json) == {"endorsed": "content"}
+                assert JsonUtil.loads(endorsed_json) == {"endorsed": "content"}
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
@@ -968,12 +968,12 @@ class TestIndySdkLedger(AsyncTestCase):
                     mock_submit.return_value
                 )
 
-                assert response == json.loads(
+                assert response == JsonUtil.loads(
                     mock_parse_get_schema_resp.return_value[1]
                 )
 
                 response == await ledger.get_schema("schema_id")  # cover get-from-cache
-                assert response == json.loads(
+                assert response == JsonUtil.loads(
                     mock_parse_get_schema_resp.return_value[1]
                 )
 
@@ -991,7 +991,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
 
-        mock_submit.return_value = json.dumps({"result": {"seqNo": None}})
+        mock_submit.return_value = JsonUtil.dumps({"result": {"seqNo": None}})
 
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
@@ -1037,7 +1037,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_parse_get_schema_resp.return_value = (None, '{"attrNames": ["a", "b"]}')
 
         submissions = [
-            json.dumps(
+            JsonUtil.dumps(
                 {
                     "result": {
                         "data": {
@@ -1052,7 +1052,7 @@ class TestIndySdkLedger(AsyncTestCase):
                     }
                 }
             ),
-            json.dumps({"result": {"seqNo": 999}}),
+            JsonUtil.dumps({"result": {"seqNo": 999}}),
         ]  # need to subscript these in assertions later
         mock_submit.side_effect = list(
             submissions
@@ -1083,7 +1083,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 )
                 mock_parse_get_schema_resp.assert_called_once_with(submissions[1])
 
-                assert response == json.loads(
+                assert response == JsonUtil.loads(
                     mock_parse_get_schema_resp.return_value[1]
                 )
 
@@ -1108,7 +1108,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_parse_get_schema_resp.return_value = (None, '{"attrNames": ["a", "b"]}')
 
         submissions = [
-            json.dumps(
+            JsonUtil.dumps(
                 {
                     "result": {
                         "data": {
@@ -1119,7 +1119,7 @@ class TestIndySdkLedger(AsyncTestCase):
                     }
                 }
             ),  # not a schema
-            json.dumps({"result": {"seqNo": 999}}),
+            JsonUtil.dumps({"result": {"seqNo": 999}}),
         ]  # need to subscript these in assertions later
         mock_submit.side_effect = list(
             submissions
@@ -1176,7 +1176,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.side_effect = [None, cred_def]
 
@@ -1268,7 +1268,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.side_effect = [None, cred_def]
 
@@ -1346,7 +1346,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.return_value = {"mock": "cred-def"}
 
@@ -1494,7 +1494,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.return_value = {}
 
@@ -1540,7 +1540,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.return_value = {}
 
@@ -1590,7 +1590,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.return_value = {}
 
@@ -1643,7 +1643,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.return_value = {}
 
@@ -1698,7 +1698,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.return_value = cred_def
 
@@ -1757,7 +1757,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.return_value = cred_def
 
@@ -1840,7 +1840,7 @@ class TestIndySdkLedger(AsyncTestCase):
             "tag": "default",
             "value": cred_def_value,
         }
-        cred_def_json = json.dumps(cred_def)
+        cred_def_json = JsonUtil.dumps(cred_def)
 
         mock_fetch_cred_def.return_value = None
 
@@ -1884,7 +1884,7 @@ class TestIndySdkLedger(AsyncTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_parse_get_cred_def_resp.return_value = (
             None,
-            json.dumps({"result": {"seqNo": 1}}),
+            JsonUtil.dumps({"result": {"seqNo": 1}}),
         )
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
@@ -1908,13 +1908,13 @@ class TestIndySdkLedger(AsyncTestCase):
                 mock_parse_get_cred_def_resp.assert_called_once_with(
                     mock_submit.return_value
                 )
-                assert response == json.loads(
+                assert response == JsonUtil.loads(
                     mock_parse_get_cred_def_resp.return_value[1]
                 )
                 response == await ledger.get_credential_definition(  # cover get-from-cache
                     "cred_def_id"
                 )
-                assert response == json.loads(
+                assert response == JsonUtil.loads(
                     mock_parse_get_cred_def_resp.return_value[1]
                 )
 
@@ -2000,8 +2000,8 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
-        mock_submit.return_value = json.dumps(
-            {"result": {"data": json.dumps({"verkey": self.test_verkey})}}
+        mock_submit.return_value = JsonUtil.dumps(
+            {"result": {"data": JsonUtil.dumps({"verkey": self.test_verkey})}}
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
@@ -2031,8 +2031,8 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         endpoint = "http://aries.ca"
-        mock_submit.return_value = json.dumps(
-            {"result": {"data": json.dumps({"endpoint": {"endpoint": endpoint}})}}
+        mock_submit.return_value = JsonUtil.dumps(
+            {"result": {"data": JsonUtil.dumps({"endpoint": {"endpoint": endpoint}})}}
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
@@ -2066,10 +2066,10 @@ class TestIndySdkLedger(AsyncTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         endpoint = "http://company.com/masterdata"
         endpoint_type = EndpointType.PROFILE
-        mock_submit.return_value = json.dumps(
+        mock_submit.return_value = JsonUtil.dumps(
             {
                 "result": {
-                    "data": json.dumps(
+                    "data": JsonUtil.dumps(
                         {"endpoint": {EndpointType.PROFILE.indy: endpoint}}
                     )
                 }
@@ -2110,10 +2110,10 @@ class TestIndySdkLedger(AsyncTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         profile_endpoint = "http://company.com/masterdata"
         default_endpoint = "http://agent.company.com"
-        data_json = json.dumps(
+        data_json = JsonUtil.dumps(
             {"endpoint": {"endpoint": default_endpoint, "profile": profile_endpoint}}
         )
-        mock_submit.return_value = json.dumps({"result": {"data": data_json}})
+        mock_submit.return_value = JsonUtil.dumps({"result": {"data": data_json}})
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
@@ -2133,7 +2133,7 @@ class TestIndySdkLedger(AsyncTestCase):
                     mock_build_get_attrib_req.return_value,
                     sign_did=mock_wallet_get_public_did.return_value,
                 )
-                assert response == json.loads(data_json).get("endpoint")
+                assert response == JsonUtil.loads(data_json).get("endpoint")
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
@@ -2146,7 +2146,7 @@ class TestIndySdkLedger(AsyncTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         profile_endpoint = "http://company.com/masterdata"
         default_endpoint = "http://agent.company.com"
-        mock_submit.return_value = json.dumps({"result": {"data": None}})
+        mock_submit.return_value = JsonUtil.dumps({"result": {"data": None}})
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
@@ -2177,8 +2177,8 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
-        mock_submit.return_value = json.dumps(
-            {"result": {"data": json.dumps({"endpoint": None})}}
+        mock_submit.return_value = JsonUtil.dumps(
+            {"result": {"data": JsonUtil.dumps({"endpoint": None})}}
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
@@ -2210,7 +2210,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
-        mock_submit.return_value = json.dumps({"result": {"data": None}})
+        mock_submit.return_value = JsonUtil.dumps({"result": {"data": None}})
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
@@ -2252,10 +2252,10 @@ class TestIndySdkLedger(AsyncTestCase):
         endpoint = ["http://old.aries.ca", "http://new.aries.ca"]
         mock_is_ledger_read_only.return_value = False
         mock_submit.side_effect = [
-            json.dumps(
+            JsonUtil.dumps(
                 {
                     "result": {
-                        "data": json.dumps({"endpoint": {"endpoint": endpoint[i]}})
+                        "data": JsonUtil.dumps({"endpoint": {"endpoint": endpoint[i]}})
                     }
                 }
             )
@@ -2300,7 +2300,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 EndpointType.ENDPOINT,
                 routing_keys=["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
             )
-        assert attr_json == json.dumps(
+        assert attr_json == JsonUtil.dumps(
             {
                 "endpoint": {
                     "endpoint": "https://url",
@@ -2323,7 +2323,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 all_exist_endpoints={"profile": "https://endpoint/profile"},
                 routing_keys=["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
             )
-        assert attr_json == json.dumps(
+        assert attr_json == JsonUtil.dumps(
             {
                 "endpoint": {
                     "profile": "https://endpoint/profile",
@@ -2361,7 +2361,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 ledger,
                 "_construct_attr_json",
                 async_mock.CoroutineMock(
-                    return_value=json.dumps(
+                    return_value=JsonUtil.dumps(
                         {
                             "endpoint": {
                                 "endpoint": {
@@ -2460,10 +2460,10 @@ class TestIndySdkLedger(AsyncTestCase):
         endpoint_type = EndpointType.PROFILE
         mock_is_ledger_read_only.return_value = False
         mock_submit.side_effect = [
-            json.dumps(
+            JsonUtil.dumps(
                 {
                     "result": {
-                        "data": json.dumps(
+                        "data": JsonUtil.dumps(
                             {"endpoint": {endpoint_type.indy: endpoint[i]}}
                         )
                     }
@@ -2514,8 +2514,8 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         endpoint = "http://aries.ca"
-        mock_submit.return_value = json.dumps(
-            {"result": {"data": json.dumps({"endpoint": {"endpoint": endpoint}})}}
+        mock_submit.return_value = JsonUtil.dumps(
+            {"result": {"data": JsonUtil.dumps({"endpoint": {"endpoint": endpoint}})}}
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
@@ -2548,8 +2548,8 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         endpoint = "http://aries.ca"
-        mock_submit.return_value = json.dumps(
-            {"result": {"data": json.dumps({"endpoint": {"endpoint": endpoint}})}}
+        mock_submit.return_value = JsonUtil.dumps(
+            {"result": {"data": JsonUtil.dumps({"endpoint": {"endpoint": endpoint}})}}
         )
         ledger = IndySdkLedger(
             IndySdkLedgerPool("name", checked=True, read_only=True), self.profile
@@ -2770,7 +2770,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
-        mock_submit.return_value = json.dumps(
+        mock_submit.return_value = JsonUtil.dumps(
             {
                 "result": {
                     "dest": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
@@ -2791,7 +2791,7 @@ class TestIndySdkLedger(AsyncTestCase):
                             "signature": "QuX...",
                         },
                     },
-                    "data": json.dumps(
+                    "data": JsonUtil.dumps(
                         {
                             "dest": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
                             "identifier": "V4SGRU86Z58d6TV7PBUe6f",
@@ -2852,7 +2852,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
-        mock_submit.return_value = json.dumps(
+        mock_submit.return_value = JsonUtil.dumps(
             {
                 "result": {
                     "dest": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
@@ -2873,7 +2873,7 @@ class TestIndySdkLedger(AsyncTestCase):
                             "signature": "QuX...",
                         },
                     },
-                    "data": json.dumps(None),
+                    "data": JsonUtil.dumps(None),
                     "seqNo": 11,
                     "identifier": "GjZWsBLgZCR18aL468JAT7w9CZRiBnpxUPPgyQxh4voa",
                     "type": "105",
@@ -2908,8 +2908,8 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_submit.side_effect = [
-            json.dumps({"result": {"data": json.dumps({"seqNo": 1234})}}),
-            json.dumps(
+            JsonUtil.dumps({"result": {"data": JsonUtil.dumps({"seqNo": 1234})}}),
+            JsonUtil.dumps(
                 {
                     "result": {
                         "data": {"txn": {"data": {"role": "101", "alias": "Billy"}}}
@@ -2940,7 +2940,7 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
-        mock_submit.return_value = json.dumps({"result": {"data": json.dumps(None)}})
+        mock_submit.return_value = JsonUtil.dumps({"result": {"data": JsonUtil.dumps(None)}})
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
 
         with async_mock.patch.object(
@@ -2975,8 +2975,8 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_submit.side_effect = [
-            json.dumps({"result": {"data": json.dumps({"seqNo": 1234})}}),
-            json.dumps({"result": {"data": None}}),
+            JsonUtil.dumps({"result": {"data": JsonUtil.dumps({"seqNo": 1234})}}),
+            JsonUtil.dumps({"result": {"data": None}}),
         ]
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
@@ -3010,9 +3010,9 @@ class TestIndySdkLedger(AsyncTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_indy_parse_get_rrdef_resp.return_value = (
             "rr-id",
-            json.dumps({"...": "..."}),
+            JsonUtil.dumps({"...": "..."}),
         )
-        mock_submit.return_value = json.dumps({"result": {"txnTime": 1234567890}})
+        mock_submit.return_value = JsonUtil.dumps({"result": {"txnTime": 1234567890}})
 
         ledger = IndySdkLedger(
             IndySdkLedgerPool("name", checked=True, read_only=True), self.profile
@@ -3365,7 +3365,7 @@ class TestIndySdkLedger(AsyncTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         txn_result_data = {"text": "text", "version": "1.0"}
         mock_submit.side_effect = [
-            json.dumps({"result": {"data": txn_result_data}}) for i in range(2)
+            JsonUtil.dumps({"result": {"data": txn_result_data}}) for i in range(2)
         ]
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
@@ -3435,7 +3435,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_find_all_records.return_value = [
             StorageRecord(
                 TAA_ACCEPTED_RECORD_TYPE,
-                json.dumps(acceptance),
+                JsonUtil.dumps(acceptance),
                 {"pool_name": ledger.pool_name},
             )
         ]

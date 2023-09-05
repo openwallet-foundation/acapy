@@ -104,7 +104,7 @@ class TestDomainTxnHandler(TestCase):
         test_lsn = "100"
         test_lut = "test_lut"
         test_encoded = {"val": test_value, "lsn": test_lsn, "lut": test_lut}
-        assert decode_state_value(json.dumps(test_encoded)) == (
+        assert decode_state_value(JsonUtil.dumps(test_encoded)) == (
             test_value,
             test_lsn,
             test_lut,

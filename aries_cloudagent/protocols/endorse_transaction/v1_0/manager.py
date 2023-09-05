@@ -280,7 +280,7 @@ class TransactionManager:
                 )
             elif txn_goal_code == TransactionRecord.WRITE_DID_TRANSACTION:
                 # get DID info from transaction.meta_data
-                meta_data = json.loads(transaction_json)
+                meta_data = JsonUtil.loads(transaction_json)
                 (success, txn) = await shield(
                     ledger.register_nym(
                         meta_data["did"],
@@ -296,7 +296,7 @@ class TransactionManager:
                     },
                     "meta_data": meta_data,
                 }
-                endorsed_msg = json.dumps(ledger_response)
+                endorsed_msg = JsonUtil.dumps(ledger_response)
             else:
                 raise TransactionManagerError(
                     f"Invalid goal code for transaction record:" f" {txn_goal_code}"
@@ -432,7 +432,7 @@ class TransactionManager:
                 except (IndyIssuerError, LedgerError) as err:
                     raise TransactionManagerError(err.roll_up) from err
 
-            ledger_response = json.loads(ledger_response_json)
+            ledger_response = JsonUtil.loads(ledger_response_json)
 
         else:
             ledger_response = ledger_transaction
@@ -771,7 +771,7 @@ class TransactionManager:
         """
 
         if isinstance(ledger_response, str):
-            ledger_response = json.loads(ledger_response)
+            ledger_response = JsonUtil.loads(ledger_response)
 
         ledger = self._profile.inject(BaseLedger)
         if not ledger:

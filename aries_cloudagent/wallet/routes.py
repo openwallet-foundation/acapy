@@ -592,7 +592,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     outbound_handler = request["outbound_message_router"]
 
-    create_transaction_for_endorser = json.loads(
+    create_transaction_for_endorser = JsonUtil.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
     write_ledger = not create_transaction_for_endorser
@@ -808,7 +808,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         body.get("endpoint_type", EndpointType.ENDPOINT.w3c)
     )
 
-    create_transaction_for_endorser = json.loads(
+    create_transaction_for_endorser = JsonUtil.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
     write_ledger = not create_transaction_for_endorser

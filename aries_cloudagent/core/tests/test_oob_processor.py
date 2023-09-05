@@ -133,7 +133,7 @@ class TestOobProcessor(AsyncTestCase):
             },
         )
 
-        message = json.dumps({"~thread": {"thid": "the-thid"}})
+        message = JsonUtil.dumps({"~thread": {"thid": "the-thid"}})
         outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
 
         with async_mock.patch.object(
@@ -155,7 +155,7 @@ class TestOobProcessor(AsyncTestCase):
             ]
             assert target.sender_key == "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
-            payload = json.loads(outbound.payload)
+            payload = JsonUtil.loads(outbound.payload)
 
             assert payload == {
                 "~thread": {"thid": "the-thid", "pthid": "the-pthid"},
@@ -171,7 +171,7 @@ class TestOobProcessor(AsyncTestCase):
             )
 
     async def test_find_oob_target_for_outbound_message_oob_not_found(self):
-        message = json.dumps({})
+        message = JsonUtil.dumps({})
         outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
 
         with async_mock.patch.object(
@@ -213,12 +213,12 @@ class TestOobProcessor(AsyncTestCase):
             "retrieve_by_tag_filter",
             async_mock.CoroutineMock(return_value=mock_oob),
         ):
-            message = json.dumps({})
+            message = JsonUtil.dumps({})
             outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
             await self.oob_processor.find_oob_target_for_outbound_message(
                 self.profile, outbound
             )
-            payload = json.loads(outbound.payload)
+            payload = JsonUtil.loads(outbound.payload)
 
             assert payload == {
                 "~thread": {"pthid": "the-pthid"},
@@ -229,7 +229,7 @@ class TestOobProcessor(AsyncTestCase):
                 },
             }
 
-            message = json.dumps(
+            message = JsonUtil.dumps(
                 {
                     "~service": {"already": "present"},
                 }
@@ -238,7 +238,7 @@ class TestOobProcessor(AsyncTestCase):
             await self.oob_processor.find_oob_target_for_outbound_message(
                 self.profile, outbound
             )
-            payload = json.loads(outbound.payload)
+            payload = JsonUtil.loads(outbound.payload)
 
             assert payload == {
                 "~thread": {"pthid": "the-pthid"},

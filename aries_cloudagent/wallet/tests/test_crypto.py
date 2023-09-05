@@ -69,11 +69,11 @@ class TestCrypto(TestCase):
 
     def test_decode_pack_message_outer_x(self):
         with pytest.raises(ValueError) as excinfo:
-            test_module.decode_pack_message_outer(json.dumps({"invalid": "content"}))
+            test_module.decode_pack_message_outer(JsonUtil.dumps({"invalid": "content"}))
         assert "Invalid packed message" in str(excinfo.value)
 
         recips = str_to_b64(
-            json.dumps(
+            JsonUtil.dumps(
                 {
                     "enc": "xchacha20poly1305_ietf",
                     "typ": "JWM/1.0",
@@ -84,7 +84,7 @@ class TestCrypto(TestCase):
         )
         with pytest.raises(ValueError) as excinfo:
             test_module.decode_pack_message_outer(
-                json.dumps(
+                JsonUtil.dumps(
                     {
                         "protected": recips,
                         "iv": "MTIzNDU",
@@ -96,7 +96,7 @@ class TestCrypto(TestCase):
         assert "Invalid packed message" in str(excinfo.value)
 
         recips = str_to_b64(
-            json.dumps(
+            JsonUtil.dumps(
                 {
                     "enc": "xchacha20poly1305_ietf",
                     "typ": "JWM/1.0",
@@ -107,7 +107,7 @@ class TestCrypto(TestCase):
         )
         with pytest.raises(ValueError) as excinfo:
             test_module.decode_pack_message_outer(
-                json.dumps(
+                JsonUtil.dumps(
                     {
                         "protected": recips,
                         "iv": "MTIzNDU",

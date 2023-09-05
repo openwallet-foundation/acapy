@@ -74,7 +74,7 @@ class SignatureDecorator(BaseModel):
             value = value.serialize()
         # 8 byte, big-endian encoded, unsigned int (long)
         timestamp_bin = struct.pack("!Q", int(timestamp))
-        msg_combined_bin = timestamp_bin + json.dumps(value).encode("ascii")
+        msg_combined_bin = timestamp_bin + JsonUtil.dumps(value).encode("ascii")
         signature_bin = await wallet.sign_message(msg_combined_bin, signer)
         return SignatureDecorator(
             signature_type=DIDCommPrefix.qualify_current(cls.TYPE_ED25519SHA512),
@@ -92,7 +92,7 @@ class SignatureDecorator(BaseModel):
         """
         msg_bin = b64_to_bytes(self.sig_data, urlsafe=True)
         (timestamp,) = struct.unpack_from("!Q", msg_bin, 0)
-        return (json.loads(msg_bin[8:]), timestamp)
+        return (JsonUtil.loads(msg_bin[8:]), timestamp)
 
     async def verify(self, wallet: BaseWallet) -> bool:
         """Verify the signature against the signer's public key.

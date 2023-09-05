@@ -124,7 +124,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                 if isinstance(response_json, dict):
                     response = response_json
                 else:
-                    response = json.loads(response_json)
+                    response = JsonUtil.loads(response_json)
                 if "result" in response.keys():
                     data = response.get("result", {}).get("data")
                 else:
@@ -133,7 +133,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                     LOGGER.warning(f"Did {did} not posted to ledger {ledger_id}")
                     return None
                 if isinstance(data, str):
-                    data = json.loads(data)
+                    data = JsonUtil.loads(data)
                 if not await SubTrie.verify_spv_proof(
                     expected_value=prepare_for_state_read(response),
                     proof_nodes=get_proof_nodes(response),

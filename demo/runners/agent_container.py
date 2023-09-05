@@ -537,7 +537,7 @@ class AriesAgent(DemoAgent):
                 except ClientError:
                     pass
 
-            log_status("#26 Send the proof to X: " + json.dumps(request))
+            log_status("#26 Send the proof to X: " + JsonUtil.dumps(request))
             await self.admin_POST(
                 f"/present-proof-2.0/records/{pres_ex_id}/send-presentation",
                 request,
@@ -594,7 +594,7 @@ class AriesAgent(DemoAgent):
                 " Or use the QR code to connect from a mobile agent."
             )
             log_msg(
-                json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None
+                JsonUtil.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None
             )
             qr.print_ascii(invert=True)
 

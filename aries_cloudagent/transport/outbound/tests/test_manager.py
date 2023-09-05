@@ -161,7 +161,7 @@ class TestOutboundTransportManager(AsyncTestCase):
             assert len(mgr.outbound_new) == 1
             queued = mgr.outbound_new[0]
             assert queued.endpoint == f"{test_endpoint_host}/topic/{test_topic}/"
-            assert json.loads(queued.payload) == test_payload
+            assert JsonUtil.loads(queued.payload) == test_payload
             assert queued.retries == test_attempts - 1
             assert queued.state == QueuedOutboundMessage.STATE_PENDING
 

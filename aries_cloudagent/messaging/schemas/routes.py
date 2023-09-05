@@ -180,7 +180,7 @@ async def schemas_send_schema(request: web.BaseRequest):
     profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
-    create_transaction_for_endorser = json.loads(
+    create_transaction_for_endorser = JsonUtil.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
     write_ledger = not create_transaction_for_endorser

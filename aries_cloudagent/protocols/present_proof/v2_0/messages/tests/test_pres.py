@@ -12,7 +12,7 @@ from ...message_types import ATTACHMENT_FORMAT, PRES_20
 from ..pres_format import V20PresFormat
 from ..pres import V20Pres
 
-INDY_PROOF = json.loads(  # indy returns proof json-encoded: json-decode before base64
+INDY_PROOF = JsonUtil.loads(  # indy returns proof json-encoded: json-decode before base64
     """{
         "proof": {
             "proofs": [
@@ -1659,7 +1659,7 @@ INDY_PROOF = json.loads(  # indy returns proof json-encoded: json-decode before 
     }"""
 )
 
-DIF_PROOF = json.loads(
+DIF_PROOF = JsonUtil.loads(
     """[
         {
             "@context":[

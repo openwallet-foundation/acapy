@@ -75,7 +75,7 @@ class TestIndySdkIssuer(AsyncTestCase):
             ["name", "moniker", "genre", "effective"],
         )
         assert s_id == SCHEMA_ID
-        schema = json.loads(schema_json)
+        schema = JsonUtil.loads(schema_json)
         schema["seqNo"] = SCHEMA_TXN
 
         assert (
@@ -85,9 +85,9 @@ class TestIndySdkIssuer(AsyncTestCase):
 
         mock_indy_cred_def.return_value = (
             CRED_DEF_ID,
-            json.dumps({"dummy": "cred-def"}),
+            JsonUtil.dumps({"dummy": "cred-def"}),
         )
-        assert (CRED_DEF_ID, json.dumps({"dummy": "cred-def"})) == (
+        assert (CRED_DEF_ID, JsonUtil.dumps({"dummy": "cred-def"})) == (
             await self.issuer.create_and_store_credential_definition(
                 TEST_DID, schema, support_revocation=True
             )
@@ -117,11 +117,11 @@ class TestIndySdkIssuer(AsyncTestCase):
     async def test_create_credential_offer(self, mock_create_offer):
         test_offer = {"test": "offer"}
         test_cred_def_id = "test-cred-def-id"
-        mock_create_offer.return_value = json.dumps(test_offer)
+        mock_create_offer.return_value = JsonUtil.dumps(test_offer)
         mock_profile = async_mock.MagicMock()
         issuer = test_module.IndySdkIssuer(mock_profile)
         offer_json = await issuer.create_credential_offer(test_cred_def_id)
-        assert json.loads(offer_json) == test_offer
+        assert JsonUtil.loads(offer_json) == test_offer
         mock_create_offer.assert_called_once_with(
             mock_profile.wallet.handle, test_cred_def_id
         )
@@ -160,7 +160,7 @@ class TestIndySdkIssuer(AsyncTestCase):
         test_rr_delta = TEST_RR_DELTA
         mock_indy_create_credential.side_effect = [
             (
-                json.dumps(test_cred),
+                JsonUtil.dumps(test_cred),
                 cr_id,
                 test_rr_delta,
             )
@@ -193,20 +193,20 @@ class TestIndySdkIssuer(AsyncTestCase):
             call_etc2,
         ) = mock_indy_create_credential.call_args[0]
         assert call_wallet is self.wallet.handle
-        assert json.loads(call_offer) == test_offer
-        assert json.loads(call_request) == test_request
-        values = json.loads(call_values)
+        assert JsonUtil.loads(call_offer) == test_offer
+        assert JsonUtil.loads(call_request) == test_request
+        values = JsonUtil.loads(call_values)
         assert "attr1" in values
 
-        mock_indy_revoke_credential.return_value = json.dumps(TEST_RR_DELTA)
-        mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
+        mock_indy_revoke_credential.return_value = JsonUtil.dumps(TEST_RR_DELTA)
+        mock_indy_merge_rr_deltas.return_value = JsonUtil.dumps(TEST_RR_DELTA)
         (result, failed) = await self.issuer.revoke_credentials(
             CRED_DEF_ID,
             REV_REG_ID,
             tails_file_path="dummy",
             cred_rev_ids=test_cred_rev_ids,
         )
-        assert json.loads(result) == TEST_RR_DELTA
+        assert JsonUtil.loads(result) == TEST_RR_DELTA
         assert not failed
         assert mock_indy_revoke_credential.call_count == 2
         mock_indy_merge_rr_deltas.assert_called_once()
@@ -245,7 +245,7 @@ class TestIndySdkIssuer(AsyncTestCase):
         test_rr_delta = TEST_RR_DELTA
         mock_indy_create_credential.side_effect = [
             (
-                json.dumps(test_cred),
+                JsonUtil.dumps(test_cred),
                 cr_id,
                 test_rr_delta,
             )
@@ -278,14 +278,14 @@ class TestIndySdkIssuer(AsyncTestCase):
             call_etc2,
         ) = mock_indy_create_credential.call_args[0]
         assert call_wallet is self.wallet.handle
-        assert json.loads(call_offer) == test_offer
-        assert json.loads(call_request) == test_request
-        values = json.loads(call_values)
+        assert JsonUtil.loads(call_offer) == test_offer
+        assert JsonUtil.loads(call_request) == test_request
+        values = JsonUtil.loads(call_values)
         assert "attr1" in values
 
         def mock_revoke(_h, _t, _r, cred_rev_id):
             if cred_rev_id == "42":
-                return json.dumps(TEST_RR_DELTA)
+                return JsonUtil.dumps(TEST_RR_DELTA)
             if cred_rev_id == "54":
                 raise IndyError(
                     error_code=ErrorCode.AnoncredsInvalidUserRevocId,
@@ -297,14 +297,14 @@ class TestIndySdkIssuer(AsyncTestCase):
             )
 
         mock_indy_revoke_credential.side_effect = mock_revoke
-        mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
+        mock_indy_merge_rr_deltas.return_value = JsonUtil.dumps(TEST_RR_DELTA)
         (result, failed) = await self.issuer.revoke_credentials(
             CRED_DEF_ID,
             REV_REG_ID,
             tails_file_path="dummy",
             cred_rev_ids=test_cred_rev_ids,
         )
-        assert json.loads(result) == TEST_RR_DELTA
+        assert JsonUtil.loads(result) == TEST_RR_DELTA
         assert failed == ["54", "103"]
         assert mock_indy_revoke_credential.call_count == 3
         mock_indy_merge_rr_deltas.assert_not_called()
@@ -389,8 +389,8 @@ class TestIndySdkIssuer(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.issuer_merge_revocation_registry_deltas")
     async def test_merge_revocation_registry_deltas(self, mock_indy_merge):
-        mock_indy_merge.return_value = json.dumps({"net": "delta"})
-        assert {"net": "delta"} == json.loads(
+        mock_indy_merge.return_value = JsonUtil.dumps({"net": "delta"})
+        assert {"net": "delta"} == JsonUtil.loads(
             await self.issuer.merge_revocation_registry_deltas(
                 {"fro": "delta"}, {"to": "delta"}
             )

@@ -346,14 +346,14 @@ class TestIndySdkVerifier(AsyncTestCase):
             )
 
         mock_verify.assert_called_once_with(
-            json.dumps(INDY_PROOF_REQ_X),
-            json.dumps(INDY_PROOF_PRED_NAMES),
-            json.dumps("schemas"),
-            json.dumps(
+            JsonUtil.dumps(INDY_PROOF_REQ_X),
+            JsonUtil.dumps(INDY_PROOF_PRED_NAMES),
+            JsonUtil.dumps("schemas"),
+            JsonUtil.dumps(
                 {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}}
             ),
-            json.dumps(REV_REG_DEFS),
-            json.dumps("rev_reg_entries"),
+            JsonUtil.dumps(REV_REG_DEFS),
+            JsonUtil.dumps("rev_reg_entries"),
         )
 
         assert verified == "val"
@@ -380,12 +380,12 @@ class TestIndySdkVerifier(AsyncTestCase):
             )
 
         mock_verify.assert_called_once_with(
-            json.dumps(INDY_PROOF_REQ_NAME),
-            json.dumps(INDY_PROOF_NAME),
-            json.dumps("schemas"),
-            json.dumps({"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}}),
-            json.dumps(REV_REG_DEFS),
-            json.dumps("rev_reg_entries"),
+            JsonUtil.dumps(INDY_PROOF_REQ_NAME),
+            JsonUtil.dumps(INDY_PROOF_NAME),
+            JsonUtil.dumps("schemas"),
+            JsonUtil.dumps({"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}}),
+            JsonUtil.dumps(REV_REG_DEFS),
+            JsonUtil.dumps("rev_reg_entries"),
         )
 
         assert not verified
@@ -407,12 +407,12 @@ class TestIndySdkVerifier(AsyncTestCase):
             )
 
         mock_verify.assert_called_once_with(
-            json.dumps(INDY_PROOF_REQ_NAME),
-            json.dumps(INDY_PROOF_NAME),
-            json.dumps("schemas"),
-            json.dumps({"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}}),
-            json.dumps(REV_REG_DEFS),
-            json.dumps("rev_reg_entries"),
+            JsonUtil.dumps(INDY_PROOF_REQ_NAME),
+            JsonUtil.dumps(INDY_PROOF_NAME),
+            JsonUtil.dumps("schemas"),
+            JsonUtil.dumps({"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}}),
+            JsonUtil.dumps(REV_REG_DEFS),
+            JsonUtil.dumps("rev_reg_entries"),
         )
         assert verified is True
         assert len(msgs) == 1
@@ -492,14 +492,14 @@ class TestIndySdkVerifier(AsyncTestCase):
             )
 
         mock_verify.assert_called_once_with(
-            json.dumps(INDY_PROOF_REQ_X),
-            json.dumps(INDY_PROOF_PRED_NAMES),
-            json.dumps("schemas"),
-            json.dumps(
+            JsonUtil.dumps(INDY_PROOF_REQ_X),
+            JsonUtil.dumps(INDY_PROOF_PRED_NAMES),
+            JsonUtil.dumps("schemas"),
+            JsonUtil.dumps(
                 {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}}
             ),
-            json.dumps(REV_REG_DEFS),
-            json.dumps("rev_reg_entries"),
+            JsonUtil.dumps(REV_REG_DEFS),
+            JsonUtil.dumps("rev_reg_entries"),
         )
 
         assert verified is True

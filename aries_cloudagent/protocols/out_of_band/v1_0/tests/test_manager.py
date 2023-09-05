@@ -104,7 +104,7 @@ class TestConfig:
     TEST_INVI_MESSAGE_TYPE = "out-of-band/1.1/invitation"
     NOW_EPOCH = str_to_epoch(NOW_8601)
     CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
-    INDY_PROOF_REQ = json.loads(
+    INDY_PROOF_REQ = JsonUtil.loads(
         f"""{{
         "name": "proof-req",
         "version": "1.0",

@@ -20,12 +20,12 @@ class MediationInviteRecord(NamedTuple):
 
     def to_json(self) -> str:
         """:return: The current record serialized into a json string."""
-        return json.dumps({"invite": self.invite, "used": self.used})
+        return JsonUtil.dumps({"invite": self.invite, "used": self.used})
 
     @staticmethod
     def from_json(json_invite_record: str) -> "MediationInviteRecord":
         """:return: a mediation invite record deserialized from a json string."""
-        return MediationInviteRecord(**json.loads(json_invite_record))
+        return MediationInviteRecord(**JsonUtil.loads(json_invite_record))
 
     @staticmethod
     def unused(invite: str) -> "MediationInviteRecord":

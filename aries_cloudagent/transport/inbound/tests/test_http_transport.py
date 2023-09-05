@@ -101,7 +101,7 @@ class TestHttpTransport(AioHTTPTestCase):
         test_message = {"~transport": {"return_route": "all"}, "test": "message"}
         test_response = {"response": "ok"}
         self.response_message = OutboundMessage(
-            payload=None, enc_payload=json.dumps(test_response)
+            payload=None, enc_payload=JsonUtil.dumps(test_response)
         )
 
         async with self.client.post("/", json=test_message) as resp:

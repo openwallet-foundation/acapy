@@ -43,7 +43,7 @@ def storage_to_vc_record(record: StorageRecord) -> VCRecord:
         issuer_id=issuer_id,
         subject_ids=subject_ids,
         proof_types=proof_types,
-        cred_value=json.loads(record.value),
+        cred_value=JsonUtil.loads(record.value),
         given_id=given_id,
         cred_tags=cred_tags,
         record_id=record.id,
@@ -72,7 +72,7 @@ def vc_to_storage_record(cred: VCRecord) -> StorageRecord:
 
     return StorageRecord(
         VC_CRED_RECORD_TYPE,
-        json.dumps(cred.cred_value),
+        JsonUtil.dumps(cred.cred_value),
         tags,
         cred.record_id,
     )

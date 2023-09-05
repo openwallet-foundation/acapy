@@ -47,7 +47,7 @@ class TestPresExchSchemas(TestCase):
                 }
             }
         """
-        expected_result = json.loads(submission_req_json)
+        expected_result = JsonUtil.loads(submission_req_json)
         actual_result = (ClaimFormat.deserialize(submission_req_json)).serialize()
         assert expected_result == actual_result
 
@@ -59,7 +59,7 @@ class TestPresExchSchemas(TestCase):
                 }
             }
         """
-        expected_result = json.loads(submission_req_json)
+        expected_result = JsonUtil.loads(submission_req_json)
         actual_result = (ClaimFormat.deserialize(submission_req_json)).serialize()
         assert expected_result == actual_result
 
@@ -72,7 +72,7 @@ class TestPresExchSchemas(TestCase):
                 "from": "A"
             }
         """
-        expected_result = json.loads(claim_format_json)
+        expected_result = JsonUtil.loads(claim_format_json)
         actual_result = (
             SubmissionRequirements.deserialize(claim_format_json)
         ).serialize()
@@ -100,7 +100,7 @@ class TestPresExchSchemas(TestCase):
                 ]
             }
         """
-        expected_result = json.loads(nested_submission_req_json)
+        expected_result = JsonUtil.loads(nested_submission_req_json)
         actual_result = (
             SubmissionRequirements.deserialize(nested_submission_req_json)
         ).serialize()
@@ -146,7 +146,7 @@ class TestPresExchSchemas(TestCase):
                 ]
             }
         """
-        expected_result = json.loads(nested_submission_req_json)
+        expected_result = JsonUtil.loads(nested_submission_req_json)
         assert SubmissionRequirements.deserialize(nested_submission_req_json)
         actual_result = (
             SubmissionRequirements.deserialize(nested_submission_req_json)
@@ -213,7 +213,7 @@ class TestPresExchSchemas(TestCase):
                 "directive": "required"
             }
         """
-        expected_result = json.loads(test_json)
+        expected_result = JsonUtil.loads(test_json)
         actual_result = (DIFHolder.deserialize(test_json)).serialize()
         assert expected_result == actual_result
 
@@ -282,7 +282,7 @@ class TestPresExchSchemas(TestCase):
         """
 
         for tmp_test_item in test_json_list:
-            expected_result = json.loads(tmp_test_item)
+            expected_result = JsonUtil.loads(tmp_test_item)
             actual_result = (Filter.deserialize(tmp_test_item)).serialize()
             assert expected_result == actual_result
 
@@ -323,7 +323,7 @@ class TestPresExchSchemas(TestCase):
             }
         """
 
-        expected_result = json.loads(test_json)
+        expected_result = JsonUtil.loads(test_json)
         actual_result = (Constraints.deserialize(test_json)).serialize()
         assert expected_result == actual_result
 

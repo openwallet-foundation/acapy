@@ -431,7 +431,7 @@ class PresentationManager:
             rev_reg_defs,
             rev_reg_entries,
         )
-        presentation_exchange_record.verified = json.dumps(verified_bool)
+        presentation_exchange_record.verified = JsonUtil.dumps(verified_bool)
         presentation_exchange_record.verified_msgs = list(set(verified_msgs))
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED
 

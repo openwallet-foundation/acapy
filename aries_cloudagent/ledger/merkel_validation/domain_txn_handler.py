@@ -80,8 +80,8 @@ def parse_attr_txn(txn_data):
     """Process txn_data and parse attr_txn based on attr_type."""
     attr_type, attr = _extract_attr_typed_value(txn_data)
     if attr_type == "raw":
-        data = json.loads(attr)
-        re_raw = json.dumps(data)
+        data = JsonUtil.loads(attr)
+        re_raw = JsonUtil.dumps(data)
         key, _ = data.popitem()
         return attr_type, key, re_raw
     if attr_type == "enc":
@@ -92,12 +92,12 @@ def parse_attr_txn(txn_data):
 
 def encode_state_value(value, seqNo, txnTime):
     """Return encoded state value."""
-    return json.dumps({LAST_SEQ_NO: seqNo, LAST_UPDATE_TIME: txnTime, VAL: value})
+    return JsonUtil.dumps({LAST_SEQ_NO: seqNo, LAST_UPDATE_TIME: txnTime, VAL: value})
 
 
 def decode_state_value(encoded_value):
     """Return val, lsn, lut from encoded state value."""
-    decoded = json.loads(encoded_value)
+    decoded = JsonUtil.loads(encoded_value)
     value = decoded.get(VAL)
     last_seq_no = decoded.get(LAST_SEQ_NO)
     last_update_time = decoded.get(LAST_UPDATE_TIME)
@@ -107,7 +107,7 @@ def decode_state_value(encoded_value):
 def hash_of(text) -> str:
     """Return 256 bit hexadecimal digest of text."""
     if not isinstance(text, (str, bytes)):
-        text = json.dumps(text)
+        text = JsonUtil.dumps(text)
     if not isinstance(text, bytes):
         text = text.encode()
     return hashlib.sha256(text).hexdigest()
@@ -176,9 +176,9 @@ def prepare_get_nym_for_state(reply):
     value = None
     if data is not None:
         if isinstance(data, str):
-            data = json.loads(data)
+            data = JsonUtil.loads(data)
         data.pop(DEST, None)
-        value = json.dumps(data)
+        value = JsonUtil.dumps(data)
     return value
 
 

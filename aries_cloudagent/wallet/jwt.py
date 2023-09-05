@@ -20,12 +20,12 @@ LOGGER = logging.getLogger(__name__)
 
 def dict_to_b64(value: Mapping[str, Any]) -> str:
     """Encode a dictionary as a b64 string."""
-    return bytes_to_b64(json.dumps(value).encode(), urlsafe=True, pad=False)
+    return bytes_to_b64(JsonUtil.dumps(value).encode(), urlsafe=True, pad=False)
 
 
 def b64_to_dict(value: str) -> Mapping[str, Any]:
     """Decode a dictionary from a b64 encoded value."""
-    return json.loads(b64_to_bytes(value, urlsafe=True))
+    return JsonUtil.loads(b64_to_bytes(value, urlsafe=True))
 
 
 def nym_to_did(value: str) -> str:

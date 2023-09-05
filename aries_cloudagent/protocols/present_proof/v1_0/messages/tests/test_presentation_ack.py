@@ -24,7 +24,7 @@ class TestPresentationAck(TestCase):
 
     def test_deserialize(self):
         """Test deserialization."""
-        dump = json.dumps(
+        dump = JsonUtil.dumps(
             {"@type": DIDCommPrefix.qualify_current(PRESENTATION_ACK), "status": "OK"}
         )
 

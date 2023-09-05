@@ -42,15 +42,15 @@ class TestTracing(AsyncTestCase):
         dict_message["~trace"] = dict_message.pop("trace")
         assert test_module.tracing_enabled({}, dict_message)
 
-        str_message = json.dumps({"item": "I can't draw but I can trace"})
+        str_message = JsonUtil.dumps({"item": "I can't draw but I can trace"})
         assert not test_module.tracing_enabled({}, str_message)
-        str_message = json.dumps(
+        str_message = JsonUtil.dumps(
             "Finding a ~trace as a false positive represents an outlier"
         )
         assert test_module.tracing_enabled({}, str_message)
-        str_message = json.dumps({"trace": False, "content": "sample"})
+        str_message = JsonUtil.dumps({"trace": False, "content": "sample"})
         assert not test_module.tracing_enabled({}, str_message)
-        str_message = json.dumps({"trace": True, "content": "sample"})
+        str_message = JsonUtil.dumps({"trace": True, "content": "sample"})
         assert test_module.tracing_enabled({}, str_message)
 
         invi._trace = None
@@ -67,7 +67,7 @@ class TestTracing(AsyncTestCase):
         assert test_module.tracing_enabled({}, outbound_message)
         outbound_message = OutboundMessage(payload="This text does not have the T word")
         assert not test_module.tracing_enabled({}, outbound_message)
-        outbound_message = OutboundMessage(payload=json.dumps({"trace": True}))
+        outbound_message = OutboundMessage(payload=JsonUtil.dumps({"trace": True}))
         assert test_module.tracing_enabled({}, outbound_message)
 
     def test_decode_inbound_message(self):
@@ -82,7 +82,7 @@ class TestTracing(AsyncTestCase):
         assert dict_message == test_module.decode_inbound_message(message)
         assert dict_message == test_module.decode_inbound_message(dict_message)
 
-        str_message = json.dumps(dict_message)
+        str_message = JsonUtil.dumps(dict_message)
         message = OutboundMessage(payload=str_message)
         assert dict_message == test_module.decode_inbound_message(message)
         assert dict_message == test_module.decode_inbound_message(str_message)

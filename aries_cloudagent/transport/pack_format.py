@@ -60,7 +60,7 @@ class PackWireFormat(BaseWireFormat):
             raise WireFormatParseError("Message body is empty")
 
         try:
-            message_dict = json.loads(message_json)
+            message_dict = JsonUtil.loads(message_json)
         except ValueError:
             raise WireFormatParseError("Message JSON parsing failed")
         if not isinstance(message_dict, dict):
@@ -78,7 +78,7 @@ class PackWireFormat(BaseWireFormat):
             else:
                 receipt.raw_message = message_json
                 try:
-                    message_dict = json.loads(message_json)
+                    message_dict = JsonUtil.loads(message_json)
                 except ValueError:
                     raise WireFormatParseError("Message JSON parsing failed")
                 if not isinstance(message_dict, dict):
@@ -182,7 +182,7 @@ class PackWireFormat(BaseWireFormat):
         if routing_keys:
             recip_keys = recipient_keys
             for router_key in routing_keys:
-                message = json.loads(message.decode("utf-8"))
+                message = JsonUtil.loads(message.decode("utf-8"))
                 fwd_msg = Forward(to=recip_keys[0], msg=message)
                 # Forwards are anon packed
                 recip_keys = [router_key]
@@ -207,8 +207,8 @@ class PackWireFormat(BaseWireFormat):
         """
 
         try:
-            message_dict = json.loads(message_body)
-            protected = json.loads(b64_to_str(message_dict["protected"], urlsafe=True))
+            message_dict = JsonUtil.loads(message_body)
+            protected = JsonUtil.loads(b64_to_str(message_dict["protected"], urlsafe=True))
             recipients = protected["recipients"]
 
             recipient_keys = [recipient["header"]["kid"] for recipient in recipients]

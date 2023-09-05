@@ -286,7 +286,7 @@ class BaseModel(ABC):
 
         """
         try:
-            parsed = json.loads(json_repr)
+            parsed = JsonUtil.loads(json_repr)
         except ValueError as e:
             LOGGER.exception(f"{cls.__name__} message parse error:")
             raise BaseModelError(f"{cls.__name__} JSON parsing failed") from e
@@ -299,7 +299,7 @@ class BaseModel(ABC):
             A JSON representation of this message
 
         """
-        return json.dumps(self.serialize(unknown=unknown))
+        return JsonUtil.dumps(self.serialize(unknown=unknown))
 
     def __repr__(self) -> str:
         """Return a human readable representation of this class.

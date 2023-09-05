@@ -973,7 +973,7 @@ class TestV20CredManager(AsyncTestCase):
         issuer = async_mock.MagicMock()
         cred_rev_id = "1000"
         issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), cred_rev_id)
+            return_value=(JsonUtil.dumps(INDY_CRED), cred_rev_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
 

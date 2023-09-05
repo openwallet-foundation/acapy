@@ -200,7 +200,7 @@ class TestIndyVdrLedger:
             test_msg.set_endorser(test_did.did)
 
             endorsed_json = await ledger.txn_endorse(request_json=test_msg.body)
-            body = json.loads(endorsed_json)
+            body = JsonUtil.loads(endorsed_json)
             assert test_did.did in body["signatures"]
 
     @pytest.mark.asyncio
@@ -251,7 +251,7 @@ class TestIndyVdrLedger:
                 endorser_did=test_did.did,
             )
             assert schema_id == issuer.create_schema.return_value[0]
-            txn = json.loads(signed_txn["signed_txn"])
+            txn = JsonUtil.loads(signed_txn["signed_txn"])
             assert txn.get("endorser") == test_did.did
             assert txn.get("signature")
 
@@ -448,7 +448,7 @@ class TestIndyVdrLedger:
         issuer.credential_definition_in_wallet.return_value = False
         issuer.create_and_store_credential_definition.return_value = (
             cred_def_id,
-            json.dumps(cred_def),
+            JsonUtil.dumps(cred_def),
         )
 
         async with ledger:
@@ -731,7 +731,7 @@ class TestIndyVdrLedger:
             attr_json = await ledger._construct_attr_json(
                 "https://url", EndpointType.ENDPOINT, all_exist_endpoints, routing_keys
             )
-        assert attr_json == json.dumps(result)
+        assert attr_json == JsonUtil.dumps(result)
 
     @pytest.mark.asyncio
     async def test_update_endpoint_for_did_calls_attr_json(self, ledger: IndyVdrLedger):
@@ -744,7 +744,7 @@ class TestIndyVdrLedger:
                 ledger,
                 "_construct_attr_json",
                 async_mock.CoroutineMock(
-                    return_value=json.dumps(
+                    return_value=JsonUtil.dumps(
                         {
                             "endpoint": {
                                 "endpoint": {
@@ -1036,7 +1036,7 @@ class TestIndyVdrLedger:
                 "submit_request",
                 async_mock.CoroutineMock(
                     side_effect=[
-                        {"data": json.dumps({"seqNo": 1234})},
+                        {"data": JsonUtil.dumps({"seqNo": 1234})},
                         {"data": {"txn": {"data": {"role": "101", "alias": "Billy"}}}},
                         {"data": "ok"},
                     ]

@@ -147,7 +147,7 @@ class DIDDoc:
 
         """
 
-        return json.dumps(self.serialize())
+        return JsonUtil.dumps(self.serialize())
 
     def add_service_pubkeys(
         self, service: dict, tags: Union[Sequence[str], str]
@@ -304,7 +304,7 @@ class DIDDoc:
 
         """
 
-        return cls.deserialize(json.loads(did_doc_json))
+        return cls.deserialize(JsonUtil.loads(did_doc_json))
 
     def __str__(self) -> str:
         """Return string representation for abbreviated display."""

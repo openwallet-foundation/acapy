@@ -85,8 +85,8 @@ class AskarStoreConfig:
                 raise ProfileError("No 'storage_config' provided for postgres store")
             if not self.storage_creds:
                 raise ProfileError("No 'storage_creds' provided for postgres store")
-            config = json.loads(self.storage_config)
-            creds = json.loads(self.storage_creds)
+            config = JsonUtil.loads(self.storage_config)
+            creds = JsonUtil.loads(self.storage_creds)
             config_url = config.get("url")
             if not config_url:
                 raise ProfileError("No 'url' provided for postgres store")

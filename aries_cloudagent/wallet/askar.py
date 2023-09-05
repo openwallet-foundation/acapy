@@ -83,7 +83,7 @@ class AskarWallet(BaseWallet):
             keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
             await self._session.handle.insert_key(
-                verkey, keypair, metadata=json.dumps(metadata)
+                verkey, keypair, metadata=JsonUtil.dumps(metadata)
             )
         except AskarError as err:
             if err.code == AskarErrorCode.DUPLICATE:
@@ -114,7 +114,7 @@ class AskarWallet(BaseWallet):
         key = await self._session.handle.fetch_key(verkey)
         if not key:
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
-        metadata = json.loads(key.metadata or "{}")
+        metadata = JsonUtil.loads(key.metadata or "{}")
         # FIXME implement key types
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519)
 
@@ -139,7 +139,7 @@ class AskarWallet(BaseWallet):
         if not key:
             raise WalletNotFoundError("Keypair not found")
         await self._session.handle.update_key(
-            verkey, metadata=json.dumps(metadata or {}), tags=key.tags
+            verkey, metadata=JsonUtil.dumps(metadata or {}), tags=key.tags
         )
 
     async def create_local_did(
@@ -186,7 +186,7 @@ class AskarWallet(BaseWallet):
 
             try:
                 await self._session.handle.insert_key(
-                    verkey, keypair, metadata=json.dumps(metadata)
+                    verkey, keypair, metadata=JsonUtil.dumps(metadata)
                 )
             except AskarError as err:
                 if err.code == AskarErrorCode.DUPLICATE:
@@ -346,7 +346,7 @@ class AskarWallet(BaseWallet):
                     StorageRecord(
                         type=CATEGORY_CONFIG,
                         id=RECORD_NAME_PUBLIC_DID,
-                        value=json.dumps({"did": public_did}),
+                        value=JsonUtil.dumps({"did": public_did}),
                     )
                 )
             except StorageDuplicateError:
@@ -355,7 +355,7 @@ class AskarWallet(BaseWallet):
                     CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID
                 )
         if public_item:
-            public_did = json.loads(public_item.value)["did"]
+            public_did = JsonUtil.loads(public_item.value)["did"]
             if public_did:
                 try:
                     public_info = await self.get_local_did(public_did)
@@ -408,7 +408,7 @@ class AskarWallet(BaseWallet):
                     id=RECORD_NAME_PUBLIC_DID,
                     value="{}",
                 ),
-                value=json.dumps({"did": info.did}),
+                value=JsonUtil.dumps({"did": info.did}),
                 tags=None,
             )
             public = info

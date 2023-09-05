@@ -606,10 +606,10 @@ async def connections_create_invitation(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    auto_accept = JsonUtil.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
-    public = json.loads(request.query.get("public", "false"))
-    multi_use = json.loads(request.query.get("multi_use", "false"))
+    public = JsonUtil.loads(request.query.get("public", "false"))
+    multi_use = JsonUtil.loads(request.query.get("multi_use", "false"))
     body = await request.json() if request.body_exists else {}
     my_label = body.get("my_label")
     recipient_keys = body.get("recipient_keys")
@@ -689,7 +689,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
 
     try:
         invitation = ConnectionInvitation.deserialize(invitation_json)
-        auto_accept = json.loads(request.query.get("auto_accept", "null"))
+        auto_accept = JsonUtil.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
         mediation_id = request.query.get("mediation_id")
         connection = await connection_mgr.receive_invitation(

@@ -41,7 +41,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             return_value=async_mock.MagicMock()
         )
         self.ledger.txn_submit = async_mock.CoroutineMock(
-            return_value=json.dumps(
+            return_value=JsonUtil.dumps(
                 {
                     "result": {
                         "txn": {"type": "101", "metadata": {"from": TEST_DID}},
@@ -1566,7 +1566,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 serialize=async_mock.MagicMock(),
                 state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
                 messages_attach=[
-                    {"data": {"json": json.dumps({"message": "attached"})}}
+                    {"data": {"json": JsonUtil.dumps({"message": "attached"})}}
                 ],
             )
             await test_module.transaction_write(self.request)
@@ -1603,7 +1603,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 serialize=async_mock.MagicMock(return_value={"...": "..."}),
                 state=TransactionRecord.STATE_TRANSACTION_CREATED,
                 messages_attach=[
-                    {"data": {"json": json.dumps({"message": "attached"})}}
+                    {"data": {"json": JsonUtil.dumps({"message": "attached"})}}
                 ],
             )
 
@@ -1627,7 +1627,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 serialize=async_mock.MagicMock(return_value={"...": "..."}),
                 state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
                 messages_attach=[
-                    {"data": {"json": json.dumps({"message": "attached"})}}
+                    {"data": {"json": JsonUtil.dumps({"message": "attached"})}}
                 ],
             )
 

@@ -82,7 +82,7 @@ class repr_json:
     def __repr__(self) -> str:
         if isinstance(self.val, str):
             return self.val
-        return json.dumps(self.val, indent=4)
+        return JsonUtil.dumps(self.val, indent=4)
 
 
 async def default_genesis_txns():
@@ -266,7 +266,7 @@ class DemoAgent:
             "attributes": schema_attrs,
         }
         schema_response = await self.admin_POST("/schemas", schema_body)
-        log_json(json.dumps(schema_response), label="Schema:")
+        log_json(JsonUtil.dumps(schema_response), label="Schema:")
         await asyncio.sleep(2.0)
         if "schema_id" in schema_response:
             # schema is created directly
@@ -371,8 +371,8 @@ class DemoAgent:
             result.extend(
                 [
                     ("--wallet-storage-type", "postgres_storage"),
-                    ("--wallet-storage-config", json.dumps(self.postgres_config)),
-                    ("--wallet-storage-creds", json.dumps(self.postgres_creds)),
+                    ("--wallet-storage-config", JsonUtil.dumps(self.postgres_config)),
+                    ("--wallet-storage-creds", JsonUtil.dumps(self.postgres_creds)),
                 ]
             )
         if self.webhook_url:
@@ -818,7 +818,7 @@ class DemoAgent:
         proof_reg_txn["~service"] = await self.service_decorator()
         if request.headers.get("Accept") == "application/json":
             return web.json_response(proof_reg_txn)
-        objJsonStr = json.dumps(proof_reg_txn)
+        objJsonStr = JsonUtil.dumps(proof_reg_txn)
         objJsonB64 = base64.b64encode(objJsonStr.encode("ascii"))
         service_url = self.webhook_url
         redirect_url = service_url + "/?m=" + objJsonB64.decode("ascii")
@@ -864,7 +864,7 @@ class DemoAgent:
 
     async def handle_keylist(self, message):
         self.log(f"Received handle_keylist message ...\n")
-        self.log(json.dumps(message))
+        self.log(JsonUtil.dumps(message))
 
     async def taa_accept(self):
         taa_info = await self.admin_GET("/ledger/taa")
@@ -897,7 +897,7 @@ class DemoAgent:
                 return None
             if not text:
                 try:
-                    return json.loads(resp_text)
+                    return JsonUtil.loads(resp_text)
                 except json.JSONDecodeError as e:
                     raise Exception(f"Error decoding JSON: {resp_text}") from e
             return resp_text
@@ -1102,7 +1102,7 @@ class DemoAgent:
             )
         ok = False
         try:
-            status = json.loads(status_text)
+            status = JsonUtil.loads(status_text)
             ok = isinstance(status, dict) and "version" in status
         except json.JSONDecodeError:
             pass
@@ -1231,7 +1231,7 @@ class DemoAgent:
         if use_did_exchange:
             # TODO can mediation be used with DID exchange connections?
             invi_params = {
-                "auto_accept": json.dumps(auto_accept),
+                "auto_accept": JsonUtil.dumps(auto_accept),
             }
             payload = {
                 "handshake_protocols": ["rfc23"],
@@ -1247,7 +1247,7 @@ class DemoAgent:
         else:
             if self.mediation:
                 invi_params = {
-                    "auto_accept": json.dumps(auto_accept),
+                    "auto_accept": JsonUtil.dumps(auto_accept),
                 }
                 payload = {"mediation_id": self.mediator_request_id}
                 invi_rec = await self.admin_POST(

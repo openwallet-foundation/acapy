@@ -241,7 +241,7 @@ class CredentialManager:
         async def _create(cred_def_id):
             issuer = self._profile.inject(IndyIssuer)
             offer_json = await issuer.create_credential_offer(cred_def_id)
-            return json.loads(offer_json)
+            return JsonUtil.loads(offer_json)
 
         credential_proposal_message = (
             counter_proposal
@@ -434,8 +434,8 @@ class CredentialManager:
                 holder_did,
             )
             return {
-                "request": json.loads(request_json),
-                "metadata": json.loads(metadata_json),
+                "request": JsonUtil.loads(request_json),
+                "metadata": JsonUtil.loads(metadata_json),
             }
 
         if cred_ex_record.state == V10CredentialExchange.STATE_REQUEST_SENT:
@@ -665,7 +665,7 @@ class CredentialManager:
                     await revoc.handle_full_registry(rev_reg_id)
                     del revoc
 
-                credential_ser = json.loads(credential_json)
+                credential_ser = JsonUtil.loads(credential_json)
                 break
 
             if not credential_ser:
@@ -834,7 +834,7 @@ class CredentialManager:
             raise e
 
         credential_json = await holder.get_credential(credential_id)
-        credential = json.loads(credential_json)
+        credential = JsonUtil.loads(credential_json)
 
         async with self._profile.transaction() as txn:
             cred_ex_record = await V10CredentialExchange.retrieve_by_id(

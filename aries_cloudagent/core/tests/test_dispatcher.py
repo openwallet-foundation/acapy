@@ -210,7 +210,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             )
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
-            payload = json.loads(rcv.messages[0][1].payload)
+            payload = JsonUtil.loads(rcv.messages[0][1].payload)
             assert payload["@type"] == DIDCommPrefix.qualify_current(
                 ProblemReport.Meta.message_type
             )
@@ -251,7 +251,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             )
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
-            payload = json.loads(rcv.messages[0][1].payload)
+            payload = JsonUtil.loads(rcv.messages[0][1].payload)
             assert payload["@type"] == DIDCommPrefix.qualify_current(
                 ProblemReport.Meta.message_type
             )
@@ -333,7 +333,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             )
             await dispatcher.task_queue
             assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
-            payload = json.loads(rcv.messages[0][1].payload)
+            payload = JsonUtil.loads(rcv.messages[0][1].payload)
             assert payload["@type"] == DIDCommPrefix.qualify_current(
                 ProblemReport.Meta.message_type
             )
@@ -354,7 +354,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
                 )
                 await dispatcher.task_queue
                 assert rcv.messages and isinstance(rcv.messages[0][1], OutboundMessage)
-                payload = json.loads(rcv.messages[0][1].payload)
+                payload = JsonUtil.loads(rcv.messages[0][1].payload)
                 assert payload["@type"] == DIDCommPrefix.qualify_current(
                     ProblemReport.Meta.message_type
                 )
@@ -425,7 +425,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         outbound_message = await responder.create_outbound(
-            json.dumps(message.serialize())
+            JsonUtil.dumps(message.serialize())
         )
         with async_mock.patch.object(
             responder, "_send", async_mock.AsyncMock()
@@ -558,7 +558,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as mock_send_outbound:
             await responder.send(message)
             assert mock_send_outbound.called_once()
-        msg_json = json.dumps(StubAgentMessage().serialize())
+        msg_json = JsonUtil.dumps(StubAgentMessage().serialize())
         message = msg_json.encode("utf-8")
         with async_mock.patch.object(
             responder, "send_outbound", async_mock.AsyncMock()
@@ -572,7 +572,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             await responder.send_reply(message)
             assert mock_send_outbound.called_once()
 
-        message = json.dumps(StubAgentMessage().serialize())
+        message = JsonUtil.dumps(StubAgentMessage().serialize())
         with async_mock.patch.object(
             responder, "send_outbound", async_mock.AsyncMock()
         ) as mock_send_outbound:

@@ -25,8 +25,8 @@ def load_postgres_plugin(storage_config, storage_creds, raise_exc=False):
             "Checking input postgres storage_config and storage_creds arguments"
         )
         try:
-            json.loads(storage_config)
-            json.loads(storage_creds)
+            JsonUtil.loads(storage_config)
+            JsonUtil.loads(storage_creds)
         except json.decoder.JSONDecodeError:
             LOGGER.error(
                 "Invalid stringified JSON input, check storage_config and storage_creds"

@@ -63,20 +63,20 @@ class SubTrie:
             if serialized:
                 proof_nodes = rlp_decode(proof_nodes)
             new_trie = await SubTrie.get_new_trie_with_proof_nodes(proof_nodes)
-            expected_value = json.loads(expected_value)
+            expected_value = JsonUtil.loads(expected_value)
             for encoded_node in list(new_trie._subtrie.values()):
                 try:
                     decoded_node = rlp_decode(encoded_node)
                     # branch node
                     if SubTrie._get_node_type(decoded_node) == NODE_TYPE_BRANCH:
                         if (
-                            json.loads(rlp_decode(decoded_node[-1])[0].decode("utf-8"))
+                            JsonUtil.loads(rlp_decode(decoded_node[-1])[0].decode("utf-8"))
                         ) == expected_value:
                             return True
                     # leaf or extension node
                     if SubTrie._get_node_type(decoded_node) == NODE_TYPE_LEAF:
                         if (
-                            json.loads(rlp_decode(decoded_node[1])[0].decode("utf-8"))
+                            JsonUtil.loads(rlp_decode(decoded_node[1])[0].decode("utf-8"))
                         ) == expected_value:
                             return True
                 except DecodingError:

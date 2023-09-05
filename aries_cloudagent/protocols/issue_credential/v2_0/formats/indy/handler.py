@@ -198,7 +198,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         async def _create():
             offer_json = await issuer.create_credential_offer(cred_def_id)
-            return json.loads(offer_json)
+            return JsonUtil.loads(offer_json)
 
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
@@ -283,8 +283,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             )
 
             return {
-                "request": json.loads(request_json),
-                "metadata": json.loads(metadata_json),
+                "request": JsonUtil.loads(request_json),
+                "metadata": JsonUtil.loads(metadata_json),
             }
 
         cache_key = f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
@@ -392,7 +392,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 await revoc.handle_full_registry(rev_reg_id)
                 del revoc
 
-            result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
+            result = self.get_format_data(CRED_20_ISSUE, JsonUtil.loads(cred_json))
             break
 
         if not result:

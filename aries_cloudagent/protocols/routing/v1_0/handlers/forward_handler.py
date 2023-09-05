@@ -28,7 +28,7 @@ class ForwardHandler(BaseHandler):
         )
 
         packed = context.message.msg
-        packed = json.dumps(packed).encode("ascii")
+        packed = JsonUtil.dumps(packed).encode("ascii")
         rt_mgr = RoutingManager(context.profile)
         target = context.message.to
 

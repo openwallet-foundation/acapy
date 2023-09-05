@@ -121,13 +121,13 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
                 response_json = await asyncio.wait_for(
                     indy_sdk_ledger.submit_get_nym_request(request), 10
                 )
-                response = json.loads(response_json)
+                response = JsonUtil.loads(response_json)
                 data = response.get("result", {}).get("data")
                 if not data:
                     LOGGER.warning(f"Did {did} not posted to ledger {ledger_id}")
                     return None
                 if isinstance(data, str):
-                    data = json.loads(data)
+                    data = JsonUtil.loads(data)
                 if not await SubTrie.verify_spv_proof(
                     expected_value=prepare_for_state_read(response),
                     proof_nodes=get_proof_nodes(response),

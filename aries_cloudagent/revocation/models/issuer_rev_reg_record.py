@@ -218,8 +218,8 @@ class IssuerRevRegRecord(BaseRecord):
         if self.revoc_reg_id and revoc_reg_id != self.revoc_reg_id:
             raise RevocationError("Generated registry ID does not match assigned value")
         self.revoc_reg_id = revoc_reg_id
-        self.revoc_reg_def = json.loads(revoc_reg_def_json)
-        self.revoc_reg_entry = json.loads(revoc_reg_entry_json)
+        self.revoc_reg_def = JsonUtil.loads(revoc_reg_def_json)
+        self.revoc_reg_entry = JsonUtil.loads(revoc_reg_entry_json)
         self.state = IssuerRevRegRecord.STATE_GENERATED
         self.tails_hash = self.revoc_reg_def.value.tails_hash
 
@@ -410,7 +410,7 @@ class IssuerRevRegRecord(BaseRecord):
                     self.revoc_reg_id,
                     revoked_ids,
                 )
-                recovery_txn = json.loads(calculated_txn.to_json())
+                recovery_txn = JsonUtil.loads(calculated_txn.to_json())
 
                 LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
                 if apply_ledger_update:

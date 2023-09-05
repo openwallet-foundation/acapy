@@ -21,7 +21,7 @@ class TestWsTransport(AioHTTPTestCase):
 
         async for msg in ws:
             if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
-                self.message_results.append(json.loads(msg.data))
+                self.message_results.append(JsonUtil.loads(msg.data))
 
             elif msg.type == WSMsgType.ERROR:
                 raise Exception(ws.exception())

@@ -61,7 +61,7 @@ LASTMOD_TIME = datetime.now().replace(tzinfo=timezone.utc).isoformat(" ", "secon
 BYTE_COUNT = 123456
 DATA_B64 = AttachDecoratorData(base64_=bytes_to_b64(b"sample image with padding"))
 DATA_JSON = AttachDecoratorData(
-    json_=json.dumps({"preference": "hasselback", "variety": "russet"})
+    json_=JsonUtil.dumps({"preference": "hasselback", "variety": "russet"})
 )
 LINK_1X1 = "https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png"
 SHA256_1X1 = "3eb10792d1f0c7e07e7248273540f1952d9a5a2996f4b5df70ab026cd9f05517"
@@ -341,7 +341,7 @@ class TestAttachDecorator(TestCase):
         assert deco_json_auto_id.ident
 
         # cover AttachDecoratorData equality operator
-        plain_json = AttachDecoratorData(json_=json.dumps({"sample": "data"}))
+        plain_json = AttachDecoratorData(json_=JsonUtil.dumps({"sample": "data"}))
         assert deco_json.data == plain_json
 
         # data.links
@@ -467,7 +467,7 @@ class TestAttachDecoratorSignature:
         assert await deco_indy.data.verify(wallet)
         assert await deco_indy.data.verify(wallet, did_info[0].verkey)
 
-        indy_cred = json.loads(deco_indy.data.signed.decode())
+        indy_cred = JsonUtil.loads(deco_indy.data.signed.decode())
         assert indy_cred == INDY_CRED
 
         # Test tamper evidence
@@ -498,7 +498,7 @@ class TestAttachDecoratorSignature:
         assert deco_indy.data.header_map()["jwk"]["kid"] == did_key(did_info[0].verkey)
         assert await deco_indy.data.verify(wallet)
 
-        indy_cred = json.loads(deco_indy.data.signed.decode())
+        indy_cred = JsonUtil.loads(deco_indy.data.signed.decode())
         assert indy_cred == INDY_CRED
 
         # Multi-signature
@@ -526,7 +526,7 @@ class TestAttachDecoratorSignature:
         assert deco_indy.data.signed is not None
         assert await deco_indy.data.verify(wallet)
 
-        indy_cred = json.loads(deco_indy.data.signed.decode())
+        indy_cred = JsonUtil.loads(deco_indy.data.signed.decode())
         assert indy_cred == INDY_CRED
 
         # De/serialize to exercise initializer with JWS

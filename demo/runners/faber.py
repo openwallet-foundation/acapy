@@ -733,7 +733,7 @@ async def main(args):
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["rrid2crid"]),
                             "y" if len(resp["rrid2crid"]) == 1 else "ies",
-                            json.dumps([k for k in resp["rrid2crid"]], indent=4),
+                            JsonUtil.dumps([k for k in resp["rrid2crid"]], indent=4),
                         )
                     )
                 except ClientError:
@@ -747,7 +747,7 @@ async def main(args):
                     faber_agent.agent.log(
                         "Rotated registries for {}. Decommissioned Registries: {}".format(
                             faber_agent.cred_def_id,
-                            json.dumps([r for r in resp["rev_reg_ids"]], indent=4),
+                            JsonUtil.dumps([r for r in resp["rev_reg_ids"]], indent=4),
                         )
                     )
                 except ClientError:
@@ -777,7 +777,7 @@ async def main(args):
                     faber_agent.agent.log(
                         "Registries (state = '{}'): {}".format(
                             state,
-                            json.dumps([r for r in resp["rev_reg_ids"]], indent=4),
+                            JsonUtil.dumps([r for r in resp["rev_reg_ids"]], indent=4),
                         )
                     )
                 except ClientError:

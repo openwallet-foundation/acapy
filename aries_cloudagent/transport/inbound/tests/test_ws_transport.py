@@ -95,7 +95,7 @@ class TestWsTransport(AioHTTPTestCase):
             assert can_respond
 
             response = OutboundMessage(
-                payload=None, enc_payload=json.dumps(test_response)
+                payload=None, enc_payload=JsonUtil.dumps(test_response)
             )
             self.session.set_response(response)
 
