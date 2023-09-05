@@ -8,8 +8,7 @@ import orjson
 
 
 class JsonUtil:
-    """
-    A utility class for handling JSON-related operations.
+    """A utility class for handling JSON-related operations.
 
     This class provides static methods for formatting JSON strings, and
     for converting between Python objects and JSON strings/files. It uses
@@ -20,8 +19,7 @@ class JsonUtil:
 
     @staticmethod
     def format_json(json_str):
-        """
-        Post-processes a json string to conform to json.dumps default formatting.
+        """Post-processes a json string to conform to json.dumps default formatting.
 
         The `orjson` library does not introduce whitespace between keys and values,
         nor after commas. The default behavior of `json.dumps`, however, does include
@@ -52,8 +50,7 @@ class JsonUtil:
 
     @staticmethod
     def dumps(obj, *args, **kwargs) -> str:
-        """
-        Convert a Python object into a json string.
+        """Convert a Python object into a json string.
 
         Args:
             obj: The data to be converted
@@ -72,8 +69,7 @@ class JsonUtil:
 
     @staticmethod
     def loads(s: str, *args, **kwargs) -> Any:
-        """
-        Parse a JSON string into a Python object.
+        """Parse a JSON string into a Python object.
 
         Args:
             s: The JSON string to be parsed
@@ -89,8 +85,7 @@ class JsonUtil:
 
     @staticmethod
     def load(fp, *args, **kwargs) -> Any:
-        """
-        Parse a JSON file into a Python object.
+        """Parse a JSON file into a Python object.
 
         Args:
             fp: a .read()-supporting file-like object containing a JSON document
