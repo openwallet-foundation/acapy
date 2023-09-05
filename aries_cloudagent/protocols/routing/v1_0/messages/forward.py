@@ -1,6 +1,6 @@
 """Represents a forward message."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from typing import Union
 

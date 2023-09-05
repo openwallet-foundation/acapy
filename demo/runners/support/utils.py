@@ -1,5 +1,5 @@
 import functools
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import os
 import sys
 from timeit import default_timer

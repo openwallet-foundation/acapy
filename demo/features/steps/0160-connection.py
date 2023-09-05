@@ -9,7 +9,7 @@
 # -----------------------------------------------------------
 
 from behave import given, when, then
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import os
 
 from bdd_support.agent_backchannel_client import (

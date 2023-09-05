@@ -1,6 +1,6 @@
 """Model and schema for working with field signatures within message bodies."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import struct
 import time
 

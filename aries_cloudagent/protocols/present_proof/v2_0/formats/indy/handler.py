@@ -1,6 +1,6 @@
 """V2.0 present-proof indy presentation-exchange format handler."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 
 from marshmallow import RAISE

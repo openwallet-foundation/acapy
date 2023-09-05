@@ -2,7 +2,7 @@
 import asyncio
 import concurrent.futures
 import logging
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from collections import OrderedDict
 from typing import Optional, Tuple, Mapping, List

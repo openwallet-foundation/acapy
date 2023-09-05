@@ -1,5 +1,5 @@
 from behave import given, when, then
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from time import sleep
 import time
 

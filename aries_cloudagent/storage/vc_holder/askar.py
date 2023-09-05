@@ -1,6 +1,6 @@
 """Askar storage implementation of VC holder interface."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from dateutil.parser import parse as dateutil_parser
 from dateutil.parser import ParserError

@@ -4,7 +4,7 @@ Handle storage and retrieval of mediation invites provided through arguments.
 Enables having the mediation invite config be the same
 for `provision` and `starting` commands.
 """
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from typing import NamedTuple, Optional
 
 from aries_cloudagent.storage.base import BaseStorage

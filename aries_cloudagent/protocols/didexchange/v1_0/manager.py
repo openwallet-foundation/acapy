@@ -1,6 +1,6 @@
 """Classes to manage connection establishment under RFC 23 (DID exchange)."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 from typing import Optional
 

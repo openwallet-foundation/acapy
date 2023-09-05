@@ -1,6 +1,6 @@
 """Sign and verify functions for json-ld based credentials."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from ...did.did_key import DIDKey
 from ...vc.ld_proofs import DocumentLoader

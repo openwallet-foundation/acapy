@@ -1,4 +1,4 @@
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from unittest.mock import ANY
 from asynctest import TestCase as AsyncTestCase

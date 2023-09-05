@@ -1,6 +1,6 @@
 """Tests for Domain Txn Handling Utils."""
 import base58
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from copy import deepcopy
 

@@ -1,6 +1,6 @@
 """Abstract wire format classes."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 
 from abc import abstractmethod

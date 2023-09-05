@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from ......connections.models.connection_target import ConnectionTarget
 from ......messaging.base_handler import HandlerException

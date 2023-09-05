@@ -1,6 +1,6 @@
 """Connection handling admin routes."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from typing import cast
 
 from aiohttp import web

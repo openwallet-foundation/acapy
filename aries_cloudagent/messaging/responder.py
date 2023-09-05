@@ -4,7 +4,7 @@ The responder is provided to message handlers to enable them to send a new messa
 in response to the message being handled.
 """
 import asyncio
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from abc import ABC, abstractmethod
 from typing import List, Sequence, Union, Optional, Tuple

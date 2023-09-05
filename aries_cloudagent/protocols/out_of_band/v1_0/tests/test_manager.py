@@ -1,6 +1,6 @@
 """Test OOB Manager."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from typing import List

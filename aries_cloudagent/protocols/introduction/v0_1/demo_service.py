@@ -1,6 +1,6 @@
 """Introduction service demo classes."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 
 from ....connections.models.conn_record import ConnRecord

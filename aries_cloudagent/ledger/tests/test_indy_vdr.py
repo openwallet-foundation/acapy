@@ -1,4 +1,4 @@
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 import indy_vdr
 import pytest

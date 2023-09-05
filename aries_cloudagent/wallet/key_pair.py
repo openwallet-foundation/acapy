@@ -1,6 +1,6 @@
 """Key pair storage manager."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from typing import List, Mapping, Optional, Sequence
 import uuid
 

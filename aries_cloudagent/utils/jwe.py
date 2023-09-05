@@ -1,7 +1,7 @@
 """JSON Web Encryption utilities."""
 
 import binascii
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from collections import OrderedDict
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 

@@ -1,5 +1,5 @@
 """Data for DIFPresExchHandler."""
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from .....storage.vc_holder.vc_record import VCRecord
 

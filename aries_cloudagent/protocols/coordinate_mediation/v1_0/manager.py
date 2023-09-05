@@ -1,5 +1,5 @@
 """Manager for Mediation coordination."""
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 from typing import Optional, Sequence, Tuple
 

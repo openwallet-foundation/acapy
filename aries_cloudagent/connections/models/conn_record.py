@@ -1,6 +1,6 @@
 """Handle connection information interface with non-secrets storage."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from enum import Enum
 from typing import Any, Optional, Union
 

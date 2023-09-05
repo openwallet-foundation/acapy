@@ -1,5 +1,5 @@
 """Test for DIF PresExch Schemas."""
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from unittest import TestCase
 

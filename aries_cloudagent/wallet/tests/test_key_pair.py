@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from ...storage.error import StorageNotFoundError
 from ..util import bytes_to_b58

@@ -1,4 +1,4 @@
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from base64 import b64encode
 
 from asynctest import TestCase as AsyncTestCase

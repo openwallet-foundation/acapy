@@ -1,6 +1,6 @@
 """Indy SDK verifier implementation."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 
 from typing import Tuple

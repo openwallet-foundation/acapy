@@ -1,6 +1,6 @@
 """Classes for BaseStorage-based record management."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 import sys
 import uuid

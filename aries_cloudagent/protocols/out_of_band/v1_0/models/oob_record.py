@@ -1,6 +1,6 @@
 """Record for out of band invitations."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields, validate

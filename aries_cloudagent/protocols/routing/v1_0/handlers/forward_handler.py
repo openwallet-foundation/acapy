@@ -1,6 +1,6 @@
 """Handler for incoming forward messages."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from .....messaging.base_handler import (
     BaseHandler,

@@ -1,5 +1,5 @@
 import asyncio
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import uuid
 
 from runners.agent_container import AgentContainer, create_agent_with_args_list

@@ -1,4 +1,4 @@
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import uuid
 from copy import deepcopy
 from datetime import datetime, timezone

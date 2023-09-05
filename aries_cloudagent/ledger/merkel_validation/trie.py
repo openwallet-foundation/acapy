@@ -1,5 +1,5 @@
 """Validates State Proof."""
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from collections import (
     OrderedDict,

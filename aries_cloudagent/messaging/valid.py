@@ -1,6 +1,6 @@
 """Validators for schema fields."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import re
 
 from base58 import alphabet

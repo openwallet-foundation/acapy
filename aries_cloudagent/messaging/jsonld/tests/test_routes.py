@@ -1,5 +1,5 @@
 from copy import deepcopy
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from aiohttp import web
 from asynctest import TestCase as AsyncTestCase

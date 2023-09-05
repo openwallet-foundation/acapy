@@ -5,7 +5,7 @@ An attach decorator embeds content or specifies appended content.
 
 
 import copy
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import uuid
 from typing import Any, Mapping, Sequence, Tuple, Union
 

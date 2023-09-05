@@ -1,6 +1,6 @@
 """Credential definition admin routes."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 # from asyncio import ensure_future, shield
 from asyncio import shield

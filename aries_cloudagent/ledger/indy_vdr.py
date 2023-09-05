@@ -1,7 +1,7 @@
 """Indy-VDR ledger implementation."""
 
 import asyncio
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import hashlib
 import logging
 import os

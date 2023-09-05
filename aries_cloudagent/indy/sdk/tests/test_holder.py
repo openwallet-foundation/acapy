@@ -1,4 +1,4 @@
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import pytest
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase

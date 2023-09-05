@@ -1,7 +1,7 @@
 import asyncio
 from copy import deepcopy
 import pytest
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock

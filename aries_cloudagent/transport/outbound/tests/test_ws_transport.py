@@ -1,5 +1,5 @@
 import asyncio
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from aiohttp.test_utils import AioHTTPTestCase
 from aiohttp import web, WSMsgType

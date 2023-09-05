@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import asyncpg
 import base64
 import functools
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 import os
 import random

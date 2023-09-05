@@ -1,6 +1,6 @@
 """Credential schema admin routes."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from asyncio import shield
 from time import time
 

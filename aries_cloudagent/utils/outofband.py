@@ -1,6 +1,6 @@
 """Utilities for creating out-of-band messages."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from urllib.parse import quote, urljoin
 

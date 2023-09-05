@@ -1,7 +1,7 @@
 """Indy ledger implementation."""
 
 import asyncio
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 import tempfile
 from datetime import date, datetime

@@ -1,6 +1,6 @@
 """Endorse Transaction handling admin routes."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 
 from aiohttp import web

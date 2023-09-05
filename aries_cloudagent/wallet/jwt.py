@@ -1,6 +1,6 @@
 """Operations supporting JWT creation and verification."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 from typing import Any, Mapping, NamedTuple, Optional
 

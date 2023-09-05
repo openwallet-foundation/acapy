@@ -2,7 +2,7 @@
 import base58
 import base64
 import hashlib
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from binascii import hexlify
 from copy import deepcopy

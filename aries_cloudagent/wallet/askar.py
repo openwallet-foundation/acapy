@@ -1,7 +1,7 @@
 """Aries-Askar implementation of BaseWallet interface."""
 
 import asyncio
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 
 from typing import List, Sequence, Tuple, Union

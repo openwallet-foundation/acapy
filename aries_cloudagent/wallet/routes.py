@@ -1,6 +1,6 @@
 """Wallet admin routes."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 from typing import List, Optional, Tuple
 

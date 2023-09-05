@@ -1,6 +1,6 @@
 """Indy utilities."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from pathlib import Path
 

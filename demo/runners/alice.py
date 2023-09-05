@@ -1,7 +1,7 @@
 import asyncio
 import base64
 import binascii
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 import os
 import sys

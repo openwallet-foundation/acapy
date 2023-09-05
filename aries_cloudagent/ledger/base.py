@@ -1,6 +1,6 @@
 """Ledger base class."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 import re
 

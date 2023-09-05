@@ -2,7 +2,7 @@
 
 import logging
 import platform
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from ctypes import cdll, c_char_p
 
 EXTENSION = {"darwin": ".dylib", "linux": ".so", "win32": ".dll", "windows": ".dll"}

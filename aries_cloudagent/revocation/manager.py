@@ -1,6 +1,6 @@
 """Classes to manage credential revocation."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 from typing import Mapping, Sequence, Text, Tuple
 

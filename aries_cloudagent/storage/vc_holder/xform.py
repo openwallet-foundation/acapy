@@ -1,6 +1,6 @@
 """Transformation between StorageRecord and VCRecord."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from ...storage.record import StorageRecord
 

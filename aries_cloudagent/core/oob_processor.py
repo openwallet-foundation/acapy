@@ -1,6 +1,6 @@
 """Oob message processor and functions."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 from typing import Any, Callable, Dict, List, Optional, cast
 

@@ -1,4 +1,4 @@
-import json
+from aries_cloudagent.utils.json import JsonUtil
 from unittest import TestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator

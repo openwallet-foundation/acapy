@@ -1,6 +1,6 @@
 import asyncio
 import pytest
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from aiohttp.test_utils import AioHTTPTestCase, unused_port
 from asynctest import mock as async_mock

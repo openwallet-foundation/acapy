@@ -1,7 +1,7 @@
 """Command line option parsing."""
 
 import abc
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from functools import reduce
 from itertools import chain

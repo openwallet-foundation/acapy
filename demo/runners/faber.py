@@ -1,5 +1,5 @@
 import asyncio
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 import os
 import sys

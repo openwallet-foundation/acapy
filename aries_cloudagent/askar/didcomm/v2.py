@@ -1,6 +1,6 @@
 """DIDComm v2 envelope handling via Askar backend."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from collections import OrderedDict
 from typing import Mapping, Tuple, Union

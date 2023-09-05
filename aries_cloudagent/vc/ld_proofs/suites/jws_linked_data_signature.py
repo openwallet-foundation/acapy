@@ -1,6 +1,6 @@
 """JWS Linked Data class."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from datetime import datetime
 from typing import Union

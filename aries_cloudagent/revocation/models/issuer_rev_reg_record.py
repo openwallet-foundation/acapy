@@ -1,6 +1,6 @@
 """Issuer revocation registry storage handling."""
 
-import json
+from aries_cloudagent.utils.json import JsonUtil
 import logging
 import uuid
 from functools import total_ordering

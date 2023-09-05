@@ -1,7 +1,7 @@
 """Base classes for Models and Schemas."""
 
 import logging
-import json
+from aries_cloudagent.utils.json import JsonUtil
 
 from abc import ABC
 from collections import namedtuple
