@@ -70,13 +70,17 @@ class SubTrie:
                     # branch node
                     if SubTrie._get_node_type(decoded_node) == NODE_TYPE_BRANCH:
                         if (
-                            JsonUtil.loads(rlp_decode(decoded_node[-1])[0].decode("utf-8"))
+                            JsonUtil.loads(
+                                rlp_decode(decoded_node[-1])[0].decode("utf-8")
+                            )
                         ) == expected_value:
                             return True
                     # leaf or extension node
                     if SubTrie._get_node_type(decoded_node) == NODE_TYPE_LEAF:
                         if (
-                            JsonUtil.loads(rlp_decode(decoded_node[1])[0].decode("utf-8"))
+                            JsonUtil.loads(
+                                rlp_decode(decoded_node[1])[0].decode("utf-8")
+                            )
                         ) == expected_value:
                             return True
                 except DecodingError:

@@ -652,7 +652,10 @@ class TestCredentialManager(AsyncTestCase):
             cred_req_meta = {}
             holder = async_mock.MagicMock()
             holder.create_credential_request = async_mock.CoroutineMock(
-                return_value=(JsonUtil.dumps(INDY_CRED_REQ), JsonUtil.dumps(cred_req_meta))
+                return_value=(
+                    JsonUtil.dumps(INDY_CRED_REQ),
+                    JsonUtil.dumps(cred_req_meta),
+                )
             )
             self.context.injector.bind_instance(IndyHolder, holder)
 
@@ -723,7 +726,10 @@ class TestCredentialManager(AsyncTestCase):
             cred_req_meta = {}
             holder = async_mock.MagicMock()
             holder.create_credential_request = async_mock.CoroutineMock(
-                return_value=(JsonUtil.dumps(INDY_CRED_REQ), JsonUtil.dumps(cred_req_meta))
+                return_value=(
+                    JsonUtil.dumps(INDY_CRED_REQ),
+                    JsonUtil.dumps(cred_req_meta),
+                )
             )
             self.context.injector.bind_instance(IndyHolder, holder)
 

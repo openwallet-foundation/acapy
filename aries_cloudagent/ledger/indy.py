@@ -677,7 +677,9 @@ class IndySdkLedger(BaseLedger):
             request_json = await indy.ledger.build_get_nym_request(public_did, nym)
         response_json = await self._submit(request_json, sign_did=public_info)
         data_json = (JsonUtil.loads(response_json))["result"]["data"]
-        return full_verkey(did, JsonUtil.loads(data_json)["verkey"]) if data_json else None
+        return (
+            full_verkey(did, JsonUtil.loads(data_json)["verkey"]) if data_json else None
+        )
 
     async def get_all_endpoints_for_did(self, did: str) -> dict:
         """Fetch all endpoints for a ledger DID.
@@ -1182,7 +1184,10 @@ class IndySdkLedger(BaseLedger):
             )
         with IndyErrorHandler("Exception building rev reg entry", LedgerError):
             request_json = await indy.ledger.build_revoc_reg_entry_request(
-                did_info.did, revoc_reg_id, revoc_def_type, JsonUtil.dumps(revoc_reg_entry)
+                did_info.did,
+                revoc_reg_id,
+                revoc_def_type,
+                JsonUtil.dumps(revoc_reg_entry),
             )
 
         if endorser_did and not write_ledger:

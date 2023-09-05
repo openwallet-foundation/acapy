@@ -1123,7 +1123,10 @@ class IndyVdrLedger(BaseLedger):
             )
         try:
             request = ledger.build_revoc_reg_entry_request(
-                did_info.did, revoc_reg_id, revoc_def_type, JsonUtil.dumps(revoc_reg_entry)
+                did_info.did,
+                revoc_reg_id,
+                revoc_def_type,
+                JsonUtil.dumps(revoc_reg_entry),
             )
             if endorser_did and not write_ledger:
                 request.set_endorser(endorser_did)

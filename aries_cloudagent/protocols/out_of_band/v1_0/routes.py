@@ -267,7 +267,9 @@ async def invitation_receive(request: web.BaseRequest):
     auto_accept = JsonUtil.loads(request.query.get("auto_accept", "null"))
     alias = request.query.get("alias")
     # By default, try to use an existing connection
-    use_existing_conn = JsonUtil.loads(request.query.get("use_existing_connection", "true"))
+    use_existing_conn = JsonUtil.loads(
+        request.query.get("use_existing_connection", "true")
+    )
     mediation_id = request.query.get("mediation_id")
     try:
         invitation = InvitationMessage.deserialize(body)

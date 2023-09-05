@@ -594,7 +594,9 @@ class AriesAgent(DemoAgent):
                 " Or use the QR code to connect from a mobile agent."
             )
             log_msg(
-                JsonUtil.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None
+                JsonUtil.dumps(invi_rec["invitation"]),
+                label="Invitation Data:",
+                color=None,
             )
             qr.print_ascii(invert=True)
 

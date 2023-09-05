@@ -512,7 +512,9 @@ class TestIndySdkLedger(AsyncTestCase):
 
             async with ledger:
                 with self.assertRaises(BadLedgerRequestError):
-                    await ledger.txn_endorse(request_json=JsonUtil.dumps({"...": "..."}))
+                    await ledger.txn_endorse(
+                        request_json=JsonUtil.dumps({"...": "..."})
+                    )
 
                 mock_wallet_get_public_did.return_value = self.test_did_info
 
@@ -2940,7 +2942,9 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
-        mock_submit.return_value = JsonUtil.dumps({"result": {"data": JsonUtil.dumps(None)}})
+        mock_submit.return_value = JsonUtil.dumps(
+            {"result": {"data": JsonUtil.dumps(None)}}
+        )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
 
         with async_mock.patch.object(

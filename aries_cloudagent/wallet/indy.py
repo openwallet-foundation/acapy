@@ -92,7 +92,9 @@ class IndySdkWallet(BaseWallet):
         if seed:
             args["seed"] = bytes_to_b64(validate_seed(seed))
         try:
-            verkey = await indy.crypto.create_key(self.opened.handle, JsonUtil.dumps(args))
+            verkey = await indy.crypto.create_key(
+                self.opened.handle, JsonUtil.dumps(args)
+            )
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletItemAlreadyExists:
                 raise WalletDuplicateError("Verification key already present in wallet")

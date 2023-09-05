@@ -869,7 +869,9 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 
     apply_ledger_update_json = request.query.get("apply_ledger_update", "false")
     LOGGER.debug(">>> apply_ledger_update_json = %s", apply_ledger_update_json)
-    apply_ledger_update = JsonUtil.loads(request.query.get("apply_ledger_update", "false"))
+    apply_ledger_update = JsonUtil.loads(
+        request.query.get("apply_ledger_update", "false")
+    )
 
     rev_reg_record = None
     genesis_transactions = None

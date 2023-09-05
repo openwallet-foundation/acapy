@@ -513,7 +513,11 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             if not write_ledger:
                 return (credential_definition_id, {"signed_txn": resp}, novel)
 
-        return (credential_definition_id, JsonUtil.loads(credential_definition_json), novel)
+        return (
+            credential_definition_id,
+            JsonUtil.loads(credential_definition_json),
+            novel,
+        )
 
     @abstractmethod
     async def _create_credential_definition_request(

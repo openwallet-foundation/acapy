@@ -47,7 +47,10 @@ class TestIndySdkHolder(AsyncTestCase):
             self.wallet.master_secret_id,
         )
 
-        assert (JsonUtil.loads(cred_req_json), JsonUtil.loads(cred_req_meta_json)) == ({}, [])
+        assert (JsonUtil.loads(cred_req_json), JsonUtil.loads(cred_req_meta_json)) == (
+            {},
+            [],
+        )
 
     @async_mock.patch("indy.anoncreds.prover_store_credential")
     async def test_store_credential(self, mock_store_cred):
@@ -177,9 +180,7 @@ class TestIndySdkHolder(AsyncTestCase):
         ]
 
         credentials = await self.holder.get_credentials(0, SIZE, {})
-        mock_search_credentials.assert_called_once_with(
-            self.wallet.handle, "{}"
-        )
+        mock_search_credentials.assert_called_once_with(self.wallet.handle, "{}")
 
         assert mock_fetch_credentials.call_count == 2
         mock_close_cred_search.assert_called_once_with("search_handle")

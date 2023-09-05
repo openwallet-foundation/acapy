@@ -218,7 +218,9 @@ async def transaction_create_request(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     transaction_id = request.query.get("tran_id")
-    endorser_write_txn = JsonUtil.loads(request.query.get("endorser_write_txn", "false"))
+    endorser_write_txn = JsonUtil.loads(
+        request.query.get("endorser_write_txn", "false")
+    )
 
     body = await request.json()
     expires_time = body.get("expires_time")

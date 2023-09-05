@@ -25,5 +25,7 @@ async def create_tails_reader(tails_file_path: str) -> int:
 
 async def create_tails_writer(tails_base_dir: str) -> int:
     """Get a handle for the blob_storage file writer."""
-    tails_writer_config = JsonUtil.dumps({"base_dir": tails_base_dir, "uri_pattern": ""})
+    tails_writer_config = JsonUtil.dumps(
+        {"base_dir": tails_base_dir, "uri_pattern": ""}
+    )
     return await indy.blob_storage.open_writer("default", tails_writer_config)
