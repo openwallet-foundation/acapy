@@ -1,4 +1,4 @@
-from aries_cloudagent.utils.json import JsonUtil
+import json
 from typing import Any
 
 import orjson
