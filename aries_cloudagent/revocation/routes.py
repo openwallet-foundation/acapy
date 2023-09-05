@@ -1594,7 +1594,7 @@ class TailsDeleteResponseSchema(OpenAPISchema):
 @querystring_schema(RevRegId())
 @response_schema(TailsDeleteResponseSchema())
 @docs(tags=["revocation"], summary="Delete the tail files")
-async def delete_tails(request: web.BaseRequest) -> json:
+async def delete_tails(request: web.BaseRequest):
     """Delete Tails Files."""
     context: AdminRequestContext = request["context"]
     rev_reg_id = request.query.get("rev_reg_id")
