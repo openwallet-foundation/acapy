@@ -1,27 +1,32 @@
 """Test PeerDIDResolver."""
 
 from asynctest import mock as async_mock
-from peerdid.dids import resolve_peer_did
-import pydid
+from peerdid.dids import resolve_peer_did, DIDDocument
 import pytest
 
 from .. import legacy_peer as test_module
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
-from ....connections.models.diddoc.diddoc import DIDDoc
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
-from ....storage.error import StorageNotFoundError
-from ..legacy_peer import LegacyPeerDIDResolver
+from ...did_resolver import DIDResolver
+from ..peer import PeerDID2Resolver, _resolve_peer_did_with_service_key_reference
 
 
 TEST_DID0 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"
-TEST_DID0_DOC = resolve_peer_did(TEST_DID0).dict()
+TEST_DID0_DOC = _resolve_peer_did_with_service_key_reference(TEST_DID0).dict()
+TEST_DID0_RAW_DOC = resolve_peer_did(TEST_DID0).dict()
+
+@pytest.fixture
+def common_resolver():
+    """Resolver fixture."""
+    yield DIDResolver([PeerDID2Resolver()])
+
 
 @pytest.fixture
 def resolver():
     """Resolver fixture."""
-    yield LegacyPeerDIDResolver()
+    yield PeerDID2Resolver()
 
 
 @pytest.fixture
@@ -34,7 +39,7 @@ def profile():
 
 class TestPeerDIDResolver:
     @pytest.mark.asyncio
-    async def test_supports(self, resolver: LegacyPeerDIDResolver, profile: Profile):
+    async def test_supports(self, resolver: PeerDID2Resolver, profile: Profile):
         """Test supports."""
         with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
             mock_mgr.return_value = async_mock.MagicMock(
@@ -46,7 +51,7 @@ class TestPeerDIDResolver:
 
     @pytest.mark.asyncio
     async def test_supports_no_cache(
-        self, resolver: LegacyPeerDIDResolver, profile: Profile
+        self, resolver: PeerDID2Resolver, profile: Profile
     ):
         """Test supports."""
         profile.context.injector.clear_binding(BaseCache)
@@ -57,3 +62,19 @@ class TestPeerDIDResolver:
                 )
             )
             assert await resolver.supports(profile, TEST_DID0)
+
+    @pytest.mark.asyncio
+    async def test_supports_service_referenced(
+        self, resolver: PeerDID2Resolver, common_resolver: DIDResolver, profile: Profile
+    ):
+        """Test supports."""
+        profile.context.injector.clear_binding(BaseCache)
+        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
+            mock_mgr.return_value = async_mock.MagicMock(
+                fetch_did_document=async_mock.CoroutineMock(
+                    return_value=(TEST_DID0_DOC, None)
+                )
+            )
+            recipient_key = await common_resolver.dereference(profile, TEST_DID0_DOC["service"][0]["recipient_keys"][0], document=DIDDocument.deserialize(TEST_DID0_DOC))
+            assert recipient_key
+            
