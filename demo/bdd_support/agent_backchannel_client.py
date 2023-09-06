@@ -1,5 +1,5 @@
 import asyncio
-from aries_cloudagent.utils.json import JsonUtil
+import json
 import uuid
 
 from runners.agent_container import AgentContainer, create_agent_with_args_list
@@ -159,7 +159,7 @@ def aries_container_verify_proof(
 ######################################################################
 def read_json_data(file_name: str):
     with open("features/data/" + file_name) as data_file:
-        return JsonUtil.load(data_file)
+        return json.load(data_file)
 
 
 def read_schema_data(schema_name: str):

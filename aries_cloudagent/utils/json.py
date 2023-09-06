@@ -82,19 +82,3 @@ class JsonUtil:
         """
 
         return orjson.loads(s, *args, **kwargs)
-
-    @staticmethod
-    def load(fp, *args, **kwargs) -> Any:
-        """Parse a JSON file into a Python object.
-
-        Args:
-            fp: a .read()-supporting file-like object containing a JSON document
-            *args: Extra arguments to pass to the json.load() function
-            **kwargs: Extra keyword arguments to pass to the json.load() function
-
-        Returns:
-            The Python representation of fp
-
-        """
-
-        return json.load(fp, *args, **kwargs)
