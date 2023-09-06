@@ -67,7 +67,7 @@ class PeerDID3Resolver(BaseDIDResolver):
         return did_doc.dict()
 
     async def create_and_store_document(
-            self, profile: Profile, peer_did_2: Union[str, DID]
+        self, profile: Profile, peer_did_2: Union[str, DID]
     ):
         if not peer_did_2.startswith("did:peer:2"):
             raise MalformedPeerDIDError("did:peer:2 expected")
@@ -96,7 +96,7 @@ class PeerDID3Resolver(BaseDIDResolver):
                     record, dp3_doc.to_json(), {"did": dp3_doc.id}
                 )
         await _reset_keys_from_did_doc(profile, dp3_doc)
-        
+
         return dp3_doc
 
 
@@ -134,7 +134,7 @@ async def _add_key_for_did(profile, did: str, key: str):
     record = StorageRecord(
         BaseConnectionManager.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
     )
-    async with  profile.session() as session:
+    async with profile.session() as session:
         storage: BaseStorage = session.inject(BaseStorage)
         try:
             await storage.find_record(
@@ -146,6 +146,7 @@ async def _add_key_for_did(profile, did: str, key: str):
             pass
             # "Key already associated with DID: %s; this is likely caused by "
             # "routing keys being erroneously stored in the past",
+
 
 def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
     """Generate did:peer:3 and corresponding DIDDocument."""
