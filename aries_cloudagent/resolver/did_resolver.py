@@ -30,6 +30,8 @@ LOGGER = logging.getLogger(__name__)
 class DIDResolver:
     """did resolver singleton."""
 
+    DEFAULT_TIMEOUT = 30
+
     def __init__(self, resolvers: Optional[List[BaseDIDResolver]] = None):
         """Create DID Resolver."""
         self.resolvers = resolvers or []
@@ -64,7 +66,7 @@ class DIDResolver:
                         did,
                         service_accept,
                     ),
-                    timeout if timeout is not None else 30,
+                    timeout if timeout is not None else self.DEFAULT_TIMEOUT,
                 )
                 return resolver, document
             except DIDNotFound:
