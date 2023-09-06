@@ -102,7 +102,7 @@ class ServiceDecoratorSchema(BaseModelSchema):
     )
     routing_keys = fields.List(
         fields.Str(
-            validate=INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
+            validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
             metadata={
                 "description": "Routing key",
                 "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
