@@ -796,9 +796,7 @@ class IndyOrKeyDID(Regexp):
 class IndyOrKeyBbsPublicKey(Regexp):
     """Indy (with Ed25519) or Key (with BBS+) Public Key class."""
 
-    PATTERN = "|".join(
-        x.pattern for x in [IndyRawPublicKey.PATTERN, DidKeyBbsRawPublicKey.PATTERN]
-    )
+    PATTERN = "|".join(x.PATTERN for x in [IndyRawPublicKey, DidKeyBbsRawPublicKey])
     EXAMPLE = IndyRawPublicKey.EXAMPLE
 
     def __init__(
@@ -806,7 +804,7 @@ class IndyOrKeyBbsPublicKey(Regexp):
     ):
         """Initialize the instance."""
         super().__init__(
-            IndyOrKeyDID.PATTERN,
+            IndyOrKeyBbsPublicKey.PATTERN,
             error="Value {input} is not Indy (Ed25519) or key (BBS) public key format",
         )
 
