@@ -67,6 +67,7 @@ python3-indy= { version = "^1.11.1", optional = true }
 [tool.poetry.group.dev.dependencies]
 pre-commit="~3.3.3"
 ruff="^0.0.285"
+black="23.7.0"
 
 sphinx="1.8.4"
 sphinx-rtd-theme=">=0.4.3"
