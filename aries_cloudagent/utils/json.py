@@ -4,7 +4,10 @@ import json
 import re
 from typing import Any
 
-import orjson
+try:
+    import orjson
+except ImportError:
+    orjson = None
 
 
 class JsonUtil:
@@ -62,7 +65,9 @@ class JsonUtil:
 
         """
 
-        if "indent" in kwargs:  # not supported in orjson, and only used in demo logs
+        if (
+            orjson is None or "indent" in kwargs
+        ):  # indent is not supported in orjson, and only used in demo logs
             return json.dumps(obj, *args, **kwargs)
         else:
             return JsonUtil.format_json(orjson.dumps(obj, *args, **kwargs).decode())
@@ -80,8 +85,10 @@ class JsonUtil:
             The Python representation of s
 
         """
-
-        return orjson.loads(s, *args, **kwargs)
+        if orjson is None:
+            return json.loads(s, *args, **kwargs)
+        else:
+            return orjson.loads(s, *args, **kwargs)
 
 
 def read_json_file(file_name: str):
