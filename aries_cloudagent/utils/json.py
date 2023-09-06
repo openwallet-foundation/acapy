@@ -82,3 +82,13 @@ class JsonUtil:
         """
 
         return orjson.loads(s, *args, **kwargs)
+
+
+def read_json_file(file_name: str):
+    mode = "r" if orjson is None else "rb"
+    with open(file_name, mode=mode) as data_file:
+        if orjson is None:
+            return json.load(data_file)
+        else:
+            content = data_file.read()
+            return orjson.loads(content)
