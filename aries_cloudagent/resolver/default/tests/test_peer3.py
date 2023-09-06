@@ -27,6 +27,7 @@ TEST_DP3 = DID(
 )
 TEST_DP3_DOC = gen_did_peer_3(TEST_DP2)[1]
 
+
 @pytest.fixture
 def common_resolver():
     """Resolver fixture."""

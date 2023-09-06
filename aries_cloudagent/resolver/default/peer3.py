@@ -22,6 +22,7 @@ from ...core.profile import Profile
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 from .peer2 import _resolve_peer_did_with_service_key_reference
 
+
 class PeerDID3Resolver(BaseDIDResolver):
     """Peer DID Resolver."""
 
@@ -70,23 +71,24 @@ def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
     convert_to_did_peer_3_document(dp3, doc)
     return dp3, doc
 
+
 def _replace_all_values(input, org, new):
     for k, v in input.items():
-        if isinstance(v,type(dict)):
-            _replace_all_values(v, org, new)    
-        if isinstance(v,List):
-            for i,item in enumerate(v):
+        if isinstance(v, type(dict)):
+            _replace_all_values(v, org, new)
+        if isinstance(v, List):
+            for i, item in enumerate(v):
                 if isinstance(item, type(dict)):
-                    _replace_all_values(item, org, new)            
+                    _replace_all_values(item, org, new)
                 elif (
-                    isinstance(item, str) 
-                    or isinstance(item, DID) 
+                    isinstance(item, str)
+                    or isinstance(item, DID)
                     or isinstance(item, DIDUrl)
                 ):
                     v.pop(i)
                     v.append(item.replace(org, new, 1))
-                elif hasattr(item,"__dict__"):
-                    _replace_all_values(item.__dict__, org, new) 
+                elif hasattr(item, "__dict__"):
+                    _replace_all_values(item.__dict__, org, new)
                 else:
                     pass
 
@@ -95,7 +97,8 @@ def _replace_all_values(input, org, new):
         else:
             pass
 
-def convert_to_did_peer_3_document(dp3, dp2_document:DIDDocument) -> None:
+
+def convert_to_did_peer_3_document(dp3, dp2_document: DIDDocument) -> None:
     dp2 = dp2_document.id
     _replace_all_values(dp2_document.__dict__, dp2, dp3)
 
@@ -105,4 +108,3 @@ def convert_to_did_peer_3_document(dp3, dp2_document:DIDDocument) -> None:
         new_indexes[ind.replace(dp2, dp3)] = val
 
     dp2_document._index = new_indexes
-    

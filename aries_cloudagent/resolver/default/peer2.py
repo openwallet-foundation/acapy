@@ -66,7 +66,7 @@ def _resolve_peer_did_with_service_key_reference(
         ## WORKAROUND LIBRARY NOT REREFERENCING RECEIPIENT_KEY
         services = doc.service
         signing_keys = [
-            vm 
+            vm
             for vm in doc.verification_method or []
             if vm.type == "Ed25519VerificationKey2020"
         ]

@@ -62,4 +62,3 @@ async def setup(context: InjectionContext):
     ).provide(context.settings, context.injector)
     await peer_did_3_resolver.setup(context)
     registry.register_resolver(peer_did_3_resolver)
-    
