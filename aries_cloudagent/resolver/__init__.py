@@ -52,13 +52,13 @@ async def setup(context: InjectionContext):
         registry.register_resolver(universal_resolver)
 
     peer_did_2_resolver = ClassProvider(
-        "aries_cloudagent.resolver.default.peer.PeerDID2Resolver"
+        "aries_cloudagent.resolver.default.peer2.PeerDID2Resolver"
     ).provide(context.settings, context.injector)
     await peer_did_2_resolver.setup(context)
     registry.register_resolver(peer_did_2_resolver)
 
     peer_did_3_resolver = ClassProvider(
-        "aries_cloudagent.resolver.default.peer.PeerDID3Resolver"
+        "aries_cloudagent.resolver.default.peer3.PeerDID3Resolver"
     ).provide(context.settings, context.injector)
     await peer_did_3_resolver.setup(context)
     registry.register_resolver(peer_did_3_resolver)
