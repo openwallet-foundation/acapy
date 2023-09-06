@@ -16,7 +16,7 @@ from peerdid.dids import (
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
-
+from .peer3 import PeerDID3Resolver
 
 class PeerDID2Resolver(BaseDIDResolver):
     """Peer DID Resolver."""
@@ -46,6 +46,7 @@ class PeerDID2Resolver(BaseDIDResolver):
             raise DIDNotFound(f"peer_did is not formatted correctly: {did}") from e
         if peer_did:
             did_doc = self.resolve_peer_did_with_service_key_reference(did)
+            await PeerDID3Resolver().create_and_store_document(profile, did_doc.id)
         else:
             raise DIDNotFound(f"did is not a peer did: {did}")
 

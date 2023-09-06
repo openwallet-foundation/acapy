@@ -9,6 +9,7 @@ the did:peer:2 has been replaced with the did:peer:3.
 import re
 from hashlib import sha256
 from typing import Optional, Pattern, Sequence, Text, Union, Tuple, List
+from multiformats import multibase, multicodec
 
 from peerdid.dids import (
     DID,
@@ -17,10 +18,15 @@ from peerdid.dids import (
     DIDUrl,
 )
 from peerdid.keys import to_multibase, MultibaseFormat
+from ...wallet.util import b64_to_bytes, bytes_to_b58
+
 from ...connections.base_manager import BaseConnectionManager
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ...storage.base import BaseStorage
+from ...storage.error import StorageDuplicateError, StorageNotFoundError
+from ...storage.record import StorageRecord
+
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 from .peer2 import _resolve_peer_did_with_service_key_reference
 
@@ -60,6 +66,79 @@ class PeerDID3Resolver(BaseDIDResolver):
 
         return did_doc.dict()
 
+    async def create_and_store_document(self, profile: Profile, peer_did_2: Union[str, DID]):
+        if not peer_did_2.startswith("did:peer:2"):
+            raise MalformedPeerDIDError("did:peer:2 expected")
+        
+        dp3, dp3_doc = gen_did_peer_3(peer_did_2)
+
+        try:
+            async with profile.session() as session:
+                storage = session.inject(BaseStorage)
+                record = await storage.find_record(
+                    BaseConnectionManager.RECORD_TYPE_DID_DOCUMENT, {"did": dp3}
+                )
+        except StorageNotFoundError:
+            record = StorageRecord(
+                BaseConnectionManager.RECORD_TYPE_DID_DOCUMENT,
+                dp3_doc.to_json(),
+                {"did": dp3_doc.id},
+            )
+            async with profile.session() as session:
+                storage: BaseStorage = session.inject(BaseStorage)
+                await storage.add_record(record) 
+        else:
+            async with profile.session() as session:
+                storage: BaseStorage = session.inject(BaseStorage)
+                await storage.update_record(
+                    record, dp3_doc.to_json(), {"did": dp3_doc.id}
+                )
+        await _reset_keys_from_did_doc(profile, dp3_doc)
+        
+        return dp3_doc
+
+
+async def _reset_keys_from_did_doc(profile, did_doc):
+    async with profile.session() as session:
+        storage: BaseStorage = session.inject(BaseStorage)
+        await storage.delete_all_records(BaseConnectionManager.RECORD_TYPE_DID_KEY, {"did": did_doc.id})
+
+    for vm in did_doc.verification_method or []:
+        if vm.controller == did_doc.id:
+            if vm.public_key_base58:
+                await _add_key_for_did(profile, did_doc.id, vm.public_key_base58)
+            if vm.public_key_multibase:
+                pk = multibase.decode(vm.public_key_multibase)
+                if len(pk) == 32:  # No multicodec prefix
+                    pk = bytes_to_b58(pk)
+                else:
+                    codec, key = multicodec.unwrap(pk)
+                    if codec == multicodec.multicodec("ed25519-pub"):
+                        pk = bytes_to_b58(key)
+                    else: 
+                        continue
+                await _add_key_for_did(profile, did_doc.id, pk)
+
+
+
+async def _add_key_for_did(profile, did: str, key: str):
+    """Store a verkey for lookup against a DID.
+
+    Args:
+        did: The DID to associate with this key
+        key: The verkey to be added
+    """
+    record = StorageRecord(BaseConnectionManager.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
+    async with  profile.session() as session:
+        storage: BaseStorage = session.inject(BaseStorage)
+        try:
+            await storage.find_record(BaseConnectionManager.RECORD_TYPE_DID_KEY, {"key": key})
+        except StorageNotFoundError:
+            await storage.add_record(record)
+        except StorageDuplicateError:
+            pass
+                # "Key already associated with DID: %s; this is likely caused by "
+                # "routing keys being erroneously stored in the past",
 
 def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
     """Generate did:peer:3 and corresponding DIDDocument."""
