@@ -31,8 +31,8 @@ from ..messaging.valid import (
     GENERIC_DID_VALIDATE,
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
+    INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
     JWT_EXAMPLE,
     JWT_VALIDATE,
     IndyDID,
@@ -73,10 +73,10 @@ class DIDSchema(OpenAPISchema):
         metadata={"description": "DID of interest", "example": GENERIC_DID_EXAMPLE},
     )
     verkey = fields.Str(
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Public verification key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
         },
     )
     posture = fields.Str(
@@ -219,10 +219,10 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     verkey = fields.Str(
         required=False,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Verification key of interest",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
         },
     )
     posture = fields.Str(

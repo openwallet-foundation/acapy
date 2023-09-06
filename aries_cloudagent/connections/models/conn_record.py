@@ -11,8 +11,8 @@ from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
+    INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
     UUID4_EXAMPLE,
 )
 from ...protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
@@ -693,10 +693,10 @@ class ConnRecordSchema(BaseRecordSchema):
     )
     invitation_key = fields.Str(
         required=False,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Public key for connection",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
         },
     )
     invitation_msg_id = fields.Str(

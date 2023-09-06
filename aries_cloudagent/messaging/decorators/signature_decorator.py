@@ -14,8 +14,8 @@ from ..models.base import BaseModel, BaseModelSchema
 from ..valid import (
     BASE64URL_EXAMPLE,
     BASE64URL_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
+    INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
 )
 
 
@@ -161,9 +161,9 @@ class SignatureDecoratorSchema(BaseModelSchema):
     )
     signer = fields.Str(
         required=True,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Signer verification key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
         },
     )

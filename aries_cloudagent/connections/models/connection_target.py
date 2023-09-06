@@ -8,8 +8,8 @@ from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
     GENERIC_DID_EXAMPLE,
     GENERIC_DID_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
+    INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
 )
 
 
@@ -74,10 +74,10 @@ class ConnectionTargetSchema(BaseModelSchema):
     )
     recipient_keys = fields.List(
         fields.Str(
-            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
             metadata={
                 "description": "Recipient public key",
-                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+                "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
             },
         ),
         required=False,
@@ -85,10 +85,10 @@ class ConnectionTargetSchema(BaseModelSchema):
     )
     routing_keys = fields.List(
         fields.Str(
-            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
             metadata={
                 "description": "Routing key",
-                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+                "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
             },
         ),
         data_key="routingKeys",
@@ -97,9 +97,9 @@ class ConnectionTargetSchema(BaseModelSchema):
     )
     sender_key = fields.Str(
         required=False,
-        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Sender public key",
-            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
         },
     )

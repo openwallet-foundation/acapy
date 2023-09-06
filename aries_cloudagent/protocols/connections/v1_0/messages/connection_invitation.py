@@ -9,8 +9,8 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import (
     GENERIC_DID_EXAMPLE,
     GENERIC_DID_VALIDATE,
-    INDY_RAW_PUBLIC_KEY_EXAMPLE,
-    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
+    INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
 )
 from .....wallet.util import b64_to_bytes, bytes_to_b64
 from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
@@ -117,10 +117,10 @@ class ConnectionInvitationSchema(AgentMessageSchema):
     )
     recipient_keys = fields.List(
         fields.Str(
-            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
             metadata={
                 "description": "Recipient public key",
-                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+                "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
             },
         ),
         data_key="recipientKeys",
@@ -137,10 +137,10 @@ class ConnectionInvitationSchema(AgentMessageSchema):
     )
     routing_keys = fields.List(
         fields.Str(
-            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            validate=INDY_OR_KEY_PUBLIC_KEY_VALIDATE,
             metadata={
                 "description": "Routing key",
-                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+                "example": INDY_OR_KEY_PUBLIC_KEY_EXAMPLE,
             },
         ),
         data_key="routingKeys",
