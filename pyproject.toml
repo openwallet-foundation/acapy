@@ -51,7 +51,6 @@ unflatten="~0.1"
 asyncpg = ">=0.25.0,<0.26.0"
 web-py = ">=0.62,<1.0"
 pygments = ">=2.10,<3.0"
-peerdid = "^0.5.2"
 
 # askar
 aries-askar= { version = "~0.2.5", optional = true }
@@ -63,6 +62,7 @@ ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
 # indy
 python3-indy= { version = "^1.11.1", optional = true }
+peerdid = "^0.5.2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit="~3.3.3"
