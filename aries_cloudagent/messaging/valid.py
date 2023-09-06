@@ -329,6 +329,24 @@ class IndyRawPublicKey(Regexp):
         )
 
 
+class DidKeyBbsRawPublicKey(Regexp):
+    """Validate value against did:key (BbsBlsSignature2020) raw public key."""
+
+    EXAMPLE = (
+        "oLbNvqaFVjGTHvWBhC9tDjNVTEBosy6bwdfLi13SBqmzZ2ZCxPDvAxLaxTKSzsbFNAhtn9B"
+        "mSwk3KnvMx2cmxmpwwEKdpqRbXnth8xFrVXngpoEUc3QUXVcdb4m5SWGGVim"
+    )
+    PATTERN = rf"^[{B58}]{{131,132}}$"
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            DidKeyBbsRawPublicKey.PATTERN,
+            error="Value {input} is not a valid did:key BBS+ public key",
+        )
+
+
 class RoutingKey(Regexp):
     """Validate between indy or did key.
 
