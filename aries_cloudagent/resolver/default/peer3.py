@@ -66,10 +66,12 @@ class PeerDID3Resolver(BaseDIDResolver):
 
         return did_doc.dict()
 
-    async def create_and_store_document(self, profile: Profile, peer_did_2: Union[str, DID]):
+    async def create_and_store_document(
+            self, profile: Profile, peer_did_2: Union[str, DID]
+    ):
         if not peer_did_2.startswith("did:peer:2"):
             raise MalformedPeerDIDError("did:peer:2 expected")
-        
+
         dp3, dp3_doc = gen_did_peer_3(peer_did_2)
 
         try:
@@ -86,7 +88,7 @@ class PeerDID3Resolver(BaseDIDResolver):
             )
             async with profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)
-                await storage.add_record(record) 
+                await storage.add_record(record)
         else:
             async with profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)
@@ -101,7 +103,9 @@ class PeerDID3Resolver(BaseDIDResolver):
 async def _reset_keys_from_did_doc(profile, did_doc):
     async with profile.session() as session:
         storage: BaseStorage = session.inject(BaseStorage)
-        await storage.delete_all_records(BaseConnectionManager.RECORD_TYPE_DID_KEY, {"did": did_doc.id})
+        await storage.delete_all_records(
+            BaseConnectionManager.RECORD_TYPE_DID_KEY, {"did": did_doc.id}
+        )
 
     for vm in did_doc.verification_method or []:
         if vm.controller == did_doc.id:
@@ -115,10 +119,9 @@ async def _reset_keys_from_did_doc(profile, did_doc):
                     codec, key = multicodec.unwrap(pk)
                     if codec == multicodec.multicodec("ed25519-pub"):
                         pk = bytes_to_b58(key)
-                    else: 
+                    else:
                         continue
                 await _add_key_for_did(profile, did_doc.id, pk)
-
 
 
 async def _add_key_for_did(profile, did: str, key: str):
@@ -128,17 +131,21 @@ async def _add_key_for_did(profile, did: str, key: str):
         did: The DID to associate with this key
         key: The verkey to be added
     """
-    record = StorageRecord(BaseConnectionManager.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
+    record = StorageRecord(
+        BaseConnectionManager.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
+    )
     async with  profile.session() as session:
         storage: BaseStorage = session.inject(BaseStorage)
         try:
-            await storage.find_record(BaseConnectionManager.RECORD_TYPE_DID_KEY, {"key": key})
+            await storage.find_record(
+                BaseConnectionManager.RECORD_TYPE_DID_KEY, {"key": key}
+            )
         except StorageNotFoundError:
             await storage.add_record(record)
         except StorageDuplicateError:
             pass
-                # "Key already associated with DID: %s; this is likely caused by "
-                # "routing keys being erroneously stored in the past",
+            # "Key already associated with DID: %s; this is likely caused by "
+            # "routing keys being erroneously stored in the past",
 
 def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
     """Generate did:peer:3 and corresponding DIDDocument."""

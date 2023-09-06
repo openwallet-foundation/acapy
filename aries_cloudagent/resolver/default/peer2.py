@@ -18,6 +18,7 @@ from ...core.profile import Profile
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 from .peer3 import PeerDID3Resolver
 
+
 class PeerDID2Resolver(BaseDIDResolver):
     """Peer DID Resolver."""
 
