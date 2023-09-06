@@ -97,6 +97,7 @@ bbs = [
 indy = [
      "python3-indy"
 ]
+orjson = ["orjson"]
 
 [tool.poetry.scripts]
 aca-py = "aries_cloudagent.__main__:script_main"
