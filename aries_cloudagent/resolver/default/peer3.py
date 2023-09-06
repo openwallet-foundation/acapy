@@ -9,7 +9,7 @@ the did:peer:2 has been replaced with the did:peer:3.
 import re
 from copy import deepcopy
 from hashlib import sha256
-from typing import Optional, Pattern, Sequence, Text, Union, Tuple, List
+from typing import Optional, Pattern, Sequence, Text, List
 from multiformats import multibase, multicodec
 
 from peerdid.dids import (
@@ -19,7 +19,7 @@ from peerdid.dids import (
     DIDUrl,
 )
 from peerdid.keys import to_multibase, MultibaseFormat
-from ...wallet.util import b64_to_bytes, bytes_to_b58
+from ...wallet.util import bytes_to_b58
 
 from ...connections.base_manager import BaseConnectionManager
 from ...config.injection_context import InjectionContext
