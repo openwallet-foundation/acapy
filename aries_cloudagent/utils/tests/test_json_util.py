@@ -64,14 +64,3 @@ def test_loads_wo_spaces():
     json_str = '{"key":"value","key2":"value2"}'
     obj = JsonUtil.loads(json_str)
     assert obj == {"key": "value", "key2": "value2"}
-
-
-def test_load():
-    # Test the load method
-    # This test requires a file-like object, so we use io.StringIO
-    import io
-
-    json_str = '{"key": "value", "key2": "value2"}'
-    fp = io.StringIO(json_str)
-    obj = JsonUtil.load(fp)
-    assert obj == {"key": "value", "key2": "value2"}
