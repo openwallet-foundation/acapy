@@ -675,21 +675,13 @@ class BaseConnectionManager:
         Args:
             did: The DID to search for
         """
-        if DID.is_valid(did):
-            async with self._profile.session() as session:
-                storage = session.inject(BaseStorage)
-                record = await storage.find_record(
-                    self.RECORD_TYPE_DID_DOCUMENT, {"did": did}
-                )
-            return ResolvedDocument.from_json(record.value), record
-
-        else:  # legacy documents for unqualified dids
-            async with self._profile.session() as session:
-                storage = session.inject(BaseStorage)
-                record = await storage.find_record(
-                    self.RECORD_TYPE_DID_DOC, {"did": did}
-                )
-            return DIDDoc.from_json(record.value), record
+        # legacy documents for unqualified dids
+        async with self._profile.session() as session:
+            storage = session.inject(BaseStorage)
+            record = await storage.find_record(
+                self.RECORD_TYPE_DID_DOC, {"did": did}
+            )
+        return DIDDoc.from_json(record.value), record
 
     async def find_connection(
         self,

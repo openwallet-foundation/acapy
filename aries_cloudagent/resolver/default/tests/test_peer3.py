@@ -7,7 +7,7 @@ from asynctest import mock as async_mock
 from peerdid.dids import resolve_peer_did, DIDDocument, DID
 import pytest
 
-from .. import legacy_peer as test_module
+from .. import peer3 as test_module
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
 from ....core.in_memory import InMemoryProfile
@@ -59,10 +59,10 @@ class TestPeerDID3Resolver:
     @pytest.mark.asyncio
     async def test_supports(self, resolver: PeerDID3Resolver, profile: Profile):
         """Test supports."""
-        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
-                    return_value=(TEST_DP3_DOC, None)
+        with async_mock.patch.object(test_module, "PeerDID3Resolver") as mock_resolve:
+            mock_resolve.return_value = async_mock.MagicMock(
+                _resolve=async_mock.CoroutineMock(
+                    return_value=TEST_DP3_DOC
                 )
             )
             assert await resolver.supports(profile, TEST_DP3)
@@ -73,10 +73,10 @@ class TestPeerDID3Resolver:
     ):
         """Test supports."""
         profile.context.injector.clear_binding(BaseCache)
-        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
-                    return_value=(TEST_DP3_DOC, None)
+        with async_mock.patch.object(test_module, "PeerDID3Resolver") as mock_resolve:
+            mock_resolve.return_value = async_mock.MagicMock(
+                _resolve=async_mock.CoroutineMock(
+                    return_value=TEST_DP3_DOC
                 )
             )
             assert await resolver.supports(profile, TEST_DP3)
@@ -87,15 +87,10 @@ class TestPeerDID3Resolver:
     ):
         """Test supports."""
         profile.context.injector.clear_binding(BaseCache)
-        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
-                    return_value=(TEST_DP3_DOC, None)
-                )
-            )
-            recipient_key = await common_resolver.dereference(
-                profile,
-                TEST_DP3_DOC.dict()["service"][0]["recipient_keys"][0],
-                document=TEST_DP3_DOC,
-            )
-            assert recipient_key
+
+        recipient_key = await common_resolver.dereference(
+            profile,
+            TEST_DP3_DOC.dict()["service"][0]["recipient_keys"][0],
+            document=TEST_DP3_DOC,
+        )
+        assert recipient_key
