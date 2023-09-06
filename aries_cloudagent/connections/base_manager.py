@@ -677,9 +677,7 @@ class BaseConnectionManager:
         # legacy documents for unqualified dids
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
-            record = await storage.find_record(
-                self.RECORD_TYPE_DID_DOC, {"did": did}
-            )
+            record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
         return DIDDoc.from_json(record.value), record
 
     async def find_connection(

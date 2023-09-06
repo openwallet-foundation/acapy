@@ -61,9 +61,7 @@ class TestPeerDID3Resolver:
         """Test supports."""
         with async_mock.patch.object(test_module, "PeerDID3Resolver") as mock_resolve:
             mock_resolve.return_value = async_mock.MagicMock(
-                _resolve=async_mock.CoroutineMock(
-                    return_value=TEST_DP3_DOC
-                )
+                _resolve=async_mock.CoroutineMock(return_value=TEST_DP3_DOC)
             )
             assert await resolver.supports(profile, TEST_DP3)
 
@@ -75,9 +73,7 @@ class TestPeerDID3Resolver:
         profile.context.injector.clear_binding(BaseCache)
         with async_mock.patch.object(test_module, "PeerDID3Resolver") as mock_resolve:
             mock_resolve.return_value = async_mock.MagicMock(
-                _resolve=async_mock.CoroutineMock(
-                    return_value=TEST_DP3_DOC
-                )
+                _resolve=async_mock.CoroutineMock(return_value=TEST_DP3_DOC)
             )
             assert await resolver.supports(profile, TEST_DP3)
 
