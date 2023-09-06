@@ -7,6 +7,7 @@ the did:peer:2 has been replaced with the did:peer:3.
 """
 
 import re
+from copy import deepcopy
 from hashlib import sha256
 from typing import Optional, Pattern, Sequence, Text, Union, Tuple, List
 from multiformats import multibase, multicodec
@@ -28,7 +29,6 @@ from ...storage.error import StorageDuplicateError, StorageNotFoundError
 from ...storage.record import StorageRecord
 
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
-from .peer2 import _resolve_peer_did_with_service_key_reference
 
 
 class PeerDID3Resolver(BaseDIDResolver):
@@ -67,18 +67,18 @@ class PeerDID3Resolver(BaseDIDResolver):
         return did_doc.dict()
 
     async def create_and_store_document(
-        self, profile: Profile, peer_did_2: Union[str, DID]
+        self, profile: Profile, peer_did_2_doc: DIDDocument
     ):
-        if not peer_did_2.startswith("did:peer:2"):
+        if not peer_did_2_doc.id.startswith("did:peer:2"):
             raise MalformedPeerDIDError("did:peer:2 expected")
-
-        dp3, dp3_doc = gen_did_peer_3(peer_did_2)
-
+        
+        dp3_doc = deepcopy(peer_did_2_doc)
+        _convert_to_did_peer_3_document(dp3_doc)
         try:
             async with profile.session() as session:
                 storage = session.inject(BaseStorage)
                 record = await storage.find_record(
-                    BaseConnectionManager.RECORD_TYPE_DID_DOCUMENT, {"did": dp3}
+                    BaseConnectionManager.RECORD_TYPE_DID_DOCUMENT, {"did": dp3_doc.id}
                 )
         except StorageNotFoundError:
             record = StorageRecord(
@@ -148,22 +148,6 @@ async def _add_key_for_did(profile, did: str, key: str):
             # "routing keys being erroneously stored in the past",
 
 
-def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
-    """Generate did:peer:3 and corresponding DIDDocument."""
-    if not peer_did_2.startswith("did:peer:2"):
-        raise MalformedPeerDIDError("did:peer:2 expected")
-
-    content = to_multibase(
-        sha256(peer_did_2.lstrip("did:peer:2").encode()).digest(),
-        MultibaseFormat.BASE58,
-    )
-    dp3 = DID("did:peer:3" + content)
-
-    doc = _resolve_peer_did_with_service_key_reference(peer_did_2)
-    _convert_to_did_peer_3_document(dp3, doc)
-    return dp3, doc
-
-
 def _replace_all_values(input, org, new):
     for k, v in input.items():
         if isinstance(v, type(dict)):
@@ -190,7 +174,12 @@ def _replace_all_values(input, org, new):
             pass
 
 
-def _convert_to_did_peer_3_document(dp3, dp2_document: DIDDocument) -> None:
+def _convert_to_did_peer_3_document(dp2_document: DIDDocument) -> DIDDocument:
+    content = to_multibase(
+        sha256(dp2_document.id.lstrip("did:peer:2").encode()).digest(),
+        MultibaseFormat.BASE58,
+    )
+    dp3 = DID("did:peer:3" + content)
     dp2 = dp2_document.id
     _replace_all_values(dp2_document.__dict__, dp2, dp3)
 
@@ -200,3 +189,4 @@ def _convert_to_did_peer_3_document(dp3, dp2_document: DIDDocument) -> None:
         new_indexes[ind.replace(dp2, dp3)] = val
 
     dp2_document._index = new_indexes
+    return dp2_document

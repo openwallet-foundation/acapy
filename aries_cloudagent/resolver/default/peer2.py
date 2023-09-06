@@ -11,12 +11,13 @@ from peerdid.dids import (
     resolve_peer_did,
     DID,
     DIDDocument,
+    MalformedPeerDIDError,
 )
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
-from .peer3 import PeerDID3Resolver
+from .peer3 import PeerDID3Resolver, _convert_to_did_peer_3_document
 
 
 class PeerDID2Resolver(BaseDIDResolver):
@@ -47,7 +48,7 @@ class PeerDID2Resolver(BaseDIDResolver):
             raise DIDNotFound(f"peer_did is not formatted correctly: {did}") from e
         if peer_did:
             did_doc = self.resolve_peer_did_with_service_key_reference(did)
-            await PeerDID3Resolver().create_and_store_document(profile, did_doc.id)
+            await PeerDID3Resolver().create_and_store_document(profile, did_doc)
         else:
             raise DIDNotFound(f"did is not a peer did: {did}")
 
@@ -82,4 +83,13 @@ def _resolve_peer_did_with_service_key_reference(
             raise Exception("no recipient_key signing_key pair")
     except Exception as e:
         raise ValueError("pydantic validation error:" + str(e))
+    return doc
+
+def convert_to_did_peer_3(peer_did_2: Union[str, DID]) -> DIDDocument:
+    """Generate did:peer:3 and corresponding DIDDocument."""
+    if not peer_did_2.startswith("did:peer:2"):
+        raise MalformedPeerDIDError("did:peer:2 expected")
+
+    doc = _resolve_peer_did_with_service_key_reference(peer_did_2)
+    _convert_to_did_peer_3_document(doc)
     return doc

@@ -13,7 +13,8 @@ from ....cache.in_memory import InMemoryCache
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 from ...did_resolver import DIDResolver
-from ..peer3 import PeerDID3Resolver, gen_did_peer_3
+from ..peer2 import convert_to_did_peer_3
+from ..peer3 import PeerDID3Resolver
 
 
 TEST_DP2 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"
@@ -25,7 +26,7 @@ TEST_DP3 = DID(
         sha256(TEST_DP2.lstrip("did:peer:2").encode()).digest(), MultibaseFormat.BASE58
     )
 )
-TEST_DP3_DOC = gen_did_peer_3(TEST_DP2)[1]
+TEST_DP3_DOC = convert_to_did_peer_3(TEST_DP2)
 
 
 @pytest.fixture
@@ -53,8 +54,8 @@ class TestPeerDID3Resolver:
     async def test_resolution_types(self, resolver: PeerDID3Resolver, profile: Profile):
         """Test supports."""
         assert DID.is_valid(TEST_DP3)
-        assert isinstance(gen_did_peer_3(TEST_DP2)[1], DIDDocument)
-        assert gen_did_peer_3(TEST_DP2)[0] == TEST_DP3
+        assert isinstance(convert_to_did_peer_3(TEST_DP2), DIDDocument)
+        assert convert_to_did_peer_3(TEST_DP2).id == TEST_DP3
 
     @pytest.mark.asyncio
     async def test_supports(self, resolver: PeerDID3Resolver, profile: Profile):
