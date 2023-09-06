@@ -1,4 +1,5 @@
 """Peer DID Resolver.
+
 Resolution is performed using the peer-did-python library https://github.com/sicpa-dlab/peer-did-python.
 """
 

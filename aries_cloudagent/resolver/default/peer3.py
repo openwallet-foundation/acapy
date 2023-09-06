@@ -1,5 +1,7 @@
 """Peer DID Resolver.
-Resolution is performed using the peer-did-python library https://github.com/sicpa-dlab/peer-did-python.
+
+Resolution is performed by converting did:peer:2 to did:peer:3 according to https://identity.foundation/peer-did-method-spec/#generation-method:~:text=Method%203%3A%20DID%20Shortening%20with%20SHA%2D256%20Hash
+DID Document is just a did:peer:2 document (resolved by peer-did-python) where the did has been replaced.
 """
 
 import re
