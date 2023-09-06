@@ -91,6 +91,7 @@ class JsonUtil:
             return orjson.loads(s, *args, **kwargs)
 
 
+@staticmethod
 def read_json_file(file_name: str):
     """Reads a JSON file and returns its content as a Python object.
 
