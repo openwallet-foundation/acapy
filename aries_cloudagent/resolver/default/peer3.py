@@ -62,7 +62,7 @@ class PeerDID3Resolver(BaseDIDResolver):
 
 
 def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
-    """generate did:peer:3 and corresponding DIDDocument."""
+    """Generate did:peer:3 and corresponding DIDDocument."""
     if not peer_did_2.startswith("did:peer:2"):
         raise MalformedPeerDIDError("did:peer:2 expected")
 
