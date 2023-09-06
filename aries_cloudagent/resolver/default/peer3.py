@@ -2,7 +2,8 @@
 
 Resolution is performed by converting did:peer:2 to did:peer:3 according to 
 https://identity.foundation/peer-did-method-spec/#generation-method:~:text=Method%203%3A%20DID%20Shortening%20with%20SHA%2D256%20Hash
-DID Document is just a did:peer:2 document (resolved by peer-did-python) where the did has been replaced.
+DID Document is just a did:peer:2 document (resolved by peer-did-python) where 
+the did:peer:2 has been replaced with the did:peer:3.
 """
 
 import re
@@ -61,6 +62,7 @@ class PeerDID3Resolver(BaseDIDResolver):
 
 
 def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
+    """generate did:peer:3 and corresponding DIDDocument."""
     if not peer_did_2.startswith("did:peer:2"):
         raise MalformedPeerDIDError("did:peer:2 expected")
 
@@ -71,7 +73,7 @@ def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
     dp3 = DID("did:peer:3" + content)
 
     doc = _resolve_peer_did_with_service_key_reference(peer_did_2)
-    convert_to_did_peer_3_document(dp3, doc)
+    _convert_to_did_peer_3_document(dp3, doc)
     return dp3, doc
 
 
@@ -101,7 +103,7 @@ def _replace_all_values(input, org, new):
             pass
 
 
-def convert_to_did_peer_3_document(dp3, dp2_document: DIDDocument) -> None:
+def _convert_to_did_peer_3_document(dp3, dp2_document: DIDDocument) -> None:
     dp2 = dp2_document.id
     _replace_all_values(dp2_document.__dict__, dp2, dp3)
 

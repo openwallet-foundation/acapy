@@ -11,7 +11,6 @@ from pydid import (
     BaseDIDDocument as ResolvedDocument,
     DIDCommService,
     VerificationMethod,
-    DID,
 )
 import pydid
 from pydid.verification_method import (
