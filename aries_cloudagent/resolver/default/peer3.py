@@ -69,7 +69,7 @@ class PeerDID3Resolver(BaseDIDResolver):
     async def create_and_store_document(
         self, profile: Profile, peer_did_2_doc: DIDDocument
     ):
-        """Injest did:peer:2 document create did:peer:3 and store document"""
+        """Injest did:peer:2 document create did:peer:3 and store document."""
         if not peer_did_2_doc.id.startswith("did:peer:2"):
             raise MalformedPeerDIDError("did:peer:2 expected")
 
