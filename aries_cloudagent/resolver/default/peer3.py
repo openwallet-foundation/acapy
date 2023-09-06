@@ -16,10 +16,10 @@ from peerdid.dids import (
     DIDUrl,
 )
 from peerdid.keys import to_multibase, MultibaseFormat
-
 from ...connections.base_manager import BaseConnectionManager
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
+from ...storage.base import BaseStorage
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 from .peer2 import _resolve_peer_did_with_service_key_reference
 
@@ -48,12 +48,14 @@ class PeerDID3Resolver(BaseDIDResolver):
         """Resolve a Key DID."""
         if did.startswith("did:peer:3"):
             # retrieve did_doc from storage using did:peer:3
-            did_doc, rec = await BaseConnectionManager(profile).fetch_did_document(
-                did=did
-            )
-            assert isinstance(did_doc, DIDDocument)
+            async with profile.session() as session:
+                storage = session.inject(BaseStorage)
+                record = await storage.find_record(
+                    BaseConnectionManager.RECORD_TYPE_DID_DOCUMENT, {"did": did}
+                )
+                did_doc = DIDDocument.from_json(record.value)
         else:
-            raise DIDNotFound(f"did is not a peer did: {did}")
+            raise DIDNotFound(f"did is not a did:peer:3 {did}")
 
         return did_doc.dict()
 
