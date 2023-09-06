@@ -1,7 +1,7 @@
 """Classes to manage connections."""
 
 import logging
-from typing import Coroutine, Optional, Sequence, Tuple, cast
+from typing import Optional, Sequence, Tuple, cast
 
 
 from ....core.oob_processor import OobMessageProcessor
@@ -18,7 +18,6 @@ from ....wallet.base import BaseWallet
 from ....wallet.did_method import SOV
 from ....wallet.key_type import ED25519
 from ...coordinate_mediation.v1_0.manager import MediationManager
-from ...routing.v1_0.manager import RoutingManager
 from .message_types import ARIES_PROTOCOL as CONN_PROTO
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
@@ -776,72 +775,3 @@ class ConnectionManager(BaseConnectionManager):
             await responder.send(request, connection_id=connection.connection_id)
 
         return connection
-
-    async def establish_inbound(
-        self,
-        connection: ConnRecord,
-        inbound_connection_id: str,
-        outbound_handler: Coroutine,
-    ) -> str:
-        """Assign the inbound routing connection for a connection record.
-
-        Returns: the current routing state (request or done)
-
-        """
-
-        # The connection must have a verkey, but in the case of a received
-        # invitation we might not have created one yet
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            if connection.my_did:
-                my_info = await wallet.get_local_did(connection.my_did)
-            else:
-                # Create new DID for connection
-                my_info = await wallet.create_local_did(SOV, ED25519)
-                connection.my_did = my_info.did
-
-        try:
-            async with self.profile.session() as session:
-                router = await ConnRecord.retrieve_by_id(session, inbound_connection_id)
-        except StorageNotFoundError:
-            raise ConnectionManagerError(
-                f"Routing connection not found: {inbound_connection_id}"
-            )
-        if not router.is_ready:
-            raise ConnectionManagerError(
-                f"Routing connection is not ready: {inbound_connection_id}"
-            )
-        connection.inbound_connection_id = inbound_connection_id
-
-        route_mgr = RoutingManager(self.profile)
-
-        await route_mgr.send_create_route(
-            inbound_connection_id, my_info.verkey, outbound_handler
-        )
-        connection.routing_state = ConnRecord.ROUTING_STATE_REQUEST
-        async with self.profile.session() as session:
-            await connection.save(session)
-        return connection.routing_state
-
-    async def update_inbound(
-        self, inbound_connection_id: str, recip_verkey: str, routing_state: str
-    ):
-        """Activate connections once a route has been established.
-
-        Looks up pending connections associated with the inbound routing
-        connection and marks the routing as complete.
-        """
-        async with self.profile.session() as session:
-            conns = await ConnRecord.query(
-                session, {"inbound_connection_id": inbound_connection_id}
-            )
-            wallet = session.inject(BaseWallet)
-
-            for connection in conns:
-                # check the recipient key
-                if not connection.my_did:
-                    continue
-                conn_info = await wallet.get_local_did(connection.my_did)
-                if conn_info.verkey == recip_verkey:
-                    connection.routing_state = routing_state
-                    await connection.save(session)

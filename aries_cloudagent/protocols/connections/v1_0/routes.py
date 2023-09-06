@@ -790,38 +790,6 @@ async def connections_accept_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["connection"], summary="Assign another connection as the inbound connection"
-)
-@match_info_schema(ConnIdRefIdMatchInfoSchema())
-@response_schema(ConnectionModuleResponseSchema(), 200, description="")
-async def connections_establish_inbound(request: web.BaseRequest):
-    """Request handler for setting the inbound connection on a connection record.
-
-    Args:
-        request: aiohttp request object
-    """
-    context: AdminRequestContext = request["context"]
-    connection_id = request.match_info["conn_id"]
-    outbound_handler = request["outbound_message_router"]
-    inbound_connection_id = request.match_info["ref_id"]
-
-    profile = context.profile
-    try:
-        async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
-        connection_mgr = ConnectionManager(profile)
-        await connection_mgr.establish_inbound(
-            connection, inbound_connection_id, outbound_handler
-        )
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (StorageError, WalletError, ConnectionManagerError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({})
-
-
 @docs(tags=["connection"], summary="Remove an existing connection record")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(ConnectionModuleResponseSchema, 200, description="")
@@ -925,10 +893,6 @@ async def register(app: web.Application):
             web.post(
                 "/connections/{conn_id}/accept-request",
                 connections_accept_request,
-            ),
-            web.post(
-                "/connections/{conn_id}/establish-inbound/{ref_id}",
-                connections_establish_inbound,
             ),
             web.delete("/connections/{conn_id}", connections_remove),
         ]
