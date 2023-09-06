@@ -793,6 +793,24 @@ class IndyOrKeyDID(Regexp):
         )
 
 
+class IndyOrKeyBbsPublicKey(Regexp):
+    """Indy (with Ed25519) or Key (with BBS+) Public Key class."""
+
+    PATTERN = "|".join(
+        x.pattern for x in [IndyRawPublicKey.PATTERN, DidKeyBbsRawPublicKey.PATTERN]
+    )
+    EXAMPLE = IndyRawPublicKey.EXAMPLE
+
+    def __init__(
+        self,
+    ):
+        """Initialize the instance."""
+        super().__init__(
+            IndyOrKeyDID.PATTERN,
+            error="Value {input} is not Indy (Ed25519) or key (BBS) public key format",
+        )
+
+
 # Instances for marshmallow schema specification
 INT_EPOCH_VALIDATE = IntEpoch()
 INT_EPOCH_EXAMPLE = IntEpoch.EXAMPLE
@@ -907,3 +925,6 @@ CREDENTIAL_SUBJECT_EXAMPLE = CredentialSubject.EXAMPLE
 
 INDY_OR_KEY_DID_VALIDATE = IndyOrKeyDID()
 INDY_OR_KEY_DID_EXAMPLE = IndyOrKeyDID.EXAMPLE
+
+INDY_OR_KEY_PUBLIC_KEY_VALIDATE = IndyOrKeyBbsPublicKey()
+INDY_OR_KEY_PUBLIC_KEY_EXAMPLE = IndyOrKeyBbsPublicKey.EXAMPLE
