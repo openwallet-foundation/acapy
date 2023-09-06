@@ -85,6 +85,7 @@ def _resolve_peer_did_with_service_key_reference(
         raise ValueError("pydantic validation error:" + str(e))
     return doc
 
+
 def convert_to_did_peer_3(peer_did_2: Union[str, DID]) -> DIDDocument:
     """Generate did:peer:3 and corresponding DIDDocument."""
     if not peer_did_2.startswith("did:peer:2"):

@@ -71,7 +71,7 @@ class PeerDID3Resolver(BaseDIDResolver):
     ):
         if not peer_did_2_doc.id.startswith("did:peer:2"):
             raise MalformedPeerDIDError("did:peer:2 expected")
-        
+
         dp3_doc = deepcopy(peer_did_2_doc)
         _convert_to_did_peer_3_document(dp3_doc)
         try:
