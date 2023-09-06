@@ -11,7 +11,7 @@ from pydid import (
     BaseDIDDocument as ResolvedDocument,
     DIDCommService,
     VerificationMethod,
-    DID
+    DID,
 )
 import pydid
 from pydid.verification_method import (
@@ -61,8 +61,8 @@ class BaseConnectionManagerError(BaseError):
 class BaseConnectionManager:
     """Class to provide utilities regarding connection_targets."""
 
-    RECORD_TYPE_DID_DOC = "did_doc" #legacy
-    RECORD_TYPE_DID_DOCUMENT = "did_document" #pydid DIDDocument
+    RECORD_TYPE_DID_DOC = "did_doc" # legacy
+    RECORD_TYPE_DID_DOCUMENT = "did_document" # pydid DIDDocument
     RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, profile: Profile):
@@ -667,7 +667,9 @@ class BaseConnectionManager:
                 )
         return targets
 
-    async def fetch_did_document(self, did: str) -> Tuple[Union[DIDDoc, ResolvedDocument], StorageRecord]:
+    async def fetch_did_document(
+            self, did: str
+    ) -> Tuple[Union[DIDDoc, ResolvedDocument], StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
@@ -676,13 +678,17 @@ class BaseConnectionManager:
         if DID.is_valid(did):
             async with self._profile.session() as session:
                 storage = session.inject(BaseStorage)
-                record = await storage.find_record(self.RECORD_TYPE_DID_DOCUMENT, {"did": did})
+                record = await storage.find_record(
+                    self.RECORD_TYPE_DID_DOCUMENT, {"did": did}
+                )
             return ResolvedDocument.from_json(record.value), record
 
         else: #legacy documents for unqualified dids
             async with self._profile.session() as session:
                 storage = session.inject(BaseStorage)
-                record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
+                record = await storage.find_record(
+                    self.RECORD_TYPE_DID_DOC, {"did": did}
+                )
             return DIDDoc.from_json(record.value), record
 
     async def find_connection(

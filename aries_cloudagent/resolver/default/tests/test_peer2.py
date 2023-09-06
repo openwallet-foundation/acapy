@@ -43,7 +43,9 @@ class TestPeerDID2Resolver:
         """Test supports."""
         assert DID.is_valid(TEST_DID0)
         assert isinstance(resolve_peer_did(TEST_DID0), DIDDocument)
-        assert isinstance(_resolve_peer_did_with_service_key_reference(TEST_DID0),DIDDocument)
+        assert isinstance(
+            _resolve_peer_did_with_service_key_reference(TEST_DID0),DIDDocument
+        )
 
     @pytest.mark.asyncio
     async def test_supports(self, resolver: PeerDID2Resolver, profile: Profile):
@@ -82,55 +84,10 @@ class TestPeerDID2Resolver:
                     return_value=(TEST_DID0_DOC, None)
                 )
             )
-            recipient_key = await common_resolver.dereference(profile, TEST_DID0_DOC["service"][0]["recipient_keys"][0], document=DIDDocument.deserialize(TEST_DID0_DOC))
+            recipient_key = await common_resolver.dereference(
+                profile,
+                TEST_DID0_DOC["service"][0]["recipient_keys"][0],
+                document=DIDDocument.deserialize(TEST_DID0_DOC)
+            )
             assert recipient_key
             
-
-            
-class TestPeerDID3Resolver:
-    @pytest.mark.asyncio
-    async def test_resolution_types(self, resolver: PeerDID2Resolver, profile: Profile):
-        """Test supports."""
-        assert DID.is_valid(TEST_DID0)
-        assert isinstance(resolve_peer_did(TEST_DID0), DIDDocument)
-        assert isinstance(_resolve_peer_did_with_service_key_reference(TEST_DID0),DIDDocument)
-
-    @pytest.mark.asyncio
-    async def test_supports(self, resolver: PeerDID2Resolver, profile: Profile):
-        """Test supports."""
-        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
-                    return_value=(TEST_DID0_DOC, None)
-                )
-            )
-            assert await resolver.supports(profile, TEST_DID0)
-
-    @pytest.mark.asyncio
-    async def test_supports_no_cache(
-        self, resolver: PeerDID2Resolver, profile: Profile
-    ):
-        """Test supports."""
-        profile.context.injector.clear_binding(BaseCache)
-        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
-                    return_value=(TEST_DID0_DOC, None)
-                )
-            )
-            assert await resolver.supports(profile, TEST_DID0)
-
-    @pytest.mark.asyncio
-    async def test_supports_service_referenced(
-        self, resolver: PeerDID2Resolver, common_resolver: DIDResolver, profile: Profile
-    ):
-        """Test supports."""
-        profile.context.injector.clear_binding(BaseCache)
-        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
-                    return_value=(TEST_DID0_DOC, None)
-                )
-            )
-            recipient_key = await common_resolver.dereference(profile, TEST_DID0_DOC["service"][0]["recipient_keys"][0], document=DIDDocument.deserialize(TEST_DID0_DOC))
-            assert recipient_key

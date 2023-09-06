@@ -19,7 +19,12 @@ from ..peer3 import PeerDID3Resolver, gen_did_peer_3
 TEST_DP2 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"
 TEST_DID0_RAW_DOC = resolve_peer_did(TEST_DP2).dict()
 
-TEST_DP3 = DID("did:peer:3"+to_multibase(sha256(TEST_DP2.lstrip("did:peer:2").encode()).digest(),MultibaseFormat.BASE58))
+TEST_DP3 = DID(
+    "did:peer:3"
+    + to_multibase(
+        sha256(TEST_DP2.lstrip("did:peer:2").encode()).digest(),MultibaseFormat.BASE58
+    )
+)
 TEST_DP3_DOC = gen_did_peer_3(TEST_DP2)[1]
 
 @pytest.fixture
@@ -49,7 +54,6 @@ class TestPeerDID3Resolver:
         assert DID.is_valid(TEST_DP3)
         assert isinstance(gen_did_peer_3(TEST_DP2)[1], DIDDocument)
         assert gen_did_peer_3(TEST_DP2)[0] == TEST_DP3
-
 
     @pytest.mark.asyncio
     async def test_supports(self, resolver: PeerDID3Resolver, profile: Profile):
@@ -88,6 +92,10 @@ class TestPeerDID3Resolver:
                     return_value=(TEST_DP3_DOC, None)
                 )
             )
-            recipient_key = await common_resolver.dereference(profile, TEST_DP3_DOC.dict()["service"][0]["recipient_keys"][0], document=TEST_DP3_DOC)
+            recipient_key = await common_resolver.dereference(
+                profile,
+                TEST_DP3_DOC.dict()["service"][0]["recipient_keys"][0],
+                document=TEST_DP3_DOC
+            )
             assert recipient_key
            

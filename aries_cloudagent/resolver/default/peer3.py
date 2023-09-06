@@ -4,9 +4,14 @@ Resolution is performed using the peer-did-python library https://github.com/sic
 
 import re
 from hashlib import sha256
-from typing import Optional, Pattern, Sequence, Text, Union, Tuple, Dict, List
+from typing import Optional, Pattern, Sequence, Text, Union, Tuple, List
 
-from peerdid.dids import resolve_peer_did, DID, MalformedPeerDIDError, DIDDocument, DIDUrl
+from peerdid.dids import (
+    DID,
+    MalformedPeerDIDError,
+    DIDDocument,
+    DIDUrl,
+)
 from peerdid.keys import to_multibase, MultibaseFormat
 
 from ...connections.base_manager import BaseConnectionManager
@@ -39,7 +44,9 @@ class PeerDID3Resolver(BaseDIDResolver):
         """Resolve a Key DID."""
         if did.startswith('did:peer:3'):
             # retrieve did_doc from storage using did:peer:3 
-            did_doc, rec = await BaseConnectionManager(profile).fetch_did_document(did=did)
+            did_doc, rec = await BaseConnectionManager(profile).fetch_did_document(
+                did=did
+            )
             assert isinstance(did_doc, DIDDocument)
         else:
             raise DIDNotFound(f"did is not a peer did: {did}")
@@ -51,15 +58,18 @@ def gen_did_peer_3(peer_did_2 : Union[str,DID]) -> Tuple[DID,DIDDocument]:
     if not peer_did_2.startswith("did:peer:2"):
         raise MalformedPeerDIDError("did:peer:2 expected")
 
-    content = to_multibase(sha256(peer_did_2.lstrip("did:peer:2").encode()).digest(),MultibaseFormat.BASE58)
-    dp3 = DID("did:peer:3"+content)
+    content = to_multibase(
+        sha256(peer_did_2.lstrip("did:peer:2").encode()).digest(),
+        MultibaseFormat.BASE58
+    )
+    dp3 = DID("did:peer:3" + content)
 
     doc = _resolve_peer_did_with_service_key_reference(peer_did_2)
-    convert_to_did_peer_3_document(dp3,doc)
+    convert_to_did_peer_3_document(dp3, doc)
     return dp3, doc
 
 def _replace_all_values(input,org,new):
-    for k,v in input.items():
+    for k, v in input.items():
         typ = type(v)
         if isinstance(v,type(dict)):
             _replace_all_values(v,org,new)    
@@ -67,11 +77,15 @@ def _replace_all_values(input,org,new):
             for i,item in enumerate(v):
                 if isinstance(item,type(dict)):
                     _replace_all_values(item,org,new)            
-                elif isinstance(item,str) or isinstance(item,DID) or isinstance(item,DIDUrl):
+                elif (
+                    isinstance(item,str) 
+                    or isinstance(item,DID) 
+                    or isinstance(item,DIDUrl)
+                ):
                     v.pop(i)
-                    v.append(item.replace(org,new,1))
+                    v.append(item.replace(org, new, 1))
                 elif hasattr(item,"__dict__"):
-                    _replace_all_values(item.__dict__,org,new) 
+                    _replace_all_values(item.__dict__, org, new) 
                 else:
                     pass
 
@@ -82,11 +96,12 @@ def _replace_all_values(input,org,new):
 
 def convert_to_did_peer_3_document(dp3, dp2_document:DIDDocument) -> None:
     dp2 = dp2_document.id
-    _replace_all_values(dp2_document.__dict__, dp2,dp3)
+    _replace_all_values(dp2_document.__dict__, dp2, dp3)
 
-    #update document indexes
+    # update document indexes
     new_indexes = {}
     for ind,val in dp2_document._index.items():
-        new_indexes[ind.replace(dp2,dp3)] = val
+        new_indexes[ind.replace(dp2, dp3)] = val
 
     dp2_document._index = new_indexes
+    
