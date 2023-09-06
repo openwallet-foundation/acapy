@@ -72,7 +72,6 @@ def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
 
 def _replace_all_values(input, org, new):
     for k, v in input.items():
-        typ = type(v)
         if isinstance(v,type(dict)):
             _replace_all_values(v, org, new)    
         if isinstance(v,List):

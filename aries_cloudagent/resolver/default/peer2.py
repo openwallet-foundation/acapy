@@ -54,6 +54,7 @@ class PeerDID2Resolver(BaseDIDResolver):
     def resolve_peer_did_with_service_key_reference(
         self, peer_did_2: Union[str, DID]
     ) -> DIDDocument:
+        """Generate a DIDDocument from the did:peer:2 based on peer-did-python library and ensure recipient key references verificationmethod in same document."""
         return _resolve_peer_did_with_service_key_reference(peer_did_2)
 
 
