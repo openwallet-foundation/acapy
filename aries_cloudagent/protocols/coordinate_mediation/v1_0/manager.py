@@ -247,7 +247,7 @@ class MediationManager:
     ):
         """Handle deletion of as directed by a keylist update."""
         route_mgr = RoutingManager(self._profile)
-        if recipient_key in existing_keys:
+        if recipient_key not in existing_keys:
             return KeylistUpdated.RESULT_NO_CHANGE
         try:
             await route_mgr.delete_route_record(existing_keys[recipient_key])
@@ -276,10 +276,11 @@ class MediationManager:
 
         route_mgr = RoutingManager(self._profile)
         routes = await route_mgr.get_routes(record.connection_id)
-        existing_keys = {r.recipient_key: r for r in routes}
+        existing_keys = {normalize_from_did_key(r.recipient_key): r for r in routes}
 
         updated = []
         for update in updates:
+            normalized_key = normalize_from_did_key(update.recipient_key)
             result = KeylistUpdated(
                 recipient_key=update.recipient_key,
                 action=update.action,
@@ -290,11 +291,11 @@ class MediationManager:
                 result.result = KeylistUpdated.RESULT_CLIENT_ERROR
             elif update.action == KeylistUpdateRule.RULE_ADD:
                 result.result = await self._handle_keylist_update_add(
-                    existing_keys, record.connection_id, update.recipient_key
+                    existing_keys, record.connection_id, normalized_key
                 )
             elif update.action == KeylistUpdateRule.RULE_REMOVE:
                 result.result = await self._handle_keylist_update_remove(
-                    existing_keys, update.recipient_key
+                    existing_keys, normalized_key
                 )
             else:
                 result.result = KeylistUpdated.RESULT_CLIENT_ERROR
