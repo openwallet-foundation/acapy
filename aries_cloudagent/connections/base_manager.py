@@ -61,8 +61,8 @@ class BaseConnectionManagerError(BaseError):
 class BaseConnectionManager:
     """Class to provide utilities regarding connection_targets."""
 
-    RECORD_TYPE_DID_DOC = "did_doc" # legacy
-    RECORD_TYPE_DID_DOCUMENT = "did_document" # pydid DIDDocument
+    RECORD_TYPE_DID_DOC = "did_doc"  # legacy
+    RECORD_TYPE_DID_DOCUMENT = "did_document"  # pydid DIDDocument
     RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, profile: Profile):
@@ -668,7 +668,7 @@ class BaseConnectionManager:
         return targets
 
     async def fetch_did_document(
-            self, did: str
+        self, did: str
     ) -> Tuple[Union[DIDDoc, ResolvedDocument], StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
@@ -683,7 +683,7 @@ class BaseConnectionManager:
                 )
             return ResolvedDocument.from_json(record.value), record
 
-        else: #legacy documents for unqualified dids
+        else:  # legacy documents for unqualified dids
             async with self._profile.session() as session:
                 storage = session.inject(BaseStorage)
                 record = await storage.find_record(

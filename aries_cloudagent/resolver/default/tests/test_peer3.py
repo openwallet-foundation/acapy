@@ -22,7 +22,7 @@ TEST_DID0_RAW_DOC = resolve_peer_did(TEST_DP2).dict()
 TEST_DP3 = DID(
     "did:peer:3"
     + to_multibase(
-        sha256(TEST_DP2.lstrip("did:peer:2").encode()).digest(),MultibaseFormat.BASE58
+        sha256(TEST_DP2.lstrip("did:peer:2").encode()).digest(), MultibaseFormat.BASE58
     )
 )
 TEST_DP3_DOC = gen_did_peer_3(TEST_DP2)[1]
@@ -95,7 +95,6 @@ class TestPeerDID3Resolver:
             recipient_key = await common_resolver.dereference(
                 profile,
                 TEST_DP3_DOC.dict()["service"][0]["recipient_keys"][0],
-                document=TEST_DP3_DOC
+                document=TEST_DP3_DOC,
             )
             assert recipient_key
-           

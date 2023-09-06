@@ -42,8 +42,8 @@ class PeerDID3Resolver(BaseDIDResolver):
         service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve a Key DID."""
-        if did.startswith('did:peer:3'):
-            # retrieve did_doc from storage using did:peer:3 
+        if did.startswith("did:peer:3"):
+            # retrieve did_doc from storage using did:peer:3
             did_doc, rec = await BaseConnectionManager(profile).fetch_did_document(
                 did=did
             )
@@ -54,13 +54,13 @@ class PeerDID3Resolver(BaseDIDResolver):
         return did_doc.dict()
 
 
-def gen_did_peer_3(peer_did_2 : Union[str,DID]) -> Tuple[DID,DIDDocument]:
+def gen_did_peer_3(peer_did_2: Union[str, DID]) -> Tuple[DID, DIDDocument]:
     if not peer_did_2.startswith("did:peer:2"):
         raise MalformedPeerDIDError("did:peer:2 expected")
 
     content = to_multibase(
         sha256(peer_did_2.lstrip("did:peer:2").encode()).digest(),
-        MultibaseFormat.BASE58
+        MultibaseFormat.BASE58,
     )
     dp3 = DID("did:peer:3" + content)
 
@@ -68,19 +68,19 @@ def gen_did_peer_3(peer_did_2 : Union[str,DID]) -> Tuple[DID,DIDDocument]:
     convert_to_did_peer_3_document(dp3, doc)
     return dp3, doc
 
-def _replace_all_values(input,org,new):
+def _replace_all_values(input, org, new):
     for k, v in input.items():
         typ = type(v)
         if isinstance(v,type(dict)):
-            _replace_all_values(v,org,new)    
+            _replace_all_values(v, org, new)    
         if isinstance(v,List):
             for i,item in enumerate(v):
-                if isinstance(item,type(dict)):
-                    _replace_all_values(item,org,new)            
+                if isinstance(item, type(dict)):
+                    _replace_all_values(item, org, new)            
                 elif (
-                    isinstance(item,str) 
-                    or isinstance(item,DID) 
-                    or isinstance(item,DIDUrl)
+                    isinstance(item, str) 
+                    or isinstance(item, DID) 
+                    or isinstance(item, DIDUrl)
                 ):
                     v.pop(i)
                     v.append(item.replace(org, new, 1))
@@ -89,8 +89,8 @@ def _replace_all_values(input,org,new):
                 else:
                     pass
 
-        elif isinstance(v,str) or isinstance(v,DID) or isinstance(v,DIDUrl):
-            input[k] = v.replace(org,new,1)
+        elif isinstance(v, str) or isinstance(v, DID) or isinstance(v, DIDUrl):
+            input[k] = v.replace(org, new, 1)
         else:
             pass
 
@@ -100,7 +100,7 @@ def convert_to_did_peer_3_document(dp3, dp2_document:DIDDocument) -> None:
 
     # update document indexes
     new_indexes = {}
-    for ind,val in dp2_document._index.items():
+    for ind, val in dp2_document._index.items():
         new_indexes[ind.replace(dp2, dp3)] = val
 
     dp2_document._index = new_indexes

@@ -17,6 +17,7 @@ TEST_DID0 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6Mks
 TEST_DID0_DOC = _resolve_peer_did_with_service_key_reference(TEST_DID0).dict()
 TEST_DID0_RAW_DOC = resolve_peer_did(TEST_DID0).dict()
 
+
 @pytest.fixture
 def common_resolver():
     """Resolver fixture."""
@@ -44,7 +45,7 @@ class TestPeerDID2Resolver:
         assert DID.is_valid(TEST_DID0)
         assert isinstance(resolve_peer_did(TEST_DID0), DIDDocument)
         assert isinstance(
-            _resolve_peer_did_with_service_key_reference(TEST_DID0),DIDDocument
+            _resolve_peer_did_with_service_key_reference(TEST_DID0), DIDDocument
         )
 
     @pytest.mark.asyncio
@@ -87,7 +88,6 @@ class TestPeerDID2Resolver:
             recipient_key = await common_resolver.dereference(
                 profile,
                 TEST_DID0_DOC["service"][0]["recipient_keys"][0],
-                document=DIDDocument.deserialize(TEST_DID0_DOC)
+                document=DIDDocument.deserialize(TEST_DID0_DOC),
             )
             assert recipient_key
-            

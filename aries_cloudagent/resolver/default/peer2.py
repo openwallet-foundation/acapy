@@ -6,10 +6,10 @@ from typing import Optional, Pattern, Sequence, Text, Union
 
 from peerdid.dids import (
     is_peer_did,
-    PEER_DID_PATTERN, 
-    resolve_peer_did, 
-    DID, 
-    DIDDocument
+    PEER_DID_PATTERN,
+    resolve_peer_did,
+    DID,
+    DIDDocument,
 )
 
 from ...config.injection_context import InjectionContext
@@ -50,12 +50,14 @@ class PeerDID2Resolver(BaseDIDResolver):
 
         return did_doc.dict()
 
-    def resolve_peer_did_with_service_key_reference(self, peer_did_2: Union[str,DID]) -> DIDDocument:
+    def resolve_peer_did_with_service_key_reference(
+        self, peer_did_2: Union[str, DID]
+    ) -> DIDDocument:
         return _resolve_peer_did_with_service_key_reference(peer_did_2)
 
 
 def _resolve_peer_did_with_service_key_reference(
-    peer_did_2: Union[str,DID]
+    peer_did_2: Union[str, DID]
 ) -> DIDDocument:
     try:
         doc = resolve_peer_did(peer_did_2)
@@ -63,11 +65,11 @@ def _resolve_peer_did_with_service_key_reference(
         services = doc.service
         signing_keys = [
             vm 
-            for vm in doc.verification_method or [] 
+            for vm in doc.verification_method or []
             if vm.type == "Ed25519VerificationKey2020"
         ]
         if services and signing_keys:
-            services[0].__dict__["recipient_keys"]=[signing_keys[0].id]
+            services[0].__dict__["recipient_keys"] = [signing_keys[0].id]
         else:
             raise Exception("no recipient_key signing_key pair")
     except Exception as e:
