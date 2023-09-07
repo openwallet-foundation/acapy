@@ -1,7 +1,7 @@
 """Operations supporting SD-JWT creation and verification."""
 
 import re
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Union
 from marshmallow import fields
 from jsonpath_ng.ext import parse
 from sd_jwt.common import SDObj
@@ -237,12 +237,16 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
         self,
         profile: Profile,
         sd_jwt_presentation: str,
+        expected_aud: Union[str, None] = None,
+        expected_nonce: Union[str, None] = None,
         serialization_format: str = "compact",
     ):
         """Initialize an SDJWTVerifierACAPy instance."""
         self.profile = profile
         self.sd_jwt_presentation = sd_jwt_presentation
         self._serialization_format = serialization_format
+        self.expected_aud = expected_aud
+        self.expected_nonce = expected_nonce
 
     async def _verify_sd_jwt(self) -> SDJWTVerifyResult:
         verified = await jwt_verify(
@@ -266,9 +270,13 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
 
 
 async def sd_jwt_verify(
-    profile: Profile, sd_jwt_presentation: str
+    profile: Profile,
+    sd_jwt_presentation: str,
+    expected_aud: str = None,
+    expected_nonce: str = None,
 ) -> SDJWTVerifyResult:
     """Verify sd-jwt using SDJWTVerifierACAPy.verify()."""
-    sd_jwt_verifier = SDJWTVerifierACAPy(profile, sd_jwt_presentation)
-    verified = await sd_jwt_verifier.verify()
-    return verified
+    sd_jwt_verifier = SDJWTVerifierACAPy(
+        profile, sd_jwt_presentation, expected_aud, expected_nonce
+    )
+    return await sd_jwt_verifier.verify()
