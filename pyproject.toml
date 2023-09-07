@@ -62,6 +62,7 @@ ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
 # indy
 python3-indy= { version = "^1.11.1", optional = true }
+peerdid = "^0.5.2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit="~3.3.3"
