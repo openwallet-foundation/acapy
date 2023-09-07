@@ -99,9 +99,9 @@ class PeerDID3Resolver(BaseDIDResolver):
 
 
 async def set_keys_from_did_doc(profile, did_doc):
-    """add verification method keys for lookup by conductor"""
+    """add verificationMethod keys for lookup by conductor"""
     conn_mgr = BaseConnectionManager(profile)
- 
+
     for vm in did_doc.verification_method or []:
         if vm.controller == did_doc.id:
             if vm.public_key_base58:
