@@ -91,25 +91,17 @@ class PeerDID3Resolver(BaseDIDResolver):
             async with profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)
                 await storage.add_record(record)
+            await set_keys_from_did_doc(profile, dp3_doc)
         else:
-            async with profile.session() as session:
-                storage: BaseStorage = session.inject(BaseStorage)
-                await storage.update_record(
-                    record, dp3_doc.to_json(), {"did": dp3_doc.id}
-                )
-        await _reset_keys_from_did_doc(profile, dp3_doc)
-
+            # If doc already exists for did:peer:3 then it cannot have been modified
+            pass
         return dp3_doc
 
 
-async def _reset_keys_from_did_doc(profile, did_doc):
+async def set_keys_from_did_doc(profile, did_doc):
+    """add verification method keys for lookup by conductor"""
     conn_mgr = BaseConnectionManager(profile)
-    async with profile.session() as session:
-        storage: BaseStorage = session.inject(BaseStorage)
-        await storage.delete_all_records(
-            BaseConnectionManager.RECORD_TYPE_DID_KEY, {"did": did_doc.id}
-        )
-
+ 
     for vm in did_doc.verification_method or []:
         if vm.controller == did_doc.id:
             if vm.public_key_base58:
