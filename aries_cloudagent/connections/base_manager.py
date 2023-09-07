@@ -61,7 +61,6 @@ class BaseConnectionManager:
     """Class to provide utilities regarding connection_targets."""
 
     RECORD_TYPE_DID_DOC = "did_doc"  # legacy
-    RECORD_TYPE_DID_DOCUMENT = "did_document"  # pydid DIDDocument
     RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, profile: Profile):
