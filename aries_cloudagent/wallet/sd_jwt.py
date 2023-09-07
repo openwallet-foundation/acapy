@@ -266,7 +266,48 @@ class SDJWTVerifierACAPy(SDJWTVerifier):
         self._parse_sd_jwt(self.sd_jwt_presentation)
         self._create_hash_mappings(self._input_disclosures)
         self._disclosures_list = list(self._hash_to_decoded_disclosure.values())
-        return await self._verify_sd_jwt()
+
+        self.verified_sd_jwt = await self._verify_sd_jwt()
+
+        if self.expected_aud or self.expected_nonce:
+            if not (self.expected_aud and self.expected_nonce):
+                raise ValueError(
+                    "Either both expected_aud and expected_nonce must be provided "
+                    "or both must be None"
+                )
+            await self._verify_key_binding_jwt(
+                self.expected_aud,
+                self.expected_nonce,
+            )
+        return self.verified_sd_jwt
+
+    async def _verify_key_binding_jwt(
+        self,
+        expected_aud: Union[str, None] = None,
+        expected_nonce: Union[str, None] = None,
+    ):
+        verified_kb_jwt = await jwt_verify(
+            self.profile, self._unverified_input_key_binding_jwt
+        )
+        self._holder_public_key_payload = self.verified_sd_jwt.payload.get("cnf", None)
+
+        if not self._holder_public_key_payload:
+            raise ValueError("No holder public key in SD-JWT")
+
+        holder_public_key_payload_jwk = self._holder_public_key_payload.get("jwk", None)
+        if not holder_public_key_payload_jwk:
+            raise ValueError(
+                "The holder_public_key_payload is malformed. "
+                "It doesn't contain the claim jwk: "
+                f"{self._holder_public_key_payload}"
+            )
+
+        if verified_kb_jwt.headers["typ"] != self.KB_JWT_TYP_HEADER:
+            raise ValueError("Invalid header typ")
+        if verified_kb_jwt.payload["aud"] != expected_aud:
+            raise ValueError("Invalid audience")
+        if verified_kb_jwt.payload["nonce"] != expected_nonce:
+            raise ValueError("Invalid nonce")
 
 
 async def sd_jwt_verify(
