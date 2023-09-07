@@ -94,9 +94,9 @@ class JsonUtil:
     def read_json_file(file_name: str):
         """Reads a JSON file and returns its content as a Python object.
 
-        This function uses the `orjson` library if available, otherwise it falls back to
-        the standard `json` library. The file is opened in binary mode if `orjson` is used,
-        and in text mode otherwise.
+        This function uses the `orjson` library if available, otherwise it falls back
+        to the standard `json` library. The file is opened in binary mode if `orjson`
+        is used, and in text mode otherwise.
 
         Args:
             file_name: The name of the file to be read.
