@@ -135,14 +135,14 @@ class DIDResolver:
         """Dereference a DID URL to its corresponding DID Doc object."""
         try:
             parsed = DIDUrl.parse(did_url)
-            if not parsed.did:
+            if not parsed.did and not document:
                 raise ValueError("Invalid DID URL")
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)
             ) from err
 
-        if document and parsed.did != document.id:
+        if document and parsed.did and parsed.did != document.id:
             document = None
 
         if not document:

@@ -18,7 +18,6 @@ from pydid.verification_method import (
     Ed25519VerificationKey2020,
     JsonWebKey2020,
 )
-
 from ..cache.base import BaseCache
 from ..config.base import InjectionError
 from ..config.logging import get_logger_inst
@@ -61,7 +60,7 @@ class BaseConnectionManagerError(BaseError):
 class BaseConnectionManager:
     """Class to provide utilities regarding connection_targets."""
 
-    RECORD_TYPE_DID_DOC = "did_doc"
+    RECORD_TYPE_DID_DOC = "did_doc"  # legacy
     RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, profile: Profile):
@@ -123,6 +122,7 @@ class BaseConnectionManager:
                     f"Router connection not completed: {router_id}"
                 )
             routing_doc, _ = await self.fetch_did_document(router.their_did)
+            assert isinstance(routing_doc, DIDDoc)
             if not routing_doc.service:
                 raise BaseConnectionManagerError(
                     f"No services defined by routing DIDDoc: {router_id}"
@@ -671,6 +671,7 @@ class BaseConnectionManager:
         Args:
             did: The DID to search for
         """
+        # legacy documents for unqualified dids
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
