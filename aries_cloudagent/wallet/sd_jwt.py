@@ -75,17 +75,18 @@ def create_json_paths(it, current_path="", path_list=None) -> List:
 
     if isinstance(it, dict):
         for k, v in it.items():
-            new_key = f"{current_path}.{k}" if current_path else k
-            path_list.append(new_key)
+            if not k.startswith(tuple(CLAIMS_NEVER_SD)):
+                new_key = f"{current_path}.{k}" if current_path else k
+                path_list.append(new_key)
 
-            if isinstance(v, dict):
-                create_json_paths(v, new_key, path_list)
-            elif isinstance(v, list):
-                for i, e in enumerate(v):
-                    if isinstance(e, (dict, list)):
-                        create_json_paths(e, f"{new_key}[{i}]", path_list)
-                    else:
-                        path_list.append(f"{new_key}[{i}]")
+                if isinstance(v, dict):
+                    create_json_paths(v, new_key, path_list)
+                elif isinstance(v, list):
+                    for i, e in enumerate(v):
+                        if isinstance(e, (dict, list)):
+                            create_json_paths(e, f"{new_key}[{i}]", path_list)
+                        else:
+                            path_list.append(f"{new_key}[{i}]")
     elif isinstance(it, list):
         for i, e in enumerate(it):
             if isinstance(e, (dict, list)):
@@ -160,14 +161,13 @@ async def sd_jwt_sign(
             raise SDJWTError(f"Claim for {sd} not found in payload.")
         else:
             for match in matches:
-                if str(match.path) not in CLAIMS_NEVER_SD:
-                    if isinstance(match.context.value, list):
-                        match.context.value.remove(match.value)
-                        match.context.value.append(SDObj(match.value))
-                    else:
-                        match.context.value[
-                            SDObj(str(match.path))
-                        ] = match.context.value.pop(str(match.path))
+                if isinstance(match.context.value, list):
+                    match.context.value.remove(match.value)
+                    match.context.value.append(SDObj(match.value))
+                else:
+                    match.context.value[
+                        SDObj(str(match.path))
+                    ] = match.context.value.pop(str(match.path))
 
     return await SDJWTIssuerACAPy(
         user_claims=payload,
