@@ -100,7 +100,7 @@ Once you have the list of PRs:
    errors should be fixed in the code.
 
 5. Update the version number listed in
-   [aries_cloudagent/version.py](aries_cloudagent/version.py) and, prefixed with
+   [pyproject.toml](pyproject.toml) and, prefixed with
    a "v" in [open-api/openapi.json](open-api/openapi.json) and
    [open-api/swagger.json](open-api/swagger.json) (e.g. "0.7.2" in the
    version.py file and "v0.7.2" in the openapi.json file). The incremented
@@ -126,7 +126,7 @@ Once you have the list of PRs:
 
 9. Immediately after it is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
-   version in [aries_cloudagent/version.py](aries_cloudagent/version.py). Use
+   version in [pyproject.toml](pyproject.toml). Use
    the "Generate Release Notes" capability to get a sequential listing of the
    PRs in the release, to complement the manually curated Changelog. Verify on
    PyPi that the version is published.
