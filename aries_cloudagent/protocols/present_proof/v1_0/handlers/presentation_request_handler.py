@@ -1,6 +1,5 @@
 """Presentation request message handler."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolder, IndyHolderError
 from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
@@ -33,11 +32,6 @@ class PresentationRequestHandler(BaseHandler):
         """
         r_time = get_timer()
         profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
 
         self._logger.debug("PresentationRequestHandler called with context %s", context)
         assert isinstance(context.message, PresentationRequest)

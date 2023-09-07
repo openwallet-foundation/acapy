@@ -1,6 +1,5 @@
 """Handler for keylist-update-response message."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....core.profile import Profile
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
@@ -17,12 +16,6 @@ class KeylistUpdateResponseHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle keylist-update-response message."""
-        profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
         self._logger.debug(
             "%s called with context %s", self.__class__.__name__, context
         )
@@ -43,11 +36,6 @@ class KeylistUpdateResponseHandler(BaseHandler):
         self, profile: Profile, connection_id: str, response: KeylistUpdateResponse
     ):
         """Notify of keylist update response received."""
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
         route_manager = profile.inject(RouteManager)
         self._logger.debug(
             "Retrieving connection ID from route manager of type %s",

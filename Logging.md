@@ -12,6 +12,8 @@ Other log levels fall back to `WARNING`.
 
 * `--log-level` - The log level to log on std out.
 * `--log-file` - Path to a file to log to.
+
+## WIP - add config file details
 * `--log-handler-config` - Specifies `when`, `interval`, `backupCount` for the   `TimedRotatingFileMultiProcessHandler`. These 3 attributes are passed as a `;` seperated string. For example, `when` of d (days), `interval` of 7 and `backupCount` of 1 will be passed as `D;7;1`. Note: `backupCount` of 0 will mean all backup log files will be retained and not deleted at all. More details about these attributes can be found [here](https://docs.python.org/3/library/logging.handlers.html#timedrotatingfilehandler). `TimedRotatingFileMultiProcessHandler` supports the ability to cleanup logs by time and mantain backup logs and a custom JSON formatter for logs.
 * `--log-fmt-pattern` - Specifies logging.Formatter pattern to override default patterns.
 * `--log-json-fmt` - Specifies whether to use JSON logging formatter or text logging formatter. Defaults to `False`.

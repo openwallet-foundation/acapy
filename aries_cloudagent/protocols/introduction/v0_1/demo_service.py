@@ -3,7 +3,6 @@
 import json
 import logging
 
-from ....config.logging import get_adapted_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import ProfileSession
 from ....storage.base import (
@@ -111,12 +110,7 @@ class DemoIntroductionService(BaseIntroductionService):
             outbound_handler: The outbound handler coroutine for sending a message
         """
         thread_id = invitation._thread_id
-        profile = session.profile
-        _logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
+
         tag_filter = {"target_connection_id": target_connection_id}
         storage = session.inject(BaseStorage)
         records = await storage.find_all_records(
@@ -140,8 +134,8 @@ class DemoIntroductionService(BaseIntroductionService):
                 init_connection_id = row.tags["init_connection_id"]
                 await outbound_handler(msg, connection_id=init_connection_id)
                 found = True
-                _logger.info("Forwarded fwd-invitation to %s", init_connection_id)
+                LOGGER.info("Forwarded fwd-invitation to %s", init_connection_id)
                 break
 
         if not found:
-            _logger.error("Could not forward invitation, no pending introduction found")
+            LOGGER.error("Could not forward invitation, no pending introduction found")

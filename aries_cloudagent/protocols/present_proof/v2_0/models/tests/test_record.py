@@ -120,21 +120,17 @@ class TestRecord(AsyncTestCase):
     async def test_save_error_state(self):
         session = InMemoryProfile.test_session()
         record = V20PresExRecord(state=None)
-        profile = session.profile
-        profile.settings["log.file"] = "test_file.log"
-        profile.settings["wallet.id"] = "test123"
         assert record._last_state is None
         await record.save_error_state(session)  # cover short circuit
+
         record.state = V20PresExRecord.STATE_PROPOSAL_RECEIVED
         await record.save(session)
-        mock_logger = async_mock.MagicMock(exception=async_mock.MagicMock())
+
         with async_mock.patch.object(
             record, "save", async_mock.CoroutineMock()
         ) as mock_save, async_mock.patch.object(
-            test_module,
-            "get_adapted_logger_inst",
-            async_mock.MagicMock(return_value=mock_logger),
-        ):
+            test_module.LOGGER, "exception", async_mock.MagicMock()
+        ) as mock_log_exc:
             mock_save.side_effect = test_module.StorageError()
             await record.save_error_state(session, reason="testing")
-            assert mock_logger.exception.call_count == 1
+            mock_log_exc.assert_called_once()

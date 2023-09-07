@@ -4,7 +4,6 @@
 import logging
 from typing import List, Optional, Tuple
 
-from ..config.logging import get_adapted_logger_inst
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.responder import BaseResponder
@@ -49,13 +48,8 @@ class MultitenantRouteManager(RouteManager):
         skip_if_exists: bool = False,
         replace_key: Optional[str] = None,
     ):
-        _logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
         wallet_id = profile.settings["wallet.id"]
-        _logger.info(
+        LOGGER.info(
             f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
         )
         routing_mgr = RoutingManager(self.root_profile)
@@ -140,12 +134,7 @@ class BaseWalletRouteManager(CoordinateMediationV1RouteManager):
         for sub wallets, we check the sub wallet's connections before the base
         wallet.
         """
-        _logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
-        _logger.debug("Retrieving connection for recipient key for multitenant wallet")
+        LOGGER.debug("Retrieving connection for recipient key for multitenant wallet")
         manager = profile.inject(BaseMultitenantManager)
         profile_to_search = (
             await manager.get_profile_for_key(

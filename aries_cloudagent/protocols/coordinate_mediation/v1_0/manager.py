@@ -5,7 +5,6 @@ from typing import Dict, Optional, Sequence, Tuple
 
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
-from ....config.logging import get_adapted_logger_inst
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
@@ -68,11 +67,6 @@ class MediationManager:
         self._profile = profile
         if not profile:
             raise MediationManagerError("Missing profile")
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self._profile.settings.get("log.file"),
-            wallet_id=self._profile.settings.get("wallet.id"),
-        )
 
     # Role: Server {{{
 
@@ -586,7 +580,7 @@ class MediationManager:
             for updated in results:
                 if updated.result != KeylistUpdated.RESULT_SUCCESS:
                     # TODO better handle different results?
-                    self._logger.warning(
+                    LOGGER.warning(
                         "Keylist update failure: %s(%s): %s",
                         updated.action,
                         updated.recipient_key,
@@ -620,13 +614,13 @@ class MediationManager:
                             },
                         )
                     except StorageNotFoundError as err:
-                        self._logger.error(
+                        LOGGER.error(
                             "No route found while processing keylist update response: %s",
                             err,
                         )
                     else:
                         if len(records) > 1:
-                            self._logger.error(
+                            LOGGER.error(
                                 f"Too many ({len(records)}) routes found "
                                 "while processing keylist update response"
                             )

@@ -5,7 +5,6 @@ import logging
 from typing import Mapping, Optional, Tuple
 
 from ....connections.models.conn_record import ConnRecord
-from ....config.logging import get_adapted_logger_inst
 from ....core.oob_processor import OobRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -39,11 +38,6 @@ class V20CredManager:
             profile: The profile instance for this credential manager
         """
         self._profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self._profile.settings.get("log.file"),
-            wallet_id=self._profile.settings.get("wallet.id"),
-        )
 
     @property
     def profile(self) -> Profile:
@@ -655,7 +649,7 @@ class V20CredManager:
                 await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
         except StorageError:
-            self._logger.exception(
+            LOGGER.exception(
                 "Error sending credential ack"
             )  # holder still owes an ack: carry on
 
@@ -666,7 +660,7 @@ class V20CredManager:
                 connection_id=cred_ex_record.connection_id,
             )
         else:
-            self._logger.warning(
+            LOGGER.warning(
                 "Configuration has no BaseResponder: cannot ack credential on %s",
                 cred_ex_record.thread_id,
             )

@@ -8,7 +8,6 @@ import indy.anoncreds
 import indy.blob_storage
 from indy.error import AnoncredsRevocationRegistryFullError, IndyError, ErrorCode
 
-from ...config.logging import get_adapted_logger_inst
 from ...indy.sdk.profile import IndySdkProfile
 from ...messaging.util import encode
 from ...storage.error import StorageError
@@ -38,11 +37,6 @@ class IndySdkIssuer(IndyIssuer):
 
         """
         self.profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self.profile.settings.get("log.file"),
-            wallet_id=self.profile.settings.get("wallet.id"),
-        )
 
     async def create_schema(
         self,
@@ -217,7 +211,7 @@ class IndySdkIssuer(IndyIssuer):
                 tails_reader_handle,
             )
         except AnoncredsRevocationRegistryFullError:
-            self._logger.warning(
+            LOGGER.warning(
                 "Revocation registry %s is full: cannot create credential",
                 rev_reg_id,
             )
@@ -229,7 +223,7 @@ class IndySdkIssuer(IndyIssuer):
                 err, "Error when issuing credential", IndyIssuerError
             ) from err
         except StorageError as err:
-            self._logger.warning(
+            LOGGER.warning(
                 (
                     "Created issuer cred rev record for "
                     "Could not store issuer cred rev record for "
@@ -278,7 +272,7 @@ class IndySdkIssuer(IndyIssuer):
                     )
                 except IndyError as err:
                     if err.error_code == ErrorCode.AnoncredsInvalidUserRevocId:
-                        self._logger.error(
+                        LOGGER.error(
                             (
                                 "Abstaining from revoking credential on "
                                 "rev reg id %s, cred rev id=%s: "
@@ -288,7 +282,7 @@ class IndySdkIssuer(IndyIssuer):
                             cred_rev_id,
                         )
                     else:
-                        self._logger.error(
+                        LOGGER.error(
                             IndyErrorHandler.wrap_error(
                                 err, "Revocation error", IndyIssuerError
                             ).roll_up
@@ -296,7 +290,7 @@ class IndySdkIssuer(IndyIssuer):
                     failed_crids.add(int(cred_rev_id))
                     continue
                 except StorageError as err:
-                    self._logger.warning(
+                    LOGGER.warning(
                         (
                             "Revoked credential on rev reg id %s, cred rev id %s "
                             "without corresponding issuer cred rev record: %s"

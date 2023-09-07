@@ -1,6 +1,5 @@
 """Handler for incoming invitation request messages."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -19,12 +18,6 @@ class InvitationRequestHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
         self._logger.debug("InvitationRequestHandler called with context %s", context)
         assert isinstance(context.message, IntroInvitationRequest)
 
@@ -37,6 +30,7 @@ class InvitationRequestHandler(BaseHandler):
 
         if context.settings.get("auto_accept_intro_invitation_requests"):
             # Create a new connection invitation and send it back in an IntroInvitation
+            profile = context.profile
             connection_mgr = ConnectionManager(profile)
             _connection, invite = await connection_mgr.create_invitation()
             response = IntroInvitation(

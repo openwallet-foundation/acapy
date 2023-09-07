@@ -1,16 +1,18 @@
 """Utilities related to logging."""
 
+from contextvars import ContextVar
 from datetime import datetime, timedelta
 from io import TextIOWrapper
 import logging
-from logging.config import fileConfig
+from logging.config import fileConfig, dictConfig
 from logging.handlers import BaseRotatingHandler
 import os
 from random import randint
 import re
 import sys
+import yaml
 import time as mod_time
-from typing import Tuple, TextIO
+from typing import TextIO
 
 import pkg_resources
 from portalocker import LOCK_EX, lock, unlock
@@ -21,12 +23,31 @@ from ..version import __version__
 from .banner import Banner
 
 DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
+DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH = "./aries_cloudagent/config/default_per_tenant_logging_config.yml"
 LOG_FORMAT_FILE_ALIAS_PATTERN = (
     "%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
 )
 LOG_FORMAT_STREAM_PATTERN = (
     "%(asctime)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
 )
+
+context_wallet_id: ContextVar[str] = ContextVar("context_wallet_id")
+
+
+class ContextFilter(logging.Filter):
+    """Custom logging Filter to adapt logs with contextual wallet_id."""
+
+    def __init__(self):
+        super(ContextFilter, self).__init__()
+
+    def filter(self, record):
+        try:
+            wallet_id = context_wallet_id.get()
+            record.wallet_id= wallet_id
+            return True
+        except LookupError:
+            record.wallet_id= None
+            return True
 
 
 def load_resource(path: str, encoding: str = None) -> TextIO:
@@ -58,6 +79,8 @@ class LoggingConfigurator:
         cls,
         logging_config_path: str = None,
         log_level: str = None,
+        log_file: str = None,
+        multitenant: bool = False,
     ):
         """Configure logger.
 
@@ -66,77 +89,70 @@ class LoggingConfigurator:
 
         :param log_level: str: (Default value = None)
         """
+        is_dict_config = False
         if logging_config_path is not None:
             config_path = logging_config_path
         else:
             config_path = DEFAULT_LOGGING_CONFIG_PATH
-
-        log_config = load_resource(config_path, "utf-8")
+        if ".yml" in config_path or ".yaml"  in config_path:
+            is_dict_config = True
+            with open(config_path, "r") as stream:
+                log_config = yaml.safe_load(stream)
+        else:
+            log_config = load_resource(config_path, "utf-8")
         if log_config:
-            with log_config:
-                fileConfig(log_config, disable_existing_loggers=False)
-        else:
-            logging.basicConfig(level=logging.WARNING)
-            logging.root.warning(f"Logging config file not found: {config_path}")
-        if log_level:
-            log_level = log_level.upper()
-            logging.root.setLevel(log_level)
-
-    @classmethod
-    def configure_per_tenant(
-        cls,
-        logging_config_path: str = None,
-        log_level: str = None,
-        log_file: str = None,
-        log_interval: int = None,
-        log_bak_count: int = None,
-        log_at_when: str = None,
-        log_fmt_pattern: str = None,
-        log_json_fmt: bool = False,
-    ):
-        """
-        Configure logger with time rotated file and stream log handlers.
-
-        :param logging_config_path: str: (Default value = None) Optional path to
-            custom logging config
-
-        :param log_level: str: (Default value = None)
-        :param log_file: str: (Default value = None)
-        :param log_interval: int: (Default value = None)
-        :param log_bak_count: int: (Default value = None)
-        :param log_at_when: str: (Default value = None)
-        :param log_fmt_pattern: str: (Default value = None)
-        :param log_json_fmt: bool: (Default value = None)
-        """
-        if logging_config_path is not None:
-            config_path = logging_config_path
-        else:
-            config_path = DEFAULT_LOGGING_CONFIG_PATH
-
-        log_config = load_resource(config_path, "utf-8")
-        if log_config:
-            with log_config:
-                fileConfig(log_config, disable_existing_loggers=False)
-        else:
-            logging.basicConfig(level=logging.WARNING)
-            logging.root.warning(f"Logging config file not found: {config_path}")
-        if log_file:
-            logging.root.handlers.clear()
-            timed_file_handler, std_out_handler = get_log_file_handlers(
-                log_file, log_interval, log_bak_count, log_at_when
-            )
-            file_handler_pattern = log_fmt_pattern
-            if not file_handler_pattern:
-                file_handler_pattern = LOG_FORMAT_FILE_ALIAS_PATTERN
-            if log_json_fmt:
-                timed_file_handler.setFormatter(
-                    jsonlogger.JsonFormatter(file_handler_pattern)
-                )
+            if is_dict_config:
+                dictConfig(log_config)
             else:
-                timed_file_handler.setFormatter(logging.Formatter(file_handler_pattern))
-            std_out_handler.setFormatter(logging.Formatter(LOG_FORMAT_STREAM_PATTERN))
-            logging.root.handlers.append(timed_file_handler)
-            logging.root.handlers.append(std_out_handler)
+                with log_config:
+                    fileConfig(log_config, disable_existing_loggers=False)
+        else:
+            logging.basicConfig(level=logging.WARNING)
+            logging.root.warning(f"Logging config file not found: {config_path}")
+        if log_file and multitenant:
+            file_handler_set = False
+            handler_pattern = None
+            # Create context filter to adapt wallet_id in logger messages
+            _cf = ContextFilter()
+            for _handler in logging.root.handlers:
+                if isinstance(_handler, TimedRotatingFileMultiProcessHandler):
+                    file_handler_set = True
+                    handler_pattern = _handler.formatter._fmt
+                    # Set Json formatter for rotated file handler which
+                    # cannot be set with config file. By default this will
+                    # be set up.
+                    _handler.setFormatter(
+                        jsonlogger.JsonFormatter(handler_pattern)
+                    )
+                # Add context filter to handlers
+                _handler.addFilter(_cf)
+            if not file_handler_set:
+                file_path = os.path.join(
+                    os.path.dirname(os.path.realpath(__file__)).replace(
+                        "aries_cloudagent/config", ""
+                    ),
+                    log_file,
+                )
+                # If configuration is not provided within .ini or dict config file
+                # then by default the rotated file handler will have interval=7, 
+                # when=d and backupCount=1 configuration
+                timed_file_handler = TimedRotatingFileMultiProcessHandler(
+                    filename=file_path,
+                    interval=7,
+                    when="d",
+                    backupCount=1,
+                )
+                timed_file_handler.addFilter(_cf)
+                # By default this will be set up.
+                timed_file_handler.setFormatter(
+                    jsonlogger.JsonFormatter(LOG_FORMAT_FILE_ALIAS_PATTERN)
+                )
+                logging.root.handlers.append(timed_file_handler)
+        elif log_file and not multitenant:
+            # Don't go with rotated file handler when not in multitenant mode.
+            logging.root.handlers.append(
+                logging.FileHandler(log_file, encoding="utf-8")
+            )  
         if log_level:
             log_level = log_level.upper()
             logging.root.setLevel(log_level)
@@ -550,39 +566,4 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
             self.stream = self._open()
         self.release()
 
-
-def get_log_file_handlers(
-    log_file_name: str,
-    log_interval: int = None,
-    log_bak_count: int = None,
-    log_at_when: str = None,
-) -> Tuple[TimedRotatingFileMultiProcessHandler, logging.StreamHandler]:
-    """Get TimedRotatingFileMultiProcessHandler and StreamHandler."""
-    file_path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)).replace(
-            "aries_cloudagent/config", ""
-        ),
-        log_file_name,
-    )
-    timed_file_handler = TimedRotatingFileMultiProcessHandler(
-        filename=file_path,
-        interval=log_interval or 7,
-        when=log_at_when or "d",
-        backupCount=log_bak_count or 1,
-    )
-    std_out_handler = logging.StreamHandler(sys.stdout)
-    return (timed_file_handler, std_out_handler)
-
-
-def get_adapted_logger_inst(
-    logger: logging.Logger,
-    log_file: str = None,
-    wallet_id: str = None,
-) -> logging.Logger:
-    """Get adapted logger, formatted with wallet_id if applicable."""
-    _logger = None
-    if log_file and wallet_id:
-        _logger = logging.LoggerAdapter(logger, {"wallet_id": wallet_id})
-    else:
-        _logger = logger
-    return _logger
+logging.handlers.TimedRotatingFileMultiProcessHandler = TimedRotatingFileMultiProcessHandler

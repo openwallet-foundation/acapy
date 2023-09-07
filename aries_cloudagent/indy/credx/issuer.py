@@ -21,7 +21,6 @@ from indy_credx import (
 )
 
 from ...askar.profile import AskarProfile
-from ...config.logging import get_adapted_logger_inst
 
 from ..issuer import (
     IndyIssuer,
@@ -32,6 +31,7 @@ from ..issuer import (
 )
 
 LOGGER = logging.getLogger(__name__)
+
 CATEGORY_CRED_DEF = "credential_def"
 CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
 CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
@@ -54,11 +54,6 @@ class IndyCredxIssuer(IndyIssuer):
 
         """
         self._profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self._profile.settings.get("log.file"),
-            wallet_id=self._profile.settings.get("wallet.id"),
-        )
 
     @property
     def profile(self) -> AskarProfile:
@@ -453,7 +448,7 @@ class IndyCredxIssuer(IndyIssuer):
             for rev_id in cred_revoc_ids:
                 rev_id = int(rev_id)
                 if rev_id < 1 or rev_id > max_cred_num:
-                    self._logger.error(
+                    LOGGER.error(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s not in range",
                         revoc_reg_id,
@@ -461,7 +456,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     failed_crids.add(rev_id)
                 elif rev_id > rev_info["curr_id"]:
-                    self._logger.warn(
+                    LOGGER.warn(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s not yet issued",
                         revoc_reg_id,
@@ -469,7 +464,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     failed_crids.add(rev_id)
                 elif rev_id in used_ids:
-                    self._logger.warn(
+                    LOGGER.warn(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s already revoked",
                         revoc_reg_id,
@@ -505,7 +500,7 @@ class IndyCredxIssuer(IndyIssuer):
                         CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                     )
                     if not rev_reg_upd or not rev_reg_info:
-                        self._logger.warn(
+                        LOGGER.warn(
                             "Revocation registry missing, skipping update: {}",
                             revoc_reg_id,
                         )

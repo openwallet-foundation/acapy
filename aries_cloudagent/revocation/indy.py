@@ -3,7 +3,6 @@ import logging
 from typing import Optional, Sequence, Tuple
 from uuid import uuid4
 
-from ..config.logging import get_adapted_logger_inst
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.multiple_ledger.ledger_requests_executor import (
@@ -39,11 +38,6 @@ class IndyRevocation:
     def __init__(self, profile: Profile):
         """Initialize the IndyRevocation instance."""
         self._profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self._profile.settings.get("log.file"),
-            wallet_id=self._profile.settings.get("wallet.id"),
-        )
 
     async def init_issuer_registry(
         self,
@@ -131,9 +125,9 @@ class IndyRevocation:
         )
 
         for rec in recs:
-            self._logger.debug(f"decommission {rec.state} rev. reg.")
-            self._logger.debug(f"revoc_reg_id: {rec.revoc_reg_id}")
-            self._logger.debug(f"cred_def_id: {cred_def_id}")
+            LOGGER.debug(f"decommission {rec.state} rev. reg.")
+            LOGGER.debug(f"revoc_reg_id: {rec.revoc_reg_id}")
+            LOGGER.debug(f"cred_def_id: {cred_def_id}")
             # decommission active registry, we need to init a replacement
             init = IssuerRevRegRecord.STATE_ACTIVE == rec.state
             await self._set_registry_status(

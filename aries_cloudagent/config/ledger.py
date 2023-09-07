@@ -12,7 +12,6 @@ import prompt_toolkit
 from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
 
-from ..config.logging import get_adapted_logger_inst
 from ..config.settings import Settings
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
@@ -129,14 +128,9 @@ async def ledger_config(
     """Perform Indy ledger configuration."""
 
     session = await profile.session()
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     ledger = session.inject_or(BaseLedger)
     if not ledger:
-        _logger.info("Ledger instance not provided")
+        LOGGER.info("Ledger instance not provided")
         return False
 
     async with ledger:
@@ -257,11 +251,6 @@ async def accept_taa(
 
     mechanisms = taa_info["aml_record"]["aml"]
     mechanism = None
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     taa_acceptance_mechanism = profile.settings.get("ledger.taa_acceptance_mechanism")
     taa_acceptance_version = profile.settings.get("ledger.taa_acceptance_version")
 
@@ -287,13 +276,13 @@ async def accept_taa(
     elif sys.stdout.isatty():
         mechanism = await select_aml_tty(taa_info, provision)
     else:
-        _logger.warning(
+        LOGGER.warning(
             "Cannot accept TAA without interactive terminal or taa accept config"
         )
 
     if not mechanism:
         return False
 
-    _logger.debug(f"Accepting the TAA using mechanism '{mechanism}'")
+    LOGGER.debug(f"Accepting the TAA using mechanism '{mechanism}'")
     await ledger.accept_txn_author_agreement(taa_info["taa_record"], mechanism)
     return True

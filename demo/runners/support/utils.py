@@ -122,8 +122,10 @@ def output_reader(handle, callback, *args, **kwargs):
 
 
 def log_msg(*msg, color="fg:ansimagenta", **kwargs):
-    run_in_terminal(lambda: print_ext(*msg, color=color, **kwargs))
-
+    try:
+        run_in_terminal(lambda: print_ext(*msg, color=color, **kwargs))
+    except AssertionError:
+        pass
 
 def log_json(data, **kwargs):
     run_in_terminal(lambda: print_json(data, **kwargs))

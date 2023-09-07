@@ -139,7 +139,10 @@ class BaseAgent(DemoAgent):
             return pending, total
 
     async def update_creds(self):
-        await self.credential_event.wait()
+        try:
+            await self.credential_event.wait()
+        except asyncio.exceptions.CancelledError:
+            pass
 
     async def check_received_pings(self) -> Tuple[int, int]:
         while True:
@@ -767,25 +770,6 @@ if __name__ == "__main__":
             "('debug', 'info', 'warning', 'error', 'critical')"
         ),
     )
-    parser.add_argument(
-        "--log-handler-config",
-        type=str,
-        metavar="<log-handler-config>",
-        help=(
-            "Specifies when, interval, backupCount for the TimedRotatingFileHandler."
-        ),
-    )
-    parser.add_argument(
-        "--log-fmt-pattern",
-        type=str,
-        metavar="<log-fmt-pattern>",
-        help=("Specifies logging formatter pattern as string."),
-    )
-    parser.add_argument(
-        "--log-json-fmt",
-        action="store_true",
-        help=("JSON logging formatter."),
-    )
     args = parser.parse_args()
 
     if args.did_exchange and args.mediation:
@@ -825,9 +809,6 @@ if __name__ == "__main__":
                 args.wallet_type,
                 args.arg_file,
                 args.log_file,
-                args.log_handler_config,
-                args.log_fmt_pattern,
-                args.log_json_fmt,
                 args.log_level,
             )
         )

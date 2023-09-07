@@ -8,7 +8,6 @@ from typing import Tuple
 from indy_credx import CredxError, Presentation
 
 from ...core.profile import Profile
-from ...config.logging import get_adapted_logger_inst
 
 from ..verifier import IndyVerifier, PresVerifyMsg
 
@@ -26,11 +25,6 @@ class IndyCredxVerifier(IndyVerifier):
 
         """
         self.profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self.profile.settings.get("log.file"),
-            wallet_id=self.profile.settings.get("wallet.id"),
-        )
 
     async def verify_presentation(
         self,
@@ -66,7 +60,7 @@ class IndyCredxVerifier(IndyVerifier):
         except ValueError as err:
             s = str(err)
             msgs.append(f"{PresVerifyMsg.PRES_VALUE_ERROR.value}::{s}")
-            self._logger.error(
+            LOGGER.error(
                 f"Presentation on nonce={pres_req['nonce']} "
                 f"cannot be validated: {str(err)}"
             )
@@ -87,7 +81,7 @@ class IndyCredxVerifier(IndyVerifier):
         except CredxError as err:
             s = str(err)
             msgs.append(f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{s}")
-            self._logger.exception(
+            LOGGER.exception(
                 f"Validation of presentation on nonce={pres_req['nonce']} "
                 "failed with error"
             )

@@ -361,26 +361,12 @@ class DemoAgent:
                     ("--log-file", self.log_file),
                 ]
             )
-        if self.log_handler_config:
-            result.extend(
-                [
-                    ("--log-handler-config", self.log_handler_config),
-                ]
-            )
-        if self.log_fmt_pattern:
-            result.extend(
-                [
-                    ("--log-fmt-pattern", self.log_fmt_pattern),
-                ]
-            )
         if self.log_level:
             result.extend(
                 [
                     ("--log-level", self.log_level),
                 ]
             )
-        if self.log_json_fmt:
-            result.append("--log-json-fmt")
         if self.aip == 20:
             result.append("--emit-new-didcomm-prefix")
         if self.multitenant:

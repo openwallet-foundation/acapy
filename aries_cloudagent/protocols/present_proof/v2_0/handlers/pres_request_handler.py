@@ -1,6 +1,5 @@
 """Presentation request message handler."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....ledger.error import LedgerError
@@ -32,12 +31,7 @@ class V20PresRequestHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
+
         self._logger.debug("V20PresRequestHandler called with context %s", context)
         assert isinstance(context.message, V20PresRequest)
         self._logger.info(
@@ -66,6 +60,7 @@ class V20PresRequestHandler(BaseHandler):
             else None
         )
 
+        profile = context.profile
         pres_manager = V20PresManager(profile)
 
         # Get pres ex record (holder initiated via proposal)

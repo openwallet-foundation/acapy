@@ -4,17 +4,14 @@ import json
 import logging
 from typing import Optional
 
+from ...out_of_band.v1_0.models.oob_record import OobRecord
 from ....connections.models.conn_record import ConnRecord
-from ....config.logging import get_adapted_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.verifier import IndyVerifier
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
-
-from ...out_of_band.v1_0.models.oob_record import OobRecord
-
 from ..indy.pres_exch_handler import IndyPresExchHandler
 
 from .messages.presentation_ack import PresentationAck
@@ -46,11 +43,6 @@ class PresentationManager:
         """
 
         self._profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self._profile.settings.get("log.file"),
-            wallet_id=self._profile.settings.get("wallet.id"),
-        )
 
     async def create_exchange_for_proposal(
         self,
@@ -477,7 +469,7 @@ class PresentationManager:
             except StorageNotFoundError:
                 # This can happen in AIP1 style connectionless exchange. ACA-PY only
                 # supported this for receiving a presentation
-                self._logger.error(
+                LOGGER.error(
                     "Unable to send connectionless presentation ack without associated "
                     "oob record. This can happen if proof request was sent without "
                     "wrapping it in an out of band invitation (AIP1-style)."
@@ -506,7 +498,7 @@ class PresentationManager:
                 async with self._profile.session() as session:
                     await presentation_exchange_record.delete_record(session)
         else:
-            self._logger.warning(
+            LOGGER.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
                 presentation_exchange_record.thread_id,
             )

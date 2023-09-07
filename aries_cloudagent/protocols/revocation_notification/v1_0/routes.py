@@ -2,7 +2,6 @@
 import logging
 import re
 
-from ....config.logging import get_adapted_logger_inst
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
@@ -31,12 +30,7 @@ def register_events(event_bus: EventBus):
 
 async def on_revocation_published(profile: Profile, event: Event):
     """Handle issuer revoke event."""
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
-    _logger.debug("Sending notification of revocation to recipient: %s", event.payload)
+    LOGGER.debug("Sending notification of revocation to recipient: %s", event.payload)
 
     responder = profile.inject(BaseResponder)
     crids = event.payload.get("crids") or []
@@ -56,12 +50,12 @@ async def on_revocation_published(profile: Profile, event: Event):
                 )
 
     except StorageNotFoundError:
-        _logger.info(
+        LOGGER.info(
             "No revocation notification record found for revoked credential; "
             "no notification will be sent"
         )
     except StorageError:
-        _logger.exception("Failed to retrieve revocation notification record")
+        LOGGER.exception("Failed to retrieve revocation notification record")
 
 
 async def on_pending_cleared(profile: Profile, event: Event):

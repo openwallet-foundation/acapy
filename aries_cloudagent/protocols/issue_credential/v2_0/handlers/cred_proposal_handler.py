@@ -1,6 +1,5 @@
 """Credential proposal message handler."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -28,12 +27,7 @@ class V20CredProposalHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
+
         self._logger.debug("V20CredProposalHandler called with context %s", context)
         assert isinstance(context.message, V20CredProposal)
         self._logger.info(
@@ -49,6 +43,7 @@ class V20CredProposalHandler(BaseHandler):
                 "Connectionless not supported for credential proposal"
             )
 
+        profile = context.profile
         cred_manager = V20CredManager(profile)
         cred_ex_record = await cred_manager.receive_proposal(
             context.message, context.connection_record.connection_id

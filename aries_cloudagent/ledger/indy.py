@@ -16,7 +16,6 @@ from indy.error import ErrorCode, IndyError
 
 from ..cache.base import BaseCache
 from ..config.base import BaseInjector, BaseProvider, BaseSettings
-from ..config.logging import get_adapted_logger_inst
 from ..indy.sdk.error import IndyErrorHandler
 from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
@@ -277,11 +276,6 @@ class IndySdkLedger(BaseLedger):
         """
         self.pool = pool
         self.profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self.profile.settings.get("log.file"),
-            wallet_id=self.profile.settings.get("wallet.id"),
-        )
 
     @property
     def pool_handle(self):
@@ -1063,7 +1057,7 @@ class IndySdkLedger(BaseLedger):
             found_def["txnTime"] = json.loads(response_json)["result"]["txnTime"]
 
         except IndyError as e:
-            self._logger.error(
+            LOGGER.error(
                 f"get_revoc_reg_def failed with revoc_reg_id={revoc_reg_id} - "
                 f"{e.error_code}: {getattr(e, 'message', '[no message]')}"
             )
@@ -1087,7 +1081,7 @@ class IndySdkLedger(BaseLedger):
                     ledger_timestamp,
                 ) = await indy.ledger.parse_get_revoc_reg_response(response_json)
             except IndyError as e:
-                self._logger.error(
+                LOGGER.error(
                     f"get_revoc_reg_entry failed with revoc_reg_id={revoc_reg_id} - "
                     f"{e.error_code}: {getattr(e, 'message', '[no message]')}"
                 )

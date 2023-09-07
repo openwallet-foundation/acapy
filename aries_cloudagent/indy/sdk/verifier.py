@@ -9,7 +9,6 @@ import indy.anoncreds
 from indy.error import IndyError
 
 from ...core.profile import Profile
-from ...config.logging import get_adapted_logger_inst
 
 from ..verifier import IndyVerifier, PresVerifyMsg
 
@@ -27,11 +26,6 @@ class IndySdkVerifier(IndyVerifier):
 
         """
         self.profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self.profile.settings.get("log.file"),
-            wallet_id=self.profile.settings.get("wallet.id"),
-        )
 
     async def verify_presentation(
         self,
@@ -53,8 +47,8 @@ class IndySdkVerifier(IndyVerifier):
             rev_reg_entries: revocation registry entries
         """
 
-        self._logger.debug(f">>> received presentation: {pres}")
-        self._logger.debug(f">>> for pres_req: {pres_req}")
+        LOGGER.debug(f">>> received presentation: {pres}")
+        LOGGER.debug(f">>> for pres_req: {pres_req}")
         msgs = []
         try:
             msgs += self.non_revoc_intervals(pres_req, pres, credential_definitions)
@@ -65,14 +59,14 @@ class IndySdkVerifier(IndyVerifier):
         except ValueError as err:
             s = str(err)
             msgs.append(f"{PresVerifyMsg.PRES_VALUE_ERROR.value}::{s}")
-            self._logger.error(
+            LOGGER.error(
                 f"Presentation on nonce={pres_req['nonce']} "
                 f"cannot be validated: {str(err)}"
             )
             return (False, msgs)
 
-        self._logger.debug(f">>> verifying presentation: {pres}")
-        self._logger.debug(f">>> for pres_req: {pres_req}")
+        LOGGER.debug(f">>> verifying presentation: {pres}")
+        LOGGER.debug(f">>> for pres_req: {pres_req}")
         try:
             verified = await indy.anoncreds.verifier_verify_proof(
                 json.dumps(pres_req),
@@ -85,7 +79,7 @@ class IndySdkVerifier(IndyVerifier):
         except IndyError as err:
             s = str(err)
             msgs.append(f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{s}")
-            self._logger.exception(
+            LOGGER.exception(
                 f"Validation of presentation on nonce={pres_req['nonce']} "
                 "failed with error"
             )

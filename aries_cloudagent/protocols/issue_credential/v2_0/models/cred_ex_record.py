@@ -5,7 +5,6 @@ from typing import Any, Mapping, Optional, Union
 
 from marshmallow import Schema, fields, validate
 
-from .....config.logging import get_adapted_logger_inst
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUID4_EXAMPLE
@@ -163,12 +162,7 @@ class V20CredExRecord(BaseExchangeRecord):
             log_params: Additional parameters to log
             override: Override configured logging regimen, print to stderr instead
         """
-        profile = session.profile
-        _logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
+
         if self._last_state == state:  # already done
             return
 
@@ -184,7 +178,7 @@ class V20CredExRecord(BaseExchangeRecord):
                 log_override=log_override,
             )
         except StorageError as err:
-            _logger.exception(err)
+            LOGGER.exception(err)
 
     # Override
     async def emit_event(self, session: ProfileSession, payload: Any = None):

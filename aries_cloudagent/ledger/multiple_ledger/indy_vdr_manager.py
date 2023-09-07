@@ -9,7 +9,6 @@ from typing import Optional, Tuple, Mapping, List
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
-from ...config.logging import get_adapted_logger_inst
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.crypto import did_is_self_certified
@@ -54,11 +53,6 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         self.endorser_map = endorser_map
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self.profile.settings.get("log.file"),
-            wallet_id=self.profile.settings.get("wallet.id"),
-        )
 
     async def get_write_ledgers(self) -> List[str]:
         """Return the write IndyVdrLedger instance."""
@@ -136,7 +130,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                 else:
                     data = response.get("data")
                 if not data:
-                    self._logger.warning(f"Did {did} not posted to ledger {ledger_id}")
+                    LOGGER.warning(f"Did {did} not posted to ledger {ledger_id}")
                     return None
                 if isinstance(data, str):
                     data = json.loads(data)
@@ -144,7 +138,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                     expected_value=prepare_for_state_read(response),
                     proof_nodes=get_proof_nodes(response),
                 ):
-                    self._logger.warning(
+                    LOGGER.warning(
                         f"State Proof validation failed for Did {did} "
                         f"and ledger {ledger_id}"
                     )
@@ -153,13 +147,13 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                     return (ledger_id, indy_vdr_ledger, True)
                 return (ledger_id, indy_vdr_ledger, False)
         except asyncio.TimeoutError:
-            self._logger.exception(
+            LOGGER.exception(
                 f"get-nym request timedout for Did {did} and "
                 f"ledger {ledger_id}, reply not received within 10 sec"
             )
             return None
         except LedgerError as err:
-            self._logger.error(
+            LOGGER.error(
                 "Exception when building and submitting get-nym request, "
                 f"for Did {did} and ledger {ledger_id}, {err}"
             )

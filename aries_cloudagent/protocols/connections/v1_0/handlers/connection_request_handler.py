@@ -1,10 +1,8 @@
 """Connection request handler."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ....coordinate_mediation.v1_0.manager import MediationManager
-
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_request import ConnectionRequest
 from ..messages.problem_report import ConnectionProblemReport
@@ -20,14 +18,11 @@ class ConnectionRequestHandler(BaseHandler):
             context: Request context
             responder: Responder callback
         """
-        profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
+
         self._logger.debug(f"ConnectionRequestHandler called with context {context}")
         assert isinstance(context.message, ConnectionRequest)
+
+        profile = context.profile
         mgr = ConnectionManager(profile)
 
         mediation_id = None

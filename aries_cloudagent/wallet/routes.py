@@ -10,7 +10,6 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
-from ..config.logging import get_adapted_logger_inst
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -1049,11 +1048,7 @@ def register_events(event_bus: EventBus):
 
 async def on_register_nym_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
+
     # after the nym record is written, promote to wallet public DID
     if is_author_role(profile) and profile.context.settings.get_value(
         "endorser.auto_promote_author_did"
@@ -1066,7 +1061,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
             )
         except Exception as err:
             # log the error, but continue
-            _logger.exception(
+            LOGGER.exception(
                 "Error promoting to public DID: %s",
                 err,
             )
@@ -1079,8 +1074,9 @@ async def on_register_nym_event(profile: Profile, event: Event):
             )
         except StorageError as err:
             # log the error, but continue
-            _logger.exception(
-                "Error accepting endorser invitation/configuring endorser connection: %s",
+            LOGGER.exception(
+                "Error accepting endorser invitation/configuring endorser"
+                " connection: %s",
                 err,
             )
             return
@@ -1096,7 +1092,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
                 )
             except (StorageError, TransactionManagerError) as err:
                 # log the error, but continue
-                _logger.exception(
+                LOGGER.exception(
                     "Error creating endorser transaction request: %s",
                     err,
                 )
@@ -1110,7 +1106,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
                     connection_id=connection_id,
                 )
             else:
-                _logger.warning(
+                LOGGER.warning(
                     "Configuration has no BaseResponder: cannot update "
                     "ATTRIB record on DID: %s",
                     did,

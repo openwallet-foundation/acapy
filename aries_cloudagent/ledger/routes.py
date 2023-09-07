@@ -15,7 +15,6 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
-from ..config.logging import get_adapted_logger_inst
 from ..connections.models.conn_record import ConnRecord
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
@@ -647,7 +646,6 @@ async def ledger_accept_taa(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     async with context.profile.session() as session:
         ledger = session.inject_or(BaseLedger)
         if not ledger:
@@ -657,12 +655,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
             raise web.HTTPForbidden(reason=reason)
 
     accept_input = await request.json()
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
-    _logger.info(">>> accepting TAA with: %s", accept_input)
+    LOGGER.info(">>> accepting TAA with: %s", accept_input)
     async with ledger:
         try:
             taa_info = await ledger.get_txn_author_agreement()
@@ -670,14 +663,14 @@ async def ledger_accept_taa(request: web.BaseRequest):
                 raise web.HTTPBadRequest(
                     reason=f"Ledger {ledger.pool_name} TAA not available"
                 )
-            _logger.info("TAA on ledger: ", taa_info)
+            LOGGER.info("TAA on ledger: ", taa_info)
             # this is a bit of a hack, but the "\ufeff" code is included in the
             # ledger TAA and digest calculation, so it needs to be included in the
             # TAA text that the user is accepting
             # (if you copy the TAA text using swagger it won't include this character)
             if taa_info["taa_record"]["text"].startswith("\ufeff"):
                 if not accept_input["text"].startswith("\ufeff"):
-                    _logger.info(
+                    LOGGER.info(
                         ">>> pre-pending -endian character to TAA acceptance text"
                     )
                     accept_input["text"] = "\ufeff" + accept_input["text"]
@@ -690,7 +683,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
                 ),
             }
             taa_record_digest = taa_record["digest"]
-            _logger.info(">>> accepting with digest: %s", taa_record_digest)
+            LOGGER.info(">>> accepting with digest: %s", taa_record_digest)
             await ledger.accept_txn_author_agreement(
                 taa_record, accept_input["mechanism"]
             )

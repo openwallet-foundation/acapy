@@ -375,12 +375,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
     async def test_store_update_results(
         self,
         session: ProfileSession,
+        manager: MediationManager,
     ):
         """test_store_update_results."""
-        profile = session.profile
-        profile.settings["log.file"] = "test.log"
-        profile.settings["wallet.id"] = "test123"
-        mock_logger = async_mock.MagicMock(error=async_mock.MagicMock())
         await RouteRecord(
             role=RouteRecord.ROLE_CLIENT,
             connection_id=TEST_CONN_ID,
@@ -398,49 +395,41 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
                 result=KeylistUpdated.RESULT_SUCCESS,
             ),
         ]
-        with async_mock.patch.object(
-            test_module,
-            "get_adapted_logger_inst",
-            async_mock.MagicMock(return_value=mock_logger),
-        ):
-            manager = MediationManager(profile)
-            await manager.store_update_results(TEST_CONN_ID, results)
-            routes = await RouteRecord.query(session)
+        await manager.store_update_results(TEST_CONN_ID, results)
+        routes = await RouteRecord.query(session)
 
-            assert len(routes) == 1
-            assert routes[0].recipient_key == TEST_ROUTE_VERKEY
+        assert len(routes) == 1
+        assert routes[0].recipient_key == TEST_ROUTE_VERKEY
 
-            results = [
-                KeylistUpdated(
-                    recipient_key=TEST_VERKEY,
-                    action=KeylistUpdateRule.RULE_REMOVE,
-                    result=KeylistUpdated.RESULT_SUCCESS,
-                ),
-            ]
+        results = [
+            KeylistUpdated(
+                recipient_key=TEST_VERKEY,
+                action=KeylistUpdateRule.RULE_REMOVE,
+                result=KeylistUpdated.RESULT_SUCCESS,
+            ),
+        ]
 
-            with async_mock.patch.object(
-                RouteRecord, "query", async_mock.CoroutineMock()
-            ) as mock_route_rec_query:
-                mock_route_rec_query.side_effect = StorageNotFoundError("no record")
-                await manager.store_update_results(TEST_CONN_ID, results)
-                assert mock_logger.error.call_count == 1
-
-        del profile.settings["log.file"]
-        del profile.settings["wallet.id"]
-        mock_logger = async_mock.MagicMock(error=async_mock.MagicMock())
         with async_mock.patch.object(
             RouteRecord, "query", async_mock.CoroutineMock()
         ) as mock_route_rec_query, async_mock.patch.object(
-            test_module,
-            "get_adapted_logger_inst",
-            async_mock.MagicMock(return_value=mock_logger),
-        ):
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_logger_error:
+            mock_route_rec_query.side_effect = StorageNotFoundError("no record")
+
+            await manager.store_update_results(TEST_CONN_ID, results)
+            mock_logger_error.assert_called_once()
+
+        with async_mock.patch.object(
+            RouteRecord, "query", async_mock.CoroutineMock()
+        ) as mock_route_rec_query, async_mock.patch.object(
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_logger_error:
             mock_route_rec_query.return_value = [
                 async_mock.MagicMock(delete_record=async_mock.CoroutineMock())
             ] * 2
-            manager = MediationManager(profile)
+
             await manager.store_update_results(TEST_CONN_ID, results)
-            assert mock_logger.error.call_count == 1
+            mock_logger_error.assert_called_once()
 
     async def test_store_update_results_exists_relay(self, session, manager):
         """test_store_update_results_record_exists_relay."""

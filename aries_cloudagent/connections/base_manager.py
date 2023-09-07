@@ -20,7 +20,6 @@ from pydid.verification_method import (
 )
 from ..cache.base import BaseCache
 from ..config.base import InjectionError
-from ..config.logging import get_adapted_logger_inst
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
@@ -73,11 +72,6 @@ class BaseConnectionManager:
         """
         self._profile = profile
         self._route_manager = profile.inject(RouteManager)
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self._profile.settings.get("log.file"),
-            wallet_id=self._profile.settings.get("wallet.id"),
-        )
 
     async def create_did_document(
         self,
@@ -228,7 +222,7 @@ class BaseConnectionManager:
             except StorageNotFoundError:
                 await storage.add_record(record)
             except StorageDuplicateError:
-                self._logger.warning(
+                LOGGER.warning(
                     "Key already associated with DID: %s; this is likely caused by "
                     "routing keys being erroneously stored in the past",
                     key,
@@ -358,10 +352,10 @@ class BaseConnectionManager:
         their_label: Optional[str] = None,
     ) -> List[ConnectionTarget]:
         """Resolve connection targets for a DID."""
-        self._logger.debug("Resolving connection targets for DID %s", did)
+        LOGGER.debug("Resolving connection targets for DID %s", did)
         doc, didcomm_services = await self.resolve_didcomm_services(did)
-        self._logger.debug("Resolved DID document: %s", doc)
-        self._logger.debug("Resolved DIDComm services: %s", didcomm_services)
+        LOGGER.debug("Resolved DID document: %s", doc)
+        LOGGER.debug("Resolved DIDComm services: %s", didcomm_services)
         targets = []
         for service in didcomm_services:
             try:
@@ -386,7 +380,7 @@ class BaseConnectionManager:
                     )
                 )
             except ResolverError:
-                self._logger.exception(
+                LOGGER.exception(
                     "Failed to resolve service details while determining "
                     "connection targets; skipping service"
                 )
@@ -547,7 +541,7 @@ class BaseConnectionManager:
         """
 
         if not connection.my_did:
-            self._logger.debug("No local DID associated with connection")
+            LOGGER.debug("No local DID associated with connection")
             return []
 
         async with self._profile.session() as session:
@@ -564,7 +558,7 @@ class BaseConnectionManager:
             )
 
         if not connection.their_did:
-            self._logger.debug("No target DID associated with connection")
+            LOGGER.debug("No target DID associated with connection")
             return []
 
         return await self.resolve_connection_targets(
@@ -595,7 +589,7 @@ class BaseConnectionManager:
         if cache:
             async with cache.acquire(cache_key) as entry:
                 if entry.result:
-                    self._logger.debug("Connection targets retrieved from cache")
+                    LOGGER.debug("Connection targets retrieved from cache")
                     targets = [
                         ConnectionTarget.deserialize(row) for row in entry.result
                     ]
@@ -612,12 +606,12 @@ class BaseConnectionManager:
                         # Only set cache if connection has reached completed state
                         # Otherwise, a replica that participated early in exchange
                         # may have bad data set in cache.
-                        self._logger.debug("Caching connection targets")
+                        LOGGER.debug("Caching connection targets")
                         await entry.set_result(
                             [row.serialize() for row in targets], 3600
                         )
                     else:
-                        self._logger.debug(
+                        LOGGER.debug(
                             "Not caching connection targets for connection in "
                             f"state ({connection.state})"
                         )
@@ -803,7 +797,7 @@ class BaseConnectionManager:
             try:
                 receipt.sender_did = await self.find_did_for_key(receipt.sender_verkey)
             except StorageNotFoundError:
-                self._logger.warning(
+                LOGGER.warning(
                     "No corresponding DID found for sender verkey: %s",
                     receipt.sender_verkey,
                 )
@@ -819,13 +813,13 @@ class BaseConnectionManager:
                 if "posted" in my_info.metadata and my_info.metadata["posted"] is True:
                     receipt.recipient_did_public = True
             except InjectionError:
-                self._logger.warning(
+                LOGGER.warning(
                     "Cannot resolve recipient verkey, no wallet defined by "
                     "context: %s",
                     receipt.recipient_verkey,
                 )
             except WalletNotFoundError:
-                self._logger.warning(
+                LOGGER.warning(
                     "No corresponding DID found for recipient verkey: %s",
                     receipt.recipient_verkey,
                 )

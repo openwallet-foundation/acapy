@@ -1,6 +1,5 @@
 """Presentation proposal message handler."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -28,11 +27,6 @@ class PresentationProposalHandler(BaseHandler):
         """
         r_time = get_timer()
         profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
         self._logger.debug(
             "PresentationProposalHandler called with context %s", context
         )

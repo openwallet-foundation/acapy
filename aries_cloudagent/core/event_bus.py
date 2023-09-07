@@ -19,8 +19,6 @@ from typing import (
 )
 from functools import partial
 
-from ..config.logging import get_adapted_logger_inst
-
 if TYPE_CHECKING:  # To avoid circular import error
     from .profile import Profile
 
@@ -99,12 +97,7 @@ class EventBus:
         # TODO don't block notifier until subscribers have all been called?
         # TODO trigger each processor but don't await?
         # TODO log errors but otherwise ignore?
-        _logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
-        _logger.debug("Notifying subscribers: %s", event)
+        LOGGER.debug("Notifying subscribers: %s", event)
 
         partials = []
         for pattern, subscribers in self.topic_patterns_to_subscribers.items():
@@ -126,7 +119,7 @@ class EventBus:
             try:
                 await processor()
             except Exception:
-                _logger.exception("Error occurred while processing event")
+                LOGGER.exception("Error occurred while processing event")
 
     def subscribe(self, pattern: Pattern, processor: Callable):
         """Subscribe to an event.
@@ -174,12 +167,7 @@ class EventBus:
 
         async def _handle_single_event(profile, event):
             """Handle the single event."""
-            _logger = get_adapted_logger_inst(
-                logger=LOGGER,
-                log_file=profile.settings.get("log.file"),
-                wallet_id=profile.settings.get("wallet.id"),
-            )
-            _logger.debug(
+            LOGGER.debug(
                 "wait_for_event event listener with event %s and profile %s",
                 event,
                 profile,

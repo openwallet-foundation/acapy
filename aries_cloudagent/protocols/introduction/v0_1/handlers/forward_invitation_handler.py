@@ -1,6 +1,5 @@
 """Handler for incoming forward invitation messages."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -19,12 +18,6 @@ class ForwardInvitationHandler(BaseHandler):
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
-        profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
         self._logger.debug("ForwardInvitationHandler called with context %s", context)
         assert isinstance(context.message, ForwardInvitation)
 
@@ -34,6 +27,7 @@ class ForwardInvitationHandler(BaseHandler):
             )
 
         # Store invitation
+        profile = context.profile
         connection_mgr = ConnectionManager(profile)
 
         try:

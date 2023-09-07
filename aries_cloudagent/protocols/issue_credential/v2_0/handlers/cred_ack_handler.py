@@ -1,6 +1,5 @@
 """Credential ack message handler."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....core.oob_processor import OobMessageProcessor
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
@@ -22,12 +21,7 @@ class V20CredAckHandler(BaseHandler):
             responder: responder callback
         """
         r_time = get_timer()
-        profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
+
         self._logger.debug("V20CredAckHandler called with context %s", context)
         assert isinstance(context.message, V20CredAck)
         self._logger.info(

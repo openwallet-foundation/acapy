@@ -5,7 +5,6 @@ import time
 
 from typing import Union, Tuple
 
-from ....config.logging import get_adapted_logger_inst
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
@@ -39,11 +38,6 @@ class IndyPresExchHandler:
         """Initialize PresExchange Handler."""
         super().__init__()
         self._profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self._profile.settings.get("log.file"),
-            wallet_id=self._profile.settings.get("wallet.id"),
-        )
 
     async def return_presentation(
         self,
@@ -89,7 +83,7 @@ class IndyPresExchHandler:
                 if not credentials[req_item["cred_id"]].get(
                     "rev_reg_id"
                 ) and req_item.pop("timestamp", None):
-                    self._logger.info(
+                    LOGGER.info(
                         f"Removed superfluous timestamp from requested_credentials {r} "
                         f"{reft} for non-revocable credential {req_item['cred_id']}"
                     )
@@ -196,7 +190,7 @@ class IndyPresExchHandler:
                     )
                 )
             except IndyHolderError as e:
-                self._logger.error(
+                LOGGER.error(
                     f"Failed to create revocation state: {e.error_code}, {e.message}"
                 )
                 raise e

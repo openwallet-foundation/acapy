@@ -7,7 +7,6 @@ from enum import Enum
 from time import time
 from typing import Mapping, Tuple
 
-from ..config.logging import get_adapted_logger_inst
 from ..core.profile import Profile
 from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
@@ -124,19 +123,14 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
             pres: indy proof request
             rev_reg_defs: rev reg defs by rev reg id, augmented with transaction times
         """
-        _logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
         msgs = []
         now = int(time())
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_req)
-        _logger.debug(f">>> got non-revoc intervals: {non_revoc_intervals}")
+        LOGGER.debug(f">>> got non-revoc intervals: {non_revoc_intervals}")
         # timestamp for irrevocable credential
         cred_defs = []
         for index, ident in enumerate(pres["identifiers"]):
-            _logger.debug(f">>> got (index, ident): ({index},{ident})")
+            LOGGER.debug(f">>> got (index, ident): ({index},{ident})")
             cred_def_id = ident["cred_def_id"]
             multitenant_mgr = profile.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
@@ -196,8 +190,8 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                         if (timestamp is not None) ^ bool(
                             non_revoc_intervals.get(uuid)
                         ):
-                            _logger.debug(f">>> uuid: {uuid}")
-                            _logger.debug(
+                            LOGGER.debug(f">>> uuid: {uuid}")
+                            LOGGER.debug(
                                 f">>> revealed_attrs[uuid]: {revealed_attrs[uuid]}"
                             )
                             raise ValueError(
@@ -214,7 +208,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                                 f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::"
                                 f"{uuid}"
                             )
-                            _logger.info(
+                            LOGGER.info(
                                 f"Timestamp {timestamp} from ledger for item"
                                 f"{uuid} falls outside non-revocation interval "
                                 f"{non_revoc_intervals[uuid]}"
@@ -255,7 +249,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                             f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::"
                             f"{uuid}"
                         )
-                        _logger.warning(
+                        LOGGER.warning(
                             f"Timestamp {timestamp} from ledger for item"
                             f"{uuid} falls outside non-revocation interval "
                             f"{non_revoc_intervals[uuid]}"
@@ -284,7 +278,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     msgs.append(
                         f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::" f"{uuid}"
                     )
-                    _logger.warning(
+                    LOGGER.warning(
                         f"Best-effort timestamp {timestamp} "
                         "from ledger falls outside non-revocation interval "
                         f"{non_revoc_intervals[uuid]}"

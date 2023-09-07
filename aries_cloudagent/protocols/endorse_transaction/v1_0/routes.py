@@ -15,7 +15,6 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
-from ....config.logging import get_adapted_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
@@ -720,11 +719,6 @@ def register_events(event_bus: EventBus):
 
 async def on_startup_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     # auto setup is only for authors
     if not is_author_role(profile):
         return
@@ -801,7 +795,7 @@ async def on_startup_event(profile: Profile, event: Event):
 
     except Exception:
         # log the error, but continue
-        _logger.exception(
+        LOGGER.exception(
             "Error accepting endorser invitation/configuring endorser connection: %s",
         )
 

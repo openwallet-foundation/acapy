@@ -9,7 +9,6 @@ from aiohttp_apispec import docs, match_info_schema, querystring_schema, respons
 from marshmallow import fields
 
 from ....admin.request_context import AdminRequestContext
-from ....config.logging import get_adapted_logger_inst
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError
@@ -61,14 +60,8 @@ async def introduction_start(request: web.BaseRequest):
         request: aiohttp request object
 
     """
+    LOGGER.info("Introduction requested")
     context: AdminRequestContext = request["context"]
-    profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
-    _logger.info("Introduction requested")
     outbound_handler = request["outbound_message_router"]
     init_connection_id = request.match_info["conn_id"]
     target_connection_id = request.query.get("target_connection_id")

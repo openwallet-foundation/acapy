@@ -5,7 +5,6 @@ from collections import OrderedDict
 from typing import Optional
 from weakref import WeakValueDictionary
 
-from ..config.logging import get_adapted_logger_inst
 from ..core.profile import Profile
 
 LOGGER = logging.getLogger(__name__)
@@ -55,13 +54,8 @@ class ProfileCache:
         """
         value = self.profiles.get(key)
         if value:
-            _logger = get_adapted_logger_inst(
-                logger=LOGGER,
-                log_file=value.settings.get("log.file"),
-                wallet_id=value.settings.get("wallet.id"),
-            )
             if key not in self._cache:
-                _logger.debug(
+                LOGGER.debug(
                     f"Rescuing profile {key} from eviction from cache; profile "
                     "will be reinserted into cache"
                 )

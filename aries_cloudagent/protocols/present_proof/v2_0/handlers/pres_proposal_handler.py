@@ -1,6 +1,5 @@
 """Presentation proposal message handler."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -27,12 +26,7 @@ class V20PresProposalHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
+
         self._logger.debug("V20PresProposalHandler called with context %s", context)
         assert isinstance(context.message, V20PresProposal)
         self._logger.info(
@@ -50,6 +44,7 @@ class V20PresProposalHandler(BaseHandler):
                 "Connection used for presentation proposal not ready"
             )
 
+        profile = context.profile
         pres_manager = V20PresManager(profile)
         pres_ex_record = await pres_manager.receive_pres_proposal(
             context.message, context.connection_record

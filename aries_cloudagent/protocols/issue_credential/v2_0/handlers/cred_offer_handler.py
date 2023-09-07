@@ -1,6 +1,5 @@
 """Credential offer message handler."""
 
-from .....config.logging import get_adapted_logger_inst
 from .....wallet.util import default_did_from_verkey
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
@@ -30,12 +29,7 @@ class V20CredOfferHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        profile = context.profile
-        self._logger = get_adapted_logger_inst(
-            logger=self._logger,
-            log_file=profile.settings.get("log.file"),
-            wallet_id=profile.settings.get("wallet.id"),
-        )
+
         self._logger.debug("V20CredOfferHandler called with context %s", context)
         assert isinstance(context.message, V20CredOffer)
         self._logger.info(
@@ -64,6 +58,7 @@ class V20CredOfferHandler(BaseHandler):
             else None
         )
 
+        profile = context.profile
         cred_manager = V20CredManager(profile)
         cred_ex_record = await cred_manager.receive_offer(
             context.message, connection_id

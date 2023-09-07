@@ -16,7 +16,6 @@ from aiohttp_apispec import (
 from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
-from ....config.logging import get_adapted_logger_inst
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....indy.holder import IndyHolderError
@@ -681,11 +680,6 @@ async def credential_exchange_send(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -749,7 +743,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         V20CredManagerError,
         V20CredFormatError,
     ) as err:
-        _logger.exception("Error preparing credential offer")
+        LOGGER.exception("Error preparing credential offer")
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
@@ -796,11 +790,6 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -842,7 +831,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         result = cred_ex_record.serialize()
 
     except (BaseModelError, StorageError) as err:
-        _logger.exception("Error preparing credential proposal")
+        LOGGER.exception("Error preparing credential proposal")
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
@@ -933,11 +922,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
+
     body = await request.json()
 
     auto_issue = body.get(
@@ -970,7 +955,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
         V20CredFormatError,
         V20CredManagerError,
     ) as err:
-        _logger.exception("Error creating free credential offer")
+        LOGGER.exception("Error creating free credential offer")
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
@@ -1007,11 +992,6 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -1058,7 +1038,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         V20CredFormatError,
         V20CredManagerError,
     ) as err:
-        _logger.exception("Error preparing free credential offer")
+        LOGGER.exception("Error preparing free credential offer")
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
@@ -1106,11 +1086,6 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json() if request.body_exists else {}
@@ -1169,7 +1144,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         V20CredFormatError,
         V20CredManagerError,
     ) as err:
-        _logger.exception("Error preparing bound credential offer")
+        LOGGER.exception("Error preparing bound credential offer")
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
@@ -1218,11 +1193,6 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -1278,7 +1248,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
         StorageError,
         V20CredManagerError,
     ) as err:
-        _logger.exception("Error preparing free credential request")
+        LOGGER.exception("Error preparing free credential request")
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
@@ -1323,11 +1293,6 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     outbound_handler = request["outbound_message_router"]
 
     try:
@@ -1399,7 +1364,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
         V20CredFormatError,
         V20CredManagerError,
     ) as err:
-        _logger.exception("Error preparing bound credential request")
+        LOGGER.exception("Error preparing bound credential request")
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
@@ -1446,11 +1411,6 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -1497,7 +1457,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         V20CredFormatError,
         V20CredManagerError,
     ) as err:
-        _logger.exception("Error preparing issued credential")
+        LOGGER.exception("Error preparing issued credential")
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
@@ -1544,11 +1504,6 @@ async def credential_exchange_store(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    _logger = get_adapted_logger_inst(
-        logger=LOGGER,
-        log_file=profile.settings.get("log.file"),
-        wallet_id=profile.settings.get("wallet.id"),
-    )
     outbound_handler = request["outbound_message_router"]
 
     try:
@@ -1588,7 +1543,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         StorageError,
         V20CredManagerError,
     ) as err:  # treat failure to store as mangled on receipt hence protocol error
-        _logger.exception("Error storing issued credential")
+        LOGGER.exception("Error storing issued credential")
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)

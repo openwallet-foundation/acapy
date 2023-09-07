@@ -1322,25 +1322,6 @@ def arg_parser(ident: str = None, port: int = 8020):
             "('debug', 'info', 'warning', 'error', 'critical')"
         ),
     )
-    parser.add_argument(
-        "--log-handler-config",
-        type=str,
-        metavar="<log-handler-config>",
-        help=(
-            "Specifies when, interval, backupCount for the TimedRotatingFileHandler."
-        ),
-    )
-    parser.add_argument(
-        "--log-fmt-pattern",
-        type=str,
-        metavar="<log-fmt-pattern>",
-        help="Specifies logging formatter pattern as string.",
-    )
-    parser.add_argument(
-        "--log-json-fmt",
-        action="store_true",
-        help="JSON logging formatter.",
-    )
     return parser
 
 
@@ -1374,11 +1355,6 @@ async def create_agent_with_args(args, ident: str = None):
 
     log_file = args.log_file or os.getenv("ACAPY_LOG_FILE")
     log_level = args.log_level
-    log_handler_config = args.log_handler_config or os.getenv(
-        "ACAPY_LOG_HANDLER_CONFIG"
-    )
-    log_fmt_pattern = args.log_fmt_pattern or os.getenv("ACAPY_LOG_FMT_PATTERN")
-    log_json_fmt = args.log_json_fmt or False
     # if we don't have a tails server url then guess it
     if ("revocation" in args and args.revocation) and not tails_server_base_url:
         # assume we're running in docker
@@ -1457,9 +1433,6 @@ async def create_agent_with_args(args, ident: str = None):
         taa_accept=args.taa_accept,
         anoncreds_legacy_revocation=anoncreds_legacy_revocation,
         log_file=log_file,
-        log_handler_config=log_handler_config,
-        log_fmt_pattern=log_fmt_pattern,
-        log_json_fmt=log_json_fmt,
         log_level=log_level,
     )
 

@@ -7,7 +7,6 @@ from typing import Mapping, Tuple
 
 from .....core.error import BaseError
 from .....core.profile import Profile
-from .....config.logging import get_adapted_logger_inst
 from .....messaging.decorators.attach_decorator import AttachDecorator
 
 from ..messages.cred_format import V20CredFormat
@@ -18,6 +17,7 @@ from ..messages.cred_issue import V20CredIssue
 from ..models.cred_ex_record import V20CredExRecord
 
 LOGGER = logging.getLogger(__name__)
+
 CredFormatAttachment = Tuple[V20CredFormat, AttachDecorator]
 
 
@@ -35,11 +35,6 @@ class V20CredFormatHandler(ABC):
         super().__init__()
 
         self._profile = profile
-        self._logger = get_adapted_logger_inst(
-            logger=LOGGER,
-            log_file=self._profile.settings.get("log.file"),
-            wallet_id=self._profile.settings.get("wallet.id"),
-        )
 
     @property
     def profile(self) -> Profile:
