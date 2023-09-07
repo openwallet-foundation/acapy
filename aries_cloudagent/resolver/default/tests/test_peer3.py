@@ -4,7 +4,7 @@ from hashlib import sha256
 from peerdid.keys import to_multibase, MultibaseFormat
 
 from asynctest import mock as async_mock
-from peerdid.dids import resolve_peer_did, DIDDocument, DID
+from peerdid.dids import DIDDocument, DID
 import pytest
 
 from .. import peer3 as test_module

@@ -11,13 +11,12 @@ from peerdid.dids import (
     resolve_peer_did,
     DID,
     DIDDocument,
-    MalformedPeerDIDError,
 )
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
-from .peer3 import PeerDID3Resolver, _convert_to_did_peer_3_document
+from .peer3 import PeerDID3Resolver
 
 
 class PeerDID2Resolver(BaseDIDResolver):
