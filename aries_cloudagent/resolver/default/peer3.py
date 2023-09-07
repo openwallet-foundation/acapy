@@ -134,8 +134,9 @@ def _convert_to_did_peer_3_document(dp2_document: DIDDocument) -> DIDDocument:
     )
     dp3 = DID("did:peer:3" + content)
     dp2 = dp2_document.id
+    
     dp2_doc_str = dp2_document.to_json()
-    dp3_doc_str = dp2_doc_str.replace(dp2,dp3)
-    dp3_doc = DIDDocument.from_json(dp3_doc_str)
+    dp3_doc_str = dp2_doc_str.replace(dp2, dp3)
 
+    dp3_doc = DIDDocument.from_json(dp3_doc_str)
     return dp3_doc
