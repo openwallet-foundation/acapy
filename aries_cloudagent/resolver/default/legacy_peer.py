@@ -115,13 +115,13 @@ class LegacyDocCorrections:
     def didcomm_services_use_updated_conventions(value: dict) -> dict:
         """Update DIDComm services to use updated conventions."""
         if "service" in value:
-            for service in value["service"]:
+            for index, service in enumerate(value["service"]):
                 if "type" in service and service["type"] == "IndyAgent":
                     service["type"] = "did-communication"
                     if ";" in service["id"]:
-                        service["id"] = value["id"] + "#didcomm"
+                        service["id"] = value["id"] + f"#didcomm-{index}"
                     if "#" not in service["id"]:
-                        service["id"] += "#didcomm"
+                        service["id"] += f"#didcomm-{index}"
                     if "priority" in service and service["priority"] is None:
                         service.pop("priority")
         return value
