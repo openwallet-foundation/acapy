@@ -31,6 +31,7 @@ from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 
 RECORD_TYPE_DID_DOCUMENT = "did_document"  # pydid DIDDocument
 
+
 class PeerDID3Resolver(BaseDIDResolver):
     """Peer DID Resolver."""
 
