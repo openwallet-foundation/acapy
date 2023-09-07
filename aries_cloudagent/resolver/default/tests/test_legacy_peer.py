@@ -173,7 +173,7 @@ class TestLegacyPeerDIDResolver:
                     "authentication": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
                     "service": [
                         {
-                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#didcomm",
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#didcomm-0",
                             "type": "did-communication",
                             "priority": 0,
                             "recipientKeys": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
@@ -229,7 +229,7 @@ class TestLegacyPeerDIDResolver:
                     "authentication": ["did:sov:5qXMeLdyWEQhieFUBNw5ux#1"],
                     "service": [
                         {
-                            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#didcomm",
+                            "id": "did:sov:5qXMeLdyWEQhieFUBNw5ux#didcomm-0",
                             "type": "did-communication",
                             "recipientKeys": ["did:sov:5qXMeLdyWEQhieFUBNw5ux#1"],
                             "serviceEndpoint": "http://172.17.0.1:9031/a2a/5b6dyY6PndLaCnWxZbeEYW/5b6dyY6PndLaCnWxZbeEYW/2f6aae0c-6b04-40ff-a25e-faecaea39f83",
@@ -276,7 +276,7 @@ class TestLegacyPeerDIDResolver:
                     "authentication": [],
                     "service": [
                         {
-                            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#didcomm",
+                            "id": "did:sov:1H6d1WS29Bcfr7Bb9tZxA#didcomm-0",
                             "type": "did-communication",
                             "priority": 0,
                             "recipientKeys": ["did:sov:1H6d1WS29Bcfr7Bb9tZxA#cSwsDbSW"],
@@ -338,7 +338,7 @@ class TestLegacyPeerDIDResolver:
                     "authentication": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
                     "service": [
                         {
-                            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#didcomm",
+                            "id": "did:sov:PkWfCgY4SSAYeSoaWx3RFP#didcomm-0",
                             "type": "did-communication",
                             "priority": 0,
                             "recipientKeys": ["did:sov:PkWfCgY4SSAYeSoaWx3RFP#1"],
@@ -406,6 +406,87 @@ class TestLegacyPeerDIDResolver:
                             ],
                             "serviceEndpoint": "https://aries-mediator-agent.vonx.io",
                         }
+                    ],
+                },
+            ),
+            (  # Doc with multiple services
+                {
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
+                    "publicKey": [
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
+                            "publicKeyBase58": "AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG",
+                        }
+                    ],
+                    "authentication": [
+                        {
+                            "type": "Ed25519SignatureAuthentication2018",
+                            "publicKey": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1",
+                        }
+                    ],
+                    "service": [
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ;indy",
+                            "type": "IndyAgent",
+                            "priority": 0,
+                            "recipientKeys": [
+                                "AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG"
+                            ],
+                            "routingKeys": [
+                                "9NnKFUZoYcCqYC2PcaXH3cnaGsoRfyGgyEHbvbLJYh8j"
+                            ],
+                            "serviceEndpoint": "http://bob:3000",
+                        },
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ;indy-ws",
+                            "type": "IndyAgent",
+                            "priority": 1,
+                            "recipientKeys": [
+                                "AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG"
+                            ],
+                            "routingKeys": [
+                                "9NnKFUZoYcCqYC2PcaXH3cnaGsoRfyGgyEHbvbLJYh8j"
+                            ],
+                            "serviceEndpoint": "ws://bob:3000",
+                        },
+                    ],
+                },
+                {
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
+                    "verificationMethod": [
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1",
+                            "type": "Ed25519VerificationKey2018",
+                            "controller": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ",
+                            "publicKeyBase58": "AU2FFjtkVzjFuirgWieqGGqtNrAZWS9LDuB8TDp6EUrG",
+                        }
+                    ],
+                    "authentication": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
+                    "service": [
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#didcomm-0",
+                            "type": "did-communication",
+                            "priority": 0,
+                            "recipientKeys": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
+                            "routingKeys": [
+                                "did:key:z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7#z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7"
+                            ],
+                            "serviceEndpoint": "http://bob:3000",
+                        },
+                        {
+                            "id": "did:sov:JNKL9kJxQi5pNCfA8QBXdJ#didcomm-1",
+                            "type": "did-communication",
+                            "priority": 1,
+                            "recipientKeys": ["did:sov:JNKL9kJxQi5pNCfA8QBXdJ#1"],
+                            "routingKeys": [
+                                "did:key:z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7#z6Mknq3MqipEt9hJegs6J9V7tiLa6T5H5rX3fFCXksJKTuv7"
+                            ],
+                            "serviceEndpoint": "ws://bob:3000",
+                        },
                     ],
                 },
             ),
