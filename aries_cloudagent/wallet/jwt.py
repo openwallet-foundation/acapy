@@ -69,10 +69,11 @@ async def jwt_sign(
         if not did:
             raise ValueError("DID URL must be absolute")
 
+    if not headers.get("typ", None):
+        headers["typ"] = "JWT"
     headers = {
         **headers,
         "alg": "EdDSA",
-        "typ": "JWT",
         "kid": verification_method,
     }
     encoded_headers = dict_to_b64(headers)
