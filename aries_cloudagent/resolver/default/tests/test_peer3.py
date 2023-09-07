@@ -53,9 +53,10 @@ class TestPeerDID3Resolver:
     @pytest.mark.asyncio
     async def test_resolution_types(self, resolver: PeerDID3Resolver, profile: Profile):
         """Test supports."""
+        dp3_doc = convert_to_did_peer_3(TEST_DP2)
         assert DID.is_valid(TEST_DP3)
-        assert isinstance(convert_to_did_peer_3(TEST_DP2), DIDDocument)
-        assert convert_to_did_peer_3(TEST_DP2).id == TEST_DP3
+        assert isinstance(dp3_doc, DIDDocument)
+        assert dp3_doc.id == TEST_DP3
 
     @pytest.mark.asyncio
     async def test_supports(self, resolver: PeerDID3Resolver, profile: Profile):
