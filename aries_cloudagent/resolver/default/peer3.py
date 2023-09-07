@@ -149,31 +149,6 @@ async def _add_key_for_did(profile, did: str, key: str):
             # "routing keys being erroneously stored in the past",
 
 
-def _replace_all_values(input, org, new):
-    for k, v in input.items():
-        if isinstance(v, type(dict)):
-            _replace_all_values(v, org, new)
-        if isinstance(v, List):
-            for i, item in enumerate(v):
-                if isinstance(item, type(dict)):
-                    _replace_all_values(item, org, new)
-                elif (
-                    isinstance(item, str)
-                    or isinstance(item, DID)
-                    or isinstance(item, DIDUrl)
-                ):
-                    v.pop(i)
-                    v.append(item.replace(org, new, 1))
-                elif hasattr(item, "__dict__"):
-                    _replace_all_values(item.__dict__, org, new)
-                else:
-                    pass
-
-        elif isinstance(v, str) or isinstance(v, DID) or isinstance(v, DIDUrl):
-            input[k] = v.replace(org, new, 1)
-        else:
-            pass
-
 
 def _convert_to_did_peer_3_document(dp2_document: DIDDocument) -> DIDDocument:
     content = to_multibase(
@@ -182,12 +157,8 @@ def _convert_to_did_peer_3_document(dp2_document: DIDDocument) -> DIDDocument:
     )
     dp3 = DID("did:peer:3" + content)
     dp2 = dp2_document.id
-    _replace_all_values(dp2_document.__dict__, dp2, dp3)
+    dp2_doc_str = dp2_document.to_json()
+    dp3_doc_str = dp2_doc_str.replace(dp2,dp3)
+    dp3_doc = DIDDocument.from_json(dp3_doc_str)
 
-    # update document indexes
-    new_indexes = {}
-    for ind, val in dp2_document._index.items():
-        new_indexes[ind.replace(dp2, dp3)] = val
-
-    dp2_document._index = new_indexes
-    return dp2_document
+    return dp3_doc
