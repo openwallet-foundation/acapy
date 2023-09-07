@@ -30,6 +30,7 @@ from ...storage.record import StorageRecord
 
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 
+RECORD_TYPE_DID_DOCUMENT = "did_document"  # pydid DIDDocument
 
 class PeerDID3Resolver(BaseDIDResolver):
     """Peer DID Resolver."""
@@ -58,7 +59,7 @@ class PeerDID3Resolver(BaseDIDResolver):
             async with profile.session() as session:
                 storage = session.inject(BaseStorage)
                 record = await storage.find_record(
-                    BaseConnectionManager.RECORD_TYPE_DID_DOCUMENT, {"did": did}
+                    RECORD_TYPE_DID_DOCUMENT, {"did": did}
                 )
                 did_doc = DIDDocument.from_json(record.value)
         else:
@@ -79,11 +80,11 @@ class PeerDID3Resolver(BaseDIDResolver):
             async with profile.session() as session:
                 storage = session.inject(BaseStorage)
                 record = await storage.find_record(
-                    BaseConnectionManager.RECORD_TYPE_DID_DOCUMENT, {"did": dp3_doc.id}
+                    RECORD_TYPE_DID_DOCUMENT, {"did": dp3_doc.id}
                 )
         except StorageNotFoundError:
             record = StorageRecord(
-                BaseConnectionManager.RECORD_TYPE_DID_DOCUMENT,
+                RECORD_TYPE_DID_DOCUMENT,
                 dp3_doc.to_json(),
                 {"did": dp3_doc.id},
             )
@@ -102,6 +103,7 @@ class PeerDID3Resolver(BaseDIDResolver):
 
 
 async def _reset_keys_from_did_doc(profile, did_doc):
+    conn_mgr = BaseConnectionManager(profile)
     async with profile.session() as session:
         storage: BaseStorage = session.inject(BaseStorage)
         await storage.delete_all_records(
@@ -111,7 +113,7 @@ async def _reset_keys_from_did_doc(profile, did_doc):
     for vm in did_doc.verification_method or []:
         if vm.controller == did_doc.id:
             if vm.public_key_base58:
-                await _add_key_for_did(profile, did_doc.id, vm.public_key_base58)
+                await conn_mgr.add_key_for_did(did_doc.id, vm.public_key_base58)
             if vm.public_key_multibase:
                 pk = multibase.decode(vm.public_key_multibase)
                 if len(pk) == 32:  # No multicodec prefix
@@ -122,32 +124,7 @@ async def _reset_keys_from_did_doc(profile, did_doc):
                         pk = bytes_to_b58(key)
                     else:
                         continue
-                await _add_key_for_did(profile, did_doc.id, pk)
-
-
-async def _add_key_for_did(profile, did: str, key: str):
-    """Store a verkey for lookup against a DID.
-
-    Args:
-        did: The DID to associate with this key
-        key: The verkey to be added
-    """
-    record = StorageRecord(
-        BaseConnectionManager.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key}
-    )
-    async with profile.session() as session:
-        storage: BaseStorage = session.inject(BaseStorage)
-        try:
-            await storage.find_record(
-                BaseConnectionManager.RECORD_TYPE_DID_KEY, {"key": key}
-            )
-        except StorageNotFoundError:
-            await storage.add_record(record)
-        except StorageDuplicateError:
-            pass
-            # "Key already associated with DID: %s; this is likely caused by "
-            # "routing keys being erroneously stored in the past",
-
+                await conn_mgr.add_key_for_did(did_doc.id, pk)
 
 
 def _convert_to_did_peer_3_document(dp2_document: DIDDocument) -> DIDDocument:
