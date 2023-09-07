@@ -47,7 +47,7 @@ class IndyTailsServer(BaseTailsServer):
             available_write_ledgers = await ledger_manager.get_write_ledgers()
             LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
             LOGGER.debug(f"write_ledger = {write_ledger}")
-            pool = write_ledger[1].pool
+            pool = write_ledger.pool
             LOGGER.debug(f"write_ledger pool = {pool}")
 
             genesis_transactions = pool.genesis_txns
