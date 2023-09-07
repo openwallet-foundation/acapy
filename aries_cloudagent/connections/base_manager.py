@@ -665,9 +665,7 @@ class BaseConnectionManager:
                 )
         return targets
 
-    async def fetch_did_document(
-        self, did: str
-    ) -> Tuple[DIDDoc, StorageRecord]:
+    async def fetch_did_document(self, did: str) -> Tuple[DIDDoc, StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
