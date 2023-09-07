@@ -90,30 +90,29 @@ class JsonUtil:
         else:
             return orjson.loads(s, *args, **kwargs)
 
+    @staticmethod
+    def read_json_file(file_name: str):
+        """Reads a JSON file and returns its content as a Python object.
 
-@staticmethod
-def read_json_file(file_name: str):
-    """Reads a JSON file and returns its content as a Python object.
+        This function uses the `orjson` library if available, otherwise it falls back to
+        the standard `json` library. The file is opened in binary mode if `orjson` is used,
+        and in text mode otherwise.
 
-    This function uses the `orjson` library if available, otherwise it falls back to
-    the standard `json` library. The file is opened in binary mode if `orjson` is used,
-    and in text mode otherwise.
+        Args:
+            file_name: The name of the file to be read.
 
-    Args:
-        file_name: The name of the file to be read.
+        Returns:
+            The Python representation of the JSON content in the file.
 
-    Returns:
-        The Python representation of the JSON content in the file.
+        Raises:
+            FileNotFoundError: If the file does not exist.
+            json.JSONDecodeError: If the file content is not valid JSON.
+        """
 
-    Raises:
-        FileNotFoundError: If the file does not exist.
-        json.JSONDecodeError: If the file content is not valid JSON.
-    """
-
-    mode = "r" if orjson is None else "rb"
-    with open(file_name, mode=mode) as data_file:
-        if orjson is None:
-            return json.load(data_file)
-        else:
-            content = data_file.read()
-            return orjson.loads(content)
+        mode = "r" if orjson is None else "rb"
+        with open(file_name, mode=mode) as data_file:
+            if orjson is None:
+                return json.load(data_file)
+            else:
+                content = data_file.read()
+                return orjson.loads(content)
