@@ -667,7 +667,7 @@ class BaseConnectionManager:
 
     async def fetch_did_document(
         self, did: str
-    ) -> Tuple[Union[DIDDoc, ResolvedDocument], StorageRecord]:
+    ) -> Tuple[DIDDoc, StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
