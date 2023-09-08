@@ -990,8 +990,7 @@ async def wallet_jwt_sign(request: web.BaseRequest):
 @request_schema(SDJWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
 async def wallet_sd_jwt_sign(request: web.BaseRequest):
-    """
-        Request handler for sd-jws creation using did.
+    """Request handler for sd-jws creation using did.
 
     Args:
         "headers": { ... },
@@ -1058,8 +1057,7 @@ async def wallet_jwt_verify(request: web.BaseRequest):
 @request_schema(SDJWSVerifySchema())
 @response_schema(SDJWSVerifyResponseSchema(), 200, description="")
 async def wallet_sd_jwt_verify(request: web.BaseRequest):
-    """
-        Request handler for sd-jws validation using did.
+    """Request handler for sd-jws validation using did.
 
     Args:
         "sd-jwt": { ... }

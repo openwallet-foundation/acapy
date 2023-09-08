@@ -98,8 +98,7 @@ def create_json_paths(it, current_path="", path_list=None) -> List:
 
 
 def sort_sd_list(sd_list) -> List:
-    """
-    Sorts sd_list.
+    """Sorts sd_list.
 
     Ensures that selectively disclosable claims deepest
     in the structure are handled first.
@@ -110,8 +109,7 @@ def sort_sd_list(sd_list) -> List:
 
 
 def separate_list_splices(non_sd_list) -> List:
-    """
-    Separate list splices in the non_sd_list into individual indices.
+    """Separate list splices in the non_sd_list into individual indices.
 
     This is necessary in order to properly construct the inverse of
     the claims which should not be selectively disclosable in the case
@@ -145,8 +143,7 @@ async def sd_jwt_sign(
     did: Optional[str] = None,
     verification_method: Optional[str] = None,
 ) -> str:
-    """
-    Sign sd-jwt.
+    """Sign sd-jwt.
 
     Use non_sd_list and json paths for payload elements to create a list of
     claims that can be selectively disclosable. Use this list to wrap
