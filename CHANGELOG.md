@@ -1,3 +1,34 @@
+# 0.10.2-rc0
+
+## September 7, 2023
+
+Release 0.10.2 is a patch release for 0.10.1 that addresses two specific regressions found
+in deploying Release 0.10.1. The regressions are to fix:
+
+- An ACA-Py instance upgraded to 0.10.1 that had an existing connection to another Aries agent
+where the connection has both an `http` and `ws` (websocket) service endpoint with the same ID cannot
+message that agent. A scenario is an ACA-Py issuer connecting to an Endorser with both `http` and
+`ws` service endpoints. The updates made in 0.10.1 to improve ACA-Py DID resolution did not account
+for this scenario and needed a tweak to work ([Issue \#2474], [PR \#2475]).
+- The "fix revocation registry" endpoint used to fix scenarios an Issuer's local revocation registry
+state is out of sync with the ledger was broken by some code being added to support a single
+ACA-Py instance writing to different ledgers ([Issue \#2477], [PR \#2480]).
+
+[Issue \#2474]: https://github.com/hyperledger/aries-cloudagent-python/issue/2474
+[PR \#2475]: https://github.com/hyperledger/aries-cloudagent-python/pull/2476
+[Issue \#2477]: https://github.com/hyperledger/aries-cloudagent-python/issue/2477
+[PR \#2480]: https://github.com/hyperledger/aries-cloudagent-python/pull/2480
+
+### 0.10.0 Categorized List of Pull Requests
+
+- DID Handling and Connection Establishment Updates/Fixes
+  - LegacyPeerDIDResolver: erroneously assigning same ID to multiple services [\#2475](https://github.com/hyperledger/aries-cloudagent-python/pull/2475) [dbluhm](https://github.com/dbluhm)
+- Credential Exchange (Issue, Present) Updates
+  - Bugfix: Issue with write ledger pool when performing Accumulator sync [\#2480](https://github.com/hyperledger/aries-cloudagent-python/pull/2480) [shaangill025](https://github.com/shaangill025)
+- Release management pull requests
+  - 0.10.2 [\#2484](https://github.com/hyperledger/aries-cloudagent-python/pull/2484) [swcurran](https://github.com/swcurran)
+  - 0.10.2 Patch Release - fix issue #2475, #2477 [\#2482](https://github.com/hyperledger/aries-cloudagent-python/pull/2480) [shaangill025](https://github.com/shaangill025)
+
 # 0.10.1
 
 ## August 29, 2023
