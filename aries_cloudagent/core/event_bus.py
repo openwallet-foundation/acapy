@@ -97,6 +97,7 @@ class EventBus:
         # TODO don't block notifier until subscribers have all been called?
         # TODO trigger each processor but don't await?
         # TODO log errors but otherwise ignore?
+
         LOGGER.debug("Notifying subscribers: %s", event)
 
         partials = []
