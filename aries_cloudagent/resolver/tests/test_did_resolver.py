@@ -113,7 +113,7 @@ async def test_match_did_to_resolver(profile, resolver, did, method):
 
 
 @pytest.mark.asyncio
-async def test_match_did_to_resolver_x_not_supported(profile, resolver):
+async def test_match_did_to_resolver_x_not_supported(resolver):
     with pytest.raises(DIDMethodNotSupported):
         await resolver._match_did_to_resolver(
             profile, "did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A"

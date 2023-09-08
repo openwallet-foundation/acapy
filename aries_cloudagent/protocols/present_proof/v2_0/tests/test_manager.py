@@ -27,7 +27,7 @@ from .....storage.error import StorageNotFoundError
 from ...indy import pres_exch_handler as test_indy_util_module
 
 from .. import manager as test_module
-from ..formats.handler import V20PresFormatHandler, V20PresFormatHandlerError
+from ..formats.handler import V20PresFormatHandlerError
 from ..formats.dif.handler import DIFPresFormatHandler
 from ..formats.dif.tests.test_handler import (
     DIF_PRES_REQUEST_B as DIF_PRES_REQ,
@@ -1040,6 +1040,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
+
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
@@ -1143,7 +1144,7 @@ class TestV20PresManager(AsyncTestCase):
         ) as mock_attach_decorator, async_mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr, async_mock.patch.object(
-            self.manager._logger, "error", async_mock.MagicMock()
+            test_indy_util_module.LOGGER, "error", async_mock.MagicMock()
         ) as mock_log_error:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 

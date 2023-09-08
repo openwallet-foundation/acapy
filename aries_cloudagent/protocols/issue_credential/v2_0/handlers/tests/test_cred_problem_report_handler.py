@@ -29,12 +29,6 @@ class TestCredProblemReportHandler(AsyncTestCase):
                 }
             )
             handler = test_module.CredProblemReportHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -65,12 +59,6 @@ class TestCredProblemReportHandler(AsyncTestCase):
                 }
             )
             handler = test_module.CredProblemReportHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -93,12 +81,6 @@ class TestCredProblemReportHandler(AsyncTestCase):
             }
         )
         handler = test_module.CredProblemReportHandler()
-        handler._logger = async_mock.MagicMock(
-            error=async_mock.MagicMock(),
-            info=async_mock.MagicMock(),
-            warning=async_mock.MagicMock(),
-            debug=async_mock.MagicMock(),
-        )
         responder = MockResponder()
 
         with self.assertRaises(test_module.HandlerException) as err:
@@ -120,12 +102,6 @@ class TestCredProblemReportHandler(AsyncTestCase):
             }
         )
         handler = test_module.CredProblemReportHandler()
-        handler._logger = async_mock.MagicMock(
-            error=async_mock.MagicMock(),
-            info=async_mock.MagicMock(),
-            warning=async_mock.MagicMock(),
-            debug=async_mock.MagicMock(),
-        )
         responder = MockResponder()
 
         with self.assertRaises(test_module.HandlerException) as err:

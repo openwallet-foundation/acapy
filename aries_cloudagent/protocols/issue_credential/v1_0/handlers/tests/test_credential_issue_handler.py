@@ -31,12 +31,6 @@ class TestCredentialIssueHandler(AsyncTestCase):
             request_context.message = CredentialIssue()
             request_context.connection_ready = True
             handler = test_module.CredentialIssueHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -78,12 +72,6 @@ class TestCredentialIssueHandler(AsyncTestCase):
             request_context.message = CredentialIssue()
             request_context.connection_ready = True
             handler = test_module.CredentialIssueHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -132,12 +120,6 @@ class TestCredentialIssueHandler(AsyncTestCase):
             request_context.message = CredentialIssue()
             request_context.connection_ready = True
             handler = test_module.CredentialIssueHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
 
             with async_mock.patch.object(
@@ -160,12 +142,6 @@ class TestCredentialIssueHandler(AsyncTestCase):
             request_context.message = CredentialIssue()
             request_context.connection_ready = False
             handler = test_module.CredentialIssueHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)
@@ -191,12 +167,6 @@ class TestCredentialIssueHandler(AsyncTestCase):
             mock_cred_mgr.return_value.receive_credential = async_mock.CoroutineMock()
             request_context.message = CredentialIssue()
             handler = test_module.CredentialIssueHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)

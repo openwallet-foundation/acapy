@@ -719,6 +719,7 @@ def register_events(event_bus: EventBus):
 
 async def on_startup_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
+
     # auto setup is only for authors
     if not is_author_role(profile):
         return

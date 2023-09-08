@@ -1552,9 +1552,9 @@ class TestCredentialManager(AsyncTestCase):
         ) as mock_save_ex, async_mock.patch.object(
             V10CredentialExchange, "delete_record", autospec=True
         ) as mock_delete_ex, async_mock.patch.object(
-            self.manager._logger, "exception", async_mock.MagicMock()
+            test_module.LOGGER, "exception", async_mock.MagicMock()
         ) as mock_log_exception, async_mock.patch.object(
-            self.manager._logger, "warning", async_mock.MagicMock()
+            test_module.LOGGER, "warning", async_mock.MagicMock()
         ) as mock_log_warning:
             mock_delete_ex.side_effect = test_module.StorageError()
             (exch, ack) = await self.manager.send_credential_ack(stored_exchange)

@@ -37,9 +37,7 @@ class AliceAgent(AriesAgent):
         aip: int = 20,
         endorser_role: str = None,
         log_file: str = None,
-        log_handler_config: str = None,
-        log_fmt_pattern: str = None,
-        log_json_fmt: bool = False,
+        log_config: str = None,
         log_level: str = None,
         **kwargs,
     ):
@@ -53,9 +51,7 @@ class AliceAgent(AriesAgent):
             aip=aip,
             endorser_role=endorser_role,
             log_file=log_file,
-            log_handler_config=log_handler_config,
-            log_fmt_pattern=log_fmt_pattern,
-            log_json_fmt=log_json_fmt,
+            log_config=log_config,
             log_level=log_level,
             **kwargs,
         )
@@ -141,9 +137,7 @@ async def main(args):
             aip=alice_agent.aip,
             endorser_role=alice_agent.endorser_role,
             log_file=alice_agent.log_file,
-            log_handler_config=alice_agent.log_handler_config,
-            log_fmt_pattern=alice_agent.log_fmt_pattern,
-            log_json_fmt=alice_agent.log_json_fmt,
+            log_config=alice_agent.log_config,
             log_level=alice_agent.log_level,
         )
 

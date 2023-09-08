@@ -33,9 +33,7 @@ class BaseAgent(DemoAgent):
         port: int,
         prefix: str = None,
         log_file: str = None,
-        log_handler_config: str = None,
-        log_fmt_pattern: str = None,
-        log_json_fmt: bool = False,
+        log_config: str = None,
         log_level: str = None,
         **kwargs,
     ):
@@ -47,9 +45,7 @@ class BaseAgent(DemoAgent):
             port + 1,
             prefix=prefix,
             log_file=log_file,
-            log_handler_config=log_handler_config,
-            log_fmt_pattern=log_fmt_pattern,
-            log_json_fmt=log_json_fmt,
+            log_config=log_config,
             log_level=log_level,
             **kwargs,
         )
@@ -181,9 +177,7 @@ class AliceAgent(BaseAgent):
         self,
         port: int,
         log_file: str = None,
-        log_handler_config: str = None,
-        log_fmt_pattern: str = None,
-        log_json_fmt: bool = False,
+        log_config: str = None,
         log_level: str = None,
         **kwargs,
     ):
@@ -192,9 +186,7 @@ class AliceAgent(BaseAgent):
             port,
             seed=None,
             log_file=log_file,
-            log_handler_config=log_handler_config,
-            log_fmt_pattern=log_fmt_pattern,
-            log_json_fmt=log_json_fmt,
+            log_config=log_config,
             log_level=log_level,
             **kwargs,
         )
@@ -237,9 +229,7 @@ class FaberAgent(BaseAgent):
         self,
         port: int,
         log_file: str = None,
-        log_handler_config: str = None,
-        log_fmt_pattern: str = None,
-        log_json_fmt: bool = False,
+        log_config: str = None,
         log_level: str = None,
         **kwargs,
     ):
@@ -248,9 +238,7 @@ class FaberAgent(BaseAgent):
             port,
             seed="random",
             log_file=log_file,
-            log_handler_config=log_handler_config,
-            log_fmt_pattern=log_fmt_pattern,
-            log_json_fmt=log_json_fmt,
+            log_config=log_config,
             log_level=log_level,
             **kwargs,
         )
@@ -340,9 +328,7 @@ async def main(
     wallet_type: str = None,
     arg_file: str = None,
     log_file: str = None,
-    log_handler_config: str = None,
-    log_fmt_pattern: str = None,
-    log_json_fmt: bool = False,
+    log_config: str = None,
     log_level: str = None,
 ):
     if multi_ledger:
@@ -373,9 +359,7 @@ async def main(
             wallet_type=wallet_type,
             arg_file=arg_file,
             log_file=log_file,
-            log_handler_config=log_handler_config,
-            log_fmt_pattern=log_fmt_pattern,
-            log_json_fmt=log_json_fmt,
+            log_config=log_config,
             log_level=log_level,
         )
         await alice.listen_webhooks(start_port + 2)
@@ -391,9 +375,7 @@ async def main(
             wallet_type=wallet_type,
             arg_file=arg_file,
             log_file=log_file,
-            log_handler_config=log_handler_config,
-            log_fmt_pattern=log_fmt_pattern,
-            log_json_fmt=log_json_fmt,
+            log_config=log_config,
             log_level=log_level,
         )
         await faber.listen_webhooks(start_port + 5)
@@ -761,6 +743,12 @@ if __name__ == "__main__":
         help=("Output destination for the root logger."),
     )
     parser.add_argument(
+        "--log-config",
+        type=str,
+        metavar="<log-config>",
+        help=("File path for logging configuration."),
+    )
+    parser.add_argument(
         "--log-level",
         type=str,
         metavar="<log-level>",
@@ -809,6 +797,7 @@ if __name__ == "__main__":
                 args.wallet_type,
                 args.arg_file,
                 args.log_file,
+                args.log_config,
                 args.log_level,
             )
         )

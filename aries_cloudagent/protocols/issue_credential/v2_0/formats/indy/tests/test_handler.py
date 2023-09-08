@@ -42,6 +42,7 @@ from ....message_types import (
 from ...handler import V20CredFormatError
 
 from ..handler import IndyCredFormatHandler
+from ..handler import LOGGER as INDY_LOGGER
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"
@@ -286,16 +287,12 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         ]
         await details_indy[0].save(self.session)
         await details_indy[1].save(self.session)  # exercise logger warning on get()
-        mock_logger = async_mock.MagicMock(
-            return_value=async_mock.MagicMock(warning=async_mock.MagicMock()),
-        )
+
         with async_mock.patch.object(
-            self.handler,
-            "_logger",
-            mock_logger,
-        ):
+            INDY_LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_indy
-            assert mock_logger.warning.call_count == 1
+            mock_warning.assert_called_once()
 
     async def test_check_uniqueness(self):
         with async_mock.patch.object(

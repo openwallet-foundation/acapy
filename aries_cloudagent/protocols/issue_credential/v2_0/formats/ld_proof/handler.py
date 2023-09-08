@@ -1,5 +1,7 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
+
+import logging
 from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, INCLUDE
@@ -50,6 +52,8 @@ from ...models.detail.ld_proof import V20CredExRecordLDProof
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 from .models.cred_detail_options import LDProofVCDetailOptions
 from .models.cred_detail import LDProofVCDetail, LDProofVCDetailSchema
+
+LOGGER = logging.getLogger(__name__)
 
 SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     CredentialIssuancePurpose.term,
@@ -130,7 +134,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             )
 
         if len(records) > 1:
-            self._logger.warning(
+            LOGGER.warning(
                 "Cred ex id %s has %d %s detail records: should be 1",
                 cred_ex_id,
                 len(records),

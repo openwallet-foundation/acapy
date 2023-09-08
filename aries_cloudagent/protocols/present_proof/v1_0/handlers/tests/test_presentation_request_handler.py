@@ -113,12 +113,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
 
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -180,12 +174,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
 
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
 
@@ -268,12 +256,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             )
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
@@ -365,16 +347,13 @@ class TestPresentationRequestHandler(AsyncTestCase):
 
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
 
-            await handler.handle(request_context, responder)
-            assert handler._logger.exception.call_count == 1
+            with async_mock.patch.object(
+                handler._logger, "exception", async_mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()
 
     async def test_called_auto_present_no_preview(self):
         request_context = RequestContext.test_context()
@@ -446,12 +425,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             )
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
@@ -527,12 +500,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             )
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_not_called()
@@ -606,12 +573,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             )
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
@@ -692,12 +653,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             )
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
@@ -829,12 +784,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             )
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             await handler.handle(request_context, responder)
             mock_pres_mgr.return_value.create_presentation.assert_called_once()
@@ -948,12 +897,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             )
             request_context.connection_ready = True
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
 
             await handler.handle(request_context, responder)
@@ -979,12 +922,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
             request_context.message = PresentationRequest()
             request_context.connection_ready = False
             handler = test_module.PresentationRequestHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
             with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)
@@ -1009,12 +946,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
 
         request_context.message = PresentationRequest()
         handler = test_module.PresentationRequestHandler()
-        handler._logger = async_mock.MagicMock(
-            error=async_mock.MagicMock(),
-            info=async_mock.MagicMock(),
-            warning=async_mock.MagicMock(),
-            debug=async_mock.MagicMock(),
-        )
         responder = MockResponder()
         with self.assertRaises(test_module.HandlerException) as err:
             await handler.handle(request_context, responder)

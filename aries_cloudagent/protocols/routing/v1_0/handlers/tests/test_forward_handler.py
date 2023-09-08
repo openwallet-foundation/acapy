@@ -27,12 +27,7 @@ class TestForwardHandler(AsyncTestCase):
     async def test_handle(self):
         self.context.message_receipt = MessageReceipt(recipient_verkey=TEST_VERKEY)
         handler = test_module.ForwardHandler()
-        handler._logger = async_mock.MagicMock(
-            error=async_mock.MagicMock(),
-            info=async_mock.MagicMock(),
-            warning=async_mock.MagicMock(),
-            debug=async_mock.MagicMock(),
-        )
+
         responder = MockResponder()
         with async_mock.patch.object(
             test_module, "RoutingManager", autospec=True
@@ -74,24 +69,13 @@ class TestForwardHandler(AsyncTestCase):
     async def test_handle_receipt_no_recipient_verkey(self):
         self.context.message_receipt = MessageReceipt()
         handler = test_module.ForwardHandler()
-        handler._logger = async_mock.MagicMock(
-            error=async_mock.MagicMock(),
-            info=async_mock.MagicMock(),
-            warning=async_mock.MagicMock(),
-            debug=async_mock.MagicMock(),
-        )
         with self.assertRaises(HandlerException):
             await handler.handle(self.context, None)
 
     async def test_handle_cannot_resolve_recipient(self):
         self.context.message_receipt = MessageReceipt(recipient_verkey=TEST_VERKEY)
         handler = test_module.ForwardHandler()
-        handler._logger = async_mock.MagicMock(
-            error=async_mock.MagicMock(),
-            info=async_mock.MagicMock(),
-            warning=async_mock.MagicMock(),
-            debug=async_mock.MagicMock(),
-        )
+
         responder = MockResponder()
         with async_mock.patch.object(
             test_module, "RoutingManager", autospec=True

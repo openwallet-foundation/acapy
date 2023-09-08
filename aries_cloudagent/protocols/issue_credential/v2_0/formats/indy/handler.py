@@ -1,5 +1,7 @@
 """V2.0 issue-credential indy credential format handler."""
 
+import logging
+
 from marshmallow import RAISE
 import json
 from typing import Mapping, Tuple
@@ -44,6 +46,8 @@ from ...models.cred_ex_record import V20CredExRecord
 from ...models.detail.indy import V20CredExRecordIndy
 
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
+
+LOGGER = logging.getLogger(__name__)
 
 
 class IndyCredFormatHandler(V20CredFormatHandler):
@@ -92,7 +96,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             )
 
         if len(records) > 1:
-            self._logger.warning(
+            LOGGER.warning(
                 "Cred ex id %s has %d %s detail records: should be 1",
                 cred_ex_id,
                 len(records),
@@ -351,7 +355,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         for attempt in range(max(retries, 1)):
             if attempt > 0:
-                self._logger.info(
+                LOGGER.info(
                     "Waiting 2s before retrying credential issuance for cred def '%s'",
                     cred_def_id,
                 )
@@ -489,7 +493,5 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     session, reason="store credential v2.0", event=True
                 )
         except IndyHolderError as e:
-            self._logger.error(
-                f"Error storing credential: {e.error_code} - {e.message}"
-            )
+            LOGGER.error(f"Error storing credential: {e.error_code} - {e.message}")
             raise e

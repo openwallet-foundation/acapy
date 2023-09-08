@@ -23,7 +23,9 @@ from ..version import __version__
 from .banner import Banner
 
 DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
-DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH = "./aries_cloudagent/config/default_per_tenant_logging_config.yml"
+DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH = (
+    "./aries_cloudagent/config/default_per_tenant_logging_config.yml"
+)
 LOG_FORMAT_FILE_ALIAS_PATTERN = (
     "%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
 )
@@ -43,10 +45,10 @@ class ContextFilter(logging.Filter):
     def filter(self, record):
         try:
             wallet_id = context_wallet_id.get()
-            record.wallet_id= wallet_id
+            record.wallet_id = wallet_id
             return True
         except LookupError:
-            record.wallet_id= None
+            record.wallet_id = None
             return True
 
 
@@ -94,7 +96,7 @@ class LoggingConfigurator:
             config_path = logging_config_path
         else:
             config_path = DEFAULT_LOGGING_CONFIG_PATH
-        if ".yml" in config_path or ".yaml"  in config_path:
+        if ".yml" in config_path or ".yaml" in config_path:
             is_dict_config = True
             with open(config_path, "r") as stream:
                 log_config = yaml.safe_load(stream)
@@ -121,9 +123,7 @@ class LoggingConfigurator:
                     # Set Json formatter for rotated file handler which
                     # cannot be set with config file. By default this will
                     # be set up.
-                    _handler.setFormatter(
-                        jsonlogger.JsonFormatter(handler_pattern)
-                    )
+                    _handler.setFormatter(jsonlogger.JsonFormatter(handler_pattern))
                 # Add context filter to handlers
                 _handler.addFilter(_cf)
             if not file_handler_set:
@@ -134,7 +134,7 @@ class LoggingConfigurator:
                     log_file,
                 )
                 # If configuration is not provided within .ini or dict config file
-                # then by default the rotated file handler will have interval=7, 
+                # then by default the rotated file handler will have interval=7,
                 # when=d and backupCount=1 configuration
                 timed_file_handler = TimedRotatingFileMultiProcessHandler(
                     filename=file_path,
@@ -152,7 +152,7 @@ class LoggingConfigurator:
             # Don't go with rotated file handler when not in multitenant mode.
             logging.root.handlers.append(
                 logging.FileHandler(log_file, encoding="utf-8")
-            )  
+            )
         if log_level:
             log_level = log_level.upper()
             logging.root.setLevel(log_level)
@@ -566,4 +566,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
             self.stream = self._open()
         self.release()
 
-logging.handlers.TimedRotatingFileMultiProcessHandler = TimedRotatingFileMultiProcessHandler
+
+logging.handlers.TimedRotatingFileMultiProcessHandler = (
+    TimedRotatingFileMultiProcessHandler
+)

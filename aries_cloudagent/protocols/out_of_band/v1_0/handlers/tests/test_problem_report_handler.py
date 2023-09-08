@@ -46,12 +46,6 @@ class TestOOBProblemReportHandler:
             }
         )
         handler = test_module.OOBProblemReportMessageHandler()
-        handler._logger = async_mock.MagicMock(
-            error=async_mock.MagicMock(),
-            info=async_mock.MagicMock(),
-            warning=async_mock.MagicMock(),
-            debug=async_mock.MagicMock(),
-        )
         responder = MockResponder()
         await handler.handle(context=request_context, responder=responder)
         mock_oob_mgr.return_value.receive_problem_report.assert_called_once_with(
@@ -74,12 +68,10 @@ class TestOOBProblemReportHandler:
             }
         )
         handler = test_module.OOBProblemReportMessageHandler()
-        handler._logger = async_mock.MagicMock(
-            error=async_mock.MagicMock(),
-            info=async_mock.MagicMock(),
-            warning=async_mock.MagicMock(),
-            debug=async_mock.MagicMock(),
-        )
-        responder = MockResponder()
-        await handler.handle(context=request_context, responder=responder)
-        assert handler._logger.exception.call_count == 1
+        with async_mock.patch.object(
+            handler._logger, "exception", async_mock.MagicMock()
+        ) as mock_exc_logger:
+            responder = MockResponder()
+            await handler.handle(context=request_context, responder=responder)
+
+        assert mock_exc_logger.called_once()

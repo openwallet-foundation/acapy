@@ -101,9 +101,7 @@ class OobMessageProcessor:
 
                 outbound_message.payload = json.dumps(message)
 
-                LOGGER.debug(
-                    "Sending oob message payload %s", outbound_message.payload
-                )
+                LOGGER.debug("Sending oob message payload %s", outbound_message.payload)
 
                 return ConnectionTarget(
                     endpoint=their_service.endpoint,

@@ -139,9 +139,7 @@ class DemoAgent:
         endorser_role: str = None,
         extra_args=None,
         log_file: str = None,
-        log_handler_config: str = None,
-        log_fmt_pattern: str = None,
-        log_json_fmt: bool = False,
+        log_config: str = None,
         log_level: str = None,
         **params,
     ):
@@ -175,9 +173,7 @@ class DemoAgent:
         self.aip = aip
         self.arg_file = arg_file
         self.log_file = log_file
-        self.log_handler_config = log_handler_config
-        self.log_fmt_pattern = log_fmt_pattern
-        self.log_json_fmt = log_json_fmt
+        self.log_config = log_config
         self.log_level = log_level
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
@@ -359,6 +355,12 @@ class DemoAgent:
             result.extend(
                 [
                     ("--log-file", self.log_file),
+                ]
+            )
+        if self.log_config:
+            result.extend(
+                [
+                    ("--log-config", self.log_config),
                 ]
             )
         if self.log_level:

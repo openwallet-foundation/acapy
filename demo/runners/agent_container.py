@@ -57,10 +57,8 @@ class AriesAgent(DemoAgent):
         revocation: bool = False,
         anoncreds_legacy_revocation: str = None,
         log_file: str = None,
-        log_handler_config: str = None,
-        log_fmt_pattern: str = None,
+        log_config: str = None,
         log_level: str = None,
-        log_json_fmt: bool = False,
         **kwargs,
     ):
         extra_args = []
@@ -87,9 +85,7 @@ class AriesAgent(DemoAgent):
             revocation=revocation,
             extra_args=extra_args,
             log_file=log_file,
-            log_handler_config=log_handler_config,
-            log_fmt_pattern=log_fmt_pattern,
-            log_json_fmt=log_json_fmt,
+            log_config=log_config,
             log_level=log_level,
             **kwargs,
         )
@@ -690,9 +686,7 @@ class AgentContainer:
         taa_accept: bool = False,
         anoncreds_legacy_revocation: str = None,
         log_file: str = None,
-        log_handler_config: str = None,
-        log_fmt_pattern: str = None,
-        log_json_fmt: bool = False,
+        log_config: str = None,
         log_level: str = None,
     ):
         # configuration parameters
@@ -718,9 +712,7 @@ class AgentContainer:
         self.endorser_role = endorser_role
         self.anoncreds_legacy_revocation = anoncreds_legacy_revocation
         self.log_file = log_file
-        self.log_handler_config = log_handler_config
-        self.log_fmt_pattern = log_fmt_pattern
-        self.log_json_fmt = log_json_fmt
+        self.log_config = log_config
         self.log_level = log_level
         if endorser_role:
             # endorsers and authors need public DIDs (assume cred_type is Indy)
@@ -769,9 +761,7 @@ class AgentContainer:
                 arg_file=self.arg_file,
                 endorser_role=self.endorser_role,
                 log_file=self.log_file,
-                log_handler_config=self.log_handler_config,
-                log_fmt_pattern=self.log_fmt_pattern,
-                log_json_fmt=self.log_json_fmt,
+                log_config=self.log_config,
                 log_level=self.log_level,
             )
         else:
@@ -1313,6 +1303,12 @@ def arg_parser(ident: str = None, port: int = 8020):
         help="Output destination for the root logger.",
     )
     parser.add_argument(
+        "--log-config",
+        type=str,
+        metavar="<log-config>",
+        help="File path for logging configuration.",
+    )
+    parser.add_argument(
         "--log-level",
         type=str,
         metavar="<log-level>",
@@ -1354,6 +1350,7 @@ async def create_agent_with_args(args, ident: str = None):
             arg_file_dict = yaml.safe_load(f)
 
     log_file = args.log_file or os.getenv("ACAPY_LOG_FILE")
+    log_config = args.log_config or os.getenv("ACAPY_LOG_CONFIG")
     log_level = args.log_level
     # if we don't have a tails server url then guess it
     if ("revocation" in args and args.revocation) and not tails_server_base_url:
@@ -1433,6 +1430,7 @@ async def create_agent_with_args(args, ident: str = None):
         taa_accept=args.taa_accept,
         anoncreds_legacy_revocation=anoncreds_legacy_revocation,
         log_file=log_file,
+        log_config=log_config,
         log_level=log_level,
     )
 

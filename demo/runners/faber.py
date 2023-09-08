@@ -48,9 +48,7 @@ class FaberAgent(AriesAgent):
         revocation: bool = False,
         anoncreds_legacy_revocation: str = None,
         log_file: str = None,
-        log_handler_config: str = None,
-        log_fmt_pattern: str = None,
-        log_json_fmt: bool = False,
+        log_config: str = None,
         log_level: str = None,
         **kwargs,
     ):
@@ -64,9 +62,7 @@ class FaberAgent(AriesAgent):
             revocation=revocation,
             anoncreds_legacy_revocation=anoncreds_legacy_revocation,
             log_file=log_file,
-            log_handler_config=log_handler_config,
-            log_fmt_pattern=log_fmt_pattern,
-            log_json_fmt=log_json_fmt,
+            log_config=log_config,
             log_level=log_level,
             **kwargs,
         )
@@ -414,9 +410,7 @@ async def main(args):
             endorser_role=faber_agent.endorser_role,
             anoncreds_legacy_revocation=faber_agent.anoncreds_legacy_revocation,
             log_file=faber_agent.log_file,
-            log_handler_config=faber_agent.log_handler_config,
-            log_fmt_pattern=faber_agent.log_fmt_pattern,
-            log_json_fmt=faber_agent.log_json_fmt,
+            log_config=faber_agent.log_config,
             log_level=faber_agent.log_level,
         )
 

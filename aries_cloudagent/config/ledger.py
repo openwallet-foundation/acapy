@@ -128,6 +128,7 @@ async def ledger_config(
     """Perform Indy ledger configuration."""
 
     session = await profile.session()
+
     ledger = session.inject_or(BaseLedger)
     if not ledger:
         LOGGER.info("Ledger instance not provided")
@@ -251,6 +252,7 @@ async def accept_taa(
 
     mechanisms = taa_info["aml_record"]["aml"]
     mechanism = None
+
     taa_acceptance_mechanism = profile.settings.get("ledger.taa_acceptance_mechanism")
     taa_acceptance_version = profile.settings.get("ledger.taa_acceptance_version")
 

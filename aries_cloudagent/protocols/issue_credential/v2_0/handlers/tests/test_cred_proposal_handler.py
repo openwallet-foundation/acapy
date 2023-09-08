@@ -86,19 +86,15 @@ class TestV20CredProposalHandler(AsyncTestCase):
             request_context.message = V20CredProposal()
             request_context.connection_ready = True
             handler = test_module.V20CredProposalHandler()
-            handler._logger = async_mock.MagicMock(
-                error=async_mock.MagicMock(),
-                info=async_mock.MagicMock(),
-                warning=async_mock.MagicMock(),
-                debug=async_mock.MagicMock(),
-            )
             responder = MockResponder()
 
             with async_mock.patch.object(
                 responder, "send_reply", async_mock.CoroutineMock()
-            ) as mock_send_reply:
+            ) as mock_send_reply, async_mock.patch.object(
+                handler._logger, "exception", async_mock.CoroutineMock()
+            ) as mock_log_exc:
                 await handler.handle(request_context, responder)
-                assert handler._logger.exception.call_count == 1
+                mock_log_exc.assert_called_once()
 
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
