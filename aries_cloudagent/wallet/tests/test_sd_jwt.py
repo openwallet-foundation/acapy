@@ -2,14 +2,10 @@ from base64 import urlsafe_b64decode
 import json
 import pytest
 
-
 from ...wallet.did_method import KEY
 from ...wallet.key_type import ED25519
 from ...wallet.jwt import jwt_sign
-
 from ..sd_jwt import SDJWTVerifyResult, sd_jwt_sign, sd_jwt_verify
-
-from .test_jwt import profile, in_memory_wallet
 
 
 @pytest.fixture
