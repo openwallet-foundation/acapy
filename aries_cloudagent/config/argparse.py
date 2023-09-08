@@ -2139,6 +2139,13 @@ class UpgradeGroup(ArgumentGroup):
             ),
         )
 
+        parser.add_argument(
+            "--named-tag",
+            action="append",
+            env_var="ACAPY_UPGRADE_NAMED_TAGS",
+            help=("Runs upgrade steps associated with tags provided in the config"),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
@@ -2148,4 +2155,8 @@ class UpgradeGroup(ArgumentGroup):
             settings["upgrade.from_version"] = args.from_version
         if args.force_upgrade:
             settings["upgrade.force_upgrade"] = args.force_upgrade
+        if args.named_tag:
+            settings["upgrade.named_tags"] = (
+                list(args.named_tag) if args.named_tag else []
+            )
         return settings
