@@ -753,7 +753,7 @@ class CredentialSubject(Validator):
                     uri_validator(value["id"])
                 except ValidationError:
                     raise ValidationError(
-                        f"credential subject id {value[0]} must be URI"
+                        f'credential subject id "{id}" must be URI'
                     ) from None
 
         return value
