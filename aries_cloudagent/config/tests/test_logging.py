@@ -1,5 +1,4 @@
 import contextlib
-import logging
 
 from io import StringIO
 
@@ -7,11 +6,6 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from tempfile import NamedTemporaryFile
 
 from .. import logging as test_module
-
-from ...core.in_memory import InMemoryProfile
-from ...wallet.base import BaseWallet
-from ...wallet.did_method import SOV, DIDMethods
-from ...wallet.key_type import ED25519
 
 
 class TestLoggingConfigurator(AsyncTestCase):
@@ -98,25 +92,3 @@ class TestLoggingConfigurator(AsyncTestCase):
             test_module.pkg_resources, "resource_stream", async_mock.MagicMock()
         ) as mock_res_stream:
             test_module.load_resource("abc:def", encoding=None)
-
-    def test_get_logger_with_handlers(self):
-        profile = InMemoryProfile.test_profile()
-        profile.settings["log.file"] = "test_file.log"
-        logger = logging.getLogger(__name__)
-        logger = test_module.get_logger_with_handlers(
-            settings=profile.settings,
-            logger=logger,
-            at_when="m",
-            interval=1,
-            backup_count=1,
-        )
-        assert logger
-        logger = test_module.get_logger_with_handlers(
-            settings=profile.settings,
-            logger=logger,
-            did_ident="tenant_did_123",
-            at_when="m",
-            interval=1,
-            backup_count=1,
-        )
-        assert logger

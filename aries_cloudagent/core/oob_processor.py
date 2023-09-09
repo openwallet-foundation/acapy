@@ -118,7 +118,6 @@ class OobMessageProcessor:
         """Find oob record for inbound message."""
         message_type = context.message._type
         oob_record = None
-        profile = context.profile
         async with context.profile.session() as session:
             # First try to find the oob record based on the associated pthid
             if context.message_receipt.parent_thread_id:

@@ -40,9 +40,11 @@ class ContextFilter(logging.Filter):
     """Custom logging Filter to adapt logs with contextual wallet_id."""
 
     def __init__(self):
+        """Initialize an instance of Custom logging.Filter."""
         super(ContextFilter, self).__init__()
 
     def filter(self, record):
+        """Filter LogRecords and add wallet id to them."""
         try:
             wallet_id = context_wallet_id.get()
             record.wallet_id = wallet_id
