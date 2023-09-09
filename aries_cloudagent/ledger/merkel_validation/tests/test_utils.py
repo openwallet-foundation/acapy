@@ -1,5 +1,4 @@
 """Tests for Merkel Validation Utils."""
-import json
 
 from unittest import TestCase
 

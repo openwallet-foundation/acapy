@@ -6,7 +6,6 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....core.in_memory import InMemoryProfile
 from ....indy.issuer import IndyIssuer, IndyIssuerError
-from ....indy.models.revocation import IndyRevRegDef
 from ....indy.util import indy_client_dir
 from ....ledger.base import BaseLedger
 from ....tails.base import BaseTailsServer

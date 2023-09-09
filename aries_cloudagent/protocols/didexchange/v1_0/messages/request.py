@@ -9,7 +9,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import INDY_DID_EXAMPLE, INDY_DID_VALIDATE
+from .....messaging.valid import GENERIC_DID_EXAMPLE, GENERIC_DID_VALIDATE
 from ..message_types import DIDX_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.request_handler.DIDXRequestHandler"
@@ -35,8 +35,7 @@ class DIDXRequest(AgentMessage):
         goal: Optional[str] = None,
         **kwargs,
     ):
-        """
-        Initialize DID exchange request object under RFC 23.
+        """Initialize DID exchange request object under RFC 23.
 
         Args:
             label: Label for this request
@@ -75,8 +74,8 @@ class DIDXRequestSchema(AgentMessageSchema):
         },
     )
     did = fields.Str(
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "DID of exchange", "example": INDY_DID_EXAMPLE},
+        validate=GENERIC_DID_VALIDATE,
+        metadata={"description": "DID of exchange", "example": GENERIC_DID_EXAMPLE},
     )
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,

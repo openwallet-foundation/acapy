@@ -1,4 +1,4 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from asynctest import TestCase as AsyncTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
@@ -7,7 +7,6 @@ from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import ATTACHMENT_FORMAT, CRED_20_OFFER
 
-from .. import cred_offer as test_module
 from ..cred_format import V20CredFormat
 from ..cred_offer import V20CredOffer
 from ..inner.cred_preview import V20CredAttrSpec, V20CredPreview

@@ -2,7 +2,6 @@
 import pytest
 from asynctest import TestCase as AsyncTestCase
 
-from ......config.injection_context import InjectionContext
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext

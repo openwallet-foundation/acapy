@@ -34,8 +34,7 @@ class CredentialRequest(AgentMessage):
         requests_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential request object.
+        """Initialize credential request object.
 
         Args:
             requests_attach: requests attachments
@@ -47,8 +46,7 @@ class CredentialRequest(AgentMessage):
         self.requests_attach = list(requests_attach) if requests_attach else []
 
     def indy_cred_req(self, index: int = 0):
-        """
-        Retrieve and decode indy credential request from attachment.
+        """Retrieve and decode indy credential request from attachment.
 
         Args:
             index: ordinal in attachment list to decode and return

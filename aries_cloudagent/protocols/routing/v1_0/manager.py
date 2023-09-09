@@ -2,20 +2,16 @@
 
 import asyncio
 import logging
-from typing import Coroutine, Sequence
+from typing import Sequence
 
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....storage.error import (
-    StorageError,
     StorageDuplicateError,
     StorageNotFoundError,
 )
 
-from .messages.route_update_request import RouteUpdateRequest
 from .models.route_record import RouteRecord
-from .models.route_update import RouteUpdate
-from .models.route_updated import RouteUpdated
 
 
 LOGGER = logging.getLogger(__name__)
@@ -38,8 +34,7 @@ class RoutingManager:
     RECORD_TYPE = "forward_route"
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a RoutingManager.
+        """Initialize a RoutingManager.
 
         Args:
             profile: The profile instance for this manager
@@ -49,8 +44,7 @@ class RoutingManager:
             raise RoutingManagerError("Missing profile")
 
     async def get_recipient(self, recip_verkey: str) -> RouteRecord:
-        """
-        Resolve the recipient for a verkey.
+        """Resolve the recipient for a verkey.
 
         Args:
             recip_verkey: The verkey ("to") of the incoming Forward message
@@ -90,8 +84,7 @@ class RoutingManager:
     async def get_routes(
         self, client_connection_id: str = None, tag_filter: dict = None
     ) -> Sequence[RouteRecord]:
-        """
-        Fetch all routes associated with the current connection.
+        """Fetch all routes associated with the current connection.
 
         Args:
             client_connection_id: The ID of the connection record
@@ -135,8 +128,7 @@ class RoutingManager:
         recipient_key: str = None,
         internal_wallet_id: str = None,
     ) -> RouteRecord:
-        """
-        Create and store a new RouteRecord.
+        """Create and store a new RouteRecord.
 
         Args:
             client_connection_id: The ID of the connection record
@@ -163,70 +155,3 @@ class RoutingManager:
             await route.save(session, reason="Created new route")
         LOGGER.info(">>> CREATED routing record for verkey: " + recipient_key)
         return route
-
-    async def update_routes(
-        self, client_connection_id: str, updates: Sequence[RouteUpdate]
-    ) -> Sequence[RouteUpdated]:
-        """
-        Update routes associated with the current connection.
-
-        Args:
-            client_connection_id: The ID of the connection record
-            updates: The sequence of route updates (create/delete) to perform.
-
-        """
-        exist_routes = await self.get_routes(client_connection_id)
-        exist = {}
-        for route in exist_routes:
-            exist[route.recipient_key] = route
-
-        updated = []
-        for update in updates:
-            result = RouteUpdated(
-                recipient_key=update.recipient_key, action=update.action
-            )
-            recip_key = update.recipient_key
-            if not recip_key:
-                result.result = RouteUpdated.RESULT_CLIENT_ERROR
-            elif update.action == RouteUpdate.ACTION_CREATE:
-                if recip_key in exist:
-                    result.result = RouteUpdated.RESULT_NO_CHANGE
-                else:
-                    try:
-                        await self.create_route_record(
-                            client_connection_id=client_connection_id,
-                            recipient_key=recip_key,
-                        )
-                    except RoutingManagerError:
-                        result.result = RouteUpdated.RESULT_SERVER_ERROR
-                    else:
-                        result.result = RouteUpdated.RESULT_SUCCESS
-            elif update.action == RouteUpdate.ACTION_DELETE:
-                if recip_key in exist:
-                    try:
-                        await self.delete_route_record(exist[recip_key])
-                    except StorageError:
-                        result.result = RouteUpdated.RESULT_SERVER_ERROR
-                    else:
-                        result.result = RouteUpdated.RESULT_SUCCESS
-                else:
-                    result.result = RouteUpdated.RESULT_NO_CHANGE
-            else:
-                result.result = RouteUpdated.RESULT_CLIENT_ERROR
-            updated.append(result)
-        return updated
-
-    async def send_create_route(
-        self, router_connection_id: str, recip_key: str, outbound_handler: Coroutine
-    ):
-        """Create and send a route update request.
-
-        Returns: the current routing state (request or done)
-
-        """
-        msg = RouteUpdateRequest(
-            updates=[
-                RouteUpdate(recipient_key=recip_key, action=RouteUpdate.ACTION_CREATE)
-            ]
-        )
-        await outbound_handler(msg, connection_id=router_connection_id)

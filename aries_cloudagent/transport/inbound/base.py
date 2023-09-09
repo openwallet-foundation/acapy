@@ -23,8 +23,7 @@ class BaseInboundTransport(ABC):
         wire_format: BaseWireFormat = None,
         root_profile: Profile = None,
     ):
-        """
-        Initialize the inbound transport instance.
+        """Initialize the inbound transport instance.
 
         Args:
             scheme: The transport scheme identifier
@@ -61,8 +60,7 @@ class BaseInboundTransport(ABC):
         client_info: dict = None,
         wire_format: BaseWireFormat = None,
     ) -> Awaitable[InboundSession]:
-        """
-        Create a new inbound session.
+        """Create a new inbound session.
 
         Args:
             accept_undelivered: Flag for accepting undelivered messages

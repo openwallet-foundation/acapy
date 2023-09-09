@@ -54,8 +54,7 @@ class IntroConnIdMatchInfoSchema(OpenAPISchema):
 @querystring_schema(IntroStartQueryStringSchema())
 @response_schema(IntroModuleResponseSchema, description="")
 async def introduction_start(request: web.BaseRequest):
-    """
-    Request handler for starting an introduction.
+    """Request handler for starting an introduction.
 
     Args:
         request: aiohttp request object

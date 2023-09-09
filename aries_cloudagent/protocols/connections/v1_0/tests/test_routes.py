@@ -100,7 +100,7 @@ class TestConnectionRoutes(AsyncTestCase):
                         "invitation_msg_id": "dummy_msg",
                     },
                     post_filter_positive={
-                        "their_role": [v for v in ConnRecord.Role.REQUESTER.value],
+                        "their_role": list(ConnRecord.Role.REQUESTER.value),
                         "connection_protocol": ConnRecord.Protocol.RFC_0160.aries_protocol,
                     },
                     alt=True,
@@ -641,56 +641,6 @@ class TestConnectionRoutes(AsyncTestCase):
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.connections_accept_request(self.request)
-
-    async def test_connections_establish_inbound(self):
-        self.request.match_info = {"conn_id": "dummy", "ref_id": "ref"}
-        self.request.query = {
-            "my_endpoint": "http://endpoint.ca",
-        }
-        mock_conn_rec = async_mock.MagicMock()
-
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, async_mock.patch.object(
-            test_module.web, "json_response"
-        ) as mock_response:
-            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
-            mock_conn_mgr.return_value.establish_inbound = async_mock.CoroutineMock()
-
-            await test_module.connections_establish_inbound(self.request)
-            mock_response.assert_called_once_with({})
-
-    async def test_connections_establish_inbound_not_found(self):
-        self.request.match_info = {"conn_id": "dummy", "ref_id": "ref"}
-
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id:
-            mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
-
-            with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.connections_establish_inbound(self.request)
-
-    async def test_connections_establish_inbound_x(self):
-        self.request.match_info = {"conn_id": "dummy", "ref_id": "ref"}
-        self.request.query = {
-            "my_endpoint": "http://endpoint.ca",
-        }
-        mock_conn_rec = async_mock.MagicMock()
-
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr:
-            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
-            mock_conn_mgr.return_value.establish_inbound = async_mock.CoroutineMock(
-                side_effect=test_module.ConnectionManagerError()
-            )
-            with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.connections_establish_inbound(self.request)
 
     async def test_connections_remove(self):
         self.request.match_info = {"conn_id": "dummy"}

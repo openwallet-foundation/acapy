@@ -4,7 +4,6 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....core.in_memory import InMemoryProfile
 from ....connections.models.connection_target import ConnectionTarget
-from ....core.in_memory import InMemoryProfile
 from ...wire_format import BaseWireFormat
 
 from .. import manager as test_module

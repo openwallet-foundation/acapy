@@ -89,7 +89,7 @@ class TestWalletRecord(AsyncTestCase):
 
         assert wallet_record.settings.get("wallet.type") == "indy"
 
-    async def test_update_settings(self):
+    async def test_update_settings_x(self):
         wallet_record = WalletRecord()
         settings = {
             "wallet.id": "my-wallet-id",

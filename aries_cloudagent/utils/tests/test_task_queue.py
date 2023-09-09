@@ -206,7 +206,7 @@ class TestTaskQueue(AsyncTestCase):
 
         task = queue.run(retval(1), done)
         await task
-        queue.completed_task(task, done, None, dict())
+        queue.completed_task(task, done, None, {})
         assert completed == [1, 1]
 
     async def test_timed(self):

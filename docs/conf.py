@@ -52,6 +52,10 @@ autodoc_mock_imports = [
     "async_timeout",
     "portalocker",
     "pythonjsonlogger",
+    "jwt",
+    "yaml",
+    "pytz",
+    "multiformats",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",

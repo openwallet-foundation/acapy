@@ -341,7 +341,7 @@ class TestInMemoryWallet:
         assert info_check.metadata.get("posted")
 
         posted = await wallet.get_posted_dids()
-        assert len(posted) == 2 and set(p.did for p in posted) == {
+        assert len(posted) == 2 and {p.did for p in posted} == {
             info_public.did,
             info_replace.did,
         }

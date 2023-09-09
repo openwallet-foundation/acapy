@@ -263,8 +263,7 @@ class WriteLedgerRequestSchema(OpenAPISchema):
 @querystring_schema(SchemaConnIdMatchInfoSchema())
 @response_schema(TxnOrRegisterLedgerNymResponseSchema(), 200, description="")
 async def register_ledger_nym(request: web.BaseRequest):
-    """
-    Request handler for registering a NYM with the ledger.
+    """Request handler for registering a NYM with the ledger.
 
     Args:
         request: aiohttp request object
@@ -429,8 +428,7 @@ async def register_ledger_nym(request: web.BaseRequest):
 @querystring_schema(QueryStringDIDSchema)
 @response_schema(GetNymRoleResponseSchema(), 200, description="")
 async def get_nym_role(request: web.BaseRequest):
-    """
-    Request handler for getting the role from the NYM registration of a public DID.
+    """Request handler for getting the role from the NYM registration of a public DID.
 
     Args:
         request: aiohttp request object
@@ -476,8 +474,7 @@ async def get_nym_role(request: web.BaseRequest):
 @docs(tags=["ledger"], summary="Rotate key pair for public DID.")
 @response_schema(LedgerModulesResultSchema(), 200, description="")
 async def rotate_public_did_keypair(request: web.BaseRequest):
-    """
-    Request handler for rotating key pair associated with public DID.
+    """Request handler for rotating key pair associated with public DID.
 
     Args:
         request: aiohttp request object
@@ -506,8 +503,7 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
 @querystring_schema(QueryStringDIDSchema())
 @response_schema(GetDIDVerkeyResponseSchema(), 200, description="")
 async def get_did_verkey(request: web.BaseRequest):
-    """
-    Request handler for getting a verkey for a DID from the ledger.
+    """Request handler for getting a verkey for a DID from the ledger.
 
     Args:
         request: aiohttp request object
@@ -555,8 +551,7 @@ async def get_did_verkey(request: web.BaseRequest):
 @querystring_schema(QueryStringEndpointSchema())
 @response_schema(GetDIDEndpointResponseSchema(), 200, description="")
 async def get_did_endpoint(request: web.BaseRequest):
-    """
-    Request handler for getting a verkey for a DID from the ledger.
+    """Request handler for getting a verkey for a DID from the ledger.
 
     Args:
         request: aiohttp request object
@@ -601,8 +596,7 @@ async def get_did_endpoint(request: web.BaseRequest):
 @docs(tags=["ledger"], summary="Fetch the current transaction author agreement, if any")
 @response_schema(TAAResultSchema, 200, description="")
 async def ledger_get_taa(request: web.BaseRequest):
-    """
-    Request handler for fetching the transaction author agreement.
+    """Request handler for fetching the transaction author agreement.
 
     Args:
         request: aiohttp request object
@@ -642,8 +636,7 @@ async def ledger_get_taa(request: web.BaseRequest):
 @request_schema(TAAAcceptSchema)
 @response_schema(LedgerModulesResultSchema(), 200, description="")
 async def ledger_accept_taa(request: web.BaseRequest):
-    """
-    Request handler for accepting the current transaction author agreement.
+    """Request handler for accepting the current transaction author agreement.
 
     Args:
         request: aiohttp request object
@@ -703,8 +696,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
 @docs(tags=["ledger"], summary="Fetch list of available write ledgers")
 @response_schema(ConfigurableWriteLedgersSchema, 200, description="")
 async def get_write_ledgers(request: web.BaseRequest):
-    """
-    Request handler for fetching the list of available write ledgers.
+    """Request handler for fetching the list of available write ledgers.
 
     Args:
         request: aiohttp request object
@@ -725,8 +717,7 @@ async def get_write_ledgers(request: web.BaseRequest):
 @docs(tags=["ledger"], summary="Fetch the current write ledger")
 @response_schema(WriteLedgerSchema, 200, description="")
 async def get_write_ledger(request: web.BaseRequest):
-    """
-    Request handler for fetching the currently set write ledger.
+    """Request handler for fetching the currently set write ledger.
 
     Args:
         request: aiohttp request object
@@ -751,8 +742,7 @@ async def get_write_ledger(request: web.BaseRequest):
 @match_info_schema(WriteLedgerRequestSchema())
 @response_schema(WriteLedgerSchema, 200, description="")
 async def set_write_ledger(request: web.BaseRequest):
-    """
-    Request handler for setting write ledger.
+    """Request handler for setting write ledger.
 
     Args:
         request: aiohttp request object
@@ -782,8 +772,7 @@ async def set_write_ledger(request: web.BaseRequest):
 )
 @response_schema(LedgerConfigListSchema, 200, description="")
 async def get_ledger_config(request: web.BaseRequest):
-    """
-    Request handler for fetching the ledger configuration list in use.
+    """Request handler for fetching the ledger configuration list in use.
 
     Args:
         request: aiohttp request object

@@ -176,8 +176,7 @@ class AskarProfile(Profile):
         return AskarProfileSession(self, False, context=context)
 
     def transaction(self, context: InjectionContext = None) -> ProfileSession:
-        """
-        Start a new interactive session with commit and rollback support.
+        """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.

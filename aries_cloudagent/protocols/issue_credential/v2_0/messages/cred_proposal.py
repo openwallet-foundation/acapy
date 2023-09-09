@@ -38,8 +38,7 @@ class V20CredProposal(AgentMessage):
         filters_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential proposal object.
+        """Initialize credential proposal object.
 
         Args:
             comment: optional human-readable comment
@@ -55,8 +54,7 @@ class V20CredProposal(AgentMessage):
         self.filters_attach = list(filters_attach) if filters_attach else []
 
     def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
-        """
-        Return attached filter.
+        """Return attached filter.
 
         Args:
             fmt: format of attachment in list to decode and return

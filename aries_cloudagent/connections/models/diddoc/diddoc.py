@@ -1,5 +1,4 @@
-"""
-DID Document classes.
+"""DID Document classes.
 
 Copyright 2017-2019 Government of Canada
 Public Services and Procurement Canada - buyandsell.gc.ca
@@ -31,8 +30,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class DIDDoc:
-    """
-    DID document, grouping a DID with verification keys and services.
+    """DID document, grouping a DID with verification keys and services.
 
     Retains DIDs as raw values (orientated toward indy-facing operations),
     everything else as URIs (oriented toward W3C-facing operations).
@@ -41,8 +39,7 @@ class DIDDoc:
     CONTEXT = "https://w3id.org/did/v1"
 
     def __init__(self, did: str = None) -> None:
-        """
-        Initialize the DIDDoc instance.
+        """Initialize the DIDDoc instance.
 
         Retain DID ('id' in DIDDoc context); initialize verification keys
         and services to empty lists.
@@ -67,8 +64,7 @@ class DIDDoc:
 
     @did.setter
     def did(self, value: str) -> None:
-        """
-        Set DID ('id' in DIDDoc context).
+        """Set DID ('id' in DIDDoc context).
 
         Args:
             value: DID
@@ -99,8 +95,7 @@ class DIDDoc:
         return self._service
 
     def set(self, item: Union[Service, PublicKey]) -> "DIDDoc":
-        """
-        Add or replace service or public key; return current DIDDoc.
+        """Add or replace service or public key; return current DIDDoc.
 
         Raises:
             ValueError: if input item is neither service nor public key.
@@ -122,8 +117,7 @@ class DIDDoc:
             )
 
     def serialize(self) -> dict:
-        """
-        Dump current object to a JSON-compatible dictionary.
+        """Dump current object to a JSON-compatible dictionary.
 
         Returns:
             dict representation of current DIDDoc
@@ -146,8 +140,7 @@ class DIDDoc:
         }
 
     def to_json(self) -> str:
-        """
-        Dump current object as json (JSON-LD).
+        """Dump current object as json (JSON-LD).
 
         Returns:
             json representation of current DIDDoc
@@ -159,8 +152,7 @@ class DIDDoc:
     def add_service_pubkeys(
         self, service: dict, tags: Union[Sequence[str], str]
     ) -> List[PublicKey]:
-        """
-        Add public keys specified in service. Return public keys so discovered.
+        """Add public keys specified in service. Return public keys so discovered.
 
         Args:
             service: service from DID document
@@ -214,8 +206,7 @@ class DIDDoc:
 
     @classmethod
     def deserialize(cls, did_doc: dict) -> "DIDDoc":
-        """
-        Construct DIDDoc object from dict representation.
+        """Construct DIDDoc object from dict representation.
 
         Args:
             did_doc: DIDDoc dict representation
@@ -304,8 +295,7 @@ class DIDDoc:
 
     @classmethod
     def from_json(cls, did_doc_json: str) -> "DIDDoc":
-        """
-        Construct DIDDoc object from json representation.
+        """Construct DIDDoc object from json representation.
 
         Args:
             did_doc_json: DIDDoc json representation

@@ -1,4 +1,3 @@
-import asyncio
 import json
 
 from copy import deepcopy

@@ -1,12 +1,11 @@
 """Test Reuse Message."""
 import pytest
 
-from asynctest import TestCase as AsyncTestCase
-from unittest import mock, TestCase
+from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
 
-from ..reuse import HandshakeReuse, HandshakeReuseSchema
+from ..reuse import HandshakeReuse
 
 
 class TestReuseMessage(TestCase):

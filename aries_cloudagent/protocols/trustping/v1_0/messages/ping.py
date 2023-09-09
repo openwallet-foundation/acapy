@@ -21,8 +21,7 @@ class Ping(AgentMessage):
     def __init__(
         self, *, response_requested: bool = True, comment: str = None, **kwargs
     ):
-        """
-        Initialize a Ping message instance.
+        """Initialize a Ping message instance.
 
         Args:
             response_requested: A flag indicating that a response is requested

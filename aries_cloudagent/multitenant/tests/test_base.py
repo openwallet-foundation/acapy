@@ -13,7 +13,6 @@ from ...protocols.coordinate_mediation.v1_0.manager import (
     MediationRecord,
 )
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
-from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
 from ...storage.error import StorageNotFoundError
 from ...storage.in_memory import InMemoryStorage

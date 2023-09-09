@@ -1,4 +1,4 @@
-ARG python_version=3.9.16
+ARG python_version=3.9.18
 FROM python:${python_version}-slim-bullseye
 
 RUN apt-get update -y && \
@@ -9,14 +9,12 @@ RUN apt-get update -y && \
 
 WORKDIR /usr/src/app
 
-ADD requirements*.txt ./
+RUN pip install --no-cache-dir poetry
 
-RUN pip3 install --no-cache-dir \
-	-r requirements.txt \
-	-r requirements.askar.txt \
-	-r requirements.bbs.txt \
-	-r requirements.dev.txt
+ADD ./README.md pyproject.toml ./poetry.lock ./
+
+RUN poetry install --no-root --no-directory -E "askar bbs"
 
 ADD . .
 
-ENTRYPOINT ["/bin/bash", "-c", "pytest \"$@\"", "--"]
+ENTRYPOINT ["/bin/bash", "-c", "poetry run pytest \"$@\"", "--"]

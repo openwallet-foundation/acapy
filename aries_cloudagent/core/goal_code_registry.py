@@ -13,8 +13,7 @@ class GoalCodeRegistry:
         self.goal_codes = []
 
     def register_controllers(self, *controller_sets):
-        """
-        Add new controllers.
+        """Add new controllers.
 
         Args:
             controller_sets: Mappings of controller to coroutines

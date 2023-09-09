@@ -32,8 +32,7 @@ class Keylist(AgentMessage):
         pagination: KeylistQueryPaginate = None,
         **kwargs,
     ):
-        """
-        Initialize keylist query response object.
+        """Initialize keylist query response object.
 
         Args:
             keys: Found keys by requested query

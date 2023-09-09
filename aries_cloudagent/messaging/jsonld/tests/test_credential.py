@@ -1,14 +1,10 @@
 """Test json-ld credential."""
 
-import asyncio
 import json
-import pytest
 
-from itertools import cycle
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
 from ....vc.ld_proofs import DocumentLoader
 from ....wallet.base import BaseWallet
@@ -24,7 +20,6 @@ from . import (
     TEST_SEED,
     TEST_SIGN_ERROR_OBJS,
     TEST_SIGN_OBJS,
-    TEST_VALIDATE_ERROR_OBJ2,
     TEST_VERIFY_ERROR,
     TEST_VERIFY_OBJS,
     TEST_VERKEY,

@@ -1,7 +1,3 @@
-import json
-
-import pytest
-
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from copy import deepcopy
 from pathlib import Path

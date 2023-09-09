@@ -18,8 +18,7 @@ class IndyCredxVerifier(IndyVerifier):
     """Indy-Credx verifier class."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize an IndyCredxVerifier instance.
+        """Initialize an IndyCredxVerifier instance.
 
         Args:
             profile: an active profile instance
@@ -36,8 +35,7 @@ class IndyCredxVerifier(IndyVerifier):
         rev_reg_defs,
         rev_reg_entries,
     ) -> Tuple[bool, list]:
-        """
-        Verify a presentation.
+        """Verify a presentation.
 
         Args:
             pres_req: Presentation request data

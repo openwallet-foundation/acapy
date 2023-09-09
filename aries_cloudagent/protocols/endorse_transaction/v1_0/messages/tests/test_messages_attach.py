@@ -1,6 +1,5 @@
 from unittest import mock, TestCase
 
-from asynctest import TestCase as AsyncTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 

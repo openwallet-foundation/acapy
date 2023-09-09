@@ -168,8 +168,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
     ):
-        """
-        Save record error state if need be; log and swallow any storage error.
+        """Save record error state if need be; log and swallow any storage error.
 
         Args:
             session: The profile session to use
@@ -197,8 +196,7 @@ class V10PresentationExchange(BaseExchangeRecord):
 
     # Override
     async def emit_event(self, session: ProfileSession, payload: Any = None):
-        """
-        Emit an event.
+        """Emit an event.
 
         Args:
             session: The profile session to use

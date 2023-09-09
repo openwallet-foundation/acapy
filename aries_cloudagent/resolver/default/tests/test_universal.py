@@ -6,7 +6,8 @@ from typing import Dict, Union
 from asynctest import mock as async_mock
 import pytest
 
-from aries_cloudagent.config.settings import Settings
+from ....config.settings import Settings
+from ....core.in_memory import InMemoryProfile
 
 from .. import universal as test_module
 from ...base import DIDNotFound, ResolverError
@@ -24,7 +25,7 @@ async def resolver():
 @pytest.fixture
 def profile():
     """Profile fixture."""
-    yield async_mock.MagicMock()
+    yield InMemoryProfile.test_profile()
 
 
 class MockResponse:

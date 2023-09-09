@@ -35,8 +35,7 @@ class PresentationRequest(AgentMessage):
         request_presentations_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize presentation request object.
+        """Initialize presentation request object.
 
         Args:
             request_presentations_attach: proof request attachments
@@ -50,8 +49,7 @@ class PresentationRequest(AgentMessage):
         )
 
     def indy_proof_request(self, index: int = 0):
-        """
-        Retrieve and decode indy proof request from attachment.
+        """Retrieve and decode indy proof request from attachment.
 
         Args:
             index: ordinal in attachment list to decode and return

@@ -19,8 +19,7 @@ class V20PresAck(V10Ack):
         schema_class = "V20PresAckSchema"
 
     def __init__(self, status: str = None, verification_result: str = None, **kwargs):
-        """
-        Initialize an explicit ack message instance.
+        """Initialize an explicit ack message instance.
 
         Args:
             status: Status (default OK)

@@ -1,8 +1,4 @@
-import asyncio
-from unittest import mock, TestCase
-
 from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
 from ....connections.models.connection_target import ConnectionTarget
 from ....transport.outbound.message import OutboundMessage
@@ -44,7 +40,7 @@ class TestDeliveryQueue(AsyncTestCase):
         msg = OutboundMessage(payload="x", target=t)
         queue.add_message(msg)
         assert queue.has_message_for_key("aaa")
-        msg_list = [m for m in queue.inspect_all_messages_for_key("aaa")]
+        msg_list = list(queue.inspect_all_messages_for_key("aaa"))
         assert queue.message_count_for_key("aaa") == 1
         assert len(msg_list) == 1
         assert msg_list[0] == msg

@@ -33,8 +33,7 @@ class V20PresFormatHandler(ABC):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile instance.
+        """Accessor for the current profile instance.
 
         Returns:
             The profile instance for this presentation exchange format

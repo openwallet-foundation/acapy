@@ -55,8 +55,7 @@ class CredentialManager:
     """Class for managing credentials."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a CredentialManager.
+        """Initialize a CredentialManager.
 
         Args:
             profile: The profile instance for this credential manager
@@ -65,8 +64,7 @@ class CredentialManager:
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile instance.
+        """Accessor for the current profile instance.
 
         Returns:
             The profile instance for this credential manager
@@ -95,8 +93,7 @@ class CredentialManager:
         auto_remove: bool = None,
         comment: str = None,
     ) -> Tuple[V10CredentialExchange, CredentialOffer]:
-        """
-        Set up a new credential exchange for an automated send.
+        """Set up a new credential exchange for an automated send.
 
         Args:
             connection_id: Connection to create offer for
@@ -141,8 +138,7 @@ class CredentialManager:
         issuer_did: str = None,
         trace: bool = False,
     ) -> V10CredentialExchange:
-        """
-        Create a credential proposal.
+        """Create a credential proposal.
 
         Args:
             connection_id: Connection to create proposal for
@@ -197,8 +193,7 @@ class CredentialManager:
     async def receive_proposal(
         self, message: CredentialProposal, connection_id: str
     ) -> V10CredentialExchange:
-        """
-        Receive a credential proposal.
+        """Receive a credential proposal.
 
         Returns:
             The resulting credential exchange record, created
@@ -232,8 +227,7 @@ class CredentialManager:
         counter_proposal: CredentialProposal = None,
         comment: str = None,
     ) -> Tuple[V10CredentialExchange, CredentialOffer]:
-        """
-        Create a credential offer, update credential exchange record.
+        """Create a credential offer, update credential exchange record.
 
         Args:
             cred_ex_record: Credential exchange to create offer for
@@ -282,8 +276,8 @@ class CredentialManager:
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
-        schema_attrs = {attr for attr in schema["attrNames"]}
-        preview_attrs = {attr for attr in credential_preview.attr_dict()}
+        schema_attrs = set(schema["attrNames"])
+        preview_attrs = set(credential_preview.attr_dict())
         if preview_attrs != schema_attrs:
             raise CredentialManagerError(
                 f"Preview attributes {preview_attrs} "
@@ -333,8 +327,7 @@ class CredentialManager:
     async def receive_offer(
         self, message: CredentialOffer, connection_id: Optional[str]
     ) -> V10CredentialExchange:
-        """
-        Receive a credential offer.
+        """Receive a credential offer.
 
         Returns:
             The credential exchange record, updated
@@ -401,8 +394,7 @@ class CredentialManager:
     async def create_request(
         self, cred_ex_record: V10CredentialExchange, holder_did: str
     ) -> Tuple[V10CredentialExchange, CredentialRequest]:
-        """
-        Create a credential request.
+        """Create a credential request.
 
         Args:
             cred_ex_record: Credential exchange record
@@ -514,8 +506,7 @@ class CredentialManager:
         connection_record: Optional[ConnRecord],
         oob_record: Optional[OobRecord],
     ):
-        """
-        Receive a credential request.
+        """Receive a credential request.
 
         Args:
             credential_request_message: Credential request to receive
@@ -574,8 +565,7 @@ class CredentialManager:
         comment: str = None,
         retries: int = 5,
     ) -> Tuple[V10CredentialExchange, CredentialIssue]:
-        """
-        Issue a credential.
+        """Issue a credential.
 
         Args:
             cred_ex_record: The credential exchange record
@@ -731,8 +721,7 @@ class CredentialManager:
     async def receive_credential(
         self, message: CredentialIssue, connection_id: Optional[str]
     ) -> V10CredentialExchange:
-        """
-        Receive a credential from an issuer.
+        """Receive a credential from an issuer.
 
         Hold in storage potentially to be processed by controller before storing.
 
@@ -777,8 +766,7 @@ class CredentialManager:
     async def store_credential(
         self, cred_ex_record: V10CredentialExchange, credential_id: str = None
     ) -> V10CredentialExchange:
-        """
-        Store a credential in holder wallet; send ack to issuer.
+        """Store a credential in holder wallet; send ack to issuer.
 
         Args:
             cred_ex_record: credential exchange record
@@ -872,8 +860,7 @@ class CredentialManager:
         self,
         cred_ex_record: V10CredentialExchange,
     ) -> Tuple[V10CredentialExchange, CredentialAck]:
-        """
-        Create, send, and return ack message for input credential exchange record.
+        """Create, send, and return ack message for input credential exchange record.
 
         Delete credential exchange record if set to auto-remove.
 
@@ -944,8 +931,7 @@ class CredentialManager:
     async def receive_credential_ack(
         self, message: CredentialAck, connection_id: Optional[str]
     ) -> Optional[V10CredentialExchange]:
-        """
-        Receive credential ack from holder.
+        """Receive credential ack from holder.
 
         Returns:
             credential exchange record, retrieved and updated
@@ -986,8 +972,7 @@ class CredentialManager:
     async def receive_problem_report(
         self, message: CredentialProblemReport, connection_id: str
     ):
-        """
-        Receive problem report.
+        """Receive problem report.
 
         Returns:
             credential exchange record, retrieved and updated

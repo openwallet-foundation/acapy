@@ -18,8 +18,7 @@ class WsTransport(BaseInboundTransport):
     """Websockets Transport class."""
 
     def __init__(self, host: str, port: int, create_session, **kwargs) -> None:
-        """
-        Initialize an inbound WebSocket transport instance.
+        """Initialize an inbound WebSocket transport instance.
 
         Args:
             host: Host to listen on
@@ -52,8 +51,7 @@ class WsTransport(BaseInboundTransport):
         return app
 
     async def start(self) -> None:
-        """
-        Start this transport.
+        """Start this transport.
 
         Raises:
             InboundTransportSetupError: If there was an error starting the webserver
@@ -78,8 +76,7 @@ class WsTransport(BaseInboundTransport):
             self.site = None
 
     async def inbound_message_handler(self, request):
-        """
-        Message handler for inbound messages.
+        """Message handler for inbound messages.
 
         Args:
             request: aiohttp request object

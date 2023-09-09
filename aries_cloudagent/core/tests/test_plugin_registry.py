@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import call
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock, call
 
@@ -493,7 +492,7 @@ class TestPluginRegistry(AsyncTestCase):
                 None,  # message types
                 None,  # definition without versions attr
             ]
-            assert self.registry.register_plugin(self.blocked_module) == None
+            assert self.registry.register_plugin(self.blocked_module) is None
             assert self.blocked_module not in self.registry._plugins.keys()
 
     async def test_register_definitions_malformed(self):
@@ -600,4 +599,4 @@ class TestPluginRegistry(AsyncTestCase):
             assert load_module.call_count == 4
 
     def test_repr(self):
-        assert type(repr(self.registry)) is str
+        assert isinstance(repr(self.registry), str)

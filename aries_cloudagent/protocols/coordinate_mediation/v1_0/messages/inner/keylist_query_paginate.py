@@ -14,8 +14,7 @@ class KeylistQueryPaginate(BaseModel):
         schema_class = "KeylistQueryPaginateSchema"
 
     def __init__(self, limit: int, offset: int, **kwargs):
-        """
-        Initialize keylist query pagination object.
+        """Initialize keylist query pagination object.
 
         Args:
             limit: limit for response count

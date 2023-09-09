@@ -29,8 +29,7 @@ class MediationRequest(AgentMessage):
         recipient_terms: Sequence[str] = None,
         **kwargs,
     ):
-        """
-        Initialize mediation request object.
+        """Initialize mediation request object.
 
         Args:
             mediator_terms: Mediator's terms for granting mediation.

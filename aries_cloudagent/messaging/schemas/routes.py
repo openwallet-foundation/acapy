@@ -167,8 +167,7 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
 @querystring_schema(SchemaConnIdMatchInfoSchema())
 @response_schema(TxnOrSchemaSendResultSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
-    """
-    Request handler for creating a schema.
+    """Request handler for creating a schema.
 
     Args:
         request: aiohttp request object
@@ -340,8 +339,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 @querystring_schema(SchemaQueryStringSchema())
 @response_schema(SchemasCreatedResultSchema(), 200, description="")
 async def schemas_created(request: web.BaseRequest):
-    """
-    Request handler for retrieving schemas that current agent created.
+    """Request handler for retrieving schemas that current agent created.
 
     Args:
         request: aiohttp request object
@@ -368,8 +366,7 @@ async def schemas_created(request: web.BaseRequest):
 @match_info_schema(SchemaIdMatchInfoSchema())
 @response_schema(SchemaGetResultSchema(), 200, description="")
 async def schemas_get_schema(request: web.BaseRequest):
-    """
-    Request handler for sending a credential offer.
+    """Request handler for sending a credential offer.
 
     Args:
         request: aiohttp request object
@@ -413,8 +410,7 @@ async def schemas_get_schema(request: web.BaseRequest):
 @match_info_schema(SchemaIdMatchInfoSchema())
 @response_schema(SchemaGetResultSchema(), 200, description="")
 async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
-    """
-    Request handler for fixing a schema's wallet non-secrets records.
+    """Request handler for fixing a schema's wallet non-secrets records.
 
     Args:
         request: aiohttp request object
@@ -482,8 +478,7 @@ async def on_schema_event(profile: Profile, event: Event):
 
 
 async def add_schema_non_secrets_record(profile: Profile, schema_id: str):
-    """
-    Write the wallet non-secrets record for a schema (already written to the ledger).
+    """Write the wallet non-secrets record for a schema (already written to the ledger).
 
     Args:
         profile: the current profile (used to determine storage)

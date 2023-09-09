@@ -99,8 +99,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         pres_ex_record: V20PresExRecord,
         request_data: dict = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
-        """
-        Create a presentation request bound to a proposal.
+        """Create a presentation request bound to a proposal.
 
         Args:
             pres_ex_record: Presentation exchange record for which
@@ -258,7 +257,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                 req_value = proof_req_pred_spec["p_value"]
                 req_restrictions = proof_req_pred_spec.get("restrictions", {})
                 for req_restriction in req_restrictions:
-                    for k in [k for k in req_restriction]:  # cannot modify en passant
+                    for k in list(req_restriction):  # cannot modify en passant
                         if k.startswith("attr::"):
                             req_restriction.pop(k)  # let indy-sdk reject mismatch here
                 sub_proof_index = pred_spec["sub_proof_index"]
@@ -306,8 +305,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         _check_proof_vs_proposal()
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
-        """
-        Verify a presentation.
+        """Verify a presentation.
 
         Args:
             pres_ex_record: presentation exchange record

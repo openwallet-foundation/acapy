@@ -80,7 +80,6 @@ from ..manager import (
     OutOfBandManager,
     OutOfBandManagerError,
 )
-from ..message_types import INVITATION, MESSAGE_REUSE
 from ..messages.invitation import HSProto, InvitationMessage
 from ..messages.invitation import Service as OobService
 from ..messages.problem_report import ProblemReport, ProblemReportReason

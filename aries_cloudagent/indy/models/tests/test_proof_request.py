@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-from ..non_rev_interval import IndyNonRevocationInterval
 from ..proof_request import IndyProofRequest
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"

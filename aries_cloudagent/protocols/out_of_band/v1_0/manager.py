@@ -57,8 +57,7 @@ class OutOfBandManager(BaseConnectionManager):
     """Class for managing out of band messages."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a OutOfBandManager.
+        """Initialize a OutOfBandManager.
 
         Args:
             profile: The profile for this out of band manager
@@ -68,8 +67,7 @@ class OutOfBandManager(BaseConnectionManager):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile.
+        """Accessor for the current profile.
 
         Returns:
             The profile for this connection manager
@@ -94,8 +92,7 @@ class OutOfBandManager(BaseConnectionManager):
         goal_code: Optional[Text] = None,
         goal: Optional[Text] = None,
     ) -> InvitationRecord:
-        """
-        Generate new connection invitation.
+        """Generate new connection invitation.
 
         This interaction represents an out-of-band communication channel. In the future
         and in practice, these sort of invitations will be received over any number of
@@ -411,8 +408,7 @@ class OutOfBandManager(BaseConnectionManager):
         alias: Optional[str] = None,
         mediation_id: Optional[str] = None,
     ) -> OobRecord:
-        """
-        Receive an out of band invitation message.
+        """Receive an out of band invitation message.
 
         Args:
             invitation: invitation message
@@ -891,8 +887,7 @@ class OutOfBandManager(BaseConnectionManager):
         conn_record: ConnRecord,
         version: str,
     ) -> OobRecord:
-        """
-        Create and Send a Handshake Reuse message under RFC 0434.
+        """Create and Send a Handshake Reuse message under RFC 0434.
 
         Args:
             oob_record: OOB  Record
@@ -954,8 +949,7 @@ class OutOfBandManager(BaseConnectionManager):
         receipt: MessageReceipt,
         conn_rec: ConnRecord,
     ) -> None:
-        """
-        Receive and process a HandshakeReuse message under RFC 0434.
+        """Receive and process a HandshakeReuse message under RFC 0434.
 
         Process a `HandshakeReuse` message by looking up
         the connection records using the MessageReceipt sender DID.
@@ -1032,8 +1026,7 @@ class OutOfBandManager(BaseConnectionManager):
         receipt: MessageReceipt,
         conn_record: ConnRecord,
     ) -> None:
-        """
-        Receive and process a HandshakeReuseAccept message under RFC 0434.
+        """Receive and process a HandshakeReuseAccept message under RFC 0434.
 
         Process a `HandshakeReuseAccept` message by updating the OobRecord
         state to `accepted`.
@@ -1112,8 +1105,7 @@ class OutOfBandManager(BaseConnectionManager):
         receipt: MessageReceipt,
         conn_record: ConnRecord,
     ) -> None:
-        """
-        Receive and process a ProblemReport message from the inviter to invitee.
+        """Receive and process a ProblemReport message from the inviter to invitee.
 
         Process a `ProblemReport` message by updating the OobRecord
         state to `not_accepted`.

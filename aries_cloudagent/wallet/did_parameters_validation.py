@@ -39,8 +39,7 @@ class DIDParametersValidation:
         verkey: bytes,
         did: Optional[str],
     ) -> str:
-        """
-        Validate compatibility of the provided did (if any) with the given DID method.
+        """Validate compatibility of the provided did (if any) with the given DID method.
 
         If no DID was provided, automatically derive one for methods that support it.
         """

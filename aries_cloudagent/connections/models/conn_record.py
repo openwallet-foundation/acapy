@@ -105,8 +105,7 @@ class ConnRecord(BaseRecord):
             return self is ConnRecord.Role.get(other)
 
     class State(Enum):
-        """
-        Collator for equivalent states between RFC 160 and RFC 23.
+        """Collator for equivalent states between RFC 160 and RFC 23.
 
         On the connection record, the state has to serve for both RFCs.
         Hence, internally, RFC23 requester/responder states collate to
@@ -191,36 +190,34 @@ class ConnRecord(BaseRecord):
     INVITATION_MODE_MULTI = "multi"
     INVITATION_MODE_STATIC = "static"
 
-    ROUTING_STATE_NONE = "none"
-    ROUTING_STATE_REQUEST = "request"
-    ROUTING_STATE_ACTIVE = "active"
-    ROUTING_STATE_ERROR = "error"
-
     ACCEPT_MANUAL = "manual"
     ACCEPT_AUTO = "auto"
 
     def __init__(
         self,
         *,
-        connection_id: str = None,
-        my_did: str = None,
-        their_did: str = None,
-        their_label: str = None,
-        their_role: Union[str, "ConnRecord.Role"] = None,
-        invitation_key: str = None,
-        invitation_msg_id: str = None,
-        request_id: str = None,
-        state: Union[str, "ConnRecord.State"] = None,
-        inbound_connection_id: str = None,
-        error_msg: str = None,
-        routing_state: str = None,
-        accept: str = None,
-        invitation_mode: str = None,
-        alias: str = None,
-        their_public_did: str = None,
-        rfc23_state: str = None,  # from state: formalism for base_record.from_storage()
-        initiator: str = None,  # for backward compatibility with old ConnectionRecord
-        connection_protocol: Union[str, "ConnRecord.Protocol"] = None,
+        connection_id: Optional[str] = None,
+        my_did: Optional[str] = None,
+        their_did: Optional[str] = None,
+        their_label: Optional[str] = None,
+        their_role: Union[str, "ConnRecord.Role", None] = None,
+        invitation_key: Optional[str] = None,
+        invitation_msg_id: Optional[str] = None,
+        request_id: Optional[str] = None,
+        state: Union[str, "ConnRecord.State", None] = None,
+        inbound_connection_id: Optional[str] = None,
+        error_msg: Optional[str] = None,
+        accept: Optional[str] = None,
+        invitation_mode: Optional[str] = None,
+        alias: Optional[str] = None,
+        their_public_did: Optional[str] = None,
+        connection_protocol: Union[str, "ConnRecord.Protocol", None] = None,
+        # from state: formalism for base_record.from_storage()
+        rfc23_state: Optional[str] = None,
+        # for backward compat with old records
+        routing_state: Optional[str] = None,
+        # for backward compatibility with old ConnectionRecord
+        initiator: Optional[str] = None,
         **kwargs,
     ):
         """Initialize a new ConnRecord."""
@@ -244,7 +241,6 @@ class ConnRecord(BaseRecord):
         self.request_id = request_id
         self.error_msg = error_msg
         self.inbound_connection_id = inbound_connection_id
-        self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.accept = accept or self.ACCEPT_MANUAL
         self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
         self.alias = alias
@@ -277,7 +273,6 @@ class ConnRecord(BaseRecord):
             for prop in (
                 "their_role",
                 "inbound_connection_id",
-                "routing_state",
                 "accept",
                 "invitation_mode",
                 "invitation_msg_id",
@@ -294,9 +289,9 @@ class ConnRecord(BaseRecord):
     async def retrieve_by_did(
         cls,
         session: ProfileSession,
-        their_did: str = None,
-        my_did: str = None,
-        their_role: str = None,
+        their_did: Optional[str] = None,
+        my_did: Optional[str] = None,
+        their_role: Optional[str] = None,
     ) -> "ConnRecord":
         """Retrieve a connection record by target DID.
 
@@ -327,7 +322,7 @@ class ConnRecord(BaseRecord):
         Args:
             session: The active profile session
             invitation_key: The key on the originating invitation
-            initiator: Filter by the initiator value
+            their_role: Filter by their role
         """
         tag_filter = {
             "invitation_key": invitation_key,
@@ -350,7 +345,7 @@ class ConnRecord(BaseRecord):
         Args:
             session: The active profile session
             invitation_msg_id: Invitation message identifier
-            initiator: Filter by the initiator value
+            their_role: Filter by their role
         """
         tag_filter = {"invitation_msg_id": invitation_msg_id}
         post_filter = {
@@ -538,7 +533,7 @@ class ConnRecord(BaseRecord):
     async def abandon(self, session: ProfileSession, *, reason: Optional[str] = None):
         """Set state to abandoned."""
         reason = reason or "Connectin abandoned"
-        self.state = ConnRecord.State.ABANDONED.rfc23
+        self.state = ConnRecord.State.ABANDONED.rfc160
         self.error_msg = reason
         await self.save(session, reason=reason)
 
@@ -712,16 +707,6 @@ class ConnRecordSchema(BaseRecordSchema):
         metadata={
             "description": "Connection request identifier",
             "example": UUID4_EXAMPLE,
-        },
-    )
-    routing_state = fields.Str(
-        required=False,
-        validate=validate.OneOf(
-            ConnRecord.get_attributes_by_prefix("ROUTING_STATE_", walk_mro=False)
-        ),
-        metadata={
-            "description": "Routing state of connection",
-            "example": ConnRecord.ROUTING_STATE_ACTIVE,
         },
     )
     accept = fields.Str(

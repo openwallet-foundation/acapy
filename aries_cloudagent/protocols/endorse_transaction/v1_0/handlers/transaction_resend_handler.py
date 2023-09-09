@@ -15,8 +15,7 @@ class TransactionResendHandler(BaseHandler):
     """Handler class for transaction resend."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle transaction resend.
+        """Handle transaction resend.
 
         Args:
             context: Request context

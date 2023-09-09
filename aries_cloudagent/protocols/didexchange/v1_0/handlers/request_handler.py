@@ -14,8 +14,7 @@ class DIDXRequestHandler(BaseHandler):
     """Handler class for connection request message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle connection request under RFC 23 (DID exchange).
+        """Handle connection request under RFC 23 (DID exchange).
 
         Args:
             context: Request context

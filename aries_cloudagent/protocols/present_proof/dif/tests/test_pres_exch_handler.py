@@ -10,11 +10,9 @@ import pytest
 from aries_cloudagent.wallet.key_type import BLS12381G2, ED25519
 
 from .....core.in_memory import InMemoryProfile
-from .....did.did_key import DIDKey
 from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
 from .....wallet.base import BaseWallet, DIDInfo
-from .....wallet.crypto import KeyType
 from .....wallet.default_verification_key_strategy import (
     DefaultVerificationKeyStrategy,
     BaseVerificationKeyStrategy,

@@ -25,8 +25,7 @@ DT_FMT = "%Y-%m-%d %H:%M:%S.%f%z"
 
 
 class AdminAPIMessageTracingSchema(OpenAPISchema):
-    """
-    Request/result schema including agent message tracing.
+    """Request/result schema including agent message tracing.
 
     This is to be used as a superclass for aca-py admin input/output
     messages that need to support tracing.
@@ -119,8 +118,7 @@ def trace_event(
     force_trace: bool = False,
     raise_errors: bool = False,
 ) -> float:
-    """
-    Log a trace event to a configured target.
+    """Log a trace event to a configured target.
 
     Args:
         context: The application context, attributes of interest are:

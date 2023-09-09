@@ -16,9 +16,7 @@ limitations under the License.
 """
 
 
-import json
-
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from asynctest import TestCase as AsyncTestCase
 
 from .. import DIDDoc, PublicKey, PublicKeyType, Service
 from ..util import canon_did, canon_ref
@@ -81,17 +79,17 @@ class TestDIDDoc(AsyncTestCase):
             dd_copy.authnkey[k].to_dict() == dd.authnkey[k].to_dict()
             for k in dd_copy.authnkey
         )
-        assert {k for k in dd_copy.authnkey} == {k for k in dd.authnkey}
+        assert set(dd_copy.authnkey) == set(dd.authnkey)
         assert all(
             dd_copy.pubkey[k].to_dict() == dd.pubkey[k].to_dict()
             for k in dd_copy.pubkey
         )
-        assert {k for k in dd_copy.pubkey} == {k for k in dd.pubkey}
+        assert set(dd_copy.pubkey) == set(dd.pubkey)
         assert all(
             dd_copy.service[k].to_dict() == dd.service[k].to_dict()
             for k in dd_copy.service
         )
-        assert {k for k in dd_copy.service} == {k for k in dd.service}
+        assert set(dd_copy.service) == set(dd.service)
         # print('\n\n== 2 == DID Doc de/serialization operates OK:')
 
         # Exercise accessors
@@ -99,7 +97,7 @@ class TestDIDDoc(AsyncTestCase):
         assert dd.did == canon_did(dd_out["id"])
         with self.assertRaises(ValueError):
             dd.set(["neither a service", "nor a public key"])
-        assert dd.service[[k for k in dd.service][0]].did == dd.did
+        assert dd.service[list(dd.service)[0]].did == dd.did
         # print('\n\n== 3 == DID Doc accessors operate OK')
 
     def test_embedded_authkey(self):
@@ -486,7 +484,7 @@ class TestDIDDoc(AsyncTestCase):
         dd = DIDDoc.deserialize(dd_in)
 
         assert PublicKeyType.get("no-such-type") is None
-        pubkey0 = dd.pubkey[[k for k in dd.pubkey][0]]
+        pubkey0 = dd.pubkey[list(dd.pubkey)[0]]
         was_authn = pubkey0.authn
         pubkey0.authn = not was_authn
         assert pubkey0.authn != was_authn

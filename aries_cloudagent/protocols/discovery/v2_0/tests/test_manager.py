@@ -5,16 +5,11 @@ import pytest
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....core.in_memory import InMemoryProfile
-from .....core.protocol_registry import ProtocolRegistry
-from .....core.goal_code_registry import GoalCodeRegistry
 from .....storage.error import StorageNotFoundError
 from .....messaging.responder import BaseResponder, MockResponder
 
 from ....didcomm_prefix import DIDCommPrefix
-from ....issue_credential.v1_0.controller import ISSUE_VC, PARTICIPATE_VC_INTERACTION
-from ....issue_credential.v1_0.message_types import CONTROLLERS, MESSAGE_TYPES
 
-from .. import manager as test_module
 from ..manager import V20DiscoveryMgr, V20DiscoveryMgrError
 from ..messages.queries import Queries, QueryItem
 from ..messages.disclosures import Disclosures

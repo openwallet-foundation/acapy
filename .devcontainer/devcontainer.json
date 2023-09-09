@@ -6,7 +6,8 @@
         "dockerfile": "Dockerfile",
         "context": "..",
         "args": {
-          "VARIANT": "3.9-bullseye"
+          "VARIANT": "3.9-bullseye",
+          "POETRY_VERSION": "1.4.2"
         }
     },
     "customizations": {
@@ -43,6 +44,7 @@
     "remoteUser": "vscode",
     
     "remoteEnv": {
+        "RUST_LOG":"aries-askar::log::target=error"
         //"PATH": "${containerEnv:PATH}:${workspaceRoot}/.venv/bin"
     },
     

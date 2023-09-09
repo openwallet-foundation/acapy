@@ -268,7 +268,7 @@ class TestArgParse(AsyncTestCase):
 
         settings = group.get_settings(result)
 
-        assert settings.get("multitenant.enabled") == True
+        assert settings.get("multitenant.enabled") is True
         assert settings.get("multitenant.jwt_secret") == "secret"
         assert settings.get("multitenant.wallet_type") == "askar"
         assert settings.get("multitenant.wallet_name") == "test"
@@ -290,7 +290,7 @@ class TestArgParse(AsyncTestCase):
 
         settings = group.get_settings(result)
 
-        assert settings.get("multitenant.enabled") == True
+        assert settings.get("multitenant.enabled") is True
         assert settings.get("multitenant.jwt_secret") == "secret"
         assert settings.get("multitenant.wallet_type") == "askar"
         assert settings.get("multitenant.wallet_name") == "test"
@@ -314,10 +314,10 @@ class TestArgParse(AsyncTestCase):
 
         settings = group.get_settings(result)
 
-        assert settings.get("endorser.author") == True
-        assert settings.get("endorser.endorser") == False
+        assert settings.get("endorser.author") is True
+        assert settings.get("endorser.endorser") is False
         assert settings.get("endorser.endorser_public_did") == "did:sov:12345"
-        assert settings.get("endorser.auto_endorse") == False
+        assert settings.get("endorser.auto_endorse") is False
 
     async def test_logging(self):
         """Test logging."""

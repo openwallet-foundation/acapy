@@ -33,8 +33,7 @@ class MediationGrant(AgentMessage):
         routing_keys: Sequence[str] = None,
         **kwargs,
     ):
-        """
-        Initialize mediation grant object.
+        """Initialize mediation grant object.
 
         Args:
             endpoint: Endpoint address for the mediation route
@@ -43,7 +42,7 @@ class MediationGrant(AgentMessage):
         super(MediationGrant, self).__init__(**kwargs)
         self.endpoint = endpoint
         self.routing_keys = (
-            list(normalize_from_public_key(key) for key in routing_keys)
+            [normalize_from_public_key(key) for key in routing_keys]
             if routing_keys
             else []
         )

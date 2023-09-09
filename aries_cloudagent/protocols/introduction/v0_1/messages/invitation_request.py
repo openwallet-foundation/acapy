@@ -21,8 +21,7 @@ class InvitationRequest(AgentMessage):
         schema_class = "InvitationRequestSchema"
 
     def __init__(self, *, responder: str = None, message: str = None, **kwargs):
-        """
-        Initialize invitation request object.
+        """Initialize invitation request object.
 
         Args:
             responder: The name of the agent initiating the introduction

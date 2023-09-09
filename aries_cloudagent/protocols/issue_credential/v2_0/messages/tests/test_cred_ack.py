@@ -2,7 +2,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from ...message_types import CRED_20_ACK, PROTOCOL_PACKAGE
+from ...message_types import CRED_20_ACK
 
 from .. import cred_ack as test_module
 from ..cred_ack import V20CredAck

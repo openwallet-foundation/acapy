@@ -32,8 +32,7 @@ class RefusedTransactionResponse(AgentMessage):
         endorser_did: str = None,
         **kwargs,
     ):
-        """
-        Initialize a refused transaction response object.
+        """Initialize a refused transaction response object.
 
         Args:
             transaction_id: The id of the transaction record

@@ -4,23 +4,17 @@ ENV ENABLE_PTVSD 0
 
 # For consistency with base images, include curl for healthchecks
 RUN apt-get update && apt-get install -y curl && apt-get clean
-ADD requirements*.txt ./
 
-RUN pip3 install --no-cache-dir \
-    -r requirements.txt \
-    -r requirements.askar.txt \
-    -r requirements.bbs.txt \
-    -r requirements.dev.txt
+RUN pip install --no-cache-dir poetry
 
-RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
+ADD . .
+
+RUN poetry install -E "askar bbs"
+
+RUN mkdir -p aries_cloudagent && touch aries_cloudagent/__init__.py
 ADD aries_cloudagent/version.py aries_cloudagent/version.py
-ADD bin ./bin
-ADD README.md ./
-ADD setup.py ./
 
-RUN pip3 install --no-cache-dir -e .
-
-RUN mkdir logs && chmod -R ug+rw logs
+RUN mkdir -p logs && chmod -R ug+rw logs
 ADD aries_cloudagent ./aries_cloudagent
 
-ENTRYPOINT ["/bin/bash", "-c", "aca-py \"$@\"", "--"]
+ENTRYPOINT ["/bin/bash", "-c", "poetry run aca-py \"$@\"", "--"]

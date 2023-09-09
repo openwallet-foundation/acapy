@@ -60,8 +60,7 @@ class BaseMultitenantManager(ABC):
     async def _wallet_name_exists(
         self, session: ProfileSession, wallet_name: str
     ) -> bool:
-        """
-        Check whether wallet with specified wallet name already exists.
+        """Check whether wallet with specified wallet name already exists.
 
         Besides checking for wallet records, it will also check if the base wallet
 

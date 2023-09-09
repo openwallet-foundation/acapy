@@ -1,5 +1,3 @@
-import pytest
-
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......core.oob_processor import OobMessageProcessor

@@ -77,8 +77,7 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
 @querystring_schema(QueryFeaturesQueryStringSchema())
 @response_schema(V20DiscoveryExchangeResultSchema(), 200, description="")
 async def query_features(request: web.BaseRequest):
-    """
-    Request handler for creating and sending feature queries.
+    """Request handler for creating and sending feature queries.
 
     Args:
         request: aiohttp request object
@@ -108,8 +107,7 @@ async def query_features(request: web.BaseRequest):
 @querystring_schema(QueryDiscoveryExchRecordsSchema())
 @response_schema(V20DiscoveryExchangeListResultSchema(), 200, description="")
 async def query_records(request: web.BaseRequest):
-    """
-    Request handler for looking up V20DiscoveryExchangeRecord.
+    """Request handler for looking up V20DiscoveryExchangeRecord.
 
     Args:
         request: aiohttp request object

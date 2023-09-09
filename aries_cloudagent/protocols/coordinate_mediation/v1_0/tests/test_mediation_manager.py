@@ -1,8 +1,7 @@
 """Test MediationManager."""
 import logging
-from typing import AsyncGenerator, AsyncIterable, Iterable
+from typing import AsyncIterable, Iterable
 
-from functools import partial
 from asynctest import mock as async_mock
 import pytest
 
@@ -21,7 +20,6 @@ from ..manager import (
 )
 from ..messages.inner.keylist_update_rule import KeylistUpdateRule
 from ..messages.inner.keylist_updated import KeylistUpdated
-from ..messages.keylist_update_response import KeylistUpdateResponse
 from ..messages.mediate_deny import MediationDeny
 from ..messages.mediate_grant import MediationGrant
 from ..messages.mediate_request import MediationRequest
@@ -251,7 +249,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         record: MediationRecord,
     ):
         await record.save(session)
-        assert await manager.get_default_mediator() == None
+        assert await manager.get_default_mediator() is None
         await manager.set_default_mediator(record)
         assert await manager.get_default_mediator() == record
 

@@ -134,7 +134,7 @@ class TestAgentMessage(AsyncTestCase):
         msg.add_trace_decorator()
         tracer = msg._trace
         assert tracer.target == TRACE_LOG_TARGET
-        assert tracer.full_thread == True
+        assert tracer.full_thread is True
 
         trace_report = TraceReport(
             msg_id=msg._id,

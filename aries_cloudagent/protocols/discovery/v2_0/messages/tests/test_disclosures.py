@@ -1,6 +1,5 @@
 from unittest import mock, TestCase
 
-from marshmallow.exceptions import ValidationError
 
 from ......messaging.models.base import BaseModelError
 

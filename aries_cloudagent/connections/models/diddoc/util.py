@@ -1,5 +1,4 @@
-"""
-DIDDoc utility methods.
+"""DIDDoc utility methods.
 
 Copyright 2017-2019 Government of Canada
 Public Services and Procurement Canada - buyandsell.gc.ca
@@ -23,8 +22,7 @@ from urllib.parse import urlparse
 
 
 def resource(ref: str, delimiter: str = None) -> str:
-    """
-    Extract the resource for an identifier.
+    """Extract the resource for an identifier.
 
     Given a (URI) reference, return up to its delimiter (exclusively), or all of it if
     there is none.
@@ -39,8 +37,7 @@ def resource(ref: str, delimiter: str = None) -> str:
 
 
 def canon_did(uri: str) -> str:
-    """
-    Convert a URI into a DID if need be, left-stripping 'did:sov:' if present.
+    """Convert a URI into a DID if need be, left-stripping 'did:sov:' if present.
 
     Args:
         uri: input URI or DID
@@ -63,8 +60,7 @@ def canon_did(uri: str) -> str:
 
 
 def canon_ref(did: str, ref: str, delimiter: str = None):
-    """
-    Given a reference in a DID document, return it in its canonical form of a URI.
+    """Given a reference in a DID document, return it in its canonical form of a URI.
 
     Args:
         did: DID acting as the identifier of the DID document
@@ -98,8 +94,7 @@ def canon_ref(did: str, ref: str, delimiter: str = None):
 
 
 def ok_did(token: str) -> bool:
-    """
-    Whether input token looks like a valid decentralized identifier.
+    """Whether input token looks like a valid decentralized identifier.
 
     Args:
         token: candidate string

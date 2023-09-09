@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 
-from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
+from aiohttp.test_utils import AioHTTPTestCase
 from aiohttp import web
 from asynctest import mock as async_mock
 

@@ -1,4 +1,6 @@
 """Library version information."""
 
-__version__ = "0.10.0-rc0"
+from importlib import metadata
+
+__version__ = metadata.version("aries-cloudagent")
 RECORD_TYPE_ACAPY_VERSION = "acapy_version"

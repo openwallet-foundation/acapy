@@ -1,7 +1,7 @@
 """Manager for Mediation coordination."""
 import json
 import logging
-from typing import Optional, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Tuple
 
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
@@ -12,10 +12,8 @@ from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import SOV
 from ....wallet.key_type import ED25519
-from ...routing.v1_0.manager import RoutingManager
+from ...routing.v1_0.manager import RoutingManager, RoutingManagerError
 from ...routing.v1_0.models.route_record import RouteRecord
-from ...routing.v1_0.models.route_update import RouteUpdate
-from ...routing.v1_0.models.route_updated import RouteUpdated
 from .messages.inner.keylist_key import KeylistKey
 from .messages.inner.keylist_query_paginate import KeylistQueryPaginate
 from .messages.inner.keylist_update_rule import KeylistUpdateRule
@@ -222,6 +220,42 @@ class MediationManager:
         )
         return mediation_record, deny
 
+    async def _handle_keylist_update_add(
+        self,
+        existing_keys: Dict[str, RouteRecord],
+        client_connection_id: str,
+        recipient_key: str,
+    ):
+        """Handle creation of as directed by a keylist update."""
+        route_mgr = RoutingManager(self._profile)
+        if recipient_key in existing_keys:
+            return KeylistUpdated.RESULT_NO_CHANGE
+        try:
+            await route_mgr.create_route_record(
+                client_connection_id=client_connection_id,
+                recipient_key=recipient_key,
+            )
+        except RoutingManagerError:
+            LOGGER.exception("Error adding route record")
+            return KeylistUpdated.RESULT_SERVER_ERROR
+        return KeylistUpdated.RESULT_SUCCESS
+
+    async def _handle_keylist_update_remove(
+        self,
+        existing_keys: Dict[str, RouteRecord],
+        recipient_key: str,
+    ):
+        """Handle deletion of as directed by a keylist update."""
+        route_mgr = RoutingManager(self._profile)
+        if recipient_key not in existing_keys:
+            return KeylistUpdated.RESULT_NO_CHANGE
+        try:
+            await route_mgr.delete_route_record(existing_keys[recipient_key])
+        except RoutingManagerError:
+            LOGGER.exception("Error deleting route record")
+            return KeylistUpdated.RESULT_SERVER_ERROR
+        return KeylistUpdated.RESULT_SUCCESS
+
     async def update_keylist(
         self, record: MediationRecord, updates: Sequence[KeylistUpdateRule]
     ) -> KeylistUpdateResponse:
@@ -239,34 +273,35 @@ class MediationManager:
             raise MediationNotGrantedError(
                 "Mediation has not been granted for this connection."
             )
-        # TODO: Don't borrow logic from RoutingManager
-        # Bidirectional mapping of KeylistUpdateRules to RouteUpdate actions
-        action_map = {
-            KeylistUpdateRule.RULE_ADD: RouteUpdate.ACTION_CREATE,
-            KeylistUpdateRule.RULE_REMOVE: RouteUpdate.ACTION_DELETE,
-            RouteUpdate.ACTION_DELETE: KeylistUpdateRule.RULE_REMOVE,
-            RouteUpdate.ACTION_CREATE: KeylistUpdateRule.RULE_ADD,
-        }
-
-        def rule_to_update(rule: KeylistUpdateRule):
-            recipient_key = normalize_from_did_key(rule.recipient_key)
-            return RouteUpdate(
-                recipient_key=recipient_key, action=action_map[rule.action]
-            )
-
-        def updated_to_keylist_updated(updated: RouteUpdated):
-            return KeylistUpdated(
-                recipient_key=updated.recipient_key,
-                action=action_map[updated.action],
-                result=updated.result,
-            )
 
         route_mgr = RoutingManager(self._profile)
-        # Map keylist update rules to route updates
-        updates = map(rule_to_update, updates)
-        updated = await route_mgr.update_routes(record.connection_id, updates)
-        # Map RouteUpdated to KeylistUpdated
-        updated = map(updated_to_keylist_updated, updated)
+        routes = await route_mgr.get_routes(record.connection_id)
+        existing_keys = {normalize_from_did_key(r.recipient_key): r for r in routes}
+
+        updated = []
+        for update in updates:
+            normalized_key = normalize_from_did_key(update.recipient_key)
+            result = KeylistUpdated(
+                recipient_key=update.recipient_key,
+                action=update.action,
+            )
+
+            # Assign result
+            if not update.recipient_key:
+                result.result = KeylistUpdated.RESULT_CLIENT_ERROR
+            elif update.action == KeylistUpdateRule.RULE_ADD:
+                result.result = await self._handle_keylist_update_add(
+                    existing_keys, record.connection_id, normalized_key
+                )
+            elif update.action == KeylistUpdateRule.RULE_REMOVE:
+                result.result = await self._handle_keylist_update_remove(
+                    existing_keys, normalized_key
+                )
+            else:
+                result.result = KeylistUpdated.RESULT_CLIENT_ERROR
+
+            updated.append(result)
+
         return KeylistUpdateResponse(updated=updated)
 
     async def get_keylist(self, record: MediationRecord) -> Sequence[RouteRecord]:
@@ -298,9 +333,7 @@ class MediationManager:
             Keylist: message to return to client
 
         """
-        keys = list(
-            map(lambda key: KeylistKey(recipient_key=key.recipient_key), keylist)
-        )
+        keys = [KeylistKey(recipient_key=key.recipient_key) for key in keylist]
         return Keylist(keys=keys, pagination=None)
 
     # }}}

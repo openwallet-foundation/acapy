@@ -33,8 +33,7 @@ class EndorsedTransactionResponse(AgentMessage):
         ledger_response: dict = None,
         **kwargs,
     ):
-        """
-        Initialize an endorsed transaction response object.
+        """Initialize an endorsed transaction response object.
 
         Args:
             transaction_id: The id of the transaction record

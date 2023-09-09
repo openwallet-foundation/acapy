@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from asynctest import TestCase as AsyncTestCase
 
 from ...protocols.issue_credential.v1_0.message_types import CONTROLLERS
 

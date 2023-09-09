@@ -1,6 +1,6 @@
 """Record used to handle routing of messages to another agent."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -24,15 +24,14 @@ class ConnectionTarget(BaseModel):
     def __init__(
         self,
         *,
-        did: str = None,
-        endpoint: str = None,
-        label: str = None,
-        recipient_keys: Sequence[str] = None,
-        routing_keys: Sequence[str] = None,
-        sender_key: str = None,
+        did: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        label: Optional[str] = None,
+        recipient_keys: Optional[Sequence[str]] = None,
+        routing_keys: Optional[Sequence[str]] = None,
+        sender_key: Optional[str] = None,
     ):
-        """
-        Initialize a ConnectionTarget instance.
+        """Initialize a ConnectionTarget instance.
 
         Args:
             did: A did for the connection

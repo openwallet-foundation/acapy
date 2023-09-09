@@ -7,7 +7,7 @@ from ...models.menu_form_param import MenuFormParam
 from ...models.menu_option import MenuOption
 from ...message_types import MENU, PROTOCOL_PACKAGE
 
-from ..menu import Menu, MenuSchema
+from ..menu import Menu
 
 
 class TestConfig:
@@ -84,4 +84,4 @@ class TestMenu(TestCase, TestConfig):
     def test_make_model(self):
         data = self.menu.serialize()
         model_instance = Menu.deserialize(data)
-        assert type(model_instance) is type(self.menu)
+        assert isinstance(model_instance, type(self.menu))

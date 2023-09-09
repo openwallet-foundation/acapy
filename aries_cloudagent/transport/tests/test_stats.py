@@ -1,6 +1,5 @@
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ...config.injection_context import InjectionContext
 
 from .. import stats as test_module
 

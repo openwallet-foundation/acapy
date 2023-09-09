@@ -1054,9 +1054,9 @@ class TestIndySdkLedger(AsyncTestCase):
             ),
             json.dumps({"result": {"seqNo": 999}}),
         ]  # need to subscript these in assertions later
-        mock_submit.side_effect = [
-            sub for sub in submissions
-        ]  # becomes list iterator, unsubscriptable, in mock object
+        mock_submit.side_effect = list(
+            submissions
+        )  # becomes list iterator, unsubscriptable, in mock object
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
@@ -1121,9 +1121,9 @@ class TestIndySdkLedger(AsyncTestCase):
             ),  # not a schema
             json.dumps({"result": {"seqNo": 999}}),
         ]  # need to subscript these in assertions later
-        mock_submit.side_effect = [
-            sub for sub in submissions
-        ]  # becomes list iterator, unsubscriptable, in mock object
+        mock_submit.side_effect = list(
+            submissions
+        )  # becomes list iterator, unsubscriptable, in mock object
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"

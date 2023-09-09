@@ -37,8 +37,7 @@ class OutboundMessage:
         self.to_session_only = to_session_only
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class

@@ -1,5 +1,4 @@
-"""
-The Delivery Queue.
+"""The Delivery Queue.
 
 The delivery queue holds and manages messages that have not yet
 been delivered to their intended destination.
@@ -11,15 +10,13 @@ from ..outbound.message import OutboundMessage
 
 
 class QueuedMessage:
-    """
-    Wrapper Class for queued messages.
+    """Wrapper Class for queued messages.
 
     Allows tracking Metadata.
     """
 
     def __init__(self, msg: OutboundMessage):
-        """
-        Create Wrapper for queued message.
+        """Create Wrapper for queued message.
 
         Automatically sets timestamp on create.
         """
@@ -27,8 +24,7 @@ class QueuedMessage:
         self.timestamp = time.time()
 
     def older_than(self, compare_timestamp: float) -> bool:
-        """
-        Age Comparison.
+        """Age Comparison.
 
         Allows you to test age as compared to the provided timestamp.
 
@@ -39,15 +35,13 @@ class QueuedMessage:
 
 
 class DeliveryQueue:
-    """
-    DeliveryQueue class.
+    """DeliveryQueue class.
 
     Manages undelivered messages.
     """
 
     def __init__(self) -> None:
-        """
-        Initialize an instance of DeliveryQueue.
+        """Initialize an instance of DeliveryQueue.
 
         This uses an in memory structure to queue messages.
         """
@@ -56,8 +50,7 @@ class DeliveryQueue:
         self.ttl_seconds = 604800  # one week
 
     def expire_messages(self, ttl=None):
-        """
-        Expire messages that are past the time limit.
+        """Expire messages that are past the time limit.
 
         Args:
             ttl: Optional. Allows override of configured ttl
@@ -71,8 +64,7 @@ class DeliveryQueue:
             ]
 
     def add_message(self, msg: OutboundMessage):
-        """
-        Add an OutboundMessage to delivery queue.
+        """Add an OutboundMessage to delivery queue.
 
         The message is added once per recipient key
 
@@ -91,8 +83,7 @@ class DeliveryQueue:
             self.queue_by_key[recipient_key].append(wrapped_msg)
 
     def has_message_for_key(self, key: str):
-        """
-        Check for queued messages by key.
+        """Check for queued messages by key.
 
         Args:
             key: The key to use for lookup
@@ -102,8 +93,7 @@ class DeliveryQueue:
         return False
 
     def message_count_for_key(self, key: str):
-        """
-        Count of queued messages by key.
+        """Count of queued messages by key.
 
         Args:
             key: The key to use for lookup
@@ -114,8 +104,7 @@ class DeliveryQueue:
             return 0
 
     def get_one_message_for_key(self, key: str):
-        """
-        Remove and return a matching message.
+        """Remove and return a matching message.
 
         Args:
             key: The key to use for lookup
@@ -124,8 +113,7 @@ class DeliveryQueue:
             return self.queue_by_key[key].pop(0).msg
 
     def inspect_all_messages_for_key(self, key: str):
-        """
-        Return all messages for key.
+        """Return all messages for key.
 
         Args:
             key: The key to use for lookup
@@ -135,8 +123,7 @@ class DeliveryQueue:
                 yield wrapped_msg.msg
 
     def remove_message_for_key(self, key: str, msg: OutboundMessage):
-        """
-        Remove specified message from queue for key.
+        """Remove specified message from queue for key.
 
         Args:
             key: The key to use for lookup

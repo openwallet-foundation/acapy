@@ -146,6 +146,9 @@ class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
             "example": UUID4_EXAMPLE,
         },
     )
+    use_public_did = fields.Boolean(
+        required=False, metadata={"description": "Use public DID for this connection"}
+    )
 
 
 class DIDXConnIdMatchInfoSchema(OpenAPISchema):
@@ -192,8 +195,7 @@ class DIDXRejectRequestSchema(OpenAPISchema):
 @querystring_schema(DIDXAcceptInvitationQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_accept_invitation(request: web.BaseRequest):
-    """
-    Request handler for accepting a stored connection invitation.
+    """Request handler for accepting a stored connection invitation.
 
     Args:
         request: aiohttp request object
@@ -239,8 +241,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
 @querystring_schema(DIDXCreateRequestImplicitQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_create_request_implicit(request: web.BaseRequest):
-    """
-    Request handler for creating and sending a request to an implicit invitation.
+    """Request handler for creating and sending a request to an implicit invitation.
 
     Args:
         request: aiohttp request object
@@ -289,8 +290,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
 @request_schema(DIDXRequestSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_receive_request_implicit(request: web.BaseRequest):
-    """
-    Request handler for receiving a request against public DID's implicit invitation.
+    """Request handler for receiving a request against public DID's implicit invitation.
 
     Args:
         request: aiohttp request object
@@ -336,8 +336,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
 @querystring_schema(DIDXAcceptRequestQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_accept_request(request: web.BaseRequest):
-    """
-    Request handler for accepting a stored connection request.
+    """Request handler for accepting a stored connection request.
 
     Args:
         request: aiohttp request object
@@ -351,6 +350,7 @@ async def didx_accept_request(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
+    use_public_did = json.loads(request.query.get("use_public_did", "null"))
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
@@ -361,6 +361,7 @@ async def didx_accept_request(request: web.BaseRequest):
             conn_rec=conn_rec,
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
+            use_public_did=use_public_did,
         )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:

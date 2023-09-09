@@ -31,8 +31,7 @@ class MessagesAttach(AgentMessage):
         time: int = None,
         **kwargs
     ):
-        """
-        Initialize the attached message object.
+        """Initialize the attached message object.
 
         Args:
             author_did: The public did of the author who creates the transaction

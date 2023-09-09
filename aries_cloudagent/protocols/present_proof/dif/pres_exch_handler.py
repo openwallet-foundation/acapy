@@ -1,5 +1,4 @@
-"""
-Utilities for dif presentation exchange attachment.
+"""Utilities for dif presentation exchange attachment.
 
 General Flow:
 create_vp ->
@@ -224,8 +223,7 @@ class DIFPresExchHandler:
     async def to_requirement(
         self, sr: SubmissionRequirements, descriptors: Sequence[InputDescriptors]
     ) -> Requirement:
-        """
-        Return Requirement.
+        """Return Requirement.
 
         Args:
             sr: submission_requirement
@@ -279,8 +277,7 @@ class DIFPresExchHandler:
         srs: Sequence[SubmissionRequirements] = None,
         descriptors: Sequence[InputDescriptors] = None,
     ) -> Requirement:
-        """
-        Return Requirement.
+        """Return Requirement.
 
         Creates and return Requirement with nesting if required
         using to_requirement()
@@ -318,8 +315,7 @@ class DIFPresExchHandler:
         return requirement
 
     def is_len_applicable(self, req: Requirement, val: int) -> bool:
-        """
-        Check and validate requirement minimum, maximum and count.
+        """Check and validate requirement minimum, maximum and count.
 
         Args:
             req: Requirement
@@ -340,8 +336,7 @@ class DIFPresExchHandler:
         return True
 
     def contains(self, data: Sequence[str], e: str) -> bool:
-        """
-        Check for e in data.
+        """Check for e in data.
 
         Returns True if e exists in data else return False
 
@@ -363,8 +358,7 @@ class DIFPresExchHandler:
         constraints: Constraints,
         credentials: Sequence[VCRecord],
     ) -> Sequence[VCRecord]:
-        """
-        Return list of applicable VCRecords after applying filtering.
+        """Return list of applicable VCRecords after applying filtering.
 
         Args:
             constraints: Constraints
@@ -457,11 +451,11 @@ class DIFPresExchHandler:
         """Return VCRecord from a credential dict."""
         proofs = cred_dict.get("proof") or []
         proof_types = None
-        if type(proofs) is dict:
+        if isinstance(proofs, dict):
             proofs = [proofs]
         if proofs:
             proof_types = [proof.get("type") for proof in proofs]
-        contexts = [ctx for ctx in cred_dict.get("@context") if type(ctx) is str]
+        contexts = [ctx for ctx in cred_dict.get("@context") if isinstance(ctx, str)]
         if "@graph" in cred_dict:
             for enclosed_data in cred_dict.get("@graph"):
                 if (
@@ -476,14 +470,14 @@ class DIFPresExchHandler:
             given_id = str(uuid4())
         # issuer
         issuer = cred_dict.get("issuer")
-        if type(issuer) is dict:
+        if isinstance(issuer, dict):
             issuer = issuer.get("id")
 
         # subjects
         subject_ids = None
         subjects = cred_dict.get("credentialSubject")
         if subjects:
-            if type(subjects) is dict:
+            if isinstance(subjects, dict):
                 subjects = [subjects]
             subject_ids = [
                 subject.get("id") for subject in subjects if ("id" in subject)
@@ -493,7 +487,7 @@ class DIFPresExchHandler:
 
         # Schemas
         schemas = cred_dict.get("credentialSchema", [])
-        if type(schemas) is dict:
+        if isinstance(schemas, dict):
             schemas = [schemas]
         schema_ids = [schema.get("id") for schema in schemas]
         document_loader = self.profile.inject(DocumentLoader)
@@ -560,8 +554,7 @@ class DIFPresExchHandler:
     def new_credential_builder(
         self, new_credential: dict, unflatten_dict: dict
     ) -> dict:
-        """
-        Update and return the new_credential.
+        """Update and return the new_credential.
 
         Args:
             new_credential: credential dict to be updated and returned
@@ -574,8 +567,7 @@ class DIFPresExchHandler:
         return new_credential
 
     async def filter_by_field(self, field: DIFField, credential: VCRecord) -> bool:
-        """
-        Apply filter on VCRecord.
+        """Apply filter on VCRecord.
 
         Checks if a credential is applicable
 
@@ -638,8 +630,7 @@ class DIFPresExchHandler:
             return dateutil_parser(datetime_str).replace(tzinfo=utc)
 
     def validate_patch(self, to_check: any, _filter: Filter) -> bool:
-        """
-        Apply filter on match_value.
+        """Apply filter on match_value.
 
         Utility function used in applying filtering to a cred
         by triggering checks according to filter specification
@@ -686,8 +677,7 @@ class DIFPresExchHandler:
         return return_val
 
     def check_filter_only_type_enforced(self, _filter: Filter) -> bool:
-        """
-        Check if only type is specified in filter.
+        """Check if only type is specified in filter.
 
         Args:
             _filter: Filter
@@ -711,8 +701,7 @@ class DIFPresExchHandler:
             return False
 
     def process_numeric_val(self, val: any, _filter: Filter) -> bool:
-        """
-        Trigger Filter checks.
+        """Trigger Filter checks.
 
         Trigger appropriate check for a number type filter,
         according to _filter spec.
@@ -740,8 +729,7 @@ class DIFPresExchHandler:
             return False
 
     def process_string_val(self, val: any, _filter: Filter) -> bool:
-        """
-        Trigger Filter checks.
+        """Trigger Filter checks.
 
         Trigger appropriate check for a string type filter,
         according to _filter spec.
@@ -773,8 +761,7 @@ class DIFPresExchHandler:
             return False
 
     def exclusive_minimum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Exclusiveminimum check.
+        """Exclusiveminimum check.
 
         Returns True if value greater than filter specified check
 
@@ -804,8 +791,7 @@ class DIFPresExchHandler:
             return False
 
     def exclusive_maximum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Exclusivemaximum check.
+        """Exclusivemaximum check.
 
         Returns True if value less than filter specified check
 
@@ -835,8 +821,7 @@ class DIFPresExchHandler:
             return False
 
     def maximum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Maximum check.
+        """Maximum check.
 
         Returns True if value less than equal to filter specified check
 
@@ -866,8 +851,7 @@ class DIFPresExchHandler:
             return False
 
     def minimum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Minimum check.
+        """Minimum check.
 
         Returns True if value greater than equal to filter specified check
 
@@ -897,8 +881,7 @@ class DIFPresExchHandler:
             return False
 
     def length_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Length check.
+        """Length check.
 
         Returns True if length value string meets the minLength and maxLength specs
 
@@ -922,8 +905,7 @@ class DIFPresExchHandler:
         return False
 
     def pattern_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Pattern check.
+        """Pattern check.
 
         Returns True if value string matches the specified pattern
 
@@ -939,8 +921,7 @@ class DIFPresExchHandler:
         return False
 
     def const_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Const check.
+        """Const check.
 
         Returns True if value is equal to filter specified check
 
@@ -956,8 +937,7 @@ class DIFPresExchHandler:
         return False
 
     def enum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Enum check.
+        """Enum check.
 
         Returns True if value is contained to filter specified list
 
@@ -973,8 +953,7 @@ class DIFPresExchHandler:
         return False
 
     def subject_is_issuer(self, credential: VCRecord) -> bool:
-        """
-        subject_is_issuer check.
+        """subject_is_issuer check.
 
         Returns True if cred issuer_id is in subject_ids
 
@@ -1019,8 +998,7 @@ class DIFPresExchHandler:
         credentials: Sequence[VCRecord],
         schemas: SchemasInputDescriptorFilter,
     ) -> Sequence[VCRecord]:
-        """
-        Filter by schema.
+        """Filter by schema.
 
         Returns list of credentials where credentialSchema.id or types matched
         with input_descriptors.schema.uri
@@ -1043,8 +1021,7 @@ class DIFPresExchHandler:
         return result
 
     def credential_match_schema(self, credential: VCRecord, schema_id: str) -> bool:
-        """
-        Credential matching by schema.
+        """Credential matching by schema.
 
         Used by filter_schema to check if credential.schema_ids or credential.types
         matched with schema_id
@@ -1077,8 +1054,7 @@ class DIFPresExchHandler:
         credentials: Sequence[VCRecord],
         records_filter: dict = None,
     ) -> dict:
-        """
-        Apply Requirement.
+        """Apply Requirement.
 
         Args:
             req: Requirement
@@ -1165,8 +1141,7 @@ class DIFPresExchHandler:
         )
 
     def is_numeric(self, val: any):
-        """
-        Check if val is an int or float.
+        """Check if val is an int or float.
 
         Args:
             val: to check
@@ -1193,8 +1168,7 @@ class DIFPresExchHandler:
     async def merge_nested_results(
         self, nested_result: Sequence[dict], exclude: dict
     ) -> dict:
-        """
-        Merge nested results with merged credentials.
+        """Merge nested results with merged credentials.
 
         Args:
             nested_result: Sequence of dict containing input_descriptor.id as keys
@@ -1234,8 +1208,7 @@ class DIFPresExchHandler:
         domain: str = None,
         records_filter: dict = None,
     ) -> Union[Sequence[dict], dict]:
-        """
-        Create VerifiablePresentation.
+        """Create VerifiablePresentation.
 
         Args:
             credentials: Sequence of VCRecords
@@ -1351,8 +1324,7 @@ class DIFPresExchHandler:
         self,
         dict_descriptor_creds: dict,
     ) -> Tuple[Sequence[VCRecord], Sequence[InputDescriptorMapping]]:
-        """
-        Return applicable credentials and descriptor_map for attachment.
+        """Return applicable credentials and descriptor_map for attachment.
 
         Used for generating the presentation_submission property with the
         descriptor_map, mantaining the order in which applicable credential
@@ -1368,7 +1340,7 @@ class DIFPresExchHandler:
         dict_of_descriptors = {}
         result = []
         descriptors = []
-        sorted_desc_keys = sorted(list(dict_descriptor_creds.keys()))
+        sorted_desc_keys = sorted(dict_descriptor_creds.keys())
         for desc_id in sorted_desc_keys:
             credentials = dict_descriptor_creds.get(desc_id)
             for cred in credentials:
@@ -1393,8 +1365,7 @@ class DIFPresExchHandler:
         pd: PresentationDefinition,
         pres: Union[Sequence[dict], dict],
     ):
-        """
-        Verify credentials received in presentation.
+        """Verify credentials received in presentation.
 
         Args:
             pres: received VerifiablePresentation
@@ -1493,7 +1464,7 @@ class DIFPresExchHandler:
             )
         # Selective Disclosure check
         if is_limit_disclosure:
-            field_paths = set([path.replace("$.", "") for path in field_paths])
+            field_paths = {path.replace("$.", "") for path in field_paths}
             mandatory_paths = {
                 "@context",
                 "type",

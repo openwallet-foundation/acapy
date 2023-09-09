@@ -31,8 +31,7 @@ class RevocationManager:
     """Class for managing revocation operations."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a RevocationManager.
+        """Initialize a RevocationManager.
 
         Args:
             context: The context for this revocation manager
@@ -50,8 +49,7 @@ class RevocationManager:
         connection_id: str = None,
         comment: str = None,
     ):
-        """
-        Revoke a credential by its credential exchange identifier at issue.
+        """Revoke a credential by its credential exchange identifier at issue.
 
         Optionally, publish the corresponding revocation registry delta to the ledger.
 
@@ -95,8 +93,7 @@ class RevocationManager:
         connection_id: str = None,
         comment: str = None,
     ):
-        """
-        Revoke a credential.
+        """Revoke a credential.
 
         Optionally, publish the corresponding revocation registry delta to the ledger.
 
@@ -166,8 +163,7 @@ class RevocationManager:
         rev_reg_record: IssuerRevRegRecord,
         genesis_transactions: dict,
     ) -> Tuple[dict, dict, dict]:
-        """
-        Request handler to fix ledger entry of credentials revoked against registry.
+        """Request handler to fix ledger entry of credentials revoked against registry.
 
         Args:
             rev_reg_id: revocation registry id
@@ -187,8 +183,7 @@ class RevocationManager:
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,
     ) -> Mapping[Text, Sequence[Text]]:
-        """
-        Publish pending revocations to the ledger.
+        """Publish pending revocations to the ledger.
 
         Args:
             rrid2crid: Mapping from revocation registry identifiers to all credential
@@ -256,8 +251,7 @@ class RevocationManager:
     async def clear_pending_revocations(
         self, purge: Mapping[Text, Sequence[Text]] = None
     ) -> Mapping[Text, Sequence[Text]]:
-        """
-        Clear pending revocation publications.
+        """Clear pending revocation publications.
 
         Args:
             purge: Mapping from revocation registry identifiers to all credential
@@ -304,8 +298,7 @@ class RevocationManager:
     async def set_cred_revoked_state(
         self, rev_reg_id: str, cred_rev_ids: Sequence[str]
     ) -> None:
-        """
-        Update credentials state to credential_revoked.
+        """Update credentials state to credential_revoked.
 
         Args:
             rev_reg_id: revocation registry ID

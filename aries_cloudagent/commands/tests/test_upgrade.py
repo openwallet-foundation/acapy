@@ -3,7 +3,6 @@ import asyncio
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...core.in_memory import InMemoryProfile
-from ...config.error import ArgsParseError
 from ...connections.models.conn_record import ConnRecord
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord

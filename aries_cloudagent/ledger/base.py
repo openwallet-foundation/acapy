@@ -27,8 +27,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     BACKEND_NAME: str = None
 
     async def __aenter__(self) -> "BaseLedger":
-        """
-        Context manager entry.
+        """Context manager entry.
 
         Returns:
             The current instance
@@ -139,8 +138,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         write_ledger: bool = True,
         endorser_did: str = None,
     ) -> Tuple[bool, dict]:
-        """
-        Register a nym on the ledger.
+        """Register a nym on the ledger.
 
         Args:
             did: DID to register on the ledger.
@@ -151,8 +149,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_nym_role(self, did: str):
-        """
-        Return the role registered to input public DID on the ledger.
+        """Return the role registered to input public DID on the ledger.
 
         Args:
             did: DID to register on the ledger.
@@ -164,8 +161,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
-        """
-        Rotate keypair for public DID: create new key, submit to ledger, update wallet.
+        """Rotate keypair for public DID: create new key, submit to ledger, update wallet.
 
         Args:
             next_seed: seed for incoming ed25519 keypair (default random)
@@ -226,8 +222,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def fetch_schema_by_id(self, schema_id: str) -> dict:
-        """
-        Get schema from ledger.
+        """Get schema from ledger.
 
         Args:
             schema_id: The schema id (or stringified sequence number) to retrieve
@@ -239,8 +234,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def fetch_schema_by_seq_no(self, seq_no: int) -> dict:
-        """
-        Fetch a schema by its sequence number.
+        """Fetch a schema by its sequence number.
 
         Args:
             seq_no: schema ledger sequence number
@@ -281,8 +275,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         write_ledger: bool = True,
         endorser_did: str = None,
     ) -> Tuple[str, dict]:
-        """
-        Send schema to ledger.
+        """Send schema to ledger.
 
         Args:
             issuer: The issuer instance to use for schema creation
@@ -419,8 +412,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         write_ledger: bool = True,
         endorser_did: str = None,
     ) -> Tuple[str, dict, bool]:
-        """
-        Send credential definition to ledger and store relevant key matter in wallet.
+        """Send credential definition to ledger and store relevant key matter in wallet.
 
         Args:
             issuer: The issuer instance to use for credential definition creation
@@ -535,8 +527,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_credential_definition(self, credential_definition_id: str) -> dict:
-        """
-        Get a credential definition from the cache if available, otherwise the ledger.
+        """Get a credential definition from the cache if available, otherwise the ledger.
 
         Args:
             credential_definition_id: The schema id of the schema to fetch cred def for
@@ -551,8 +542,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_schema(self, schema_id: str) -> dict:
-        """
-        Get a schema from the cache if available, otherwise fetch from the ledger.
+        """Get a schema from the cache if available, otherwise fetch from the ledger.
 
         Args:
             schema_id: The schema id (or stringified sequence number) to retrieve
@@ -578,8 +568,7 @@ class Role(Enum):
 
     @staticmethod
     def get(token: Union[str, int] = None) -> "Role":
-        """
-        Return enum instance corresponding to input token.
+        """Return enum instance corresponding to input token.
 
         Args:
             token: token identifying role to indy-sdk:
@@ -599,8 +588,7 @@ class Role(Enum):
         return None
 
     def to_indy_num_str(self) -> str:
-        """
-        Return (typically, numeric) string value that indy-sdk associates with role.
+        """Return (typically, numeric) string value that indy-sdk associates with role.
 
         Recall that None signifies USER and "" signifies a role undergoing reset.
         """

@@ -1,4 +1,4 @@
-ARG python_version=3.9.16
+ARG python_version=3.9.18
 ARG rust_version=1.46
 
 # This image could be replaced with an "indy" image from another repo,
@@ -188,19 +188,16 @@ WORKDIR /home/indy/src
 
 RUN mkdir -p test-reports && chown -R indy:indy test-reports && chmod -R ug+rw test-reports
 
-ADD requirements*.txt ./
+ADD ./README.md pyproject.toml ./poetry.lock ./
 
 USER root
-RUN pip3 install --no-cache-dir \
-    -r requirements.txt \
-    -r requirements.askar.txt \
-    -r requirements.bbs.txt \
-    -r requirements.dev.txt
+RUN pip install --no-cache-dir poetry
+RUN poetry install --no-root --no-directory -E "askar bbs indy"
 
 ADD --chown=indy:root . .
 USER indy
 
-ENTRYPOINT ["/bin/bash", "-c", "pytest \"$@\"", "--"]
+ENTRYPOINT ["/bin/bash", "-c", "poetry run pytest \"$@\"", "--"]
 
 # ACA-Py Builder
 # Build ACA-Py wheel using setuptools
@@ -210,8 +207,8 @@ WORKDIR /src
 
 ADD . .
 
-RUN pip install setuptools wheel
-RUN python setup.py sdist bdist_wheel
+RUN pip install --no-cache-dir poetry
+RUN poetry build
 
 
 # ACA-Py Indy

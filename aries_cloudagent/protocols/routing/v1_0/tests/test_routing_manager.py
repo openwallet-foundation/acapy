@@ -6,16 +6,12 @@ from marshmallow import ValidationError
 from .....messaging.request_context import RequestContext
 from .....storage.error import (
     StorageDuplicateError,
-    StorageError,
     StorageNotFoundError,
 )
-from .....storage.in_memory import InMemoryStorage
 from .....transport.inbound.receipt import MessageReceipt
 
 from ..manager import RoutingManager, RoutingManagerError, RouteNotFoundError
 from ..models.route_record import RouteRecord, RouteRecordSchema
-from ..models.route_update import RouteUpdate
-from ..models.route_updated import RouteUpdated
 
 TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -179,131 +175,3 @@ class TestRoutingManager(AsyncTestCase):
             )
         assert by_conn_id == route_rec
         assert route_rec != ValueError()
-
-    async def test_update_routes_delete(self):
-        await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
-        results = await self.manager.update_routes(
-            client_connection_id=TEST_CONN_ID,
-            updates=[
-                RouteUpdate(
-                    recipient_key=TEST_ROUTE_VERKEY, action=RouteUpdate.ACTION_DELETE
-                )
-            ],
-        )
-        assert len(results) == 1
-        assert results[0].recipient_key == TEST_ROUTE_VERKEY
-        assert results[0].action == RouteUpdate.ACTION_DELETE
-        assert results[0].result == RouteUpdated.RESULT_SUCCESS
-
-    async def test_update_routes_create(self):
-        results = await self.manager.update_routes(
-            client_connection_id=TEST_CONN_ID,
-            updates=[
-                RouteUpdate(
-                    recipient_key=TEST_ROUTE_VERKEY, action=RouteUpdate.ACTION_CREATE
-                )
-            ],
-        )
-        assert len(results) == 1
-        assert results[0].recipient_key == TEST_ROUTE_VERKEY
-        assert results[0].action == RouteUpdate.ACTION_CREATE
-        assert results[0].result == RouteUpdated.RESULT_SUCCESS
-
-    async def test_update_routes_create_existing(self):
-        await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
-        results = await self.manager.update_routes(
-            client_connection_id=TEST_CONN_ID,
-            updates=[
-                RouteUpdate(
-                    recipient_key=TEST_ROUTE_VERKEY, action=RouteUpdate.ACTION_CREATE
-                )
-            ],
-        )
-        assert len(results) == 1
-        assert results[0].recipient_key == TEST_ROUTE_VERKEY
-        assert results[0].action == RouteUpdate.ACTION_CREATE
-        assert results[0].result == RouteUpdated.RESULT_NO_CHANGE
-
-    async def test_update_routes_no_recipient_key(self):
-        await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
-        results = await self.manager.update_routes(
-            client_connection_id=TEST_CONN_ID,
-            updates=[RouteUpdate(recipient_key=None, action=RouteUpdate.ACTION_DELETE)],
-        )
-        assert len(results) == 1
-        assert results[0].recipient_key is None
-        assert results[0].action == RouteUpdate.ACTION_DELETE
-        assert results[0].result == RouteUpdated.RESULT_CLIENT_ERROR
-
-    async def test_update_routes_unsupported_action(self):
-        await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
-        results = await self.manager.update_routes(
-            client_connection_id=TEST_CONN_ID,
-            updates=[RouteUpdate(recipient_key=TEST_ROUTE_VERKEY, action="mystery")],
-        )
-        assert len(results) == 1
-        assert results[0].recipient_key == TEST_ROUTE_VERKEY
-        assert results[0].action == "mystery"
-        assert results[0].result == RouteUpdated.RESULT_CLIENT_ERROR
-
-    async def test_update_routes_create_server_error(self):
-        with async_mock.patch.object(
-            self.manager, "create_route_record", async_mock.CoroutineMock()
-        ) as mock_mgr_create_route_record:
-            mock_mgr_create_route_record.side_effect = RoutingManagerError()
-            results = await self.manager.update_routes(
-                client_connection_id=TEST_CONN_ID,
-                updates=[
-                    RouteUpdate(
-                        recipient_key=TEST_ROUTE_VERKEY,
-                        action=RouteUpdate.ACTION_CREATE,
-                    )
-                ],
-            )
-            assert len(results) == 1
-            assert results[0].recipient_key == TEST_ROUTE_VERKEY
-            assert results[0].action == RouteUpdate.ACTION_CREATE
-            assert results[0].result == RouteUpdated.RESULT_SERVER_ERROR
-
-    async def test_update_routes_delete_absent(self):
-        results = await self.manager.update_routes(
-            client_connection_id=TEST_CONN_ID,
-            updates=[
-                RouteUpdate(
-                    recipient_key=TEST_ROUTE_VERKEY, action=RouteUpdate.ACTION_DELETE
-                )
-            ],
-        )
-        assert len(results) == 1
-        assert results[0].recipient_key == TEST_ROUTE_VERKEY
-        assert results[0].action == RouteUpdate.ACTION_DELETE
-        assert results[0].result == RouteUpdated.RESULT_NO_CHANGE
-
-    async def test_update_routes_delete_server_error(self):
-        await self.manager.create_route_record(TEST_CONN_ID, TEST_ROUTE_VERKEY)
-        with async_mock.patch.object(
-            self.manager, "delete_route_record", async_mock.CoroutineMock()
-        ) as mock_mgr_delete_route_record:
-            mock_mgr_delete_route_record.side_effect = StorageError()
-            results = await self.manager.update_routes(
-                client_connection_id=TEST_CONN_ID,
-                updates=[
-                    RouteUpdate(
-                        recipient_key=TEST_ROUTE_VERKEY,
-                        action=RouteUpdate.ACTION_DELETE,
-                    )
-                ],
-            )
-            assert len(results) == 1
-            assert results[0].recipient_key == TEST_ROUTE_VERKEY
-            assert results[0].action == RouteUpdate.ACTION_DELETE
-            assert results[0].result == RouteUpdated.RESULT_SERVER_ERROR
-
-    async def test_send_create_route(self):
-        mock_outbound_handler = async_mock.CoroutineMock()
-        await self.manager.send_create_route(
-            router_connection_id=TEST_CONN_ID,
-            recip_key=TEST_ROUTE_VERKEY,
-            outbound_handler=mock_outbound_handler,
-        )
-        mock_outbound_handler.assert_called_once()

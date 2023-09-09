@@ -74,8 +74,7 @@ def create_argument_parser(*, prog: str = None):
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
-    """
-    Log a set of argument groups into a parser.
+    """Log a set of argument groups into a parser.
 
     Returns:
         A callable to convert loaded arguments into a settings dictionary
@@ -1469,8 +1468,7 @@ class TransportGroup(ArgumentGroup):
 
 @group(CAT_START, CAT_PROVISION)
 class MediationInviteGroup(ArgumentGroup):
-    """
-    Mediation invitation settings.
+    """Mediation invitation settings.
 
     These can be provided at provision- and start-time.
     """

@@ -109,6 +109,19 @@ class TestDIDXRequest(AsyncTestCase, TestConfig):
 
         assert request_dict is mock_request_schema_dump.return_value
 
+    def test_method_other_than_indy(self):
+        """Test method other than indy."""
+        request = DIDXRequest(
+            label=TestConfig.test_label,
+            did="did:web:example.com:alice",
+            did_doc_attach=None,
+            goal_code=TestConfig.goal_code,
+            goal=TestConfig.goal,
+        )
+        request_dict = request.serialize()
+        new_request = DIDXRequest.deserialize(request_dict)
+        assert request.serialize() == new_request.serialize()
+
 
 class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
     """Test request schema."""

@@ -151,9 +151,7 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
     wallet_type = fields.Str(
         dump_default="in_memory",
-        validate=validate.OneOf(
-            [wallet_type for wallet_type in ProfileManagerProvider.MANAGER_TYPES]
-        ),
+        validate=validate.OneOf(list(ProfileManagerProvider.MANAGER_TYPES)),
         metadata={"description": "Type of the wallet to create", "example": "indy"},
     )
 
@@ -213,8 +211,7 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Args:
             data: The data to validate
@@ -350,8 +347,7 @@ class WalletListQueryStringSchema(OpenAPISchema):
 @querystring_schema(WalletListQueryStringSchema())
 @response_schema(WalletListSchema(), 200, description="")
 async def wallets_list(request: web.BaseRequest):
-    """
-    Request handler for listing all internal subwallets.
+    """Request handler for listing all internal subwallets.
 
     Args:
         request: aiohttp request object
@@ -380,8 +376,7 @@ async def wallets_list(request: web.BaseRequest):
 @match_info_schema(WalletIdMatchInfoSchema())
 @response_schema(WalletRecordSchema(), 200, description="")
 async def wallet_get(request: web.BaseRequest):
-    """
-    Request handler for getting a single subwallet.
+    """Request handler for getting a single subwallet.
 
     Args:
         request: aiohttp request object
@@ -411,8 +406,7 @@ async def wallet_get(request: web.BaseRequest):
 @request_schema(CreateWalletRequestSchema)
 @response_schema(CreateWalletResponseSchema(), 200, description="")
 async def wallet_create(request: web.BaseRequest):
-    """
-    Request handler for adding a new subwallet for handling by the agent.
+    """Request handler for adding a new subwallet for handling by the agent.
 
     Args:
         request: aiohttp request object
@@ -473,8 +467,7 @@ async def wallet_create(request: web.BaseRequest):
 @request_schema(UpdateWalletRequestSchema)
 @response_schema(WalletRecordSchema(), 200, description="")
 async def wallet_update(request: web.BaseRequest):
-    """
-    Request handler for updating a existing subwallet for handling by the agent.
+    """Request handler for updating a existing subwallet for handling by the agent.
 
     Args:
         request: aiohttp request object
@@ -531,8 +524,7 @@ async def wallet_update(request: web.BaseRequest):
 @request_schema(CreateWalletTokenRequestSchema)
 @response_schema(CreateWalletTokenResponseSchema(), 200, description="")
 async def wallet_create_token(request: web.BaseRequest):
-    """
-    Request handler for creating an authorization token for a specific subwallet.
+    """Request handler for creating an authorization token for a specific subwallet.
 
     Args:
         request: aiohttp request object
@@ -576,8 +568,7 @@ async def wallet_create_token(request: web.BaseRequest):
 @request_schema(RemoveWalletRequestSchema)
 @response_schema(MultitenantModuleResponseSchema(), 200, description="")
 async def wallet_remove(request: web.BaseRequest):
-    """
-    Request handler to remove a subwallet from agent and storage.
+    """Request handler to remove a subwallet from agent and storage.
 
     Args:
         request: aiohttp request object.

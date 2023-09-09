@@ -27,8 +27,7 @@ class TransactionJobToSend(AgentMessage):
         job: str = None,
         **kwargs,
     ):
-        """
-        Initialize transaction job to send.
+        """Initialize transaction job to send.
 
         Args:
             job: The job that needs to be send

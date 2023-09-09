@@ -35,8 +35,7 @@ class V10CredentialExchangeWebhook:
         self,
         **kwargs,
     ):
-        """
-        Initialize webhook object from V10CredentialExchange.
+        """Initialize webhook object from V10CredentialExchange.
 
         from a list of accepted attributes.
         """

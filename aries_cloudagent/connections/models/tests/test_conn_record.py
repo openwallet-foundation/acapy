@@ -255,7 +255,7 @@ class TestConnRecord(AsyncTestCase):
         connection_id = await record.save(self.session)
         fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
 
-        assert fetched.is_ready == True
+        assert fetched.is_ready is True
 
     async def test_response_is_ready(self):
         record = ConnRecord(my_did=self.test_did, state=ConnRecord.State.RESPONSE)

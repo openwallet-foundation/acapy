@@ -1,22 +1,16 @@
-import json
-import pytest
-
-from datetime import datetime, timezone
 from unittest import TestCase
 
-from ......indy.models.pres_preview import PRESENTATION_PREVIEW
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
-from ......messaging.util import str_to_datetime, str_to_epoch
 
 from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import ATTACHMENT_FORMAT, PRES_20_REQUEST
 
 from ..pres_format import V20PresFormat
-from ..pres_request import V20PresRequest, V20PresRequestSchema
+from ..pres_request import V20PresRequest
 
-CD_ID = f"NcYxiDXkpYi6ov5FcYDi1e:3:CL:12:tag1"
+CD_ID = "NcYxiDXkpYi6ov5FcYDi1e:3:CL:12:tag1"
 INDY_PROOF_REQ = [
     {
         "name": "proof-req",

@@ -139,7 +139,7 @@ class JweEnvelope:
             raise ValidationError(
                 "Invalid JWE: invalid JSON for protected headers"
             ) from None
-        unprotected = parsed.get("unprotected") or dict()
+        unprotected = parsed.get("unprotected") or {}
         if protected.keys() & unprotected.keys():
             raise ValidationError("Invalid JWE: duplicate header")
 

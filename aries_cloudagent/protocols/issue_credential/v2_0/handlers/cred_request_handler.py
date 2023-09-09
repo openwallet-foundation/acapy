@@ -20,8 +20,7 @@ class V20CredRequestHandler(BaseHandler):
     """Message handler class for credential requests."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for credential requests.
+        """Message handler logic for credential requests.
 
         Args:
             context: request context

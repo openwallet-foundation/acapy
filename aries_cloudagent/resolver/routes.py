@@ -1,41 +1,40 @@
-"""
-Resolve did document admin routes.
+"""Resolve did document admin routes.
 
-    "/resolver/resolve/{did}": {
-        "get": {
-            "responses": {
-                "200": {
-                    "schema": {
-                        "$ref": "#/definitions/DIDDoc"
+"/resolver/resolve/{did}": {
+"get": {
+"responses": {
+"200": {
+"schema": {
+"$ref": "#/definitions/DIDDoc"
 
-                    },
-                    "description": null
+},
+"description": null
 
-                }
+}
 
-            },
-            "parameters": [
+},
+"parameters": [
 
-                {
-                    "in": "path",
-                    "name": "did",
-                    "required": true,
-                    "type": "string",
-                    "pattern": "did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)",
-                    "description": "decentralize identifier(DID)",
-                    "example": "did:ted:WgWxqztrNooG92RXvxSTWv"
+{
+"in": "path",
+"name": "did",
+"required": true,
+"type": "string",
+"pattern": "did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)",
+"description": "decentralize identifier(DID)",
+"example": "did:ted:WgWxqztrNooG92RXvxSTWv"
 
-                }
+}
 
-            ],
+],
 
-            "tags": [ "resolver" ],
-            "summary": "Retrieve doc for requested did",
-            "produces": [ "application/json" ]
+"tags": [ "resolver" ],
+"summary": "Retrieve doc for requested did",
+"produces": [ "application/json" ]
 
-        }
+}
 
-    }
+}
 
 """
 

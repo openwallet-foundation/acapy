@@ -29,8 +29,7 @@ class ConnectionRequest(AgentMessage):
         image_url: str = None,
         **kwargs,
     ):
-        """
-        Initialize connection request object.
+        """Initialize connection request object.
 
         Args:
             connection (ConnectionDetail): Connection details object

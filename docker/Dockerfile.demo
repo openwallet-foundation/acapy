@@ -10,20 +10,15 @@ RUN mkdir -p bin && curl -L -o bin/jq \
 	https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && \
 	chmod ug+x bin/jq
 
-# Add and install Indy Agent code
-ADD requirements*.txt ./
+# Add and install Aries Agent code
+RUN pip install --no-cache-dir poetry
 
-RUN pip3 install --no-cache-dir \
-	-r requirements.txt \
-	-r requirements.askar.txt \
-	-r requirements.bbs.txt \
-	-r requirements.dev.txt
+ADD README.md pyproject.toml poetry.lock ./
+
+RUN poetry install --no-root --no-directory -E "askar bbs"
 
 ADD aries_cloudagent ./aries_cloudagent
-ADD bin ./bin
-ADD README.md ./
 ADD scripts ./scripts
-ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 

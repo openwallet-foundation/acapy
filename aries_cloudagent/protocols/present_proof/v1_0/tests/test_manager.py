@@ -10,24 +10,19 @@ from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange
 
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder, IndyHolderError
-from .....indy.issuer import IndyIssuer
-from .....indy.sdk.holder import IndySdkHolder
 from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,
 )
-from .....indy.sdk.verifier import IndySdkVerifier
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from .....messaging.decorators.attach_decorator import AttachDecorator
-from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder, MockResponder
-from .....storage.error import StorageNotFoundError
 
 from ....didcomm_prefix import DIDCommPrefix
 
@@ -37,7 +32,6 @@ from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
 from ..message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
 from ..messages.presentation import Presentation
-from ..messages.presentation_ack import PresentationAck
 from ..messages.presentation_problem_report import PresentationProblemReport
 from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
@@ -376,7 +370,7 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange.initiator == V10PresentationExchange.INITIATOR_SELF
             assert exchange.role == V10PresentationExchange.ROLE_PROVER
             assert exchange.state == V10PresentationExchange.STATE_PROPOSAL_SENT
-            assert exchange.auto_remove == True
+            assert exchange.auto_remove is True
 
     async def test_receive_proposal(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
@@ -439,7 +433,7 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange.initiator == V10PresentationExchange.INITIATOR_SELF
             assert exchange.role == V10PresentationExchange.ROLE_VERIFIER
             assert exchange.state == V10PresentationExchange.STATE_REQUEST_SENT
-            assert exchange.auto_remove == True
+            assert exchange.auto_remove is True
 
     async def test_receive_request(self):
         exchange_in = V10PresentationExchange()

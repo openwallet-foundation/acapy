@@ -19,11 +19,6 @@ from .......vc.ld_proofs import (
     BbsBlsSignatureProof2020,
 )
 from .......vc.tests.document_loader import custom_document_loader
-from .......vc.vc_ld.prove import (
-    sign_presentation,
-    create_presentation,
-    derive_credential,
-)
 from .......vc.vc_ld.validation_result import PresentationVerificationResult
 from .......wallet.base import BaseWallet
 
@@ -49,7 +44,6 @@ from ....models.pres_exchange import V20PresExRecord
 from ...handler import V20PresFormatHandlerError
 
 from .. import handler as test_module
-from .....dif.pres_exch_handler import DIFPresExchHandler as test_pe_handler_module
 from ..handler import DIFPresFormatHandler
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"

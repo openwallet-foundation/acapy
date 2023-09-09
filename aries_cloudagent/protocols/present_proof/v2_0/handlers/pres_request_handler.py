@@ -23,8 +23,7 @@ class V20PresRequestHandler(BaseHandler):
     """Message handler class for v2.0 presentation requests."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for v2.0 presentation requests.
+        """Message handler logic for v2.0 presentation requests.
 
         Args:
             context: request context
