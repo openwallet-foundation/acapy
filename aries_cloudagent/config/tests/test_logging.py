@@ -26,6 +26,62 @@ class TestLoggingConfigurator(AsyncTestCase):
             mock_load_resource.return_value, disable_existing_loggers=False
         )
 
+    def test_configure_with_per_tenant_config_file(self):
+        with async_mock.patch.object(
+            test_module,
+            "logging",
+            async_mock.MagicMock(
+                basicConfig=async_mock.MagicMock(),
+                FileHandler=async_mock.MagicMock(),
+                root=async_mock.MagicMock(
+                    warning=async_mock.MagicMock(),
+                    handlers=[],
+                ),
+            ),
+        ):
+            test_module.LoggingConfigurator.configure(
+                logging_config_path="aries_cloudagent.config:default_per_tenant_logging_config.ini",
+                log_file="test.log",
+                multitenant=True,
+            )
+
+    def test_configure_with_per_tenant_yml_file(self):
+        with async_mock.patch.object(
+            test_module,
+            "logging",
+            async_mock.MagicMock(
+                basicConfig=async_mock.MagicMock(),
+                FileHandler=async_mock.MagicMock(),
+                root=async_mock.MagicMock(
+                    warning=async_mock.MagicMock(),
+                    handlers=[],
+                ),
+            ),
+        ):
+            test_module.LoggingConfigurator.configure(
+                logging_config_path="aries_cloudagent/config/default_per_tenant_logging_config.yml",
+                log_file="test.log",
+                multitenant=True,
+            )
+
+    def test_configure_with_default_config(self):
+        with async_mock.patch.object(
+            test_module,
+            "logging",
+            async_mock.MagicMock(
+                basicConfig=async_mock.MagicMock(),
+                FileHandler=async_mock.MagicMock(),
+                root=async_mock.MagicMock(
+                    warning=async_mock.MagicMock(),
+                    handlers=[],
+                ),
+            ),
+        ):
+            test_module.LoggingConfigurator.configure(
+                log_file="test.log",
+                multitenant=True,
+            )
+
     def test_configure_default_no_resource(self):
         with async_mock.patch.object(
             test_module, "load_resource", async_mock.MagicMock()
