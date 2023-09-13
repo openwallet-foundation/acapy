@@ -64,7 +64,7 @@ The issuer lists neither `address` nor the subclaims of `address` in the `non_sd
 ## Walk-Through of SD-JWT Implementation
 
 ### Signing SD-JWTs
-THe `sd_jwt_sign` method:
+The `sd_jwt_sign` method:
 - Creates the list of claims that are selectively disclosable
     - Uses the `non_sd_list` compared against the list of JSON paths for all claims to create the list of JSON paths for selectively disclosable claims
     - Separates list splices if necessary
@@ -81,7 +81,7 @@ THe `sd_jwt_sign` method:
 
 
 ### Verifying SD-JWTs
-`sd_jwt_verify`:
+The `sd_jwt_verify` method:
 - Parses the SD-JWT presentation into its component parts: JWT, disclosures, and optional key binding
     - The JWT payload is parsed from its headers and signature
 - Creates a list of plaintext disclosures
