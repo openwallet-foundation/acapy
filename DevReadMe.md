@@ -211,7 +211,7 @@ The `manage` script is described in detail [here](https://github.com/hyperledger
 
 ## Development Workflow
 
-We use [Flake8](http://flake8.pycqa.org/en/latest/) to enforce a coding style guide.
+We use [Ruff](https://github.com/astral-sh/ruff) to enforce a coding style guide.
 
 We use [Black](https://black.readthedocs.io/en/stable/) to automatically format code.
 
