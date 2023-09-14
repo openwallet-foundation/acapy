@@ -1052,7 +1052,9 @@ async def wallet_jwt_verify(request: web.BaseRequest):
 
 
 @docs(
-    tags=["wallet"], summary="Verify a EdDSA sd-jws using did keys with a given SD-JWS"
+    tags=["wallet"],
+    summary="Verify a EdDSA sd-jws using did keys with a given SD-JWS with "
+    "optional key binding",
 )
 @request_schema(SDJWSVerifySchema())
 @response_schema(SDJWSVerifyResponseSchema(), 200, description="")
