@@ -2,8 +2,6 @@
 
 import json
 import logging
-import os
-import shutil
 from asyncio import shield
 import re
 import uuid
@@ -550,27 +548,25 @@ async def rev_regs_created(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
+    profile: AskarProfile = context.profile
     search_tags = [
         tag for tag in vars(RevRegsCreatedQueryStringSchema)["_declared_fields"]
     ]
     tag_filter = {
         tag: request.query[tag] for tag in search_tags if tag in request.query
     }
-    async with context.profile.session() as session:
-        found = await IssuerRevRegRecord.query(
-            session,
-            tag_filter,
-            post_filter_negative={"state": IssuerRevRegRecord.STATE_INIT},
+    cred_def_id = tag_filter.get("cred_def_id")
+    state = tag_filter.get("state")
+    try:
+        revocation = AnonCredsRevocation(profile)
+        found = await revocation.get_created_revocation_registry_definitions(
+            cred_def_id, state
         )
 
-    return web.json_response(
-        {
-            "rev_reg_ids": [
-                record.revoc_reg_id for record in found if record.revoc_reg_id
-            ]
-        }
-    )
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
+    # TODO remove state == init
+    return web.json_response({"rev_reg_ids": found})
 
 
 @docs(
@@ -914,83 +910,6 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     return web.FileResponse(path=tails_local_path, status=200)
 
 
-@docs(
-    tags=["revocation"],
-    summary="Upload local tails file to server",
-)
-@match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevocationModuleResponseSchema(), description="")
-async def upload_tails_file(request: web.BaseRequest):
-    """
-    Request handler to upload local tails file for revocation registry.
-
-    Args:
-        request: aiohttp request object
-
-    """
-    #
-    # this is exactly what is in anoncreds /revocation/upload-tails-file.
-    # we cannot import the function as it imports classes from here,
-    # so circular dependency.
-    # we will clean this up and DRY at some point.
-    #
-    context: AdminRequestContext = request["context"]
-    profile: AskarProfile = context.profile
-    rev_reg_id = request.match_info["rev_reg_id"]
-    try:
-        revocation = AnonCredsRevocation(profile)
-        rev_reg_def = await revocation.get_created_revocation_registry_definition(
-            rev_reg_id
-        )
-        if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
-
-        await revocation.upload_tails_file(rev_reg_def)
-
-    except AnonCredsIssuerError as e:
-        raise web.HTTPInternalServerError(reason=str(e)) from e
-
-    return web.json_response({})
-
-
-@docs(
-    tags=["revocation"],
-    summary="Update revocation registry with new public URI to its tails file",
-)
-@match_info_schema(RevRegIdMatchInfoSchema())
-@request_schema(RevRegUpdateTailsFileUriSchema())
-@response_schema(RevRegResultSchema(), 200, description="")
-async def update_rev_reg(request: web.BaseRequest):
-    """
-    Request handler to update a rev reg's public tails URI by registry id.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The revocation registry record
-
-    """
-    context: AdminRequestContext = request["context"]
-    profile: AskarProfile = context.profile
-    rev_reg_id = request.match_info["rev_reg_id"]
-    body = await request.json()
-    tails_public_uri = body.get("tails_public_uri")
-    try:
-        revocation = AnonCredsRevocation(profile)
-        rev_reg_def = await revocation.set_tails_file_public_uri(
-            rev_reg_id, tails_public_uri
-        )
-        if rev_reg_def is None:
-            raise web.HTTPNotFound(reason="No rev reg def found")
-
-    except AnonCredsIssuerError as e:
-        raise web.HTTPInternalServerError(reason=str(e)) from e
-
-    rev_reg = await _get_issuer_rev_reg_record(profile, rev_reg_id)
-    return web.json_response({"result": rev_reg.serialize()})
-
-
 @docs(tags=["revocation"], summary="Set revocation registry state manually")
 @match_info_schema(RevRegIdMatchInfoSchema())
 @querystring_schema(SetRevRegStateQueryStringSchema())
@@ -1244,52 +1163,6 @@ class TailsDeleteResponseSchema(OpenAPISchema):
     message = fields.Str()
 
 
-@querystring_schema(RevRegId())
-@response_schema(TailsDeleteResponseSchema())
-@docs(tags=["revocation"], summary="Delete the tail files")
-async def delete_tails(request: web.BaseRequest) -> json:
-    """Delete Tails Files."""
-    context: AdminRequestContext = request["context"]
-    rev_reg_id = request.query.get("rev_reg_id")
-    cred_def_id = request.query.get("cred_def_id")
-    revoc = IndyRevocation(context.profile)
-    session = revoc._profile.session()
-    if rev_reg_id:
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        tails_path = rev_reg.tails_local_path
-        main_dir_rev = os.path.dirname(tails_path)
-        try:
-            shutil.rmtree(main_dir_rev)
-            return web.json_response({"message": "All files deleted successfully"})
-        except Exception as e:
-            return web.json_response({"message": str(e)})
-    elif cred_def_id:
-        async with session:
-            cred_reg = sorted(
-                await IssuerRevRegRecord.query_by_cred_def_id(
-                    session, cred_def_id, IssuerRevRegRecord.STATE_GENERATED
-                )
-            )[0]
-        tails_path = cred_reg.tails_local_path
-        main_dir_rev = os.path.dirname(tails_path)
-        main_dir_cred = os.path.dirname(main_dir_rev)
-        filenames = os.listdir(main_dir_cred)
-        try:
-            flag = 0
-            for i in filenames:
-                safe_cred_def_id = re.escape(cred_def_id)
-                if re.search(safe_cred_def_id, i):
-                    shutil.rmtree(main_dir_cred + "/" + i)
-                    flag = 1
-            if flag:
-                return web.json_response({"message": "All files deleted successfully"})
-            else:
-                return web.json_response({"message": "No such file or directory"})
-
-        except Exception as e:
-            return web.json_response({"message": str(e)})
-
-
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
@@ -1320,8 +1193,6 @@ async def register(app: web.Application):
                 get_rev_reg_indy_recs,
                 allow_head=False,
             ),
-            web.patch("/revocation/registry/{rev_reg_id}", update_rev_reg),
-            web.put("/revocation/registry/{rev_reg_id}/tails-file", upload_tails_file),
             web.get(
                 "/revocation/registry/{rev_reg_id}/tails-file",
                 get_tails_file,
@@ -1335,7 +1206,6 @@ async def register(app: web.Application):
                 "/revocation/registry/{rev_reg_id}/fix-revocation-entry-state",
                 update_rev_reg_revoked_state,
             ),
-            web.delete("/revocation/registry/delete-tails-file", delete_tails),
         ]
     )
 
