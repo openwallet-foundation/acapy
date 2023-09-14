@@ -276,11 +276,13 @@ class MediationManager:
 
         route_mgr = RoutingManager(self._profile)
         routes = await route_mgr.get_routes(record.connection_id)
-        existing_keys = {normalize_from_did_key(r.recipient_key): r for r in routes}
+        # existing_keys = {normalize_from_did_key(r.recipient_key): r for r in routes}
+        # We may want to change this, but this might break other parts of the code
+        existing_keys = {normalize_from_public_key(r.recipient_key): r for r in routes}
 
         updated = []
         for update in updates:
-            normalized_key = normalize_from_did_key(update.recipient_key)
+            normalized_key = normalize_from_public_key(update.recipient_key)
             result = KeylistUpdated(
                 recipient_key=update.recipient_key,
                 action=update.action,
@@ -482,7 +484,9 @@ class MediationManager:
         # record.routing_keys = grant.routing_keys
         routing_keys = []
         for key in grant.routing_keys:
-            routing_keys.append(normalize_from_did_key(key))
+            # Turn to b58
+            # routing_keys.append(normalize_from_did_key(key))
+            routing_keys.append(normalize_from_public_key(key))
         record.routing_keys = routing_keys
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request granted.")
