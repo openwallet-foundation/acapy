@@ -1311,7 +1311,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
             return_value=(DIDDocument(id=DID(did)), service_builder.services)
         )
-        await self.manager.record_keys_for_public_did(did)
+        await self.manager.record_keys_for_resolvable_did(did)
 
     async def test_record_keys_for_public_did(self):
         did = "did:sov:" + self.test_did
@@ -1327,7 +1327,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
             return_value=(doc, doc.service)
         )
-        await self.manager.record_keys_for_public_did(did)
+        await self.manager.record_keys_for_resolvable_did(did)
 
     async def test_diddoc_connection_targets_diddoc_underspecified(self):
         with self.assertRaises(BaseConnectionManagerError):
