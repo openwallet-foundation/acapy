@@ -626,6 +626,21 @@ class BaseConnectionManager:
             targets = await self.fetch_connection_targets(connection)
         return targets
 
+    async def clear_connection_targets_cache(self, connection_id: str):
+        """Clear the connection targets cache for a given connection ID.
+
+        Historically, connections have not been updatable after the protocol
+        completes. However, with DID Rotation, we need to be able to update
+        the connection targets and clear the cache of targets.
+        """
+        # TODO it would be better to include the DIDs of the connection in the
+        # target cache key This solution only works when using whole cluster
+        # caching or have only a single instance with local caching
+        cache = self._profile.inject_or(BaseCache)
+        if cache:
+            cache_key = f"connection_target::{connection_id}"
+            await cache.clear(cache_key)
+
     def diddoc_connection_targets(
         self,
         doc: DIDDoc,
@@ -845,6 +860,7 @@ class BaseConnectionManager:
             connection = await ConnRecord.retrieve_by_id(session, conn_id)
             wallet = session.inject(BaseWallet)
             my_did_info = await wallet.get_local_did(connection.my_did)
+
         my_endpoint = my_did_info.metadata.get(
             "endpoint",
             self._profile.settings.get("default_endpoint"),

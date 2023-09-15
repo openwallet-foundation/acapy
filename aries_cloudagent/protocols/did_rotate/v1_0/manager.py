@@ -121,6 +121,7 @@ class DIDRotateManager:
             await self.ensure_supported_did(rotate.to_did)
         except ReportableDIDRotateError as err:
             responder = self.profile.inject(BaseResponder)
+            err.message.assign_thread_from(rotate)
             await responder.send(err.message, connection_id=conn.connection_id)
 
         async with self.profile.session() as session:
@@ -160,6 +161,11 @@ class DIDRotateManager:
             await conn.save(session, reason="Their DID rotated", event=False)
             await record.save(session, reason="Sent rotate ack")
 
+        # TODO it would be better if the cache key included DIDs so we don't
+        # have to manually clear it. This is a bigger change than a first pass
+        # warrants though.
+        await conn_mgr.clear_connection_targets_cache(conn.connection_id)
+
     async def receive_ack(self, conn: ConnRecord, ack: RotateAck):
         """Receive rotate ack message.
 
@@ -167,6 +173,25 @@ class DIDRotateManager:
             conn (ConnRecord): The connection to rotate the DID for.
             ack (RotateAck): The received rotate ack message.
         """
+        async with self.profile.session() as session:
+            record = await RotateRecord.retrieve_by_thread_id(session, ack._thread_id)
+
+        record.state = RotateRecord.STATE_ACK_RECEIVED
+        if not record.new_did:
+            raise ValueError("No new DID stored in record")
+
+        conn.my_did = record.new_did
+        async with self.profile.session() as session:
+            # Don't emit a connection event for this change
+            # Controllers should listen for the rotate event instead
+            await conn.save(session, reason="My DID rotated", event=False)
+            await record.save(session, reason="Received rotate ack")
+
+        # TODO it would be better if the cache key included DIDs so we don't
+        # have to manually clear it. This is a bigger change than a first pass
+        # warrants though.
+        conn_mgr = BaseConnectionManager(self.profile)
+        await conn_mgr.clear_connection_targets_cache(conn.connection_id)
 
     async def receive_problem_report(
         self, conn: ConnRecord, problem_report: RotateProblemReport
@@ -177,3 +202,14 @@ class DIDRotateManager:
             conn (ConnRecord): The connection to rotate the DID for.
             problem_report (ProblemReport): The received problem report message.
         """
+        async with self.profile.session() as session:
+            record = await RotateRecord.retrieve_by_thread_id(
+                session, problem_report._thread_id
+            )
+
+        record.state = RotateRecord.STATE_FAILED
+        # Base ProblemReportSchema requires this value be present
+        assert problem_report.description
+        record.error = problem_report.description["code"]
+        async with self.profile.session() as session:
+            await record.save(session, reason="Received problem report")
