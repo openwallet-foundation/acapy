@@ -127,7 +127,7 @@ class ProblemReportSchema(AgentMessageSchema):
             "example": "you - agency",
         },
     )
-    time_noticed = fields.Str(
+    noticed_time = fields.Str(
         data_key="noticed_time",
         required=False,
         validate=RFC3339_DATETIME_VALIDATE,
