@@ -276,8 +276,8 @@ class MediationManager:
 
         route_mgr = RoutingManager(self._profile)
         routes = await route_mgr.get_routes(record.connection_id)
-        # existing_keys = {normalize_from_did_key(r.recipient_key): r for r in routes}
-        existing_keys = {normalize_from_public_key(r.recipient_key): r for r in routes}
+        # existing_keys = {normalize_from_public_key(r.recipient_key): r for r in routes}
+        existing_keys = {r.recipient_key: r for r in routes}
 
         updated = []
         for update in updates:

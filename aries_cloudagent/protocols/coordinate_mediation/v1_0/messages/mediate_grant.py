@@ -41,6 +41,7 @@ class MediationGrant(AgentMessage):
         """
         super(MediationGrant, self).__init__(**kwargs)
         self.endpoint = endpoint
+        # Stores as did:key
         self.routing_keys = (
             [normalize_from_public_key(key) for key in routing_keys]
             if routing_keys
