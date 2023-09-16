@@ -8,7 +8,6 @@ from typing import Iterable, List, Optional, cast, Tuple
 import jwt
 
 from ..config.injection_context import InjectionContext
-from ..config.logging import context_wallet_id
 from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
 from ..protocols.coordinate_mediation.v1_0.manager import (
@@ -202,9 +201,6 @@ class BaseMultitenantManager(ABC):
                 await profile.inject(RouteManager).route_verkey(
                     profile, public_did_info.verkey
                 )
-            # add wallet id contextVar for logging
-            wallet_id = profile.settings.get("wallet.id")
-            context_wallet_id.set(wallet_id)
         except Exception:
             await wallet_record.delete_record(session)
             raise

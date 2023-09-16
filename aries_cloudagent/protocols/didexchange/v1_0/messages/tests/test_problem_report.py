@@ -1,10 +1,13 @@
 import pytest
 
+from asynctest import mock as async_mock
+
 from ......messaging.models.base import BaseModelError
 from .....didcomm_prefix import DIDCommPrefix
 from ...message_types import PROBLEM_REPORT
 from ..problem_report import DIDXProblemReport
 
+from .. import problem_report as test_module
 
 THID = "dummy-thid"
 PTHID = "dummy-pthid"
@@ -31,9 +34,11 @@ def test_missing_code():
         DIDXProblemReport.deserialize({"description": {"en": "test"}})
 
 
-def test_unrecognized_code(caplog):
-    with caplog.at_level("DEBUG"):
+def test_unrecognized_code():
+    with async_mock.patch.object(
+        test_module, "LOGGER", async_mock.MagicMock()
+    ) as mock_logger:
         DIDXProblemReport.deserialize(
             {"description": {"code": "unknown", "en": "test"}}
         )
-    assert "Unexpected error code received" in caplog.text
+        assert mock_logger.warning.call_count == 1

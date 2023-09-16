@@ -113,7 +113,7 @@ class LoggingConfigurator:
         else:
             logging.basicConfig(level=logging.WARNING)
             logging.root.warning(f"Logging config file not found: {config_path}")
-        if log_file and multitenant:
+        if multitenant:
             file_handler_set = False
             handler_pattern = None
             # Create context filter to adapt wallet_id in logger messages
@@ -128,7 +128,9 @@ class LoggingConfigurator:
                     _handler.setFormatter(jsonlogger.JsonFormatter(handler_pattern))
                 # Add context filter to handlers
                 _handler.addFilter(_cf)
-            if not file_handler_set:
+                if log_level:
+                    _handler.setLevel(log_level.upper())
+            if not file_handler_set and log_file:
                 file_path = os.path.join(
                     os.path.dirname(os.path.realpath(__file__)).replace(
                         "aries_cloudagent/config", ""
@@ -156,8 +158,7 @@ class LoggingConfigurator:
                 logging.FileHandler(log_file, encoding="utf-8")
             )
         if log_level:
-            log_level = log_level.upper()
-            logging.root.setLevel(log_level)
+            logging.root.setLevel(log_level.upper())
 
     @classmethod
     def print_banner(

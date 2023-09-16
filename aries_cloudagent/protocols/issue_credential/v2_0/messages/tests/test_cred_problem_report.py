@@ -1,6 +1,7 @@
 import logging
 import pytest
 
+from asynctest import mock as async_mock
 from unittest import mock, TestCase
 
 from ......messaging.models.base import BaseModelError
@@ -15,6 +16,8 @@ from ..cred_problem_report import (
     ProblemReportReason,
     ValidationError,
 )
+
+from .. import cred_problem_report as test_module
 
 
 class TestCredProblemReport(TestCase):
@@ -100,8 +103,11 @@ class TestCredProblemReport(TestCase):
             },
         ).serialize()
         self._caplog.set_level(logging.WARNING)
-        V20CredProblemReportSchema().validate_fields(data)
-        assert "Unexpected error code received" in self._caplog.text
+        with async_mock.patch.object(
+            test_module, "LOGGER", async_mock.MagicMock()
+        ) as mock_logger:
+            V20CredProblemReportSchema().validate_fields(data)
+            assert mock_logger.warning.call_count == 1
 
     def test_validate_x(self):
         """Exercise validation requirements."""
