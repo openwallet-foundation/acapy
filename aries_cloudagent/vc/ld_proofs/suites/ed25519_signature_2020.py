@@ -1,7 +1,7 @@
 """Ed25519Signature2018 suite."""
 
 from datetime import datetime
-from typing import List, Union
+from typing import Optional, Union, List
 
 from ....utils.multiformats import multibase
 from ..crypto import _KeyPair as KeyPair
@@ -19,9 +19,9 @@ class Ed25519Signature2020(LinkedDataSignature):
         self,
         *,
         key_pair: KeyPair,
-        proof: dict = None,
-        verification_method: str = None,
-        date: Union[datetime, str] = None,
+        proof: Optional[dict] = None,
+        verification_method: Optional[str] = None,
+        date: Union[datetime, str, None] = None,
     ):
         """Create new Ed25519Signature2020 instance.
 

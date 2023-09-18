@@ -1,7 +1,7 @@
 """Base Proof Purpose class."""
 
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from ....messaging.util import str_to_datetime
 
@@ -17,7 +17,11 @@ class ProofPurpose:
     """Base proof purpose class."""
 
     def __init__(
-        self, *, term: str, date: datetime = None, max_timestamp_delta: timedelta = None
+        self,
+        *,
+        term: str,
+        date: Optional[datetime] = None,
+        max_timestamp_delta: Optional[timedelta] = None,
     ):
         """Initialize new proof purpose instance."""
         self.term = term
