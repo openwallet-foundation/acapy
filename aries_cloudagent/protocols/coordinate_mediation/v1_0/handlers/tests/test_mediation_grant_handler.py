@@ -18,7 +18,7 @@ from ..mediation_grant_handler import MediationGrantHandler
 from .. import mediation_grant_handler as test_module
 
 TEST_CONN_ID = "conn-id"
-TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_BASE58_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_ENDPOINT = "https://example.com"
 
@@ -59,7 +59,21 @@ class TestMediationGrantHandler(AsyncTestCase):
         assert record
         assert record.state == MediationRecord.STATE_GRANTED
         assert record.endpoint == TEST_ENDPOINT
-        assert record.routing_keys == [TEST_RECORD_VERKEY]
+        assert record.routing_keys == [TEST_VERKEY]
+
+    async def test_handler_with_base58_received(self):
+        assert isinstance(self.context.message, MediationGrant)
+        self.context.message.routing_keys = [TEST_BASE58_VERKEY]
+        handler, responder = MediationGrantHandler(), MockResponder()
+        await MediationRecord(connection_id=TEST_CONN_ID).save(self.session)
+        await handler.handle(self.context, responder)
+        record = await MediationRecord.retrieve_by_connection_id(
+            self.session, TEST_CONN_ID
+        )
+        assert record
+        assert record.state == MediationRecord.STATE_GRANTED
+        assert record.endpoint == TEST_ENDPOINT
+        assert record.routing_keys == [TEST_VERKEY]
 
     async def test_handler_connection_has_set_to_default_meta(self):
         handler, responder = MediationGrantHandler(), MockResponder()
