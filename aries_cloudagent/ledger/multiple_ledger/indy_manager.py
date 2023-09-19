@@ -79,17 +79,6 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         """Return non_production ledgers mapping."""
         return self.non_production_ledgers
 
-    async def get_ledger_id_by_ledger_pool_name(self, pool_name: str) -> str:
-        """Return ledger_id by ledger pool name."""
-        multi_ledgers = self.production_ledgers | self.non_production_ledgers
-        for ledger_id, indy_vdr_ledger in multi_ledgers.items():
-            if indy_vdr_ledger.pool_name == pool_name:
-                return ledger_id
-        raise MultipleLedgerManagerError(
-            f"Provided Ledger pool name {pool_name} not found "
-            "in either production_ledgers or non_production_ledgers"
-        )
-
     async def _get_ledger_by_did(
         self,
         ledger_id: str,

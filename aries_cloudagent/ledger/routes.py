@@ -44,7 +44,8 @@ from ..protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
     is_author_role,
 )
-from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.base import BaseStorage, StorageRecord
+from ..storage.error import StorageError, StorageNotFoundError, StorageDuplicateError
 from ..wallet.error import WalletError, WalletNotFoundError
 from .base import BaseLedger
 from .base import Role as LedgerRole
@@ -53,6 +54,7 @@ from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 from .multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
+    RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
 )
 from .multiple_ledger.ledger_config_schema import (
     ConfigurableWriteLedgersSchema,
@@ -349,7 +351,45 @@ async def register_ledger_nym(request: web.BaseRequest):
             # special case - if we are an author with no public DID
             if create_transaction_for_endorser:
                 public_info = await ledger.get_wallet_public_did()
+                _write_ledger_nym_txn = False
                 if not public_info:
+                    _write_ledger_nym_txn = True
+                else:
+                    _curr_public_did = public_info.did
+                    async with context.profile.session() as session:
+                        storage = session.inject_or(BaseStorage)
+                        write_ledger = session.inject(BaseLedger)
+                        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
+                        try:
+                            ledger_id_public_did_map_record: StorageRecord = (
+                                await storage.find_record(
+                                    type_filter=RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+                                    tag_query={},
+                                )
+                            )
+                            ledger_id_public_did_map = json.loads(
+                                ledger_id_public_did_map_record.value
+                            )
+                            ledger_id = (
+                                await multiledger_mgr.get_ledger_id_by_ledger_pool_name(
+                                    write_ledger.pool_name
+                                )
+                            )
+                            if ledger_id in ledger_id_public_did_map:
+                                assert (
+                                    _curr_public_did
+                                    == ledger_id_public_did_map[ledger_id]["did"]
+                                )
+                                _write_ledger_nym_txn = False
+                            else:
+                                _write_ledger_nym_txn = True
+                        except (
+                            StorageError,
+                            StorageNotFoundError,
+                            StorageDuplicateError,
+                        ):
+                            _write_ledger_nym_txn = False
+                if _write_ledger_nym_txn:
                     write_ledger_nym_transaction = False
                     success = False
                     txn = {"signed_txn": json.dumps(meta_data)}
@@ -760,7 +800,7 @@ async def set_write_ledger(request: web.BaseRequest):
     try:
         set_ledger_id = await multiledger_mgr.set_profile_write_ledger(
             ledger_id=req_ledger_id,
-            profile=context.profile,
+            context=context,
         )
     except MultipleLedgerManagerError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

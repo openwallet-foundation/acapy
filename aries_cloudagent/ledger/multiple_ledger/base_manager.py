@@ -1,13 +1,21 @@
 """Manager for multiple ledger."""
 
+import json
+
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple, Mapping, List
 
+from ...admin.request_context import AdminRequestContext
 from ...core.error import BaseError
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
+from ...storage.base import BaseStorage, StorageRecord
+from ...storage.error import StorageNotFoundError, StorageDuplicateError, StorageError
 from ...messaging.valid import IndyDID
 from ...multitenant.manager import BaseMultitenantManager
+from ...wallet.routes import promote_wallet_public_did
+
+RECORD_TYPE_LEDGER_PUBLIC_DID_MAP = "acapy_ledger_public_did_map"
 
 
 class MultipleLedgerManagerError(BaseError):
@@ -27,10 +35,6 @@ class BaseMultipleLedgerManager(ABC):
     @abstractmethod
     async def get_write_ledgers(self) -> List[str]:
         """Return write ledger."""
-
-    @abstractmethod
-    async def get_ledger_id_by_ledger_pool_name(self, pool_name: str) -> str:
-        """Return ledger_id by ledger pool name."""
 
     @abstractmethod
     async def get_prod_ledgers(self) -> Mapping:
@@ -63,8 +67,22 @@ class BaseMultipleLedgerManager(ABC):
         else:
             return identifier.split(":")[0]
 
-    async def set_profile_write_ledger(self, ledger_id: str, profile: Profile) -> str:
+    async def get_ledger_id_by_ledger_pool_name(self, pool_name: str) -> str:
+        """Return ledger_id by ledger pool name."""
+        multi_ledgers = self.production_ledgers | self.non_production_ledgers
+        for ledger_id, ledger in multi_ledgers.items():
+            if ledger.pool_name == pool_name:
+                return ledger_id
+        raise MultipleLedgerManagerError(
+            f"Provided Ledger pool name {pool_name} not found "
+            "in either production_ledgers or non_production_ledgers"
+        )
+
+    async def set_profile_write_ledger(
+        self, ledger_id: str, context: AdminRequestContext
+    ) -> str:
         """Set the write ledger for the profile."""
+        profile = context.profile
         if ledger_id not in self.writable_ledgers:
             raise MultipleLedgerManagerError(
                 f"Provided Ledger identifier {ledger_id} is not write configurable."
@@ -83,6 +101,38 @@ class BaseMultipleLedgerManager(ABC):
                     profile.context.settings["wallet.id"],
                     extra_settings,
                 )
+            async with profile.session() as session:
+                storage = session.inject_or(BaseStorage)
+                write_ledger = session.inject(BaseLedger)
+                try:
+                    ledger_id_public_did_map_record: StorageRecord = (
+                        await storage.find_record(
+                            type_filter=RECORD_TYPE_LEDGER_PUBLIC_DID_MAP, tag_query={}
+                        )
+                    )
+                    ledger_id_public_did_map = json.loads(
+                        ledger_id_public_did_map_record.value
+                    )
+                    ledger_id = await self.get_ledger_id_by_ledger_pool_name(
+                        write_ledger.pool_name
+                    )
+                    public_did_config = ledger_id_public_did_map.get(ledger_id)
+                    if public_did_config:
+                        info, _ = await promote_wallet_public_did(
+                            profile,
+                            context,
+                            context.session,
+                            public_did_config.get("did"),
+                            write_ledger=public_did_config.get("write_ledger"),
+                            connection_id=public_did_config.get("connection_id"),
+                            routing_keys=public_did_config.get("routing_keys"),
+                            mediator_endpoint=public_did_config.get(
+                                "mediator_endpoint"
+                            ),
+                        )
+                        assert info
+                except (StorageError, StorageNotFoundError, StorageDuplicateError):
+                    pass
             return ledger_id
         raise MultipleLedgerManagerError(f"No ledger info found for {ledger_id}.")
 

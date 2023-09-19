@@ -8,6 +8,7 @@ from aries_cloudagent.tests import mock
 
 from collections import OrderedDict
 
+from ....admin.request_context import AdminRequestContext
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
 from ....core.in_memory import InMemoryProfile
@@ -113,8 +114,13 @@ class TestMultiIndyLedgerManager(IsolatedAsyncioTestCase):
         profile = InMemoryProfile.test_profile()
         assert not profile.inject_or(BaseLedger)
         assert "test_prod_2" in manager.writable_ledgers
+        test_ctx = AdminRequestContext(
+            profile=profile,
+            root_profile=profile,
+            metadata={},
+        )
         new_write_ledger_id = await manager.set_profile_write_ledger(
-            profile=profile, ledger_id="test_prod_2"
+            context=test_ctx, ledger_id="test_prod_2"
         )
         assert new_write_ledger_id == "test_prod_2"
         new_write_ledger = profile.inject_or(BaseLedger)
@@ -122,9 +128,14 @@ class TestMultiIndyLedgerManager(IsolatedAsyncioTestCase):
 
     async def test_set_profile_write_ledger_x(self):
         profile = InMemoryProfile.test_profile()
+        test_ctx = AdminRequestContext(
+            profile=profile,
+            root_profile=profile,
+            metadata={},
+        )
         with self.assertRaises(MultipleLedgerManagerError) as cm:
             new_write_ledger_id = await self.manager.set_profile_write_ledger(
-                profile=profile, ledger_id="test_non_prod_1"
+                context=test_ctx, ledger_id="test_non_prod_1"
             )
         assert "is not write configurable" in str(cm.exception.message)
 

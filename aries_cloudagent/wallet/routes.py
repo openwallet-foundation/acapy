@@ -16,6 +16,10 @@ from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
+from ..ledger.multiple_ledger.base_manager import (
+    RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+    BaseMultipleLedgerManager,
+)
 from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMethod
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
@@ -53,7 +57,8 @@ from ..protocols.endorse_transaction.v1_0.util import (
     is_author_role,
 )
 from ..resolver.base import ResolverError
-from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.base import BaseStorage, StorageRecord
+from ..storage.error import StorageError, StorageNotFoundError, StorageDuplicateError
 from ..wallet.jwt import jwt_sign, jwt_verify
 from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
 from .base import BaseWallet
@@ -800,9 +805,9 @@ async def promote_wallet_public_did(
         if info:
             # Publish endpoint if necessary
             endpoint = did_info.metadata.get("endpoint")
-
             if is_indy_did and not endpoint:
                 endpoint = mediator_endpoint or context.settings.get("default_endpoint")
+
                 attrib_def = await wallet.set_did_endpoint(
                     info.did,
                     endpoint,
@@ -811,6 +816,38 @@ async def promote_wallet_public_did(
                     endorser_did=endorser_did,
                     routing_keys=routing_keys,
                 )
+
+        if context.settings.get_value("ledger.ledger_config_list"):
+            storage = session.inject_or(BaseStorage)
+            write_ledger = session.inject(BaseLedger)
+            multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
+            try:
+                ledger_id_public_did_map_record: StorageRecord = (
+                    await storage.find_record(
+                        type_filter=RECORD_TYPE_LEDGER_PUBLIC_DID_MAP, tag_query={}
+                    )
+                )
+                ledger_id_public_did_map = json.loads(
+                    ledger_id_public_did_map_record.value
+                )
+            except (StorageError, StorageNotFoundError, StorageDuplicateError):
+                ledger_id_public_did_map = {}
+            ledger_id = await multiledger_mgr.get_ledger_id_by_ledger_pool_name(
+                write_ledger.pool_name
+            )
+            ledger_id_public_did_map[ledger_id] = {
+                "did": info.did,
+                "routing_keys": routing_keys,
+                "mediation_endpoint": mediator_endpoint,
+                "connection_id": connection_id,
+                "write_ledger": write_ledger,
+            }
+            record = StorageRecord(
+                RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+                ledger_id_public_did_map.to_json(),
+                {},
+            )
+            await storage.add_record(record)
 
     if info:
         # Route the public DID
