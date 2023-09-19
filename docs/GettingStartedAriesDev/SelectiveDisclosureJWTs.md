@@ -32,7 +32,7 @@ The issuer creates a list of JSON paths for the claims that will not be selectiv
 | The second item in the nationalities list   | "nationalities[1]  |
 | All items in the nationalities list  | "nationalities[0:2]"  |
 
-The (specification)[https://datatracker.ietf.org/doc/html/draft-ietf-oauth-selective-disclosure-jwt-05#name-nested-data-in-sd-jwts] defines options for how the issuer can handle nested structures with respect to selective disclosability. As mentioned, all claims at all levels of the JSON structure are by default selectively disclosable.
+The [specification](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-selective-disclosure-jwt-05#name-nested-data-in-sd-jwts) defines options for how the issuer can handle nested structures with respect to selective disclosability. As mentioned, all claims at all levels of the JSON structure are by default selectively disclosable.
 
 ### [Option 1: Flat SD-JWT](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-selective-disclosure-jwt-05#section-5.7.1)
 The issuer can decide to treat the `address` claim in the above example payload as a block that can either be disclosed completely or not at all.
