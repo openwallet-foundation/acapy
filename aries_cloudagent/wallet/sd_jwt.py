@@ -3,7 +3,7 @@
 import re
 from typing import Any, List, Mapping, Optional, Union
 from marshmallow import fields
-from jsonpath_ng.ext import parse
+from jsonpath_ng.ext import parse as jsonpath_parse
 from sd_jwt.common import SDObj
 from sd_jwt.issuer import SDJWTIssuer
 from sd_jwt.verifier import SDJWTVerifier
@@ -152,7 +152,7 @@ async def sd_jwt_sign(
     """
     sd_list = create_sd_list(payload, non_sd_list)
     for sd in sd_list:
-        jsonpath_expression = parse(f"$.{sd}")
+        jsonpath_expression = jsonpath_parse(f"$.{sd}")
         matches = jsonpath_expression.find(payload)
         if len(matches) < 1:
             raise SDJWTError(f"Claim for {sd} not found in payload.")
