@@ -599,7 +599,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     profile,
                     rev_list,
                     True,
-                    ledger.genesis_txns,
+                    ledger.pool.genesis_txns,
                 )
                 rev_entry_res = {"result": res}
                 LOGGER.warn("Ledger update/fix applied")
