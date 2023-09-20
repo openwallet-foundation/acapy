@@ -75,7 +75,7 @@ In VS Code, open a Terminal, you should be able to run the following commands:
 ```
 python -m aries_cloudagent -v
 cd aries_cloudagent
-flake8 --max-line-length=90 --exclude=*/tests/** --extend-ignore=D202,W503 --per-file-ignores=*/__init__.py:D104
+ruff check .
 black . --check
 ```
 
