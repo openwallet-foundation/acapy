@@ -35,7 +35,12 @@ from ..messaging.valid import (
     INDY_RAW_PUBLIC_KEY_VALIDATE,
     JWT_EXAMPLE,
     JWT_VALIDATE,
+    SD_JWT_EXAMPLE,
+    SD_JWT_VALIDATE,
+    NON_SD_LIST_EXAMPLE,
+    NON_SD_LIST_VALIDATE,
     IndyDID,
+    StrOrDictField,
     Uri,
 )
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
@@ -50,6 +55,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
 from ..resolver.base import ResolverError
 from ..storage.error import StorageError, StorageNotFoundError
 from ..wallet.jwt import jwt_sign, jwt_verify
+from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
 from .base import BaseWallet
 from .did_info import DIDInfo
 from .did_method import KEY, SOV, DIDMethod, DIDMethods, HolderDefinedDid
@@ -171,14 +177,32 @@ class JWSCreateSchema(OpenAPISchema):
     )
 
 
+class SDJWSCreateSchema(JWSCreateSchema):
+    """Request schema to create an sd-jws with a particular DID."""
+
+    non_sd_list = fields.List(
+        fields.Str(
+            required=False,
+            validate=NON_SD_LIST_VALIDATE,
+            metadata={"example": NON_SD_LIST_EXAMPLE},
+        )
+    )
+
+
 class JWSVerifySchema(OpenAPISchema):
     """Request schema to verify a jws created from a DID."""
 
     jwt = fields.Str(validate=JWT_VALIDATE, metadata={"example": JWT_EXAMPLE})
 
 
+class SDJWSVerifySchema(OpenAPISchema):
+    """Request schema to verify an sd-jws created from a DID."""
+
+    sd_jwt = fields.Str(validate=SD_JWT_VALIDATE, metadata={"example": SD_JWT_EXAMPLE})
+
+
 class JWSVerifyResponseSchema(OpenAPISchema):
-    """Response schema for verification result."""
+    """Response schema for JWT verification result."""
 
     valid = fields.Bool(required=True)
     error = fields.Str(required=False, metadata={"description": "Error text"})
@@ -188,6 +212,25 @@ class JWSVerifyResponseSchema(OpenAPISchema):
     )
     payload = fields.Dict(
         required=True, metadata={"description": "Payload from verified JWT"}
+    )
+
+
+class SDJWSVerifyResponseSchema(JWSVerifyResponseSchema):
+    """Response schema for SD-JWT verification result."""
+
+    disclosures = fields.List(
+        fields.List(StrOrDictField()),
+        metadata={
+            "description": "Disclosure arrays associated with the SD-JWT",
+            "example": [
+                ["fx1iT_mETjGiC-JzRARnVg", "name", "Alice"],
+                [
+                    "n4-t3mlh8jSS6yMIT7QHnA",
+                    "street_address",
+                    {"_sd": ["kLZrLK7enwfqeOzJ9-Ss88YS3mhjOAEk9lr_ix2Heng"]},
+                ],
+            ],
+        },
     )
 
 
@@ -941,6 +984,44 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     return web.json_response(jws)
 
 
+@docs(
+    tags=["wallet"], summary="Create a EdDSA sd-jws using did keys with a given payload"
+)
+@request_schema(SDJWSCreateSchema)
+@response_schema(WalletModuleResponseSchema(), description="")
+async def wallet_sd_jwt_sign(request: web.BaseRequest):
+    """Request handler for sd-jws creation using did.
+
+    Args:
+        "headers": { ... },
+        "payload": { ... },
+        "did": "did:example:123",
+        "verificationMethod": "did:example:123#keys-1"
+        with did and verification being mutually exclusive.
+        "non_sd_list": []
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    did = body.get("did")
+    verification_method = body.get("verificationMethod")
+    headers = body.get("headers", {})
+    payload = body.get("payload", {})
+    non_sd_list = body.get("non_sd_list", [])
+
+    try:
+        sd_jws = await sd_jwt_sign(
+            context.profile, headers, payload, non_sd_list, did, verification_method
+        )
+    except ValueError as err:
+        raise web.HTTPBadRequest(reason="Bad did or verification method") from err
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(sd_jws)
+
+
 @docs(tags=["wallet"], summary="Verify a EdDSA jws using did keys with a given JWS")
 @request_schema(JWSVerifySchema())
 @response_schema(JWSVerifyResponseSchema(), 200, description="")
@@ -968,6 +1049,32 @@ async def wallet_jwt_verify(request: web.BaseRequest):
             "kid": result.kid,
         }
     )
+
+
+@docs(
+    tags=["wallet"],
+    summary="Verify a EdDSA sd-jws using did keys with a given SD-JWS with "
+    "optional key binding",
+)
+@request_schema(SDJWSVerifySchema())
+@response_schema(SDJWSVerifyResponseSchema(), 200, description="")
+async def wallet_sd_jwt_verify(request: web.BaseRequest):
+    """Request handler for sd-jws validation using did.
+
+    Args:
+        "sd-jwt": { ... }
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    sd_jwt = body["sd_jwt"]
+    try:
+        result = await sd_jwt_verify(context.profile, sd_jwt)
+    except (BadJWSHeaderError, InvalidVerificationMethod) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except ResolverError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    return web.json_response(result.serialize())
 
 
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
@@ -1125,6 +1232,8 @@ async def register(app: web.Application):
             web.post("/wallet/set-did-endpoint", wallet_set_did_endpoint),
             web.post("/wallet/jwt/sign", wallet_jwt_sign),
             web.post("/wallet/jwt/verify", wallet_jwt_verify),
+            web.post("/wallet/sd-jwt/sign", wallet_sd_jwt_sign),
+            web.post("/wallet/sd-jwt/verify", wallet_sd_jwt_verify),
             web.get(
                 "/wallet/get-did-endpoint", wallet_get_did_endpoint, allow_head=False
             ),

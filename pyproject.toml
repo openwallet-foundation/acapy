@@ -51,6 +51,7 @@ unflatten="~0.1"
 asyncpg = ">=0.25.0,<0.26.0"
 web-py = ">=0.62,<1.0"
 pygments = ">=2.10,<3.0"
+sd_jwt = {git = "https://github.com/openwallet-foundation-labs/sd-jwt-python.git"}
 
 # askar
 aries-askar= { version = "~0.2.5", optional = true }
