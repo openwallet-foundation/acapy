@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -16,10 +16,12 @@ from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
-from ..ledger.multiple_ledger.base_manager import (
-    RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
-    BaseMultipleLedgerManager,
-)
+
+if TYPE_CHECKING:
+    from ..ledger.multiple_ledger.base_manager import (
+        RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+        BaseMultipleLedgerManager,
+    )
 from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMethod
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
