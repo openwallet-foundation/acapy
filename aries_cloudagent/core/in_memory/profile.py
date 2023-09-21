@@ -6,7 +6,7 @@ from weakref import ref
 
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
-from ...storage.base import BaseStorage
+from ...storage.base import BaseStorage, BaseStorageSearch
 from ...storage.vc_holder.base import VCHolder
 from ...utils.classloader import DeferLoad
 from ...wallet.base import BaseWallet
@@ -114,7 +114,9 @@ class InMemoryProfileSession(ProfileSession):
 
     def _init_context(self):
         """Initialize the session context."""
-        self._context.injector.bind_instance(BaseStorage, STORAGE_CLASS(self.profile))
+        storage = STORAGE_CLASS(self.profile)
+        self._context.injector.bind_instance(BaseStorageSearch, storage)
+        self._context.injector.bind_instance(BaseStorage, storage)
         self._context.injector.bind_instance(BaseWallet, WALLET_CLASS(self.profile))
 
     @property

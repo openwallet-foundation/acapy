@@ -1,15 +1,22 @@
 import asyncio
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ...core.in_memory import InMemoryProfile
+from .. import upgrade as test_module
 from ...connections.models.conn_record import ConnRecord
+from ...core.in_memory import InMemoryProfile
+from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
+    MediationRecord,
+)
+from ...protocols.routing.v1_0.models.route_record import RouteRecord
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 from ...version import __version__
-
-from .. import upgrade as test_module
 from ..upgrade import UpgradeError
+
+
+TEST_BASE58_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 
 
 class TestUpgrade(AsyncTestCase):
@@ -619,3 +626,67 @@ class TestUpgrade(AsyncTestCase):
             await test_module.upgrade(profile=self.profile)
             assert mock_logger.warning.call_count == 1
             assert mock_logger.info.call_count == 0
+
+    async def test_update_routing_keys(self):
+        """Test update routing keys routine."""
+        routes = [
+            RouteRecord(
+                role=RouteRecord.ROLE_SERVER,
+                recipient_key=TEST_BASE58_VERKEY,
+                connection_id="dummy connection id",
+            ),
+            RouteRecord(
+                role=RouteRecord.ROLE_SERVER,
+                recipient_key=TEST_BASE58_VERKEY,
+                connection_id="dummy connection id",
+            ),
+            RouteRecord(
+                role=RouteRecord.ROLE_SERVER,
+                recipient_key=TEST_VERKEY,
+                connection_id="dummy connection id",
+            ),
+        ]
+        mediations = [
+            MediationRecord(
+                role=MediationRecord.ROLE_CLIENT,
+                state=MediationRecord.STATE_GRANTED,
+                connection_id="dummy connection id",
+                routing_keys=[TEST_BASE58_VERKEY],
+            ),
+            MediationRecord(
+                role=MediationRecord.ROLE_CLIENT,
+                state=MediationRecord.STATE_GRANTED,
+                connection_id="dummy connection id",
+                routing_keys=[TEST_BASE58_VERKEY, TEST_BASE58_VERKEY],
+            ),
+            MediationRecord(
+                role=MediationRecord.ROLE_CLIENT,
+                state=MediationRecord.STATE_GRANTED,
+                connection_id="dummy connection id",
+                routing_keys=[TEST_VERKEY],
+            ),
+            MediationRecord(
+                role=MediationRecord.ROLE_CLIENT,
+                state=MediationRecord.STATE_GRANTED,
+                connection_id="dummy connection id",
+                routing_keys=[TEST_VERKEY, TEST_BASE58_VERKEY],
+            ),
+        ]
+        for route in routes:
+            await route.save(self.session)
+        for mediation in mediations:
+            await mediation.save(self.session)
+
+        await test_module.update_routing_keys(self.profile)
+
+        mediation_records = await MediationRecord.query(self.session)
+        route_records = await RouteRecord.query(self.session)
+        assert len(mediation_records)
+        assert len(route_records)
+
+        for record in mediation_records:
+            for routing_key in record.routing_keys:
+                assert routing_key == TEST_VERKEY
+
+        for record in route_records:
+            assert record.recipient_key == TEST_VERKEY
