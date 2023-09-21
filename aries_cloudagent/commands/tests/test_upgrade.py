@@ -690,3 +690,42 @@ class TestUpgrade(AsyncTestCase):
 
         for record in route_records:
             assert record.recipient_key == TEST_VERKEY
+
+    async def test_update_routing_keys_called_from_executables(self):
+        version_storage_record = await self.storage.find_record(
+            type_filter="acapy_version", tag_query={}
+        )
+        await self.storage.delete_record(version_storage_record)
+        with async_mock.patch.object(
+            test_module,
+            "wallet_config",
+            async_mock.CoroutineMock(
+                return_value=(
+                    self.profile,
+                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                )
+            ),
+        ), async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.11.0": {
+                        "update_routing_keys": True,
+                    },
+                }
+            ),
+        ), async_mock.patch.object(
+            test_module,
+            "update_routing_keys",
+            async_mock.CoroutineMock(),
+        ) as mock_update_routing_keys:
+            test_module.UPGRADE_EXISTING_RECORDS_FUNCTION_MAPPING[
+                "update_routing_keys"
+            ] = mock_update_routing_keys
+            await test_module.upgrade(
+                settings={
+                    "upgrade.from_version": "v0.7.2",
+                }
+            )
+            mock_update_routing_keys.assert_called_once()
