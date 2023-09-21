@@ -276,7 +276,6 @@ class MediationManager:
 
         route_mgr = RoutingManager(self._profile)
         routes = await route_mgr.get_routes(record.connection_id)
-        # existing_keys = {normalize_from_public_key(r.recipient_key): r for r in routes}
         existing_keys = {r.recipient_key: r for r in routes}
 
         updated = []
@@ -480,11 +479,8 @@ class MediationManager:
         """
         record.state = MediationRecord.STATE_GRANTED
         record.endpoint = grant.endpoint
-        # record.routing_keys = grant.routing_keys
         routing_keys = []
         for key in grant.routing_keys:
-            # Turn to b58
-            # routing_keys.append(normalize_from_did_key(key))
             routing_keys.append(normalize_from_public_key(key))
         record.routing_keys = routing_keys
         async with self._profile.session() as session:
@@ -518,7 +514,6 @@ class MediationManager:
             KeylistQuery: message to send to mediator
 
         """
-        # TODO Handle creation of filter rather than delegating to caller?
         message = KeylistQuery(
             filter=filter_,
             paginate=KeylistQueryPaginate(paginate_limit, paginate_offset),
