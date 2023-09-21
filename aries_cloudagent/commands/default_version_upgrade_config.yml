@@ -1,3 +1,5 @@
+v0.11.0:
+  update_routing_keys: true
 v0.8.1:
   resave_records:
     base_record_path:

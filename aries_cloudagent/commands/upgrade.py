@@ -1,6 +1,7 @@
 """Upgrade command for handling breaking changes when updating ACA-PY versions."""
 
 import asyncio
+import json
 import logging
 import os
 import yaml
@@ -19,6 +20,14 @@ from typing import (
     Tuple,
 )
 
+from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
+    MediationRecord,
+)
+from ..protocols.coordinate_mediation.v1_0.normalization import (
+    normalize_from_public_key,
+)
+from ..protocols.routing.v1_0.models.route_record import RouteRecord
+
 from ..core.profile import Profile
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
@@ -26,7 +35,7 @@ from ..config.base import BaseError, BaseSettings
 from ..config.util import common_config
 from ..config.wallet import wallet_config
 from ..messaging.models.base_record import BaseRecord
-from ..storage.base import BaseStorage
+from ..storage.base import BaseStorage, BaseStorageSearch
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..utils.classloader import ClassLoader, ClassNotFoundError
@@ -341,6 +350,7 @@ async def upgrade(
                         f"Only BaseRecord can be resaved, found: {str(rec_type)}"
                     )
                 async with root_profile.session() as session:
+                    # TODO This should use BaseStorageSearch so we don't risk OOM errors
                     all_records = await rec_type.query(session)
                     for record in all_records:
                         await record.save(
@@ -394,6 +404,61 @@ async def update_existing_records(profile: Profile):
     pass
 
 
+async def update_routing_keys(profile: Profile):
+    """Update routing keys previously stored in wallet.
+
+    This update step will transform the stored routing keys into did:key values
+    from raw base58 encoded values.
+
+    Steps:
+        for each mediation record stored in the wallet:
+            ensure the stored routing_keys list is formated as did:keys
+            save the record if modified
+        for each routing record stored in the wallet:
+            ensure the stored recipient keys are formated as did:keys
+            save the record if modified
+    """
+    async with profile.transaction() as txn:
+        searcher = txn.inject(BaseStorageSearch)
+        search = searcher.search_records(
+            MediationRecord.RECORD_TYPE,
+        )
+        async for record in search:
+            try:
+                value = json.loads(record.value)
+                record = MediationRecord.from_storage(record.id, value)
+                original = record.routing_keys
+                record.routing_keys = [
+                    normalize_from_public_key(key) for key in record.routing_keys
+                ]
+                if original != record.routing_keys:
+                    await record.save(
+                        txn, reason="Normalize routing keys to did:key", event=False
+                    )
+            except Exception:
+                LOGGER.exception("Error normalizing routing keys in mediation record")
+        await txn.commit()
+
+    async with profile.transaction() as txn:
+        searcher = txn.inject(BaseStorageSearch)
+        search = searcher.search_records(
+            RouteRecord.RECORD_TYPE,
+        )
+        async for record in search:
+            try:
+                value = json.loads(record.value)
+                record = RouteRecord.from_storage(record.id, value)
+                original = record.recipient_key
+                record.recipient_key = normalize_from_public_key(record.recipient_key)
+                if original != record.recipient_key:
+                    await record.save(
+                        txn, reason="Normalize recipient key to did:key", event=False
+                    )
+            except Exception:
+                LOGGER.exception("Error normalizing recipient key in route record")
+        await txn.commit()
+
+
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
     parser = arg.create_argument_parser(prog=PROG)
@@ -413,7 +478,8 @@ def main():
 
 
 UPGRADE_EXISTING_RECORDS_FUNCTION_MAPPING = {
-    "update_existing_records": update_existing_records
+    "update_existing_records": update_existing_records,
+    "update_routing_keys": update_routing_keys,
 }
 
 main()
