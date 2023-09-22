@@ -16,5 +16,6 @@ ADD aries_cloudagent/version.py aries_cloudagent/version.py
 
 RUN mkdir -p logs && chmod -R ug+rw logs
 ADD aries_cloudagent ./aries_cloudagent
+ADD bin ./bin
 
 ENTRYPOINT ["/bin/bash", "-c", "poetry run aca-py \"$@\"", "--"]
