@@ -1,6 +1,6 @@
 """Base Registry."""
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, Pattern, Sequence, Tuple, TypeVar
+from typing import Generic, Optional, Pattern, Sequence, TypeVar
 
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
@@ -11,6 +11,7 @@ from .models.anoncreds_cred_def import (
     GetCredDefResult,
 )
 from .models.anoncreds_revocation import (
+    GetRevListResult,
     GetRevRegDefResult,
     RevRegDef,
     RevRegDefResult,
@@ -130,10 +131,10 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
         """Get a revocation registry definition from the registry."""
 
     @abstractmethod
-    async def get_revocation_registry_delta(
-        self, profile: Profile, rev_reg_def_id: str, timestamp: None
-    ) -> Tuple[dict, int]:
-        """Get a revocation registry delta."""
+    async def get_revocation_list(
+        self, profile: Profile, revocation_registry_id: str, timestamp: int
+    ) -> GetRevListResult:
+        """Get a revocation list from the registry."""
 
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
