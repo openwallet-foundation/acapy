@@ -78,6 +78,7 @@ def step_impl(context, issuer, schema_name):
     context.cred_def_id = cred_def_id
 
 
+@given('"{issuer}" offers a credential with data {credential_data}')
 @when('"{issuer}" offers a credential with data {credential_data}')
 def step_impl(context, issuer, credential_data):
     agent = context.active_agents[issuer]

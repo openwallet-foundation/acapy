@@ -7,6 +7,7 @@ WORKSPACE_DIR=$(pwd)
 # install all ACA-Py requirements
 python -m pip install --upgrade pip
 pip3 install -r requirements.txt -r requirements.askar.txt -r requirements.bbs.txt -r requirements.dev.txt -r requirements.indy.txt -r requirements.anoncreds.txt
+pip3 install -r demo/requirements.behave.txt -r demo/requirements.txt
 
 # install black for formatting
 pip3 install black

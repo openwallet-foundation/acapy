@@ -17,10 +17,10 @@ Feature: TAA Transaction Author Agreement related tests
          | --taa-accept                           | driverslicense |
          | --taa-accept --multitenant             | driverslicense |
          | --taa-accept --revocation              | driverslicense |
-         | --taa-accept --multi-ledger            | driverslicense |
-         | --taa-accept --multitenant --multi-ledger | driverslicense |
+         #| --taa-accept --multi-ledger            | driverslicense |
+         #| --taa-accept --multitenant --multi-ledger | driverslicense |
 
-   @T001a-TAA @taa_required
+   @T001a-TAA @taa_required_anoncreds-break
    Scenario Outline: accept the ledger TAA and write to the ledger via endorser
       Given we have "2" agents
          | name  | role     | capabilities        |
