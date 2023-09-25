@@ -130,8 +130,6 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         record = await manager.receive_request(TEST_CONN_ID, request)
         assert record.connection_id == TEST_CONN_ID
         record, deny = await manager.deny_request(record.mediation_id)
-        assert deny.mediator_terms == []
-        assert deny.recipient_terms == []
 
     async def test_update_keylist_delete(self, session, manager, record):
         """test_update_keylist_delete."""

@@ -33,8 +33,6 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             "state": "granted",
             "role": "server",
             "connection_id": "c3dd00cf-f6a2-4ddf-93d8-49ae74bdacef",
-            "mediator_terms": [],
-            "recipient_terms": [],
             "routing_keys": ["EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up"],
             "endpoint": "http://192.168.1.13:3005",
             "created_at": "1234567890",
@@ -212,10 +210,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             await test_module.delete_mediation_request(self.request)
 
     async def test_request_mediation(self):
-        body = {
-            "mediator_terms": ["meaningless string because terms are not used"],
-            "recipient_terms": ["meaningless string because terms are not a 'thing'"],
-        }
+        body = {}
         self.request.json.return_value = body
         with async_mock.patch.object(
             test_module, "MediationManager", autospec=True
@@ -243,10 +238,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             self.outbound_message_router.assert_called()
 
     async def test_request_mediation_x_conn_not_ready(self):
-        body = {
-            "mediator_terms": ["meaningless string because terms are not used"],
-            "recipient_terms": ["meaningless string because terms are not a 'thing'"],
-        }
+        body = {}
         self.request.json.return_value = body
         with async_mock.patch.object(
             test_module.ConnRecord,
@@ -259,10 +251,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             assert "request connection is not ready" in exc.msg
 
     async def test_request_mediation_x_already_exists(self):
-        body = {
-            "mediator_terms": ["meaningless string because terms are not used"],
-            "recipient_terms": ["meaningless string because terms are not a 'thing'"],
-        }
+        body = {}
         self.request.json.return_value = body
         with async_mock.patch.object(
             test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -277,10 +266,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             assert "already exists for connection" in exc.msg
 
     async def test_request_mediation_x_conn_not_found(self):
-        body = {
-            "mediator_terms": ["meaningless string because terms are not used"],
-            "recipient_terms": ["meaningless string because terms are not a 'thing'"],
-        }
+        body = {}
         self.request.json.return_value = body
         with async_mock.patch.object(
             test_module.ConnRecord,
@@ -292,10 +278,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             await test_module.request_mediation(self.request)
 
     async def test_request_mediation_x_storage_error(self):
-        body = {
-            "mediator_terms": ["meaningless string because terms are not used"],
-            "recipient_terms": ["meaningless string because terms are not a 'thing'"],
-        }
+        body = {}
         self.request.json.return_value = body
         with async_mock.patch.object(
             test_module.ConnRecord,
