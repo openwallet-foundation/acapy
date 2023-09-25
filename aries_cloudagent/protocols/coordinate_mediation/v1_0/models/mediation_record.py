@@ -108,8 +108,6 @@ class MediationRecord(BaseRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
-                "mediator_terms",
-                "recipient_terms",
                 "routing_keys",
                 "endpoint",
             )
