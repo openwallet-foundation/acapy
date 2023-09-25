@@ -463,6 +463,7 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_create_request_mediation_id(self):
         mediation_record = MediationRecord(
+            mediation_id="test_medation_id",
             role=MediationRecord.ROLE_CLIENT,
             state=MediationRecord.STATE_GRANTED,
             connection_id=self.test_mediator_conn_id,
@@ -866,6 +867,7 @@ class TestConnectionManager(AsyncTestCase):
         )
 
         mediation_record = MediationRecord(
+            mediation_id="test_medation_id",
             role=MediationRecord.ROLE_CLIENT,
             state=MediationRecord.STATE_GRANTED,
             connection_id=self.test_mediator_conn_id,
@@ -936,6 +938,7 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_create_response_mediation(self):
         mediation_record = MediationRecord(
+            mediation_id="test_medation_id",
             role=MediationRecord.ROLE_CLIENT,
             state=MediationRecord.STATE_GRANTED,
             connection_id=self.test_mediator_conn_id,
