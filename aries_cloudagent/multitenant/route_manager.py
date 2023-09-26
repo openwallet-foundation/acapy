@@ -11,7 +11,10 @@ from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
-from ..protocols.coordinate_mediation.v1_0.normalization import normalize_from_did_key
+from ..protocols.coordinate_mediation.v1_0.normalization import (
+    normalize_from_did_key,
+    normalize_to_did_key,
+)
 from ..protocols.coordinate_mediation.v1_0.route_manager import (
     CoordinateMediationV1RouteManager,
     RouteManager,
@@ -116,6 +119,8 @@ class MultitenantRouteManager(RouteManager):
         if mediation_record:
             routing_keys = [*routing_keys, *mediation_record.routing_keys]
             my_endpoint = mediation_record.endpoint
+
+        routing_keys = [normalize_to_did_key(key).key_id for key in routing_keys]
 
         return routing_keys, my_endpoint
 

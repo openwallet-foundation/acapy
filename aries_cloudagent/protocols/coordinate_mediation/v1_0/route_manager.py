@@ -20,7 +20,10 @@ from ...routing.v1_0.models.route_record import RouteRecord
 from .manager import MediationManager
 from .messages.keylist_update import KeylistUpdate
 from .models.mediation_record import MediationRecord
-from .normalization import normalize_from_did_key
+from .normalization import (
+    normalize_from_did_key,
+    normalize_to_did_key,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -326,6 +329,9 @@ class CoordinateMediationV1RouteManager(RouteManager):
     ) -> Tuple[List[str], str]:
         """Return routing info for mediator."""
         if mediation_record:
-            return mediation_record.routing_keys, mediation_record.endpoint
+            return [
+                normalize_to_did_key(key).key_id
+                for key in mediation_record.routing_keys
+            ], mediation_record.endpoint
 
         return [], my_endpoint

@@ -17,3 +17,10 @@ def normalize_from_public_key(key: str):
         return key
 
     return DIDKey.from_public_key_b58(key, ED25519).did
+
+
+def normalize_to_did_key(value: str) -> DIDKey:
+    """Normalize a value to a DIDKey."""
+    if value.startswith("did:key:"):
+        return DIDKey.from_did(value)
+    return DIDKey.from_public_key_b58(value, ED25519)
