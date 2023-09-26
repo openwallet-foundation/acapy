@@ -836,7 +836,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
 
-    await outbound_handler(cred_proposal_message, connection_id=connection_id)
+    else:
+        await outbound_handler(cred_proposal_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
@@ -1036,7 +1037,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
 
-    await outbound_handler(cred_offer_message, connection_id=connection_id)
+    else:
+        await outbound_handler(cred_offer_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
@@ -1239,7 +1241,8 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
 
-    await outbound_handler(cred_request_message, connection_id=connection_id)
+    else:
+        await outbound_handler(cred_request_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
