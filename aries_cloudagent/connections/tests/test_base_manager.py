@@ -155,7 +155,6 @@ class TestBaseConnectionManager(AsyncTestCase):
 
             did_doc = await self.manager.create_did_document(
                 did_info=did_info,
-                inbound_connection_id="dummy",
                 svc_endpoints=[self.test_endpoint],
             )
 
@@ -183,7 +182,6 @@ class TestBaseConnectionManager(AsyncTestCase):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
-                    inbound_connection_id="dummy",
                     svc_endpoints=[self.test_endpoint],
                 )
 
@@ -218,7 +216,6 @@ class TestBaseConnectionManager(AsyncTestCase):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
-                    inbound_connection_id="dummy",
                     svc_endpoints=[self.test_endpoint],
                 )
 
@@ -256,7 +253,6 @@ class TestBaseConnectionManager(AsyncTestCase):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
-                    inbound_connection_id="dummy",
                     svc_endpoints=[self.test_endpoint],
                 )
 
@@ -302,7 +298,6 @@ class TestBaseConnectionManager(AsyncTestCase):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
-                    inbound_connection_id="dummy",
                     svc_endpoints=[self.test_endpoint],
                 )
 
@@ -322,7 +317,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             endpoint=self.test_mediator_endpoint,
         )
         doc = await self.manager.create_did_document(
-            did_info, mediation_records=[mediation_record]
+            did_info, [], mediation_records=[mediation_record]
         )
         assert doc.service
         services = list(doc.service.values())
@@ -355,7 +350,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             endpoint="http://mediatorw.example.com",
         )
         doc = await self.manager.create_did_document(
-            did_info, mediation_records=[mediation_record1, mediation_record2]
+            did_info, [], mediation_records=[mediation_record1, mediation_record2]
         )
         assert doc.service
         services = list(doc.service.values())

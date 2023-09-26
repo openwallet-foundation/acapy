@@ -336,7 +336,6 @@ class DIDXManager(BaseConnectionManager):
         else:
             did_doc = await self.create_did_document(
                 my_info,
-                conn_rec.inbound_connection_id,
                 my_endpoints,
                 mediation_records=list(
                     filter(None, [base_mediation_record, mediation_record])
@@ -665,7 +664,6 @@ class DIDXManager(BaseConnectionManager):
         else:
             did_doc = await self.create_did_document(
                 my_info,
-                conn_rec.inbound_connection_id,
                 my_endpoints,
                 mediation_records=list(
                     filter(None, [base_mediation_record, mediation_record])

@@ -2219,7 +2219,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             did_doc = await self.manager.create_did_document(
                 did_info=did_info,
-                inbound_connection_id="dummy",
                 svc_endpoints=[TestConfig.test_endpoint],
             )
 
@@ -2247,7 +2246,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
-                    inbound_connection_id="dummy",
                     svc_endpoints=[TestConfig.test_endpoint],
                 )
 
@@ -2282,7 +2280,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
-                    inbound_connection_id="dummy",
                     svc_endpoints=[TestConfig.test_endpoint],
                 )
 
@@ -2320,7 +2317,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
-                    inbound_connection_id="dummy",
                     svc_endpoints=[TestConfig.test_endpoint],
                 )
 
@@ -2366,7 +2362,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.create_did_document(
                     did_info=did_info,
-                    inbound_connection_id="dummy",
                     svc_endpoints=[TestConfig.test_endpoint],
                 )
 

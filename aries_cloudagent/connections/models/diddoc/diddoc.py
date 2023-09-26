@@ -285,7 +285,7 @@ class DIDDoc:
                 ),
                 service["type"],
                 rv.add_service_pubkeys(service, "recipientKeys"),
-                rv.add_service_pubkeys(service, ["mediatorKeys", "routingKeys"]),
+                service.get("routingKeys", []),
                 canon_ref(rv.did, endpoint, ";") if ";" in endpoint else endpoint,
                 service.get("priority", None),
             )

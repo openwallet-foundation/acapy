@@ -79,15 +79,13 @@ class BaseConnectionManager:
     async def create_did_document(
         self,
         did_info: DIDInfo,
-        inbound_connection_id: Optional[str] = None,
-        svc_endpoints: Optional[Sequence[str]] = None,
+        svc_endpoints: Sequence[str],
         mediation_records: Optional[List[MediationRecord]] = None,
     ) -> DIDDoc:
         """Create our DID doc for a given DID.
 
         Args:
             did_info: The DID information (DID and verkey) used in the connection
-            inbound_connection_id: The ID of the inbound routing connection to use
             svc_endpoints: Custom endpoints for the DID Document
             mediation_record: The record for mediation that contains routing_keys and
                 service endpoint
@@ -110,61 +108,17 @@ class BaseConnectionManager:
         )
         did_doc.set(pk)
 
-        router_id = inbound_connection_id
-        routing_keys = []
-        router_idx = 1
-        while router_id:
-            # look up routing connection information
-            async with self._profile.session() as session:
-                router = await ConnRecord.retrieve_by_id(session, router_id)
-            if ConnRecord.State.get(router.state) != ConnRecord.State.COMPLETED:
-                raise BaseConnectionManagerError(
-                    f"Router connection not completed: {router_id}"
-                )
-            routing_doc, _ = await self.fetch_did_document(router.their_did)
-            assert isinstance(routing_doc, DIDDoc)
-            if not routing_doc.service:
-                raise BaseConnectionManagerError(
-                    f"No services defined by routing DIDDoc: {router_id}"
-                )
-            for service in routing_doc.service.values():
-                if not service.endpoint:
-                    raise BaseConnectionManagerError(
-                        "Routing DIDDoc service has no service endpoint"
-                    )
-                if not service.recip_keys:
-                    raise BaseConnectionManagerError(
-                        "Routing DIDDoc service has no recipient key(s)"
-                    )
-                rk = PublicKey(
-                    did_info.did,
-                    f"routing-{router_idx}",
-                    service.recip_keys[0].value,
-                    PublicKeyType.ED25519_SIG_2018,
-                    did_controller,
-                    True,
-                )
-                routing_keys.append(rk)
-                svc_endpoints = [service.endpoint]
-                break
-            router_id = router.inbound_connection_id
-
+        routing_keys: List[str] = []
         if mediation_records:
             for mediation_record in mediation_records:
-                mediator_routing_keys = [
-                    PublicKey(
-                        did_info.did,
-                        f"routing-{idx}",
-                        key,
-                        PublicKeyType.ED25519_SIG_2018,
-                        did_controller,  # TODO: get correct controller did_info
-                        True,  # TODO: should this be true?
-                    )
-                    for idx, key in enumerate(mediation_record.routing_keys)
-                ]
-
+                (
+                    mediator_routing_keys,
+                    endpoint,
+                ) = await self._route_manager.routing_info(
+                    self._profile, svc_endpoints[0], mediation_record
+                )
                 routing_keys = [*routing_keys, *mediator_routing_keys]
-                svc_endpoints = [mediation_record.endpoint]
+                svc_endpoints = [endpoint]
 
         for endpoint_index, svc_endpoint in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
@@ -937,7 +891,6 @@ class BaseConnectionManager:
         # Synthesize their DID doc
         did_doc = await self.create_did_document(
             their_info,
-            None,
             [their_endpoint or ""],
             mediation_records=list(
                 filter(None, [base_mediation_record, mediation_record])
