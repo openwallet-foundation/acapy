@@ -805,8 +805,6 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
     conn_record = None
     cred_ex_record = None
-    cred_proposal_message = None
-    result = None
     try:
         cred_preview = (
             V20CredPreview.deserialize(preview_spec) if preview_spec else None
@@ -838,9 +836,9 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cannot yet receive a problem report about our failed protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
-    else:
-        await outbound_handler(cred_proposal_message, connection_id=connection_id)
+    await outbound_handler(cred_proposal_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
@@ -1008,8 +1006,6 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     cred_ex_record = None
     conn_record = None
-    cred_offer_message = None
-    result = None
     try:
         async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
@@ -1042,9 +1038,9 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cannot yet receive a problem report about our failed protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
-    else:
-        await outbound_handler(cred_offer_message, connection_id=connection_id)
+    await outbound_handler(cred_offer_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
@@ -1202,8 +1198,6 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
     conn_record = None
     cred_ex_record = None
-    cred_request_message = None
-    result = None
     try:
         try:
             async with profile.session() as session:
@@ -1249,9 +1243,9 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cannot yet receive a problem report about our failed protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
-    else:
-        await outbound_handler(cred_request_message, connection_id=connection_id)
+    await outbound_handler(cred_request_message, connection_id=connection_id)
 
     trace_event(
         context.settings,
