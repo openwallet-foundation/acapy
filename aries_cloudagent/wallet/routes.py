@@ -631,7 +631,6 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
 
     outbound_handler = request["outbound_message_router"]
 
@@ -653,9 +652,10 @@ async def wallet_set_public_did(request: web.BaseRequest):
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
 
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
@@ -677,9 +677,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     try:
         info, attrib_def = await promote_wallet_public_did(
-            context.profile,
             context,
-            context.session,
             did,
             write_ledger=write_ledger,
             connection_id=connection_id,
@@ -725,9 +723,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
 
 async def promote_wallet_public_did(
-    profile: Profile,
     context: AdminRequestContext,
-    session_fn,
     did: str,
     write_ledger: bool = False,
     connection_id: str = None,
@@ -742,7 +738,7 @@ async def promote_wallet_public_did(
     # write only Indy DID
     write_ledger = is_indy_did and write_ledger
 
-    ledger = profile.inject_or(BaseLedger)
+    ledger = context.profile.inject_or(BaseLedger)
 
     if is_indy_did:
         if not ledger:
@@ -756,30 +752,29 @@ async def promote_wallet_public_did(
                 raise LookupError(f"DID {did} is not posted to the ledger")
 
         # check if we need to endorse
-        if is_author_role(profile):
+        if is_author_role(context.profile):
             # authors cannot write to the ledger
             write_ledger = False
 
             # author has not provided a connection id, so determine which to use
             if not connection_id:
-                connection_id = await get_endorser_connection_id(profile)
+                connection_id = await get_endorser_connection_id(context.profile)
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
         if not write_ledger:
-            try:
-                async with profile.session() as session:
+            async with context.session() as session:
+                try:
                     connection_record = await ConnRecord.retrieve_by_id(
                         session, connection_id
                     )
-            except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-            except BaseModelError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-            async with profile.session() as session:
+                except StorageNotFoundError as err:
+                    raise web.HTTPNotFound(reason=err.roll_up) from err
+                except BaseModelError as err:
+                    raise web.HTTPBadRequest(reason=err.roll_up) from err
                 endorser_info = await connection_record.metadata_get(
                     session, "endorser_info"
                 )
+
             if not endorser_info:
                 raise web.HTTPForbidden(
                     reason=(
@@ -798,18 +793,16 @@ async def promote_wallet_public_did(
 
     did_info: DIDInfo = None
     attrib_def = None
-    async with session_fn() as session:
+    async with context.session() as session:
         wallet = session.inject_or(BaseWallet)
         did_info = await wallet.get_local_did(did)
         info = await wallet.set_public_did(did_info)
 
-    if info:
-        # Publish endpoint if necessary
-        endpoint = did_info.metadata.get("endpoint")
+        if info:
+            # Publish endpoint if necessary
+            endpoint = did_info.metadata.get("endpoint")
 
-        if is_indy_did and not endpoint:
-            async with session_fn() as session:
-                wallet = session.inject_or(BaseWallet)
+            if is_indy_did and not endpoint:
                 endpoint = mediator_endpoint or context.settings.get("default_endpoint")
                 attrib_def = await wallet.set_did_endpoint(
                     info.did,
@@ -820,9 +813,10 @@ async def promote_wallet_public_did(
                     routing_keys=routing_keys,
                 )
 
+    if info:
         # Route the public DID
-        route_manager = profile.inject(RouteManager)
-        await route_manager.route_verkey(profile, info.verkey)
+        route_manager = context.profile.inject(RouteManager)
+        await route_manager.route_verkey(context.profile, info.verkey)
 
     return info, attrib_def
 
@@ -1163,8 +1157,8 @@ async def on_register_nym_event(profile: Profile, event: Event):
         did = event.payload["did"]
         connection_id = event.payload.get("connection_id")
         try:
-            info, attrib_def = await promote_wallet_public_did(
-                profile, profile.context, profile.session, did, connection_id
+            _info, attrib_def = await promote_wallet_public_did(
+                profile.context, did, connection_id
             )
         except Exception as err:
             # log the error, but continue
