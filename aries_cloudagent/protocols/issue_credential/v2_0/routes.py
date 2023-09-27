@@ -835,6 +835,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        # other party cannot yet receive a problem report about our failed protocol start
 
     else:
         await outbound_handler(cred_proposal_message, connection_id=connection_id)
@@ -1036,6 +1037,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        # other party cannot yet receive a problem report about our failed protocol start
 
     else:
         await outbound_handler(cred_offer_message, connection_id=connection_id)
@@ -1240,6 +1242,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        # other party cannot yet receive a problem report about our failed protocol start
 
     else:
         await outbound_handler(cred_request_message, connection_id=connection_id)
