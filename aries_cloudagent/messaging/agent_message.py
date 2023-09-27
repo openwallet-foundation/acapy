@@ -3,7 +3,7 @@
 import uuid
 from collections import OrderedDict
 from re import sub
-from typing import Mapping, Optional, Text, Union
+from typing import Mapping, Optional, Text, Union, Sequence
 
 from marshmallow import (
     EXCLUDE,
@@ -23,6 +23,7 @@ from .decorators.default import DecoratorSet
 from .decorators.service_decorator import ServiceDecorator
 from .decorators.signature_decorator import SignatureDecorator  # TODO deprecated
 from .decorators.thread_decorator import ThreadDecorator
+from .decorators.please_ack_decorator import PleaseAckDecorator
 from .decorators.trace_decorator import (
     TRACE_LOG_TARGET,
     TRACE_MESSAGE_TARGET,
@@ -282,6 +283,32 @@ class AgentMessage(BaseModel, BaseMessage):
             self._decorators.pop("service", None)
         else:
             self._decorators["service"] = val
+
+    @property
+    def _please_ack(self) -> PleaseAckDecorator:
+        """Accessor for the message's please_ack decorator.
+
+        Returns:
+            The PleaseAckDecorator for this message
+        """
+        return self._decorators.get("please_ack")
+
+    @_please_ack.setter
+    def _please_ack(self, val: Union[PleaseAckDecorator, dict]):
+        """Setter for the message's please_ack decorator.
+
+        Args:
+            val: PleaseAckDecorator or dict to set as the please_ack
+        """
+        if val is None:
+            self._decorators.pop("please_ack", None)
+        else:
+            self._decorators["please_ack"] = val
+
+    def assign_please_ack(self, on: Sequence[str]):
+        """Assign a please_ack decorator with specified options
+        """
+        self._please_ack = PleaseAckDecorator(on=on)
 
     @property
     def _thread(self) -> ThreadDecorator:

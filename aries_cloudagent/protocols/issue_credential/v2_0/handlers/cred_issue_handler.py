@@ -89,7 +89,11 @@ class V20CredIssueHandler(BaseHandler):
                         )
                     )
 
-            cred_ack_message = await cred_manager.send_cred_ack(cred_ex_record)
+            if cred_ex_record.ack_required:
+                cred_ack_message = await cred_manager.send_cred_ack(cred_ex_record)
+            else:
+                cred_ack_message = await cred_manager.transit_to_done(cred_ex_record)
+
 
             trace_event(
                 context.settings,

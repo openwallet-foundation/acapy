@@ -69,6 +69,7 @@ class V20CredExRecord(BaseExchangeRecord):
         auto_offer: bool = False,
         auto_issue: bool = False,
         auto_remove: bool = True,
+        ack_required: bool = False,
         error_msg: str = None,
         trace: bool = False,  # backward compat: BaseRecord.from_storage()
         cred_id_stored: str = None,  # backward compat: BaseRecord.from_storage()
@@ -93,6 +94,7 @@ class V20CredExRecord(BaseExchangeRecord):
         self.auto_offer = auto_offer
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
+        self.ack_required = ack_required
         self.error_msg = error_msg
 
     @property
@@ -222,6 +224,7 @@ class V20CredExRecord(BaseExchangeRecord):
                     "auto_offer",
                     "auto_issue",
                     "auto_remove",
+                    "ack_required",
                     "error_msg",
                     "trace",
                 )
@@ -421,6 +424,16 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         metadata={
             "description": (
                 "Issuer choice to remove this credential exchange record when complete"
+            ),
+            "example": False,
+        },
+    )
+    ack_required = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Issuer requests to send ack in response to credentials"
             ),
             "example": False,
         },

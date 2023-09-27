@@ -515,8 +515,15 @@ class V20CredManager:
             credentials_attach=[attach for (_, attach) in issue_formats],
         )
 
-        cred_ex_record.state = V20CredExRecord.STATE_ISSUED
         cred_ex_record.cred_issue = cred_issue_message
+
+        if self._profile.settings.get("debug.cred_issue_ack_required"):
+            # request the holder to answer with an ack message
+            cred_ex_record.state = V20CredExRecord.STATE_ISSUED
+            cred_issue_message.assign_please_ack(["OUTCOME"])
+        else:
+            cred_ex_record.state = V20CredExRecord.STATE_DONE
+
         async with self._profile.session() as session:
             # FIXME - re-fetch record to check state, apply transactional update
             await cred_ex_record.save(session, reason="v2.0 issue credential")
@@ -549,6 +556,11 @@ class V20CredManager:
                 cred_issue_message._thread_id,
                 role=V20CredExRecord.ROLE_HOLDER,
             )
+
+        please_ack = cred_issue_message._please_ack
+
+        if please_ack is not None and 'OUTCOME' in please_ack.on:
+            cred_ex_record.ack_required = True
 
         cred_request_message = cred_ex_record.cred_request
         req_formats = [
@@ -666,6 +678,36 @@ class V20CredManager:
             )
 
         return cred_ex_record, cred_ack_message
+
+
+    async def transit_to_done(
+        self,
+        cred_ex_record: V20CredExRecord,
+    ):
+        """Transition of the protocol instance to STATE_DONE
+
+        Delete cred ex record if set to auto-remove.
+
+        Returns:
+            cred ex record
+        """
+
+        # FIXME - most of the code are copy-pasted from the send_cred_ack()
+        cred_ex_record.state = V20CredExRecord.STATE_DONE
+        try:
+            async with self._profile.session() as session:
+                await cred_ex_record.save(session, reason="store credential v2.0")
+
+            if cred_ex_record.auto_remove:
+                await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
+
+        except StorageError:
+            LOGGER.exception(
+                "Error transition to done"
+            )
+
+        return cred_ex_record
+
 
     async def receive_credential_ack(
         self, cred_ack_message: V20CredAck, connection_id: Optional[str]

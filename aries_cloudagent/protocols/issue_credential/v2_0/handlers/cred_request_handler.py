@@ -14,6 +14,7 @@ from .. import problem_report_for_record
 from ..manager import V20CredManager, V20CredManagerError
 from ..messages.cred_problem_report import ProblemReportReason
 from ..messages.cred_request import V20CredRequest
+from ..models.cred_ex_record import V20CredExRecord
 
 
 class V20CredRequestHandler(BaseHandler):
@@ -96,6 +97,10 @@ class V20CredRequestHandler(BaseHandler):
                         ProblemReportReason.ISSUANCE_ABANDONED.value,  # them: vague
                     )
                 )
+
+            if cred_ex_record.state == V20CredExRecord.STATE_DONE and cred_ex_record.auto_remove:
+                self._logger.debug("delete cred_ex_record")
+                await cred_manager.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
             trace_event(
                 context.settings,

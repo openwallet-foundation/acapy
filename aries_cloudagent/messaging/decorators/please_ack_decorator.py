@@ -5,7 +5,6 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import UUID4_EXAMPLE
 
 
 class PleaseAckDecorator(BaseModel):
@@ -18,8 +17,7 @@ class PleaseAckDecorator(BaseModel):
 
     def __init__(
         self,
-        message_id: str = None,
-        on: Sequence[str] = None,
+        on: Sequence[str]
     ):
         """Initialize a PleaseAckDecorator instance.
 
@@ -29,8 +27,7 @@ class PleaseAckDecorator(BaseModel):
 
         """
         super().__init__()
-        self.message_id = message_id
-        self.on = list(on) if on else None
+        self.on = list(on)
 
 
 class PleaseAckDecoratorSchema(BaseModelSchema):
@@ -42,14 +39,9 @@ class PleaseAckDecoratorSchema(BaseModelSchema):
         model_class = PleaseAckDecorator
         unknown = EXCLUDE
 
-    message_id = fields.Str(
-        required=False,
-        allow_none=False,
-        metadata={"description": "Message identifier", "example": UUID4_EXAMPLE},
-    )
     on = fields.List(
         fields.Str(metadata={"example": "OUTCOME"}),
-        required=False,
+        required=True,
         metadata={
             "description": "List of tokens describing circumstances for acknowledgement"
         },

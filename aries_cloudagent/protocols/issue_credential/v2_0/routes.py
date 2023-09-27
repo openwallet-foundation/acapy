@@ -1559,11 +1559,15 @@ async def credential_exchange_store(request: web.BaseRequest):
         # fetch these early, before potential removal
         details = await _get_attached_credentials(profile, cred_ex_record)
 
-        # the record may be auto-removed here
-        (
-            cred_ex_record,
-            cred_ack_message,
-        ) = await cred_manager.send_cred_ack(cred_ex_record)
+        if cred_ex_record.ack_required:
+            # the record may be auto-removed here
+            (
+                cred_ex_record,
+                cred_ack_message,
+            ) = await cred_manager.send_cred_ack(cred_ex_record)
+        else:
+            cred_ex_record = await cred_manager.transit_to_done(cred_ex_record)
+            cred_ack_message = None
 
         result = _format_result_with_details(cred_ex_record, details)
 

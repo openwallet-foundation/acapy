@@ -417,6 +417,14 @@ class DebugGroup(ArgumentGroup):
                 "Default: false."
             ),
         )
+        parser.add_argument(
+            "--cred-issue-ack-required",
+            action="store_true",
+            env_var="ACAPY_CRED_ISSUE_ACK_REQUIRED",
+            help=(
+                "An issuer sends please_ack to request a holder to send an ack"
+                "message in response to credential issuance"),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract debug settings."""
@@ -468,6 +476,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.auto_accept_requests"] = True
         if args.auto_respond_messages:
             settings["debug.auto_respond_messages"] = True
+        if args.cred_issue_ack_required:
+            settings["debug.cred_issue_ack_required"] = True
         return settings
 
 
