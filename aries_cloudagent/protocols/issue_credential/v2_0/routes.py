@@ -805,6 +805,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
     conn_record = None
     cred_ex_record = None
+    cred_proposal_message = None
+    result = None
     try:
         cred_preview = (
             V20CredPreview.deserialize(preview_spec) if preview_spec else None
@@ -1006,6 +1008,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     cred_ex_record = None
     conn_record = None
+    cred_offer_message = None
+    result = None
     try:
         async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
@@ -1198,6 +1202,8 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
     conn_record = None
     cred_ex_record = None
+    cred_request_message = None
+    result = None
     try:
         try:
             async with profile.session() as session:
