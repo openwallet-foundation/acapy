@@ -1207,7 +1207,8 @@ class ProtocolGroup(ArgumentGroup):
             help=(
                 "Emit protocol messages with new DIDComm prefix; i.e., "
                 "'https://didcomm.org/' instead of (default) prefix "
-                "'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'."
+                "'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'. "
+                "Forced to `true` as the old prefix must never be used."
             ),
         )
         parser.add_argument(
@@ -1217,7 +1218,8 @@ class ProtocolGroup(ArgumentGroup):
             help=(
                 "Send packed agent messages with the DIDComm MIME type "
                 "as of RFC 0044; i.e., 'application/didcomm-envelope-enc' "
-                "instead of 'application/ssi-agent-wire'."
+                "instead of 'application/ssi-agent-wire'. "
+                "Forced to `true` as the old MIME type must never be used."
             ),
         )
         parser.add_argument(
@@ -1288,10 +1290,10 @@ class ProtocolGroup(ArgumentGroup):
                 raise ArgsParseError("Error writing trace event " + str(e))
         if args.preserve_exchange_records:
             settings["preserve_exchange_records"] = True
-        if args.emit_new_didcomm_prefix:
-            settings["emit_new_didcomm_prefix"] = True
-        if args.emit_new_didcomm_mime_type:
-            settings["emit_new_didcomm_mime_type"] = True
+        # NOT setting the following two parameters `True` is no longer supported
+        # Even if the args are not set, the config setting is True.
+        settings["emit_new_didcomm_prefix"] = True
+        settings["emit_new_didcomm_mime_type"] = True
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
