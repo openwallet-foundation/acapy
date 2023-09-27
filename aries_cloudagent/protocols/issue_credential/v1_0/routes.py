@@ -695,7 +695,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cannot yet receive a problem report about our failed protocol start
-        
+
     else:
         await outbound_handler(
             credential_proposal,
