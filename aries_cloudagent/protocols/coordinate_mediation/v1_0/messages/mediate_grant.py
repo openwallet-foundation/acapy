@@ -3,7 +3,7 @@
 Used to notify mediation client of a granted mediation request.
 """
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import fields
 
@@ -29,8 +29,8 @@ class MediationGrant(AgentMessage):
     def __init__(
         self,
         *,
-        endpoint: str = None,
-        routing_keys: Sequence[str] = None,
+        endpoint: Optional[str] = None,
+        routing_keys: Optional[Sequence[str]] = None,
         **kwargs,
     ):
         """Initialize mediation grant object.
