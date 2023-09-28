@@ -115,7 +115,6 @@ class DIFPresExchHandler:
     async def _get_issue_suite(
         self,
         *,
-        wallet: BaseWallet,
         issuer_id: str,
     ):
         """Get signature suite for signing presentation."""
@@ -139,17 +138,13 @@ class DIFPresExchHandler:
         return SignatureClass(
             verification_method=verification_method,
             key_pair=WalletKeyPair(
-                wallet=wallet,
+                profile=self.profile,
                 key_type=self.ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
                 public_key_base58=did_info.verkey if did_info else None,
             ),
         )
 
-    async def _get_derive_suite(
-        self,
-        *,
-        wallet: BaseWallet,
-    ):
+    async def _get_derive_suite(self):
         """Get signature suite for deriving credentials."""
         # Get signature class based on proof type
         SignatureClass = self.DERIVED_PROOF_TYPE_SIGNATURE_SUITE_MAPPING[
@@ -159,7 +154,7 @@ class DIFPresExchHandler:
         # Generically create signature class
         return SignatureClass(
             key_pair=WalletKeyPair(
-                wallet=wallet,
+                profile=self.profile,
                 key_type=self.DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
             ),
         )
@@ -406,18 +401,14 @@ class DIFPresExchHandler:
                 new_credential_dict = self.reveal_doc(
                     credential_dict=credential_dict, constraints=constraints
                 )
-                async with self.profile.session() as session:
-                    wallet = session.inject(BaseWallet)
-                    derive_suite = await self._get_derive_suite(
-                        wallet=wallet,
-                    )
-                    signed_new_credential_dict = await derive_credential(
-                        credential=credential_dict,
-                        reveal_document=new_credential_dict,
-                        suite=derive_suite,
-                        document_loader=document_loader,
-                    )
-                    credential = self.create_vcrecord(signed_new_credential_dict)
+                derive_suite = await self._get_derive_suite()
+                signed_new_credential_dict = await derive_credential(
+                    credential=credential_dict,
+                    reveal_document=new_credential_dict,
+                    suite=derive_suite,
+                    document_loader=document_loader,
+                )
+                credential = self.create_vcrecord(signed_new_credential_dict)
             result.append(credential)
         return result
 
@@ -1297,18 +1288,15 @@ class DIFPresExchHandler:
             vp["presentation_submission"] = submission_property.serialize()
             if self.proof_type is BbsBlsSignature2020.signature_type:
                 vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                issue_suite = await self._get_issue_suite(
-                    wallet=wallet,
-                    issuer_id=issuer_id,
-                )
-                signed_vp = await sign_presentation(
-                    presentation=vp,
-                    suite=issue_suite,
-                    challenge=challenge,
-                    document_loader=document_loader,
-                )
+            issue_suite = await self._get_issue_suite(
+                issuer_id=issuer_id,
+            )
+            signed_vp = await sign_presentation(
+                presentation=vp,
+                suite=issue_suite,
+                challenge=challenge,
+                document_loader=document_loader,
+            )
             result_vp.append(signed_vp)
         if len(result_vp) == 1:
             return result_vp[0]
