@@ -1,3 +1,27 @@
+# 0.10.3
+
+## September 29, 2023
+
+Release 0.10.3 is a patch release to add an upgrade process for very old
+versions of Aries Cloud Agent Python (circa [0.5.2](#052)). If you have a long
+time deployment of an issuer that uses revocation, this release could correct
+internal data (tags in secure storage) related to revocation registries.
+Details of the about the triggering problem can be found in [Issue \#2485].
+
+[Issue \#2485]: https://github.com/hyperledger/aries-cloudagent-python/issue/2485
+
+The upgrade is applied by running the following command for the ACA-Py
+instance to be upgraded:
+
+`./scripts/run_docker upgrade --force-upgrade --named-tag fix_issue_rev_reg`
+
+### 0.10.3 Categorized List of Pull Requests
+
+- Credential Exchange (Issue, Present) Updates
+  - Feat: Upgrade from tags and fix issue with legacy IssuerRevRegRecords [<=v0.5.2] [\#2486](https://github.com/hyperledger/aries-cloudagent-python/pull/2486) [shaangill025](https://github.com/shaangill025)
+- Release management pull requests
+  - 0.10.3 [\#2522](https://github.com/hyperledger/aries-cloudagent-python/pull/2522) [swcurran](https://github.com/swcurran)
+
 # 0.10.2
 
 ## September 22, 2023
