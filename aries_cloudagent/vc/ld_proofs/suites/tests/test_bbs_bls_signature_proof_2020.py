@@ -3,9 +3,9 @@ import pytest
 
 from aries_cloudagent.wallet.key_type import BLS12381G2
 
+from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....wallet.in_memory import InMemoryWallet
-from .....core.in_memory import InMemoryProfile
 from ....tests.document_loader import custom_document_loader
 from ....tests.data import (
     TEST_LD_DOCUMENT_SIGNED_BBS,
@@ -46,7 +46,7 @@ class TestBbsBlsSignatureProof2020(TestCase):
             self.key.verkey, BLS12381G2
         ).key_id
 
-        self.key_pair = WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
+        self.key_pair = WalletKeyPair(profile=self.profile, key_type=BLS12381G2)
 
     async def test_derive_ld_proofs(self):
         derived = await derive(

@@ -396,7 +396,7 @@ class TestDIFFormatHandler(AsyncTestCase):
             self.handler.validate_fields(PRES_20, incorrect_pres)
 
     async def test_get_all_suites(self):
-        suites = await self.handler._get_all_suites(self.wallet)
+        suites = await self.handler._get_all_suites()
         assert len(suites) == 4
         types = [
             Ed25519Signature2018,
