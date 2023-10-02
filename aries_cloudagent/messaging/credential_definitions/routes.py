@@ -189,7 +189,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     options = {}
     if support_revocation:
         options["support_revocation"] = True
-        options["revocation_registry_size"] = rev_reg_size
+        options["max_cred_num"] = rev_reg_size
     if create_transaction_for_endorser:
         endorser_connection_id = await get_endorser_connection_id(context.profile)
         if not endorser_connection_id:
