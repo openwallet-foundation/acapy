@@ -157,9 +157,6 @@ class VcLdpManager:
         did_info: Optional[DIDInfo] = None,
     ):
         """Get signature suite for issuance of verification."""
-        session = await self.profile.session()
-        wallet = session.inject(BaseWallet)
-
         # Get signature class based on proof type
         SignatureClass = PROOF_TYPE_SIGNATURE_SUITE_MAPPING[proof_type]
 
@@ -168,7 +165,7 @@ class VcLdpManager:
             verification_method=verification_method,
             proof=proof,
             key_pair=WalletKeyPair(
-                wallet=wallet,
+                profile=self.profile,
                 key_type=SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
                 public_key_base58=did_info.verkey if did_info else None,
             ),
