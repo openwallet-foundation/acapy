@@ -2148,6 +2148,24 @@ class UpgradeGroup(ArgumentGroup):
             help=("Runs upgrade steps associated with tags provided in the config"),
         )
 
+        parser.add_argument(
+            "--upgrade-all-subwallets",
+            action="store_true",
+            env_var="ACAPY_UPGRADE_ALL_SUBWALLETS",
+            help=(
+                "Forces the '—from-version' argument to override the version "
+                "retrieved from secure storage when calculating upgrades to "
+                "be run."
+            ),
+        )
+
+        parser.add_argument(
+            "--upgrade-subwallet",
+            action="append",
+            env_var="ACAPY_UPGRADE_SUBWALLETS",
+            help=("Runs upgrade steps associated with tags provided in the config"),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
@@ -2160,5 +2178,11 @@ class UpgradeGroup(ArgumentGroup):
         if args.named_tag:
             settings["upgrade.named_tags"] = (
                 list(args.named_tag) if args.named_tag else []
+            )
+        if args.upgrade_all_subwallets:
+            settings["upgrade.upgrade_all_subwallets"] = args.upgrade_all_subwallets
+        if args.upgrade_subwallet:
+            settings["upgrade.upgrade_subwallets"] = (
+                list(args.upgrade_subwallet) if args.upgrade_subwallet else []
             )
         return settings

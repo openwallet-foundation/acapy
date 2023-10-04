@@ -28,12 +28,14 @@ from ..config.util import common_config
 from ..config.wallet import wallet_config
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.base_record import BaseRecord, RecordType
+from ..multitenant.base import BaseMultitenantManager
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ..utils.classloader import ClassLoader, ClassNotFoundError
 from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
+from ..wallet.models.wallet_record import WalletRecord
 
 from . import PROG
 
@@ -243,17 +245,61 @@ async def upgrade(
     settings: Optional[Union[Mapping[str, Any], BaseSettings]] = None,
     profile: Optional[Profile] = None,
 ):
+    """Invoke upgradation process for each applicable profile."""
+    profiles_to_upgrade = []
+    if profile and (settings or settings == {}):
+        raise UpgradeError("upgrade requires either profile or settings, not both.")
+    if profile:
+        root_profile = profile
+        settings = profile.settings
+    else:
+        context_builder = DefaultContextBuilder(settings)
+        context = await context_builder.build_context()
+        root_profile, _ = await wallet_config(context)
+    multitenant_mgr = root_profile.inject_or(BaseMultitenantManager)
+    profiles_to_upgrade.append(root_profile)
+    if "upgrade.upgrade_all_subwallets" in settings and settings.get(
+        "upgrade.upgrade_all_subwallets"
+    ):
+        if not multitenant_mgr:
+            raise UpgradeError(
+                "--upgrade-all-subwallets was provided but no instnace of BaseMultitenantManager provided in root_profile"
+            )
+        async with root_profile.session() as session:
+            wallet_records = await WalletRecord.query(session, tag_filter={})
+        for wallet_record in wallet_records:
+            wallet_profile = await multitenant_mgr.get_wallet_profile(
+                base_context=root_profile.context, wallet_record=wallet_record
+            )
+            profiles_to_upgrade.append(wallet_profile)
+        del settings["upgrade.upgrade_all_subwallets"]
+    if (
+        "upgrade.upgrade_subwallets" in settings
+        and len(settings.get("upgrade.upgrade_subwallets")) >= 1
+    ):
+        if not multitenant_mgr:
+            raise UpgradeError(
+                "--upgrade-subwallet was provided but no instnace of BaseMultitenantManager provided in root_profile"
+            )
+        for _wallet_id in settings.get("upgrade.upgrade_subwallets"):
+            wallet_record = await WalletRecord.retrieve_by_id(
+                session, record_id=_wallet_id
+            )
+            wallet_profile = await multitenant_mgr.get_wallet_profile(
+                base_context=root_profile.context, wallet_record=wallet_record
+            )
+            profiles_to_upgrade.append(wallet_profile)
+        del settings["upgrade.upgrade_subwallets"]
+    for _profile in profiles_to_upgrade:
+        await upgrade_per_profile(profile=_profile, settings=settings)
+
+
+async def upgrade_per_profile(
+    profile: Profile,
+    settings: Optional[Union[Mapping[str, Any], BaseSettings]] = None,
+):
     """Perform upgradation steps."""
     try:
-        if profile and (settings or settings == {}):
-            raise UpgradeError("upgrade requires either profile or settings, not both.")
-        if profile:
-            root_profile = profile
-            settings = profile.settings
-        else:
-            context_builder = DefaultContextBuilder(settings)
-            context = await context_builder.build_context()
-            root_profile, _ = await wallet_config(context)
         version_upgrade_config_inst = VersionUpgradeConfig(
             settings.get("upgrade.config_path")
         )
@@ -273,7 +319,7 @@ async def upgrade(
         upgrade_from_version_storage = None
         upgrade_from_version_config = None
         upgrade_from_version = None
-        async with root_profile.session() as session:
+        async with profile.session() as session:
             storage = session.inject(BaseStorage)
             try:
                 version_storage_record = await storage.find_record(
@@ -391,7 +437,7 @@ async def upgrade(
                 raise UpgradeError(
                     f"Only BaseRecord can be resaved, found: {str(rec_type)}"
                 )
-            async with root_profile.session() as session:
+            async with profile.session() as session:
                 all_records = await rec_type.query(session)
                 for record in all_records:
                     await record.save(
@@ -406,11 +452,11 @@ async def upgrade(
             _callable = version_upgrade_config_inst.get_callable(callable_name)
             if not _callable:
                 raise UpgradeError(f"No function specified for {callable_name}")
-            await _callable(root_profile)
+            await _callable(profile)
 
         # Update storage version
         if to_update_flag:
-            async with root_profile.session() as session:
+            async with profile.session() as session:
                 storage = session.inject(BaseStorage)
                 if not version_storage_record:
                     await storage.add_record(
@@ -428,7 +474,7 @@ async def upgrade(
                     f"set to {upgrade_to_version}"
                 )
         if not profile:
-            await root_profile.close()
+            await profile.close()
     except BaseError as e:
         raise UpgradeError(f"Error during upgrade: {e}")
 
