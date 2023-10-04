@@ -22,13 +22,13 @@ from typing import (
 
 from ..core.profile import Profile, ProfileSession
 from ..config import argparse as arg
+from ..config.injection_context import InjectionContext
 from ..config.default_context import DefaultContextBuilder
 from ..config.base import BaseError, BaseSettings
 from ..config.util import common_config
 from ..config.wallet import wallet_config
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.base_record import BaseRecord, RecordType
-from ..multitenant.base import BaseMultitenantManager
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
@@ -241,6 +241,66 @@ def _perform_upgrade(
     return resave_record_path_sets, executables_call_set
 
 
+def get_webhook_urls(
+    base_context: InjectionContext,
+    wallet_record: WalletRecord,
+) -> list:
+    """Get the webhook urls according to dispatch_type."""
+    wallet_id = wallet_record.wallet_id
+    dispatch_type = wallet_record.wallet_dispatch_type
+    subwallet_webhook_urls = wallet_record.wallet_webhook_urls or []
+    base_webhook_urls = base_context.settings.get("admin.webhook_urls", [])
+
+    if dispatch_type == "both":
+        webhook_urls = list(set(base_webhook_urls) | set(subwallet_webhook_urls))
+        if not webhook_urls:
+            LOGGER.warning(
+                "No webhook URLs in context configuration "
+                f"nor wallet record {wallet_id}, but wallet record "
+                f"configures dispatch type {dispatch_type}"
+            )
+    elif dispatch_type == "default":
+        webhook_urls = subwallet_webhook_urls
+        if not webhook_urls:
+            LOGGER.warning(
+                f"No webhook URLs in nor wallet record {wallet_id}, but "
+                f"wallet record configures dispatch type {dispatch_type}"
+            )
+    else:
+        webhook_urls = base_webhook_urls
+    return webhook_urls
+
+
+async def get_wallet_profile(
+    base_context: InjectionContext,
+    wallet_record: WalletRecord,
+    extra_settings: dict = {},
+) -> Profile:
+    """Get profile for a wallet record."""
+    context = base_context.copy()
+    reset_settings = {
+        "wallet.recreate": False,
+        "wallet.seed": None,
+        "wallet.rekey": None,
+        "wallet.name": None,
+        "wallet.type": None,
+        "mediation.open": None,
+        "mediation.invite": None,
+        "mediation.default_id": None,
+        "mediation.clear": None,
+    }
+    extra_settings["admin.webhook_urls"] = get_webhook_urls(base_context, wallet_record)
+
+    context.settings = (
+        context.settings.extend(reset_settings)
+        .extend(wallet_record.settings)
+        .extend(extra_settings)
+    )
+
+    profile, _ = await wallet_config(context, provision=False)
+    return profile
+
+
 async def upgrade(
     settings: Optional[Union[Mapping[str, Any], BaseSettings]] = None,
     profile: Optional[Profile] = None,
@@ -256,19 +316,14 @@ async def upgrade(
         context_builder = DefaultContextBuilder(settings)
         context = await context_builder.build_context()
         root_profile, _ = await wallet_config(context)
-    multitenant_mgr = root_profile.inject_or(BaseMultitenantManager)
     profiles_to_upgrade.append(root_profile)
     if "upgrade.upgrade_all_subwallets" in settings and settings.get(
         "upgrade.upgrade_all_subwallets"
     ):
-        if not multitenant_mgr:
-            raise UpgradeError(
-                "--upgrade-all-subwallets was provided but no instnace of BaseMultitenantManager provided in root_profile"
-            )
         async with root_profile.session() as session:
             wallet_records = await WalletRecord.query(session, tag_filter={})
         for wallet_record in wallet_records:
-            wallet_profile = await multitenant_mgr.get_wallet_profile(
+            wallet_profile = await get_wallet_profile(
                 base_context=root_profile.context, wallet_record=wallet_record
             )
             profiles_to_upgrade.append(wallet_profile)
@@ -277,15 +332,12 @@ async def upgrade(
         "upgrade.upgrade_subwallets" in settings
         and len(settings.get("upgrade.upgrade_subwallets")) >= 1
     ):
-        if not multitenant_mgr:
-            raise UpgradeError(
-                "--upgrade-subwallet was provided but no instnace of BaseMultitenantManager provided in root_profile"
-            )
         for _wallet_id in settings.get("upgrade.upgrade_subwallets"):
-            wallet_record = await WalletRecord.retrieve_by_id(
-                session, record_id=_wallet_id
-            )
-            wallet_profile = await multitenant_mgr.get_wallet_profile(
+            async with root_profile.session() as session:
+                wallet_record = await WalletRecord.retrieve_by_id(
+                    session, record_id=_wallet_id
+                )
+            wallet_profile = await get_wallet_profile(
                 base_context=root_profile.context, wallet_record=wallet_record
             )
             profiles_to_upgrade.append(wallet_profile)
