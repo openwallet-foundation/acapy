@@ -85,7 +85,9 @@ async def fetch_txns(genesis_txns, registry_id):
     return defn, registry, delta, revoked, tails_temp
 
 
-async def generate_ledger_rrrecovery_txn(genesis_txns, registry_id, set_revoked):
+async def generate_ledger_rrrecovery_txn(
+    genesis_txns, registry_id, set_revoked, cred_def, rev_reg_def_private
+):
     """Generate a new ledger accum entry, based on wallet vs ledger revocation state."""
 
     new_delta = None
@@ -111,7 +113,9 @@ async def generate_ledger_rrrecovery_txn(genesis_txns, registry_id, set_revoked)
 
         LOGGER.debug("tails_temp: %s", tails_temp.name)
         update_registry = registry.copy()
-        new_delta = update_registry.update(defn, [], updates, tails_temp.name)
+        new_delta = update_registry.update(
+            cred_def, defn, rev_reg_def_private, [], updates
+        )
 
         LOGGER.debug("New delta:")
         LOGGER.debug(new_delta.to_json())

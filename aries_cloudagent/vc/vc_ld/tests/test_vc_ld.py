@@ -68,7 +68,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
         suite = Ed25519Signature2018(
             verification_method=self.ed25519_verification_method,
             key_pair=WalletKeyPair(
-                wallet=self.wallet,
+                profile=self.profile,
                 key_type=ED25519,
                 public_key_base58=self.ed25519_key_info.verkey,
             ),
@@ -90,7 +90,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
         suite = Ed25519Signature2020(
             verification_method=self.ed25519_verification_method,
             key_pair=WalletKeyPair(
-                wallet=self.wallet,
+                profile=self.profile,
                 key_type=ED25519,
                 public_key_base58=self.ed25519_key_info.verkey,
             ),
@@ -133,7 +133,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
     async def test_verify_Ed25519Signature2018(self):
         # Verification requires lot less input parameters
         suite = Ed25519Signature2018(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
+            key_pair=WalletKeyPair(profile=self.profile, key_type=ED25519),
         )
         verified = await verify_credential(
             credential=CREDENTIAL_ISSUED,
@@ -146,7 +146,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
     async def test_verify_Ed25519Signature2020(self):
         # Verification requires lot less input parameters
         suite = Ed25519Signature2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
+            key_pair=WalletKeyPair(profile=self.profile, key_type=ED25519),
         )
         verified = await verify_credential(
             credential=CREDENTIAL_ISSUED_2020,
@@ -177,7 +177,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
         suite = BbsBlsSignature2020(
             verification_method=self.bls12381g2_verification_method,
             key_pair=WalletKeyPair(
-                wallet=self.wallet,
+                profile=self.profile,
                 key_type=BLS12381G2,
                 public_key_base58=self.bls12381g2_key_info.verkey,
             ),
@@ -201,7 +201,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
     async def test_verify_BbsBlsSignature2020(self):
         # Verification requires lot less input parameters
         suite = BbsBlsSignature2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2),
+            key_pair=WalletKeyPair(profile=self.profile, key_type=BLS12381G2),
         )
         result = await verify_credential(
             credential=CREDENTIAL_ISSUED_BBS,
@@ -227,7 +227,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
         suite = Ed25519Signature2018(
             verification_method=self.ed25519_verification_method,
             key_pair=WalletKeyPair(
-                wallet=self.wallet,
+                profile=self.profile,
                 key_type=ED25519,
                 public_key_base58=self.ed25519_key_info.verkey,
             ),
@@ -260,7 +260,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
         suite = BbsBlsSignature2020(
             verification_method=self.bls12381g2_verification_method,
             key_pair=WalletKeyPair(
-                wallet=self.wallet,
+                profile=self.profile,
                 key_type=BLS12381G2,
                 public_key_base58=self.bls12381g2_key_info.verkey,
             ),
@@ -269,7 +269,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
 
         assert unsigned_presentation == PRESENTATION_UNSIGNED
         unsigned_presentation["@context"].append("https://w3id.org/security/bbs/v1")
-        presentation = await sign_presentation(
+        _ = await sign_presentation(
             presentation=unsigned_presentation,
             suite=suite,
             document_loader=custom_document_loader,
@@ -278,7 +278,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
 
     async def test_verify_presentation(self):
         suite = Ed25519Signature2018(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
+            key_pair=WalletKeyPair(profile=self.profile, key_type=ED25519),
         )
         verification_result = await verify_presentation(
             presentation=PRESENTATION_SIGNED,

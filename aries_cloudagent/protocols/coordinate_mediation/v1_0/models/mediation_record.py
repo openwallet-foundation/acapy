@@ -1,6 +1,6 @@
 """Store state for Mediation requests."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields
 
@@ -33,14 +33,15 @@ class MediationRecord(BaseRecord):
     def __init__(
         self,
         *,
-        mediation_id: str = None,
-        state: str = None,
-        role: str = None,
-        connection_id: str = None,
-        mediator_terms: Sequence[str] = None,
-        recipient_terms: Sequence[str] = None,
-        routing_keys: Sequence[str] = None,
-        endpoint: str = None,
+        mediation_id: Optional[str] = None,
+        state: Optional[str] = None,
+        role: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        routing_keys: Optional[Sequence[str]] = None,
+        endpoint: Optional[str] = None,
+        # Included for record backwards compat
+        mediator_terms: Optional[Sequence[str]] = None,
+        recipient_terms: Optional[Sequence[str]] = None,
         **kwargs,
     ):
         """__init__.
@@ -50,8 +51,6 @@ class MediationRecord(BaseRecord):
             state (str): state, defaults to 'request_received'
             role (str): role in mediation, defaults to 'server'
             connection_id (str): ID of connection requesting or managing mediation
-            mediator_terms (Sequence[str]): mediator_terms
-            recipient_terms (Sequence[str]): recipient_terms
             routing_keys (Sequence[str]): keys in mediator control used to
             receive incoming messages
             endpoint (str): mediators endpoint
@@ -61,8 +60,6 @@ class MediationRecord(BaseRecord):
         super().__init__(mediation_id, state or self.STATE_REQUEST, **kwargs)
         self.role = role if role else self.ROLE_SERVER
         self.connection_id = connection_id
-        self.mediator_terms = list(mediator_terms) if mediator_terms else []
-        self.recipient_terms = list(recipient_terms) if recipient_terms else []
         self.routing_keys = list(routing_keys) if routing_keys else []
         self.endpoint = endpoint
 
@@ -79,6 +76,8 @@ class MediationRecord(BaseRecord):
     @property
     def mediation_id(self) -> str:
         """Get Mediation ID."""
+        if not self._id:
+            raise ValueError("Record not yet stored")
         return self._id
 
     @property
@@ -109,8 +108,6 @@ class MediationRecord(BaseRecord):
         return {
             prop: getattr(self, prop)
             for prop in (
-                "mediator_terms",
-                "recipient_terms",
                 "routing_keys",
                 "endpoint",
             )
@@ -170,10 +167,12 @@ class MediationRecordSchema(BaseRecordSchema):
     mediation_id = fields.Str(required=False)
     role = fields.Str(required=True)
     connection_id = fields.Str(required=True)
-    mediator_terms = fields.List(fields.Str(), required=False)
-    recipient_terms = fields.List(fields.Str(), required=False)
     routing_keys = fields.List(
         fields.Str(validate=DID_KEY_VALIDATE, metadata={"example": DID_KEY_EXAMPLE}),
         required=False,
     )
     endpoint = fields.Str(required=False)
+
+    # Included for backwards compat with old records
+    mediator_terms = fields.List(fields.Str(), required=False)
+    recipient_terms = fields.List(fields.Str(), required=False)

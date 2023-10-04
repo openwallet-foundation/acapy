@@ -200,6 +200,26 @@ class JWSHeaderKid(Regexp):
         )
 
 
+class NonSDList(Regexp):
+    """Validate NonSD List."""
+
+    EXAMPLE = [
+        "name",
+        "address",
+        "address.street_address",
+        "nationalities[1:3]",
+    ]
+    PATTERN = r"[a-z0-9:\[\]_\.@?\(\)]"
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            NonSDList.PATTERN,
+            error="Value {input} is not a valid NonSDList",
+        )
+
+
 class JSONWebToken(Regexp):
     """Validate JSON Web Token."""
 
@@ -208,7 +228,7 @@ class JSONWebToken(Regexp):
         "eyJhIjogIjAifQ."
         "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
     )
-    PATTERN = r"^[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*\.[-_a-zA-Z0-9]*$"
+    PATTERN = r"^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]+$"
 
     def __init__(self):
         """Initialize the instance."""
@@ -216,6 +236,28 @@ class JSONWebToken(Regexp):
         super().__init__(
             JSONWebToken.PATTERN,
             error="Value {input} is not a valid JSON Web token",
+        )
+
+
+class SDJSONWebToken(Regexp):
+    """Validate SD-JSON Web Token."""
+
+    EXAMPLE = (
+        "eyJhbGciOiJFZERTQSJ9."
+        "eyJhIjogIjAifQ."
+        "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+        "~WyJEM3BUSFdCYWNRcFdpREc2TWZKLUZnIiwgIkRFIl0"
+        "~WyJPMTFySVRjRTdHcXExYW9oRkd0aDh3IiwgIlNBIl0"
+        "~WyJkVmEzX1JlTGNsWTU0R1FHZm5oWlRnIiwgInVwZGF0ZWRfYXQiLCAxNTcwMDAwMDAwXQ"
+    )
+    PATTERN = r"^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]+(?:~[a-zA-Z0-9._-]+)*~?$"
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            SDJSONWebToken.PATTERN,
+            error="Value {input} is not a valid SD-JSON Web token",
         )
 
 
@@ -800,8 +842,14 @@ INDY_REV_REG_SIZE_EXAMPLE = IndyRevRegSize.EXAMPLE
 JWS_HEADER_KID_VALIDATE = JWSHeaderKid()
 JWS_HEADER_KID_EXAMPLE = JWSHeaderKid.EXAMPLE
 
+NON_SD_LIST_VALIDATE = NonSDList()
+NON_SD_LIST_EXAMPLE = NonSDList().EXAMPLE
+
 JWT_VALIDATE = JSONWebToken()
 JWT_EXAMPLE = JSONWebToken.EXAMPLE
+
+SD_JWT_VALIDATE = SDJSONWebToken()
+SD_JWT_EXAMPLE = SDJSONWebToken.EXAMPLE
 
 DID_KEY_VALIDATE = DIDKey()
 DID_KEY_EXAMPLE = DIDKey.EXAMPLE

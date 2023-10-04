@@ -19,7 +19,6 @@ python = "^3.9"
 aiohttp="~3.8.1"
 aiohttp-apispec="~2.2.1"
 aiohttp-cors="~0.7.0"
-aioredis="~2.0.0"
 apispec="~3.3.0"
 async-timeout="~4.0.2"
 base58="~2.1.0"
@@ -30,7 +29,6 @@ jsonpath_ng="1.5.2"
 Markdown="~3.1.1"
 markupsafe="2.0.1"
 marshmallow="~3.20.1"
-msgpack="~1.0"
 multiformats="~0.2.1"
 nest_asyncio="~1.5.5"
 packaging="~23.1"
@@ -48,9 +46,7 @@ qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
 requests="~2.31.0"
 rlp="1.2.0"
 unflatten="~0.1"
-asyncpg = ">=0.25.0,<0.26.0"
-web-py = ">=0.62,<1.0"
-pygments = ">=2.10,<3.0"
+sd_jwt = {git = "https://github.com/openwallet-foundation-labs/sd-jwt-python.git"}
 
 # askar
 aries-askar= { version = "~0.2.5", optional = true }
