@@ -2,10 +2,10 @@
 
 import json
 import logging
+from typing import Mapping, Sequence, Tuple
+from uuid import uuid4
 
 from marshmallow import RAISE
-from typing import Mapping, Tuple, Sequence
-from uuid import uuid4
 
 from ......messaging.base_handler import BaseResponder
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -13,38 +13,29 @@ from ......storage.error import StorageNotFoundError
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.ld_proofs import (
-    DocumentLoader,
+    BbsBlsSignature2020,
     Ed25519Signature2018,
     Ed25519Signature2020,
-    BbsBlsSignature2020,
-    BbsBlsSignatureProof2020,
-    WalletKeyPair,
 )
-from ......vc.vc_ld.verify import verify_presentation
-from ......wallet.key_type import ED25519, BLS12381G2
-
+from ......vc.vc_ld.manager import VcLdpManager
+from ......vc.vc_ld.models.options import LDProofVCOptions
+from ......vc.vc_ld.models.presentation import VerifiablePresentation
 from .....problem_report.v1_0.message import ProblemReport
-
 from ....dif.pres_exch import PresentationDefinition, SchemaInputDescriptor
-from ....dif.pres_exch_handler import DIFPresExchHandler, DIFPresExchError
+from ....dif.pres_exch_handler import DIFPresExchError, DIFPresExchHandler
 from ....dif.pres_proposal_schema import DIFProofProposalSchema
-from ....dif.pres_request_schema import (
-    DIFProofRequestSchema,
-    DIFPresSpecSchema,
-)
+from ....dif.pres_request_schema import DIFPresSpecSchema, DIFProofRequestSchema
 from ....dif.pres_schema import DIFProofSchema
 from ....v2_0.messages.pres_problem_report import ProblemReportReason
-
 from ...message_types import (
     ATTACHMENT_FORMAT,
-    PRES_20_REQUEST,
     PRES_20,
     PRES_20_PROPOSAL,
+    PRES_20_REQUEST,
 )
-from ...messages.pres_format import V20PresFormat
 from ...messages.pres import V20Pres
+from ...messages.pres_format import V20PresFormat
 from ...models.pres_exchange import V20PresExRecord
-
 from ..handler import V20PresFormatHandler, V20PresFormatHandlerError
 
 LOGGER = logging.getLogger(__name__)
@@ -54,26 +45,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
     """DIF presentation format handler."""
 
     format = V20PresFormat.Format.DIF
-
-    ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        Ed25519Signature2018: ED25519,
-        Ed25519Signature2020: ED25519,
-    }
-
-    if BbsBlsSignature2020.BBS_SUPPORTED:
-        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
-        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignatureProof2020] = BLS12381G2
-
-    async def _get_all_suites(self):
-        """Get all supported suites for verifying presentation."""
-        suites = []
-        for suite, key_type in self.ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING.items():
-            suites.append(
-                suite(
-                    key_pair=WalletKeyPair(profile=self._profile, key_type=key_type),
-                )
-            )
-        return suites
 
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping):
@@ -474,27 +445,31 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_request = pres_ex_record.pres_request.attachment(
             DIFPresFormatHandler.format
         )
-        challenge = None
-        if "options" in pres_request:
-            challenge = pres_request["options"].get("challenge", str(uuid4()))
-        if not challenge:
-            challenge = str(uuid4())
+        manager = VcLdpManager(self._profile)
+
+        options = LDProofVCOptions.deserialize(pres_request["options"])
+        if not options.challenge:
+            options.challenge = str(uuid4())
+
+        pres_ver_result = None
         if isinstance(dif_proof, Sequence):
+            if len(dif_proof) == 0:
+                raise V20PresFormatHandlerError(
+                    "Presentation exchange record has no presentations to verify"
+                )
             for proof in dif_proof:
-                pres_ver_result = await verify_presentation(
-                    presentation=proof,
-                    suites=await self._get_all_suites(),
-                    document_loader=self._profile.inject(DocumentLoader),
-                    challenge=challenge,
+                pres_ver_result = await manager.verify_presentation(
+                    vp=VerifiablePresentation.deserialize(proof),
+                    options=options,
                 )
                 if not pres_ver_result.verified:
                     break
         else:
-            pres_ver_result = await verify_presentation(
-                presentation=dif_proof,
-                suites=await self._get_all_suites(),
-                document_loader=self._profile.inject(DocumentLoader),
-                challenge=challenge,
+            pres_ver_result = await manager.verify_presentation(
+                vp=VerifiablePresentation.deserialize(dif_proof),
+                options=options,
             )
+
+        assert pres_ver_result is not None
         pres_ex_record.verified = json.dumps(pres_ver_result.verified)
         return pres_ex_record

@@ -9,6 +9,7 @@ from aries_cloudagent.vc.ld_proofs.constants import (
 )
 
 from ...core.profile import Profile
+from ..vc_ld.models.presentation import VerifiablePresentation
 from ...wallet.base import BaseWallet
 from ...wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
 from ...wallet.did_info import DIDInfo
@@ -102,8 +103,8 @@ class VcLdpManager:
             # All other methods we can just query
             return await wallet.get_local_did(did)
 
-    async def _assert_can_issue_with_id_and_proof_type(
-        self, issuer_id: str, proof_type: str
+    async def assert_can_issue_with_id_and_proof_type(
+        self, issuer_id: Optional[str], proof_type: Optional[str]
     ):
         """Assert that it is possible to issue using the specified id and proof type.
 
@@ -119,6 +120,11 @@ class VcLdpManager:
                 - If the did does not support to create signatures for the proof type
 
         """
+        if not issuer_id or not proof_type:
+            raise VcLdpManagerError(
+                "Issuer id and proof type are required to issue a credential."
+            )
+
         try:
             # Check if it is a proof type we can issue with
             if proof_type not in PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys():
@@ -216,15 +222,14 @@ class VcLdpManager:
                 f"Supported  proof types are: {SUPPORTED_ISSUANCE_PROOF_PURPOSES}"
             )
 
-    async def _prepare_credential(
+    async def prepare_credential(
         self,
         credential: VerifiableCredential,
         options: LDProofVCOptions,
         holder_did: Optional[str] = None,
     ) -> VerifiableCredential:
+        """Prepare a credential for issuance."""
         # Add BBS context if not present yet
-        assert options and isinstance(options, LDProofVCOptions)
-        assert credential and isinstance(credential, VerifiableCredential)
         if (
             options.proof_type == BbsBlsSignature2020.signature_type
             and SECURITY_CONTEXT_BBS_URL not in credential.context_urls
@@ -268,7 +273,7 @@ class VcLdpManager:
             raise VcLdpManagerError("Proof type is required")
 
         # Assert we can issue the credential based on issuer + proof_type
-        await self._assert_can_issue_with_id_and_proof_type(issuer_id, proof_type)
+        await self.assert_can_issue_with_id_and_proof_type(issuer_id, proof_type)
 
         # Create base proof object with options
         proof = LDProof(
@@ -315,7 +320,7 @@ class VcLdpManager:
         self, credential: VerifiableCredential, options: LDProofVCOptions
     ) -> VerifiableCredential:
         """Sign a VC with a Linked Data Proof."""
-        credential = await self._prepare_credential(credential, options)
+        credential = await self.prepare_credential(credential, options)
 
         # Get signature suite, proof purpose and document loader
         suite = await self._get_suite_for_credential(credential, options)
@@ -326,7 +331,6 @@ class VcLdpManager:
         )
         document_loader = self.profile.inject(DocumentLoader)
 
-        # issue the credential
         vc = await ldp_issue(
             credential=credential.serialize(),
             suite=suite,
@@ -336,7 +340,7 @@ class VcLdpManager:
         return VerifiableCredential.deserialize(vc)
 
     async def verify_presentation(
-        self, vp: VerifiableCredential, options: LDProofVCOptions
+        self, vp: VerifiablePresentation, options: LDProofVCOptions
     ) -> PresentationVerificationResult:
         """Verify a VP with a Linked Data Proof."""
         if not options.challenge:

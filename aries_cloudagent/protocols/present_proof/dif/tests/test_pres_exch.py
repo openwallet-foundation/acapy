@@ -11,7 +11,7 @@ from ..pres_exch import (
     DIFHolder,
     Filter,
     Constraints,
-    VerifiablePresentation,
+    VPWithSubmission,
     SchemasInputDescriptorFilter,
 )
 
@@ -377,8 +377,8 @@ class TestPresExchSchemas(TestCase):
                 "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..2uBYmg7muE9ZPVeAGo_ibVfLkCjf2hGshr2o5i8pAwFyNBM-kDHXofuq1MzJgb19wzb01VIu91hY_ajjt9KFAA",
             },
         }
-        vp = VerifiablePresentation.deserialize(test_vp_dict)
-        assert isinstance(vp, VerifiablePresentation)
+        vp = VPWithSubmission.deserialize(test_vp_dict)
+        assert isinstance(vp, VPWithSubmission)
 
     def test_schemas_input_desc_filter(self):
         test_schema_list = [
