@@ -14,7 +14,7 @@ from .assertion_proof_purpose import AssertionProofPurpose
 
 # Avoid circular dependency
 if TYPE_CHECKING:
-    from ..suites import LinkedDataProof
+    from ..suites import _LinkedDataProof as LinkedDataProof
 
 
 class CredentialIssuancePurpose(AssertionProofPurpose):
@@ -70,4 +70,4 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
 
             return result
         except Exception as e:
-            return PurposeResult(valid=False, error=e)
+            return PurposeResult(valid=False, error=str(e))

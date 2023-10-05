@@ -7,7 +7,6 @@ from aries_cloudagent.vc.ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
-from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
 
 from ...core.profile import Profile
 from ...wallet.base import BaseWallet
@@ -16,6 +15,7 @@ from ...wallet.did_info import DIDInfo
 from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import BLS12381G2, ED25519
 from ..ld_proofs.crypto.wallet_key_pair import WalletKeyPair
+from ..ld_proofs.document_loader import DocumentLoader
 from ..ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
 from ..ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
 from ..ld_proofs.purposes.proof_purpose import ProofPurpose
@@ -23,10 +23,13 @@ from ..ld_proofs.suites.bbs_bls_signature_2020 import BbsBlsSignature2020
 from ..ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ..ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
 from ..ld_proofs.suites.linked_data_proof import LinkedDataProof
+from ..ld_proofs.validation_result import DocumentVerificationResult
+from ..vc_ld.validation_result import PresentationVerificationResult
 from .issue import issue as ldp_issue
 from .models.credential import VerifiableCredential
 from .models.linked_data_proof import LDProof
 from .models.options import LDProofVCOptions
+from .verify import verify_credential, verify_presentation
 
 
 SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
@@ -297,7 +300,20 @@ class VcLdpManager:
 
         return suite
 
-    async def issue(self, credential: VerifiableCredential, options: LDProofVCOptions):
+    async def _get_all_suites(self):
+        """Get all supported suites for verifying presentation."""
+        suites = []
+        for suite, key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items():
+            suites.append(
+                suite(
+                    key_pair=WalletKeyPair(profile=self.profile, key_type=key_type),
+                )
+            )
+        return suites
+
+    async def issue(
+        self, credential: VerifiableCredential, options: LDProofVCOptions
+    ) -> VerifiableCredential:
         """Sign a VC with a Linked Data Proof."""
         credential = await self._prepare_credential(credential, options)
 
@@ -317,10 +333,28 @@ class VcLdpManager:
             document_loader=document_loader,
             purpose=proof_purpose,
         )
-        return vc
+        return VerifiableCredential.deserialize(vc)
 
-    async def verify_presentation(self):
+    async def verify_presentation(
+        self, vp: VerifiableCredential, options: LDProofVCOptions
+    ) -> PresentationVerificationResult:
         """Verify a VP with a Linked Data Proof."""
+        if not options.challenge:
+            raise VcLdpManagerError("Challenge is required for verifying a VP")
 
-    async def verify_credential(self):
+        return await verify_presentation(
+            presentation=vp.serialize(),
+            suites=await self._get_all_suites(),
+            document_loader=self.profile.inject(DocumentLoader),
+            challenge=options.challenge,
+        )
+
+    async def verify_credential(
+        self, vc: VerifiableCredential
+    ) -> DocumentVerificationResult:
         """Verify a VC with a Linked Data Proof."""
+        return await verify_credential(
+            credential=vc.serialize(),
+            suites=await self._get_all_suites(),
+            document_loader=self.profile.inject(DocumentLoader),
+        )

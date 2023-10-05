@@ -52,7 +52,7 @@ class ProofPurpose:
 
             return PurposeResult(valid=True)
         except Exception as err:
-            return PurposeResult(valid=False, error=err)
+            return PurposeResult(valid=False, error=str(err))
 
     def update(self, proof: dict) -> dict:
         """Update proof purpose on proof."""

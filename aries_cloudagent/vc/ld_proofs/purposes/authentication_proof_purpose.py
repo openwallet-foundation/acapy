@@ -68,7 +68,7 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
                 document_loader=document_loader,
             )
         except Exception as e:
-            return PurposeResult(valid=False, error=e)
+            return PurposeResult(valid=False, error=str(e))
 
     def update(self, proof: dict) -> dict:
         """Update poof purpose, challenge and domain on proof."""
