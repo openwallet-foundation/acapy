@@ -2152,18 +2152,17 @@ class UpgradeGroup(ArgumentGroup):
             "--upgrade-all-subwallets",
             action="store_true",
             env_var="ACAPY_UPGRADE_ALL_SUBWALLETS",
-            help=(
-                "Forces the '—from-version' argument to override the version "
-                "retrieved from secure storage when calculating upgrades to "
-                "be run."
-            ),
+            help="Apply upgrade to all subwallets and the base wallet",
         )
 
         parser.add_argument(
             "--upgrade-subwallet",
             action="append",
             env_var="ACAPY_UPGRADE_SUBWALLETS",
-            help=("Runs upgrade steps associated with tags provided in the config"),
+            help=(
+                "Apply upgrade to specified subwallets (identified by wallet id)"
+                " and the base wallet"
+            ),
         )
 
     def get_settings(self, args: Namespace) -> dict:

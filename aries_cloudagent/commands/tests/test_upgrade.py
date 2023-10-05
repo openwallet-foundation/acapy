@@ -7,6 +7,7 @@ from ...connections.models.conn_record import ConnRecord
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 from ...version import __version__
+from ...wallet.models.wallet_record import WalletRecord
 
 from .. import upgrade as test_module
 from ..upgrade import UpgradeError
@@ -22,6 +23,24 @@ class TestUpgrade(AsyncTestCase):
             "v0.7.2",
         )
         await self.storage.add_record(record)
+        recs = [
+            WalletRecord(
+                key_management_mode=[
+                    WalletRecord.MODE_UNMANAGED,
+                    WalletRecord.MODE_MANAGED,
+                ][i],
+                settings={
+                    "wallet.name": f"my-wallet-{i}",
+                    "wallet.type": "indy",
+                    "wallet.key": f"dummy-wallet-key-{i}",
+                },
+                wallet_name=f"my-wallet-{i}",
+            )
+            for i in range(2)
+        ]
+        async with self.profile.session() as session:
+            for rec in recs:
+                await rec.save(session)
 
     def test_bad_calls(self):
         with self.assertRaises(SystemExit):
@@ -74,6 +93,61 @@ class TestUpgrade(AsyncTestCase):
         self.profile.settings.extend(
             {
                 "upgrade.from_version": "v0.7.2",
+            }
+        )
+        with async_mock.patch.object(
+            ConnRecord,
+            "query",
+            async_mock.CoroutineMock(return_value=[ConnRecord()]),
+        ), async_mock.patch.object(ConnRecord, "save", async_mock.CoroutineMock()):
+            await test_module.upgrade(
+                profile=self.profile,
+            )
+
+    async def test_upgrade_all_subwallets(self):
+        self.profile.settings.extend(
+            {
+                "upgrade.from_version": "v0.7.2",
+                "upgrade.upgrade_all_subwallets": True,
+                "upgrade.force_upgrade": True,
+            }
+        )
+        with async_mock.patch.object(
+            ConnRecord,
+            "query",
+            async_mock.CoroutineMock(return_value=[ConnRecord()]),
+        ), async_mock.patch.object(ConnRecord, "save", async_mock.CoroutineMock()):
+            await test_module.upgrade(
+                profile=self.profile,
+            )
+
+    async def test_upgrade_specified_subwallets(self):
+        wallet_ids = []
+        async with self.profile.session() as session:
+            wallet_recs = await WalletRecord.query(session, tag_filter={})
+        for wallet_rec in wallet_recs:
+            wallet_ids.append(wallet_rec.wallet_id)
+        self.profile.settings.extend(
+            {
+                "upgrade.named_tags": "fix_issue_rev_reg",
+                "upgrade.upgrade_subwallets": [wallet_ids[0]],
+                "upgrade.force_upgrade": True,
+            }
+        )
+        with async_mock.patch.object(
+            ConnRecord,
+            "query",
+            async_mock.CoroutineMock(return_value=[ConnRecord()]),
+        ), async_mock.patch.object(ConnRecord, "save", async_mock.CoroutineMock()):
+            await test_module.upgrade(
+                profile=self.profile,
+            )
+
+        self.profile.settings.extend(
+            {
+                "upgrade.named_tags": "fix_issue_rev_reg",
+                "upgrade.upgrade_subwallets": wallet_ids,
+                "upgrade.force_upgrade": True,
             }
         )
         with async_mock.patch.object(
