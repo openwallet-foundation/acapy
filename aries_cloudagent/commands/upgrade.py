@@ -29,7 +29,7 @@ from ..config.util import common_config
 from ..config.wallet import wallet_config
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.base_record import BaseRecord, RecordType
-from ..storage.base import BaseStorage
+from ..storage.base import BaseStorage, BaseStorageSearch
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
@@ -41,6 +41,7 @@ from . import PROG
 
 DEFAULT_UPGRADE_CONFIG_FILE_NAME = "default_version_upgrade_config.yml"
 LOGGER = logging.getLogger(__name__)
+BATCH_SIZE = 25
 
 
 class ExplicitUpgradeOption(Enum):
@@ -307,6 +308,10 @@ async def upgrade(
 ):
     """Invoke upgradation process for each applicable profile."""
     profiles_to_upgrade = []
+    if settings:
+        batch_size = settings.get("upgrade.page_size", BATCH_SIZE)
+    else:
+        batch_size = BATCH_SIZE
     if profile and (settings or settings == {}):
         raise UpgradeError("upgrade requires either profile or settings, not both.")
     if profile:
@@ -317,16 +322,24 @@ async def upgrade(
         context = await context_builder.build_context()
         root_profile, _ = await wallet_config(context)
     profiles_to_upgrade.append(root_profile)
+    base_storage_search_inst = root_profile.inject(BaseStorageSearch)
     if "upgrade.upgrade_all_subwallets" in settings and settings.get(
         "upgrade.upgrade_all_subwallets"
     ):
-        async with root_profile.session() as session:
-            wallet_records = await WalletRecord.query(session, tag_filter={})
-        for wallet_record in wallet_records:
-            wallet_profile = await get_wallet_profile(
-                base_context=root_profile.context, wallet_record=wallet_record
-            )
-            profiles_to_upgrade.append(wallet_profile)
+        search_session = base_storage_search_inst.search_records(
+            type_filter=WalletRecord.RECORD_TYPE, page_size=batch_size
+        )
+        while search_session._done is False:
+            wallet_storage_records = await search_session.fetch()
+            for wallet_storage_record in wallet_storage_records:
+                wallet_record = WalletRecord.from_storage(
+                    wallet_storage_record.id,
+                    json.loads(wallet_storage_record.value),
+                )
+                wallet_profile = await get_wallet_profile(
+                    base_context=root_profile.context, wallet_record=wallet_record
+                )
+                profiles_to_upgrade.append(wallet_profile)
         del settings["upgrade.upgrade_all_subwallets"]
     if (
         "upgrade.upgrade_subwallets" in settings
@@ -489,8 +502,24 @@ async def upgrade_per_profile(
                 raise UpgradeError(
                     f"Only BaseRecord can be resaved, found: {str(rec_type)}"
                 )
+            all_records = []
+            if settings:
+                batch_size = settings.get("upgrade.page_size", BATCH_SIZE)
+            else:
+                batch_size = BATCH_SIZE
+            base_storage_search_inst = profile.inject(BaseStorageSearch)
+            search_session = base_storage_search_inst.search_records(
+                type_filter=rec_type.RECORD_TYPE, page_size=batch_size
+            )
+            while search_session._done is False:
+                storage_records = await search_session.fetch()
+                for storage_record in storage_records:
+                    _record = rec_type.from_storage(
+                        storage_record.id,
+                        json.loads(storage_record.value),
+                    )
+                    all_records.append(_record)
             async with profile.session() as session:
-                all_records = await rec_type.query(session)
                 for record in all_records:
                     await record.save(
                         session,

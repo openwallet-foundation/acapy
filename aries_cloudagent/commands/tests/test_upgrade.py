@@ -4,7 +4,8 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...core.in_memory import InMemoryProfile
 from ...connections.models.conn_record import ConnRecord
-from ...storage.base import BaseStorage
+from ...storage.base import BaseStorage, BaseStorageSearch
+from ...storage.in_memory import InMemoryStorage
 from ...storage.record import StorageRecord
 from ...version import __version__
 from ...wallet.models.wallet_record import WalletRecord
@@ -17,6 +18,9 @@ class TestUpgrade(AsyncTestCase):
     async def setUp(self):
         self.session = InMemoryProfile.test_session()
         self.profile = self.session.profile
+        self.profile.context.injector.bind_instance(
+            BaseStorageSearch, InMemoryStorage(self.profile)
+        )
         self.storage = self.session.inject(BaseStorage)
         record = StorageRecord(
             "acapy_version",
@@ -110,6 +114,7 @@ class TestUpgrade(AsyncTestCase):
                 "upgrade.from_version": "v0.7.2",
                 "upgrade.upgrade_all_subwallets": True,
                 "upgrade.force_upgrade": True,
+                "upgrade.page_size": 1,
             }
         )
         with async_mock.patch.object(
@@ -148,6 +153,7 @@ class TestUpgrade(AsyncTestCase):
                 "upgrade.named_tags": "fix_issue_rev_reg",
                 "upgrade.upgrade_subwallets": wallet_ids,
                 "upgrade.force_upgrade": True,
+                "upgrade.page_size": 1,
             }
         )
         with async_mock.patch.object(
@@ -486,7 +492,7 @@ class TestUpgrade(AsyncTestCase):
             async_mock.MagicMock(return_value={}),
         ):
             with self.assertRaises(UpgradeError) as ctx:
-                await test_module.upgrade(settings={})
+                await test_module.upgrade(profile=self.profile)
             assert "No version configs found in" in str(ctx.exception)
 
     async def test_upgrade_x_params(self):
