@@ -28,7 +28,6 @@ from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
 from .normalization import (
     normalize_from_did_key,
-    normalize_from_public_key,
     normalize_to_did_key,
 )
 
@@ -463,7 +462,7 @@ class MediationManager:
         record.state = MediationRecord.STATE_GRANTED
         record.endpoint = grant.endpoint
         record.routing_keys = [
-            normalize_from_public_key(key) for key in grant.routing_keys
+            normalize_to_did_key(key).key_id for key in grant.routing_keys
         ]
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request granted.")
