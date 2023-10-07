@@ -295,9 +295,7 @@ async def test_routing_info_with_mediator(
         routing_keys=["test-key-0", "test-key-1"],
         endpoint="http://mediator.example.com",
     )
-    keys, endpoint = await route_manager.routing_info(
-        sub_profile, "http://example.com", mediation_record
-    )
+    keys, endpoint = await route_manager.routing_info(sub_profile, mediation_record)
     assert keys == mediation_record.routing_keys
     assert endpoint == mediation_record.endpoint
 
@@ -307,11 +305,9 @@ async def test_routing_info_no_mediator(
     sub_profile: Profile,
     route_manager: MultitenantRouteManager,
 ):
-    keys, endpoint = await route_manager.routing_info(
-        sub_profile, "http://example.com", None
-    )
+    keys, endpoint = await route_manager.routing_info(sub_profile, None)
     assert keys == []
-    assert endpoint == "http://example.com"
+    assert endpoint is None
 
 
 @pytest.mark.asyncio
@@ -331,9 +327,7 @@ async def test_routing_info_with_base_mediator(
         "get_base_wallet_mediator",
         mock.CoroutineMock(return_value=base_mediation_record),
     ):
-        keys, endpoint = await route_manager.routing_info(
-            sub_profile, "http://example.com", None
-        )
+        keys, endpoint = await route_manager.routing_info(sub_profile, None)
     assert keys == base_mediation_record.routing_keys
     assert endpoint == base_mediation_record.endpoint
 
@@ -361,9 +355,7 @@ async def test_routing_info_with_base_mediator_and_sub_mediator(
         "get_base_wallet_mediator",
         mock.CoroutineMock(return_value=base_mediation_record),
     ):
-        keys, endpoint = await route_manager.routing_info(
-            sub_profile, "http://example.com", mediation_record
-        )
+        keys, endpoint = await route_manager.routing_info(sub_profile, mediation_record)
     assert keys == [*base_mediation_record.routing_keys, *mediation_record.routing_keys]
     assert endpoint == mediation_record.endpoint
 

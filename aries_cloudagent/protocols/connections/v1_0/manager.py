@@ -55,16 +55,16 @@ class ConnectionManager(BaseConnectionManager):
 
     async def create_invitation(
         self,
-        my_label: str = None,
-        my_endpoint: str = None,
-        auto_accept: bool = None,
+        my_label: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        auto_accept: Optional[bool] = None,
         public: bool = False,
         multi_use: bool = False,
-        alias: str = None,
-        routing_keys: Sequence[str] = None,
-        recipient_keys: Sequence[str] = None,
-        metadata: dict = None,
-        mediation_id: str = None,
+        alias: Optional[str] = None,
+        routing_keys: Optional[Sequence[str]] = None,
+        recipient_keys: Optional[Sequence[str]] = None,
+        metadata: Optional[dict] = None,
+        mediation_id: Optional[str] = None,
     ) -> Tuple[ConnRecord, ConnectionInvitation]:
         """Generate new connection invitation.
 
@@ -208,10 +208,14 @@ class ConnectionManager(BaseConnectionManager):
             await self._route_manager.route_invitation(
                 self.profile, connection, mediation_record
             )
-            routing_keys, my_endpoint = await self._route_manager.routing_info(
+            routing_keys, routing_endpoint = await self._route_manager.routing_info(
                 self.profile,
-                my_endpoint or cast(str, self.profile.settings.get("default_endpoint")),
                 mediation_record,
+            )
+            my_endpoint = (
+                routing_endpoint
+                or my_endpoint
+                or cast(str, self.profile.settings.get("default_endpoint"))
             )
 
             # Create connection invitation message

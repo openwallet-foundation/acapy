@@ -51,7 +51,7 @@ def route_manager():
     manager._route_for_key = mock.CoroutineMock(
         return_value=mock.MagicMock(KeylistUpdate)
     )
-    manager.routing_info = mock.CoroutineMock(return_value=([], "http://example.com"))
+    manager.routing_info = mock.CoroutineMock(return_value=([], None))
     yield manager
 
 
@@ -700,7 +700,7 @@ async def test_mediation_routing_info_with_mediator(
         endpoint="http://mediator.example.com",
     )
     keys, endpoint = await mediation_route_manager.routing_info(
-        profile, "http://example.com", mediation_record
+        profile, mediation_record
     )
     assert keys == mediation_record.routing_keys
     assert endpoint == mediation_record.endpoint
@@ -711,8 +711,6 @@ async def test_mediation_routing_info_no_mediator(
     profile: Profile,
     mediation_route_manager: CoordinateMediationV1RouteManager,
 ):
-    keys, endpoint = await mediation_route_manager.routing_info(
-        profile, "http://example.com", None
-    )
+    keys, endpoint = await mediation_route_manager.routing_info(profile, None)
     assert keys == []
-    assert endpoint == "http://example.com"
+    assert endpoint is None

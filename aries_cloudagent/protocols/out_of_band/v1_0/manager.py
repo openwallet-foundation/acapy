@@ -317,9 +317,10 @@ class OutOfBandManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Created new connection")
 
-            routing_keys, my_endpoint = await self._route_manager.routing_info(
-                self.profile, my_endpoint, mediation_record
+            routing_keys, routing_endpoint = await self._route_manager.routing_info(
+                self.profile, mediation_record
             )
+            my_endpoint = routing_endpoint or my_endpoint
 
             if not conn_rec:
                 our_service = ServiceDecorator(
@@ -336,7 +337,7 @@ class OutOfBandManager(BaseConnectionManager):
                 key
                 if len(key.split(":")) == 3
                 else DIDKey.from_public_key_b58(key, ED25519).key_id
-                for key in routing_keys
+                for key in routing_keys or []
             ]
 
             # Create connection invitation message

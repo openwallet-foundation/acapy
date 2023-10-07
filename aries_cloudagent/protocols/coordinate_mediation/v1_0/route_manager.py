@@ -6,7 +6,7 @@ Set up routing for newly formed connections.
 
 from abc import ABC, abstractmethod
 import logging
-from typing import List, Optional, Tuple
+from typing import List, NamedTuple, Optional
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
@@ -31,6 +31,18 @@ LOGGER = logging.getLogger(__name__)
 
 class RouteManagerError(Exception):
     """Raised on error from route manager."""
+
+
+class RoutingInfo(NamedTuple):
+    """Routing info tuple contiaing routing keys and endpoint."""
+
+    routing_keys: Optional[List[str]]
+    endpoint: Optional[str]
+
+    @classmethod
+    def empty(cls):
+        """Empty routing info."""
+        return cls(routing_keys=None, endpoint=None)
 
 
 class RouteManager(ABC):
@@ -258,9 +270,8 @@ class RouteManager(ABC):
     async def routing_info(
         self,
         profile: Profile,
-        my_endpoint: str,
         mediation_record: Optional[MediationRecord] = None,
-    ) -> Tuple[List[str], str]:
+    ) -> RoutingInfo:
         """Retrieve routing keys."""
 
     async def connection_from_recipient_key(
@@ -324,14 +335,16 @@ class CoordinateMediationV1RouteManager(RouteManager):
     async def routing_info(
         self,
         profile: Profile,
-        my_endpoint: str,
         mediation_record: Optional[MediationRecord] = None,
-    ) -> Tuple[List[str], str]:
+    ) -> RoutingInfo:
         """Return routing info for mediator."""
         if mediation_record:
-            return [
-                normalize_to_did_key(key).key_id
-                for key in mediation_record.routing_keys
-            ], mediation_record.endpoint
+            return RoutingInfo(
+                routing_keys=[
+                    normalize_to_did_key(key).key_id
+                    for key in mediation_record.routing_keys
+                ],
+                endpoint=mediation_record.endpoint,
+            )
 
-        return [], my_endpoint
+        return RoutingInfo.empty()

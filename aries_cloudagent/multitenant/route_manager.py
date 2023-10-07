@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
@@ -18,6 +18,7 @@ from ..protocols.coordinate_mediation.v1_0.normalization import (
 from ..protocols.coordinate_mediation.v1_0.route_manager import (
     CoordinateMediationV1RouteManager,
     RouteManager,
+    RoutingInfo,
 )
 from ..protocols.routing.v1_0.manager import RoutingManager
 from ..protocols.routing.v1_0.models.route_record import RouteRecord
@@ -104,14 +105,14 @@ class MultitenantRouteManager(RouteManager):
     async def routing_info(
         self,
         profile: Profile,
-        my_endpoint: str,
         mediation_record: Optional[MediationRecord] = None,
-    ) -> Tuple[List[str], str]:
+    ) -> RoutingInfo:
         """Return routing info."""
         routing_keys = []
 
         base_mediation_record = await self.get_base_wallet_mediator()
 
+        my_endpoint = None
         if base_mediation_record:
             routing_keys = base_mediation_record.routing_keys
             my_endpoint = base_mediation_record.endpoint
@@ -122,7 +123,7 @@ class MultitenantRouteManager(RouteManager):
 
         routing_keys = [normalize_to_did_key(key).key_id for key in routing_keys]
 
-        return routing_keys, my_endpoint
+        return RoutingInfo(routing_keys or None, my_endpoint)
 
 
 class BaseWalletRouteManager(CoordinateMediationV1RouteManager):

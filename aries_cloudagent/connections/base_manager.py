@@ -115,10 +115,11 @@ class BaseConnectionManager:
                     mediator_routing_keys,
                     endpoint,
                 ) = await self._route_manager.routing_info(
-                    self._profile, svc_endpoints[0], mediation_record
+                    self._profile, mediation_record
                 )
-                routing_keys = [*routing_keys, *mediator_routing_keys]
-                svc_endpoints = [endpoint]
+                routing_keys = [*routing_keys, *(mediator_routing_keys or [])]
+                if endpoint:
+                    svc_endpoints = [endpoint]
 
         for endpoint_index, svc_endpoint in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
