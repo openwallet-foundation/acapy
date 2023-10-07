@@ -26,7 +26,11 @@ from .messages.mediate_deny import MediationDeny
 from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
-from .normalization import normalize_from_did_key, normalize_from_public_key
+from .normalization import (
+    normalize_from_did_key,
+    normalize_from_public_key,
+    normalize_to_did_key,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -176,7 +180,7 @@ class MediationManager:
             await mediation_record.save(session, reason="Mediation request granted")
             grant = MediationGrant(
                 endpoint=session.settings.get("default_endpoint"),
-                routing_keys=[normalize_from_public_key(routing_did.verkey)],
+                routing_keys=[normalize_to_did_key(routing_did.verkey).key_id],
             )
         return mediation_record, grant
 
