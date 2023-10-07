@@ -135,7 +135,17 @@ class LegacyDocCorrections:
         return recip
 
     @classmethod
-    def didcomm_services_recip_keys_are_refs_routing_keys_are_did_key(
+    def did_key_to_did_key_ref(cls, key:str):
+        # Check if key is already a ref
+        if key.rfind("#") != -1:
+            return key
+        # Get the value after removing did:key:
+        value = key.replace("did:key:", "")
+
+        return key + "#" + value
+
+    @classmethod
+    def didcomm_services_recip_keys_are_refs_routing_keys_are_did_key_ref(
         cls,
         value: dict,
     ) -> dict:
@@ -150,9 +160,9 @@ class LegacyDocCorrections:
                     ]
                 if "routingKeys" in service:
                     service["routingKeys"] = [
-                        DIDKey.from_public_key_b58(key, ED25519).key_id
+                        cls.did_key_to_did_key_ref(DIDKey.from_public_key_b58(key, ED25519).key_id)
                         if "did:key:" not in key
-                        else key
+                        else cls.did_key_to_did_key_ref(key)
                         for key in service["routingKeys"]
                     ]
         return value
@@ -235,7 +245,7 @@ class LegacyDocCorrections:
             cls.fully_qualified_ids_and_controllers,
             cls.didcomm_services_use_updated_conventions,
             cls.remove_routing_keys_from_verification_method,
-            cls.didcomm_services_recip_keys_are_refs_routing_keys_are_did_key,
+            cls.didcomm_services_recip_keys_are_refs_routing_keys_are_did_key_ref,
         ):
             value = correction(value)
 
