@@ -32,7 +32,10 @@ from ...protocols.connections.v1_0.messages.connection_invitation import (
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
-from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ...protocols.coordinate_mediation.v1_0.route_manager import (
+    RouteManager,
+    CoordinateMediationV1RouteManager,
+)
 from ...protocols.discovery.v2_0.manager import V20DiscoveryMgr
 from ...resolver.default.key import KeyDIDResolver
 from ...resolver.default.legacy_peer import LegacyPeerDIDResolver
@@ -82,13 +85,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         self.oob_mock = async_mock.MagicMock(
             clean_finished_oob_record=async_mock.CoroutineMock(return_value=None)
         )
-        self.route_manager = async_mock.MagicMock(RouteManager)
-        self.route_manager.routing_info = async_mock.CoroutineMock(
-            return_value=([], self.test_endpoint)
-        )
-        self.route_manager.mediation_record_if_id = async_mock.CoroutineMock(
-            return_value=None
-        )
+        self.route_manager = CoordinateMediationV1RouteManager()
         self.resolver = DIDResolver()
         self.resolver.register_resolver(LegacyPeerDIDResolver())
         self.resolver.register_resolver(KeyDIDResolver())
@@ -118,7 +115,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         )
 
         self.test_mediator_routing_keys = [
-            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
+            "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
         ]
         self.test_mediator_conn_id = "mediator-conn-id"
         self.test_mediator_endpoint = "http://mediator.example.com"
@@ -135,171 +132,10 @@ class TestBaseConnectionManager(AsyncTestCase):
             key_type=ED25519,
         )
 
-        mock_conn = async_mock.MagicMock(
-            connection_id="dummy",
-            inbound_connection_id=None,
-            their_did=self.test_target_did,
-            state=ConnRecord.State.COMPLETED.rfc23,
+        did_doc = await self.manager.create_did_document(
+            did_info=did_info,
+            svc_endpoints=[self.test_endpoint],
         )
-
-        did_doc = self.make_did_doc(
-            did=self.test_target_did, verkey=self.test_target_verkey
-        )
-        for i in range(2):  # first cover store-record, then update-value
-            await self.manager.store_did_document(did_doc)
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id:
-            mock_conn_rec_retrieve_by_id.return_value = mock_conn
-
-            did_doc = await self.manager.create_did_document(
-                did_info=did_info,
-                svc_endpoints=[self.test_endpoint],
-            )
-
-    async def test_create_did_document_not_active(self):
-        did_info = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            None,
-            method=SOV,
-            key_type=ED25519,
-        )
-
-        mock_conn = async_mock.MagicMock(
-            connection_id="dummy",
-            inbound_connection_id=None,
-            their_did=self.test_target_did,
-            state=ConnRecord.State.ABANDONED.rfc23,
-        )
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id:
-            mock_conn_rec_retrieve_by_id.return_value = mock_conn
-
-            with self.assertRaises(BaseConnectionManagerError):
-                await self.manager.create_did_document(
-                    did_info=did_info,
-                    svc_endpoints=[self.test_endpoint],
-                )
-
-    async def test_create_did_document_no_services(self):
-        did_info = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            None,
-            method=SOV,
-            key_type=ED25519,
-        )
-
-        mock_conn = async_mock.MagicMock(
-            connection_id="dummy",
-            inbound_connection_id=None,
-            their_did=self.test_target_did,
-            state=ConnRecord.State.COMPLETED.rfc23,
-        )
-
-        x_did_doc = self.make_did_doc(
-            did=self.test_target_did, verkey=self.test_target_verkey
-        )
-        x_did_doc._service = {}
-        for i in range(2):  # first cover store-record, then update-value
-            await self.manager.store_did_document(x_did_doc)
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id:
-            mock_conn_rec_retrieve_by_id.return_value = mock_conn
-
-            with self.assertRaises(BaseConnectionManagerError):
-                await self.manager.create_did_document(
-                    did_info=did_info,
-                    svc_endpoints=[self.test_endpoint],
-                )
-
-    async def test_create_did_document_no_service_endpoint(self):
-        did_info = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            None,
-            method=SOV,
-            key_type=ED25519,
-        )
-
-        mock_conn = async_mock.MagicMock(
-            connection_id="dummy",
-            inbound_connection_id=None,
-            their_did=self.test_target_did,
-            state=ConnRecord.State.COMPLETED.rfc23,
-        )
-
-        x_did_doc = self.make_did_doc(
-            did=self.test_target_did, verkey=self.test_target_verkey
-        )
-        x_did_doc._service = {}
-        x_did_doc.set(
-            Service(self.test_target_did, "dummy", "IndyAgent", [], [], "", 0)
-        )
-        for i in range(2):  # first cover store-record, then update-value
-            await self.manager.store_did_document(x_did_doc)
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id:
-            mock_conn_rec_retrieve_by_id.return_value = mock_conn
-
-            with self.assertRaises(BaseConnectionManagerError):
-                await self.manager.create_did_document(
-                    did_info=did_info,
-                    svc_endpoints=[self.test_endpoint],
-                )
-
-    async def test_create_did_document_no_service_recip_keys(self):
-        did_info = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            None,
-            method=SOV,
-            key_type=ED25519,
-        )
-
-        mock_conn = async_mock.MagicMock(
-            connection_id="dummy",
-            inbound_connection_id=None,
-            their_did=self.test_target_did,
-            state=ConnRecord.State.COMPLETED.rfc23,
-        )
-
-        x_did_doc = self.make_did_doc(
-            did=self.test_target_did, verkey=self.test_target_verkey
-        )
-        x_did_doc._service = {}
-        x_did_doc.set(
-            Service(
-                self.test_target_did,
-                "dummy",
-                "IndyAgent",
-                [],
-                [],
-                self.test_endpoint,
-                0,
-            )
-        )
-        for i in range(2):  # first cover store-record, then update-value
-            await self.manager.store_did_document(x_did_doc)
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve_by_id:
-            mock_conn_rec_retrieve_by_id.return_value = mock_conn
-
-            with self.assertRaises(BaseConnectionManagerError):
-                await self.manager.create_did_document(
-                    did_info=did_info,
-                    svc_endpoints=[self.test_endpoint],
-                )
 
     async def test_create_did_document_mediation(self):
         did_info = DIDInfo(
@@ -323,8 +159,9 @@ class TestBaseConnectionManager(AsyncTestCase):
         services = list(doc.service.values())
         assert len(services) == 1
         (service,) = services
-        service_public_keys = service.routing_keys[0]
-        assert service_public_keys.value == mediation_record.routing_keys[0]
+        assert service.routing_keys
+        service_routing_key = service.routing_keys[0]
+        assert service_routing_key == mediation_record.routing_keys[0]
         assert service.endpoint == mediation_record.endpoint
 
     async def test_create_did_document_multiple_mediators(self):
@@ -346,7 +183,9 @@ class TestBaseConnectionManager(AsyncTestCase):
             role=MediationRecord.ROLE_CLIENT,
             state=MediationRecord.STATE_GRANTED,
             connection_id="mediator-conn-id2",
-            routing_keys=["05e8afd1-b4f0-46b7-a285-7a08c8a37caf"],
+            routing_keys=[
+                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDz#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDz"
+            ],
             endpoint="http://mediatorw.example.com",
         )
         doc = await self.manager.create_did_document(
@@ -356,8 +195,8 @@ class TestBaseConnectionManager(AsyncTestCase):
         services = list(doc.service.values())
         assert len(services) == 1
         (service,) = services
-        assert service.routing_keys[0].value == mediation_record1.routing_keys[0]
-        assert service.routing_keys[1].value == mediation_record2.routing_keys[0]
+        assert service.routing_keys[0] == mediation_record1.routing_keys[0]
+        assert service.routing_keys[1] == mediation_record2.routing_keys[0]
         assert service.endpoint == mediation_record2.endpoint
 
     async def test_create_did_document_mediation_svc_endpoints_overwritten(self):
@@ -375,6 +214,9 @@ class TestBaseConnectionManager(AsyncTestCase):
             routing_keys=self.test_mediator_routing_keys,
             endpoint=self.test_mediator_endpoint,
         )
+        self.route_manager.routing_info = async_mock.CoroutineMock(
+            return_value=(mediation_record.routing_keys, mediation_record.endpoint)
+        )
         doc = await self.manager.create_did_document(
             did_info,
             svc_endpoints=[self.test_endpoint],
@@ -385,7 +227,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         assert len(services) == 1
         (service,) = services
         service_public_keys = service.routing_keys[0]
-        assert service_public_keys.value == mediation_record.routing_keys[0]
+        assert service_public_keys == mediation_record.routing_keys[0]
         assert service.endpoint == mediation_record.endpoint
 
     async def test_did_key_storage(self):
@@ -431,7 +273,13 @@ class TestBaseConnectionManager(AsyncTestCase):
                         "controller": "YQwDgq9vdAbB3fk1tkeXmg",
                         "type": "Ed25519VerificationKey2018",
                         "publicKeyBase58": "J81x9zdJa8CGSbTYpoYQaNrV6yv13M1Lgz4tmkNPKwZn",
-                    }
+                    },
+                    {
+                        "id": "YQwDgq9vdAbB3fk1tkeXmg#1",
+                        "controller": "YQwDgq9vdAbB3fk1tkeXmg",
+                        "type": "Ed25519VerificationKey2018",
+                        "publicKeyBase58": routing_key,
+                    },
                 ],
                 "service": [
                     {
@@ -442,7 +290,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                         "recipientKeys": [
                             "J81x9zdJa8CGSbTYpoYQaNrV6yv13M1Lgz4tmkNPKwZn"
                         ],
-                        "routingKeys": ["cK7fwfjpakMuv8QKVv2y6qouZddVw4TxZNQPUs2fFTd"],
+                        "routingKeys": [routing_key],
                     }
                 ],
                 "authentication": [
@@ -1724,6 +1572,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         )
 
         self.multitenant_mgr.get_default_mediator.return_value = None
+        self.route_manager.route_static = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
@@ -1756,6 +1605,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             }
         )
         self.multitenant_mgr.get_default_mediator.return_value = None
+        self.route_manager.route_static = async_mock.CoroutineMock()
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ), async_mock.patch.object(
@@ -1785,6 +1635,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         )
 
         default_mediator = async_mock.MagicMock()
+        self.route_manager.route_static = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
@@ -1834,11 +1685,10 @@ class TestBaseConnectionManager(AsyncTestCase):
                 [
                     call(
                         their_info,
-                        None,
                         [self.test_endpoint],
                         mediation_records=[default_mediator],
                     ),
-                    call(their_info, None, [self.test_endpoint], mediation_records=[]),
+                    call(their_info, [self.test_endpoint], mediation_records=[]),
                 ]
             )
 
