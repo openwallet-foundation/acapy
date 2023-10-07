@@ -79,7 +79,7 @@ class BaseConnectionManager:
     async def create_did_document(
         self,
         did_info: DIDInfo,
-        svc_endpoints: Sequence[str],
+        svc_endpoints: Optional[Sequence[str]] = None,
         mediation_records: Optional[List[MediationRecord]] = None,
     ) -> DIDDoc:
         """Create our DID doc for a given DID.
