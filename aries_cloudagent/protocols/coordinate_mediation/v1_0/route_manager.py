@@ -187,7 +187,7 @@ class RouteManager(ABC):
         self,
         profile: Profile,
         conn_record: ConnRecord,
-        mediation_record: Optional[MediationRecord] = None,
+        mediation_records: List[MediationRecord],
     ) -> Optional[KeylistUpdate]:
         """Set up routing for a connection.
 
@@ -197,14 +197,14 @@ class RouteManager(ABC):
             ConnRecord.Role.RESPONDER
         ):
             return await self.route_connection_as_invitee(
-                profile, conn_record, [mediation_record] if mediation_record else []
+                profile, conn_record, mediation_records
             )
 
         if conn_record.rfc23_state == ConnRecord.State.REQUEST.rfc23strict(
             ConnRecord.Role.REQUESTER
         ):
             return await self.route_connection_as_inviter(
-                profile, conn_record, [mediation_record] if mediation_record else []
+                profile, conn_record, mediation_records
             )
 
         return None

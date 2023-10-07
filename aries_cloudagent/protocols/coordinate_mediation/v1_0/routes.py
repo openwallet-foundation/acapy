@@ -505,7 +505,7 @@ async def update_keylist_for_connection(request: web.BaseRequest):
         # MediationRecord is permitted to be None; route manager will
         # ensure the correct mediator is notified.
         keylist_update = await route_manager.route_connection(
-            context.profile, connection_record, mediation_records[0]
+            context.profile, connection_record, mediation_records
         )
 
         results = keylist_update.serialize() if keylist_update else {}

@@ -356,7 +356,7 @@ async def test_route_connection_state_invitee(
     ) as mock_route_connection_as_invitee, mock.patch.object(
         route_manager, "route_connection_as_inviter", mock.CoroutineMock()
     ) as mock_route_connection_as_inviter:
-        await route_manager.route_connection(profile, conn_record, mediation_record)
+        await route_manager.route_connection(profile, conn_record, [mediation_record])
         mock_route_connection_as_invitee.assert_called_once()
         mock_route_connection_as_inviter.assert_not_called()
 
@@ -373,7 +373,7 @@ async def test_route_connection_state_inviter(
     ) as mock_route_connection_as_invitee, mock.patch.object(
         route_manager, "route_connection_as_inviter", mock.CoroutineMock()
     ) as mock_route_connection_as_inviter:
-        await route_manager.route_connection(profile, conn_record, mediation_record)
+        await route_manager.route_connection(profile, conn_record, [mediation_record])
         mock_route_connection_as_inviter.assert_called_once()
         mock_route_connection_as_invitee.assert_not_called()
 
@@ -386,7 +386,7 @@ async def test_route_connection_state_other(
     conn_record.state = "response"
     conn_record.their_role = "requester"
     assert (
-        await route_manager.route_connection(profile, conn_record, mediation_record)
+        await route_manager.route_connection(profile, conn_record, [mediation_record])
         is None
     )
 
