@@ -135,7 +135,8 @@ class LegacyDocCorrections:
         return recip
 
     @classmethod
-    def did_key_to_did_key_ref(cls, key:str):
+    def did_key_to_did_key_ref(cls, key: str):
+        """Convert did:key to did:key ref."""
         # Check if key is already a ref
         if key.rfind("#") != -1:
             return key
@@ -160,7 +161,9 @@ class LegacyDocCorrections:
                     ]
                 if "routingKeys" in service:
                     service["routingKeys"] = [
-                        cls.did_key_to_did_key_ref(DIDKey.from_public_key_b58(key, ED25519).key_id)
+                        cls.did_key_to_did_key_ref(
+                            DIDKey.from_public_key_b58(key, ED25519).key_id
+                        )
                         if "did:key:" not in key
                         else cls.did_key_to_did_key_ref(key)
                         for key in service["routingKeys"]
