@@ -276,7 +276,7 @@ async def test_route_connection_as_invitee(
         mock.CoroutineMock(return_value=mock_did_info),
     ):
         await route_manager.route_connection_as_invitee(
-            profile, conn_record, mediation_record
+            profile, conn_record, [mediation_record]
         )
         route_manager._route_for_key.assert_called_once_with(
             profile, mock_did_info.verkey, mediation_record, skip_if_exists=True

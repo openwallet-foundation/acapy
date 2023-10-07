@@ -142,11 +142,13 @@ class RouteManager(ABC):
         self,
         profile: Profile,
         conn_record: ConnRecord,
-        mediation_record: Optional[MediationRecord] = None,
+        mediation_records: List[MediationRecord],
     ) -> Optional[KeylistUpdate]:
         """Set up routing for a new connection when we are the invitee."""
         LOGGER.debug("Routing connection as invitee")
         my_info = await self.get_or_create_my_did(profile, conn_record)
+        # Only most destward mediator receives keylist updates
+        mediation_record = mediation_records[0] if mediation_records else None
         return await self._route_for_key(
             profile, my_info.verkey, mediation_record, skip_if_exists=True
         )
@@ -192,7 +194,7 @@ class RouteManager(ABC):
             ConnRecord.Role.RESPONDER
         ):
             return await self.route_connection_as_invitee(
-                profile, conn_record, mediation_record
+                profile, conn_record, [mediation_record] if mediation_record else []
             )
 
         if conn_record.rfc23_state == ConnRecord.State.REQUEST.rfc23strict(
