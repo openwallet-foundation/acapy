@@ -157,7 +157,7 @@ class RouteManager(ABC):
         self,
         profile: Profile,
         conn_record: ConnRecord,
-        mediation_record: Optional[MediationRecord] = None,
+        mediation_records: List[MediationRecord],
     ) -> Optional[KeylistUpdate]:
         """Set up routing for a new connection when we are the inviter."""
         LOGGER.debug("Routing connection as inviter")
@@ -171,6 +171,9 @@ class RouteManager(ABC):
         # Do not replace key, if it is public
         if public_did and public_did.verkey == conn_record.invitation_key:
             replace_key = None
+
+        # Only most destward mediator receives keylist updates
+        mediation_record = mediation_records[0] if mediation_records else None
 
         return await self._route_for_key(
             profile,
@@ -201,7 +204,7 @@ class RouteManager(ABC):
             ConnRecord.Role.REQUESTER
         ):
             return await self.route_connection_as_inviter(
-                profile, conn_record, mediation_record
+                profile, conn_record, [mediation_record] if mediation_record else []
             )
 
         return None

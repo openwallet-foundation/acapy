@@ -625,7 +625,7 @@ class DIDXManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
-            self.profile, conn_rec, mediation_records[0]
+            self.profile, conn_rec, mediation_records
         )
 
         # Create connection response message

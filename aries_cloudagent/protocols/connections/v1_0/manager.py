@@ -607,7 +607,7 @@ class ConnectionManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
-            self.profile, connection, mediation_records[0]
+            self.profile, connection, mediation_records
         )
 
         # Create connection response message
