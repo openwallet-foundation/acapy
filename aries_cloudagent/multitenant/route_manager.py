@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
@@ -101,6 +101,24 @@ class MultitenantRouteManager(RouteManager):
             )
 
         return keylist_updates
+
+    async def mediation_records_for_connection(
+        self,
+        profile: Profile,
+        conn_record: ConnRecord,
+        mediation_id: Optional[str] = None,
+        or_default: bool = False,
+    ) -> List[MediationRecord]:
+        """Determine mediation records for a connection."""
+        conn_specific = await super().mediation_records_for_connection(
+            profile, conn_record, mediation_id, or_default
+        )
+        base_mediation_record = await self.get_base_wallet_mediator()
+        return [
+            record
+            for record in (base_mediation_record, *conn_specific)
+            if record is not None
+        ]
 
     async def routing_info(
         self,

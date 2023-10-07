@@ -74,14 +74,15 @@ class RouteManager(ABC):
                 f"{mediation_record.mediation_id}"
             )
 
-    async def mediation_record_for_connection(
+    async def mediation_records_for_connection(
         self,
         profile: Profile,
         conn_record: ConnRecord,
         mediation_id: Optional[str] = None,
         or_default: bool = False,
-    ):
+    ) -> List[MediationRecord]:
         """Return relevant mediator for connection."""
+        # TODO Support multiple mediators?
         if conn_record.connection_id:
             async with profile.session() as session:
                 mediation_metadata = await conn_record.metadata_get(
@@ -98,7 +99,7 @@ class RouteManager(ABC):
             await self.save_mediator_for_connection(
                 profile, conn_record, mediation_record
             )
-        return mediation_record
+        return [mediation_record] if mediation_record else []
 
     async def mediation_record_if_id(
         self,

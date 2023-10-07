@@ -113,12 +113,9 @@ async def test_mediation_record_for_connection_mediation_id(
     ) as mock_mediation_record_if_id, mock.patch.object(
         route_manager, "save_mediator_for_connection", mock.CoroutineMock()
     ):
-        assert (
-            await route_manager.mediation_record_for_connection(
-                profile, conn_record, mediation_record.mediation_id
-            )
-            == mediation_record
-        )
+        assert await route_manager.mediation_records_for_connection(
+            profile, conn_record, mediation_record.mediation_id
+        ) == [mediation_record]
         mock_mediation_record_if_id.assert_called_once_with(
             profile, mediation_record.mediation_id, False
         )
@@ -139,12 +136,9 @@ async def test_mediation_record_for_connection_mediation_metadata(
     ) as mock_mediation_record_if_id, mock.patch.object(
         route_manager, "save_mediator_for_connection", mock.CoroutineMock()
     ):
-        assert (
-            await route_manager.mediation_record_for_connection(
-                profile, conn_record, "another-mediation-id"
-            )
-            == mediation_record
-        )
+        assert await route_manager.mediation_records_for_connection(
+            profile, conn_record, "another-mediation-id"
+        ) == [mediation_record]
         mock_mediation_record_if_id.assert_called_once_with(
             profile, mediation_record.mediation_id, False
         )
@@ -162,12 +156,9 @@ async def test_mediation_record_for_connection_default(
     ) as mock_mediation_record_if_id, mock.patch.object(
         route_manager, "save_mediator_for_connection", mock.CoroutineMock()
     ):
-        assert (
-            await route_manager.mediation_record_for_connection(
-                profile, conn_record, None, or_default=True
-            )
-            == mediation_record
-        )
+        assert await route_manager.mediation_records_for_connection(
+            profile, conn_record, None, or_default=True
+        ) == [mediation_record]
         mock_mediation_record_if_id.assert_called_once_with(profile, None, True)
 
 
