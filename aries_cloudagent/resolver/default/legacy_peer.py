@@ -161,9 +161,7 @@ class LegacyDocCorrections:
                     ]
                 if "routingKeys" in service:
                     service["routingKeys"] = [
-                        cls.did_key_to_did_key_ref(
-                            DIDKey.from_public_key_b58(key, ED25519).key_id
-                        )
+                        DIDKey.from_public_key_b58(key, ED25519).key_id
                         if "did:key:" not in key
                         else cls.did_key_to_did_key_ref(key)
                         for key in service["routingKeys"]
