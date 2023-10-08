@@ -30,9 +30,9 @@ TEST_CONN_ID = "conn-id"
 TEST_THREAD_ID = "thread-id"
 TEST_ENDPOINT = "https://example.com"
 TEST_BASE58_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
-TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_ROUTE_RECORD_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
-TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
+TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya#z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
 
 pytestmark = pytest.mark.asyncio
 
@@ -121,7 +121,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         routing_key = await manager._retrieve_routing_did(session)
         routing_key = DIDKey.from_public_key_b58(
             routing_key.verkey, routing_key.key_type
-        ).did
+        ).key_id
         assert grant.routing_keys == [routing_key]
 
     async def test_deny_request(self, manager):
