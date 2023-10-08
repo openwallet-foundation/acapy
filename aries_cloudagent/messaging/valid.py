@@ -275,6 +275,20 @@ class DIDKey(Regexp):
         )
 
 
+class DIDKeyOrRef(Regexp):
+    """Validate value against DID key specification."""
+
+    EXAMPLE = "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+    PATTERN = re.compile(rf"^did:key:z[{B58}]+(?:#z[{B58}]+)?$")
+
+    def __init__(self):
+        """Initialize the instance."""
+
+        super().__init__(
+            DIDKeyOrRef.PATTERN, error="Value {input} is not a did:key or did:key ref"
+        )
+
+
 class DIDKeyRef(Regexp):
     """Validate value as DID key reference."""
 
@@ -870,6 +884,9 @@ SD_JWT_EXAMPLE = SDJSONWebToken.EXAMPLE
 
 DID_KEY_VALIDATE = DIDKey()
 DID_KEY_EXAMPLE = DIDKey.EXAMPLE
+
+DID_KEY_OR_REF_VALIDATE = DIDKeyOrRef()
+DID_KEY_OR_REF_EXAMPLE = DIDKeyOrRef.EXAMPLE
 
 DID_KEY_REF_VALIDATE = DIDKeyRef()
 DID_KEY_REF_EXAMPLE = DIDKeyRef.EXAMPLE

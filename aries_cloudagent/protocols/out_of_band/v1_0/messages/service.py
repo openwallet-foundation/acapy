@@ -6,8 +6,8 @@ from marshmallow import EXCLUDE, fields, post_dump
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import (
-    DID_KEY_REF_EXAMPLE,
-    DID_KEY_REF_VALIDATE,
+    DID_KEY_OR_REF_EXAMPLE,
+    DID_KEY_OR_REF_VALIDATE,
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
 )
@@ -72,10 +72,10 @@ class ServiceSchema(BaseModelSchema):
 
     recipient_keys = fields.List(
         fields.Str(
-            validate=DID_KEY_REF_VALIDATE,
+            validate=DID_KEY_OR_REF_VALIDATE,
             metadata={
                 "description": "Recipient public key",
-                "example": DID_KEY_REF_EXAMPLE,
+                "example": DID_KEY_OR_REF_EXAMPLE,
             },
         ),
         data_key="recipientKeys",
@@ -85,8 +85,8 @@ class ServiceSchema(BaseModelSchema):
 
     routing_keys = fields.List(
         fields.Str(
-            validate=DID_KEY_REF_VALIDATE,
-            metadata={"description": "Routing key", "example": DID_KEY_REF_EXAMPLE},
+            validate=DID_KEY_OR_REF_VALIDATE,
+            metadata={"description": "Routing key", "example": DID_KEY_OR_REF_EXAMPLE},
         ),
         data_key="routingKeys",
         required=False,
