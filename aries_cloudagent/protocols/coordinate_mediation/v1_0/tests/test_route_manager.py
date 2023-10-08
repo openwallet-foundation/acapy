@@ -26,6 +26,9 @@ TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_ROUTE_RECORD_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
+TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
+TEST_ROUTE_VERKEY_REF = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya#z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
+TEST_ROUTE_VERKEY_REF2 = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhyz#z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhyz"
 
 
 class MockRouteManager(RouteManager):
@@ -687,7 +690,7 @@ async def test_mediation_routing_info_with_mediator(
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id",
         connection_id="test-mediator-conn-id",
-        routing_keys=["test-key-0", "test-key-1"],
+        routing_keys=[TEST_ROUTE_VERKEY_REF],
         endpoint="http://mediator.example.com",
     )
     keys, endpoint = await mediation_route_manager.routing_info(
@@ -703,5 +706,5 @@ async def test_mediation_routing_info_no_mediator(
     mediation_route_manager: CoordinateMediationV1RouteManager,
 ):
     keys, endpoint = await mediation_route_manager.routing_info(profile, None)
-    assert keys == []
+    assert keys is None
     assert endpoint is None
