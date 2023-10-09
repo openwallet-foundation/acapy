@@ -1,3 +1,23 @@
+# 0.10.4
+
+## October 9, 2023
+
+Release 0.10.4 is a patch release to correct an issue with the handling of `did:key` routing
+keys in some mediator scenarios, notably with the use of [Aries Framework Kotlin]. See the
+details in the PR and [Issue \#2531 Routing for agents behind a aca-py based mediator is broken].
+
+Thanks to [codespree](https://github.com/codespree) for raising the issue and providing the fix.
+
+[Aries Framework Kotlin](https://github.com/hyperledger/aries-framework-kotlin)
+[Issue \#2531 Routing for agents behind a aca-py based mediator is broken]: https://github.com/hyperledger/aries-cloudagent-python/issue/2531
+
+### 0.10.4 Categorized List of Pull Requests
+
+- DID Handling and Connection Establishment Updates/Fixes
+  - fix: routing behind mediator [\#2536](https://github.com/hyperledger/aries-cloudagent-python/pull/2536) [dbluhm](https://github.com/dbluhm)
+- Release management pull requests
+  - 0.10.4 [\#2539](https://github.com/hyperledger/aries-cloudagent-python/pull/2539) [swcurran](https://github.com/swcurran)
+
 # 0.10.3
 
 ## September 29, 2023
