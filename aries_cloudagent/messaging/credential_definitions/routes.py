@@ -139,7 +139,8 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
     conn_id = fields.Str(
         description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
     )
-    
+
+
 def error_handler(func):
     """API/Routes Error handler function."""
 
