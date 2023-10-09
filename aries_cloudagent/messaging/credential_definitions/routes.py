@@ -1,5 +1,6 @@
 """Credential definition admin routes."""
 
+import functools
 import json
 
 
@@ -13,7 +14,9 @@ from aiohttp_apispec import (
 )
 
 from marshmallow import fields
-from ...anoncreds.issuer import AnonCredsIssuer
+
+from ...anoncreds.base import AnonCredsResolutionError
+from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.registry import AnonCredsRegistry
 
 from ...wallet.base import BaseWallet
@@ -136,6 +139,23 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
     conn_id = fields.Str(
         description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
     )
+    
+def error_handler(func):
+    """API/Routes Error handler function."""
+
+    @functools.wraps(func)
+    async def wrapper(request):
+        try:
+            ret = await func(request)
+            return ret
+        except AnonCredsResolutionError as err:
+            raise web.HTTPForbidden(reason=err.roll_up) from err
+        except AnonCredsIssuerError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+        except Exception as err:
+            raise err
+
+    return wrapper
 
 
 @docs(
@@ -146,6 +166,7 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
 @querystring_schema(CreateCredDefTxnForEndorserOptionSchema())
 @querystring_schema(CredDefConnIdMatchInfoSchema())
 @response_schema(TxnOrCredentialDefinitionSendResultSchema(), 200, description="")
+@error_handler
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
     """
     Request handler for sending a credential definition to the ledger.
@@ -280,6 +301,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 )
 @querystring_schema(CredDefQueryStringSchema())
 @response_schema(CredentialDefinitionsCreatedResultSchema(), 200, description="")
+@error_handler
 async def credential_definitions_created(request: web.BaseRequest):
     """
     Request handler for retrieving credential definitions that current agent created.
@@ -312,6 +334,7 @@ async def credential_definitions_created(request: web.BaseRequest):
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
+@error_handler
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
     """
     Request handler for getting a credential definition from the ledger.

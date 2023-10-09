@@ -16,11 +16,13 @@ from anoncreds import (
     Schema,
 )
 
+from aries_cloudagent.ledger.error import LedgerError
+
 from ..askar.profile import AskarProfile, AskarProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
-from .base import AnonCredsSchemaAlreadyExists
+from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
 from .events import CredDefFinishedEvent
 from .models.anoncreds_cred_def import CredDef, CredDefResult
 from .models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
@@ -335,7 +337,7 @@ class AnonCredsIssuer:
                 CredDef.from_native(cred_def),
                 options,
             )
-        except AnoncredsError as err:
+        except (AnoncredsError, BaseAnonCredsError, LedgerError) as err:
             raise AnonCredsIssuerError("Error creating credential definition") from err
 
         # Store the cred def and it's components

@@ -34,6 +34,7 @@ class AskarProfile(Profile):
     """Provide access to Aries-Askar profile interaction methods."""
 
     BACKEND_NAME = "askar"
+    TEST_PROFILE_NAME = "test-profile"
 
     def __init__(
         self,

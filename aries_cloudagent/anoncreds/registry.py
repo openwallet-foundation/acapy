@@ -109,7 +109,6 @@ class AnonCredsRegistry:
         registrar = await self._registrar_for_identifier(
             credential_definition.issuer_id
         )
-
         return await registrar.register_credential_definition(
             profile,
             schema,
