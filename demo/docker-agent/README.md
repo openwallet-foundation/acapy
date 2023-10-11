@@ -51,7 +51,7 @@ For example start the endorser service as `LEDGER_URL=http://test.bcovrin.vonx.i
 
 ### Connecting the Author to the Endorser
 
-Endorser Service:  Use the `GET /v1/admin/config` endpoint to fetch the endorser's configuration, including the public DID (which the author will need to know).  Also confirm whether the `ENDORSER_AUTO_ACCEPT_CONNECTIONS` and `ENDORSER_AUTO_ENDORSE_REQUESTS` settings are `True` or `False` - for the following we will assume that both are `False` and the endorser must explicitely respond to all requests.
+Endorser Service:  Use the `GET /v1/admin/config` endpoint to fetch the endorser's configuration, including the public DID (which the author will need to know).  Also confirm whether the `ENDORSER_AUTO_ACCEPT_CONNECTIONS` and `ENDORSER_AUTO_ENDORSE_REQUESTS` settings are `True` or `False` - for the following we will assume that both are `False` and the endorser must explicitly respond to all requests.
 
 Author Agent:  Use the `POST /didexchange/create-request` to request a connection with the endorser, using the endorser's public DID.  Set the `alias` to `Endorser` - this *MUST* match the `--endorser-alias 'Endorser'` setting (in the ngrok-wait.sh script).  Use the `GET /connections` endpoint to verify the connection is in `request` state.
 
