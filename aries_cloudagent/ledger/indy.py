@@ -766,7 +766,8 @@ class IndySdkLedger(BaseLedger):
         if exist_endpoint_of_type != endpoint:
             if await self.is_ledger_read_only():
                 raise LedgerError(
-                    "Error cannot update endpoint when ledger is in read only mode"
+                    "Error cannot update endpoint when ledger is in read only mode, "
+                    "or TAA is required and not accepted"
                 )
 
             nym = self.did_to_nym(did)
@@ -817,7 +818,8 @@ class IndySdkLedger(BaseLedger):
         """
         if await self.is_ledger_read_only():
             raise LedgerError(
-                "Error cannot register nym when ledger is in read only mode"
+                "Error cannot register nym when ledger is in read only mode, "
+                "or TAA is required and not accepted"
             )
 
         public_info = await self.get_wallet_public_did()
