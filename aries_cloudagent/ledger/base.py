@@ -303,7 +303,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         else:
             if await self.is_ledger_read_only():
                 raise LedgerError(
-                    "Error cannot write schema when ledger is in read only mode"
+                    "Error cannot write schema when ledger is in read only mode, "
+                    "or TAA is required and not accepted"
                 )
 
             try:
@@ -497,7 +498,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
             if await self.is_ledger_read_only():
                 raise LedgerError(
-                    "Error cannot write cred def when ledger is in read only mode"
+                    "Error cannot write cred def when ledger is in read only mode, "
+                    "or TAA is required and not accepted"
                 )
 
             cred_def_req = await self._create_credential_definition_request(
