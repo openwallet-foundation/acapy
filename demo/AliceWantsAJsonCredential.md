@@ -78,7 +78,7 @@ You do *not* create a schema or cred def for a JSON-LD credential (these are onl
 
 You will need to create a DID as above for Alice as well (`/wallet/did/create` etc ...).
 
-Congradulations, you are now ready to start issuing JSON-LD credentials!
+Congratulations, you are now ready to start issuing JSON-LD credentials!
 
 - You have two agents with a connection established between the agents - you will need to copy Faber's `connection_id` into the examples below.
 - You have created a (non-public) DID for Faber to use to sign/issue the credentials - you will need to copy the DID that you created above into the examples below (as `issuer`).
