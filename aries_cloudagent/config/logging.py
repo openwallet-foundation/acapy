@@ -23,14 +23,14 @@ from ..version import __version__
 from .banner import Banner
 
 DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
-DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH = (
-    "./aries_cloudagent/config/default_per_tenant_logging_config.yml"
+# DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_YAML = (
+#     "./aries_cloudagent/config/default_per_tenant_logging_config.yml"
+# )
+DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI = (
+    "aries_cloudagent.config:default_per_tenant_logging_config.ini"
 )
 LOG_FORMAT_FILE_ALIAS_PATTERN = (
     "%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
-)
-LOG_FORMAT_STREAM_PATTERN = (
-    "%(asctime)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
 )
 
 context_wallet_id: ContextVar[str] = ContextVar("context_wallet_id")
@@ -97,7 +97,10 @@ class LoggingConfigurator:
         if logging_config_path is not None:
             config_path = logging_config_path
         else:
-            config_path = DEFAULT_LOGGING_CONFIG_PATH
+            if multitenant:
+                config_path = DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI
+            else:
+                config_path = DEFAULT_LOGGING_CONFIG_PATH
         if ".yml" in config_path or ".yaml" in config_path:
             is_dict_config = True
             with open(config_path, "r") as stream:
