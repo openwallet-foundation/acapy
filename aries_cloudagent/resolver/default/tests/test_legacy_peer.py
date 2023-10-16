@@ -499,3 +499,74 @@ class TestLegacyPeerDIDResolver:
         doc = pydid.deserialize_document(actual)
         assert doc.service
         assert isinstance(doc.service[0], pydid.DIDCommService)
+
+    @pytest.mark.parametrize(
+        ("input_doc", "expected"),
+        [
+            (
+                {
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "StwSYX1WFcJ7MBfYWxmuQ9",
+                    "publicKey": [
+                        {
+                            "type": "Ed25519VerificationKey2018",
+                            "id": "StwSYX1WFcJ7MBfYWxmuQ9#1",
+                            "controller": "StwSYX1WFcJ7MBfYWxmuQ9",
+                            "publicKeyBase58": "F7cEyTgzUbFwHsTwC2cK2Zy8bdraeoMY8921gyDmefwK",
+                        }
+                    ],
+                    "authentication": [
+                        {
+                            "type": "Ed25519VerificationKey2018",
+                            "publicKey": "StwSYX1WFcJ7MBfYWxmuQ9#1",
+                        }
+                    ],
+                    "service": [
+                        {
+                            "type": "IndyAgent",
+                            "id": "StwSYX1WFcJ7MBfYWxmuQ9#IndyAgentService",
+                            "serviceEndpoint": "https://example.com/endpoint",
+                            "recipientKeys": [
+                                "F7cEyTgzUbFwHsTwC2cK2Zy8bdraeoMY8921gyDmefwK"
+                            ],
+                            "routingKeys": [
+                                "did:key:z6Mko2LnynhGbkPQdZ3PQBUgCmrzdH9aJe7HTs4LKontx8Ge"
+                            ],
+                        }
+                    ],
+                },
+                {
+                    "@context": "https://w3id.org/did/v1",
+                    "id": "did:sov:StwSYX1WFcJ7MBfYWxmuQ9",
+                    "verificationMethod": [
+                        {
+                            "type": "Ed25519VerificationKey2018",
+                            "id": "did:sov:StwSYX1WFcJ7MBfYWxmuQ9#1",
+                            "controller": "did:sov:StwSYX1WFcJ7MBfYWxmuQ9",
+                            "publicKeyBase58": "F7cEyTgzUbFwHsTwC2cK2Zy8bdraeoMY8921gyDmefwK",
+                        }
+                    ],
+                    "authentication": ["did:sov:StwSYX1WFcJ7MBfYWxmuQ9#1"],
+                    "service": [
+                        {
+                            "id": "did:sov:StwSYX1WFcJ7MBfYWxmuQ9#didcomm-0",
+                            "type": "did-communication",
+                            "serviceEndpoint": "https://example.com/endpoint",
+                            "recipientKeys": ["did:sov:StwSYX1WFcJ7MBfYWxmuQ9#1"],
+                            "routingKeys": [
+                                "did:key:z6Mko2LnynhGbkPQdZ3PQBUgCmrzdH9aJe7HTs4LKontx8Ge#z6Mko2LnynhGbkPQdZ3PQBUgCmrzdH9aJe7HTs4LKontx8Ge"
+                            ],
+                        }
+                    ],
+                },
+            )
+        ],
+    )
+    def test_corrections_on_doc_as_received(self, input_doc: dict, expected: dict):
+        parsed = DIDDoc.deserialize(input_doc)
+        actual = test_module.LegacyDocCorrections.apply(parsed.serialize())
+        assert actual == expected
+        assert expected == test_module.LegacyDocCorrections.apply(expected)
+        doc = pydid.deserialize_document(actual)
+        assert doc.service
+        assert isinstance(doc.service[0], pydid.DIDCommService)
