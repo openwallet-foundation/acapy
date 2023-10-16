@@ -216,7 +216,7 @@ To enable support for revoking credentials, run the `faber` demo with the `--rev
 ./run_demo faber --revocation
 ```
 
-Note that you don't specify this option with `alice` because it's only applicable for the credential `issuer` (who has to enable revocation when creating a credential definition, and explicitely revoke credentials as appropriate; alice doesn't have to do anything special when revocation is enabled).
+Note that you don't specify this option with `alice` because it's only applicable for the credential `issuer` (who has to enable revocation when creating a credential definition, and explicitly revoke credentials as appropriate; alice doesn't have to do anything special when revocation is enabled).
 
 You need to run an AnonCreds revocation registry tails server in order to support revocation - the details are described in the [Alice gets a Phone](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/AliceGetsAPhone.md#run-an-instance-of-indy-tails-server) demo instructions.
 

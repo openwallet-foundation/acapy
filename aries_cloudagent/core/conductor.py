@@ -88,7 +88,7 @@ class Conductor:
     """Conductor class.
 
     Class responsible for initializing concrete implementations
-    of our require interfaces and routing inbound and outbound message data.
+    of our required interfaces and routing inbound and outbound message data.
     """
 
     def __init__(self, context_builder: ContextBuilder) -> None:

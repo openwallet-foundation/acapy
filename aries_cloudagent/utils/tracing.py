@@ -47,7 +47,7 @@ def get_timer() -> float:
 
 def tracing_enabled(context, message) -> bool:
     """Determine whether to log trace messages or not."""
-    # check if tracing is explicitely on
+    # check if tracing is explicitly on
     if context.get("trace.enabled"):
         return True
 
