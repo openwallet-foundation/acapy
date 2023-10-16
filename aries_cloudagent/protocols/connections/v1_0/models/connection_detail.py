@@ -10,7 +10,7 @@ from .....messaging.valid import INDY_DID_EXAMPLE, INDY_DID_VALIDATE
 class DIDDocWrapper(fields.Field):
     """Field that loads and serializes DIDDoc."""
 
-    def _serialize(self, value, attr, obj, **kwargs):
+    def _serialize(self, value: DIDDoc, attr, obj, **kwargs):
         """Serialize the DIDDoc.
 
         Args:
@@ -20,7 +20,7 @@ class DIDDocWrapper(fields.Field):
             The serialized DIDDoc
 
         """
-        return value.serialize()
+        return value.serialize(normalize_routing_keys=True)
 
     def _deserialize(self, value, attr=None, data=None, **kwargs):
         """Deserialize a value into a DIDDoc.
