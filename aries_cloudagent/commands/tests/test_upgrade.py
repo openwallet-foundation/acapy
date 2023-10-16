@@ -121,6 +121,44 @@ class TestUpgrade(AsyncTestCase):
                 }
             )
 
+    async def test_upgrade_callable_named_tag(self):
+        version_storage_record = await self.storage.find_record(
+            type_filter="acapy_version", tag_query={}
+        )
+        await self.storage.delete_record(version_storage_record)
+        with async_mock.patch.object(
+            test_module,
+            "wallet_config",
+            async_mock.CoroutineMock(
+                return_value=(
+                    self.profile,
+                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                )
+            ),
+        ), async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.7.2": {
+                        "resave_records": {
+                            "base_record_path": [
+                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                            ]
+                        },
+                        "update_existing_records": True,
+                    },
+                    "fix_issue_rev_reg": {"fix_issue_rev_reg_records": True},
+                }
+            ),
+        ):
+            await test_module.upgrade(
+                settings={
+                    "upgrade.named_tags": ["fix_issue_rev_reg"],
+                    "upgrade.force_upgrade": True,
+                }
+            )
+
     async def test_upgrade_x_same_version(self):
         version_storage_record = await self.storage.find_record(
             type_filter="acapy_version", tag_query={}
@@ -169,7 +207,9 @@ class TestUpgrade(AsyncTestCase):
                         "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
                     }
                 )
-            assert "No upgrade from version found in wallet or" in str(ctx.exception)
+            assert "Error during upgrade: No upgrade from version or tags found" in str(
+                ctx.exception
+            )
 
     async def test_upgrade_x_callable_not_set(self):
         version_storage_record = await self.storage.find_record(

@@ -2,9 +2,10 @@
 
 from typing import List, Optional, Union
 
-from ....wallet.util import b58_to_bytes
-from ....wallet.key_type import KeyType
+from ....core.profile import Profile
 from ....wallet.base import BaseWallet
+from ....wallet.key_type import KeyType
+from ....wallet.util import b58_to_bytes
 
 from ..error import LinkedDataProofException
 
@@ -17,13 +18,13 @@ class WalletKeyPair(KeyPair):
     def __init__(
         self,
         *,
-        wallet: BaseWallet,
+        profile: Profile,
         key_type: KeyType,
         public_key_base58: Optional[str] = None,
     ) -> None:
         """Initialize new WalletKeyPair instance."""
         super().__init__()
-        self.wallet = wallet
+        self.profile = profile
         self.key_type = key_type
         self.public_key_base58 = public_key_base58
 
@@ -33,10 +34,12 @@ class WalletKeyPair(KeyPair):
             raise LinkedDataProofException(
                 "Unable to sign message with WalletKey: No key to sign with"
             )
-        return await self.wallet.sign_message(
-            message=message,
-            from_verkey=self.public_key_base58,
-        )
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            return await wallet.sign_message(
+                message=message,
+                from_verkey=self.public_key_base58,
+            )
 
     async def verify(
         self, message: Union[List[bytes], bytes], signature: bytes
@@ -47,12 +50,14 @@ class WalletKeyPair(KeyPair):
                 "Unable to verify message with key pair: No key to verify with"
             )
 
-        return await self.wallet.verify_message(
-            message=message,
-            signature=signature,
-            from_verkey=self.public_key_base58,
-            key_type=self.key_type,
-        )
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            return await wallet.verify_message(
+                message=message,
+                signature=signature,
+                from_verkey=self.public_key_base58,
+                key_type=self.key_type,
+            )
 
     def from_verification_method(self, verification_method: dict) -> "WalletKeyPair":
         """Create new WalletKeyPair from public key in verification method."""
@@ -62,7 +67,7 @@ class WalletKeyPair(KeyPair):
             )
 
         return WalletKeyPair(
-            wallet=self.wallet,
+            profile=self.profile,
             key_type=self.key_type,
             public_key_base58=verification_method["publicKeyBase58"],
         )

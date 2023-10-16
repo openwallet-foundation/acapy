@@ -12,4 +12,4 @@ class TestMediateDeny(MessageTest, TestCase):
     TYPE = MEDIATE_DENY
     CLASS = MediationDeny
     SCHEMA = MediationDenySchema
-    VALUES = {"mediator_terms": ["test", "terms"], "recipient_terms": ["test", "terms"]}
+    VALUES = {}

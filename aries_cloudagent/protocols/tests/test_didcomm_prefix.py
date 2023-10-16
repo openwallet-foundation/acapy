@@ -16,6 +16,8 @@ class TestDIDCommPrefix(AsyncTestCase):
             f"{DIDCommPrefix.NEW.value}/hello"
         )
 
+        # No longer possible to have the arg `False` but leaving in test
+        # Still want to be able to receive the OLD format, just not emit it
         DIDCommPrefix.set({"emit_new_didcomm_prefix": False})
         assert environ.get("DIDCOMM_PREFIX") == DIDCommPrefix.OLD.value
         assert DIDCommPrefix.qualify_current("hello") == (

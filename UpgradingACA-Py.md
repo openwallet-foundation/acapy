@@ -59,6 +59,25 @@ is high (such as a "resave connections" upgrade to a deployment with many, many
 connections), you may want to do a test upgrade offline first, to see if there
 is likely to be a service disruption during the upgrade. Plan accordingly!
 
+## Tagged upgrades
+Upgrades are defined in the [Upgrade Definition YML file], in addition to specifying upgrade actions by version they can also be specified by named tags. Unlike version based upgrades where all applicable version based actions will be performed based upon sorted order of versions, with named tags only actions corresponding to provided tags will be performed. Note: `--force-upgrade` is required when running name tags based upgrade [i.e. provding `--named-tag`]
+
+Tags are specfied in YML file as below:
+```
+fix_issue_rev_reg:
+  fix_issue_rev_reg_records: true
+```
+
+Example
+```
+ ./scripts/run_docker upgrade --force-upgrade --named-tag fix_issue_rev_reg
+
+In case, running multiple tags [say test1 & test2]:
+ ./scripts/run_docker upgrade --force-upgrade --named-tag test1 --named-tag test2
+```
+
+
+
 ## Exceptions
 
 There are a couple of upgrade exception conditions to consider, as outlined
