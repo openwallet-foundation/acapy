@@ -22,6 +22,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
+from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import Profile
@@ -407,6 +408,11 @@ class AdminServer(BaseAdminServer):
                     ) = self.multitenant_manager.get_wallet_details_from_token(
                         token=token
                     )
+                    try:
+                        context_wallet_id.get()
+                    except LookupError:
+                        wallet_id = profile.settings.get("wallet.id")
+                        context_wallet_id.set(wallet_id)
                     meta_data = {
                         "wallet_id": walletid,
                         "wallet_key": walletkey,

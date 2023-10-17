@@ -1,5 +1,3 @@
-import logging
-
 from asynctest import mock as async_mock
 import pytest
 
@@ -10,6 +8,8 @@ from ....ledger.indy import IndySdkLedgerPool
 
 from ..profile import IndySdkProfile
 from ..wallet_setup import IndyOpenWallet, IndyWalletConfig
+
+from .. import profile as test_module
 
 
 @pytest.fixture
@@ -118,12 +118,15 @@ def test_read_only(open_wallet):
     ro_profile = IndySdkProfile(open_wallet, context)
 
 
-def test_finalizer(open_wallet, caplog):
-    def _smaller_scope():
-        profile = IndySdkProfile(open_wallet)
-        assert profile
-
-    with caplog.at_level(logging.DEBUG):
-        _smaller_scope()
-
-    assert "finalizer called" in caplog.text
+def test_finalizer(open_wallet):
+    profile = IndySdkProfile(open_wallet)
+    assert profile
+    with async_mock.patch.object(
+        test_module, "LOGGER", async_mock.MagicMock()
+    ) as mock_logger:
+        mock_logger.debug = async_mock.MagicMock()
+        profile._finalizer()
+        assert mock_logger.debug.call_count == 1
+        mock_logger.debug.assert_called_once_with(
+            "Profile finalizer called; closing wallet"
+        )

@@ -56,6 +56,9 @@ class AriesAgent(DemoAgent):
         endorser_role: str = None,
         revocation: bool = False,
         anoncreds_legacy_revocation: str = None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
         **kwargs,
     ):
         extra_args = []
@@ -81,6 +84,9 @@ class AriesAgent(DemoAgent):
             endorser_role=endorser_role,
             revocation=revocation,
             extra_args=extra_args,
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
             **kwargs,
         )
         self.connection_id = None
@@ -679,6 +685,9 @@ class AgentContainer:
         reuse_connections: bool = False,
         taa_accept: bool = False,
         anoncreds_legacy_revocation: str = None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -702,6 +711,9 @@ class AgentContainer:
         self.endorser_agent = None
         self.endorser_role = endorser_role
         self.anoncreds_legacy_revocation = anoncreds_legacy_revocation
+        self.log_file = log_file
+        self.log_config = log_config
+        self.log_level = log_level
         if endorser_role:
             # endorsers and authors need public DIDs (assume cred_type is Indy)
             if endorser_role == "author" or endorser_role == "endorser":
@@ -748,6 +760,9 @@ class AgentContainer:
                 aip=self.aip,
                 arg_file=self.arg_file,
                 endorser_role=self.endorser_role,
+                log_file=self.log_file,
+                log_config=self.log_config,
+                log_level=self.log_level,
             )
         else:
             self.agent = the_agent
@@ -1281,6 +1296,28 @@ def arg_parser(ident: str = None, port: int = 8020):
         action="store_true",
         help="Accept the ledger's TAA, if required",
     )
+    parser.add_argument(
+        "--log-file",
+        type=str,
+        metavar="<log-file>",
+        help="Output destination for the root logger.",
+    )
+    parser.add_argument(
+        "--log-config",
+        type=str,
+        metavar="<log-config>",
+        help="File path for logging configuration.",
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        metavar="<log-level>",
+        default=None,
+        help=(
+            "Specifies a custom logging level as one of: "
+            "('debug', 'info', 'warning', 'error', 'critical')"
+        ),
+    )
     return parser
 
 
@@ -1312,6 +1349,9 @@ async def create_agent_with_args(args, ident: str = None):
         with open(arg_file) as f:
             arg_file_dict = yaml.safe_load(f)
 
+    log_file = args.log_file or os.getenv("ACAPY_LOG_FILE")
+    log_config = args.log_config or os.getenv("ACAPY_LOG_CONFIG")
+    log_level = args.log_level
     # if we don't have a tails server url then guess it
     if ("revocation" in args and args.revocation) and not tails_server_base_url:
         # assume we're running in docker
@@ -1389,6 +1429,9 @@ async def create_agent_with_args(args, ident: str = None):
         reuse_connections=reuse_connections,
         taa_accept=args.taa_accept,
         anoncreds_legacy_revocation=anoncreds_legacy_revocation,
+        log_file=log_file,
+        log_config=log_config,
+        log_level=log_level,
     )
 
     return agent

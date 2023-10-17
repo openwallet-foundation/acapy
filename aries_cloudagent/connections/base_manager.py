@@ -20,7 +20,6 @@ from pydid.verification_method import (
 )
 from ..cache.base import BaseCache
 from ..config.base import InjectionError
-from ..config.logging import get_logger_inst
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
@@ -71,10 +70,7 @@ class BaseConnectionManager:
         """
         self._profile = profile
         self._route_manager = profile.inject(RouteManager)
-        self._logger: logging.Logger = get_logger_inst(
-            profile=self._profile,
-            logger_name=__name__,
-        )
+        self._logger = logging.getLogger(__name__)
 
     async def create_did_document(
         self,
