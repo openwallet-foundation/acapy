@@ -157,7 +157,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 }
             )
 
-    @pytest.mark.skip(reason="anoncreds-rs breaking change")
+    @pytest.mark.skip(reason="anoncreds-rs/endorser breaking change")
     async def test_send_credential_definition_create_transaction_for_endorser(
         self,
     ):
@@ -209,7 +209,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 }
             )
 
-    @pytest.mark.skip(reason="anoncreds-rs breaking change")
+    @pytest.mark.skip(reason="anoncreds-rs/endorser breaking change")
     async def test_send_credential_definition_create_transaction_for_endorser_storage_x(
         self,
     ):
@@ -250,7 +250,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                     self.request
                 )
 
-    @pytest.mark.skip(reason="anoncreds-rs breaking change")
+    @pytest.mark.skip(reason="anoncreds-rs/endorser breaking change")
     async def test_send_credential_definition_create_transaction_for_endorser_not_found_x(
         self,
     ):
@@ -277,7 +277,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                     self.request
                 )
 
-    @pytest.mark.skip(reason="anoncreds-rs breaking change")
+    @pytest.mark.skip(reason="anoncreds-rs/endorser breaking change")
     async def test_send_credential_definition_create_transaction_for_endorser_base_model_x(
         self,
     ):
@@ -304,7 +304,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                     self.request
                 )
 
-    @pytest.mark.skip(reason="anoncreds-rs breaking change")
+    @pytest.mark.skip(reason="anoncreds-rs/endorser breaking change")
     async def test_send_credential_definition_create_transaction_for_endorser_no_endorser_info_x(
         self,
     ):
@@ -332,7 +332,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                     self.request
                 )
 
-    @pytest.mark.skip(reason="anoncreds-rs breaking change")
+    @pytest.mark.skip(reason="anoncreds-rs/endorser breaking change")
     async def test_send_credential_definition_create_transaction_for_endorser_no_endorser_did_x(
         self,
     ):
@@ -460,7 +460,6 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 )
 
     async def test_get_credential_definition(self):
-
         self.registry.get_credential_definition = async_mock.CoroutineMock(
             return_value=GetCredDefResult(
                 credential_definition_id=CRED_DEF_ID,
@@ -566,8 +565,6 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         )
 
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}
-        self.context.injector.clear_binding(BaseLedger)
-        self.profile_injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.credential_definitions_get_credential_definition(
                 self.request
