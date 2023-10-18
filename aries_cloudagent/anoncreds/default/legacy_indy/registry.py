@@ -198,7 +198,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             if not profile.settings.get_value("wallet.type"):
                 # TODO is this warning necessary?
                 reason += ": missing wallet-type?"
-            raise AnonCredsResolutionError(reason)
+            raise AnonCredsRegistrationError(reason)
 
         # Translate schema into format expected by Indy
         LOGGER.debug("Registering schema: %s", schema_id)

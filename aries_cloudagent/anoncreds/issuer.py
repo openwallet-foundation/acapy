@@ -16,7 +16,6 @@ from anoncreds import (
     Schema,
 )
 
-from aries_cloudagent.ledger.error import LedgerError
 
 from ..askar.profile import AskarProfile, AskarProfileSession
 from ..core.error import BaseError
@@ -222,7 +221,7 @@ class AnonCredsIssuer:
             raise AnonCredsIssuerError(
                 "Schema already exists but was not in wallet; stored in wallet"
             ) from err
-        except (AnoncredsError, BaseAnonCredsError, LedgerError) as err:
+        except (AnoncredsError, BaseAnonCredsError) as err:
             raise AnonCredsIssuerError("Error creating schema") from err
 
     async def finish_schema(self, job_id: str, schema_id: str):
@@ -337,7 +336,7 @@ class AnonCredsIssuer:
                 CredDef.from_native(cred_def),
                 options,
             )
-        except (AnoncredsError, BaseAnonCredsError, LedgerError) as err:
+        except (AnoncredsError, BaseAnonCredsError) as err:
             raise AnonCredsIssuerError("Error creating credential definition") from err
 
         # Store the cred def and it's components

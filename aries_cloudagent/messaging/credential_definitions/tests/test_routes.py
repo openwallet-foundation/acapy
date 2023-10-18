@@ -3,6 +3,8 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 import pytest
 
+from ....anoncreds.base import AnonCredsRegistrationError
+
 from ....anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 from ....anoncreds.issuer import AnonCredsIssuer
 from ....anoncreds.models.anoncreds_cred_def import (
@@ -15,7 +17,6 @@ from ....anoncreds.models.anoncreds_cred_def import (
 )
 from ....anoncreds.registry import AnonCredsRegistry
 from ....askar.profile import AskarProfile
-from ....ledger.error import LedgerError
 
 from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import SOV
@@ -410,10 +411,9 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             }
         )
 
-        self.registry.register_credential_definition = async_mock.CoroutineMock(
-            side_effect=LedgerError
+        self.indy_ledger.register_credential_definition = async_mock.CoroutineMock(
+            side_effect=AnonCredsRegistrationError("failed")
         )
-
         with async_mock.patch.object(
             InMemoryWallet,
             "get_public_did",
@@ -431,7 +431,13 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
                 "KeyCorrectnessProof",
             ]
             mock_cred_def_json.return_value = {}
-            mock_cred_def_from_native.return_value = {}
+            mock_cred_def_from_native.return_value = CredDef(
+                issuer_id="issuer_id",
+                schema_id=SCHEMA_ID,
+                type="CL",
+                tag="tag",
+                value=None,
+            )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_definitions_send_credential_definition(
