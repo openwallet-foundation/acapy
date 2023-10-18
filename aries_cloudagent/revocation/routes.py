@@ -15,6 +15,8 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
+from ..anoncreds.models.anoncreds_revocation import RevRegDefState
+
 from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 from ..anoncreds.base import (
     AnonCredsObjectNotFound,
@@ -367,8 +369,8 @@ class SetRevRegStateQueryStringSchema(OpenAPISchema):
         required=True,
         validate=validate.OneOf(
             [
-                getattr(IssuerRevRegRecord, m)
-                for m in vars(IssuerRevRegRecord)
+                getattr(RevRegDefState, m)
+                for m in vars(RevRegDefState)
                 if m.startswith("STATE_")
             ]
         ),
