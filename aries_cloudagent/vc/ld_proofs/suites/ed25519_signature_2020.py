@@ -1,14 +1,13 @@
 """Ed25519Signature2018 suite."""
 
 from datetime import datetime
-from typing import Union, List
+from typing import List, Union
 
-from multiformats import multibase
-
-from .linked_data_signature import LinkedDataSignature
+from ....utils.multiformats import multibase
 from ..crypto import _KeyPair as KeyPair
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
+from .linked_data_signature import LinkedDataSignature
 
 
 class Ed25519Signature2020(LinkedDataSignature):
