@@ -7,6 +7,7 @@ from aries_cloudagent.revocation.models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
 )
 
+from ...connections.models.conn_record import ConnRecord
 from ...core.in_memory import InMemoryProfile
 from ...indy.issuer import IndyIssuer
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
@@ -95,6 +96,149 @@ class TestRevocationManager(AsyncTestCase):
             mock_issuer_rev_reg_record.tails_local_path,
             ["2", "1"],
         )
+
+    async def test_revoke_credential_publish_endorser(self):
+        conn_record = ConnRecord(
+            their_label="Hello",
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            alias="Bob",
+        )
+        session = await self.profile.session()
+        await conn_record.save(session)
+        await conn_record.metadata_set(
+            session,
+            key="endorser_info",
+            value={
+                "endorser_did": "test_endorser_did",
+                "endorser_name": "test_endorser_name",
+            },
+        )
+        conn_id = conn_record.connection_id
+        assert conn_id is not None
+        manager = RevocationManager(self.profile)
+        CRED_EX_ID = "dummy-cxid"
+        CRED_REV_ID = "1"
+        mock_issuer_rev_reg_record = async_mock.MagicMock(
+            revoc_reg_id=REV_REG_ID,
+            tails_local_path=TAILS_LOCAL,
+            send_entry=async_mock.CoroutineMock(),
+            clear_pending=async_mock.CoroutineMock(),
+            pending_pub=["2"],
+        )
+        issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
+        issuer.revoke_credentials = async_mock.CoroutineMock(
+            return_value=(
+                json.dumps(
+                    {
+                        "ver": "1.0",
+                        "value": {
+                            "prevAccum": "1 ...",
+                            "accum": "21 ...",
+                            "issued": [1],
+                        },
+                    }
+                ),
+                [],
+            )
+        )
+        self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+
+        with async_mock.patch.object(
+            test_module.IssuerCredRevRecord,
+            "retrieve_by_cred_ex_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as revoc, async_mock.patch.object(
+            test_module.IssuerRevRegRecord,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        ):
+            mock_retrieve.return_value = async_mock.MagicMock(
+                rev_reg_id="dummy-rr-id", cred_rev_id=CRED_REV_ID
+            )
+            mock_rev_reg = async_mock.MagicMock(
+                get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+            )
+            revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
+                return_value=mock_issuer_rev_reg_record
+            )
+            revoc.return_value.get_ledger_registry = async_mock.CoroutineMock(
+                return_value=mock_rev_reg
+            )
+
+            await self.manager.revoke_credential_by_cred_ex_id(
+                cred_ex_id=CRED_EX_ID,
+                publish=True,
+                connection_id=conn_id,
+                write_ledger=False,
+            )
+
+        issuer.revoke_credentials.assert_awaited_once_with(
+            mock_issuer_rev_reg_record.cred_def_id,
+            mock_issuer_rev_reg_record.revoc_reg_id,
+            mock_issuer_rev_reg_record.tails_local_path,
+            ["2", "1"],
+        )
+
+    async def test_revoke_credential_publish_endorser_x(self):
+        CRED_EX_ID = "dummy-cxid"
+        CRED_REV_ID = "1"
+        mock_issuer_rev_reg_record = async_mock.MagicMock(
+            revoc_reg_id=REV_REG_ID,
+            tails_local_path=TAILS_LOCAL,
+            send_entry=async_mock.CoroutineMock(),
+            clear_pending=async_mock.CoroutineMock(),
+            pending_pub=["2"],
+        )
+        issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
+        issuer.revoke_credentials = async_mock.CoroutineMock(
+            return_value=(
+                json.dumps(
+                    {
+                        "ver": "1.0",
+                        "value": {
+                            "prevAccum": "1 ...",
+                            "accum": "21 ...",
+                            "issued": [1],
+                        },
+                    }
+                ),
+                [],
+            )
+        )
+        self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+
+        with async_mock.patch.object(
+            test_module.IssuerCredRevRecord,
+            "retrieve_by_cred_ex_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as revoc, async_mock.patch.object(
+            test_module.IssuerRevRegRecord,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        ):
+            mock_retrieve.return_value = async_mock.MagicMock(
+                rev_reg_id="dummy-rr-id", cred_rev_id=CRED_REV_ID
+            )
+            mock_rev_reg = async_mock.MagicMock(
+                get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+            )
+            revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
+                return_value=mock_issuer_rev_reg_record
+            )
+            revoc.return_value.get_ledger_registry = async_mock.CoroutineMock(
+                return_value=mock_rev_reg
+            )
+            with self.assertRaises(RevocationManagerError):
+                await self.manager.revoke_credential_by_cred_ex_id(
+                    cred_ex_id=CRED_EX_ID,
+                    publish=True,
+                    connection_id="invalid_conn_id",
+                    write_ledger=False,
+                )
 
     async def test_revoke_cred_by_cxid_not_found(self):
         CRED_EX_ID = "dummy-cxid"

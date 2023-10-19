@@ -519,7 +519,7 @@ async def revoke(request: web.BaseRequest):
     body = await request.json()
     cred_ex_id = body.get("cred_ex_id")
     body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
-    notify = body.get("notify")
+    notify = body.get("notify", False)
     connection_id = body.get("connection_id")
     body["notify_version"] = body.get("notify_version", "v1_0")
     notify_version = body["notify_version"]
@@ -532,14 +532,38 @@ async def revoke(request: web.BaseRequest):
         )
 
     rev_manager = RevocationManager(context.profile)
+    profile = context.profile
+    write_ledger = True
+    if is_author_role(profile):
+        write_ledger = False
+        if not connection_id:
+            connection_id = await get_endorser_connection_id(profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
     try:
         if cred_ex_id:
-            # rev_reg_id and cred_rev_id should not be present so we can
-            # safely splat the body
-            await rev_manager.revoke_credential_by_cred_ex_id(**body)
+            await rev_manager.revoke_credential_by_cred_ex_id(
+                cred_ex_id=cred_ex_id,
+                publish=body.get("publish", False),
+                notify=notify,
+                notify_version=notify_version,
+                thread_id=body.get("thread_id"),
+                connection_id=connection_id,
+                comment=body.get("comment"),
+                write_ledger=write_ledger,
+            )
         else:
-            # no cred_ex_id so we can safely splat the body
-            await rev_manager.revoke_credential(**body)
+            await rev_manager.revoke_credential(
+                rev_reg_id=body.get("rev_reg_id"),
+                cred_rev_id=body.get("cred_rev_id"),
+                publish=body.get("publish", False),
+                notify=notify,
+                notify_version=notify_version,
+                thread_id=body.get("thread_id"),
+                connection_id=connection_id,
+                comment=body.get("comment"),
+                write_ledger=write_ledger,
+            )
     except (
         RevocationManagerError,
         RevocationError,

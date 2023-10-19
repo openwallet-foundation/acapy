@@ -7,6 +7,7 @@ from typing import Mapping, Sequence, Text, Tuple
 from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
 )
+from ..connections.models.conn_record import ConnRecord
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer
@@ -48,6 +49,7 @@ class RevocationManager:
         thread_id: str = None,
         connection_id: str = None,
         comment: str = None,
+        write_ledger: bool = True,
     ):
         """Revoke a credential by its credential exchange identifier at issue.
 
@@ -80,6 +82,7 @@ class RevocationManager:
             thread_id=thread_id,
             connection_id=connection_id,
             comment=comment,
+            write_ledger=write_ledger,
         )
 
     async def revoke_credential(
@@ -92,6 +95,7 @@ class RevocationManager:
         thread_id: str = None,
         connection_id: str = None,
         comment: str = None,
+        write_ledger: bool = True,
     ):
         """Revoke a credential.
 
@@ -147,7 +151,27 @@ class RevocationManager:
                 await txn.commit()
             await self.set_cred_revoked_state(rev_reg_id, crids)
             if delta_json:
-                await issuer_rr_upd.send_entry(self._profile)
+                if write_ledger:
+                    await issuer_rr_upd.send_entry(self._profile)
+                else:
+                    async with self._profile.session() as session:
+                        try:
+                            connection_record = await ConnRecord.retrieve_by_id(
+                                session, connection_id
+                            )
+                        except StorageNotFoundError:
+                            raise RevocationManagerError(
+                                f"No connection record found for id: {connection_id}"
+                            )
+                        endorser_info = await connection_record.metadata_get(
+                            session, "endorser_info"
+                        )
+                    endorser_did = endorser_info["endorser_did"]
+                    await issuer_rr_upd.send_entry(
+                        self._profile,
+                        write_ledger=write_ledger,
+                        endorser_did=endorser_did,
+                    )
             await notify_revocation_published_event(
                 self._profile, rev_reg_id, [cred_rev_id]
             )
