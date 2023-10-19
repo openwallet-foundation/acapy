@@ -1,7 +1,7 @@
 """Multicodec wrap and unwrap functions."""
 
 from enum import Enum
-from typing import Literal, NamedTuple, Union
+from typing import Literal, NamedTuple, Optional, Union
 
 
 class Multicodec(NamedTuple):
@@ -35,7 +35,7 @@ class SupportedCodecs(Enum):
         for codec in cls:
             if data.startswith(codec.value.code):
                 return codec.value
-        raise ValueError(f"Unsupported multicodec: {data}")
+        raise ValueError("Unsupported multicodec")
 
 
 MulticodecStr = Literal[
@@ -65,7 +65,8 @@ def wrap(multicodec: Union[Multicodec, MulticodecStr], data: bytes) -> bytes:
     return multicodec.code + data
 
 
-def unwrap(data: bytes) -> tuple[Multicodec, bytes]:
+def unwrap(data: bytes, codec: Optional[Multicodec] = None) -> tuple[Multicodec, bytes]:
     """Unwrap data with multicodec prefix."""
-    codec = SupportedCodecs.for_data(data)
+    if not codec:
+        codec = SupportedCodecs.for_data(data)
     return codec, data[len(codec.code) :]

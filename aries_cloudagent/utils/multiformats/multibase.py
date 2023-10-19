@@ -36,13 +36,13 @@ class Base58BtcEncoder(MultibaseEncoder):
         """Decode a multibase encoded string."""
         import base58
 
-        return base58.b58decode(value[1:])
+        return base58.b58decode(value)
 
 
 class Encoding(Enum):
     """Enum for supported encodings."""
 
-    BASE58_BTC = Base58BtcEncoder()
+    base58btc = Base58BtcEncoder()
     # Insert additional encodings here
 
     @classmethod
