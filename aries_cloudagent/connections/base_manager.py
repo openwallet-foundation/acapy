@@ -6,7 +6,6 @@ For Connection, DIDExchange and OutOfBand Manager.
 import logging
 from typing import List, Optional, Sequence, Text, Tuple, Union
 
-from multiformats import multibase, multicodec
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
     DIDCommService,
@@ -18,6 +17,7 @@ from pydid.verification_method import (
     Ed25519VerificationKey2020,
     JsonWebKey2020,
 )
+
 from ..cache.base import BaseCache
 from ..config.base import InjectionError
 from ..config.logging import get_logger_inst
@@ -41,6 +41,7 @@ from ..storage.base import BaseStorage
 from ..storage.error import StorageDuplicateError, StorageError, StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..transport.inbound.receipt import MessageReceipt
+from ..utils.multiformats import multibase, multicodec
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import create_keypair, seed_to_did
 from ..wallet.did_info import DIDInfo

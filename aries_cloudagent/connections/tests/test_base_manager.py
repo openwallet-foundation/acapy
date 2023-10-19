@@ -3,7 +3,6 @@
 from unittest.mock import call
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
-from multiformats import multibase, multicodec
 from pydid import DID, DIDDocument, DIDDocumentBuilder
 from pydid.doc.builder import ServiceBuilder
 from pydid.verification_method import (
@@ -44,6 +43,7 @@ from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
 from ...storage.record import StorageRecord
 from ...transport.inbound.receipt import MessageReceipt
+from ...utils.multiformats import multibase, multicodec
 from ...wallet.base import DIDInfo
 from ...wallet.did_method import DIDMethods, SOV
 from ...wallet.error import WalletNotFoundError
