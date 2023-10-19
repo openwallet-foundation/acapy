@@ -161,7 +161,8 @@ class RevocationManager:
                             )
                         except StorageNotFoundError:
                             raise RevocationManagerError(
-                                f"No connection record found for id: {connection_id}"
+                                "No endorser connection record found "
+                                f"for id: {connection_id}"
                             )
                         endorser_info = await connection_record.metadata_get(
                             session, "endorser_info"
@@ -206,6 +207,7 @@ class RevocationManager:
     async def publish_pending_revocations(
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,
+        connection_id: str = None,
     ) -> Mapping[Text, Sequence[Text]]:
         """Publish pending revocations to the ledger.
 
@@ -226,6 +228,7 @@ class RevocationManager:
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
                     - no pending revocations from any other revocation registries.
+            connection_id: connection identifier for endorser connection to use
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
@@ -263,7 +266,28 @@ class RevocationManager:
                     await txn.commit()
                 await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
                 if delta_json:
-                    await issuer_rr_upd.send_entry(self._profile)
+                    if connection_id:
+                        async with self._profile.session() as session:
+                            try:
+                                connection_record = await ConnRecord.retrieve_by_id(
+                                    session, connection_id
+                                )
+                            except StorageNotFoundError:
+                                raise RevocationManagerError(
+                                    "No endorser connection record found "
+                                    f"for id: {connection_id}"
+                                )
+                            endorser_info = await connection_record.metadata_get(
+                                session, "endorser_info"
+                            )
+                        endorser_did = endorser_info["endorser_did"]
+                        await issuer_rr_upd.send_entry(
+                            self._profile,
+                            write_ledger=False,
+                            endorser_did=endorser_did,
+                        )
+                    else:
+                        await issuer_rr_upd.send_entry(self._profile)
                 published = sorted(crid for crid in crids if crid not in failed_crids)
                 result[issuer_rr_rec.revoc_reg_id] = published
                 await notify_revocation_published_event(

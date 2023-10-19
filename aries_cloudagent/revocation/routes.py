@@ -594,10 +594,16 @@ async def publish_revocations(request: web.BaseRequest):
     rrid2crid = body.get("rrid2crid")
 
     rev_manager = RevocationManager(context.profile)
-
+    profile = context.profile
+    connection_id = None
+    if is_author_role(profile):
+        connection_id = await get_endorser_connection_id(profile)
+        if not connection_id:
+            raise web.HTTPBadRequest(reason="No endorser connection found")
     try:
         rev_reg_resp = await rev_manager.publish_pending_revocations(
-            rrid2crid,
+            rrid2crid=rrid2crid,
+            connection_id=connection_id,
         )
     except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
