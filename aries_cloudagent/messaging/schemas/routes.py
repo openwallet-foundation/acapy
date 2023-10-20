@@ -1,5 +1,6 @@
 """Credential schema admin routes."""
 
+import functools
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -11,8 +12,9 @@ from aiohttp_apispec import (
 
 from marshmallow import fields
 from marshmallow.validate import Regexp
+from aries_cloudagent.anoncreds.base import AnonCredsResolutionError
 
-from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
+from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.wallet.base import BaseWallet
 
@@ -125,11 +127,30 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+def error_handler(func):
+    """API/Routes Error handler function."""
+
+    @functools.wraps(func)
+    async def wrapper(request):
+        try:
+            ret = await func(request)
+            return ret
+        except AnonCredsResolutionError as err:
+            raise web.HTTPForbidden(reason=err.roll_up) from err
+        except AnonCredsIssuerError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+        except Exception as err:
+            raise err
+
+    return wrapper
+
+
 @docs(tags=["schema"], summary="Sends a schema to the ledger")
 @request_schema(SchemaSendRequestSchema())
 @querystring_schema(CreateSchemaTxnForEndorserOptionSchema())
 @querystring_schema(SchemaConnIdMatchInfoSchema())
 @response_schema(TxnOrSchemaSendResultSchema(), 200, description="")
+@error_handler
 async def schemas_send_schema(request: web.BaseRequest):
     """
     Request handler for creating a schema.
@@ -201,6 +222,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 )
 @querystring_schema(SchemaQueryStringSchema())
 @response_schema(SchemasCreatedResultSchema(), 200, description="")
+@error_handler
 async def schemas_created(request: web.BaseRequest):
     """
     Request handler for retrieving schemas that current agent created.
@@ -230,6 +252,7 @@ async def schemas_created(request: web.BaseRequest):
 @docs(tags=["schema"], summary="Gets a schema from the ledger")
 @match_info_schema(SchemaIdMatchInfoSchema())
 @response_schema(SchemaGetResultSchema(), 200, description="")
+@error_handler
 async def schemas_get_schema(request: web.BaseRequest):
     """
     Request handler for sending a credential offer.
