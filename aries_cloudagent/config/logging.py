@@ -121,18 +121,45 @@ class LoggingConfigurator:
             handler_pattern = None
             # Create context filter to adapt wallet_id in logger messages
             _cf = ContextFilter()
+            _new_handler = None
+            _to_remove_handler = None
             for _handler in logging.root.handlers:
                 if isinstance(_handler, TimedRotatingFileMultiProcessHandler):
                     file_handler_set = True
                     handler_pattern = _handler.formatter._fmt
-                    # Set Json formatter for rotated file handler which
-                    # cannot be set with config file. By default this will
-                    # be set up.
-                    _handler.setFormatter(jsonlogger.JsonFormatter(handler_pattern))
+                    # Override the existing handler with new handler with provided
+                    # log file path
+                    if log_file:
+                        _new_handler = TimedRotatingFileMultiProcessHandler(
+                            filename=log_file,
+                            interval=_handler.interval
+                            if (_handler.interval < 14 and _handler.when == "D")
+                            else 7,
+                            when=_handler.when,
+                            backupCount=_handler.backupCount,
+                        )
+                        _to_remove_handler = _handler
+                        # Setup new handler
+                        _new_handler.setFormatter(
+                            jsonlogger.JsonFormatter(handler_pattern)
+                        )
+                        _new_handler.addFilter(_cf)
+                        if log_level:
+                            _new_handler.setLevel(log_level.upper())
+                    else:
+                        # Set Json formatter for rotated file handler which
+                        # cannot be set with config file. By default this will
+                        # be set up.
+                        _handler.setFormatter(jsonlogger.JsonFormatter(handler_pattern))
+                # Setup existing handlers from config file
                 # Add context filter to handlers
-                _handler.addFilter(_cf)
-                if log_level:
-                    _handler.setLevel(log_level.upper())
+                if _handler != _to_remove_handler:
+                    _handler.addFilter(_cf)
+                    if log_level:
+                        _handler.setLevel(log_level.upper())
+            if _new_handler and _to_remove_handler:
+                logging.root.handlers.remove(_to_remove_handler)
+                logging.root.handlers.append(_new_handler)
             if not file_handler_set and log_file:
                 file_path = os.path.join(
                     os.path.dirname(os.path.realpath(__file__)).replace(
