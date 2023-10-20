@@ -6,27 +6,22 @@ DID Document is just a did:peer:2 document (resolved by peer-did-python) where
 the did:peer:2 has been replaced with the did:peer:3.
 """
 
-import re
 from copy import deepcopy
 from hashlib import sha256
+import re
 from typing import Optional, Pattern, Sequence, Text
-from multiformats import multibase, multicodec
 
-from peerdid.dids import (
-    DID,
-    MalformedPeerDIDError,
-    DIDDocument,
-)
-from peerdid.keys import to_multibase, MultibaseFormat
-from ...wallet.util import bytes_to_b58
+from peerdid.dids import DID, DIDDocument, MalformedPeerDIDError
+from peerdid.keys import MultibaseFormat, to_multibase
 
-from ...connections.base_manager import BaseConnectionManager
 from ...config.injection_context import InjectionContext
+from ...connections.base_manager import BaseConnectionManager
 from ...core.profile import Profile
 from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
 from ...storage.record import StorageRecord
-
+from ...utils.multiformats import multibase, multicodec
+from ...wallet.util import bytes_to_b58
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 
 RECORD_TYPE_DID_DOCUMENT = "did_document"  # pydid DIDDocument

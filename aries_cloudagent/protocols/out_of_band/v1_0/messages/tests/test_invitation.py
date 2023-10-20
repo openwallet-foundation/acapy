@@ -108,7 +108,10 @@ class TestInvitationMessage(TestCase):
         service = Service(
             _id="#inline",
             _type=DID_COMM,
-            recipient_keys=[DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did],
+            recipient_keys=[
+                DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did,
+                DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).key_id,
+            ],
             service_endpoint="http://1.2.3.4:8080/service",
         )
         invi_msg = InvitationMessage(

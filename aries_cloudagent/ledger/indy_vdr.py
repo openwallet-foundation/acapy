@@ -8,7 +8,7 @@ import os
 import os.path
 import tempfile
 
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from io import StringIO
 from pathlib import Path
 from time import time
@@ -923,7 +923,7 @@ class IndyVdrLedger(BaseLedger):
         """
         return int(
             datetime.combine(
-                date.today(), datetime.min.time(), datetime.timezone.utc
+                date.today(), datetime.min.time(), timezone.utc
             ).timestamp()
         )
 

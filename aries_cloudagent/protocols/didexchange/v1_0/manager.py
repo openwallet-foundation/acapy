@@ -17,7 +17,6 @@ from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....multitenant.base import BaseMultitenantManager
 from ....resolver.base import ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....storage.error import StorageNotFoundError
@@ -285,20 +284,12 @@ class DIDXManager(BaseConnectionManager):
 
         """
         # Mediation Support
-        mediation_record = await self._route_manager.mediation_record_for_connection(
+        mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile,
             conn_rec,
             mediation_id,
             or_default=True,
         )
-
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-
-        base_mediation_record = None
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         my_info = None
 
@@ -336,11 +327,8 @@ class DIDXManager(BaseConnectionManager):
         else:
             did_doc = await self.create_did_document(
                 my_info,
-                conn_rec.inbound_connection_id,
                 my_endpoints,
-                mediation_records=list(
-                    filter(None, [base_mediation_record, mediation_record])
-                ),
+                mediation_records=mediation_records,
             )
             attach = AttachDecorator.data_base64(did_doc.serialize())
             async with self.profile.session() as session:
@@ -377,7 +365,7 @@ class DIDXManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
-            self.profile, conn_rec, mediation_record
+            self.profile, conn_rec, mediation_records
         )
 
         return request
@@ -599,17 +587,9 @@ class DIDXManager(BaseConnectionManager):
             settings=self.profile.settings,
         )
 
-        mediation_record = await self._route_manager.mediation_record_for_connection(
+        mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile, conn_rec, mediation_id
         )
-
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-
-        base_mediation_record = None
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         if ConnRecord.State.get(conn_rec.state) is not ConnRecord.State.REQUEST:
             raise DIDXManagerError(
@@ -645,7 +625,7 @@ class DIDXManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
-            self.profile, conn_rec, mediation_record
+            self.profile, conn_rec, mediation_records
         )
 
         # Create connection response message
@@ -665,11 +645,8 @@ class DIDXManager(BaseConnectionManager):
         else:
             did_doc = await self.create_did_document(
                 my_info,
-                conn_rec.inbound_connection_id,
                 my_endpoints,
-                mediation_records=list(
-                    filter(None, [base_mediation_record, mediation_record])
-                ),
+                mediation_records=mediation_records,
             )
             attach = AttachDecorator.data_base64(did_doc.serialize())
             async with self.profile.session() as session:

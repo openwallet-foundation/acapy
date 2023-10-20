@@ -317,9 +317,10 @@ class OutOfBandManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Created new connection")
 
-            routing_keys, my_endpoint = await self._route_manager.routing_info(
-                self.profile, my_endpoint, mediation_record
+            routing_keys, routing_endpoint = await self._route_manager.routing_info(
+                self.profile, mediation_record
             )
+            my_endpoint = routing_endpoint or my_endpoint
 
             if not conn_rec:
                 our_service = ServiceDecorator(
@@ -335,8 +336,8 @@ class OutOfBandManager(BaseConnectionManager):
             routing_keys = [
                 key
                 if len(key.split(":")) == 3
-                else DIDKey.from_public_key_b58(key, ED25519).did
-                for key in routing_keys
+                else DIDKey.from_public_key_b58(key, ED25519).key_id
+                for key in routing_keys or []
             ]
 
             # Create connection invitation message
@@ -353,7 +354,9 @@ class OutOfBandManager(BaseConnectionManager):
                     _id="#inline",
                     _type="did-communication",
                     recipient_keys=[
-                        DIDKey.from_public_key_b58(connection_key.verkey, ED25519).did
+                        DIDKey.from_public_key_b58(
+                            connection_key.verkey, ED25519
+                        ).key_id
                     ],
                     service_endpoint=my_endpoint,
                     routing_keys=routing_keys,
@@ -814,11 +817,11 @@ class OutOfBandManager(BaseConnectionManager):
                     "id": "#inline",
                     "type": "did-communication",
                     "recipientKeys": [
-                        DIDKey.from_public_key_b58(key, ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).key_id
                         for key in recipient_keys
                     ],
                     "routingKeys": [
-                        DIDKey.from_public_key_b58(key, ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).key_id
                         for key in routing_keys
                     ],
                     "serviceEndpoint": endpoint,

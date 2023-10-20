@@ -808,7 +808,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     service["routingKeys"][0]
                     == DIDKey.from_public_key_b58(
                         self.test_mediator_routing_keys[0], ED25519
-                    ).did
+                    ).key_id
                 )
                 assert service["serviceEndpoint"] == self.test_mediator_endpoint
 
