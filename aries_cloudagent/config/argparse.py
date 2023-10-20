@@ -2085,6 +2085,33 @@ class UpgradeGroup(ArgumentGroup):
             help=("Runs upgrade steps associated with tags provided in the config"),
         )
 
+        parser.add_argument(
+            "--upgrade-all-subwallets",
+            action="store_true",
+            env_var="ACAPY_UPGRADE_ALL_SUBWALLETS",
+            help="Apply upgrade to all subwallets and the base wallet",
+        )
+
+        parser.add_argument(
+            "--upgrade-subwallet",
+            action="append",
+            env_var="ACAPY_UPGRADE_SUBWALLETS",
+            help=(
+                "Apply upgrade to specified subwallets (identified by wallet id)"
+                " and the base wallet"
+            ),
+        )
+
+        parser.add_argument(
+            "--upgrade-page-size",
+            type=str,
+            env_var="ACAPY_UPGRADE_PAGE_SIZE",
+            help=(
+                "Specify page/batch size to process BaseRecords, "
+                "this provides a way to prevent out-of-memory issues."
+            ),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
@@ -2098,4 +2125,15 @@ class UpgradeGroup(ArgumentGroup):
             settings["upgrade.named_tags"] = (
                 list(args.named_tag) if args.named_tag else []
             )
+        if args.upgrade_all_subwallets:
+            settings["upgrade.upgrade_all_subwallets"] = args.upgrade_all_subwallets
+        if args.upgrade_subwallet:
+            settings["upgrade.upgrade_subwallets"] = (
+                list(args.upgrade_subwallet) if args.upgrade_subwallet else []
+            )
+        if args.upgrade_page_size:
+            try:
+                settings["upgrade.page_size"] = int(args.upgrade_page_size)
+            except ValueError:
+                raise ArgsParseError("Parameter --upgrade-page-size must be an integer")
         return settings

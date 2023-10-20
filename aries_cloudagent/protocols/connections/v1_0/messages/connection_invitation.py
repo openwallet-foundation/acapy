@@ -3,8 +3,9 @@
 from typing import Sequence
 from urllib.parse import parse_qs, urljoin, urlparse
 
-from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
+from marshmallow import EXCLUDE, ValidationError, fields, pre_load, validates_schema
 
+from .....did.did_key import DIDKey
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import (
     GENERIC_DID_EXAMPLE,
@@ -58,6 +59,16 @@ class ConnectionInvitation(AgentMessage):
         self.recipient_keys = list(recipient_keys) if recipient_keys else None
         self.endpoint = endpoint
         self.routing_keys = list(routing_keys) if routing_keys else None
+        self.routing_keys = (
+            [
+                DIDKey.from_did(key).public_key_b58
+                if key.startswith("did:key:")
+                else key
+                for key in self.routing_keys
+            ]
+            if self.routing_keys
+            else None
+        )
         self.image_url = image_url
 
     def to_url(self, base_url: str = None) -> str:
@@ -156,6 +167,19 @@ class ConnectionInvitationSchema(AgentMessageSchema):
             "example": "http://192.168.56.101/img/logo.jpg",
         },
     )
+
+    @pre_load
+    def transform_routing_keys(self, data, **kwargs):
+        """Transform routingKeys from did:key refs, if necessary."""
+        routing_keys = data.get("routingKeys")
+        if routing_keys:
+            data["routingKeys"] = [
+                DIDKey.from_did(key).public_key_b58
+                if key.startswith("did:key:")
+                else key
+                for key in routing_keys
+            ]
+        return data
 
     @validates_schema
     def validate_fields(self, data, **kwargs):

@@ -76,7 +76,19 @@ In case, running multiple tags [say test1 & test2]:
  ./scripts/run_docker upgrade --force-upgrade --named-tag test1 --named-tag test2
 ```
 
+## Subwallet upgrades
+With multitenant enabled, there is a subwallet associated with each tenant profile, so there is a need to upgrade those sub wallets in addition to the base wallet associated with root profile.
 
+There are 2 options to perform such upgrades:
+  - `--upgrade-all-subwallets`
+    
+    This will apply the upgrade steps to all sub wallets [tenant profiles] and the base wallet [root profiles].
+    
+  - `--upgrade-subwallet`
+
+    This will apply the upgrade steps to specified sub wallets [identified by wallet id] and the base wallet.
+
+    Note: multiple specification allowed
 
 ## Exceptions
 

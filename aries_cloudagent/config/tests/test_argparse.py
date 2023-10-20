@@ -155,6 +155,75 @@ class TestArgParse(AsyncTestCase):
             == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
         )
 
+        result = parser.parse_args(
+            [
+                "--named-tag",
+                "test_tag_1",
+                "--named-tag",
+                "test_tag_2",
+                "--force-upgrade",
+            ]
+        )
+
+        assert result.named_tag == ["test_tag_1", "test_tag_2"]
+        assert result.force_upgrade is True
+
+        settings = group.get_settings(result)
+
+        assert settings.get("upgrade.named_tags") == ["test_tag_1", "test_tag_2"]
+        assert settings.get("upgrade.force_upgrade") is True
+
+        result = parser.parse_args(
+            [
+                "--upgrade-config-path",
+                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml",
+                "--from-version",
+                "v0.7.2",
+                "--upgrade-all-subwallets",
+                "--force-upgrade",
+            ]
+        )
+
+        assert (
+            result.upgrade_config_path
+            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+        )
+        assert result.force_upgrade is True
+        assert result.upgrade_all_subwallets is True
+
+        settings = group.get_settings(result)
+
+        assert (
+            settings.get("upgrade.config_path")
+            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+        )
+        assert settings.get("upgrade.force_upgrade") is True
+        assert settings.get("upgrade.upgrade_all_subwallets") is True
+
+        result = parser.parse_args(
+            [
+                "--named-tag",
+                "fix_issue_rev_reg",
+                "--upgrade-subwallet",
+                "test_wallet_id_1",
+                "--upgrade-subwallet",
+                "test_wallet_id_2",
+                "--force-upgrade",
+            ]
+        )
+
+        assert result.named_tag == ["fix_issue_rev_reg"]
+        assert result.force_upgrade is True
+        assert result.upgrade_subwallet == ["test_wallet_id_1", "test_wallet_id_2"]
+
+        settings = group.get_settings(result)
+        assert settings.get("upgrade.named_tags") == ["fix_issue_rev_reg"]
+        assert settings.get("upgrade.force_upgrade") is True
+        assert settings.get("upgrade.upgrade_subwallets") == [
+            "test_wallet_id_1",
+            "test_wallet_id_2",
+        ]
+
     async def test_outbound_is_required(self):
         """Test that either -ot or -oq are required"""
         parser = argparse.create_argument_parser()

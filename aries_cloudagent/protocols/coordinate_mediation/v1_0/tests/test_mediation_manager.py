@@ -28,10 +28,10 @@ from .....wallet.did_method import DIDMethods
 TEST_CONN_ID = "conn-id"
 TEST_THREAD_ID = "thread-id"
 TEST_ENDPOINT = "https://example.com"
-TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
-TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+TEST_BASE58_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_ROUTE_RECORD_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
-TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
+TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya#z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
 
 pytestmark = pytest.mark.asyncio
 
@@ -120,7 +120,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         routing_key = await manager._retrieve_routing_did(session)
         routing_key = DIDKey.from_public_key_b58(
             routing_key.verkey, routing_key.key_type
-        ).did
+        ).key_id
         assert grant.routing_keys == [routing_key]
 
     async def test_deny_request(self, manager):
@@ -133,7 +133,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
     async def test_update_keylist_delete(self, session, manager, record):
         """test_update_keylist_delete."""
         await RouteRecord(
-            connection_id=TEST_CONN_ID, recipient_key=TEST_RECORD_VERKEY
+            connection_id=TEST_CONN_ID, recipient_key=TEST_BASE58_VERKEY
         ).save(session)
         response = await manager.update_keylist(
             record=record,
@@ -168,7 +168,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
     async def test_update_keylist_create_existing(self, session, manager, record):
         """test_update_keylist_create_existing."""
         await RouteRecord(
-            connection_id=TEST_CONN_ID, recipient_key=TEST_RECORD_VERKEY
+            connection_id=TEST_CONN_ID, recipient_key=TEST_BASE58_VERKEY
         ).save(session)
         response = await manager.update_keylist(
             record=record,
@@ -272,14 +272,25 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert record.connection_id == TEST_CONN_ID
         assert request
 
-    async def test_request_granted(self, manager):
+    async def test_request_granted_base58(self, manager):
         """test_request_granted."""
         record, _ = await manager.prepare_request(TEST_CONN_ID)
-        grant = MediationGrant(endpoint=TEST_ENDPOINT, routing_keys=[TEST_ROUTE_VERKEY])
+        grant = MediationGrant(
+            endpoint=TEST_ENDPOINT, routing_keys=[TEST_BASE58_VERKEY]
+        )
         await manager.request_granted(record, grant)
         assert record.state == MediationRecord.STATE_GRANTED
         assert record.endpoint == TEST_ENDPOINT
-        assert record.routing_keys == [TEST_ROUTE_RECORD_VERKEY]
+        assert record.routing_keys == [TEST_VERKEY]
+
+    async def test_request_granted_did_key(self, manager):
+        """test_request_granted."""
+        record, _ = await manager.prepare_request(TEST_CONN_ID)
+        grant = MediationGrant(endpoint=TEST_ENDPOINT, routing_keys=[TEST_VERKEY])
+        await manager.request_granted(record, grant)
+        assert record.state == MediationRecord.STATE_GRANTED
+        assert record.endpoint == TEST_ENDPOINT
+        assert record.routing_keys == [TEST_VERKEY]
 
     async def test_request_denied(self, manager):
         """test_request_denied."""
