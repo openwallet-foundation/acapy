@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import List, Optional, Tuple
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -10,6 +10,7 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
+from ..config.wallet import is_multi_ledger, update_public_did_ledger_id_map
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -17,11 +18,6 @@ from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
 
-if TYPE_CHECKING:
-    from ..ledger.multiple_ledger.base_manager import (
-        RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
-        BaseMultipleLedgerManager,
-    )
 from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMethod
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
@@ -49,6 +45,7 @@ from ..messaging.valid import (
     StrOrDictField,
     Uri,
 )
+from ..multitenant.base import BaseMultitenantManager
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
@@ -59,8 +56,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
     is_author_role,
 )
 from ..resolver.base import ResolverError
-from ..storage.base import BaseStorage, StorageRecord
-from ..storage.error import StorageError, StorageNotFoundError, StorageDuplicateError
+from ..storage.error import StorageError, StorageNotFoundError
 from ..wallet.jwt import jwt_sign, jwt_verify
 from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
 from .base import BaseWallet
@@ -683,8 +679,8 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     try:
         info, attrib_def = await promote_wallet_public_did(
-            context,
-            did,
+            context=context,
+            did=did,
             write_ledger=write_ledger,
             connection_id=connection_id,
             routing_keys=routing_keys,
@@ -735,6 +731,7 @@ async def promote_wallet_public_did(
     connection_id: str = None,
     routing_keys: List[str] = None,
     mediator_endpoint: str = None,
+    **kwargs,
 ) -> Tuple[DIDInfo, Optional[dict]]:
     """Promote supplied DID to the wallet public DID."""
     info: DIDInfo = None
@@ -754,7 +751,15 @@ async def promote_wallet_public_did(
             raise PermissionError(reason)
 
         async with ledger:
-            if not await ledger.get_key_for_did(did):
+            async with context.profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    _key = await ledger.get_key_for_did(did, sign_did_info)
+                else:
+                    _key = await ledger.get_key_for_did(did)
+            if not _key:
                 raise LookupError(f"DID {did} is not posted to the ledger")
 
         # check if we need to endorse
@@ -819,37 +824,19 @@ async def promote_wallet_public_did(
                     routing_keys=routing_keys,
                 )
 
-        if context.settings.get_value("ledger.ledger_config_list"):
-            storage = session.inject_or(BaseStorage)
-            write_ledger = session.inject(BaseLedger)
-            multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
-            try:
-                ledger_id_public_did_map_record: StorageRecord = (
-                    await storage.find_record(
-                        type_filter=RECORD_TYPE_LEDGER_PUBLIC_DID_MAP, tag_query={}
-                    )
-                )
-                ledger_id_public_did_map = json.loads(
-                    ledger_id_public_did_map_record.value
-                )
-            except (StorageError, StorageNotFoundError, StorageDuplicateError):
-                ledger_id_public_did_map = {}
-            ledger_id = await multiledger_mgr.get_ledger_id_by_ledger_pool_name(
-                write_ledger.pool_name
+        if is_multi_ledger(session.settings):
+            config_dict = {}
+            config_dict["write_ledger"] = write_ledger
+            config_dict["routing_keys"] = routing_keys
+            config_dict["mediation_endpoint"] = mediator_endpoint
+            config_dict["connection_id"] = connection_id
+            config_dict["ledger_pool_name"] = kwargs.get("ledger_pool_name")
+            config_dict["record_type_name"] = kwargs.get("record_type_name")
+            await update_public_did_ledger_id_map(
+                session,
+                info,
+                config_dict,
             )
-            ledger_id_public_did_map[ledger_id] = {
-                "did": info.did,
-                "routing_keys": routing_keys,
-                "mediation_endpoint": mediator_endpoint,
-                "connection_id": connection_id,
-                "write_ledger": write_ledger,
-            }
-            record = StorageRecord(
-                RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
-                ledger_id_public_did_map.to_json(),
-                {},
-            )
-            await storage.add_record(record)
 
     if info:
         # Route the public DID
@@ -1196,7 +1183,9 @@ async def on_register_nym_event(profile: Profile, event: Event):
         connection_id = event.payload.get("connection_id")
         try:
             _info, attrib_def = await promote_wallet_public_did(
-                profile.context, did, connection_id
+                context=profile.context,
+                did=did,
+                connection_id=connection_id,
             )
         except Exception as err:
             # log the error, but continue

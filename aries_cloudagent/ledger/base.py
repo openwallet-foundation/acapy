@@ -54,11 +54,11 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Accessor for the ledger read-only flag."""
 
     @abstractmethod
-    async def is_ledger_read_only(self) -> bool:
+    async def is_ledger_read_only(self, sign_did_info: DIDInfo = None) -> bool:
         """Check if ledger is read-only including TAA."""
 
     @abstractmethod
-    async def get_key_for_did(self, did: str) -> str:
+    async def get_key_for_did(self, did: str, sign_did_info: DIDInfo = None) -> str:
         """Fetch the verkey for a ledger DID.
 
         Args:
@@ -67,7 +67,10 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_endpoint_for_did(
-        self, did: str, endpoint_type: EndpointType = EndpointType.ENDPOINT
+        self,
+        did: str,
+        endpoint_type: EndpointType = EndpointType.ENDPOINT,
+        sign_did_info: DIDInfo = None,
     ) -> str:
         """Fetch the endpoint for a ledger DID.
 
@@ -77,7 +80,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def get_all_endpoints_for_did(self, did: str) -> dict:
+    async def get_all_endpoints_for_did(
+        self, did: str, sign_did_info: DIDInfo = None
+    ) -> dict:
         """Fetch all endpoints for a ledger DID.
 
         Args:
@@ -142,6 +147,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         role: str = None,
         write_ledger: bool = True,
         endorser_did: str = None,
+        sign_did_info: DIDInfo = None,
     ) -> Tuple[bool, dict]:
         """Register a nym on the ledger.
 
@@ -153,7 +159,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def get_nym_role(self, did: str):
+    async def get_nym_role(self, did: str, sign_did_info: DIDInfo = None):
         """Return the role registered to input public DID on the ledger.
 
         Args:
@@ -165,7 +171,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Format a nym with the ledger's DID prefix."""
 
     @abstractmethod
-    async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
+    async def rotate_public_did_keypair(
+        self, next_seed: str = None, sign_did_info: DIDInfo = None
+    ) -> None:
         """Rotate keypair for public DID: create new key, submit to ledger, update wallet.
 
         Args:
@@ -182,11 +190,13 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Fetch the public DID from the wallet."""
 
     @abstractmethod
-    async def get_txn_author_agreement(self, reload: bool = False):
+    async def get_txn_author_agreement(
+        self, reload: bool = False, sign_did_info: DIDInfo = None
+    ):
         """Get the current transaction author agreement, fetching it if necessary."""
 
     @abstractmethod
-    async def fetch_txn_author_agreement(self):
+    async def fetch_txn_author_agreement(self, sign_did_info: DIDInfo = None):
         """Fetch the current AML and TAA from the ledger."""
 
     @abstractmethod
@@ -226,7 +236,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Write the provided (signed and possibly endorsed) transaction to the ledger."""
 
     @abstractmethod
-    async def fetch_schema_by_id(self, schema_id: str) -> dict:
+    async def fetch_schema_by_id(
+        self, schema_id: str, sign_did_info: DIDInfo = None
+    ) -> dict:
         """Get schema from ledger.
 
         Args:
@@ -255,10 +267,11 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         schema_name: str,
         schema_version: str,
         attribute_names: Sequence[str],
+        sign_did_info: DIDInfo = None,
     ) -> Tuple[str, dict]:
         """Check if a schema has already been published."""
         fetch_schema_id = f"{public_did}:2:{schema_name}:{schema_version}"
-        schema = await self.fetch_schema_by_id(fetch_schema_id)
+        schema = await self.fetch_schema_by_id(fetch_schema_id, sign_did_info)
         if schema:
             fetched_attrs = schema["attrNames"].copy()
             fetched_attrs.sort()
@@ -279,6 +292,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         attribute_names: Sequence[str],
         write_ledger: bool = True,
         endorser_did: str = None,
+        sign_did_info: DIDInfo = None,
     ) -> Tuple[str, dict]:
         """Send schema to ledger.
 
@@ -290,7 +304,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         """
 
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError("Cannot publish schema without a public DID")
 
@@ -306,7 +320,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             LOGGER.warning("Schema already exists on ledger. Returning details.")
             schema_id, schema_def = schema_info
         else:
-            if await self.is_ledger_read_only():
+            if await self.is_ledger_read_only(sign_did_info):
                 raise LedgerError(
                     "Error cannot write schema when ledger is in read only mode, "
                     "or TAA is required and not accepted"
@@ -383,7 +397,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Create the ledger request for publishing a schema."""
 
     @abstractmethod
-    async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:
+    async def get_revoc_reg_def(
+        self, revoc_reg_id: str, sign_did_info: DIDInfo = None
+    ) -> dict:
         """Look up a revocation registry definition by ID."""
 
     @abstractmethod
@@ -417,6 +433,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         support_revocation: bool = False,
         write_ledger: bool = True,
         endorser_did: str = None,
+        sign_did_info: DIDInfo = None,
     ) -> Tuple[str, dict, bool]:
         """Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -431,7 +448,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             Tuple with cred def id, cred def structure, and whether it's novel
 
         """
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError(
                 "Cannot publish credential definition without a public DID"
@@ -449,7 +466,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                 public_info.did, schema, signature_type, test_tag
             )
             ledger_cred_def = await self.fetch_credential_definition(
-                credential_definition_id
+                credential_definition_id,
+                sign_did_info,
             )
             if ledger_cred_def:
                 LOGGER.warning(
@@ -501,7 +519,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             except IndyIssuerError as err:
                 raise LedgerError(err.message) from err
 
-            if await self.is_ledger_read_only():
+            if await self.is_ledger_read_only(sign_did_info):
                 raise LedgerError(
                     "Error cannot write cred def when ledger is in read only mode, "
                     "or TAA is required and not accepted"
@@ -543,12 +561,16 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_revoc_reg_delta(
-        self, revoc_reg_id: str, timestamp_from=0, timestamp_to=None
+        self,
+        revoc_reg_id: str,
+        timestamp_from=0,
+        timestamp_to=None,
+        sign_did_info: DIDInfo = None,
     ) -> Tuple[dict, int]:
         """Look up a revocation registry delta by ID."""
 
     @abstractmethod
-    async def get_schema(self, schema_id: str) -> dict:
+    async def get_schema(self, schema_id: str, sign_did_info: DIDInfo = None) -> dict:
         """Get a schema from the cache if available, otherwise fetch from the ledger.
 
         Args:
@@ -558,7 +580,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_revoc_reg_entry(
-        self, revoc_reg_id: str, timestamp: int
+        self, revoc_reg_id: str, timestamp: int, sign_did_info: DIDInfo = None
     ) -> Tuple[dict, int]:
         """Get revocation registry entry by revocation registry ID and timestamp."""
 

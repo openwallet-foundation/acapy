@@ -14,12 +14,17 @@ from ....cache.in_memory import InMemoryCache
 from ....core.in_memory import InMemoryProfile
 from ....ledger.base import BaseLedger
 from ....messaging.responder import BaseResponder
+from ....multitenant.manager import MultitenantManager
+from ....wallet.did_method import SOV, DIDMethods
+from ....wallet.key_type import ED25519
 
 from ...error import LedgerError
 from ...indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ...merkel_validation.tests.test_data import GET_NYM_REPLY
 
 from .. import indy_vdr_manager as test_module
+from .. import base_manager as base_test_module
+
 from ..base_manager import MultipleLedgerManagerError
 from ..indy_vdr_manager import MultiIndyVDRLedgerManager
 
@@ -146,6 +151,118 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
         test_ctx = AdminRequestContext(
             profile=profile,
             root_profile=profile,
+            metadata={},
+        )
+        new_write_ledger_id = await manager.set_profile_write_ledger(
+            context=test_ctx, ledger_id="test_prod_2"
+        )
+        assert new_write_ledger_id == "test_prod_2"
+        new_write_ledger = profile.inject_or(BaseLedger)
+        assert new_write_ledger.pool_name == "test_prod_2"
+
+    async def test_set_profile_write_ledger_promote_public_did_from_record(self):
+        writable_ledgers = set()
+        writable_ledgers.add("test_prod_1")
+        writable_ledgers.add("test_prod_2")
+        endorser_info_map = {}
+        endorser_info_map["test_prod_2"] = {
+            "endorser_did": "test_public_did_2",
+            "endorser_alias": "endorser_2",
+        }
+        self.profile.context.injector.bind_instance(
+            base_test_module.BaseMultitenantManager,
+            mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        manager = MultiIndyVDRLedgerManager(
+            self.profile,
+            production_ledgers=self.production_ledger,
+            non_production_ledgers=self.non_production_ledger,
+            writable_ledgers=writable_ledgers,
+            endorser_map=endorser_info_map,
+        )
+        profile = InMemoryProfile.test_profile()
+        profile.context.settings["wallet.id"] = "test_wallet_id"
+        session = await profile.session()
+        storage = session.inject_or(base_test_module.BaseStorage)
+        record = base_test_module.StorageRecord(
+            base_test_module.RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+            json.dumps(
+                {
+                    "test_prod_1": {
+                        "did": "test_public_did_1",
+                    },
+                    "test_prod_2": {
+                        "did": "test_public_did_2",
+                        "write_ledger": True,
+                        "connection_id": "test_conn_id",
+                        "routing_keys": ["test1", "test2"],
+                    },
+                }
+            ),
+            {},
+        )
+        await storage.add_record(record)
+        assert "test_prod_2" in manager.writable_ledgers
+        test_ctx = AdminRequestContext(
+            profile=profile,
+            root_profile=self.profile,
+            metadata={},
+        )
+        with mock.patch.object(
+            base_test_module,
+            "promote_wallet_public_did",
+            mock.CoroutineMock(
+                return_value=(mock.MagicMock(did="test_public_did_2"), None)
+            ),
+        ):
+            new_write_ledger_id = await manager.set_profile_write_ledger(
+                context=test_ctx, ledger_id="test_prod_2"
+            )
+            assert new_write_ledger_id == "test_prod_2"
+            new_write_ledger = profile.inject_or(BaseLedger)
+            assert new_write_ledger.pool_name == "test_prod_2"
+
+    async def test_set_profile_write_ledger_set_default_public_did(self):
+        writable_ledgers = set()
+        writable_ledgers.add("test_prod_1")
+        writable_ledgers.add("test_prod_2")
+        endorser_info_map = {}
+        endorser_info_map["test_prod_2"] = {
+            "endorser_did": "test_public_did_2",
+            "endorser_alias": "endorser_2",
+        }
+        self.profile.context.injector.bind_instance(
+            base_test_module.BaseMultitenantManager,
+            mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        manager = MultiIndyVDRLedgerManager(
+            self.profile,
+            production_ledgers=self.production_ledger,
+            non_production_ledgers=self.non_production_ledger,
+            writable_ledgers=writable_ledgers,
+            endorser_map=endorser_info_map,
+        )
+        session = await self.profile.session()
+        wallet = session.inject_or(base_test_module.BaseWallet)
+        await wallet.create_local_did(
+            SOV,
+            ED25519,
+            did="DJGEjaMunDtFtBVrn1qJMT",
+        )
+        storage = session.inject_or(base_test_module.BaseStorage)
+        record = base_test_module.StorageRecord(
+            base_test_module.DEFAULT_PUBLIC_DID,
+            "DJGEjaMunDtFtBVrn1qJMT",
+            {},
+        )
+        await storage.add_record(record)
+        profile = InMemoryProfile.test_profile()
+        profile.context.settings["wallet.id"] = "test_wallet_id"
+        assert "test_prod_2" in manager.writable_ledgers
+        test_ctx = AdminRequestContext(
+            profile=profile,
+            root_profile=self.profile,
             metadata={},
         )
         new_write_ledger_id = await manager.set_profile_write_ledger(

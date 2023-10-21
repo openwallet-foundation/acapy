@@ -17,6 +17,7 @@ from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerError
+from ..multitenant.base import BaseMultitenantManager
 from ..utils.http import fetch, FetchError
 from ..wallet.base import BaseWallet
 
@@ -137,7 +138,15 @@ async def ledger_config(
     async with ledger:
         # Check transaction author agreement acceptance
         if not ledger.read_only:
-            taa_info = await ledger.get_txn_author_agreement()
+            multitenant_mgr = session.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                subwallet = session.inject(BaseWallet)
+                sign_did_info = await subwallet.get_public_did()
+                taa_info = await ledger.get_txn_author_agreement(
+                    sign_did_info=sign_did_info
+                )
+            else:
+                taa_info = await ledger.get_txn_author_agreement()
             if taa_info["taa_required"] and public_did:
                 taa_accepted = await ledger.get_latest_txn_author_acceptance()
                 if (

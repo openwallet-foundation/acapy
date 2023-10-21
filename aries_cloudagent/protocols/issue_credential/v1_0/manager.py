@@ -28,6 +28,7 @@ from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
+from ....wallet.base import BaseWallet
 
 from ...out_of_band.v1_0.models.oob_record import OobRecord
 from .messages.credential_ack import CredentialAck
@@ -804,9 +805,19 @@ class CredentialManager:
                 raw_cred_serde.de.cred_def_id
             )
             if raw_cred_serde.de.rev_reg_id:
-                revoc_reg_def = await ledger.get_revoc_reg_def(
-                    raw_cred_serde.de.rev_reg_id
-                )
+                async with self.profile.session() as session:
+                    multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                    if multitenant_mgr:
+                        subwallet = session.inject(BaseWallet)
+                        sign_did_info = await subwallet.get_public_did()
+                        revoc_reg_def = await ledger.get_revoc_reg_def(
+                            revoc_reg_id=raw_cred_serde.de.rev_reg_id,
+                            sign_did_info=sign_did_info,
+                        )
+                    else:
+                        revoc_reg_def = await ledger.get_revoc_reg_def(
+                            raw_cred_serde.de.rev_reg_id
+                        )
 
         holder = self._profile.inject(IndyHolder)
         if (

@@ -1,8 +1,10 @@
 """Wallet base class."""
 
 from abc import ABC, abstractmethod
-from typing import List, Sequence, Tuple, Union
+from typing import List, Sequence, Tuple, Union, TYPE_CHECKING
 
+from ..storage.base import BaseStorage, StorageRecord
+from ..storage.error import StorageError, StorageNotFoundError, StorageDuplicateError
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from .error import WalletError
@@ -10,6 +12,11 @@ from .error import WalletError
 from .did_info import DIDInfo, KeyInfo
 from .key_type import KeyType
 from .did_method import SOV, DIDMethod
+
+if TYPE_CHECKING:
+    from ..indy.sdk.profile import IndySdkProfile
+
+DEFAULT_PUBLIC_DID = "acapy_default_public_did"
 
 
 class BaseWallet(ABC):
@@ -112,6 +119,7 @@ class BaseWallet(ABC):
         seed: str = None,
         did: str = None,
         metadata: dict = {},
+        **kwargs,
     ) -> DIDInfo:
         """Create and store a new public DID.
 
@@ -129,7 +137,40 @@ class BaseWallet(ABC):
         did_info = await self.create_local_did(
             method=method, key_type=key_type, seed=seed, did=did, metadata=metadata
         )
-        return await self.set_public_did(did_info)
+        public_did_info = await self.set_public_did(did_info)
+        if hasattr(self, "_session"):
+            storage = self._session.inject_or(BaseStorage)
+        elif hasattr(self, "profile"):
+            async with self.profile.session() as _session:
+                storage = _session.inject_or(BaseStorage)
+        elif hasattr(self, "opened"):
+            _opened = self.opened
+            _context = kwargs.get("context")
+            _profile = IndySdkProfile(_opened, _context)
+            async with _profile.session() as _session:
+                storage = _session.inject_or(BaseStorage)
+        else:
+            raise WalletError(
+                "Unsupported BaseWallet type, only AskarWallet, "
+                "InMemoryWallet and IndySdkWallet are supported"
+            )
+        try:
+            default_public_did_record = await storage.find_record(
+                type_filter=DEFAULT_PUBLIC_DID, tag_query={}
+            )
+            await storage.update_record(
+                default_public_did_record,
+                public_did_info.did,
+                {},
+            )
+        except (StorageError, StorageNotFoundError, StorageDuplicateError):
+            record = StorageRecord(
+                DEFAULT_PUBLIC_DID,
+                public_did_info.did,
+                {},
+            )
+            await storage.add_record(record)
+        return public_did_info
 
     @abstractmethod
     async def get_public_did(self) -> DIDInfo:

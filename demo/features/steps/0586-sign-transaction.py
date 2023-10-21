@@ -1,3 +1,4 @@
+import json
 import time
 from time import sleep
 
@@ -16,6 +17,51 @@ from runners.agent_container import AgentContainer
 
 # This step is defined in another feature file
 # Given "Acme" and "Bob" have an existing connection
+
+
+@when(
+    '"{agent_name}" selects "{write_ledger}" write_ledger, '
+    "create local wallet did, register on ledger and set as public"
+)
+def step_impl(context, agent_name, write_ledger):
+    did_role = "AUTHOR"
+    agent = context.active_agents[agent_name]
+
+    # assign different write ledger
+    write_ledger_dict = agent_container_PUT(
+        agent["agent"],
+        f"/ledger/{write_ledger}/set-write-ledger",
+    )
+    assigned_write_ledger_id = write_ledger_dict.get("write_ledger")
+    assert write_ledger == assigned_write_ledger_id
+
+    # create a new DID in the current wallet
+    created_did = agent_container_POST(agent["agent"], "/wallet/did/create")
+    # publish to the ledger with did_role
+    registered_did = agent_container_register_did(
+        agent["agent"],
+        created_did["result"]["did"],
+        created_did["result"]["verkey"],
+        "TRUST_ANCHOR",
+    )
+
+    # make the new did the wallet's public did
+    published_did = agent_container_POST(
+        agent["agent"],
+        "/wallet/did/public",
+        params={"did": created_did["result"]["did"]},
+    )
+    if "result" in published_did:
+        # published right away!
+        pass
+    elif "txn" in published_did:
+        # we are an author and need to go through the endorser process
+        # assume everything works!
+        async_sleep(3.0)
+
+    if not "public_dids" in context:
+        context.public_dids = {}
+    context.public_dids[did_role] = created_did["result"]["did"]
 
 
 @when('"{agent_name}" has a DID with role "{did_role}"')
@@ -84,6 +130,24 @@ def step_impl(context, agent_name):
         agent["agent"],
         "/transactions/" + connection_id + "/set-endorser-info",
         params={"endorser_did": endorser_did},
+    )
+
+    # assert goodness
+    assert updated_connection["endorser_did"] == endorser_did
+    async_sleep(1.0)
+
+
+@when('"{agent_name}" connection sets "{endorser_did}" and "{endorser_name}" as endorser info')
+def step_impl(context, agent_name, endorser_did, endorser_name):
+    agent = context.active_agents[agent_name]
+
+    # current connection_id for the selected agent
+    connection_id = agent["agent"].agent.connection_id
+
+    updated_connection = agent_container_POST(
+        agent["agent"],
+        "/transactions/" + connection_id + "/set-endorser-info",
+        params={"endorser_did": endorser_did, "endorser_name": endorser_name},
     )
 
     # assert goodness

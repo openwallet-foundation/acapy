@@ -13,6 +13,7 @@ from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageNotFoundError, StorageDuplicateError, StorageError
 from ...messaging.valid import IndyDID
 from ...multitenant.manager import BaseMultitenantManager
+from ...wallet.base import BaseWallet, DEFAULT_PUBLIC_DID
 from ...wallet.routes import promote_wallet_public_did
 
 RECORD_TYPE_LEDGER_PUBLIC_DID_MAP = "acapy_ledger_public_did_map"
@@ -101,38 +102,68 @@ class BaseMultipleLedgerManager(ABC):
                     profile.context.settings["wallet.id"],
                     extra_settings,
                 )
-            async with profile.session() as session:
-                storage = session.inject_or(BaseStorage)
-                write_ledger = session.inject(BaseLedger)
+                set_default_public_did = False
                 try:
-                    ledger_id_public_did_map_record: StorageRecord = (
-                        await storage.find_record(
-                            type_filter=RECORD_TYPE_LEDGER_PUBLIC_DID_MAP, tag_query={}
+                    async with profile.session() as session:
+                        storage = session.inject_or(BaseStorage)
+                        write_ledger = session.inject(BaseLedger)
+                        ledger_id_public_did_map_record: StorageRecord = (
+                            await storage.find_record(
+                                type_filter=RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+                                tag_query={},
+                            )
                         )
-                    )
-                    ledger_id_public_did_map = json.loads(
-                        ledger_id_public_did_map_record.value
-                    )
-                    ledger_id = await self.get_ledger_id_by_ledger_pool_name(
-                        write_ledger.pool_name
-                    )
-                    public_did_config = ledger_id_public_did_map.get(ledger_id)
-                    if public_did_config:
-                        info, _ = await promote_wallet_public_did(
-                            profile,
-                            context,
-                            context.session,
-                            public_did_config.get("did"),
-                            write_ledger=public_did_config.get("write_ledger"),
-                            connection_id=public_did_config.get("connection_id"),
-                            routing_keys=public_did_config.get("routing_keys"),
-                            mediator_endpoint=public_did_config.get(
-                                "mediator_endpoint"
-                            ),
+                        ledger_id = await self.get_ledger_id_by_ledger_pool_name(
+                            write_ledger.pool_name
                         )
-                        assert info
-                except (StorageError, StorageNotFoundError, StorageDuplicateError):
-                    pass
+                        ledger_id_public_did_map = json.loads(
+                            ledger_id_public_did_map_record.value
+                        )
+                        public_did_config = ledger_id_public_did_map.get(ledger_id)
+                        if public_did_config:
+                            info, _ = await promote_wallet_public_did(
+                                profile=profile,
+                                context=context,
+                                session_fn=context.session,
+                                did=public_did_config.get("did"),
+                                write_ledger=public_did_config.get("write_ledger"),
+                                connection_id=public_did_config.get("connection_id"),
+                                routing_keys=public_did_config.get("routing_keys"),
+                                mediator_endpoint=public_did_config.get(
+                                    "mediator_endpoint"
+                                ),
+                                ledger_pool_name=write_ledger.pool_name,
+                                record_type_name=RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+                            )
+                            assert info
+                            set_default_public_did = False
+                        else:
+                            set_default_public_did = True
+                except (
+                    StorageError,
+                    StorageNotFoundError,
+                    StorageDuplicateError,
+                ):
+                    set_default_public_did = True
+                if set_default_public_did:
+                    try:
+                        async with self.profile.session() as session:
+                            storage = session.inject_or(BaseStorage)
+                            wallet = session.inject_or(BaseWallet)
+                            default_public_did_record: StorageRecord = (
+                                await storage.find_record(
+                                    type_filter=DEFAULT_PUBLIC_DID, tag_query={}
+                                )
+                            )
+                            default_public_did = default_public_did_record.value
+                            info = await wallet.set_public_did(default_public_did)
+                            assert info
+                    except (
+                        StorageError,
+                        StorageNotFoundError,
+                        StorageDuplicateError,
+                    ):
+                        pass
             return ledger_id
         raise MultipleLedgerManagerError(f"No ledger info found for {ledger_id}.")
 

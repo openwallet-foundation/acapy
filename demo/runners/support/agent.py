@@ -86,12 +86,12 @@ class repr_json:
         return json.dumps(self.val, indent=4)
 
 
-async def default_genesis_txns():
+async def default_genesis_txns(genesis_url: str = None):
     genesis = None
     try:
-        if GENESIS_URL:
+        if genesis_url or GENESIS_URL:
             async with ClientSession() as session:
-                async with session.get(GENESIS_URL) as resp:
+                async with session.get(genesis_url or GENESIS_URL) as resp:
                     genesis = await resp.text()
         elif RUN_MODE == "docker":
             async with ClientSession() as session:
@@ -585,6 +585,12 @@ class DemoAgent:
                         ("--endorser-alias", "endorser"),
                     ]
                 )
+                if not self.genesis_txn_list:
+                    result.extend(
+                        [
+                            ("--endorser-alias", "endorser"),
+                        ]
+                    )
                 if self.endorser_did:
                     result.extend(
                         [
@@ -638,6 +644,8 @@ class DemoAgent:
                     ledger_url = LEDGER_URL
             if not ledger_url:
                 ledger_url = f"http://{self.external_host}:9000"
+            if "/genesis" in ledger_url:
+                ledger_url = ledger_url.replace("/genesis", "")
             data = {"alias": alias or self.ident}
             if self.endorser_role:
                 if self.endorser_role == "endorser":
@@ -1622,6 +1630,7 @@ async def start_endorser_agent(
     genesis: str = None,
     genesis_txn_list: str = None,
     use_did_exchange: bool = True,
+    ledger_url: str = None,
 ):
     # start mediator agent
     endorser_agent = EndorserAgent(
@@ -1630,7 +1639,7 @@ async def start_endorser_agent(
         genesis_data=genesis,
         genesis_txn_list=genesis_txn_list,
     )
-    await endorser_agent.register_did(cred_type=CRED_FORMAT_INDY)
+    await endorser_agent.register_did(ledger_url=ledger_url, cred_type=CRED_FORMAT_INDY)
     await endorser_agent.listen_webhooks(start_port + 2)
     await endorser_agent.start_process()
 

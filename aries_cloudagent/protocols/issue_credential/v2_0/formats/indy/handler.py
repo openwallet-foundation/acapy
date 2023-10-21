@@ -29,6 +29,7 @@ from ......revocation.indy import IndyRevocation
 from ......revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......revocation.models.revocation_registry import RevocationRegistry
 from ......storage.base import BaseStorage
+from ......wallet.base import BaseWallet
 
 from ...message_types import (
     ATTACHMENT_FORMAT,
@@ -456,7 +457,16 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         async with ledger:
             cred_def = await ledger.get_credential_definition(cred["cred_def_id"])
             if cred.get("rev_reg_id"):
-                rev_reg_def = await ledger.get_revoc_reg_def(cred["rev_reg_id"])
+                async with self.profile.session() as session:
+                    multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                    if multitenant_mgr:
+                        subwallet = session.inject(BaseWallet)
+                        sign_did_info = await subwallet.get_public_did()
+                        rev_reg_def = await ledger.get_revoc_reg_def(
+                            revoc_reg_id=cred["rev_reg_id"], sign_did_info=sign_did_info
+                        )
+                    else:
+                        rev_reg_def = await ledger.get_revoc_reg_def(cred["rev_reg_id"])
 
         holder = self.profile.inject(IndyHolder)
         cred_offer_message = cred_ex_record.cred_offer

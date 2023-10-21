@@ -711,6 +711,7 @@ class AgentContainer:
         log_file: str = None,
         log_config: str = None,
         log_level: str = None,
+        ledger_url: str = None,
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -750,6 +751,7 @@ class AgentContainer:
         self.agent = None
         self.mediator_agent = None
         self.taa_accept = taa_accept
+        self.ledger_url = ledger_url
 
     async def initialize(
         self,
@@ -795,7 +797,9 @@ class AgentContainer:
         # create public DID ... UNLESS we are an author ...
         if (not self.endorser_role) or (self.endorser_role == "endorser"):
             if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
-                await self.agent.register_did(cred_type=self.cred_type)
+                await self.agent.register_did(
+                    ledger_url=self.ledger_url, cred_type=self.cred_type
+                )
                 log_msg("Created public DID")
 
         # if we are endorsing, create the endorser agent first, then we can use the
@@ -806,6 +810,7 @@ class AgentContainer:
                 self.genesis_txns,
                 self.genesis_txn_list,
                 use_did_exchange=self.use_did_exchange,
+                ledger_url=self.ledger_url,
             )
             if not self.endorser_agent:
                 raise Exception("Endorser agent returns None :-(")
@@ -872,6 +877,7 @@ class AgentContainer:
                 new_did = await self.agent.admin_POST("/wallet/did/create")
                 self.agent.did = new_did["result"]["did"]
                 await self.agent.register_did(
+                    ledger_url=self.ledger_url,
                     did=new_did["result"]["did"],
                     verkey=new_did["result"]["verkey"],
                 )
@@ -1122,6 +1128,7 @@ class AgentContainer:
 
     async def register_did(self, did, verkey, role):
         return await self.agent.register_did(
+            ledger_url=self.ledger_url,
             did=did,
             verkey=verkey,
             role=role,
@@ -1313,6 +1320,28 @@ def arg_parser(ident: str = None, port: int = 8020):
             "directly."
         ),
     )
+    parser.add_argument(
+        "--genesis-url",
+        type=str,
+        metavar="<genesis-url>",
+        help=(
+            "Specifies the url from which to download the genesis "
+            "transactions. For example, if you are using 'von-network', "
+            "the URL might be 'http://localhost:9000/genesis'. "
+            "Genesis transactions URLs are available for the "
+            "Sovrin test/main networks."
+        ),
+    )
+    parser.add_argument(
+        "--seed",
+        type=str,
+        metavar="<wallet-seed>",
+        help=(
+            "Specifies the seed to use for the creation of a public "
+            "DID for the agent to use with a Hyperledger Indy ledger, or a local "
+            "('--wallet-local-did') DID. If public, the DID must already exist"
+        ),
+    )
     if (not ident) or (ident != "alice"):
         parser.add_argument(
             "--reuse-connections",
@@ -1403,10 +1432,16 @@ async def create_agent_with_args(args, ident: str = None):
 
     multi_ledger_config_path = None
     genesis = None
+    ledger_url = None
     if "multi_ledger" in args and args.multi_ledger:
         multi_ledger_config_path = "./demo/multi_ledger_config.yml"
     else:
-        genesis = await default_genesis_txns()
+        genesis_url = args.genesis_url
+        if genesis_url:
+            genesis = await default_genesis_txns(genesis_url)
+            ledger_url = genesis_url
+        else:
+            genesis = await default_genesis_txns()
     if not genesis and not multi_ledger_config_path:
         print("Error retrieving ledger genesis transactions")
         sys.exit(1)
@@ -1437,6 +1472,12 @@ async def create_agent_with_args(args, ident: str = None):
     else:
         public_did = args.public_did if "public_did" in args else None
 
+    seed = None
+    if args.seed:
+        seed = args.seed
+    else:
+        seed = "random" if public_did else None
+
     cred_type = args.cred_type if "cred_type" in args else None
     log_msg(
         f"Initializing demo agent {agent_ident} with AIP {aip} and credential type {cred_type}"
@@ -1465,7 +1506,7 @@ async def create_agent_with_args(args, ident: str = None):
         use_did_exchange=(aip == 20) if ("aip" in args) else args.did_exchange,
         wallet_type=arg_file_dict.get("wallet-type") or args.wallet_type,
         public_did=public_did,
-        seed="random" if public_did else None,
+        seed=seed,
         arg_file=arg_file,
         aip=aip,
         endorser_role=args.endorser_role,
@@ -1475,6 +1516,7 @@ async def create_agent_with_args(args, ident: str = None):
         log_file=log_file,
         log_config=log_config,
         log_level=log_level,
+        ledger_url=ledger_url,
     )
 
     return agent

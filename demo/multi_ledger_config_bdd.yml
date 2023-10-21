@@ -1,11 +1,16 @@
-- id: local
-  is_production: true
-  is_write: true
-  genesis_url: 'http://$LEDGER_HOST:9000/genesis'
 - id: bcovrinTest
   is_production: true
-#  is_write: true
+  is_write: true
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+  endorser_did: '8FWsRpoLKiuqBNDxik2trg'
+  endorser_alias: 'endorser_test'
+- id: bcovrinDev
+  is_production: true
+  is_write: true
+  genesis_url: 'http://dev.bcovrin.vonx.io/genesis'
+  endorser_did: 'CftsUq2Pmjz3MEmfu8RxUs'
+  endorser_alias: 'endorser_dev'
 - id: greenlightTest
+  is_write: false
   is_production: true
   genesis_url: 'http://dev.greenlight.bcovrin.vonx.io/genesis'

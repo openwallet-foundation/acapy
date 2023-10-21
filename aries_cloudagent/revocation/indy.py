@@ -16,6 +16,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
     is_author_role,
 )
 from ..storage.base import StorageNotFoundError
+from ..wallet.base import BaseWallet
 
 from .error import (
     RevocationError,
@@ -212,11 +213,23 @@ class IndyRevocation:
         """
         ledger = await self.get_ledger_for_registry(rev_reg_id)
         async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_reg_id,
-                fro,
-                to,
-            )
+            async with self._profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                        rev_reg_id,
+                        fro,
+                        to,
+                        sign_did_info,
+                    )
+                else:
+                    (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                        rev_reg_id,
+                        fro,
+                        to,
+                    )
 
         return rev_reg_delta
 
@@ -257,9 +270,21 @@ class IndyRevocation:
         ledger = await self.get_ledger_for_registry(revoc_reg_id)
 
         async with ledger:
-            rev_reg = RevocationRegistry.from_definition(
-                await ledger.get_revoc_reg_def(revoc_reg_id), True
-            )
+            async with self._profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    rev_reg = RevocationRegistry.from_definition(
+                        await ledger.get_revoc_reg_def(
+                            revoc_reg_id=revoc_reg_id, sign_did_info=sign_did_info
+                        ),
+                        True,
+                    )
+                else:
+                    rev_reg = RevocationRegistry.from_definition(
+                        await ledger.get_revoc_reg_def(revoc_reg_id), True
+                    )
             IndyRevocation.REV_REG_CACHE[revoc_reg_id] = rev_reg
             return rev_reg
 

@@ -1,7 +1,8 @@
-from typing import Tuple
+import json
 
-from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
+from typing import Tuple
+from unittest import IsolatedAsyncioTestCase
 
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
@@ -14,6 +15,8 @@ from ...ledger.multiple_ledger.base_manager import (
 )
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
+from ...wallet.did_method import SOV, DIDMethods
+from ...wallet.key_type import ED25519
 
 from .. import routes as test_module
 from ..indy import Role
@@ -314,7 +317,327 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.register_ledger_nym(self.request)
 
-    async def test_register_nym_create_transaction_for_endorser(self):
+    async def test_register_nym_create_transaction_for_endorser_did_in_record(self):
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        session = await self.profile.session()
+        wallet = session.inject_or(test_module.BaseWallet)
+        await wallet.create_local_did(
+            SOV,
+            ED25519,
+            did="DJGEjaMunDtFtBVrn1qJMT",
+        )
+        await wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
+        storage = session.inject_or(test_module.BaseStorage)
+        record = test_module.StorageRecord(
+            test_module.RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+            json.dumps(
+                {
+                    "test_ledger_id_1": {
+                        "did": "test_public_did_1",
+                    },
+                    "test_ledger_id_2": {
+                        "did": "test_public_did_2",
+                    },
+                    "test_ledger_id": {
+                        "did": "DJGEjaMunDtFtBVrn1qJMT",
+                    },
+                }
+            ),
+            {},
+        )
+        await storage.add_record(record)
+        mock_multiledger_mgr = mock.MagicMock(
+            get_ledger_id_by_ledger_pool_name=mock.AsyncMock(
+                return_value="test_ledger_id"
+            ),
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultipleLedgerManager, mock_multiledger_mgr
+        )
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": mock.AsyncMock(),
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "ENDORSER",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+
+        with mock.patch.object(
+            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve, mock.patch.object(
+            test_module, "TransactionManager", mock.MagicMock()
+        ) as mock_txn_mgr, mock.patch.object(
+            test_module.web, "json_response", mock.MagicMock()
+        ) as mock_response:
+            mock_txn_mgr.return_value = mock.MagicMock(
+                create_record=mock.AsyncMock(
+                    return_value=mock.MagicMock(
+                        serialize=mock.MagicMock(return_value={"...": "..."})
+                    )
+                )
+            )
+            mock_conn_rec_retrieve.return_value = mock.MagicMock(
+                metadata_get=mock.AsyncMock(
+                    return_value={
+                        "endorser_did": ("did"),
+                        "endorser_name": ("name"),
+                    }
+                )
+            )
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
+                True,
+                {"signed_txn": {"...": "..."}},
+            )
+
+            result = await test_module.register_ledger_nym(self.request)
+            assert result == mock_response.return_value
+            mock_response.assert_called_once_with(
+                {"success": True, "txn": {"signed_txn": {"...": "..."}}}
+            )
+
+    async def test_register_nym_create_transaction_for_endorser_did_in_record_multitenant(
+        self,
+    ):
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        session = await self.profile.session()
+        wallet = session.inject_or(test_module.BaseWallet)
+        await wallet.create_local_did(
+            SOV,
+            ED25519,
+            did="DJGEjaMunDtFtBVrn1qJMT",
+        )
+        await wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
+        storage = session.inject_or(test_module.BaseStorage)
+        record = test_module.StorageRecord(
+            test_module.RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+            json.dumps(
+                {
+                    "test_ledger_id_1": {
+                        "did": "test_public_did_1",
+                    },
+                    "test_ledger_id_2": {
+                        "did": "test_public_did_2",
+                    },
+                    "test_ledger_id": {
+                        "did": "DJGEjaMunDtFtBVrn1qJMT",
+                    },
+                }
+            ),
+            {},
+        )
+        await storage.add_record(record)
+        mock_multiledger_mgr = mock.MagicMock(
+            get_ledger_id_by_ledger_pool_name=mock.AsyncMock(
+                return_value="test_ledger_id"
+            ),
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultipleLedgerManager, mock_multiledger_mgr
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultitenantManager,
+            mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": mock.AsyncMock(),
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "ENDORSER",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+
+        with mock.patch.object(
+            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve, mock.patch.object(
+            test_module, "TransactionManager", mock.MagicMock()
+        ) as mock_txn_mgr, mock.patch.object(
+            test_module.web, "json_response", mock.MagicMock()
+        ) as mock_response:
+            mock_txn_mgr.return_value = mock.MagicMock(
+                create_record=mock.AsyncMock(
+                    return_value=mock.MagicMock(
+                        serialize=mock.MagicMock(return_value={"...": "..."})
+                    )
+                )
+            )
+            mock_conn_rec_retrieve.return_value = mock.MagicMock(
+                metadata_get=mock.AsyncMock(
+                    return_value={
+                        "endorser_did": ("did"),
+                        "endorser_name": ("name"),
+                    }
+                )
+            )
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
+                True,
+                {"signed_txn": {"...": "..."}},
+            )
+
+            result = await test_module.register_ledger_nym(self.request)
+            assert result == mock_response.return_value
+            mock_response.assert_called_once_with(
+                {"success": True, "txn": {"signed_txn": {"...": "..."}}}
+            )
+
+    async def test_register_nym_create_transaction_for_endorser_no_did_in_record(self):
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        session = await self.profile.session()
+        wallet = session.inject_or(test_module.BaseWallet)
+        await wallet.create_local_did(
+            SOV,
+            ED25519,
+            did="DJGEjaMunDtFtBVrn1qJMT",
+        )
+        await wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
+        storage = session.inject_or(test_module.BaseStorage)
+        record = test_module.StorageRecord(
+            test_module.RECORD_TYPE_LEDGER_PUBLIC_DID_MAP,
+            json.dumps(
+                {
+                    "test_ledger_id_1": {
+                        "did": "test_public_did_1",
+                    },
+                    "test_ledger_id_2": {
+                        "did": "test_public_did_2",
+                    },
+                }
+            ),
+            {},
+        )
+        await storage.add_record(record)
+        mock_multiledger_mgr = mock.MagicMock(
+            get_ledger_id_by_ledger_pool_name=mock.AsyncMock(
+                return_value="test_ledger_id"
+            ),
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultipleLedgerManager, mock_multiledger_mgr
+        )
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": mock.AsyncMock(),
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "ENDORSER",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+
+        with mock.patch.object(
+            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve, mock.patch.object(
+            test_module, "TransactionManager", mock.MagicMock()
+        ) as mock_txn_mgr, mock.patch.object(
+            test_module.web, "json_response", mock.MagicMock()
+        ) as mock_response:
+            mock_txn_mgr.return_value = mock.MagicMock(
+                create_record=mock.AsyncMock(
+                    return_value=mock.MagicMock(
+                        serialize=mock.MagicMock(
+                            return_value={
+                                "signed_txn": {
+                                    "did": "a_test_did",
+                                    "verkey": "a_test_verkey",
+                                    "alias": "did_alias",
+                                    "role": "",
+                                }
+                            }
+                        )
+                    )
+                )
+            )
+            mock_conn_rec_retrieve.return_value = mock.MagicMock(
+                metadata_get=mock.AsyncMock(
+                    return_value={
+                        "endorser_did": ("did"),
+                        "endorser_name": ("name"),
+                    }
+                )
+            )
+
+            result = await test_module.register_ledger_nym(self.request)
+            assert result == mock_response.return_value
+            mock_response.assert_called_once_with(
+                {
+                    "success": False,
+                    "txn": {
+                        "signed_txn": json.dumps(
+                            {
+                                "did": "a_test_did",
+                                "verkey": "a_test_verkey",
+                                "alias": "did_alias",
+                                "role": "ENDORSER",
+                            }
+                        )
+                    },
+                }
+            )
+
+    async def test_register_nym_create_transaction_for_endorser_no_record(self):
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        session = await self.profile.session()
+        wallet = session.inject_or(test_module.BaseWallet)
+        await wallet.create_local_did(
+            SOV,
+            ED25519,
+            did="DJGEjaMunDtFtBVrn1qJMT",
+        )
+        await wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
+        mock_storage = mock.MagicMock(
+            find_record=mock.AsyncMock(
+                side_effect=test_module.StorageNotFoundError()
+            ),
+        )
+        self.profile.context.injector.bind_instance(
+            test_module.BaseStorage, mock_storage
+        )
+        mock_multiledger_mgr = mock.MagicMock(
+            get_ledger_id_by_ledger_pool_name=mock.AsyncMock(),
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultipleLedgerManager, mock_multiledger_mgr
+        )
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": mock.AsyncMock(),
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
         self.request.query = {
             "did": "a_test_did",
             "verkey": "a_test_verkey",
@@ -358,6 +681,20 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_register_nym_create_transaction_for_endorser_no_public_did(self):
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.AsyncMock(return_value=None),
+        )
+        self.profile.context.injector.bind_instance(test_module.BaseWallet, mock_wallet)
+        self.request_dict = {
+            "context": self.context,
+            "outbound_message_router": mock.AsyncMock(),
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
         self.request.query = {
             "did": "a_test_did",
             "verkey": "a_test_verkey",
@@ -390,15 +727,23 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
                     }
                 )
             )
-            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
-                True,
-                {"signed_txn": {"...": "..."}},
-            )
 
             result = await test_module.register_ledger_nym(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
-                {"success": True, "txn": {"signed_txn": {"...": "..."}}}
+                {
+                    "success": False,
+                    "txn": {
+                        "signed_txn": json.dumps(
+                            {
+                                "did": "a_test_did",
+                                "verkey": "a_test_verkey",
+                                "alias": "did_alias",
+                                "role": "",
+                            }
+                        )
+                    },
+                }
             )
 
     async def test_register_nym_create_transaction_for_endorser_storage_x(self):

@@ -21,6 +21,8 @@ from indy_credx import (
 
 from ...askar.profile import AskarProfile
 from ...ledger.base import BaseLedger
+from ...multitenant.base import BaseMultitenantManager
+from ...wallet.base import BaseWallet
 from ...wallet.error import WalletNotFoundError
 
 from ..holder import IndyHolder, IndyHolderError
@@ -389,11 +391,23 @@ class IndyCredxHolder(IndyHolder):
 
         if rev_reg_id:
             cred_rev_id = cred.rev_reg_index
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_reg_id,
-                fro,
-                to,
-            )
+            async with self._profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                        rev_reg_id,
+                        fro,
+                        to,
+                        sign_did_info,
+                    )
+                else:
+                    (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                        rev_reg_id,
+                        fro,
+                        to,
+                    )
             return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
         else:
             return False

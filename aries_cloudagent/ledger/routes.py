@@ -46,6 +46,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
 )
 from ..storage.base import BaseStorage, StorageRecord
 from ..storage.error import StorageError, StorageNotFoundError, StorageDuplicateError
+from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError, WalletNotFoundError
 from .base import BaseLedger
 from .base import Role as LedgerRole
@@ -350,7 +351,9 @@ async def register_ledger_nym(request: web.BaseRequest):
             write_ledger_nym_transaction = True
             # special case - if we are an author with no public DID
             if create_transaction_for_endorser:
-                public_info = await ledger.get_wallet_public_did()
+                async with context.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    public_info = await wallet.get_public_did()
                 _write_ledger_nym_txn = False
                 if not public_info:
                     _write_ledger_nym_txn = True
@@ -394,14 +397,29 @@ async def register_ledger_nym(request: web.BaseRequest):
                     success = False
                     txn = {"signed_txn": json.dumps(meta_data)}
             if write_ledger_nym_transaction:
-                (success, txn) = await ledger.register_nym(
-                    did,
-                    verkey,
-                    alias,
-                    role,
-                    write_ledger=write_ledger,
-                    endorser_did=endorser_did,
-                )
+                async with context.profile.session() as session:
+                    multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                    if multitenant_mgr:
+                        subwallet = session.inject(BaseWallet)
+                        sign_did_info = await subwallet.get_public_did()
+                        (success, txn) = await ledger.register_nym(
+                            did=did,
+                            verkey=verkey,
+                            alias=alias,
+                            role=role,
+                            write_ledger=write_ledger,
+                            endorser_did=endorser_did,
+                            sign_did_info=sign_did_info,
+                        )
+                    else:
+                        (success, txn) = await ledger.register_nym(
+                            did=did,
+                            verkey=verkey,
+                            alias=alias,
+                            role=role,
+                            write_ledger=write_ledger,
+                            endorser_did=endorser_did,
+                        )
         except LedgerTransactionError as err:
             raise web.HTTPForbidden(reason=err.roll_up)
         except LedgerError as err:
@@ -497,7 +515,14 @@ async def get_nym_role(request: web.BaseRequest):
 
     async with ledger:
         try:
-            role = await ledger.get_nym_role(did)
+            async with context.profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    role = await ledger.get_nym_role(did, sign_did_info)
+                else:
+                    role = await ledger.get_nym_role(did)
         except LedgerTransactionError as err:
             raise web.HTTPForbidden(reason=err.roll_up)
         except BadLedgerRequestError as err:
@@ -529,7 +554,15 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
             raise web.HTTPForbidden(reason=reason)
     async with ledger:
         try:
-            await ledger.rotate_public_did_keypair()  # do not take seed over the wire
+            async with context.profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    await ledger.rotate_public_did_keypair(sign_did_info=sign_did_info)
+                else:
+                    # do not take seed over the wire
+                    await ledger.rotate_public_did_keypair()
         except (WalletError, BadLedgerRequestError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -572,7 +605,14 @@ async def get_did_verkey(request: web.BaseRequest):
 
     async with ledger:
         try:
-            result = await ledger.get_key_for_did(did)
+            async with context.profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    wallet = session.inject(BaseWallet)
+                    sign_did_info = await wallet.get_public_did()
+                    result = await ledger.get_key_for_did(did, sign_did_info)
+                else:
+                    result = await ledger.get_key_for_did(did)
             if not result:
                 raise web.HTTPNotFound(reason=f"DID {did} is not on the ledger")
         except LedgerError as err:
@@ -623,7 +663,16 @@ async def get_did_endpoint(request: web.BaseRequest):
 
     async with ledger:
         try:
-            r = await ledger.get_endpoint_for_did(did, endpoint_type)
+            async with context.profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    r = await ledger.get_endpoint_for_did(
+                        did, endpoint_type, sign_did_info
+                    )
+                else:
+                    r = await ledger.get_endpoint_for_did(did, endpoint_type)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -656,7 +705,16 @@ async def ledger_get_taa(request: web.BaseRequest):
 
     async with ledger:
         try:
-            taa_info = await ledger.get_txn_author_agreement()
+            async with context.profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    taa_info = await ledger.get_txn_author_agreement(
+                        sign_did_info=sign_did_info
+                    )
+                else:
+                    taa_info = await ledger.get_txn_author_agreement()
             accepted = None
             if taa_info["taa_required"]:
                 accept_record = await ledger.get_latest_txn_author_acceptance()
@@ -698,7 +756,16 @@ async def ledger_accept_taa(request: web.BaseRequest):
     LOGGER.info(">>> accepting TAA with: %s", accept_input)
     async with ledger:
         try:
-            taa_info = await ledger.get_txn_author_agreement()
+            async with context.profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    taa_info = await ledger.get_txn_author_agreement(
+                        sign_did_info=sign_did_info
+                    )
+                else:
+                    taa_info = await ledger.get_txn_author_agreement()
             if not taa_info["taa_required"]:
                 raise web.HTTPBadRequest(
                     reason=f"Ledger {ledger.pool_name} TAA not available"

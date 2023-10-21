@@ -16,6 +16,7 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
 )
 from ....multitenant.base import BaseMultitenantManager
 from ....revocation.models.revocation_registry import RevocationRegistry
+from ....wallet.base import BaseWallet
 
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
@@ -116,11 +117,29 @@ class IndyPresExchHandler:
                 if credential.get("rev_reg_id"):
                     revocation_registry_id = credential["rev_reg_id"]
                     if revocation_registry_id not in revocation_registries:
-                        revocation_registries[
-                            revocation_registry_id
-                        ] = RevocationRegistry.from_definition(
-                            await ledger.get_revoc_reg_def(revocation_registry_id), True
-                        )
+                        async with self._profile.session() as session:
+                            multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                            if multitenant_mgr:
+                                subwallet = session.inject(BaseWallet)
+                                sign_did_info = await subwallet.get_public_did()
+                                revocation_registries[
+                                    revocation_registry_id
+                                ] = RevocationRegistry.from_definition(
+                                    await ledger.get_revoc_reg_def(
+                                        revoc_reg_id=revocation_registry_id,
+                                        sign_did_info=sign_did_info,
+                                    ),
+                                    True,
+                                )
+                            else:
+                                revocation_registries[
+                                    revocation_registry_id
+                                ] = RevocationRegistry.from_definition(
+                                    await ledger.get_revoc_reg_def(
+                                        revocation_registry_id
+                                    ),
+                                    True,
+                                )
         # Get delta with non-revocation interval defined in "non_revoked"
         # of the presentation request or attributes
         epoch_now = int(time.time())
@@ -152,11 +171,29 @@ class IndyPresExchHandler:
                         f"{reft_non_revoc_interval.get('to', epoch_now)}"
                     )
                     if key not in revoc_reg_deltas:
-                        (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
-                            rev_reg_id,
-                            reft_non_revoc_interval.get("from", 0),
-                            reft_non_revoc_interval.get("to", epoch_now),
-                        )
+                        async with self._profile.session() as session:
+                            multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                            if multitenant_mgr:
+                                subwallet = session.inject(BaseWallet)
+                                sign_did_info = await subwallet.get_public_did()
+                                (
+                                    delta,
+                                    delta_timestamp,
+                                ) = await ledger.get_revoc_reg_delta(
+                                    rev_reg_id,
+                                    reft_non_revoc_interval.get("from", 0),
+                                    reft_non_revoc_interval.get("to", epoch_now),
+                                    sign_did_info,
+                                )
+                            else:
+                                (
+                                    delta,
+                                    delta_timestamp,
+                                ) = await ledger.get_revoc_reg_delta(
+                                    rev_reg_id,
+                                    reft_non_revoc_interval.get("from", 0),
+                                    reft_non_revoc_interval.get("to", epoch_now),
+                                )
                         revoc_reg_deltas[key] = (
                             rev_reg_id,
                             credential_id,
@@ -258,9 +295,23 @@ class IndyPresExchHandler:
 
                 if identifier.get("rev_reg_id"):
                     if identifier["rev_reg_id"] not in rev_reg_defs:
-                        rev_reg_defs[
-                            identifier["rev_reg_id"]
-                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+                        async with self._profile.session() as session:
+                            multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                            if multitenant_mgr:
+                                subwallet = session.inject(BaseWallet)
+                                sign_did_info = await subwallet.get_public_did()
+                                rev_reg_defs[
+                                    identifier["rev_reg_id"]
+                                ] = await ledger.get_revoc_reg_def(
+                                    revoc_reg_id=identifier["rev_reg_id"],
+                                    sign_did_info=sign_did_info,
+                                )
+                            else:
+                                rev_reg_defs[
+                                    identifier["rev_reg_id"]
+                                ] = await ledger.get_revoc_reg_def(
+                                    identifier["rev_reg_id"]
+                                )
 
                     if identifier.get("timestamp"):
                         rev_reg_entries.setdefault(identifier["rev_reg_id"], {})
@@ -269,12 +320,29 @@ class IndyPresExchHandler:
                             identifier["timestamp"]
                             not in rev_reg_entries[identifier["rev_reg_id"]]
                         ):
-                            (
-                                found_rev_reg_entry,
-                                _found_timestamp,
-                            ) = await ledger.get_revoc_reg_entry(
-                                identifier["rev_reg_id"], identifier["timestamp"]
-                            )
+                            async with self._profile.session() as session:
+                                multitenant_mgr = session.inject_or(
+                                    BaseMultitenantManager
+                                )
+                                if multitenant_mgr:
+                                    subwallet = session.inject(BaseWallet)
+                                    sign_did_info = await subwallet.get_public_did()
+                                    (
+                                        found_rev_reg_entry,
+                                        _found_timestamp,
+                                    ) = await ledger.get_revoc_reg_entry(
+                                        revoc_reg_id=identifier["rev_reg_id"],
+                                        timestamp=identifier["timestamp"],
+                                        sign_did_info=sign_did_info,
+                                    )
+                                else:
+                                    (
+                                        found_rev_reg_entry,
+                                        _found_timestamp,
+                                    ) = await ledger.get_revoc_reg_entry(
+                                        identifier["rev_reg_id"],
+                                        identifier["timestamp"],
+                                    )
                             rev_reg_entries[identifier["rev_reg_id"]][
                                 identifier["timestamp"]
                             ] = found_rev_reg_entry

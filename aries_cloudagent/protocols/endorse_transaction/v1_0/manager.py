@@ -14,6 +14,7 @@ from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import notify_cred_def_event
 from ....messaging.schemas.util import notify_schema_event
+from ....multitenant.base import BaseMultitenantManager
 from ....revocation.util import (
     notify_revocation_reg_endorsed_event,
     notify_revocation_entry_endorsed_event,
@@ -281,14 +282,29 @@ class TransactionManager:
             elif txn_goal_code == TransactionRecord.WRITE_DID_TRANSACTION:
                 # get DID info from transaction.meta_data
                 meta_data = json.loads(transaction_json)
-                (success, txn) = await shield(
-                    ledger.register_nym(
-                        meta_data["did"],
-                        meta_data["verkey"],
-                        meta_data["alias"],
-                        meta_data["role"],
-                    )
-                )
+                async with self._profile.session() as session:
+                    multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                    if multitenant_mgr:
+                        subwallet = session.inject(BaseWallet)
+                        sign_did_info = await subwallet.get_public_did()
+                        (success, txn) = await shield(
+                            ledger.register_nym(
+                                did=meta_data["did"],
+                                verkey=meta_data["verkey"],
+                                alias=meta_data["alias"],
+                                role=meta_data["role"],
+                                sign_did_info=sign_did_info,
+                            )
+                        )
+                    else:
+                        (success, txn) = await shield(
+                            ledger.register_nym(
+                                meta_data["did"],
+                                meta_data["verkey"],
+                                meta_data["alias"],
+                                meta_data["role"],
+                            )
+                        )
                 # we don't have an endorsed transaction so just return did meta-data
                 ledger_response = {
                     "result": {

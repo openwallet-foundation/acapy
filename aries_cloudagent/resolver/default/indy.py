@@ -20,6 +20,7 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
 )
 from ...messaging.valid import IndyDID
 from ...multitenant.base import BaseMultitenantManager
+from ...wallet.base import BaseWallet
 from ...wallet.key_type import ED25519
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
@@ -177,8 +178,20 @@ class IndyDIDResolver(BaseDIDResolver):
 
         try:
             async with ledger:
-                recipient_key = await ledger.get_key_for_did(did)
-                endpoints: Optional[dict] = await ledger.get_all_endpoints_for_did(did)
+                async with profile.session() as session:
+                    multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                    if multitenant_mgr:
+                        subwallet = session.inject(BaseWallet)
+                        sign_did_info = await subwallet.get_public_did()
+                        recipient_key = await ledger.get_key_for_did(did, sign_did_info)
+                        endpoints: Optional[
+                            dict
+                        ] = await ledger.get_all_endpoints_for_did(did, sign_did_info)
+                    else:
+                        recipient_key = await ledger.get_key_for_did(did)
+                        endpoints: Optional[
+                            dict
+                        ] = await ledger.get_all_endpoints_for_did(did)
         except LedgerError as err:
             raise DIDNotFound(f"DID {did} could not be resolved") from err
 

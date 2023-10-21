@@ -1,0 +1,11 @@
+- id: bcovrin1
+  is_production: true
+  is_write: true
+  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+  endorser_did: '8nFG9mvdT44tBh3wksrYXD'
+  endorser_alias: 'endorser_1'
+- id: bcovrin2
+  is_write: true
+  genesis_url: 'http://dev.bcovrin.vonx.io/genesis'
+  endorser_did: 'L9b2uHgsabypjMmhF6xREm'
+  endorser_alias: 'endorser_2'

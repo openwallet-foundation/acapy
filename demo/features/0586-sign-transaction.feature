@@ -194,3 +194,72 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |
          | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation       | driverslicense | Data_DL_NormalizedValues |
+
+@T004-RFC0586 @GHA
+   Scenario Outline: Select different write ledgers, endorse a schema and cred def transaction, write to the selected ledger, issue and revoke a credential, with auto endorsing workflow
+      Given we have "3" agents
+         | name  | role                                 | capabilities         |
+         | Acme1 | endorser connected with dev bcovrin  | <Acme1_capabilities> |
+         | Acme2 | endorser connected with test bcovrin | <Acme2_capabilities> |
+         | Bob   | author                               | <Bob_capabilities>   |
+      And "Acme1" and "Bob" have an existing connection
+      When "Acme1" has a DID with role "ENDORSER"
+      And "Acme1" connection has job role "TRANSACTION_ENDORSER"
+      And "Bob" connection has job role "TRANSACTION_AUTHOR"
+      And "Bob" connection sets "CftsUq2Pmjz3MEmfu8RxUs" and "endorser_dev" as endorser info
+      And "Acme2" and "Bob" have an existing connection
+      When "Acme2" has a DID with role "ENDORSER"
+      And "Acme2" connection has job role "TRANSACTION_ENDORSER"
+      And "Bob" connection has job role "TRANSACTION_AUTHOR"
+      And "Bob" connection sets "8FWsRpoLKiuqBNDxik2trg" and "endorser_test" as endorser info
+      And "Bob" selects "bcovrinTest" write_ledger, create local wallet did, register on ledger and set as public
+      And "Bob" authors a schema transaction with <Schema_name>
+      And "Bob" has written the schema <Schema_name> to the ledger
+      And "Bob" authors a credential definition transaction with <Schema_name>
+      And "Bob" has written the credential definition for <Schema_name> to the ledger
+      And "Bob" has written the revocation registry definition to the ledger
+      And "Bob" has written the revocation registry entry transaction to the ledger
+      And "Acme2" has an issued <Schema_name> credential <Credential_data> from "Bob"
+      And "Bob" revokes the credential without publishing the entry
+      And "Bob" authors a revocation registry entry publishing transaction
+      Then "Acme2" can verify the credential from "Bob" was revoked
+      And "Bob" selects "bcovrinDev" write_ledger, create local wallet did, register on ledger and set as public
+      And "Bob" authors a schema transaction with <Schema_name>
+      And "Bob" has written the schema <Schema_name> to the ledger
+      And "Bob" authors a credential definition transaction with <Schema_name>
+      And "Bob" has written the credential definition for <Schema_name> to the ledger
+      And "Bob" has written the revocation registry definition to the ledger
+      And "Bob" has written the revocation registry entry transaction to the ledger
+      And "Acme1" has an issued <Schema_name> credential <Credential_data> from "Bob"
+      And "Bob" revokes the credential without publishing the entry
+      And "Bob" authors a revocation registry entry publishing transaction
+      Then "Acme1" can verify the credential from "Bob" was revoked
+      And "Bob" selects "bcovrinTest" write_ledger, create local wallet did, register on ledger and set as public
+      And "Bob" authors a schema transaction with <Schema_name>
+      And "Bob" has written the schema <Schema_name> to the ledger
+      And "Bob" authors a credential definition transaction with <Schema_name>
+      And "Bob" has written the credential definition for <Schema_name> to the ledger
+      And "Bob" has written the revocation registry definition to the ledger
+      And "Bob" has written the revocation registry entry transaction to the ledger
+      And "Acme2" has an issued <Schema_name> credential <Credential_data> from "Bob"
+      And "Bob" revokes the credential without publishing the entry
+      And "Bob" authors a revocation registry entry publishing transaction
+      Then "Acme2" can verify the credential from "Bob" was revoked
+      And "Bob" selects "bcovrinDev" write_ledger, create local wallet did, register on ledger and set as public
+      And "Bob" authors a schema transaction with <Schema_name>
+      And "Bob" has written the schema <Schema_name> to the ledger
+      And "Bob" authors a credential definition transaction with <Schema_name>
+      And "Bob" has written the credential definition for <Schema_name> to the ledger
+      And "Bob" has written the revocation registry definition to the ledger
+      And "Bob" has written the revocation registry entry transaction to the ledger
+      And "Acme1" has an issued <Schema_name> credential <Credential_data> from "Bob"
+      And "Bob" revokes the credential without publishing the entry
+      And "Bob" authors a revocation registry entry publishing transaction
+      Then "Acme1" can verify the credential from "Bob" was revoked
+
+      Examples:
+         | Acme1_capabilities                                                                                                                                      | Acme2_capabilities                                                                                                                                       | Bob_capabilities                                                                                                     | Schema_name    | Credential_data          |
+         | --endorser-role endorser --revocation --public-did --genesis-url http://dev.bcovrin.vonx.io/genesis --seed bdd_seed_00000000000000000000001             | --endorser-role endorser --revocation --public-did --genesis-url http://test.bcovrin.vonx.io/genesis --seed bdd_seed_00000000000000000000002             | --multitenant --multi-ledger --endorser-role author --revocation --seed bdd_seed_00000000000000000000003             | driverslicense | Data_DL_NormalizedValues |
+         | --endorser-role endorser --revocation --public-did --genesis-url http://dev.bcovrin.vonx.io/genesis --seed bdd_seed_00000000000000000000001             | --endorser-role endorser --revocation --public-did --genesis-url http://test.bcovrin.vonx.io/genesis --seed bdd_seed_00000000000000000000002             | --multi-ledger --endorser-role author --revocation --seed bdd_seed_00000000000000000000003                           | driverslicense | Data_DL_NormalizedValues |
+         | --mediation --endorser-role endorser --revocation --public-did --genesis-url http://dev.bcovrin.vonx.io/genesis --seed bdd_seed_00000000000000000000001 | --mediation --endorser-role endorser --revocation --public-did --genesis-url http://test.bcovrin.vonx.io/genesis --seed bdd_seed_00000000000000000000002 | --multi-ledger --mediation --endorser-role author --revocation --seed bdd_seed_00000000000000000000003               | driverslicense | Data_DL_NormalizedValues |
+         | --mediation --endorser-role endorser --revocation --public-did --genesis-url http://dev.bcovrin.vonx.io/genesis --seed bdd_seed_00000000000000000000001 | --mediation --endorser-role endorser --revocation --public-did --genesis-url http://test.bcovrin.vonx.io/genesis --seed bdd_seed_00000000000000000000002 | --multitenant --mediation --multi-ledger --endorser-role author --revocation --seed bdd_seed_00000000000000000000003 | driverslicense | Data_DL_NormalizedValues |

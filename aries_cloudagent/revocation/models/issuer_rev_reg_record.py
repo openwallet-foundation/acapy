@@ -40,7 +40,9 @@ from ...messaging.valid import (
     INDY_REV_REG_ID_VALIDATE,
     UUID4_EXAMPLE,
 )
+from ...multitenant.base import BaseMultitenantManager
 from ...tails.base import BaseTailsServer
+from ...wallet.base import BaseWallet
 from ..error import RevocationError
 from ..recover import generate_ledger_rrrecovery_txn
 from .issuer_cred_rev_record import IssuerCredRevRecord
@@ -371,7 +373,18 @@ class IssuerRevRegRecord(BaseRecord):
         # get rev reg delta (revocations published to ledger)
         ledger = profile.inject(BaseLedger)
         async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(self.revoc_reg_id)
+            async with profile.session() as session:
+                multitenant_mgr = session.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    subwallet = session.inject(BaseWallet)
+                    sign_did_info = await subwallet.get_public_did()
+                    (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                        revoc_reg_id=self.revoc_reg_id, sign_did_info=sign_did_info
+                    )
+                else:
+                    (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                        self.revoc_reg_id
+                    )
 
         # get rev reg records from wallet (revocations and status)
         recs = []

@@ -292,12 +292,12 @@ class IndySdkLedger(BaseLedger):
         """Accessor for the ledger read-only flag."""
         return self.pool.read_only
 
-    async def is_ledger_read_only(self) -> bool:
+    async def is_ledger_read_only(self, sign_did_info: DIDInfo = None) -> bool:
         """Check if ledger is read-only including TAA."""
         if self.read_only:
             return self.read_only
         # if TAA is required and not accepted we should be in read-only mode
-        taa = await self.get_txn_author_agreement()
+        taa = await self.get_txn_author_agreement(sign_did_info=sign_did_info)
         if taa["taa_required"]:
             taa_acceptance = await self.get_latest_txn_author_acceptance()
             if "mechanism" not in taa_acceptance:
@@ -483,7 +483,7 @@ class IndySdkLedger(BaseLedger):
 
         return request_json
 
-    async def get_schema(self, schema_id: str) -> dict:
+    async def get_schema(self, schema_id: str, sign_did_info: DIDInfo = None) -> dict:
         """Get a schema from the cache if available, otherwise fetch from the ledger.
 
         Args:
@@ -498,9 +498,11 @@ class IndySdkLedger(BaseLedger):
         if schema_id.isdigit():
             return await self.fetch_schema_by_seq_no(int(schema_id))
         else:
-            return await self.fetch_schema_by_id(schema_id)
+            return await self.fetch_schema_by_id(schema_id, sign_did_info)
 
-    async def fetch_schema_by_id(self, schema_id: str) -> dict:
+    async def fetch_schema_by_id(
+        self, schema_id: str, sign_did_info: DIDInfo = None
+    ) -> dict:
         """Get schema from ledger.
 
         Args:
@@ -511,7 +513,7 @@ class IndySdkLedger(BaseLedger):
 
         """
 
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         public_did = public_info.did if public_info else None
 
         with IndyErrorHandler("Exception building schema request", LedgerError):
@@ -591,7 +593,9 @@ class IndySdkLedger(BaseLedger):
 
         return request_json
 
-    async def get_credential_definition(self, credential_definition_id: str) -> dict:
+    async def get_credential_definition(
+        self, credential_definition_id: str, sign_did_info: DIDInfo = None
+    ) -> dict:
         """Get a credential definition from the cache if available, otherwise the ledger.
 
         Args:
@@ -605,9 +609,13 @@ class IndySdkLedger(BaseLedger):
             if result:
                 return result
 
-        return await self.fetch_credential_definition(credential_definition_id)
+        return await self.fetch_credential_definition(
+            credential_definition_id, sign_did_info
+        )
 
-    async def fetch_credential_definition(self, credential_definition_id: str) -> dict:
+    async def fetch_credential_definition(
+        self, credential_definition_id: str, sign_did_info: DIDInfo = None
+    ) -> dict:
         """Get a credential definition from the ledger by id.
 
         Args:
@@ -615,7 +623,7 @@ class IndySdkLedger(BaseLedger):
 
         """
 
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         public_did = public_info.did if public_info else None
 
         with IndyErrorHandler("Exception building cred def request", LedgerError):
@@ -664,14 +672,14 @@ class IndySdkLedger(BaseLedger):
         seq_no = tokens[3]
         return (await self.get_schema(seq_no))["id"]
 
-    async def get_key_for_did(self, did: str) -> str:
+    async def get_key_for_did(self, did: str, sign_did_info: DIDInfo = None) -> str:
         """Fetch the verkey for a ledger DID.
 
         Args:
             did: The DID to look up on the ledger or in the cache
         """
         nym = self.did_to_nym(did)
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         public_did = public_info.did if public_info else None
         with IndyErrorHandler("Exception building nym request", LedgerError):
             request_json = await indy.ledger.build_get_nym_request(public_did, nym)
@@ -679,14 +687,18 @@ class IndySdkLedger(BaseLedger):
         data_json = (json.loads(response_json))["result"]["data"]
         return full_verkey(did, json.loads(data_json)["verkey"]) if data_json else None
 
-    async def get_all_endpoints_for_did(self, did: str) -> dict:
+    async def get_all_endpoints_for_did(
+        self,
+        did: str,
+        sign_did_info: DIDInfo = None,
+    ) -> dict:
         """Fetch all endpoints for a ledger DID.
 
         Args:
             did: The DID to look up on the ledger or in the cache
         """
         nym = self.did_to_nym(did)
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         public_did = public_info.did if public_info else None
         with IndyErrorHandler("Exception building attribute request", LedgerError):
             request_json = await indy.ledger.build_get_attrib_request(
@@ -703,7 +715,10 @@ class IndySdkLedger(BaseLedger):
         return endpoints
 
     async def get_endpoint_for_did(
-        self, did: str, endpoint_type: EndpointType = None
+        self,
+        did: str,
+        endpoint_type: EndpointType = None,
+        sign_did_info: DIDInfo = None,
     ) -> str:
         """Fetch the endpoint for a ledger DID.
 
@@ -715,7 +730,7 @@ class IndySdkLedger(BaseLedger):
         if not endpoint_type:
             endpoint_type = EndpointType.ENDPOINT
         nym = self.did_to_nym(did)
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         public_did = public_info.did if public_info else None
         with IndyErrorHandler("Exception building attribute request", LedgerError):
             request_json = await indy.ledger.build_get_attrib_request(
@@ -739,6 +754,7 @@ class IndySdkLedger(BaseLedger):
         write_ledger: bool = True,
         endorser_did: str = None,
         routing_keys: List[str] = None,
+        sign_did_info: DIDInfo = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 
@@ -747,7 +763,7 @@ class IndySdkLedger(BaseLedger):
             endpoint: The endpoint address
             endpoint_type: The type of the endpoint
         """
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError(
                 "Cannot update endpoint at ledger without a public DID"
@@ -756,7 +772,7 @@ class IndySdkLedger(BaseLedger):
         if not endpoint_type:
             endpoint_type = EndpointType.ENDPOINT
 
-        all_exist_endpoints = await self.get_all_endpoints_for_did(did)
+        all_exist_endpoints = await self.get_all_endpoints_for_did(did, sign_did_info)
         exist_endpoint_of_type = (
             all_exist_endpoints.get(endpoint_type.indy, None)
             if all_exist_endpoints
@@ -764,7 +780,7 @@ class IndySdkLedger(BaseLedger):
         )
 
         if exist_endpoint_of_type != endpoint:
-            if await self.is_ledger_read_only():
+            if await self.is_ledger_read_only(sign_did_info):
                 raise LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode, "
                     "or TAA is required and not accepted"
@@ -807,6 +823,7 @@ class IndySdkLedger(BaseLedger):
         role: str = None,
         write_ledger: bool = True,
         endorser_did: str = None,
+        sign_did_info: DIDInfo = None,
     ) -> Tuple[bool, dict]:
         """Register a nym on the ledger.
 
@@ -816,13 +833,13 @@ class IndySdkLedger(BaseLedger):
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
         """
-        if await self.is_ledger_read_only():
+        if await self.is_ledger_read_only(sign_did_info):
             raise LedgerError(
                 "Error cannot register nym when ledger is in read only mode, "
                 "or TAA is required and not accepted"
             )
 
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         if not public_info:
             raise WalletNotFoundError(
                 f"Cannot register NYM to ledger: wallet {self.profile.name} "
@@ -852,13 +869,13 @@ class IndySdkLedger(BaseLedger):
                 await wallet.replace_local_did_metadata(did, metadata)
         return True, None
 
-    async def get_nym_role(self, did: str) -> Role:
+    async def get_nym_role(self, did: str, sign_did_info: DIDInfo = None) -> Role:
         """Return the role of the input public DID's NYM on the ledger.
 
         Args:
             did: DID to query for role on the ledger.
         """
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         public_did = public_info.did if public_info else None
 
         with IndyErrorHandler("Exception building get-nym request", LedgerError):
@@ -894,7 +911,9 @@ class IndySdkLedger(BaseLedger):
         response_json = await self._submit(request_json)
         return response_json
 
-    async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
+    async def rotate_public_did_keypair(
+        self, next_seed: str = None, sign_did_info: DIDInfo = None
+    ) -> None:
         """Rotate keypair for public DID: create new key, submit to ledger, update wallet.
 
         Args:
@@ -933,22 +952,26 @@ class IndySdkLedger(BaseLedger):
         txn_data_data = txn_resp_data["txn"]["data"]
         role_token = Role.get(txn_data_data.get("role")).token()
         alias = txn_data_data.get("alias")
-        await self.register_nym(public_did, verkey, role_token, alias)
+        await self.register_nym(
+            public_did, verkey, role_token, alias, sign_did_info=sign_did_info
+        )
 
         # update wallet
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             await wallet.rotate_did_keypair_apply(public_did)
 
-    async def get_txn_author_agreement(self, reload: bool = False) -> dict:
+    async def get_txn_author_agreement(
+        self, reload: bool = False, sign_did_info: DIDInfo = None
+    ) -> dict:
         """Get the current transaction author agreement, fetching it if necessary."""
         if not self.pool.taa_cache or reload:
-            self.pool.taa_cache = await self.fetch_txn_author_agreement()
+            self.pool.taa_cache = await self.fetch_txn_author_agreement(sign_did_info)
         return self.pool.taa_cache
 
-    async def fetch_txn_author_agreement(self) -> dict:
+    async def fetch_txn_author_agreement(self, sign_did_info: DIDInfo = None) -> dict:
         """Fetch the current AML and TAA from the ledger."""
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         public_did = public_info.did if public_info else None
 
         get_aml_req = await indy.ledger.build_get_acceptance_mechanisms_request(
@@ -1047,9 +1070,11 @@ class IndySdkLedger(BaseLedger):
                 )
         return acceptance
 
-    async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:
+    async def get_revoc_reg_def(
+        self, revoc_reg_id: str, sign_did_info: DIDInfo = None
+    ) -> dict:
         """Get revocation registry definition by ID; augment with ledger timestamp."""
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         try:
             fetch_req = await indy.ledger.build_get_revoc_reg_def_request(
                 public_info and public_info.did, revoc_reg_id
@@ -1072,9 +1097,11 @@ class IndySdkLedger(BaseLedger):
         assert found_id == revoc_reg_id
         return found_def
 
-    async def get_revoc_reg_entry(self, revoc_reg_id: str, timestamp: int):
+    async def get_revoc_reg_entry(
+        self, revoc_reg_id: str, timestamp: int, sign_did_info: DIDInfo = None
+    ):
         """Get revocation registry entry by revocation registry ID and timestamp."""
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         with IndyErrorHandler("Exception fetching rev reg entry", LedgerError):
             try:
                 fetch_req = await indy.ledger.build_get_revoc_reg_request(
@@ -1096,7 +1123,7 @@ class IndySdkLedger(BaseLedger):
         return json.loads(found_reg_json), ledger_timestamp
 
     async def get_revoc_reg_delta(
-        self, revoc_reg_id: str, fro=0, to=None
+        self, revoc_reg_id: str, fro=0, to=None, sign_did_info: DIDInfo = None
     ) -> Tuple[dict, int]:
         """Look up a revocation registry delta by ID.
 
@@ -1108,7 +1135,7 @@ class IndySdkLedger(BaseLedger):
         """
         if to is None:
             to = int(time())
-        public_info = await self.get_wallet_public_did()
+        public_info = sign_did_info or await self.get_wallet_public_did()
         with IndyErrorHandler("Exception building rev reg delta request", LedgerError):
             fetch_req = await indy.ledger.build_get_revoc_reg_delta_request(
                 public_info and public_info.did,

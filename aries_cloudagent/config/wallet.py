@@ -1,12 +1,19 @@
 """Wallet configuration."""
 
 import logging
-from typing import Tuple
+import json
+
+from typing import Tuple, Mapping, Any
 
 from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager, ProfileSession
-from ..storage.base import BaseStorage
-from ..storage.error import StorageNotFoundError
+from ..ledger.base import BaseLedger
+from ..storage.base import BaseStorage, StorageRecord
+from ..storage.error import (
+    StorageNotFoundError,
+    StorageDuplicateError,
+    StorageError,
+)
 from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import seed_to_did
@@ -27,6 +34,63 @@ CFG_MAP = {
     "storage_creds",
     "storage_type",
 }
+
+
+def is_multi_ledger(settings: Mapping[str, Any]) -> bool:
+    """Check whether mutli-ledger mode is enabled."""
+    if (
+        settings.get_value("ledger.ledger_config_list")
+        and len(settings.get_value("ledger.ledger_config_list")) >= 1
+    ):
+        return True
+    return False
+
+
+async def update_public_did_ledger_id_map(
+    session,
+    info: DIDInfo,
+    config: dict,
+):
+    """Add or update acapy_ledger_public_did_map storage record."""
+    _curr_write_ledger = session.inject_or(BaseLedger)
+    storage = session.inject_or(BaseStorage)
+    ledger_id = config.get("ledger_pool_name") or _curr_write_ledger.pool_name
+    record_type_ledger_did_map = (
+        config.get("record_type_name") or "acapy_ledger_public_did_map"
+    )
+    try:
+        ledger_id_public_did_map_record: StorageRecord = await storage.find_record(
+            type_filter=record_type_ledger_did_map, tag_query={}
+        )
+        ledger_id_public_did_map = json.loads(ledger_id_public_did_map_record.value)
+        ledger_id_public_did_map[ledger_id] = {
+            "did": info.did,
+            "routing_keys": config.get("routing_keys"),
+            "mediation_endpoint": config.get("mediator_endpoint"),
+            "connection_id": config.get("connection_id"),
+            "write_ledger": config.get("write_ledger"),
+        }
+        await storage.update_record(
+            ledger_id_public_did_map_record,
+            json.dumps(ledger_id_public_did_map),
+            {},
+        )
+    except (StorageError, StorageNotFoundError, StorageDuplicateError):
+        ledger_id_public_did_map = {
+            ledger_id: {
+                "did": info.did,
+                "routing_keys": config.get("routing_keys"),
+                "mediation_endpoint": config.get("mediator_endpoint"),
+                "connection_id": config.get("connection_id"),
+                "write_ledger": config.get("write_ledger"),
+            }
+        }
+        record = StorageRecord(
+            record_type_ledger_did_map,
+            json.dumps(ledger_id_public_did_map),
+            {},
+        )
+        await storage.add_record(record)
 
 
 async def wallet_config(
@@ -110,7 +174,10 @@ async def wallet_config(
                 print(f"Verkey: {local_did_info.verkey}")
         else:
             public_did_info = await wallet.create_public_did(
-                method=SOV, key_type=ED25519, seed=wallet_seed
+                method=SOV,
+                key_type=ED25519,
+                seed=wallet_seed,
+                context=context,
             )
             public_did = public_did_info.did
             if provision:
