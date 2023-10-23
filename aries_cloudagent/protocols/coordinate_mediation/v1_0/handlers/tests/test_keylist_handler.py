@@ -1,7 +1,6 @@
 """Test keylist handler."""
+import logging
 import pytest
-
-from asynctest import mock as async_mock
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
@@ -11,7 +10,6 @@ from ...messages.keylist import Keylist
 from ...models.mediation_record import MediationRecord
 from ..keylist_handler import KeylistHandler
 
-from .. import keylist_handler as test_module
 
 TEST_CONN_ID = "conn-id"
 pytestmark = pytest.mark.asyncio
@@ -46,20 +44,18 @@ class TestKeylistHandler:
             await handler.handle(context, responder)
             assert "inactive connection" in exc.value
 
-    async def test_handler_no_record(self, context):
-        with async_mock.patch.object(
-            test_module, "LOG", async_mock.MagicMock()
-        ) as mock_logger:
-            handler, responder = KeylistHandler(), MockResponder()
+    async def test_handler_no_record(self, context, caplog):
+        handler, responder = KeylistHandler(), MockResponder()
+        logging.propagate = True
+        with caplog.at_level(logging.INFO):
             await handler.handle(context, responder)
-            assert mock_logger.warning.call_count == 1
-            assert mock_logger.info.call_count == 0
+        assert "not acting as mediator" in caplog.text
+        assert "Keylist received: " not in caplog.text
 
-    async def test_handler(self, context, session):
-        with async_mock.patch.object(
-            test_module, "LOG", async_mock.MagicMock()
-        ) as mock_logger:
-            handler, responder = KeylistHandler(), MockResponder()
-            await MediationRecord(connection_id=TEST_CONN_ID).save(session)
+    async def test_handler(self, context, session, caplog):
+        handler, responder = KeylistHandler(), MockResponder()
+        await MediationRecord(connection_id=TEST_CONN_ID).save(session)
+        logging.propagate = True
+        with caplog.at_level(logging.INFO):
             await handler.handle(context, responder)
-            assert mock_logger.info.call_count == 1
+        assert "Keylist received: " in caplog.text

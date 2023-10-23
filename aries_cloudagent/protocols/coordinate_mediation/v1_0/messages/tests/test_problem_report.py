@@ -1,7 +1,7 @@
 """Test Problem Report Message."""
+import logging
 import pytest
 
-from asynctest import mock as async_mock
 from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
@@ -12,8 +12,6 @@ from ..problem_report import (
     ProblemReportReason,
     ValidationError,
 )
-
-from .. import problem_report as test_module
 
 
 class TestCMProblemReportMessage(TestCase):
@@ -55,8 +53,6 @@ class TestCMProblemReportMessage(TestCase):
                 "code": "invalid_code",
             },
         ).serialize()
-        with async_mock.patch.object(
-            test_module, "LOGGER", async_mock.MagicMock()
-        ) as mock_logger:
-            CMProblemReportSchema().validate_fields(data)
-            assert mock_logger.warning.call_count == 1
+        self._caplog.set_level(logging.WARNING)
+        CMProblemReportSchema().validate_fields(data)
+        assert "Unexpected error code received" in self._caplog.text

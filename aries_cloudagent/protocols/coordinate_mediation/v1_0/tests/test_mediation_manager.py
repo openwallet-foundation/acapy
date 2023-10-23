@@ -1,4 +1,5 @@
 """Test MediationManager."""
+import logging
 from typing import AsyncIterable, Iterable
 
 from asynctest import mock as async_mock
@@ -448,8 +449,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert route.wallet_id == "test_wallet"
         assert route.connection_id == TEST_CONN_ID
 
-    async def test_store_update_results_errors(self, manager):
+    async def test_store_update_results_errors(self, caplog, manager):
         """test_store_update_results with errors."""
+        caplog.set_level(logging.WARNING)
         results = [
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
@@ -467,11 +469,11 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
                 result=KeylistUpdated.RESULT_CLIENT_ERROR,
             ),
         ]
-        with async_mock.patch.object(
-            test_module, "LOGGER", async_mock.MagicMock()
-        ) as mock_logger:
-            await manager.store_update_results(TEST_CONN_ID, results)
-            assert mock_logger.warning.call_count == 3
+        await manager.store_update_results(TEST_CONN_ID, results)
+        assert "no_change" in caplog.text
+        assert "client_error" in caplog.text
+        assert "server_error" in caplog.text
+        print(caplog.text)
 
     async def test_get_my_keylist(self, session, manager):
         """test_get_my_keylist."""

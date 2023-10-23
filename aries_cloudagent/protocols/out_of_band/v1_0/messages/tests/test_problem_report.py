@@ -1,7 +1,7 @@
 """Test Problem Report Message."""
+import logging
 import pytest
 
-from asynctest import mock as async_mock
 from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
@@ -12,8 +12,6 @@ from ..problem_report import (
     ProblemReportReason,
     ValidationError,
 )
-
-from .. import problem_report as test_module
 
 
 class TestOOBProblemReportMessage(TestCase):
@@ -72,11 +70,9 @@ class TestOOBProblemReportMessage(TestCase):
         )
         data.assign_thread_id(thid="test_thid", pthid="test_pthid")
         data = data.serialize()
-        with async_mock.patch.object(
-            test_module, "LOGGER", async_mock.MagicMock()
-        ) as mock_logger:
-            OOBProblemReportSchema().validate_fields(data)
-            assert mock_logger.warning.call_count == 1
+        self._caplog.set_level(logging.WARNING)
+        OOBProblemReportSchema().validate_fields(data)
+        assert "Unexpected error code received" in self._caplog.text
 
     def test_assign_msg_type_version_to_model_inst(self):
         test_msg = OOBProblemReport()

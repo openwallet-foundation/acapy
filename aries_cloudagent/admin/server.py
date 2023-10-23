@@ -408,11 +408,8 @@ class AdminServer(BaseAdminServer):
                     ) = self.multitenant_manager.get_wallet_details_from_token(
                         token=token
                     )
-                    try:
-                        context_wallet_id.get()
-                    except LookupError:
-                        wallet_id = profile.settings.get("wallet.id")
-                        context_wallet_id.set(wallet_id)
+                    wallet_id = profile.settings.get("wallet.id")
+                    context_wallet_id.set(wallet_id)
                     meta_data = {
                         "wallet_id": walletid,
                         "wallet_key": walletkey,
