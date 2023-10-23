@@ -315,7 +315,7 @@ class TestConnectionManager(AsyncTestCase):
                 assert invite.routing_keys == self.test_mediator_routing_keys
                 assert invite.endpoint == self.test_mediator_endpoint
                 self.route_manager.routing_info.assert_awaited_once_with(
-                    self.profile, self.test_endpoint, mediation_record
+                    self.profile, mediation_record
                 )
 
     async def test_receive_invitation(self):
@@ -426,15 +426,11 @@ class TestConnectionManager(AsyncTestCase):
         with async_mock.patch.object(
             InMemoryWallet, "create_local_did", autospec=True
         ) as mock_wallet_create_local_did, async_mock.patch.object(
-            self.multitenant_mgr,
-            "get_default_mediator",
-            async_mock.CoroutineMock(return_value=mediation_record),
-        ), async_mock.patch.object(
             ConnectionManager, "create_did_document", autospec=True
         ) as create_did_document, async_mock.patch.object(
             self.route_manager,
-            "mediation_record_for_connection",
-            async_mock.CoroutineMock(return_value=None),
+            "mediation_records_for_connection",
+            async_mock.CoroutineMock(return_value=[mediation_record]),
         ):
             mock_wallet_create_local_did.return_value = DIDInfo(
                 self.test_did,
@@ -455,7 +451,6 @@ class TestConnectionManager(AsyncTestCase):
             create_did_document.assert_called_once_with(
                 self.manager,
                 mock_wallet_create_local_did.return_value,
-                None,
                 [self.test_endpoint],
                 mediation_records=[mediation_record],
             )
@@ -487,8 +482,8 @@ class TestConnectionManager(AsyncTestCase):
             InMemoryWallet, "create_local_did"
         ) as create_local_did, async_mock.patch.object(
             self.route_manager,
-            "mediation_record_for_connection",
-            async_mock.CoroutineMock(return_value=mediation_record),
+            "mediation_records_for_connection",
+            async_mock.CoroutineMock(return_value=[mediation_record]),
         ):
             did_info = DIDInfo(
                 did=self.test_did,
@@ -507,7 +502,6 @@ class TestConnectionManager(AsyncTestCase):
             create_did_document.assert_called_once_with(
                 self.manager,
                 did_info,
-                None,
                 [self.test_endpoint],
                 mediation_records=[mediation_record],
             )
@@ -539,8 +533,8 @@ class TestConnectionManager(AsyncTestCase):
                 InMemoryWallet, "create_local_did"
             ) as create_local_did, async_mock.patch.object(
                 self.route_manager,
-                "mediation_record_for_connection",
-                async_mock.CoroutineMock(return_value=mediation_record),
+                "mediation_records_for_connection",
+                async_mock.CoroutineMock(return_value=[mediation_record]),
             ):
                 did_info = DIDInfo(
                     did=self.test_did,
@@ -558,7 +552,6 @@ class TestConnectionManager(AsyncTestCase):
                 create_did_document.assert_called_once_with(
                     self.manager,
                     did_info,
-                    None,
                     [self.test_endpoint],
                     mediation_records=[mediation_record],
                 )
@@ -882,25 +875,17 @@ class TestConnectionManager(AsyncTestCase):
         ), async_mock.patch.object(
             ConnRecord, "metadata_get", async_mock.CoroutineMock(return_value=False)
         ), async_mock.patch.object(
-            self.route_manager,
-            "mediation_record_for_connection",
-            async_mock.CoroutineMock(return_value=mediation_record),
-        ), async_mock.patch.object(
             ConnRecord, "retrieve_request", autospec=True
         ), async_mock.patch.object(
             ConnectionResponse, "sign_field", autospec=True
         ), async_mock.patch.object(
             InMemoryWallet, "create_local_did", autospec=True
         ) as mock_wallet_create_local_did, async_mock.patch.object(
-            self.multitenant_mgr,
-            "get_default_mediator",
-            async_mock.CoroutineMock(return_value=mediation_record),
-        ), async_mock.patch.object(
             ConnectionManager, "create_did_document", autospec=True
         ) as create_did_document, async_mock.patch.object(
             self.route_manager,
-            "mediation_record_for_connection",
-            async_mock.CoroutineMock(return_value=None),
+            "mediation_records_for_connection",
+            async_mock.CoroutineMock(return_value=[mediation_record]),
         ):
             mock_wallet_create_local_did.return_value = DIDInfo(
                 self.test_did,
@@ -918,7 +903,6 @@ class TestConnectionManager(AsyncTestCase):
             create_did_document.assert_called_once_with(
                 self.manager,
                 mock_wallet_create_local_did.return_value,
-                None,
                 [self.test_endpoint],
                 mediation_records=[mediation_record],
             )
@@ -970,8 +954,8 @@ class TestConnectionManager(AsyncTestCase):
             InMemoryWallet, "create_local_did"
         ) as create_local_did, async_mock.patch.object(
             self.route_manager,
-            "mediation_record_for_connection",
-            async_mock.CoroutineMock(return_value=mediation_record),
+            "mediation_records_for_connection",
+            async_mock.CoroutineMock(return_value=[mediation_record]),
         ), async_mock.patch.object(
             record, "retrieve_request", autospec=True
         ), async_mock.patch.object(
@@ -994,7 +978,6 @@ class TestConnectionManager(AsyncTestCase):
             create_did_document.assert_called_once_with(
                 self.manager,
                 did_info,
-                None,
                 [self.test_endpoint],
                 mediation_records=[mediation_record],
             )

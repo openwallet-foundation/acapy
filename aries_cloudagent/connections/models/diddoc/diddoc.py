@@ -22,6 +22,8 @@ import logging
 
 from typing import List, Sequence, Union
 
+from ....did.did_key import DIDKey
+
 from .publickey import PublicKey, PublicKeyType
 from .service import Service
 from .util import canon_did, canon_ref, ok_did, resource
@@ -116,13 +118,36 @@ class DIDDoc:
                 "Cannot add item {} to DIDDoc on DID {}".format(item, self.did)
             )
 
-    def serialize(self) -> dict:
+    @staticmethod
+    def _normalize_routing_keys(service: dict) -> dict:
+        """Normalize routing keys in service.
+
+        Args:
+            service: service dict
+
+        Returns: service dict with routing keys normalized
+        """
+        routing_keys = service.get("routingKeys")
+        if routing_keys:
+            routing_keys = [
+                DIDKey.from_did(key).public_key_b58
+                if key.startswith("did:key:")
+                else key
+                for key in routing_keys
+            ]
+            service["routingKeys"] = routing_keys
+        return service
+
+    def serialize(self, normalize_routing_keys: bool = False) -> dict:
         """Dump current object to a JSON-compatible dictionary.
 
         Returns:
             dict representation of current DIDDoc
 
         """
+        service = [service.to_dict() for service in self.service.values()]
+        if normalize_routing_keys:
+            service = [self._normalize_routing_keys(s) for s in service]
 
         return {
             "@context": DIDDoc.CONTEXT,
@@ -136,7 +161,7 @@ class DIDDoc:
                 for pubkey in self.pubkey.values()
                 if pubkey.authn
             ],
-            "service": [service.to_dict() for service in self.service.values()],
+            "service": service,
         }
 
     def to_json(self) -> str:
@@ -285,7 +310,7 @@ class DIDDoc:
                 ),
                 service["type"],
                 rv.add_service_pubkeys(service, "recipientKeys"),
-                rv.add_service_pubkeys(service, ["mediatorKeys", "routingKeys"]),
+                service.get("routingKeys", []),
                 canon_ref(rv.did, endpoint, ";") if ";" in endpoint else endpoint,
                 service.get("priority", None),
             )

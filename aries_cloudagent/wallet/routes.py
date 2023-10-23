@@ -672,7 +672,6 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     routing_keys, mediator_endpoint = await route_manager.routing_info(
         profile,
-        None,
         mediation_record,
     )
 
