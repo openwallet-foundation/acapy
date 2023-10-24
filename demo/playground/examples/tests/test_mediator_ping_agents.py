@@ -6,10 +6,11 @@ import base64
 import os
 import pytest
 import time
+import uuid
 
 import json as jsonlib
 
-from . import logger, Agent, FABER, ALICE
+from . import logger, Agent, FABER, ALICE, MULTI
 
 # add a blank line...
 logger.info("start testing mediated connections...")
@@ -30,9 +31,21 @@ def alice():
 
 
 @pytest.fixture(scope="session")
+def multi_one():
+    """resolver agent fixture."""
+    agent = Agent(MULTI)
+    wallet_name = f"multi_one_{str(uuid.uuid4())[0:8]}"
+    resp = agent.create_tenant(wallet_name, "changeme")
+    wallet_id = resp["wallet_id"]
+    token = resp["token"]
+    agent.headers = {"Authorization": f"Bearer {token}"}
+    yield agent
+
+
+@pytest.fixture(scope="session")
 def mediation_invite():
-    invitation_url = os.getenv("INVITATION_URL")
-    logger.info(f"INVITATION_URL = {invitation_url}")
+    invitation_url = os.getenv("MEDIATOR_INVITATION_URL")
+    logger.info(f"MEDIATOR_INVITATION_URL = {invitation_url}")
     base64_message = invitation_url.split("=", maxsplit=1)[1]
     base64_bytes = base64_message.encode("ascii")
     message_bytes = base64.b64decode(base64_bytes)
@@ -100,9 +113,17 @@ def alice_mediator(alice, mediation_invite):
     yield result
 
 
+@pytest.fixture(scope="session")
+def multi_one_mediator(multi_one, mediation_invite):
+    logger.info(f"multi_one_mediator...")
+    result = initialize_mediation(multi_one, mediation_invite)
+    logger.info(f"...multi_one_mediator = {result}")
+    yield result
+
+
 @pytest.mark.skipif(
-    os.getenv("INVITATION_URL") in [None, "", " "],
-    reason="INVITATION_URL not set, cannot connect with mediator",
+    os.getenv("MEDIATOR_INVITATION_URL") in [None, "", " "],
+    reason="MEDIATOR_INVITATION_URL not set. Running tests that do not require mediator.",
 )
 def test_mediated_single_tenants(
     faber, alice, faber_mediator, alice_mediator, mediation_invite
@@ -167,24 +188,71 @@ def test_mediated_single_tenants(
         pings = pings + 1
 
 
-# @pytest.mark.skipif(
-#     os.getenv("INVITATION_URL") in [None, "", " "],
-#     reason="INVITATION_URL not set, cannot connect with mediator",
-# )
-# def test_faber_mediation_granted(faber, faber_mediator_connection, faber_mediation_id):
-#     assert faber_mediation_id["mediation_granted"]
+@pytest.mark.skipif(
+    os.getenv("MEDIATOR_INVITATION_URL") in [None, "", " "],
+    reason="MEDIATOR_INVITATION_URL not set. Running tests that do not require mediator.",
+)
+def test_mediated_multi_tenants(
+    multi_one, alice, multi_one_mediator, alice_mediator, mediation_invite
+):
+    assert multi_one_mediator["mediation_granted"] == True
+    assert alice_mediator["mediation_granted"] == True
 
+    resp = multi_one.create_invitation(
+        alias="alice",
+        auto_accept="true",
+        json={
+            "my_label": "multi_one",
+            "mediation_id": multi_one_mediator["mediation_id"],
+        },
+    )
+    multi_one_alice_connection_id = resp["connection_id"]
+    logger.info(f"multi_one_alice_connection_id = {multi_one_alice_connection_id}")
+    assert multi_one_alice_connection_id
+    invite = resp["invitation"]
+    logger.info(f"invite = {invite}")
+    assert invite
 
-# @pytest.mark.skipif(
-#     os.getenv("INVITATION_URL") in [None, "", " "],
-#     reason="INVITATION_URL not set, cannot connect with mediator",
-# )
-# def test_alice_connect_mediator(alice, alice_mediator_connection):
-#     # make sure connection is active...
-#     time.sleep(5)
+    mediation_invite_json = jsonlib.loads(mediation_invite)
+    logger.info(f"invitation service endpoint = {invite['serviceEndpoint']}")
+    logger.info(
+        f"mediator service endpoint = {mediation_invite_json['serviceEndpoint']}"
+    )
+    assert invite["serviceEndpoint"] == mediation_invite_json["serviceEndpoint"]
 
-#     # resp = alice.ping_connection(alice_mediator_connection, "alice")
-#     # assert True
+    resp = alice.receive_invite(invite, alias="multi_one", auto_accept="true")
+    alice_multi_one_connection_id = resp["connection_id"]
+    logger.info(f"alice_multi_one_connection_id = {alice_multi_one_connection_id}")
+    assert alice_multi_one_connection_id
 
-#     resp = alice.list_connections(alias="mediator")
-#     logger.info(f"alice connections = {resp}")
+    multi_one_alice_connection_active = False
+    attempts = 0
+    while not multi_one_alice_connection_active and attempts < 5:
+        time.sleep(1)
+        connection_resp = multi_one.get_connection(multi_one_alice_connection_id)
+        multi_one_alice_connection_active = connection_resp["state"] == "active"
+        logger.info(f"multi_one/alice active?  {multi_one_alice_connection_active}")
+        attempts = attempts + 1
+
+    alice_multi_one_connection_active = False
+    attempts = 0
+    while not alice_multi_one_connection_active and attempts < 5:
+        time.sleep(1)
+        connection_resp = alice.get_connection(alice_multi_one_connection_id)
+        alice_multi_one_connection_active = connection_resp["state"] == "active"
+        logger.info(f"alice/multi_one active?  {alice_multi_one_connection_active}")
+        attempts = attempts + 1
+
+    assert multi_one_alice_connection_active == True
+    assert alice_multi_one_connection_active == True
+
+    logger.info("multi_one alice pinging...")
+    pings = 0
+    while pings < 10:
+        resp = multi_one.ping_connection(multi_one_alice_connection_id, "multi_one")
+        logger.info(f"multi_one ping alice =  {resp}")
+        time.sleep(1)
+        alice.ping_connection(alice_multi_one_connection_id, "alice")
+        logger.info(f"alice ping multi_one =  {resp}")
+        time.sleep(1)
+        pings = pings + 1

@@ -28,6 +28,6 @@ services:
         - ACME=http://acme-agent:9013
         - MULTI=http://multi-agent:9014
         # ADDITIONAL TEST env vars
-        - INVITATION_URL=${INVITATION_URL}
+        - MEDIATOR_INVITATION_URL=${MEDIATOR_INVITATION_URL}
       networks:
         - app-network
