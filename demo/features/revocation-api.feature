@@ -68,3 +68,64 @@ Feature: ACA-Py Revocation API
       Examples:
          | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
          | Acme   | --revocation --public-did --did-exchange   |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+   @GHA
+   Scenario Outline: Using revocation api, rotate revocation 
+      Given we have "3" agents
+         | name  | role     | capabilities        |
+         | Acme  | issuer   | <Acme_capabilities> |
+         | Faber | verifier | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "<issuer>" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "<issuer>" lists revocation registries
+      And "<issuer>" rotates revocation registries
+
+      Examples:
+         | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
+         | Acme   | --revocation --public-did                  |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+   @GHA
+   Scenario Outline: Using revocation api, fill registry (need to run with "TAILS_FILE_COUNT": "4" env var)
+      Given we have "2" agents
+         | name  | role     | capabilities        |
+         | Acme  | issuer   | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "<issuer>" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And wait 5 seconds
+      And "<issuer>" lists revocation registries 1
+      When "<issuer>" offers a credential with data <Credential_data>
+      Then "Bob" has the credential issued
+      And wait 5 seconds
+      And "<issuer>" lists revocation registries 2
+      When "<issuer>" offers a credential with data <Credential_data>
+      Then "Bob" has the credential issued
+      And wait 5 seconds
+      And "<issuer>" lists revocation registries 3
+      When "<issuer>" offers a credential with data <Credential_data>
+      Then "Bob" has the credential issued
+      And wait 5 seconds
+      And "<issuer>" lists revocation registries 4
+      When "<issuer>" offers a credential with data <Credential_data>
+      Then "Bob" has the credential issued
+      And wait 5 seconds
+      And "<issuer>" lists revocation registries 5
+      When "<issuer>" offers a credential with data <Credential_data>
+      Then "Bob" has the credential issued
+      And wait 5 seconds
+      And "<issuer>" lists revocation registries 6
+      When "<issuer>" offers a credential with data <Credential_data>
+      Then "Bob" has the credential issued
+      And wait 5 seconds
+      And "<issuer>" lists revocation registries 7
+      When "<issuer>" offers a credential with data <Credential_data>
+      Then "Bob" has the credential issued
+      And "<issuer>" lists revocation registries 8
+      When "<issuer>" offers a credential with data <Credential_data>
+      Then "Bob" has the credential issued
+      And wait 5 seconds      
+      
+      Examples:
+         | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
+         | Acme   | --revocation --public-did                  |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |

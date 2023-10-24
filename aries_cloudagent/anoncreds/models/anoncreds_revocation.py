@@ -135,6 +135,8 @@ class RevRegDefState(BaseModel):
     STATE_FAILED = "failed"
     STATE_ACTION = "action"
     STATE_WAIT = "wait"
+    STATE_DECOMMISSIONED = "decommissioned"
+    STATE_FULL = "full"
 
     class Meta:
         """RevRegDefState metadata."""
@@ -179,6 +181,8 @@ class RevRegDefStateSchema(BaseModelSchema):
                 RevRegDefState.STATE_FAILED,
                 RevRegDefState.STATE_ACTION,
                 RevRegDefState.STATE_WAIT,
+                RevRegDefState.STATE_DECOMMISSIONED,
+                RevRegDefState.STATE_FULL,
             ]
         )
     )

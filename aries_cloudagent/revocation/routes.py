@@ -353,8 +353,8 @@ class RevRegsCreatedQueryStringSchema(OpenAPISchema):
         required=False,
         validate=validate.OneOf(
             [
-                getattr(IssuerRevRegRecord, m)
-                for m in vars(IssuerRevRegRecord)
+                getattr(RevRegDefState, m)
+                for m in vars(RevRegDefState)
                 if m.startswith("STATE_")
             ]
         ),
@@ -624,6 +624,61 @@ async def _get_issuer_rev_reg_record(
         pending_pub=pending_pubs,
     )
     return result
+
+
+@docs(
+    tags=["revocation"],
+    summary="Get current active revocation registry by credential definition id",
+)
+@match_info_schema(RevocationCredDefIdMatchInfoSchema())
+@response_schema(RevRegResultSchema(), 200, description="")
+async def get_active_rev_reg(request: web.BaseRequest):
+    """Request handler to get current active revocation registry by cred def id.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The revocation registry identifier
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile: AskarProfile = context.profile
+    cred_def_id = request.match_info["cred_def_id"]
+    try:
+        revocation = AnonCredsRevocation(profile)
+        active_reg = await revocation.get_or_create_active_registry(cred_def_id)
+        rev_reg = await _get_issuer_rev_reg_record(profile, active_reg.rev_reg_def_id)
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
+
+    return web.json_response({"result": rev_reg.serialize()})
+
+
+@docs(tags=["revocation"], summary="Rotate revocation registry")
+@match_info_schema(RevocationCredDefIdMatchInfoSchema())
+@response_schema(RevRegsCreatedSchema(), 200, description="")
+async def rotate_rev_reg(request: web.BaseRequest):
+    """Request handler to rotate the active revocation registries for cred. def.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        list or revocation registry ids that were rotated out
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile: AskarProfile = context.profile
+    cred_def_id = request.match_info["cred_def_id"]
+
+    try:
+        revocation = AnonCredsRevocation(profile)
+        recs = await revocation.decommission_registry(cred_def_id)
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
+
+    return web.json_response({"rev_reg_ids": [rec.name for rec in recs if rec.name]})
 
 
 @docs(
@@ -968,6 +1023,15 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.get("/revocation/registry/{rev_reg_id}", get_rev_reg, allow_head=False),
+            web.get(
+                "/revocation/active-registry/{cred_def_id}",
+                get_active_rev_reg,
+                allow_head=False,
+            ),
+            web.post(
+                "/revocation/active-registry/{cred_def_id}/rotate",
+                rotate_rev_reg,
+            ),
             web.get(
                 "/revocation/registry/{rev_reg_id}/issued",
                 get_rev_reg_issued_count,
