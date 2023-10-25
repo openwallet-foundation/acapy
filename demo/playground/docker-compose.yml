@@ -4,7 +4,7 @@
 # and restart the docker containers without losing your wallet data
 # If you want to delete your wallet data just run `docker volume ls -q | xargs docker volume rm`
 #
-# If you want to enable tracing, see elk-stack. Ensure elk-stack is running, uncomment the ACAPY_TRACE environement variables and run `docker compose up`
+# If you want to enable tracing, see elk-stack. Ensure elk-stack is running, uncomment the ACAPY_TRACE environment variables and run `docker compose up`
 version: "3"
 
 
@@ -12,9 +12,11 @@ networks:
   app-network:
     name: ${APP_NETWORK_NAME:-playgroundnet}
     driver: bridge
+    external: ${APP_NETWORK_EXTERNAL:-false}
   elk-network:
      name: ${ELK_NETWORK_NAME:-elknet}
      driver: bridge
+     external: true
 
 services:
   ngrok-faber-alice:
