@@ -4,10 +4,11 @@ from typing import Optional, Union
 
 from marshmallow import INCLUDE, fields
 
+
 from .......messaging.models.base import BaseModel, BaseModelSchema
 from .......vc.vc_ld import CredentialSchema
 from .......vc.vc_ld.models.credential import VerifiableCredential
-from .cred_detail_options import LDProofVCDetailOptions, LDProofVCDetailOptionsSchema
+from .......vc.vc_ld.models.options import LDProofVCOptions, LDProofVCOptionsSchema
 
 
 class LDProofVCDetail(BaseModel):
@@ -21,7 +22,7 @@ class LDProofVCDetail(BaseModel):
     def __init__(
         self,
         credential: Optional[Union[dict, VerifiableCredential]],
-        options: Optional[Union[dict, LDProofVCDetailOptions]],
+        options: Optional[Union[dict, LDProofVCOptions]],
     ) -> None:
         """Initialize the LDProofVCDetail instance."""
         self.credential = credential
@@ -70,7 +71,7 @@ class LDProofVCDetailSchema(BaseModelSchema):
     )
 
     options = fields.Nested(
-        LDProofVCDetailOptionsSchema(),
+        LDProofVCOptionsSchema(),
         required=True,
         metadata={
             "description": (

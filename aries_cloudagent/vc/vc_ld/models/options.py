@@ -89,7 +89,7 @@ class LDProofVCOptionsSchema(BaseModelSchema):
 
     verification_method = fields.Str(
         data_key="verificationMethod",
-        required=True,
+        required=False,
         metadata={
             "description": (
                 "The verification method to use for the proof. Should match a"
