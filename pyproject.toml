@@ -46,6 +46,7 @@ requests="~2.31.0"
 rlp="1.2.0"
 unflatten="~0.1"
 sd_jwt = {git = "https://github.com/openwallet-foundation-labs/sd-jwt-python.git"}
+did-peer-2 = "^0.1.2"
 
 # askar
 aries-askar= { version = "~0.2.5", optional = true }
@@ -57,7 +58,6 @@ ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
 # indy
 python3-indy= { version = "^1.11.1", optional = true }
-peerdid = "^0.5.2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit="~3.3.3"

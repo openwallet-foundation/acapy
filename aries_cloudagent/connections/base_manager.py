@@ -61,7 +61,7 @@ class BaseConnectionManagerError(BaseError):
 class BaseConnectionManager:
     """Class to provide utilities regarding connection_targets."""
 
-    RECORD_TYPE_DID_DOC = "did_doc"  # legacy
+    RECORD_TYPE_DID_DOC = "did_doc"
     RECORD_TYPE_DID_KEY = "did_key"
 
     def __init__(self, profile: Profile):
@@ -291,8 +291,8 @@ class BaseConnectionManager:
             [self._extract_key_material_in_base58_format(key) for key in routing_keys],
         )
 
-    async def record_keys_for_public_did(self, did: str):
-        """Record the keys for a public DID.
+    async def record_did(self, did: str):
+        """Record DID for later use.
 
         This is required to correlate sender verkeys back to a connection.
         """

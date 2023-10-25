@@ -1145,7 +1145,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             await self.manager.resolve_connection_targets(did)
         assert "not supported" in str(cm.exception)
 
-    async def test_record_keys_for_public_did_empty(self):
+    async def test_record_did_empty(self):
         did = "did:sov:" + self.test_did
         service_builder = ServiceBuilder(DID(did))
         service_builder.add_didcomm(
@@ -1154,9 +1154,9 @@ class TestBaseConnectionManager(AsyncTestCase):
         self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
             return_value=(DIDDocument(id=DID(did)), service_builder.services)
         )
-        await self.manager.record_keys_for_public_did(did)
+        await self.manager.record_did(did)
 
-    async def test_record_keys_for_public_did(self):
+    async def test_record_did(self):
         did = "did:sov:" + self.test_did
         doc_builder = DIDDocumentBuilder(did)
         vm = doc_builder.verification_method.add(
@@ -1170,7 +1170,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
             return_value=(doc, doc.service)
         )
-        await self.manager.record_keys_for_public_did(did)
+        await self.manager.record_did(did)
 
     async def test_diddoc_connection_targets_diddoc_underspecified(self):
         with self.assertRaises(BaseConnectionManagerError):
