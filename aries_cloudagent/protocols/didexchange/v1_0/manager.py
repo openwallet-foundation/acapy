@@ -500,7 +500,7 @@ class DIDXManager(BaseConnectionManager):
             self._logger.debug(
                 "No DID Doc attachment in request; doc will be resolved from DID"
             )
-            await self.record_keys_for_public_did(request.did)
+            await self.record_did(request.did)
 
         if conn_rec:  # request is against explicit invitation
             auto_accept = (
@@ -773,7 +773,7 @@ class DIDXManager(BaseConnectionManager):
             self._logger.debug(
                 "No DID Doc attachment in response; doc will be resolved from DID"
             )
-            await self.record_keys_for_public_did(response.did)
+            await self.record_did(response.did)
 
         conn_rec.their_did = their_did
         conn_rec.state = ConnRecord.State.RESPONSE.rfc160

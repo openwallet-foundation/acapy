@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "acapy_demos_playground"
+version = "0.1.0"
+description = ""
+authors = ["Jason Sherman <tools@usingtechnolo.gy>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+asynctest = "^0.13.0"
+requests = "^2.31.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
