@@ -726,8 +726,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             ), async_mock.patch.object(
                 self.manager, "create_did_document", async_mock.CoroutineMock()
             ) as mock_create_did_doc, async_mock.patch.object(
-                self.manager, "record_keys_for_public_did", async_mock.CoroutineMock()
-            ) as mock_record_keys_for_public_did, async_mock.patch.object(
+                self.manager, "record_did", async_mock.CoroutineMock()
+            ), async_mock.patch.object(
                 MediationManager, "prepare_request", autospec=True
             ) as mock_mediation_mgr_prep_req:
                 mock_create_did_doc.return_value = async_mock.MagicMock(
@@ -1957,8 +1957,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_conn_retrieve_by_id, async_mock.patch.object(
             DIDDoc, "deserialize", async_mock.MagicMock()
         ) as mock_did_doc_deser, async_mock.patch.object(
-            self.manager, "record_keys_for_public_did", async_mock.CoroutineMock()
-        ) as mock_record_keys_for_public_did:
+            self.manager, "record_did", async_mock.CoroutineMock()
+        ):
             mock_did_doc_deser.return_value = async_mock.MagicMock(
                 did=TestConfig.test_target_did
             )
@@ -1998,8 +1998,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ) as mock_conn_retrieve_by_id, async_mock.patch.object(
             DIDDoc, "deserialize", async_mock.MagicMock()
         ) as mock_did_doc_deser, async_mock.patch.object(
-            self.manager, "record_keys_for_public_did", async_mock.CoroutineMock()
-        ) as mock_record_keys_for_public_did:
+            self.manager, "record_did", async_mock.CoroutineMock()
+        ):
             mock_did_doc_deser.return_value = async_mock.MagicMock(
                 did=TestConfig.test_target_did
             )

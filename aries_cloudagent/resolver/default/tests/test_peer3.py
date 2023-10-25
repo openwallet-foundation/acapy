@@ -1,93 +1,92 @@
 """Test PeerDIDResolver."""
 
-from hashlib import sha256
-from peerdid.keys import to_multibase, MultibaseFormat
-
-from asynctest import mock as async_mock
-from peerdid.dids import DIDDocument, DID
 import pytest
+from aries_cloudagent.connections.models.conn_record import ConnRecord
+
+from aries_cloudagent.core.event_bus import EventBus
 
 from .. import peer3 as test_module
-from ....cache.base import BaseCache
-from ....cache.in_memory import InMemoryCache
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
-from ...did_resolver import DIDResolver
-from ..peer2 import _resolve_peer_did_with_service_key_reference
-from ..peer3 import PeerDID3Resolver, _convert_to_did_peer_3_document
+from ..peer2 import PeerDID2Resolver
+from ..peer3 import PeerDID3Resolver
+from did_peer_2 import peer2to3
 
 
 TEST_DP2 = "did:peer:2.Ez6LSpkcni2KTTxf4nAp6cPxjRbu26Tj4b957BgHcknVeNFEj.Vz6MksXhfmxm2i3RnoHH2mKQcx7EY4tToJR9JziUs6bp8a6FM.SeyJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJzIjoiaHR0cDovL2hvc3QuZG9ja2VyLmludGVybmFsOjkwNzAiLCJyZWNpcGllbnRfa2V5cyI6W119"
-TEST_DID0_DOC = _resolve_peer_did_with_service_key_reference(TEST_DP2)
 
-TEST_DP3 = DID(
-    "did:peer:3"
-    + to_multibase(
-        sha256(TEST_DP2.lstrip("did:peer:2").encode()).digest(), MultibaseFormat.BASE58
-    )
-)
-TEST_DP3_DOC = _convert_to_did_peer_3_document(TEST_DID0_DOC)
+TEST_DP3 = peer2to3(TEST_DP2)
 
 
 @pytest.fixture
-def common_resolver():
-    """Resolver fixture."""
-    yield DIDResolver([PeerDID3Resolver()])
+def event_bus():
+    yield EventBus()
 
 
 @pytest.fixture
-def resolver():
-    """Resolver fixture."""
-    yield PeerDID3Resolver()
-
-
-@pytest.fixture
-def profile():
+def profile(event_bus: EventBus):
     """Profile fixture."""
     profile = InMemoryProfile.test_profile()
-    profile.context.injector.bind_instance(BaseCache, InMemoryCache())
+    profile.context.injector.bind_instance(EventBus, event_bus)
     yield profile
 
 
-class TestPeerDID3Resolver:
-    @pytest.mark.asyncio
-    async def test_resolution_types(self, resolver: PeerDID3Resolver, profile: Profile):
-        """Test supports."""
-        assert DID.is_valid(TEST_DP3)
-        assert isinstance(TEST_DP3_DOC, DIDDocument)
-        assert TEST_DP3_DOC.id == TEST_DP3
+@pytest.fixture
+async def resolver(profile):
+    """Resolver fixture."""
+    instance = PeerDID3Resolver()
+    await instance.setup(profile.context)
+    yield instance
 
-    @pytest.mark.asyncio
-    async def test_supports(self, resolver: PeerDID3Resolver, profile: Profile):
-        """Test supports."""
-        with async_mock.patch.object(test_module, "PeerDID3Resolver") as mock_resolve:
-            mock_resolve.return_value = async_mock.MagicMock(
-                _resolve=async_mock.CoroutineMock(return_value=TEST_DP3_DOC)
-            )
-            assert await resolver.supports(profile, TEST_DP3)
 
-    @pytest.mark.asyncio
-    async def test_supports_no_cache(
-        self, resolver: PeerDID3Resolver, profile: Profile
-    ):
-        """Test supports."""
-        profile.context.injector.clear_binding(BaseCache)
-        with async_mock.patch.object(test_module, "PeerDID3Resolver") as mock_resolve:
-            mock_resolve.return_value = async_mock.MagicMock(
-                _resolve=async_mock.CoroutineMock(return_value=TEST_DP3_DOC)
-            )
-            assert await resolver.supports(profile, TEST_DP3)
+@pytest.fixture
+def peer2_resolver():
+    """Resolver fixture."""
+    yield PeerDID2Resolver()
 
-    @pytest.mark.asyncio
-    async def test_supports_service_referenced(
-        self, resolver: PeerDID3Resolver, common_resolver: DIDResolver, profile: Profile
-    ):
-        """Test supports."""
-        profile.context.injector.clear_binding(BaseCache)
 
-        recipient_key = await common_resolver.dereference(
-            profile,
-            TEST_DP3_DOC.dict()["service"][0]["recipient_keys"][0],
-            document=TEST_DP3_DOC,
-        )
-        assert recipient_key
+@pytest.mark.asyncio
+async def test_resolve_2_then_3(
+    profile: Profile, resolver: PeerDID3Resolver, peer2_resolver: PeerDID2Resolver
+):
+    """Test resolver setup."""
+    assert resolver.supported_did_regex
+    assert await resolver.supports(profile, TEST_DP3)
+
+    await peer2_resolver.resolve(profile, TEST_DP2)
+    doc = await resolver.resolve(profile, TEST_DP3)
+
+    assert doc
+    assert doc["id"] == TEST_DP3
+    assert "service" in doc
+    assert "verificationMethod" in doc
+    assert len(doc["verificationMethod"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_resolve_x_no_2(profile: Profile, resolver: PeerDID3Resolver):
+    """Test resolver setup."""
+    with pytest.raises(test_module.DIDNotFound):
+        await resolver.resolve(profile, TEST_DP3)
+
+
+@pytest.mark.asyncio
+async def test_record_removal(
+    profile: Profile,
+    resolver: PeerDID3Resolver,
+    peer2_resolver: PeerDID2Resolver,
+):
+    """Test resolver setup."""
+    await peer2_resolver.resolve(profile, TEST_DP2)
+    assert await resolver.resolve(profile, TEST_DP3)
+    record = ConnRecord(
+        connection_id="test",
+        my_did=TEST_DP2,
+        their_did=TEST_DP3,
+    )
+    record.state = ConnRecord.STATE_DELETED
+    async with profile.session() as session:
+        await record.emit_event(session, record.serialize())
+
+    with pytest.raises(test_module.DIDNotFound):
+        doc = await resolver.resolve(profile, TEST_DP3)
