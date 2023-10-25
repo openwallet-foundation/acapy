@@ -25,8 +25,10 @@ class VerifiablePresentation(BaseModel):
         types: Optional[Sequence[str]] = None,
         credentials: Optional[Sequence[dict]] = None,
         proof: Optional[Sequence[dict]] = None,
+        **kwargs,
     ):
         """Initialize VerifiablePresentation."""
+        super().__init__()
         self.id = id
         self.contexts = contexts
         self.types = types

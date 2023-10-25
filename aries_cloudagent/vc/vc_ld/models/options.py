@@ -101,7 +101,7 @@ class LDProofVCOptionsSchema(BaseModelSchema):
 
     proof_type = fields.Str(
         data_key="proofType",
-        required=True,
+        required=False,
         metadata={
             "description": (
                 "The proof type used for the proof. Should match suites registered in"

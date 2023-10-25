@@ -20,6 +20,7 @@ from ...ld_proofs.purposes.authentication_proof_purpose import (
 )
 from ...ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
 from ...ld_proofs.suites.bbs_bls_signature_2020 import BbsBlsSignature2020
+from ...ld_proofs.suites.bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
 from ...ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ...ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
 from ..manager import VcLdpManager, VcLdpManagerError
@@ -281,3 +282,16 @@ async def test_issue_ed25519_2020():
 async def test_issue_bbs():
     """Ensure BBS context is added to issued cred."""
     raise NotImplementedError()
+
+
+async def test_get_all_suites(manager: VcLdpManager):
+    suites = await manager._get_all_suites()
+    assert len(suites) == 4
+    types = (
+        Ed25519Signature2018,
+        Ed25519Signature2020,
+        BbsBlsSignature2020,
+        BbsBlsSignatureProof2020,
+    )
+    for suite in suites:
+        assert isinstance(suite, types)
