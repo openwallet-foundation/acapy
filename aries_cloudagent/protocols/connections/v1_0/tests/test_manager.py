@@ -130,8 +130,8 @@ class TestConnectionManager(IsolatedAsyncioTestCase):
         )
 
         # requestB fails because the invitation was not set to multi-use
-        rr_awaitable = self.manager.receive_request(requestB, receipt)
-        await self.assertAsyncRaises(ConnectionManagerError, rr_awaitable)
+        with self.assertRaises(ConnectionManagerError):
+            await self.manager.receive_request(requestB, receipt)
 
     async def test_create_invitation_public(self):
         self.context.update_settings({"public_invites": True})
