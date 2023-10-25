@@ -3,7 +3,7 @@
 import pytest
 import re
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 from pydid import DIDDocument
 
 from ..base import BaseDIDResolver, DIDMethodNotSupported, ResolverType

@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from ...core.in_memory import InMemoryProfile
 from ...messaging.responder import BaseResponder
@@ -7,12 +7,12 @@ from ...wallet.models.wallet_record import WalletRecord
 from ..manager import MultitenantManager
 
 
-class TestMultitenantManager(AsyncTestCase):
-    async def setUp(self):
+class TestMultitenantManager(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
 
-        self.responder = async_mock.CoroutineMock(send=async_mock.CoroutineMock())
+        self.responder = async_mock.AsyncMock(send=async_mock.AsyncMock())
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
         self.manager = MultitenantManager(self.profile)

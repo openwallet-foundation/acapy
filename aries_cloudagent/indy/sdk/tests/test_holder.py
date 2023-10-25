@@ -1,7 +1,8 @@
 import json
 import pytest
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 import indy.anoncreds
 
@@ -13,18 +14,18 @@ from .. import holder as test_module
 
 
 @pytest.mark.indy
-class TestIndySdkHolder(AsyncTestCase):
+class TestIndySdkHolder(IsolatedAsyncioTestCase):
     def setUp(self):
         mock_ledger = async_mock.MagicMock(
             get_credential_definition=async_mock.MagicMock(return_value={"value": {}}),
-            get_revoc_reg_delta=async_mock.CoroutineMock(
+            get_revoc_reg_delta=async_mock.AsyncMock(
                 return_value=(
                     {"value": {"...": "..."}},
                     1234567890,
                 )
             ),
         )
-        mock_ledger.__aenter__ = async_mock.CoroutineMock(return_value=mock_ledger)
+        mock_ledger.__aenter__ = async_mock.AsyncMock(return_value=mock_ledger)
         self.ledger = mock_ledger
         self.wallet = async_mock.MagicMock()
 
@@ -74,7 +75,7 @@ class TestIndySdkHolder(AsyncTestCase):
             test_module, "IndySdkStorage", async_mock.MagicMock()
         ) as mock_storage:
             mock_storage.return_value = async_mock.MagicMock(
-                add_record=async_mock.CoroutineMock()
+                add_record=async_mock.AsyncMock()
             )
 
             mock_store_cred.return_value = "cred_id"
@@ -346,7 +347,7 @@ class TestIndySdkHolder(AsyncTestCase):
 
     async def test_credential_revoked(self):
         with async_mock.patch.object(  # no creds revoked
-            self.holder, "get_credential", async_mock.CoroutineMock()
+            self.holder, "get_credential", async_mock.AsyncMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -359,7 +360,7 @@ class TestIndySdkHolder(AsyncTestCase):
             assert not result
 
         with async_mock.patch.object(  # cred not revocable
-            self.holder, "get_credential", async_mock.CoroutineMock()
+            self.holder, "get_credential", async_mock.AsyncMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -371,7 +372,7 @@ class TestIndySdkHolder(AsyncTestCase):
             result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
 
-        self.ledger.get_revoc_reg_delta = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_delta = async_mock.AsyncMock(
             return_value=(
                 {
                     "value": {
@@ -383,7 +384,7 @@ class TestIndySdkHolder(AsyncTestCase):
             )
         )
         with async_mock.patch.object(  # cred not revoked
-            self.holder, "get_credential", async_mock.CoroutineMock()
+            self.holder, "get_credential", async_mock.AsyncMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -396,7 +397,7 @@ class TestIndySdkHolder(AsyncTestCase):
             assert not result
 
         with async_mock.patch.object(  # cred revoked
-            self.holder, "get_credential", async_mock.CoroutineMock()
+            self.holder, "get_credential", async_mock.AsyncMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -578,9 +579,9 @@ class TestIndySdkHolder(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            test_module, "create_tails_reader", async_mock.CoroutineMock()
+            test_module, "create_tails_reader", async_mock.AsyncMock()
         ) as mock_create_tails_reader, async_mock.patch.object(
-            indy.anoncreds, "create_revocation_state", async_mock.CoroutineMock()
+            indy.anoncreds, "create_revocation_state", async_mock.AsyncMock()
         ) as mock_create_rr_state:
             mock_create_rr_state.return_value = json.dumps(rr_state)
 

@@ -2,8 +2,8 @@ import asyncio
 import json
 import uuid
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
 from .....cache.base import BaseCache
@@ -25,8 +25,8 @@ SCHEMA_ID = f"{TEST_DID}:2:{SCHEMA_NAME}:1.0"
 CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 
 
-class TestTransactionManager(AsyncTestCase):
-    async def setUp(self):
+class TestTransactionManager(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         sigs = [
             (
                 "2iNTeFy44WK9zpsPfcwfu489aHWroYh3v8mme9tPyNKn"
@@ -103,10 +103,10 @@ class TestTransactionManager(AsyncTestCase):
         self.test_refuser_did = "AGDEjaMunDtFtBVrn1qPKQ"
 
         self.ledger = async_mock.create_autospec(BaseLedger)
-        self.ledger.txn_endorse = async_mock.CoroutineMock(
+        self.ledger.txn_endorse = async_mock.AsyncMock(
             return_value=self.test_endorsed_message
         )
-        self.ledger.register_nym = async_mock.CoroutineMock(return_value=(True, {}))
+        self.ledger.register_nym = async_mock.AsyncMock(return_value=(True, {}))
 
         self.context = AdminRequestContext.test_context()
         self.profile = self.context.profile
@@ -476,11 +476,11 @@ class TestTransactionManager(AsyncTestCase):
         future = asyncio.Future()
         future.set_result(
             async_mock.MagicMock(
-                return_value=async_mock.MagicMock(add_record=async_mock.CoroutineMock())
+                return_value=async_mock.MagicMock(add_record=async_mock.AsyncMock())
             )
         )
         self.ledger.get_indy_storage = future
-        self.ledger.txn_submit = async_mock.CoroutineMock(
+        self.ledger.txn_submit = async_mock.AsyncMock(
             return_value=json.dumps(
                 {
                     "result": {
@@ -497,7 +497,7 @@ class TestTransactionManager(AsyncTestCase):
             ConnRecord, "retrieve_by_id"
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
+                metadata_get=async_mock.AsyncMock(
                     return_value={
                         "transaction_their_job": (
                             TransactionJob.TRANSACTION_ENDORSER.name
@@ -762,13 +762,13 @@ class TestTransactionManager(AsyncTestCase):
 
     async def test_set_transaction_my_job(self):
         conn_record = async_mock.MagicMock(
-            metadata_get=async_mock.CoroutineMock(
+            metadata_get=async_mock.AsyncMock(
                 side_effect=[
                     None,
                     {"meta": "data"},
                 ]
             ),
-            metadata_set=async_mock.CoroutineMock(),
+            metadata_set=async_mock.AsyncMock(),
         )
 
         for i in range(2):
@@ -779,16 +779,16 @@ class TestTransactionManager(AsyncTestCase):
         mock_receipt = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_did", async_mock.AsyncMock()
         ) as mock_retrieve:
             mock_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
+                metadata_get=async_mock.AsyncMock(
                     side_effect=[
                         None,
                         {"meta": "data"},
                     ]
                 ),
-                metadata_set=async_mock.CoroutineMock(),
+                metadata_set=async_mock.AsyncMock(),
             )
 
             for i in range(2):
@@ -799,7 +799,7 @@ class TestTransactionManager(AsyncTestCase):
         mock_receipt = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_did", async_mock.AsyncMock()
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError()
 

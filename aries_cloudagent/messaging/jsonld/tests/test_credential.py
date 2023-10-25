@@ -3,7 +3,8 @@
 import json
 
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
 from ....vc.ld_proofs import DocumentLoader
@@ -27,7 +28,7 @@ from . import (
 from .document_loader import custom_document_loader
 
 
-class TestCredential(AsyncTestCase):
+class TestCredential(IsolatedAsyncioTestCase):
     async def test_did_key(self):
         did_key = test_module.did_key(TEST_VERKEY)
         assert did_key.startswith("did:key:z")
@@ -52,8 +53,8 @@ class TestCredential(AsyncTestCase):
             )
 
 
-class TestOps(AsyncTestCase):
-    async def setUp(self):
+class TestOps(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.wallet = InMemoryWallet(InMemoryProfile.test_profile())
         await self.wallet.create_signing_key(ED25519, TEST_SEED)
 

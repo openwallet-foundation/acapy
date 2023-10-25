@@ -1,7 +1,8 @@
 import json
 import pytest
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from indy.error import (
     AnoncredsRevocationRegistryFullError,
@@ -35,8 +36,8 @@ TEST_RR_DELTA = {
 
 
 @pytest.mark.indy
-class TestIndySdkIssuer(AsyncTestCase):
-    async def setUp(self):
+class TestIndySdkIssuer(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = InjectionContext()
         self.context.injector.bind_instance(
             IndySdkLedgerPool, IndySdkLedgerPool("name")

@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 from unittest import mock, TestCase
 
 from .....didcomm_prefix import DIDCommPrefix
@@ -65,7 +65,7 @@ class TestTransactionAcknowledgement(TestCase, TestConfig):
         )
 
 
-class TestTransactionAcknowledgementSchema(AsyncTestCase, TestConfig):
+class TestTransactionAcknowledgementSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test transaction acknowledgement schema."""
 
     async def test_make_model(self):

@@ -1,7 +1,5 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -9,13 +7,13 @@ from ......messaging.responder import MockResponder
 from .. import menu_handler as handler
 
 
-class TestMenuHandler(AsyncTestCase):
+class TestMenuHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
 
-        handler.save_connection_menu = async_mock.CoroutineMock()
+        handler.save_connection_menu = async_mock.AsyncMock()
         responder = MockResponder()
 
         request_context.message = handler.Menu()

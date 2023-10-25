@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
 from ......indy.holder import IndyHolder
@@ -179,7 +180,7 @@ DIF_PROP_REQ = {
 }
 
 
-class TestPresRequestHandler(AsyncTestCase):
+class TestPresRequestHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
@@ -191,7 +192,7 @@ class TestPresRequestHandler(AsyncTestCase):
         )
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -218,11 +219,11 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
-            mock_px_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_px_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(auto_present=False)
             )
 
@@ -250,7 +251,7 @@ class TestPresRequestHandler(AsyncTestCase):
         )
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -277,12 +278,12 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
-            mock_px_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_px_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 side_effect=StorageNotFoundError
             )
             mock_px_rec_cls.return_value = px_rec_instance
 
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(auto_present=False)
             )
 
@@ -323,17 +324,17 @@ class TestPresRequestHandler(AsyncTestCase):
         mock_px_rec = async_mock.MagicMock(
             pres_proposal=pres_proposal.serialize(),
             auto_present=True,
-            save_error_state=async_mock.CoroutineMock(),
+            save_error_state=async_mock.AsyncMock(),
         )
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
         mock_holder = async_mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=[{"cred_info": {"referent": "dummy"}}]
                 )
             )
@@ -347,14 +348,14 @@ class TestPresRequestHandler(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
             mock_pres_ex_rec_cls.return_value = mock_px_rec
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 return_value=mock_px_rec
             )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=mock_px_rec
             )
 
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_pres = async_mock.AsyncMock(
                 side_effect=test_module.IndyHolderError()
             )
 
@@ -379,7 +380,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -403,7 +404,7 @@ class TestPresRequestHandler(AsyncTestCase):
 
         mock_holder = async_mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=[{"cred_info": {"referent": "dummy"}}]
                 )
             )
@@ -416,14 +417,14 @@ class TestPresRequestHandler(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
             mock_pres_ex_rec_cls.return_value = mock_px_rec
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 return_value=mock_px_rec
             )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=mock_px_rec
             )
 
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_pres = async_mock.AsyncMock(
                 return_value=(mock_px_rec, "pres message")
             )
 
@@ -464,7 +465,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -490,14 +491,14 @@ class TestPresRequestHandler(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
             mock_pres_ex_rec_cls.return_value = px_rec_instance
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_pres = async_mock.AsyncMock(
                 return_value=(px_rec_instance, "pres message")
             )
             request_context.connection_ready = True
@@ -537,14 +538,14 @@ class TestPresRequestHandler(AsyncTestCase):
         px_rec_instance = test_module.V20PresExRecord(auto_present=True)
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
         mock_holder = async_mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=[
                         {"cred_info": {"referent": "dummy-0"}},
                         {"cred_info": {"referent": "dummy-1"}},
@@ -560,14 +561,14 @@ class TestPresRequestHandler(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
             mock_pres_ex_rec_cls.return_value = px_rec_instance
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_pres = async_mock.AsyncMock(
                 return_value=(px_rec_instance, "pres message")
             )
             request_context.connection_ready = True
@@ -611,11 +612,11 @@ class TestPresRequestHandler(AsyncTestCase):
         mock_px_rec = async_mock.MagicMock(
             pres_proposal=pres_proposal.serialize(),
             auto_present=True,
-            save_error_state=async_mock.CoroutineMock(),
+            save_error_state=async_mock.AsyncMock(),
         )
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -623,7 +624,7 @@ class TestPresRequestHandler(AsyncTestCase):
 
         mock_holder = async_mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.CoroutineMock(return_value=[])
+                async_mock.AsyncMock(return_value=[])
             )
         )
         request_context.injector.bind_instance(IndyHolder, mock_holder)
@@ -634,14 +635,14 @@ class TestPresRequestHandler(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
             mock_pres_ex_rec_cls.return_value = mock_px_rec
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 return_value=mock_px_rec
             )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=mock_px_rec
             )
 
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_pres = async_mock.AsyncMock(
                 side_effect=test_indy_handler.V20PresFormatHandlerError
             )
             request_context.connection_ready = True
@@ -677,7 +678,7 @@ class TestPresRequestHandler(AsyncTestCase):
         px_rec_instance = test_module.V20PresExRecord(auto_present=True)
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -685,7 +686,7 @@ class TestPresRequestHandler(AsyncTestCase):
 
         mock_holder = async_mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=[{"cred_info": {"referent": "dummy-0"}}]
                 )
             )
@@ -698,14 +699,14 @@ class TestPresRequestHandler(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
             mock_pres_ex_rec_cls.return_value = px_rec_instance
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_pres = async_mock.AsyncMock(
                 return_value=(px_rec_instance, "pres message")
             )
             request_context.connection_ready = True
@@ -745,7 +746,7 @@ class TestPresRequestHandler(AsyncTestCase):
         px_rec_instance = test_module.V20PresExRecord(auto_present=True)
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -753,7 +754,7 @@ class TestPresRequestHandler(AsyncTestCase):
 
         mock_holder = async_mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=[
                         {"cred_info": {"referent": "dummy-0"}},
                         {"cred_info": {"referent": "dummy-1"}},
@@ -769,14 +770,14 @@ class TestPresRequestHandler(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
             mock_pres_ex_rec_cls.return_value = px_rec_instance
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_pres = async_mock.AsyncMock(
                 return_value=(px_rec_instance, "pres message")
             )
             request_context.connection_ready = True
@@ -826,7 +827,7 @@ class TestPresRequestHandler(AsyncTestCase):
         )
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -834,7 +835,7 @@ class TestPresRequestHandler(AsyncTestCase):
 
         mock_holder = async_mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=[
                         {
                             "cred_info": {
@@ -885,14 +886,14 @@ class TestPresRequestHandler(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
             mock_pres_ex_rec_cls.return_value = px_rec_instance
-            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_pres = async_mock.AsyncMock(
                 return_value=(px_rec_instance, "pres message")
             )
             request_context.connection_ready = True
@@ -921,7 +922,7 @@ class TestPresRequestHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_request = async_mock.CoroutineMock()
+            mock_pres_mgr.return_value.receive_pres_request = async_mock.AsyncMock()
             request_context.message = V20PresRequest()
             request_context.connection_ready = False
             handler = test_module.V20PresRequestHandler()
@@ -940,7 +941,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 # No oob record found
                 return_value=None
             )

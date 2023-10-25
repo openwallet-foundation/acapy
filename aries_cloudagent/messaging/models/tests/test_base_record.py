@@ -1,6 +1,7 @@
 import json
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 from marshmallow import EXCLUDE, fields
 
 from ....cache.base import BaseCache
@@ -65,7 +66,7 @@ class UnencTestImpl(BaseRecord):
     TAG_NAMES = {"~a", "~b", "c"}
 
 
-class TestBaseRecord(AsyncTestCase):
+class TestBaseRecord(IsolatedAsyncioTestCase):
     def test_init_undef(self):
         with self.assertRaises(TypeError):
             BaseRecord()
@@ -85,11 +86,11 @@ class TestBaseRecord(AsyncTestCase):
     async def test_post_save_new(self):
         session = InMemoryProfile.test_session()
         mock_storage = async_mock.MagicMock()
-        mock_storage.add_record = async_mock.CoroutineMock()
+        mock_storage.add_record = async_mock.AsyncMock()
         session.context.injector.bind_instance(BaseStorage, mock_storage)
         record = BaseRecordImpl()
         with async_mock.patch.object(
-            record, "post_save", async_mock.CoroutineMock()
+            record, "post_save", async_mock.AsyncMock()
         ) as post_save:
             await record.save(session, reason="reason", event=True)
             post_save.assert_called_once_with(session, True, None, True)
@@ -98,14 +99,14 @@ class TestBaseRecord(AsyncTestCase):
     async def test_post_save_exist(self):
         session = InMemoryProfile.test_session()
         mock_storage = async_mock.MagicMock()
-        mock_storage.update_record = async_mock.CoroutineMock()
+        mock_storage.update_record = async_mock.AsyncMock()
         session.context.injector.bind_instance(BaseStorage, mock_storage)
         record = BaseRecordImpl()
         last_state = "last_state"
         record._last_state = last_state
         record._id = "id"
         with async_mock.patch.object(
-            record, "post_save", async_mock.CoroutineMock()
+            record, "post_save", async_mock.AsyncMock()
         ) as post_save:
             await record.save(session, reason="reason", event=False)
             post_save.assert_called_once_with(session, False, last_state, False)
@@ -151,7 +152,7 @@ class TestBaseRecord(AsyncTestCase):
             session, "inject", async_mock.MagicMock()
         ) as mock_inject:
             mock_inject.return_value = async_mock.MagicMock(
-                add_record=async_mock.CoroutineMock(side_effect=ZeroDivisionError())
+                add_record=async_mock.AsyncMock(side_effect=ZeroDivisionError())
             )
             with self.assertRaises(ZeroDivisionError):
                 await rec.save(session)

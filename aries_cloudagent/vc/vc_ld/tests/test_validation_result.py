@@ -1,4 +1,4 @@
-from asynctest import TestCase
+from unittest import TestCase
 
 from ..validation_result import PresentationVerificationResult
 

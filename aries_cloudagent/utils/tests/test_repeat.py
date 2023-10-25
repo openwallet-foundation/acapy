@@ -1,9 +1,9 @@
-from asynctest import mock, TestCase
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .. import repeat as test_module
 
 
-class TestRepeat(TestCase):
+class TestRepeat(IsolatedAsyncioTestCase):
     async def test_iter(self):
         expect = [5, 7, 11, 17, 25]
         seq = test_module.RepeatSequence(5, interval=5.0, backoff=0.25)

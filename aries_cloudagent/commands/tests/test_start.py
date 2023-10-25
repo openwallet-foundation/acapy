@@ -1,13 +1,14 @@
 import sys
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...config.error import ArgsParseError
 
 from .. import start as test_module
 
 
-class TestStart(AsyncTestCase):
+class TestStart(IsolatedAsyncioTestCase):
     def test_bad_args(self):
         with self.assertRaises(ArgsParseError):
             test_module.execute([])
@@ -17,9 +18,9 @@ class TestStart(AsyncTestCase):
 
     async def test_start_shutdown_app(self):
         mock_conductor = async_mock.MagicMock(
-            setup=async_mock.CoroutineMock(),
-            start=async_mock.CoroutineMock(),
-            stop=async_mock.CoroutineMock(),
+            setup=async_mock.AsyncMock(),
+            start=async_mock.AsyncMock(),
+            stop=async_mock.AsyncMock(),
         )
         await test_module.start_app(mock_conductor)
         await test_module.shutdown_app(mock_conductor)
@@ -56,9 +57,9 @@ class TestStart(AsyncTestCase):
             run_loop.assert_called_once()
 
     async def test_run_loop(self):
-        startup = async_mock.CoroutineMock()
+        startup = async_mock.AsyncMock()
         startup_call = startup()
-        shutdown = async_mock.CoroutineMock()
+        shutdown = async_mock.AsyncMock()
         shutdown_call = shutdown()
         with async_mock.patch.object(
             test_module, "asyncio", autospec=True
@@ -80,7 +81,7 @@ class TestStart(AsyncTestCase):
                 async_mock.MagicMock(),
                 async_mock.MagicMock(cancel=async_mock.MagicMock()),
             ]
-            mock_asyncio.gather = async_mock.CoroutineMock()
+            mock_asyncio.gather = async_mock.AsyncMock()
 
             if sys.version_info.major == 3 and sys.version_info.minor > 6:
                 mock_asyncio.all_tasks.return_value = tasks
@@ -93,9 +94,9 @@ class TestStart(AsyncTestCase):
             shutdown.assert_awaited_once()
 
     async def test_run_loop_init_x(self):
-        startup = async_mock.CoroutineMock(side_effect=KeyError("the front fell off"))
+        startup = async_mock.AsyncMock(side_effect=KeyError("the front fell off"))
         startup_call = startup()
-        shutdown = async_mock.CoroutineMock()
+        shutdown = async_mock.AsyncMock()
         shutdown_call = shutdown()
         with async_mock.patch.object(
             test_module, "asyncio", autospec=True
@@ -116,7 +117,7 @@ class TestStart(AsyncTestCase):
             done_calls[0][1]()  # exec partial
             done_coro = mock_asyncio.ensure_future.call_args[0][0]
             task = async_mock.MagicMock()
-            mock_asyncio.gather = async_mock.CoroutineMock()
+            mock_asyncio.gather = async_mock.AsyncMock()
 
             if sys.version_info.major == 3 and sys.version_info.minor > 6:
                 mock_asyncio.all_tasks.return_value = [task]

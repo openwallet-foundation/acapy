@@ -1,6 +1,6 @@
 from unittest import mock, TestCase
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -64,7 +64,7 @@ class TestCancelTransaction(TestCase, TestConfig):
         )
 
 
-class TestTransactionResendSchema(AsyncTestCase, TestConfig):
+class TestTransactionResendSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test transaction resend schema."""
 
     async def test_make_model(self):

@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from unittest import mock, TestCase
 
@@ -57,7 +57,7 @@ class TestInvitationRequest(TestCase, TestConfig):
         assert request_dict is mock_invitation_schema_dump.return_value
 
 
-class TestInvitationRequestSchema(AsyncTestCase, TestConfig):
+class TestInvitationRequestSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test invitation request schema."""
 
     async def test_make_model(self):

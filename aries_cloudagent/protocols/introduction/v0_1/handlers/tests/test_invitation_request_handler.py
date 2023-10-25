@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -21,8 +21,8 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-class TestInvitationRequestHandler(AsyncTestCase):
-    async def setUp(self):
+class TestInvitationRequestHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = RequestContext.test_context()
         self.context.connection_ready = True
         self.context.message = InvitationRequest(
@@ -60,7 +60,7 @@ class TestInvitationRequestHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+            mock_mgr.return_value.create_invitation = async_mock.AsyncMock(
                 return_value=(mock_conn_rec, conn_invitation)
             )
 

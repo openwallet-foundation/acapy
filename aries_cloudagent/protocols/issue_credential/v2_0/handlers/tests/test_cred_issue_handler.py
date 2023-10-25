@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
@@ -10,7 +11,7 @@ from ...messages.cred_issue import V20CredIssue
 from .. import cred_issue_handler as test_module
 
 
-class TestCredentialIssueHandler(AsyncTestCase):
+class TestCredentialIssueHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
@@ -18,7 +19,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -27,7 +28,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_credential = async_mock.CoroutineMock()
+            mock_cred_mgr.return_value.receive_credential = async_mock.AsyncMock()
             request_context.message = V20CredIssue()
             request_context.connection_ready = True
             handler_inst = test_module.V20CredIssueHandler()
@@ -50,7 +51,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -60,9 +61,9 @@ class TestCredentialIssueHandler(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value = async_mock.MagicMock(
-                receive_credential=async_mock.CoroutineMock(),
-                store_credential=async_mock.CoroutineMock(),
-                send_cred_ack=async_mock.CoroutineMock(return_value="cred_ack_message"),
+                receive_credential=async_mock.AsyncMock(),
+                store_credential=async_mock.AsyncMock(),
+                send_cred_ack=async_mock.AsyncMock(return_value="cred_ack_message"),
             )
             request_context.message = V20CredIssue()
             request_context.connection_ready = True
@@ -86,7 +87,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -96,18 +97,18 @@ class TestCredentialIssueHandler(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             mock_cred_mgr.return_value = async_mock.MagicMock(
-                receive_credential=async_mock.CoroutineMock(
+                receive_credential=async_mock.AsyncMock(
                     return_value=async_mock.MagicMock(
-                        save_error_state=async_mock.CoroutineMock()
+                        save_error_state=async_mock.AsyncMock()
                     )
                 ),
-                store_credential=async_mock.CoroutineMock(
+                store_credential=async_mock.AsyncMock(
                     side_effect=[
                         test_module.IndyHolderError,
                         test_module.StorageError(),
                     ]
                 ),
-                send_cred_ack=async_mock.CoroutineMock(),
+                send_cred_ack=async_mock.AsyncMock(),
             )
 
             request_context.message = V20CredIssue()
@@ -127,7 +128,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_credential = async_mock.CoroutineMock()
+            mock_cred_mgr.return_value.receive_credential = async_mock.AsyncMock()
             request_context.message = V20CredIssue()
             request_context.connection_ready = False
             handler_inst = test_module.V20CredIssueHandler()
@@ -143,7 +144,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 # No oob record found
                 return_value=None
             )

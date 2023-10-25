@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 
 from .....admin.request_context import AdminRequestContext
@@ -11,14 +11,14 @@ from ..messages.query import Query
 from ..models.discovery_record import V10DiscoveryExchangeRecord
 
 
-class TestDiscoveryRoutes(AsyncTestCase):
-    async def setUp(self):
+class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
         self.profile = self.context.profile
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.CoroutineMock(),
+            "outbound_message_router": async_mock.AsyncMock(),
         }
         self.request = async_mock.MagicMock(
             app={},
@@ -28,7 +28,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
         )
 
     async def test_query_features(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         self.request.query = {"query": "*"}
 
@@ -46,7 +46,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(test_rec.serialize())
 
     async def test_query_features_with_connection(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         self.request.query = {"query": "*", "connection_id": "test", "comment": "test"}
 
@@ -65,7 +65,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(test_rec.serialize())
 
     async def test_query_records(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         self.request.query = {"connection_id": "test"}
 
@@ -84,7 +84,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({"results": [test_rec.serialize()]})
 
     async def test_query_records_x(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         self.request.query = {"connection_id": "test"}
 
@@ -98,7 +98,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
                 await test_module.query_records(self.request)
 
     async def test_query_records_all(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         test_recs = [
             V10DiscoveryExchangeRecord(
@@ -123,7 +123,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
             )
 
     async def test_query_records_connection_x(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         with async_mock.patch.object(
             test_module.web, "json_response"

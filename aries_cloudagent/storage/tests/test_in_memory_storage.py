@@ -1,6 +1,6 @@
 import pytest
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 
 from ...core.in_memory import InMemoryProfile
 from ...storage.error import (
@@ -183,7 +183,7 @@ class TestInMemoryStorageSearch:
         # search again with with iterator mystery error
         search = store_search.search_records(record.type, {}, None)
         with async_mock.patch.object(
-            search, "fetch", async_mock.CoroutineMock()
+            search, "fetch", async_mock.AsyncMock()
         ) as mock_fetch:
             mock_fetch.return_value = async_mock.MagicMock(
                 pop=async_mock.MagicMock(side_effect=IndexError())

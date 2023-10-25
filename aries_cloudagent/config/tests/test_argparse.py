@@ -1,12 +1,13 @@
 from configargparse import ArgumentTypeError
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from .. import argparse
 from ..util import BoundedInt, ByteSize
 
 
-class TestArgParse(AsyncTestCase):
+class TestArgParse(IsolatedAsyncioTestCase):
     async def test_groups(self):
         """Test optional argument parsing."""
         parser = argparse.create_argument_parser()

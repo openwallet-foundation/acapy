@@ -3,7 +3,7 @@
 import re
 from typing import Dict, Union
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 import pytest
 
 from ....config.settings import Settings
@@ -125,7 +125,7 @@ async def test_get_supported_did_regex():
     with async_mock.patch.object(
         UniversalResolver,
         "_fetch_resolver_props",
-        async_mock.CoroutineMock(return_value=props),
+        async_mock.AsyncMock(return_value=props),
     ):
         pattern = await UniversalResolver()._get_supported_did_regex()
         assert pattern.fullmatch("match a test string")
@@ -172,7 +172,7 @@ async def test_setup_endpoint_set(resolver: UniversalResolver):
     with async_mock.patch.object(
         UniversalResolver,
         "_get_supported_did_regex",
-        async_mock.CoroutineMock(return_value="pattern"),
+        async_mock.AsyncMock(return_value="pattern"),
     ):
         await resolver.setup(context)
 
@@ -192,7 +192,7 @@ async def test_setup_endpoint_default(resolver: UniversalResolver):
     with async_mock.patch.object(
         UniversalResolver,
         "_get_supported_did_regex",
-        async_mock.CoroutineMock(return_value="pattern"),
+        async_mock.AsyncMock(return_value="pattern"),
     ):
         await resolver.setup(context)
 
@@ -208,7 +208,7 @@ async def test_setup_endpoint_unset(resolver: UniversalResolver):
     with async_mock.patch.object(
         UniversalResolver,
         "_get_supported_did_regex",
-        async_mock.CoroutineMock(return_value="pattern"),
+        async_mock.AsyncMock(return_value="pattern"),
     ):
         await resolver.setup(context)
 

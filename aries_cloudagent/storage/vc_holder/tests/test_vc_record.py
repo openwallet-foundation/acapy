@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ....messaging.models.base import BaseModelError
 
@@ -134,7 +134,7 @@ def test_record() -> VCRecord:
     )
 
 
-class TestVCRecord(AsyncTestCase):
+class TestVCRecord(IsolatedAsyncioTestCase):
     def test_create(self):
         record = test_record()
 

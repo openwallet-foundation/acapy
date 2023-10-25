@@ -1,6 +1,6 @@
 import logging
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 import pytest
 
 from ....config.injection_context import InjectionContext
@@ -20,7 +20,7 @@ async def open_wallet():
         handle=1,
         master_secret_id="master-secret",
     )
-    with async_mock.patch.object(opened, "close", async_mock.CoroutineMock()):
+    with async_mock.patch.object(opened, "close", async_mock.AsyncMock()):
         yield opened
 
 
@@ -86,7 +86,7 @@ async def test_properties(profile: IndySdkProfile):
         with pytest.raises(ProfileError):
             await profile.remove()
 
-    with async_mock.patch.object(profile.opened, "close", async_mock.CoroutineMock()):
+    with async_mock.patch.object(profile.opened, "close", async_mock.AsyncMock()):
         await profile.remove()
         assert profile.opened is None
 

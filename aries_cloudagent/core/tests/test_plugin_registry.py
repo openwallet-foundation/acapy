@@ -1,6 +1,8 @@
 import pytest
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock, call
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest.mock import call
 
 from ...config.injection_context import InjectionContext
 from ...utils.classloader import ClassLoader, ModuleLoadError
@@ -12,7 +14,7 @@ from ..goal_code_registry import GoalCodeRegistry
 from ..error import ProtocolDefinitionValidationError
 
 
-class TestPluginRegistry(AsyncTestCase):
+class TestPluginRegistry(IsolatedAsyncioTestCase):
     def setUp(self):
         self.blocked_module = "blocked_module"
         self.registry = PluginRegistry(blocklist=[self.blocked_module])
@@ -36,7 +38,7 @@ class TestPluginRegistry(AsyncTestCase):
         self.registry._plugins[mod_name] = mod
         assert list(self.registry.plugin_names) == [mod_name]
         assert list(self.registry.plugins) == [mod]
-        mod.setup = async_mock.CoroutineMock()
+        mod.setup = async_mock.AsyncMock()
         await self.registry.init_context(ctx)
         mod.setup.assert_awaited_once_with(ctx)
 
@@ -46,7 +48,7 @@ class TestPluginRegistry(AsyncTestCase):
         mod.__name__ = mod_name
         app = async_mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.register = async_mock.CoroutineMock()
+        mod.routes.register = async_mock.AsyncMock()
         definition = async_mock.MagicMock()
         definition.versions = [
             {
@@ -91,7 +93,7 @@ class TestPluginRegistry(AsyncTestCase):
         mod.__name__ = mod_name
         app = async_mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.register = async_mock.CoroutineMock()
+        mod.routes.register = async_mock.AsyncMock()
 
         with async_mock.patch.object(
             ClassLoader,
@@ -169,7 +171,7 @@ class TestPluginRegistry(AsyncTestCase):
         mod.__name__ = mod_name
         app = async_mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.register = async_mock.CoroutineMock()
+        mod.routes.register = async_mock.AsyncMock()
 
         with async_mock.patch.object(
             ClassLoader,

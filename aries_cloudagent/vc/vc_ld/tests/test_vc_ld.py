@@ -1,4 +1,4 @@
-from asynctest import TestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock as async_mock
 from datetime import datetime
 
 import pytest
@@ -37,10 +37,10 @@ from .test_credential import (
 )
 
 
-class TestLinkedDataVerifiableCredential(TestCase):
+class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
     test_seed = "testseed000000000000000000000001"
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
 

@@ -1,10 +1,11 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 
 from .. import wallet_plugin as test_module
 
 
-class TestWalletCrypto(AsyncTestCase):
+class TestWalletCrypto(IsolatedAsyncioTestCase):
     def setUp(self):
         test_module.LOADED = False
 

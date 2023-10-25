@@ -1,4 +1,5 @@
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...config.injection_context import InjectionContext
 from ...utils.classloader import ClassLoader
@@ -6,7 +7,7 @@ from ...utils.classloader import ClassLoader
 from ..protocol_registry import ProtocolRegistry
 
 
-class TestProtocolRegistry(AsyncTestCase):
+class TestProtocolRegistry(IsolatedAsyncioTestCase):
     no_type_message = {"a": "b"}
     unknown_type_message = {"@type": 1}
     test_message_type = "PROTOCOL/MESSAGE"
@@ -205,9 +206,9 @@ class TestProtocolRegistry(AsyncTestCase):
             {self.test_message_type: self.test_message_handler}
         )
         mock = async_mock.MagicMock()
-        mock.return_value.check_access = async_mock.CoroutineMock()
+        mock.return_value.check_access = async_mock.AsyncMock()
         mock.return_value.check_access.return_value = True
-        mock.return_value.determine_roles = async_mock.CoroutineMock()
+        mock.return_value.determine_roles = async_mock.AsyncMock()
         mock.return_value.determine_roles.return_value = ["ROLE"]
         self.registry.register_controllers({self.test_protocol: mock})
         protocols = [self.test_protocol]

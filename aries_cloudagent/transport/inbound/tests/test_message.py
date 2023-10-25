@@ -1,6 +1,6 @@
 import asyncio
 
-from asynctest import TestCase
+from unittest import TestCase
 
 from ..message import InboundMessage
 from ..receipt import MessageReceipt

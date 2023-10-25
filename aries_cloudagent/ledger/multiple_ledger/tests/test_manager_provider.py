@@ -1,6 +1,7 @@
 import pytest
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
@@ -56,7 +57,7 @@ LEDGER_CONFIG = [
 ]
 
 
-class TestMultiIndyLedgerManagerProvider(AsyncTestCase):
+class TestMultiIndyLedgerManagerProvider(IsolatedAsyncioTestCase):
     async def test_provide_invalid_manager(self):
         profile = InMemoryProfile.test_profile()
         provider = MultiIndyLedgerManagerProvider(profile)

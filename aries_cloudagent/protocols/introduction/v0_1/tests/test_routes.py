@@ -1,17 +1,18 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from .....admin.request_context import AdminRequestContext
 
 from .. import routes as test_module
 
 
-class TestIntroductionRoutes(AsyncTestCase):
-    async def setUp(self):
+class TestIntroductionRoutes(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.CoroutineMock(),
+            "outbound_message_router": async_mock.AsyncMock(),
         }
         self.request = async_mock.MagicMock(
             app={},
@@ -21,7 +22,7 @@ class TestIntroductionRoutes(AsyncTestCase):
         )
 
     async def test_introduction_start_no_service(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -43,7 +44,7 @@ class TestIntroductionRoutes(AsyncTestCase):
             await test_module.introduction_start(self.request)
 
     async def test_introduction_start(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -69,7 +70,7 @@ class TestIntroductionRoutes(AsyncTestCase):
             test_module.web, "json_response"
         ) as mock_response:
             mock_ctx_inject.return_value = async_mock.MagicMock(
-                start_introduction=async_mock.CoroutineMock()
+                start_introduction=async_mock.AsyncMock()
             )
 
             await test_module.introduction_start(self.request)
@@ -83,7 +84,7 @@ class TestIntroductionRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({})
 
     async def test_introduction_start_x(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -107,7 +108,7 @@ class TestIntroductionRoutes(AsyncTestCase):
             self.context, "inject_or", async_mock.MagicMock()
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = async_mock.MagicMock(
-                start_introduction=async_mock.CoroutineMock(
+                start_introduction=async_mock.AsyncMock(
                     side_effect=test_module.IntroductionError()
                 )
             )

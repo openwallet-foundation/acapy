@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -20,8 +20,8 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-class TestInvitationHandler(AsyncTestCase):
-    async def setUp(self):
+class TestInvitationHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = RequestContext.test_context()
         self.context.connection_ready = True
         self.context.message = Invitation(
@@ -47,7 +47,7 @@ class TestInvitationHandler(AsyncTestCase):
             self.context, "inject_or", async_mock.MagicMock()
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = async_mock.MagicMock(
-                return_invitation=async_mock.CoroutineMock()
+                return_invitation=async_mock.AsyncMock()
             )
 
             await handler.handle(self.context, responder)

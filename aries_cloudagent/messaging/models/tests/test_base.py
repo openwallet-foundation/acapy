@@ -1,4 +1,5 @@
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import EXCLUDE, INCLUDE, fields, validates_schema, ValidationError
 
@@ -68,7 +69,7 @@ class SchemaImplWithoutUnknown(BaseModelSchema):
             raise ValidationError("")
 
 
-class TestBase(AsyncTestCase):
+class TestBase(IsolatedAsyncioTestCase):
     def test_model_validate_fails(self):
         model = ModelImpl(attr="string")
         with self.assertRaises(ValidationError):

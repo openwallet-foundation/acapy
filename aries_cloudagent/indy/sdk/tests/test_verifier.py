@@ -3,7 +3,8 @@ import pytest
 
 from copy import deepcopy
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 from indy.error import IndyError
 
 from ....core.in_memory import InMemoryProfile
@@ -291,10 +292,10 @@ REV_REG_DEFS = {
 
 
 @pytest.mark.indy
-class TestIndySdkVerifier(AsyncTestCase):
+class TestIndySdkVerifier(IsolatedAsyncioTestCase):
     def setUp(self):
         self.ledger = async_mock.MagicMock(
-            get_credential_definition=async_mock.CoroutineMock(
+            get_credential_definition=async_mock.AsyncMock(
                 return_value={
                     "...": "...",
                     "value": {
@@ -328,7 +329,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         mock_verify.return_value = "val"
 
         with async_mock.patch.object(
-            self.verifier, "pre_verify", async_mock.CoroutineMock()
+            self.verifier, "pre_verify", async_mock.AsyncMock()
         ) as mock_pre_verify, async_mock.patch.object(
             self.verifier, "non_revoc_intervals", async_mock.MagicMock()
         ) as mock_non_revox, async_mock.patch.object(
@@ -363,7 +364,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         mock_verify.side_effect = IndyError(error_code=1)
 
         with async_mock.patch.object(
-            self.verifier, "pre_verify", async_mock.CoroutineMock()
+            self.verifier, "pre_verify", async_mock.AsyncMock()
         ) as mock_pre_verify, async_mock.patch.object(
             self.verifier, "non_revoc_intervals", async_mock.MagicMock()
         ) as mock_non_revox, async_mock.patch.object(

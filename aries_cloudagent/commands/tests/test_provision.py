@@ -1,6 +1,7 @@
 import pytest
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...config.base import ConfigError
 from ...config.error import ArgsParseError
@@ -10,7 +11,7 @@ from ...protocols.coordinate_mediation.mediation_invite_store import (
 )
 
 
-class TestProvision(AsyncTestCase):
+class TestProvision(IsolatedAsyncioTestCase):
     def test_bad_calls(self):
         with self.assertRaises(ArgsParseError):
             test_module.execute([])
@@ -39,24 +40,24 @@ class TestProvision(AsyncTestCase):
         )
 
     async def test_provision_ledger_configured(self):
-        profile = async_mock.MagicMock(close=async_mock.CoroutineMock())
+        profile = async_mock.MagicMock(close=async_mock.AsyncMock())
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ) as mock_wallet_config, async_mock.patch.object(
-            test_module, "ledger_config", async_mock.CoroutineMock(return_value=True)
+            test_module, "ledger_config", async_mock.AsyncMock(return_value=True)
         ) as mock_ledger_config:
             await test_module.provision({})
 
     async def test_provision_config_x(self):
         with async_mock.patch.object(
-            test_module, "wallet_config", async_mock.CoroutineMock()
+            test_module, "wallet_config", async_mock.AsyncMock()
         ) as mock_wallet_config:
             mock_wallet_config.side_effect = ConfigError("oops")
             with self.assertRaises(test_module.ProvisionError):

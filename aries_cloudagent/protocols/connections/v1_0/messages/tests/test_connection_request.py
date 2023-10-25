@@ -1,6 +1,6 @@
 from unittest import mock, TestCase
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.diddoc import (
     DIDDoc,
@@ -104,7 +104,7 @@ class TestConnectionRequest(TestCase, TestConfig):
         )
 
 
-class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
+class TestConnectionRequestSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test connection request schema."""
 
     async def test_make_model(self):

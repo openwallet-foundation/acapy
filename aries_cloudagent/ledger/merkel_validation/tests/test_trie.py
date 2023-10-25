@@ -1,4 +1,4 @@
-from asynctest import TestCase
+from unittest import TestCase
 
 from ..domain_txn_handler import (
     prepare_for_state_read,

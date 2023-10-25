@@ -1,6 +1,7 @@
 import asyncio
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...core.in_memory import InMemoryProfile
 from ...connections.models.conn_record import ConnRecord
@@ -14,8 +15,8 @@ from .. import upgrade as test_module
 from ..upgrade import UpgradeError
 
 
-class TestUpgrade(AsyncTestCase):
-    async def setUp(self):
+class TestUpgrade(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.profile = self.session.profile
         self.profile.context.injector.bind_instance(
@@ -54,18 +55,18 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.CoroutineMock(return_value=[ConnRecord()]),
+            async_mock.AsyncMock(return_value=[ConnRecord()]),
         ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.CoroutineMock()
+            ConnRecord, "save", async_mock.AsyncMock()
         ):
             await test_module.upgrade(
                 settings={
@@ -78,18 +79,18 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.CoroutineMock(return_value=[ConnRecord()]),
+            async_mock.AsyncMock(return_value=[ConnRecord()]),
         ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.CoroutineMock()
+            ConnRecord, "save", async_mock.AsyncMock()
         ):
             await test_module.upgrade(settings={})
 
@@ -102,8 +103,8 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(ConnRecord, "save", async_mock.CoroutineMock()):
+            async_mock.AsyncMock(return_value=[ConnRecord()]),
+        ), async_mock.patch.object(ConnRecord, "save", async_mock.AsyncMock()):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -120,8 +121,8 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(ConnRecord, "save", async_mock.CoroutineMock()):
+            async_mock.AsyncMock(return_value=[ConnRecord()]),
+        ), async_mock.patch.object(ConnRecord, "save", async_mock.AsyncMock()):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -142,8 +143,8 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(ConnRecord, "save", async_mock.CoroutineMock()):
+            async_mock.AsyncMock(return_value=[ConnRecord()]),
+        ), async_mock.patch.object(ConnRecord, "save", async_mock.AsyncMock()):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -159,8 +160,8 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(ConnRecord, "save", async_mock.CoroutineMock()):
+            async_mock.AsyncMock(return_value=[ConnRecord()]),
+        ), async_mock.patch.object(ConnRecord, "save", async_mock.AsyncMock()):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -173,10 +174,10 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(
@@ -209,10 +210,10 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(
@@ -247,10 +248,10 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ):
@@ -268,18 +269,18 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.CoroutineMock(return_value=[ConnRecord()]),
+            async_mock.AsyncMock(return_value=[ConnRecord()]),
         ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.CoroutineMock()
+            ConnRecord, "save", async_mock.AsyncMock()
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
@@ -299,10 +300,10 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(
@@ -334,10 +335,10 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(
@@ -367,18 +368,18 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.CoroutineMock(return_value=[ConnRecord()]),
+            async_mock.AsyncMock(return_value=[ConnRecord()]),
         ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.CoroutineMock()
+            ConnRecord, "save", async_mock.AsyncMock()
         ), async_mock.patch.object(
             asyncio, "get_event_loop", async_mock.MagicMock()
         ) as mock_get_event_loop:
@@ -399,10 +400,10 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(
@@ -432,10 +433,10 @@ class TestUpgrade(AsyncTestCase):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ), async_mock.patch.object(

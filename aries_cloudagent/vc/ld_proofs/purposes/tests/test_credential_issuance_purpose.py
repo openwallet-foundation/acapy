@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from asynctest import TestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock as async_mock
 
 from ...validation_result import PurposeResult
 from ..assertion_proof_purpose import AssertionProofPurpose
@@ -8,7 +8,7 @@ from ....tests.data import TEST_VC_DOCUMENT_SIGNED_ED25519
 from ....tests.document_loader import custom_document_loader
 
 
-class TestCredentialIssuancePurpose(TestCase):
+class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
     async def test_properties(self):
         date = datetime.now()
         delta = timedelta(1)

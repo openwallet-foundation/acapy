@@ -1,6 +1,6 @@
 """Test LegacyPeerDIDResolver."""
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 import pydid
 import pytest
 
@@ -39,7 +39,7 @@ class TestLegacyPeerDIDResolver:
         """Test supports."""
         with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
             mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
+                fetch_did_document=async_mock.AsyncMock(
                     return_value=(DIDDoc(TEST_DID0), None)
                 )
             )
@@ -53,7 +53,7 @@ class TestLegacyPeerDIDResolver:
         profile.context.injector.clear_binding(BaseCache)
         with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
             mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
+                fetch_did_document=async_mock.AsyncMock(
                     return_value=(DIDDoc(TEST_DID0), None)
                 )
             )
@@ -73,7 +73,7 @@ class TestLegacyPeerDIDResolver:
         """Test supports returns false for unknown DID."""
         with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
             mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
+                fetch_did_document=async_mock.AsyncMock(
                     side_effect=StorageNotFoundError
                 )
             )
@@ -90,7 +90,7 @@ class TestLegacyPeerDIDResolver:
             doc = object()
             mock_corrections.apply = async_mock.MagicMock(return_value=doc)
             mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
+                fetch_did_document=async_mock.AsyncMock(
                     return_value=(DIDDoc(TEST_DID0), None)
                 )
             )
@@ -115,11 +115,11 @@ class TestLegacyPeerDIDResolver:
             doc = object
             mock_corrections.apply = async_mock.MagicMock(return_value=doc)
             mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.CoroutineMock(
+                fetch_did_document=async_mock.AsyncMock(
                     side_effect=StorageNotFoundError
                 )
             )
-            resolver.supports = async_mock.CoroutineMock(return_value=True)
+            resolver.supports = async_mock.AsyncMock(return_value=True)
             result = await resolver.resolve(profile, TEST_DID0)
             assert result == doc
 

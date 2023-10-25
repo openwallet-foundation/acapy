@@ -1,6 +1,6 @@
 from unittest import mock, TestCase
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -46,7 +46,7 @@ class TestBasicMessage(TestCase):
         assert msg_dict is mock_basic_message_schema_load.return_value
 
 
-class TestBasicMessageSchema(AsyncTestCase):
+class TestBasicMessageSchema(IsolatedAsyncioTestCase):
     """Test basic message schema."""
 
     async def test_make_model(self):

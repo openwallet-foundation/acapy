@@ -1,6 +1,6 @@
 import pytest
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.base_handler import HandlerException
@@ -56,7 +56,7 @@ class TestDiscloseHandler:
         with async_mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(return_value=discovery_record),
+            async_mock.AsyncMock(return_value=discovery_record),
         ) as mock_get_rec_thread_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages

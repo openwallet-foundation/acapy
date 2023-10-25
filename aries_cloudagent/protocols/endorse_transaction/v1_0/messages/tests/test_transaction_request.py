@@ -1,6 +1,6 @@
 from unittest import mock, TestCase
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -108,7 +108,7 @@ class TestTransactionRequest(TestCase, TestConfig):
         )
 
 
-class TestTransactionRequestSchema(AsyncTestCase, TestConfig):
+class TestTransactionRequestSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test transaction request schema."""
 
     async def test_make_model(self):

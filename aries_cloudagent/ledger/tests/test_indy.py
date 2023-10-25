@@ -5,7 +5,8 @@ import pytest
 
 from os import path
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...config.injection_context import InjectionContext
 from ...cache.in_memory import InMemoryCache
@@ -45,7 +46,7 @@ GENESIS_TRANSACTION_PATH = path.join(
 
 
 @pytest.mark.indy
-class TestIndySdkLedgerPoolProvider(AsyncTestCase):
+class TestIndySdkLedgerPoolProvider(IsolatedAsyncioTestCase):
     async def test_provide(self):
         provider = IndySdkLedgerPoolProvider()
         mock_injector = async_mock.MagicMock(
@@ -61,8 +62,8 @@ class TestIndySdkLedgerPoolProvider(AsyncTestCase):
 
 
 @pytest.mark.indy
-class TestIndySdkLedger(AsyncTestCase):
-    async def setUp(self):
+class TestIndySdkLedger(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.test_did = "55GkHamhTU1ZbTbV2ab9DE"
         self.test_did_info = DIDInfo(
             did=self.test_did,
@@ -76,7 +77,7 @@ class TestIndySdkLedger(AsyncTestCase):
         context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
         with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
             self.profile = IndySdkProfile(
-                async_mock.CoroutineMock(),
+                async_mock.AsyncMock(),
                 context,
             )
         self.session = await self.profile.session()
@@ -298,7 +299,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 with self.assertRaises(BadLedgerRequestError):
                     await ledger._submit("{}", True)
 
-                mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+                mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
                 mock_did = mock_wallet_get_public_did.return_value
                 mock_did.did = self.test_did
 
@@ -345,11 +346,11 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             ledger = IndySdkLedger(
                 IndySdkLedgerPool("name", checked=True), self.profile
             )
-            ledger.get_latest_txn_author_acceptance = async_mock.CoroutineMock(
+            ledger.get_latest_txn_author_acceptance = async_mock.AsyncMock(
                 return_value={
                     "text": "sample",
                     "version": "0.0",
@@ -558,7 +559,7 @@ class TestIndySdkLedger(AsyncTestCase):
             r'{"op":"REPLY","result":{"txnMetadata":{"seqNo": 1}}}'
         )
         future = asyncio.Future()
-        future.set_result(async_mock.MagicMock(add_record=async_mock.CoroutineMock()))
+        future.set_result(async_mock.MagicMock(add_record=async_mock.AsyncMock()))
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -573,7 +574,7 @@ class TestIndySdkLedger(AsyncTestCase):
                         issuer, "schema_name", "schema_version", [1, 2, 3]
                     )
 
-                mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+                mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
                 mock_did = mock_wallet_get_public_did.return_value
                 mock_did.did = self.test_did
 
@@ -628,7 +629,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-        # mock_did = async_mock.CoroutineMock()
+        # mock_did = async_mock.AsyncMock()
 
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
@@ -636,7 +637,7 @@ class TestIndySdkLedger(AsyncTestCase):
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = ("1", "{}")
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
-        mock_add_record = async_mock.CoroutineMock()
+        mock_add_record = async_mock.AsyncMock()
         future = asyncio.Future()
         future.set_result(
             async_mock.MagicMock(
@@ -693,11 +694,11 @@ class TestIndySdkLedger(AsyncTestCase):
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = ("1", "{}")
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
-        ledger._submit = async_mock.CoroutineMock(
+        ledger._submit = async_mock.AsyncMock(
             side_effect=LedgerTransactionError("UnauthorizedClientRequest")
         )
         future = asyncio.Future()
-        future.set_result(async_mock.MagicMock(add_record=async_mock.CoroutineMock()))
+        future.set_result(async_mock.MagicMock(add_record=async_mock.AsyncMock()))
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -777,7 +778,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_is_ledger_read_only.return_value = False
 
         issuer = async_mock.MagicMock(IndyIssuer)
-        issuer.create_schema = async_mock.CoroutineMock(
+        issuer.create_schema = async_mock.AsyncMock(
             side_effect=IndyIssuerError("dummy error")
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
@@ -822,7 +823,7 @@ class TestIndySdkLedger(AsyncTestCase):
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = ("1", "{}")
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
-        ledger._submit = async_mock.CoroutineMock(
+        ledger._submit = async_mock.AsyncMock(
             side_effect=LedgerTransactionError("Some other error message")
         )
         with async_mock.patch.object(
@@ -876,9 +877,9 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             async with ledger:
-                mock_wallet.get_public_did = async_mock.CoroutineMock()
+                mock_wallet.get_public_did = async_mock.AsyncMock()
                 mock_did = mock_wallet_get_public_did.return_value
                 mock_did.did = self.test_did
 
@@ -905,7 +906,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             mock_did = mock_wallet_get_public_did.return_value
             mock_did.did = self.test_did
             async with ledger:
@@ -948,7 +949,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             mock_did = mock_wallet_get_public_did.return_value
             mock_did.did = self.test_did
             ledger = IndySdkLedger(
@@ -996,7 +997,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             mock_did = mock_wallet_get_public_did.return_value
             mock_did.did = self.test_did
             ledger = IndySdkLedger(
@@ -1060,7 +1061,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             mock_did = mock_wallet_get_public_did.return_value
             mock_did.did = self.test_did
             ledger = IndySdkLedger(
@@ -1128,7 +1129,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             mock_did = mock_wallet_get_public_did.return_value
             mock_did.did = self.test_did
             async with ledger:
@@ -1192,7 +1193,7 @@ class TestIndySdkLedger(AsyncTestCase):
         tag = "default"
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         future = asyncio.Future()
-        future.set_result(async_mock.MagicMock(add_record=async_mock.CoroutineMock()))
+        future.set_result(async_mock.MagicMock(add_record=async_mock.AsyncMock()))
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -1361,7 +1362,7 @@ class TestIndySdkLedger(AsyncTestCase):
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
         future = asyncio.Future()
-        future.set_result(async_mock.MagicMock(add_record=async_mock.CoroutineMock()))
+        future.set_result(async_mock.MagicMock(add_record=async_mock.AsyncMock()))
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -1415,7 +1416,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             async with ledger:
                 with self.assertRaises(LedgerError):
                     await ledger.create_and_send_credential_definition(
@@ -1459,7 +1460,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             async with ledger:
                 with self.assertRaises(LedgerError):
                     await ledger.create_and_send_credential_definition(
@@ -1505,7 +1506,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             async with ledger:
                 with self.assertRaises(LedgerError):
                     await ledger.create_and_send_credential_definition(
@@ -1545,7 +1546,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_fetch_cred_def.return_value = {}
 
         issuer = async_mock.MagicMock(IndyIssuer)
-        issuer.credential_definition_in_wallet = async_mock.CoroutineMock(
+        issuer.credential_definition_in_wallet = async_mock.AsyncMock(
             side_effect=IndyIssuerError("dummy error")
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
@@ -1554,7 +1555,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             async with ledger:
                 with self.assertRaises(LedgerError) as context:
                     await ledger.create_and_send_credential_definition(
@@ -1595,10 +1596,10 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_fetch_cred_def.return_value = {}
 
         issuer = async_mock.MagicMock(IndyIssuer)
-        issuer.credential_definition_in_wallet = async_mock.CoroutineMock(
+        issuer.credential_definition_in_wallet = async_mock.AsyncMock(
             return_value=False
         )
-        issuer.create_and_store_credential_definition = async_mock.CoroutineMock(
+        issuer.create_and_store_credential_definition = async_mock.AsyncMock(
             side_effect=IndyIssuerError("dummy error")
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
@@ -1607,7 +1608,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             async with ledger:
                 with self.assertRaises(LedgerError) as context:
                     await ledger.create_and_send_credential_definition(
@@ -1648,10 +1649,10 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_fetch_cred_def.return_value = {}
 
         issuer = async_mock.MagicMock(IndyIssuer)
-        issuer.credential_definition_in_wallet = async_mock.CoroutineMock(
+        issuer.credential_definition_in_wallet = async_mock.AsyncMock(
             return_value=False
         )
-        issuer.create_and_store_credential_definition = async_mock.CoroutineMock(
+        issuer.create_and_store_credential_definition = async_mock.AsyncMock(
             return_value=("cred-def-id", "cred-def-json")
         )
         ledger = IndySdkLedger(
@@ -1662,7 +1663,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             async with ledger:
                 with self.assertRaises(LedgerError) as context:
                     await ledger.create_and_send_credential_definition(
@@ -1703,7 +1704,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_fetch_cred_def.return_value = cred_def
 
         issuer = async_mock.MagicMock(IndyIssuer)
-        issuer.credential_definition_in_wallet = async_mock.CoroutineMock(
+        issuer.credential_definition_in_wallet = async_mock.AsyncMock(
             return_value=False
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
@@ -1712,7 +1713,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             async with ledger:
                 with self.assertRaises(LedgerError):
                     await ledger.create_and_send_credential_definition(
@@ -1889,7 +1890,7 @@ class TestIndySdkLedger(AsyncTestCase):
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = async_mock.CoroutineMock()
+            mock_wallet_get_public_did.return_value = async_mock.AsyncMock()
             mock_did = mock_wallet_get_public_did.return_value
             ledger = IndySdkLedger(
                 IndySdkLedgerPool("name", checked=True, cache=InMemoryCache()),
@@ -2360,7 +2361,7 @@ class TestIndySdkLedger(AsyncTestCase):
             ) as mock_wallet_get_public_did, async_mock.patch.object(
                 ledger,
                 "_construct_attr_json",
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=json.dumps(
                         {
                             "endpoint": {
@@ -2375,7 +2376,7 @@ class TestIndySdkLedger(AsyncTestCase):
             ) as mock_construct_attr_json, async_mock.patch.object(
                 ledger,
                 "get_all_endpoints_for_did",
-                async_mock.CoroutineMock(return_value={}),
+                async_mock.AsyncMock(return_value={}),
             ), async_mock.patch.object(
                 ledger, "did_to_nym"
             ):
@@ -2416,7 +2417,7 @@ class TestIndySdkLedger(AsyncTestCase):
             mock_wallet_get_public_did.return_value = self.test_did_info
             async with ledger:
                 with async_mock.patch.object(
-                    ledger, "get_all_endpoints_for_did", async_mock.CoroutineMock()
+                    ledger, "get_all_endpoints_for_did", async_mock.AsyncMock()
                 ) as mock_get_all:
                     mock_get_all.return_value = None
                     response = await ledger.update_endpoint_for_did(
@@ -2475,7 +2476,7 @@ class TestIndySdkLedger(AsyncTestCase):
         # ledger = async_mock.patch.object(
         #    ledger,
         #    "is_ledger_read_only",
-        #    async_mock.CoroutineMock(return_value=False),
+        #    async_mock.AsyncMock(return_value=False),
         # )
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
@@ -2593,9 +2594,7 @@ class TestIndySdkLedger(AsyncTestCase):
             )
             mock_wallet_get_public_did.return_value = self.test_did_info
             mock_wallet_get_local_did.return_value = self.test_did_info
-            mock_wallet_replace_local_did_metadata.return_value = (
-                async_mock.CoroutineMock()
-            )
+            mock_wallet_replace_local_did_metadata.return_value = async_mock.AsyncMock()
             async with ledger:
                 await ledger.register_nym(
                     self.test_did,
@@ -2657,8 +2656,8 @@ class TestIndySdkLedger(AsyncTestCase):
     ):
         mock_wallet = async_mock.MagicMock(
             type="indy",
-            get_local_did=async_mock.CoroutineMock(),
-            replace_local_did_metadata=async_mock.CoroutineMock(),
+            get_local_did=async_mock.AsyncMock(),
+            replace_local_did_metadata=async_mock.AsyncMock(),
         )
         mock_is_ledger_read_only.return_value = False
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
@@ -2736,9 +2735,7 @@ class TestIndySdkLedger(AsyncTestCase):
         ) as mock_wallet_replace_local_did_metadata:
             mock_wallet_get_public_did.return_value = self.test_did_info
             mock_wallet_get_local_did.side_effect = WalletNotFoundError()
-            mock_wallet_replace_local_did_metadata.return_value = (
-                async_mock.CoroutineMock()
-            )
+            mock_wallet_replace_local_did_metadata.return_value = async_mock.AsyncMock()
             async with ledger:
                 await ledger.register_nym(
                     self.test_did,

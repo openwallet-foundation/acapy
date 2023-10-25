@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.in_memory import InMemoryProfile
 from ......indy.models.pres_preview import (
@@ -85,7 +86,7 @@ class BasexRecordImplSchema(BaseExchangeSchema):
         model_class = BasexRecordImpl
 
 
-class TestRecord(AsyncTestCase):
+class TestRecord(IsolatedAsyncioTestCase):
     async def test_record(self):
         presentation_proposal = PresentationProposal(
             comment="Hello World", presentation_proposal=PRES_PREVIEW
@@ -130,7 +131,7 @@ class TestRecord(AsyncTestCase):
         await record.save(session)
 
         with async_mock.patch.object(
-            record, "save", async_mock.CoroutineMock()
+            record, "save", async_mock.AsyncMock()
         ) as mock_save, async_mock.patch.object(
             test_module.LOGGER, "exception", async_mock.MagicMock()
         ) as mock_log_exc:

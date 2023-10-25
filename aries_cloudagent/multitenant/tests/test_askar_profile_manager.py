@@ -1,7 +1,7 @@
 import asyncio
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from ...config.injection_context import InjectionContext
 from ...core.in_memory import InMemoryProfile
@@ -10,14 +10,14 @@ from ...wallet.models.wallet_record import WalletRecord
 from ..askar_profile_manager import AskarProfileMultitenantManager
 
 
-class TestAskarProfileMultitenantManager(AsyncTestCase):
+class TestAskarProfileMultitenantManager(IsolatedAsyncioTestCase):
     DEFAULT_MULTIENANT_WALLET_NAME = "multitenant_sub_wallet"
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
 
-        self.responder = async_mock.CoroutineMock(send=async_mock.CoroutineMock())
+        self.responder = async_mock.AsyncMock(send=async_mock.AsyncMock())
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
         self.manager = AskarProfileMultitenantManager(self.profile)

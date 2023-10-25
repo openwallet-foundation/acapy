@@ -1,18 +1,18 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
 
 from .. import routes as test_module
 
 
-class TestTrustpingRoutes(AsyncTestCase):
+class TestTrustpingRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.CoroutineMock(),
+            "outbound_message_router": async_mock.AsyncMock(),
         }
         self.request = async_mock.MagicMock(
             app={},
@@ -22,13 +22,13 @@ class TestTrustpingRoutes(AsyncTestCase):
         )
 
     async def test_connections_send_ping(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={"comment": "some comment"}
         )
         self.request.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_retrieve, async_mock.patch.object(
             test_module, "Ping", async_mock.MagicMock()
         ) as mock_ping, async_mock.patch.object(
@@ -41,13 +41,13 @@ class TestTrustpingRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_connections_send_ping_no_conn(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={"comment": "some comment"}
         )
         self.request.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_retrieve, async_mock.patch.object(
             test_module.web, "json_response", async_mock.MagicMock()
         ) as json_response:
@@ -56,13 +56,13 @@ class TestTrustpingRoutes(AsyncTestCase):
                 await test_module.connections_send_ping(self.request)
 
     async def test_connections_send_ping_not_ready(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={"comment": "some comment"}
         )
         self.request.match_info = {"conn_id": "dummy"}
 
         with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_retrieve, async_mock.patch.object(
             test_module.web, "json_response", async_mock.MagicMock()
         ) as json_response:

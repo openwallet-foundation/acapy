@@ -1,4 +1,4 @@
-from asynctest import mock
+from unittest import mock
 import pytest
 
 from ...core.in_memory import InMemoryProfile
@@ -75,9 +75,9 @@ async def test_route_for_key_sub_mediator_no_base_mediator(
     )
 
     with mock.patch.object(
-        route_manager, "get_base_wallet_mediator", mock.CoroutineMock(return_value=None)
+        route_manager, "get_base_wallet_mediator", mock.AsyncMock(return_value=None)
     ), mock.patch.object(
-        RoutingManager, "create_route_record", mock.CoroutineMock()
+        RoutingManager, "create_route_record", mock.AsyncMock()
     ) as mock_create_route_record:
         keylist_update = await route_manager._route_for_key(
             sub_profile,
@@ -119,9 +119,9 @@ async def test_route_for_key_sub_mediator_and_base_mediator(
     with mock.patch.object(
         route_manager,
         "get_base_wallet_mediator",
-        mock.CoroutineMock(return_value=base_mediation_record),
+        mock.AsyncMock(return_value=base_mediation_record),
     ), mock.patch.object(
-        RoutingManager, "create_route_record", mock.CoroutineMock()
+        RoutingManager, "create_route_record", mock.AsyncMock()
     ) as mock_create_route_record:
         keylist_update = await route_manager._route_for_key(
             sub_profile,
@@ -160,9 +160,9 @@ async def test_route_for_key_base_mediator_no_sub_mediator(
     with mock.patch.object(
         route_manager,
         "get_base_wallet_mediator",
-        mock.CoroutineMock(return_value=base_mediation_record),
+        mock.AsyncMock(return_value=base_mediation_record),
     ), mock.patch.object(
-        RoutingManager, "create_route_record", mock.CoroutineMock()
+        RoutingManager, "create_route_record", mock.AsyncMock()
     ) as mock_create_route_record:
         keylist_update = await route_manager._route_for_key(
             sub_profile,
@@ -195,9 +195,7 @@ async def test_route_for_key_skip_if_exists_and_exists(
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id", connection_id="test-mediator-conn-id"
     )
-    with mock.patch.object(
-        RouteRecord, "retrieve_by_recipient_key", mock.CoroutineMock()
-    ):
+    with mock.patch.object(RouteRecord, "retrieve_by_recipient_key", mock.AsyncMock()):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
             TEST_VERKEY,
@@ -221,7 +219,7 @@ async def test_route_for_key_skip_if_exists_and_absent(
     with mock.patch.object(
         RouteRecord,
         "retrieve_by_recipient_key",
-        mock.CoroutineMock(side_effect=StorageNotFoundError),
+        mock.AsyncMock(side_effect=StorageNotFoundError),
     ):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
@@ -327,7 +325,7 @@ async def test_routing_info_with_base_mediator(
     with mock.patch.object(
         route_manager,
         "get_base_wallet_mediator",
-        mock.CoroutineMock(return_value=base_mediation_record),
+        mock.AsyncMock(return_value=base_mediation_record),
     ):
         keys, endpoint = await route_manager.routing_info(sub_profile, None)
     assert keys == base_mediation_record.routing_keys
@@ -355,7 +353,7 @@ async def test_routing_info_with_base_mediator_and_sub_mediator(
     with mock.patch.object(
         route_manager,
         "get_base_wallet_mediator",
-        mock.CoroutineMock(return_value=base_mediation_record),
+        mock.AsyncMock(return_value=base_mediation_record),
     ):
         keys, endpoint = await route_manager.routing_info(sub_profile, mediation_record)
     assert keys == [*base_mediation_record.routing_keys, *mediation_record.routing_keys]
@@ -367,10 +365,10 @@ async def test_connection_from_recipient_key(
     sub_profile: Profile, base_route_manager: BaseWalletRouteManager
 ):
     manager = mock.MagicMock()
-    manager.get_profile_for_key = mock.CoroutineMock(return_value=sub_profile)
+    manager.get_profile_for_key = mock.AsyncMock(return_value=sub_profile)
     sub_profile.context.injector.bind_instance(BaseMultitenantManager, manager)
     with mock.patch.object(
-        RouteManager, "connection_from_recipient_key", mock.CoroutineMock()
+        RouteManager, "connection_from_recipient_key", mock.AsyncMock()
     ) as mock_conn_for_recip:
         result = await base_route_manager.connection_from_recipient_key(
             sub_profile, TEST_VERKEY

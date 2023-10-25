@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from ....core.in_memory import InMemoryProfile
 
@@ -13,8 +13,8 @@ from ...indy import IndySdkLedger, IndySdkLedgerPool
 from ..ledger_requests_executor import IndyLedgerRequestsExecutor
 
 
-class TestIndyLedgerRequestsExecutor(AsyncTestCase):
-    async def setUp(self):
+class TestIndyLedgerRequestsExecutor(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
@@ -32,15 +32,13 @@ class TestIndyLedgerRequestsExecutor(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             async_mock.MagicMock(
-                extract_did_from_identifier=async_mock.CoroutineMock(
+                extract_did_from_identifier=async_mock.AsyncMock(
                     return_value="WgWxqztrNooG92RXvxSTWv"
                 ),
-                lookup_did_in_configured_ledgers=async_mock.CoroutineMock(
+                lookup_did_in_configured_ledgers=async_mock.AsyncMock(
                     return_value=("test_prod_1", self.ledger)
                 ),
-                get_ledger_inst_by_id=async_mock.CoroutineMock(
-                    return_value=self.ledger
-                ),
+                get_ledger_inst_by_id=async_mock.AsyncMock(return_value=self.ledger),
             ),
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -71,10 +69,10 @@ class TestIndyLedgerRequestsExecutor(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             async_mock.MagicMock(
-                extract_did_from_identifier=async_mock.CoroutineMock(
+                extract_did_from_identifier=async_mock.AsyncMock(
                     return_value="WgWxqztrNooG92RXvxSTWv"
                 ),
-                lookup_did_in_configured_ledgers=async_mock.CoroutineMock(
+                lookup_did_in_configured_ledgers=async_mock.AsyncMock(
                     side_effect=MultipleLedgerManagerError
                 ),
             ),

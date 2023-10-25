@@ -1,6 +1,6 @@
 import json
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 import pytest
 
 from aries_askar import AskarError, Key, KeyAlg, Session

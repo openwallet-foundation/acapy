@@ -1,4 +1,5 @@
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 from copy import deepcopy
 from pathlib import Path
 from shutil import rmtree
@@ -40,7 +41,7 @@ REV_REG_DEF = {
 }
 
 
-class TestRevocationRegistry(AsyncTestCase):
+class TestRevocationRegistry(IsolatedAsyncioTestCase):
     def tearDown(self):
         rmtree(TAILS_DIR, ignore_errors=True)
 

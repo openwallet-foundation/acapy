@@ -1,6 +1,6 @@
 from unittest import mock
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......core.in_memory import InMemoryProfile
@@ -49,8 +49,8 @@ class TestConfig:
         return doc
 
 
-class TestDIDXRequest(AsyncTestCase, TestConfig):
-    async def setUp(self):
+class TestDIDXRequest(IsolatedAsyncioTestCase, TestConfig):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet
@@ -123,10 +123,10 @@ class TestDIDXRequest(AsyncTestCase, TestConfig):
         assert request.serialize() == new_request.serialize()
 
 
-class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
+class TestDIDXRequestSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test request schema."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet

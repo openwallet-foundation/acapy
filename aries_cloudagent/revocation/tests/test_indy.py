@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
@@ -18,22 +19,22 @@ from ..models.issuer_rev_reg_record import DEFAULT_REGISTRY_SIZE, IssuerRevRegRe
 from ..models.revocation_registry import RevocationRegistry
 
 
-class TestIndyRevocation(AsyncTestCase):
+class TestIndyRevocation(IsolatedAsyncioTestCase):
     def setUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
 
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value={"value": {"revocation": True}}
         )
-        self.ledger.get_revoc_reg_def = async_mock.CoroutineMock()
+        self.ledger.get_revoc_reg_def = async_mock.AsyncMock()
         self.context.injector.bind_instance(BaseLedger, self.ledger)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -60,7 +61,7 @@ class TestIndyRevocation(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=(None, self.ledger)),
+            async_mock.AsyncMock(return_value=(None, self.ledger)),
         ):
             result = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         assert result.cred_def_id == CRED_DEF_ID
@@ -73,9 +74,7 @@ class TestIndyRevocation(AsyncTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         self.profile.context.injector.clear_binding(BaseLedger)
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
-            return_value=None
-        )
+        self.ledger.get_credential_definition = async_mock.AsyncMock(return_value=None)
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
         with self.assertRaises(RevocationNotSupportedError) as x_revo:
@@ -86,7 +85,7 @@ class TestIndyRevocation(AsyncTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         self.profile.context.injector.clear_binding(BaseLedger)
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value={"value": {"revocation": "..."}}
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -119,7 +118,7 @@ class TestIndyRevocation(AsyncTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         self.profile.context.injector.clear_binding(BaseLedger)
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value={"value": {}}
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -133,10 +132,10 @@ class TestIndyRevocation(AsyncTestCase):
 
         rec = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         rec.revoc_reg_id = "dummy"
-        rec.generate_registry = async_mock.CoroutineMock()
+        rec.generate_registry = async_mock.AsyncMock()
 
         with async_mock.patch.object(
-            IssuerRevRegRecord, "retrieve_by_revoc_reg_id", async_mock.CoroutineMock()
+            IssuerRevRegRecord, "retrieve_by_revoc_reg_id", async_mock.AsyncMock()
         ) as mock_retrieve_by_rr_id:
             mock_retrieve_by_rr_id.return_value = rec
             await rec.generate_registry(self.profile, None)
@@ -243,7 +242,7 @@ class TestIndyRevocation(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=(None, self.ledger)),
+            async_mock.AsyncMock(return_value=(None, self.ledger)),
         ), async_mock.patch.object(
             RevocationRegistry, "from_definition", async_mock.MagicMock()
         ) as mock_from_def:

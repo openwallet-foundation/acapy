@@ -1,6 +1,7 @@
 import asyncio
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ..task_queue import CompletedTask, PendingTask, TaskQueue, task_exc_info
 
@@ -11,7 +12,7 @@ async def retval(val, *, delay=0):
     return val
 
 
-class TestTaskQueue(AsyncTestCase):
+class TestTaskQueue(IsolatedAsyncioTestCase):
     async def test_run(self):
         queue = TaskQueue()
         task = None
@@ -108,7 +109,7 @@ class TestTaskQueue(AsyncTestCase):
         with async_mock.patch.object(
             queue, "drain", async_mock.MagicMock()
         ) as mock_drain, async_mock.patch.object(
-            queue, "wait_for", async_mock.CoroutineMock()
+            queue, "wait_for", async_mock.AsyncMock()
         ) as mock_wait_for:
             mock_drain.side_effect = [queue.loop.create_task(noop()), None]
             await queue.complete(cleanup=True)

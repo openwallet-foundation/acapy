@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
@@ -10,14 +11,14 @@ from ...messages.pres_ack import V20PresAck
 from .. import pres_ack_handler as test_module
 
 
-class TestV20PresAckHandler(AsyncTestCase):
+class TestV20PresAckHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         session = request_context.session()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
         )
@@ -26,7 +27,7 @@ class TestV20PresAckHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_ack = async_mock.CoroutineMock()
+            mock_pres_mgr.return_value.receive_pres_ack = async_mock.AsyncMock()
             request_context.message = V20PresAck()
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
@@ -48,7 +49,7 @@ class TestV20PresAckHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_ack = async_mock.CoroutineMock()
+            mock_pres_mgr.return_value.receive_pres_ack = async_mock.AsyncMock()
             request_context.message = V20PresAck()
             request_context.connection_ready = False
             handler = test_module.V20PresAckHandler()
@@ -64,7 +65,7 @@ class TestV20PresAckHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 # No oob record found
                 return_value=None
             )

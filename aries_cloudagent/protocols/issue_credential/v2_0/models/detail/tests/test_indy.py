@@ -1,9 +1,9 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..indy import V20CredExRecordIndy
 
 
-class TestV20CredExRecordIndy(AsyncTestCase):
+class TestV20CredExRecordIndy(IsolatedAsyncioTestCase):
     async def test_record(self):
         same = [
             V20CredExRecordIndy(

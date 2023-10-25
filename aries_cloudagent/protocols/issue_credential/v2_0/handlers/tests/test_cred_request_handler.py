@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
@@ -13,7 +14,7 @@ from .. import cred_request_handler as test_module
 CD_ID = "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag"
 
 
-class TestV20CredRequestHandler(AsyncTestCase):
+class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
@@ -21,7 +22,7 @@ class TestV20CredRequestHandler(AsyncTestCase):
 
         oob_record = async_mock.MagicMock()
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=oob_record
             )
         )
@@ -30,7 +31,7 @@ class TestV20CredRequestHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
+            mock_cred_mgr.return_value.receive_request = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = False
@@ -53,7 +54,7 @@ class TestV20CredRequestHandler(AsyncTestCase):
 
         oob_record = async_mock.MagicMock()
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=oob_record
             )
         )
@@ -64,11 +65,11 @@ class TestV20CredRequestHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
+            mock_cred_mgr.return_value.receive_request = async_mock.AsyncMock(
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
-            mock_cred_mgr.return_value.issue_credential = async_mock.CoroutineMock(
+            mock_cred_mgr.return_value.issue_credential = async_mock.AsyncMock(
                 return_value=(None, "cred_issue_message")
             )
             request_context.message = V20CredRequest()
@@ -99,7 +100,7 @@ class TestV20CredRequestHandler(AsyncTestCase):
 
         oob_record = async_mock.MagicMock()
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=oob_record
             )
         )
@@ -108,13 +109,13 @@ class TestV20CredRequestHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, async_mock.patch.object(
-            cred_ex_rec, "save_error_state", async_mock.CoroutineMock()
+            cred_ex_rec, "save_error_state", async_mock.AsyncMock()
         ):
-            mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock(
+            mock_cred_mgr.return_value.receive_request = async_mock.AsyncMock(
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
-            mock_cred_mgr.return_value.issue_credential = async_mock.CoroutineMock(
+            mock_cred_mgr.return_value.issue_credential = async_mock.AsyncMock(
                 side_effect=test_module.IndyIssuerError()
             )
 
@@ -124,9 +125,9 @@ class TestV20CredRequestHandler(AsyncTestCase):
             responder = MockResponder()
 
             with async_mock.patch.object(
-                responder, "send_reply", async_mock.CoroutineMock()
+                responder, "send_reply", async_mock.AsyncMock()
             ) as mock_send_reply, async_mock.patch.object(
-                handler._logger, "exception", async_mock.CoroutineMock()
+                handler._logger, "exception", async_mock.AsyncMock()
             ) as mock_log_exc:
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
@@ -139,7 +140,7 @@ class TestV20CredRequestHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = async_mock.CoroutineMock()
+            mock_cred_mgr.return_value.receive_request = async_mock.AsyncMock()
             request_context.message = V20CredRequest()
             request_context.connection_ready = False
             handler = test_module.V20CredRequestHandler()
@@ -158,7 +159,7 @@ class TestV20CredRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
 
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 # No oob record found
                 return_value=None
             )

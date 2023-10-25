@@ -3,7 +3,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 from pydid import DIDDocument
 
 from ...core.in_memory import InMemoryProfile
@@ -50,8 +50,8 @@ def mock_response():
 @pytest.fixture
 def mock_resolver(resolution_result):
     did_resolver = async_mock.MagicMock()
-    did_resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-    did_resolver.resolve_with_metadata = async_mock.CoroutineMock(
+    did_resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
+    did_resolver.resolve_with_metadata = async_mock.AsyncMock(
         return_value=resolution_result
     )
     yield did_resolver
@@ -65,7 +65,7 @@ async def test_resolver(mock_resolver, mock_response: async_mock.MagicMock, did_
     session = await profile.session()
     session.context.injector.bind_instance(DIDResolver, mock_resolver)
 
-    outbound_message_router = async_mock.CoroutineMock()
+    outbound_message_router = async_mock.AsyncMock()
     request_dict = {
         "context": context,
         "outbound_message_router": outbound_message_router,
@@ -75,7 +75,7 @@ async def test_resolver(mock_resolver, mock_response: async_mock.MagicMock, did_
             "did": "did:ethr:mainnet:0xb9c5714089478a327f09197987f16f9e5d936e8a",
         },
         query={},
-        json=async_mock.CoroutineMock(return_value={}),
+        json=async_mock.AsyncMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
     )
     with async_mock.patch.object(
@@ -98,7 +98,7 @@ async def test_resolver(mock_resolver, mock_response: async_mock.MagicMock, did_
     ],
 )
 async def test_resolver_not_found_error(mock_resolver, side_effect, error):
-    mock_resolver.resolve_with_metadata = async_mock.CoroutineMock(
+    mock_resolver.resolve_with_metadata = async_mock.AsyncMock(
         side_effect=side_effect()
     )
 
@@ -108,7 +108,7 @@ async def test_resolver_not_found_error(mock_resolver, side_effect, error):
     session = await profile.session()
     session.context.injector.bind_instance(DIDResolver, mock_resolver)
 
-    outbound_message_router = async_mock.CoroutineMock()
+    outbound_message_router = async_mock.AsyncMock()
     request_dict = {
         "context": context,
         "outbound_message_router": outbound_message_router,
@@ -118,7 +118,7 @@ async def test_resolver_not_found_error(mock_resolver, side_effect, error):
             "did": "did:ethr:mainnet:0xb9c5714089478a327f09197987f16f9e5d936e8a",
         },
         query={},
-        json=async_mock.CoroutineMock(return_value={}),
+        json=async_mock.AsyncMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
     )
     with async_mock.patch.object(

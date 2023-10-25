@@ -1,6 +1,7 @@
 import asyncio
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from .. import basic as test_module
 from ..basic import BasicMessageQueue
@@ -15,7 +16,7 @@ async def collect(queue, count=1):
     return found
 
 
-class TestBasicQueue(AsyncTestCase):
+class TestBasicQueue(IsolatedAsyncioTestCase):
     async def test_enqueue_dequeue(self):
         queue = BasicMessageQueue()
 
@@ -39,7 +40,7 @@ class TestBasicQueue(AsyncTestCase):
         with async_mock.patch.object(
             test_module.asyncio, "get_event_loop", async_mock.MagicMock()
         ) as mock_get_event_loop, async_mock.patch.object(
-            test_module.asyncio, "wait", async_mock.CoroutineMock()
+            test_module.asyncio, "wait", async_mock.AsyncMock()
         ) as mock_wait:
             mock_wait.return_value = (
                 async_mock.MagicMock(),
@@ -71,7 +72,7 @@ class TestBasicQueue(AsyncTestCase):
         with async_mock.patch.object(
             test_module.asyncio, "get_event_loop", async_mock.MagicMock()
         ) as mock_get_event_loop, async_mock.patch.object(
-            test_module.asyncio, "wait", async_mock.CoroutineMock()
+            test_module.asyncio, "wait", async_mock.AsyncMock()
         ) as mock_wait:
             mock_wait.return_value = (
                 async_mock.MagicMock(),

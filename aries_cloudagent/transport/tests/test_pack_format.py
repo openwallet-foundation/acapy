@@ -1,8 +1,8 @@
 import json
 from base64 import b64encode
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from ...core.in_memory import InMemoryProfile
 from ...protocols.didcomm_prefix import DIDCommPrefix
@@ -16,7 +16,7 @@ from ..error import RecipientKeysError, WireFormatEncodeError, WireFormatParseEr
 from ..pack_format import PackWireFormat
 
 
-class TestPackWireFormat(AsyncTestCase):
+class TestPackWireFormat(IsolatedAsyncioTestCase):
     test_message_type = DIDCommPrefix.qualify_current("PROTOCOL/MESSAGE")
     test_message_id = "MESSAGE_ID"
     test_content = "CONTENT"
@@ -55,7 +55,7 @@ class TestPackWireFormat(AsyncTestCase):
 
         serializer.task_queue = None
         with async_mock.patch.object(
-            serializer, "unpack", async_mock.CoroutineMock()
+            serializer, "unpack", async_mock.AsyncMock()
         ) as mock_unpack:
             mock_unpack.return_value = "{missing-brace"
             with self.assertRaises(WireFormatParseError) as context:
@@ -65,7 +65,7 @@ class TestPackWireFormat(AsyncTestCase):
         serializer = PackWireFormat()
         serializer.task_queue = None
         with async_mock.patch.object(
-            serializer, "unpack", async_mock.CoroutineMock()
+            serializer, "unpack", async_mock.AsyncMock()
         ) as mock_unpack:
             mock_unpack.return_value = json.dumps([1, 2, 3])
             with self.assertRaises(WireFormatParseError) as context:
@@ -93,14 +93,14 @@ class TestPackWireFormat(AsyncTestCase):
             )
 
         mock_wallet = async_mock.MagicMock(
-            pack_message=async_mock.CoroutineMock(side_effect=WalletError())
+            pack_message=async_mock.AsyncMock(side_effect=WalletError())
         )
         session = InMemoryProfile.test_session(bind={BaseWallet: mock_wallet})
         with self.assertRaises(WireFormatEncodeError):
             await serializer.pack(session, None, ["key"], None, ["key"])
 
         mock_wallet = async_mock.MagicMock(
-            pack_message=async_mock.CoroutineMock(
+            pack_message=async_mock.AsyncMock(
                 side_effect=[json.dumps("message").encode("utf-8"), WalletError()]
             )
         )

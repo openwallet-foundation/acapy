@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -9,7 +10,7 @@ from ...messages.pres_proposal import V20PresProposal
 from .. import pres_proposal_handler as test_module
 
 
-class TestV20PresProposalHandler(AsyncTestCase):
+class TestV20PresProposalHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = async_mock.MagicMock()
@@ -19,7 +20,7 @@ class TestV20PresProposalHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock()
             )
             request_context.message = V20PresProposal()
@@ -46,10 +47,10 @@ class TestV20PresProposalHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.AsyncMock(
                 return_value="presentation_exchange_record"
             )
-            mock_pres_mgr.return_value.create_bound_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_bound_request = async_mock.AsyncMock(
                 return_value=(
                     mock_pres_mgr.return_value.receive_pres_proposal.return_value,
                     "presentation_request_message",
@@ -85,12 +86,12 @@ class TestV20PresProposalHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
-                    save_error_state=async_mock.CoroutineMock()
+                    save_error_state=async_mock.AsyncMock()
                 )
             )
-            mock_pres_mgr.return_value.create_bound_request = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_bound_request = async_mock.AsyncMock(
                 side_effect=test_module.LedgerError()
             )
 
@@ -113,9 +114,7 @@ class TestV20PresProposalHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres_proposal = (
-                async_mock.CoroutineMock()
-            )
+            mock_pres_mgr.return_value.receive_pres_proposal = async_mock.AsyncMock()
             request_context.message = V20PresProposal()
             request_context.connection_ready = False
             handler = test_module.V20PresProposalHandler()

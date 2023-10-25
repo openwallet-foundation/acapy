@@ -2,7 +2,8 @@
 
 from unittest.mock import call
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 from pydid import DID, DIDDocument, DIDDocumentBuilder
 from pydid.doc.builder import ServiceBuilder
 from pydid.verification_method import (
@@ -53,7 +54,7 @@ from ...wallet.util import b58_to_bytes, bytes_to_b64
 from ..base_manager import BaseConnectionManager
 
 
-class TestBaseConnectionManager(AsyncTestCase):
+class TestBaseConnectionManager(IsolatedAsyncioTestCase):
     def make_did_doc(self, did, verkey):
         doc = DIDDoc(did=did)
         controller = did
@@ -71,7 +72,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         doc.set(service)
         return doc
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.test_seed = "testseed000000000000000000000001"
         self.test_did = "55GkHamhTU1ZbTbV2ab9DE"
         self.test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -83,7 +84,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         self.responder = MockResponder()
 
         self.oob_mock = async_mock.MagicMock(
-            clean_finished_oob_record=async_mock.CoroutineMock(return_value=None)
+            clean_finished_oob_record=async_mock.AsyncMock(return_value=None)
         )
         self.route_manager = CoordinateMediationV1RouteManager()
         self.resolver = DIDResolver()
@@ -214,7 +215,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             routing_keys=self.test_mediator_routing_keys,
             endpoint=self.test_mediator_endpoint,
         )
-        self.route_manager.routing_info = async_mock.CoroutineMock(
+        self.route_manager.routing_info = async_mock.AsyncMock(
             return_value=(mediation_record.routing_keys, mediation_record.endpoint)
         )
         doc = await self.manager.create_did_document(
@@ -335,7 +336,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
 
             with self.assertRaises(BaseConnectionManagerError):
@@ -353,11 +354,11 @@ class TestBaseConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            self.resolver.get_endpoint_for_did = async_mock.AsyncMock(
                 return_value=self.test_endpoint
             )
-            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = async_mock.CoroutineMock(
+            self.resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
+            self.resolver.dereference = async_mock.AsyncMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
@@ -383,7 +384,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
 
             targets = await self.manager.fetch_connection_targets(mock_conn)
@@ -424,11 +425,11 @@ class TestBaseConnectionManager(AsyncTestCase):
             )
             did_doc = builder.build()
 
-            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            self.resolver.get_endpoint_for_did = async_mock.AsyncMock(
                 return_value=self.test_endpoint
             )
-            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = async_mock.CoroutineMock(
+            self.resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
+            self.resolver.dereference = async_mock.AsyncMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
@@ -453,7 +454,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
 
             targets = await self.manager.fetch_connection_targets(mock_conn)
@@ -490,10 +491,10 @@ class TestBaseConnectionManager(AsyncTestCase):
                 ],
             }
             did_doc = DIDDocument.deserialize(did_doc_json)
-            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            self.resolver.get_endpoint_for_did = async_mock.AsyncMock(
                 return_value=self.test_endpoint
             )
-            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+            self.resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
             self.context.injector.bind_instance(DIDResolver, self.resolver)
 
             local_did = await session.wallet.create_local_did(
@@ -517,7 +518,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.fetch_connection_targets(mock_conn)
@@ -530,10 +531,10 @@ class TestBaseConnectionManager(AsyncTestCase):
             )
             builder.service.add(type_="LinkedData", service_endpoint=self.test_endpoint)
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            self.resolver.get_endpoint_for_did = async_mock.AsyncMock(
                 return_value=self.test_endpoint
             )
-            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+            self.resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
             self.context.injector.bind_instance(DIDResolver, self.resolver)
             await session.wallet.create_local_did(
                 method=SOV,
@@ -556,7 +557,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.fetch_connection_targets(mock_conn)
@@ -578,11 +579,11 @@ class TestBaseConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            self.resolver.get_endpoint_for_did = async_mock.AsyncMock(
                 return_value=self.test_endpoint
             )
-            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = async_mock.CoroutineMock(
+            self.resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
+            self.resolver.dereference = async_mock.AsyncMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
@@ -607,7 +608,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
 
             targets = await self.manager.fetch_connection_targets(mock_conn)
@@ -640,11 +641,11 @@ class TestBaseConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            self.resolver.get_endpoint_for_did = async_mock.AsyncMock(
                 return_value=self.test_endpoint
             )
-            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = async_mock.CoroutineMock(
+            self.resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
+            self.resolver.dereference = async_mock.AsyncMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
@@ -669,7 +670,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
 
             targets = await self.manager.fetch_connection_targets(mock_conn)
@@ -702,11 +703,11 @@ class TestBaseConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            self.resolver.get_endpoint_for_did = async_mock.AsyncMock(
                 return_value=self.test_endpoint
             )
-            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = async_mock.CoroutineMock(
+            self.resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
+            self.resolver.dereference = async_mock.AsyncMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
@@ -731,7 +732,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
 
             targets = await self.manager.fetch_connection_targets(mock_conn)
@@ -763,11 +764,11 @@ class TestBaseConnectionManager(AsyncTestCase):
                 recipient_keys=[vmethod],
             )
             did_doc = builder.build()
-            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            self.resolver.get_endpoint_for_did = async_mock.AsyncMock(
                 return_value=self.test_endpoint
             )
-            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = async_mock.CoroutineMock(
+            self.resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
+            self.resolver.dereference = async_mock.AsyncMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
@@ -792,7 +793,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.fetch_connection_targets(mock_conn)
@@ -812,9 +813,7 @@ class TestBaseConnectionManager(AsyncTestCase):
 
             mock_conn = async_mock.MagicMock(
                 my_did=self.test_did,
-                retrieve_invitation=async_mock.CoroutineMock(
-                    return_value=mock_oob_invite
-                ),
+                retrieve_invitation=async_mock.AsyncMock(return_value=mock_oob_invite),
                 state=ConnRecord.State.INVITATION.rfc23,
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
             )
@@ -837,8 +836,8 @@ class TestBaseConnectionManager(AsyncTestCase):
             )
             did_doc = builder.build()
 
-            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-            self.resolver.dereference = async_mock.CoroutineMock(
+            self.resolver.resolve = async_mock.AsyncMock(return_value=did_doc)
+            self.resolver.dereference = async_mock.AsyncMock(
                 return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
@@ -862,9 +861,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(
-                    return_value=mock_oob_invite
-                ),
+                retrieve_invitation=async_mock.AsyncMock(return_value=mock_oob_invite),
             )
 
             targets = await self.manager.fetch_connection_targets(mock_conn)
@@ -879,10 +876,10 @@ class TestBaseConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_oob_invitation_svc_block_resolver(self):
         async with self.profile.session() as session:
-            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+            self.resolver.get_endpoint_for_did = async_mock.AsyncMock(
                 return_value=self.test_endpoint
             )
-            self.resolver.get_key_for_did = async_mock.CoroutineMock(
+            self.resolver.get_key_for_did = async_mock.AsyncMock(
                 return_value=self.test_target_verkey
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
@@ -916,9 +913,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(
-                    return_value=mock_oob_invite
-                ),
+                retrieve_invitation=async_mock.AsyncMock(return_value=mock_oob_invite),
             )
 
             targets = await self.manager.fetch_connection_targets(mock_conn)
@@ -990,7 +985,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 metadata=None,
             )
 
-            self.manager.resolve_invitation = async_mock.CoroutineMock()
+            self.manager.resolve_invitation = async_mock.AsyncMock()
             self.manager.resolve_invitation.return_value = (
                 self.test_endpoint,
                 [self.test_verkey],
@@ -1035,7 +1030,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             routing_keys=[route_key.key_id],
         )
         doc = doc_builder.build()
-        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+        self.manager.resolve_didcomm_services = async_mock.AsyncMock(
             return_value=(doc, doc.service)
         )
         recip, routing = await self.manager.verification_methods_for_service(
@@ -1047,7 +1042,7 @@ class TestBaseConnectionManager(AsyncTestCase):
     async def test_resolve_connection_targets_empty(self):
         """Test resolve connection targets."""
         did = "did:sov:" + self.test_did
-        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+        self.manager.resolve_didcomm_services = async_mock.AsyncMock(
             return_value=(DIDDocument(id=DID(did)), [])
         )
         targets = await self.manager.resolve_connection_targets(did)
@@ -1069,7 +1064,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             routing_keys=[route_key.key_id],
         )
         doc = doc_builder.build()
-        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+        self.manager.resolve_didcomm_services = async_mock.AsyncMock(
             return_value=(doc, doc.service)
         )
         targets = await self.manager.resolve_connection_targets(did)
@@ -1091,7 +1086,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             routing_keys=["did:example:123#some-random-id"],
         )
         doc = doc_builder.build()
-        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+        self.manager.resolve_didcomm_services = async_mock.AsyncMock(
             return_value=(doc, doc.service)
         )
         with self.assertLogs() as cm:
@@ -1116,7 +1111,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             routing_keys=[route_key.key_id],
         )
         doc = doc_builder.build()
-        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+        self.manager.resolve_didcomm_services = async_mock.AsyncMock(
             return_value=(doc, doc.service)
         )
         with self.assertRaises(BaseConnectionManagerError) as cm:
@@ -1138,7 +1133,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             routing_keys=[route_key.key_id],
         )
         doc = doc_builder.build()
-        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+        self.manager.resolve_didcomm_services = async_mock.AsyncMock(
             return_value=(doc, doc.service)
         )
         with self.assertRaises(BaseConnectionManagerError) as cm:
@@ -1151,7 +1146,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         service_builder.add_didcomm(
             self.test_endpoint, recipient_keys=[], routing_keys=[]
         )
-        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+        self.manager.resolve_didcomm_services = async_mock.AsyncMock(
             return_value=(DIDDocument(id=DID(did)), service_builder.services)
         )
         await self.manager.record_did(did)
@@ -1167,7 +1162,7 @@ class TestBaseConnectionManager(AsyncTestCase):
             self.test_endpoint, recipient_keys=[vm], routing_keys=[]
         )
         doc = doc_builder.build()
-        self.manager.resolve_didcomm_services = async_mock.CoroutineMock(
+        self.manager.resolve_didcomm_services = async_mock.AsyncMock(
             return_value=(doc, doc.service)
         )
         await self.manager.record_did(did)
@@ -1201,7 +1196,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         with async_mock.patch.object(
             BaseConnectionManager,
             "resolve_inbound_connection",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_conn_mgr_resolve_conn:
             mock_conn_mgr_resolve_conn.return_value = mock_conn
 
@@ -1210,7 +1205,7 @@ class TestBaseConnectionManager(AsyncTestCase):
 
         # Second pass: in cache
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn
 
@@ -1230,7 +1225,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         with async_mock.patch.object(
             BaseConnectionManager,
             "resolve_inbound_connection",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_conn_mgr_resolve_conn:
             self.context.injector.clear_binding(BaseCache)
             mock_conn_mgr_resolve_conn.return_value = mock_conn
@@ -1249,9 +1244,9 @@ class TestBaseConnectionManager(AsyncTestCase):
         mock_conn.connection_id = "dummy"
 
         with async_mock.patch.object(
-            InMemoryWallet, "get_local_did_for_verkey", async_mock.CoroutineMock()
+            InMemoryWallet, "get_local_did_for_verkey", async_mock.AsyncMock()
         ) as mock_wallet_get_local_did_for_verkey, async_mock.patch.object(
-            self.manager, "find_connection", async_mock.CoroutineMock()
+            self.manager, "find_connection", async_mock.AsyncMock()
         ) as mock_mgr_find_conn:
             mock_wallet_get_local_did_for_verkey.return_value = DIDInfo(
                 self.test_did,
@@ -1275,9 +1270,9 @@ class TestBaseConnectionManager(AsyncTestCase):
         mock_conn.connection_id = "dummy"
 
         with async_mock.patch.object(
-            InMemoryWallet, "get_local_did_for_verkey", async_mock.CoroutineMock()
+            InMemoryWallet, "get_local_did_for_verkey", async_mock.AsyncMock()
         ) as mock_wallet_get_local_did_for_verkey, async_mock.patch.object(
-            self.manager, "find_connection", async_mock.CoroutineMock()
+            self.manager, "find_connection", async_mock.AsyncMock()
         ) as mock_mgr_find_conn:
             mock_wallet_get_local_did_for_verkey.side_effect = InjectionError()
             mock_mgr_find_conn.return_value = mock_conn
@@ -1295,9 +1290,9 @@ class TestBaseConnectionManager(AsyncTestCase):
         mock_conn.connection_id = "dummy"
 
         with async_mock.patch.object(
-            InMemoryWallet, "get_local_did_for_verkey", async_mock.CoroutineMock()
+            InMemoryWallet, "get_local_did_for_verkey", async_mock.AsyncMock()
         ) as mock_wallet_get_local_did_for_verkey, async_mock.patch.object(
-            self.manager, "find_connection", async_mock.CoroutineMock()
+            self.manager, "find_connection", async_mock.AsyncMock()
         ) as mock_mgr_find_conn:
             mock_wallet_get_local_did_for_verkey.side_effect = WalletNotFoundError()
             mock_mgr_find_conn.return_value = mock_conn
@@ -1333,7 +1328,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
 
             targets = await self.manager.get_connection_targets(
@@ -1392,13 +1387,13 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
 
             with async_mock.patch.object(
                 ConnectionTarget, "serialize", autospec=True
             ) as mock_conn_target_ser, async_mock.patch.object(
-                ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+                ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
             ) as mock_conn_rec_retrieve_by_id:
                 mock_conn_rec_retrieve_by_id.return_value = mock_conn
                 mock_conn_target_ser.return_value = {"serialized": "value"}
@@ -1441,9 +1436,9 @@ class TestBaseConnectionManager(AsyncTestCase):
             with async_mock.patch.object(
                 ConnectionTarget, "serialize", autospec=True
             ) as mock_conn_target_ser, async_mock.patch.object(
-                ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+                ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
             ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
-                self.manager, "fetch_connection_targets", async_mock.CoroutineMock()
+                self.manager, "fetch_connection_targets", async_mock.AsyncMock()
             ) as mock_fetch_connection_targets:
                 mock_fetch_connection_targets.return_value = [ConnectionTarget()]
                 mock_conn_rec_retrieve_by_id.return_value = mock_conn
@@ -1485,9 +1480,9 @@ class TestBaseConnectionManager(AsyncTestCase):
             with async_mock.patch.object(
                 ConnectionTarget, "serialize", autospec=True
             ) as mock_conn_target_ser, async_mock.patch.object(
-                ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+                ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
             ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
-                self.manager, "fetch_connection_targets", async_mock.CoroutineMock()
+                self.manager, "fetch_connection_targets", async_mock.AsyncMock()
             ) as mock_fetch_connection_targets:
                 mock_fetch_connection_targets.return_value = [ConnectionTarget()]
                 mock_conn_rec_retrieve_by_id.return_value = mock_conn
@@ -1537,7 +1532,7 @@ class TestBaseConnectionManager(AsyncTestCase):
                 connection_id="dummy",
                 their_role=ConnRecord.Role.RESPONDER.rfc23,
                 state=ConnRecord.State.INVITATION.rfc23,
-                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+                retrieve_invitation=async_mock.AsyncMock(return_value=conn_invite),
             )
 
             targets = await self.manager.get_connection_targets(
@@ -1572,7 +1567,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         )
 
         self.multitenant_mgr.get_default_mediator.return_value = None
-        self.route_manager.route_static = async_mock.CoroutineMock()
+        self.route_manager.route_static = async_mock.AsyncMock()
 
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
@@ -1605,13 +1600,13 @@ class TestBaseConnectionManager(AsyncTestCase):
             }
         )
         self.multitenant_mgr.get_default_mediator.return_value = None
-        self.route_manager.route_static = async_mock.CoroutineMock()
+        self.route_manager.route_static = async_mock.AsyncMock()
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
         ), async_mock.patch.object(
             InMemoryWallet, "create_local_did", autospec=True
         ) as mock_wallet_create_local_did, async_mock.patch.object(
-            V20DiscoveryMgr, "proactive_disclose_features", async_mock.CoroutineMock()
+            V20DiscoveryMgr, "proactive_disclose_features", async_mock.AsyncMock()
         ) as mock_proactive_disclose_features:
             mock_wallet_create_local_did.return_value = DIDInfo(
                 self.test_did,
@@ -1635,7 +1630,7 @@ class TestBaseConnectionManager(AsyncTestCase):
         )
 
         default_mediator = async_mock.MagicMock()
-        self.route_manager.route_static = async_mock.CoroutineMock()
+        self.route_manager.route_static = async_mock.AsyncMock()
 
         with async_mock.patch.object(
             ConnRecord, "save", autospec=True
@@ -1718,11 +1713,11 @@ class TestBaseConnectionManager(AsyncTestCase):
 
     async def test_find_connection_retrieve_by_did(self):
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_did", async_mock.AsyncMock()
         ) as mock_conn_retrieve_by_did:
             mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
                 state=ConnRecord.State.RESPONSE.rfc23,
-                save=async_mock.CoroutineMock(),
+                save=async_mock.AsyncMock(),
             )
 
             conn_rec = await self.manager.find_connection(
@@ -1736,13 +1731,13 @@ class TestBaseConnectionManager(AsyncTestCase):
     async def test_find_connection_retrieve_by_did_auto_disclose_features(self):
         self.context.update_settings({"auto_disclose_features": True})
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_did", async_mock.AsyncMock()
         ) as mock_conn_retrieve_by_did, async_mock.patch.object(
-            V20DiscoveryMgr, "proactive_disclose_features", async_mock.CoroutineMock()
+            V20DiscoveryMgr, "proactive_disclose_features", async_mock.AsyncMock()
         ) as mock_proactive_disclose_features:
             mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
                 state=ConnRecord.State.RESPONSE.rfc23,
-                save=async_mock.CoroutineMock(),
+                save=async_mock.AsyncMock(),
             )
 
             conn_rec = await self.manager.find_connection(
@@ -1756,14 +1751,14 @@ class TestBaseConnectionManager(AsyncTestCase):
 
     async def test_find_connection_retrieve_by_invitation_key(self):
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_did", async_mock.AsyncMock()
         ) as mock_conn_retrieve_by_did, async_mock.patch.object(
-            ConnRecord, "retrieve_by_invitation_key", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_invitation_key", async_mock.AsyncMock()
         ) as mock_conn_retrieve_by_invitation_key:
             mock_conn_retrieve_by_did.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_invitation_key.return_value = async_mock.MagicMock(
                 state=ConnRecord.State.RESPONSE,
-                save=async_mock.CoroutineMock(),
+                save=async_mock.AsyncMock(),
             )
 
             conn_rec = await self.manager.find_connection(
@@ -1775,9 +1770,9 @@ class TestBaseConnectionManager(AsyncTestCase):
 
     async def test_find_connection_retrieve_none_by_invitation_key(self):
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_did", async_mock.AsyncMock()
         ) as mock_conn_retrieve_by_did, async_mock.patch.object(
-            ConnRecord, "retrieve_by_invitation_key", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_invitation_key", async_mock.AsyncMock()
         ) as mock_conn_retrieve_by_invitation_key:
             mock_conn_retrieve_by_did.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_invitation_key.side_effect = StorageNotFoundError()
@@ -1793,11 +1788,11 @@ class TestBaseConnectionManager(AsyncTestCase):
         conn_id = "dummy"
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_retrieve, async_mock.patch.object(
             InMemoryWallet, "get_local_did", autospec=True
         ) as mock_wallet_get_local_did, async_mock.patch.object(
-            self.manager, "get_connection_targets", async_mock.CoroutineMock()
+            self.manager, "get_connection_targets", async_mock.AsyncMock()
         ) as mock_get_conn_targets:
             mock_retrieve.return_value = async_mock.MagicMock()
             mock_wallet_get_local_did.return_value = async_mock.MagicMock(

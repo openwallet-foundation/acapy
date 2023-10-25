@@ -1,7 +1,5 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -9,8 +7,8 @@ from ......messaging.responder import MockResponder
 from .. import menu_request_handler as handler
 
 
-class TestMenuRequestHandler(AsyncTestCase):
-    async def setUp(self):
+class TestMenuRequestHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = RequestContext.test_context()
 
     async def test_called(self):
@@ -23,9 +21,7 @@ class TestMenuRequestHandler(AsyncTestCase):
 
         responder = MockResponder()
         self.context.message = handler.MenuRequest()
-        self.menu_service.get_active_menu = async_mock.CoroutineMock(
-            return_value="menu"
-        )
+        self.menu_service.get_active_menu = async_mock.AsyncMock(return_value="menu")
 
         handler_inst = handler.MenuRequestHandler()
         await handler_inst.handle(self.context, responder)
@@ -46,7 +42,7 @@ class TestMenuRequestHandler(AsyncTestCase):
 
         responder = MockResponder()
         self.context.message = handler.MenuRequest()
-        self.menu_service.get_active_menu = async_mock.CoroutineMock(return_value=None)
+        self.menu_service.get_active_menu = async_mock.AsyncMock(return_value=None)
 
         handler_inst = handler.MenuRequestHandler()
         await handler_inst.handle(self.context, responder)

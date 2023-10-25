@@ -1,9 +1,9 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..did_posture import DIDPosture
 
 
-class TestDIDPosture(AsyncTestCase):
+class TestDIDPosture(IsolatedAsyncioTestCase):
     async def test_did_posture(self):
         assert DIDPosture.PUBLIC is DIDPosture.get("PUBLIC")
         assert DIDPosture.POSTED is DIDPosture.get("POSTED")

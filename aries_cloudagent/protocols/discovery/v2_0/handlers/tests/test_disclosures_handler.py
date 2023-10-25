@@ -1,6 +1,6 @@
 import pytest
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 
 from aries_cloudagent.storage.error import StorageNotFoundError
 
@@ -64,7 +64,7 @@ class TestDisclosuresHandler:
         with async_mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(return_value=discovery_record),
+            async_mock.AsyncMock(return_value=discovery_record),
         ) as mock_get_rec_thread_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
@@ -104,11 +104,11 @@ class TestDisclosuresHandler:
         with async_mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
+            async_mock.AsyncMock(side_effect=StorageNotFoundError),
         ) as mock_get_rec_thread_id, async_mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_connection_id",
-            async_mock.CoroutineMock(return_value=discovery_record),
+            async_mock.AsyncMock(return_value=discovery_record),
         ) as mock_get_rec_conn_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
@@ -142,11 +142,11 @@ class TestDisclosuresHandler:
         with async_mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
+            async_mock.AsyncMock(side_effect=StorageNotFoundError),
         ) as mock_get_rec_thread_id, async_mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_connection_id",
-            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
+            async_mock.AsyncMock(side_effect=StorageNotFoundError),
         ) as mock_get_rec_conn_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages

@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -8,7 +9,7 @@ from .. import cred_ack as test_module
 from ..cred_ack import V20CredAck
 
 
-class TestV20CredAck(AsyncTestCase):
+class TestV20CredAck(IsolatedAsyncioTestCase):
     """Credential ack tests."""
 
     async def test_init_type(self):
@@ -42,7 +43,7 @@ class TestV20CredAck(AsyncTestCase):
             assert cred_ack_dict is mock_dump.return_value
 
 
-class TestCredentialAckSchema(AsyncTestCase):
+class TestCredentialAckSchema(IsolatedAsyncioTestCase):
     """Test credential ack schema."""
 
     async def test_make_model(self):

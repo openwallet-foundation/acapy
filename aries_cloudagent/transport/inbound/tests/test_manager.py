@@ -1,4 +1,5 @@
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
 
@@ -9,7 +10,7 @@ from ..base import InboundTransportConfiguration, InboundTransportRegistrationEr
 from ..manager import InboundTransportManager
 
 
-class TestInboundTransportManager(AsyncTestCase):
+class TestInboundTransportManager(IsolatedAsyncioTestCase):
     def setUp(self):
         self.profile = InMemoryProfile.test_profile()
 
@@ -58,8 +59,8 @@ class TestInboundTransportManager(AsyncTestCase):
 
     async def test_start_stop(self):
         transport = async_mock.MagicMock()
-        transport.start = async_mock.CoroutineMock()
-        transport.stop = async_mock.CoroutineMock()
+        transport.start = async_mock.AsyncMock()
+        transport.stop = async_mock.AsyncMock()
 
         mgr = InboundTransportManager(self.profile, None)
         mgr.register_transport(transport, "transport_cls")
@@ -75,7 +76,7 @@ class TestInboundTransportManager(AsyncTestCase):
         test_wire_format = async_mock.MagicMock()
         self.profile.context.injector.bind_instance(BaseWireFormat, test_wire_format)
 
-        test_inbound_handler = async_mock.CoroutineMock()
+        test_inbound_handler = async_mock.AsyncMock()
         mgr = InboundTransportManager(self.profile, test_inbound_handler)
         test_transport = "http"
         test_accept = True
@@ -147,7 +148,7 @@ class TestInboundTransportManager(AsyncTestCase):
     async def test_dispatch_complete_undelivered(self):
         mgr = InboundTransportManager(self.profile, None)
         test_wire_format = async_mock.MagicMock(
-            parse_message=async_mock.CoroutineMock(return_value=("payload", "receipt"))
+            parse_message=async_mock.AsyncMock(return_value=("payload", "receipt"))
         )
         session = await mgr.create_session(
             "http", wire_format=test_wire_format, accept_undelivered=True

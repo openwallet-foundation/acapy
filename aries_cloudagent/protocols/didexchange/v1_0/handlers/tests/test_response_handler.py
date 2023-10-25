@@ -1,6 +1,6 @@
 import pytest
-from asynctest import mock as async_mock
-from asynctest import TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models import connection_target
 from ......connections.models.diddoc import (
@@ -30,7 +30,7 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-class TestDIDXResponseHandler(AsyncTestCase):
+class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
     def did_doc(self):
         doc = DIDDoc(did=TEST_DID)
         controller = TEST_DID
@@ -58,7 +58,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
         doc.set(service)
         return doc
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.ctx = RequestContext.test_context()
         self.ctx.message_receipt = MessageReceipt()
 
@@ -80,7 +80,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
     @pytest.mark.asyncio
     @async_mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_didx_mgr):
-        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock()
+        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock()
         self.ctx.message = DIDXResponse()
         handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
@@ -95,7 +95,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
     @async_mock.patch.object(test_module, "DIDXManager")
     async def test_called_auto_ping(self, mock_didx_mgr):
         self.ctx.update_settings({"auto_ping_connection": True})
-        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock()
+        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock()
         self.ctx.message = DIDXResponse()
         handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
@@ -112,7 +112,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
     @pytest.mark.asyncio
     @async_mock.patch.object(test_module, "DIDXManager")
     async def test_problem_report(self, mock_didx_mgr):
-        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
+        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
@@ -142,7 +142,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
         mock_conn_target,
         mock_didx_mgr,
     ):
-        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
+        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
@@ -178,7 +178,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
         mock_conn_target,
         mock_didx_mgr,
     ):
-        mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
+        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )

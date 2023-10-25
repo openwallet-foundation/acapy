@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
 from .....connections.models.conn_record import ConnRecord
@@ -7,13 +7,13 @@ from .....connections.models.conn_record import ConnRecord
 from .. import routes as test_module
 
 
-class TestOutOfBandRoutes(AsyncTestCase):
-    async def setUp(self):
+class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.CoroutineMock(),
+            "outbound_message_router": async_mock.AsyncMock(),
         }
         self.request = async_mock.MagicMock(
             app={},
@@ -33,14 +33,14 @@ class TestOutOfBandRoutes(AsyncTestCase):
             "use_public_did": True,
             "metadata": {"hello": "world"},
         }
-        self.request.json = async_mock.CoroutineMock(return_value=body)
+        self.request.json = async_mock.AsyncMock(return_value=body)
 
         with async_mock.patch.object(
             test_module, "OutOfBandManager", autospec=True
         ) as mock_oob_mgr, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+            mock_oob_mgr.return_value.create_invitation = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     serialize=async_mock.MagicMock(return_value={"abc": "123"})
                 )
@@ -76,14 +76,14 @@ class TestOutOfBandRoutes(AsyncTestCase):
             "use_public_did": True,
             "metadata": {"hello": "world"},
         }
-        self.request.json = async_mock.CoroutineMock(return_value=body)
+        self.request.json = async_mock.AsyncMock(return_value=body)
 
         with async_mock.patch.object(
             test_module, "OutOfBandManager", autospec=True
         ) as mock_oob_mgr, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+            mock_oob_mgr.return_value.create_invitation = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     serialize=async_mock.MagicMock(return_value={"abc": "123"})
                 )
@@ -109,7 +109,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
 
     async def test_invitation_create_x(self):
         self.request.query = {"multi_use": "true"}
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "attachments": async_mock.MagicMock(),
                 "handshake_protocols": [23],
@@ -122,7 +122,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         ) as mock_oob_mgr, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+            mock_oob_mgr.return_value.create_invitation = async_mock.AsyncMock(
                 side_effect=test_module.OutOfBandManagerError()
             )
 
@@ -131,7 +131,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
             mock_json_response.assert_not_called()
 
     async def test_invitation_receive(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
         expected_connection_record = ConnRecord(connection_id="some-id")
 
         with async_mock.patch.object(
@@ -141,7 +141,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         ), async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_oob_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
+            mock_oob_mgr.return_value.receive_invitation = async_mock.AsyncMock(
                 return_value=expected_connection_record
             )
 
@@ -156,7 +156,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
             await test_module.invitation_receive(self.request)
 
     async def test_invitation_receive_x(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         with async_mock.patch.object(
             test_module, "OutOfBandManager", autospec=True
@@ -165,7 +165,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         ) as mock_invi_deser, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_oob_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
+            mock_oob_mgr.return_value.receive_invitation = async_mock.AsyncMock(
                 side_effect=test_module.StorageError("cannot write")
             )
 

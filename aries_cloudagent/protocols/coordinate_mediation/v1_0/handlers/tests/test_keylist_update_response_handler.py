@@ -3,8 +3,8 @@
 from functools import partial
 from typing import AsyncGenerator
 import pytest
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 
 from ......connections.models.conn_record import ConnRecord
@@ -26,10 +26,10 @@ TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
 
 
-class TestKeylistUpdateResponseHandler(AsyncTestCase):
+class TestKeylistUpdateResponseHandler(IsolatedAsyncioTestCase):
     """Test handler for keylist-update-response message."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         """Setup test dependencies."""
         self.context = RequestContext.test_context()
         self.updated = [

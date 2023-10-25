@@ -4,7 +4,8 @@ import json
 from os.path import join
 from typing import Any, Mapping, Type
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile, InMemoryProfileSession
 from ....core.profile import Profile, ProfileSession
@@ -52,8 +53,8 @@ REV_REG_ENTRY = {
 }
 
 
-class TestIssuerRevRegRecord(AsyncTestCase):
-    async def setUp(self):
+class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile(
             settings={"tails_server_base_url": "http://1.2.3.4:8088"},
         )
@@ -61,13 +62,13 @@ class TestIssuerRevRegRecord(AsyncTestCase):
 
         Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.send_revoc_reg_def = async_mock.CoroutineMock()
-        self.ledger.send_revoc_reg_entry = async_mock.CoroutineMock()
+        self.ledger.send_revoc_reg_def = async_mock.AsyncMock()
+        self.ledger.send_revoc_reg_entry = async_mock.AsyncMock()
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
         TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
         self.tails_server = TailsServer()
-        self.tails_server.upload_tails_file = async_mock.CoroutineMock(
+        self.tails_server.upload_tails_file = async_mock.AsyncMock(
             return_value=(True, "http://1.2.3.4:8088/rev-reg-id")
         )
         self.profile.context.injector.bind_instance(BaseTailsServer, self.tails_server)
@@ -172,7 +173,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
                 if self.handle_counter == 0:
                     self.handle_counter = self.handle_counter + 1
                     return async_mock.MagicMock(
-                        fetch=async_mock.CoroutineMock(
+                        fetch=async_mock.AsyncMock(
                             return_value=async_mock.MagicMock(
                                 value_json=json.dumps(mock_cred_def)
                             )
@@ -180,7 +181,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
                     )
                 else:
                     return async_mock.MagicMock(
-                        fetch=async_mock.CoroutineMock(
+                        fetch=async_mock.AsyncMock(
                             return_value=async_mock.MagicMock(
                                 value_json=json.dumps(mock_reg_rev_def_private),
                             ),
@@ -213,13 +214,13 @@ class TestIssuerRevRegRecord(AsyncTestCase):
             "ver": "1.0",
             "value": {"accum": "ACCUM", "issued": [1, 2], "revoked": [3, 4]},
         }
-        self.ledger.get_revoc_reg_delta = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_delta = async_mock.AsyncMock(
             return_value=(
                 _test_rev_reg_delta,
                 1234567890,
             )
         )
-        self.ledger.send_revoc_reg_entry = async_mock.CoroutineMock(
+        self.ledger.send_revoc_reg_entry = async_mock.AsyncMock(
             return_value={
                 "result": {"...": "..."},
             },
@@ -232,7 +233,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         with async_mock.patch.object(
             test_module.IssuerCredRevRecord,
             "query_by_ids",
-            async_mock.CoroutineMock(
+            async_mock.AsyncMock(
                 return_value=[
                     test_module.IssuerCredRevRecord(
                         record_id=test_module.UUID4_EXAMPLE,
@@ -246,11 +247,11 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         ), async_mock.patch.object(
             test_module.IssuerRevRegRecord,
             "retrieve_by_revoc_reg_id",
-            async_mock.CoroutineMock(return_value=rec),
+            async_mock.AsyncMock(return_value=rec),
         ), async_mock.patch.object(
             test_module,
             "generate_ledger_rrrecovery_txn",
-            async_mock.CoroutineMock(return_value=rev_reg_delta),
+            async_mock.AsyncMock(return_value=rev_reg_delta),
         ):
             assert (
                 _test_rev_reg_delta,
@@ -277,7 +278,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
         with async_mock.patch.object(
-            issuer, "create_and_store_revocation_registry", async_mock.CoroutineMock()
+            issuer, "create_and_store_revocation_registry", async_mock.AsyncMock()
         ) as mock_create_store_rr:
             mock_create_store_rr.side_effect = IndyIssuerError("Not this time")
 

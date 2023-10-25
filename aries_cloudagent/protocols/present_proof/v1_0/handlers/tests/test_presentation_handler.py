@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
@@ -10,7 +11,7 @@ from ...messages.presentation import Presentation
 from .. import presentation_handler as test_module
 
 
-class TestPresentationHandler(AsyncTestCase):
+class TestPresentationHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
@@ -18,7 +19,7 @@ class TestPresentationHandler(AsyncTestCase):
 
         oob_record = async_mock.MagicMock()
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=oob_record
             )
         )
@@ -27,7 +28,7 @@ class TestPresentationHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_presentation = async_mock.CoroutineMock()
+            mock_pres_mgr.return_value.receive_presentation = async_mock.AsyncMock()
             request_context.message = Presentation()
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
@@ -48,7 +49,7 @@ class TestPresentationHandler(AsyncTestCase):
 
         oob_record = async_mock.MagicMock()
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=oob_record
             )
         )
@@ -57,8 +58,8 @@ class TestPresentationHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_presentation = async_mock.CoroutineMock()
-            mock_pres_mgr.return_value.verify_presentation = async_mock.CoroutineMock()
+            mock_pres_mgr.return_value.receive_presentation = async_mock.AsyncMock()
+            mock_pres_mgr.return_value.verify_presentation = async_mock.AsyncMock()
             request_context.message = Presentation()
             request_context.connection_ready = True
             request_context.connection_record = async_mock.MagicMock()
@@ -79,7 +80,7 @@ class TestPresentationHandler(AsyncTestCase):
 
         oob_record = async_mock.MagicMock()
         mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+            find_oob_record_for_inbound_message=async_mock.AsyncMock(
                 return_value=oob_record
             )
         )
@@ -89,12 +90,12 @@ class TestPresentationHandler(AsyncTestCase):
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
             mock_pres_mgr.return_value = async_mock.MagicMock(
-                receive_presentation=async_mock.CoroutineMock(
+                receive_presentation=async_mock.AsyncMock(
                     return_value=async_mock.MagicMock(
-                        save_error_state=async_mock.CoroutineMock()
+                        save_error_state=async_mock.AsyncMock()
                     )
                 ),
-                verify_presentation=async_mock.CoroutineMock(
+                verify_presentation=async_mock.AsyncMock(
                     side_effect=test_module.LedgerError()
                 ),
             )

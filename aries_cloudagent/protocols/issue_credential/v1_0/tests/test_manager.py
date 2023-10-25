@@ -3,7 +3,8 @@ import json
 from copy import deepcopy
 from time import time
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache
@@ -49,8 +50,8 @@ from . import (
 )
 
 
-class TestCredentialManager(AsyncTestCase):
-    async def setUp(self):
+class TestCredentialManager(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.profile = self.session.profile
         self.context = self.profile.context
@@ -63,22 +64,20 @@ class TestCredentialManager(AsyncTestCase):
 
         Ledger = async_mock.MagicMock()
         self.ledger = Ledger()
-        self.ledger.get_schema = async_mock.CoroutineMock(return_value=SCHEMA)
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_schema = async_mock.AsyncMock(return_value=SCHEMA)
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value=CRED_DEF
         )
-        self.ledger.get_revoc_reg_def = async_mock.CoroutineMock(
-            return_value=REV_REG_DEF
-        )
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.ledger.credential_definition_id2schema_id = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_def = async_mock.AsyncMock(return_value=REV_REG_DEF)
+        self.ledger.__aenter__ = async_mock.AsyncMock(return_value=self.ledger)
+        self.ledger.credential_definition_id2schema_id = async_mock.AsyncMock(
             return_value=SCHEMA_ID
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -163,7 +162,7 @@ class TestCredentialManager(AsyncTestCase):
             )
         )
 
-        self.ledger.credential_definition_id2schema_id = async_mock.CoroutineMock(
+        self.ledger.credential_definition_id2schema_id = async_mock.AsyncMock(
             return_value=SCHEMA_ID
         )
 
@@ -201,7 +200,7 @@ class TestCredentialManager(AsyncTestCase):
         connection_id = "test_conn_id"
         comment = "comment"
 
-        self.ledger.credential_definition_id2schema_id = async_mock.CoroutineMock(
+        self.ledger.credential_definition_id2schema_id = async_mock.AsyncMock(
             return_value=SCHEMA_ID
         )
 
@@ -299,7 +298,7 @@ class TestCredentialManager(AsyncTestCase):
             self.context.injector.bind_instance(BaseCache, self.cache)
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            issuer.create_credential_offer = async_mock.CoroutineMock(
+            issuer.create_credential_offer = async_mock.AsyncMock(
                 return_value=json.dumps(INDY_OFFER)
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
@@ -381,7 +380,7 @@ class TestCredentialManager(AsyncTestCase):
             self.context.injector.bind_instance(BaseCache, self.cache)
 
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            issuer.create_credential_offer = async_mock.CoroutineMock(
+            issuer.create_credential_offer = async_mock.AsyncMock(
                 return_value=json.dumps(INDY_OFFER)
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
@@ -439,7 +438,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as set_cached_key:
             get_cached_key.return_value = None
             issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            issuer.create_credential_offer = async_mock.CoroutineMock(
+            issuer.create_credential_offer = async_mock.AsyncMock(
                 return_value=json.dumps(INDY_OFFER)
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
@@ -510,7 +509,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as set_cached_key:
             get_cached_key.return_value = None
             issuer = async_mock.MagicMock()
-            issuer.create_credential_offer = async_mock.CoroutineMock(
+            issuer.create_credential_offer = async_mock.AsyncMock(
                 return_value=INDY_OFFER
             )
             self.context.injector.bind_instance(IndyIssuer, issuer)
@@ -560,7 +559,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(return_value=stored_exchange),
+            async_mock.AsyncMock(return_value=stored_exchange),
         ) as retrieve_ex:
             exchange = await self.manager.receive_offer(offer, connection_id)
 
@@ -599,7 +598,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
+            async_mock.AsyncMock(side_effect=StorageNotFoundError),
         ) as retrieve_ex:
             exchange = await self.manager.receive_offer(offer, connection_id)
 
@@ -645,13 +644,13 @@ class TestCredentialManager(AsyncTestCase):
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
             cred_def = {"cred": "def"}
-            self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            self.ledger.get_credential_definition = async_mock.AsyncMock(
                 return_value=cred_def
             )
 
             cred_req_meta = {}
             holder = async_mock.MagicMock()
-            holder.create_credential_request = async_mock.CoroutineMock(
+            holder.create_credential_request = async_mock.AsyncMock(
                 return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
             )
             self.context.injector.bind_instance(IndyHolder, holder)
@@ -716,13 +715,13 @@ class TestCredentialManager(AsyncTestCase):
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
             cred_def = {"cred": "def"}
-            self.ledger.get_credential_definition = async_mock.CoroutineMock(
+            self.ledger.get_credential_definition = async_mock.AsyncMock(
                 return_value=cred_def
             )
 
             cred_req_meta = {}
             holder = async_mock.MagicMock()
-            holder.create_credential_request = async_mock.CoroutineMock(
+            holder.create_credential_request = async_mock.AsyncMock(
                 return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
             )
             self.context.injector.bind_instance(IndyHolder, holder)
@@ -785,7 +784,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(return_value=stored_exchange),
+            async_mock.AsyncMock(return_value=stored_exchange),
         ) as retrieve_ex:
             exchange = await self.manager.receive_request(request, mock_conn, None)
 
@@ -825,7 +824,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_retrieve:
             mock_retrieve.return_value = stored_exchange
             cx_rec = await self.manager.receive_request(request, mock_conn, mock_oob)
@@ -865,7 +864,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_retrieve:
             mock_retrieve.side_effect = (StorageNotFoundError(),)
             with self.assertRaises(CredentialManagerError):
@@ -909,7 +908,7 @@ class TestCredentialManager(AsyncTestCase):
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
         cred_rev_id = "1000"
-        issuer.create_credential = async_mock.CoroutineMock(
+        issuer.create_credential = async_mock.AsyncMock(
             return_value=(json.dumps(cred), cred_rev_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
@@ -919,7 +918,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as revoc, async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
         ) as save_ex:
-            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+            revoc.return_value.get_or_create_active_registry = async_mock.AsyncMock(
                 return_value=(
                     async_mock.MagicMock(  # active_rev_reg_rec
                         revoc_reg_id=REV_REG_ID,
@@ -927,7 +926,7 @@ class TestCredentialManager(AsyncTestCase):
                     async_mock.MagicMock(  # rev_reg
                         registry_id=REV_REG_ID,
                         tails_local_path="dummy-path",
-                        get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
+                        get_or_fetch_local_tails_path=async_mock.AsyncMock(),
                         max_creds=10,
                     ),
                 )
@@ -996,18 +995,18 @@ class TestCredentialManager(AsyncTestCase):
 
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
-        issuer.create_credential = async_mock.CoroutineMock(
+        issuer.create_credential = async_mock.AsyncMock(
             return_value=(json.dumps(cred), None)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
 
         Ledger = async_mock.MagicMock()
         self.ledger = Ledger()
-        self.ledger.get_schema = async_mock.CoroutineMock(return_value=SCHEMA)
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_schema = async_mock.AsyncMock(return_value=SCHEMA)
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value=CRED_DEF_NR
         )
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
+        self.ledger.__aenter__ = async_mock.AsyncMock(return_value=self.ledger)
         self.context.injector.clear_binding(BaseLedger)
         self.context.injector.bind_instance(BaseLedger, self.ledger)
         with async_mock.patch.object(
@@ -1015,7 +1014,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
         ):
             (ret_exchange, ret_cred_issue) = await self.manager.issue_credential(
                 stored_exchange, comment=comment, retries=0
@@ -1067,7 +1066,7 @@ class TestCredentialManager(AsyncTestCase):
 
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
-        issuer.create_credential = async_mock.CoroutineMock(
+        issuer.create_credential = async_mock.AsyncMock(
             return_value=(json.dumps(cred), stored_exchange.revocation_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
@@ -1079,24 +1078,22 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex:
             revoc.return_value = async_mock.MagicMock(
                 get_or_create_active_registry=(
-                    async_mock.CoroutineMock(
+                    async_mock.AsyncMock(
                         return_value=(
                             async_mock.MagicMock(  # active_rev_reg_rec
                                 revoc_reg_id=REV_REG_ID,
-                                set_state=async_mock.CoroutineMock(),
+                                set_state=async_mock.AsyncMock(),
                             ),
                             async_mock.MagicMock(  # rev_reg
                                 registry_id=REV_REG_ID,
                                 tails_local_path="dummy-path",
                                 max_creds=1000,
-                                get_or_fetch_local_tails_path=(
-                                    async_mock.CoroutineMock()
-                                ),
+                                get_or_fetch_local_tails_path=(async_mock.AsyncMock()),
                             ),
                         )
                     )
                 ),
-                handle_full_registry=async_mock.CoroutineMock(),
+                handle_full_registry=async_mock.AsyncMock(),
             )
             (ret_exchange, ret_cred_issue) = await self.manager.issue_credential(
                 stored_exchange, comment=comment, retries=0
@@ -1171,14 +1168,14 @@ class TestCredentialManager(AsyncTestCase):
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
         cred_rev_id = "1"
-        issuer.create_credential = async_mock.CoroutineMock(
+        issuer.create_credential = async_mock.AsyncMock(
             return_value=(json.dumps(cred), cred_rev_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -1186,17 +1183,17 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
-            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+            revoc.return_value.get_or_create_active_registry = async_mock.AsyncMock(
                 side_effect=[
                     None,
                     (
                         async_mock.MagicMock(  # active_rev_reg_rec
                             revoc_reg_id=REV_REG_ID,
-                            set_state=async_mock.CoroutineMock(),
+                            set_state=async_mock.AsyncMock(),
                         ),
                         async_mock.MagicMock(  # rev_reg
                             tails_local_path="dummy-path",
-                            get_or_fetch_local_tails_path=(async_mock.CoroutineMock()),
+                            get_or_fetch_local_tails_path=(async_mock.AsyncMock()),
                         ),
                     ),
                 ]
@@ -1237,14 +1234,14 @@ class TestCredentialManager(AsyncTestCase):
         issuer = async_mock.MagicMock()
         cred = {"indy": "credential"}
         cred_rev_id = "1"
-        issuer.create_credential = async_mock.CoroutineMock(
+        issuer.create_credential = async_mock.AsyncMock(
             return_value=(json.dumps(cred), cred_rev_id)
         )
         self.context.injector.bind_instance(IndyIssuer, issuer)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -1252,7 +1249,7 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
-            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+            revoc.return_value.get_or_create_active_registry = async_mock.AsyncMock(
                 return_value=None
             )
             with self.assertRaises(CredentialManagerError) as context:
@@ -1283,7 +1280,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(return_value=stored_exchange),
+            async_mock.AsyncMock(return_value=stored_exchange),
         ) as retrieve_ex:
             exchange = await self.manager.receive_credential(issue, connection_id)
 
@@ -1335,15 +1332,15 @@ class TestCredentialManager(AsyncTestCase):
 
         cred_id = "cred-id"
         holder = async_mock.MagicMock()
-        holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
-        holder.get_credential = async_mock.CoroutineMock(
+        holder.store_credential = async_mock.AsyncMock(return_value=cred_id)
+        holder.get_credential = async_mock.AsyncMock(
             return_value=json.dumps(INDY_CRED_INFO)
         )
         self.context.injector.bind_instance(IndyHolder, holder)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -1357,7 +1354,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as delete_ex:
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+                    get_or_fetch_local_tails_path=async_mock.AsyncMock()
                 )
             )
             ret_exchange = await self.manager.store_credential(
@@ -1438,21 +1435,21 @@ class TestCredentialManager(AsyncTestCase):
         await stored_exchange.save(self.session)
 
         cred_def = async_mock.MagicMock()
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value=cred_def
         )
 
         cred_id = "cred-id"
         holder = async_mock.MagicMock()
-        holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
-        holder.get_credential = async_mock.CoroutineMock(
+        holder.store_credential = async_mock.AsyncMock(return_value=cred_id)
+        holder.get_credential = async_mock.AsyncMock(
             return_value=json.dumps(cred_info_no_rev)
         )
         self.context.injector.bind_instance(IndyHolder, holder)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -1508,20 +1505,20 @@ class TestCredentialManager(AsyncTestCase):
         await stored_exchange.save(self.session)
 
         cred_def = async_mock.MagicMock()
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value=cred_def
         )
 
         cred_id = "cred-id"
         holder = async_mock.MagicMock()
-        holder.store_credential = async_mock.CoroutineMock(
+        holder.store_credential = async_mock.AsyncMock(
             side_effect=test_module.IndyHolderError("Problem", {"message": "Nope"})
         )
         self.context.injector.bind_instance(IndyHolder, holder)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -1589,7 +1586,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as delete_ex, async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as retrieve_ex:
             retrieve_ex.return_value = stored_exchange
             ret_exchange = await self.manager.receive_credential_ack(ack, connection_id)
@@ -1628,7 +1625,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as retrieve_ex:
             retrieve_ex.return_value = stored_exchange
 
@@ -1654,7 +1651,7 @@ class TestCredentialManager(AsyncTestCase):
         with async_mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_connection_and_thread",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as retrieve_ex:
             retrieve_ex.side_effect = test_module.StorageNotFoundError("No such record")
 

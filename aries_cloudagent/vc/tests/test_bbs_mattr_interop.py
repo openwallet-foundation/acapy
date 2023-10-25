@@ -1,4 +1,4 @@
-from asynctest import TestCase
+from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from ...wallet.key_type import BLS12381G2
@@ -31,8 +31,8 @@ from .data import (
 
 
 @pytest.mark.ursa_bbs_signatures
-class TestBbsMattrInterop(TestCase):
-    async def setUp(self):
+class TestBbsMattrInterop(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
 

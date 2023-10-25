@@ -1,5 +1,5 @@
 import pytest
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 
 
 from ....config.injection_context import InjectionContext

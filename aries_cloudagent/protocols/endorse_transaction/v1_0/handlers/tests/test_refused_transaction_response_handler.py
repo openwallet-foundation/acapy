@@ -1,7 +1,5 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -11,7 +9,7 @@ from ...handlers import refused_transaction_response_handler as test_module
 from ...messages.refused_transaction_response import RefusedTransactionResponse
 
 
-class TestRefusedTransactionResponseHandler(AsyncTestCase):
+class TestRefusedTransactionResponseHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
@@ -20,9 +18,7 @@ class TestRefusedTransactionResponseHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_refuse_response = (
-                async_mock.CoroutineMock()
-            )
+            mock_tran_mgr.return_value.receive_refuse_response = async_mock.AsyncMock()
             request_context.message = RefusedTransactionResponse()
             request_context.connection_ready = True
             handler = test_module.RefusedTransactionResponseHandler()
@@ -42,9 +38,7 @@ class TestRefusedTransactionResponseHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_refuse_response = (
-                async_mock.CoroutineMock()
-            )
+            mock_tran_mgr.return_value.receive_refuse_response = async_mock.AsyncMock()
             request_context.message = RefusedTransactionResponse()
             request_context.connection_ready = False
             handler = test_module.RefusedTransactionResponseHandler()
@@ -62,10 +56,8 @@ class TestRefusedTransactionResponseHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_refuse_response = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.TransactionManagerError()
-                )
+            mock_tran_mgr.return_value.receive_refuse_response = async_mock.AsyncMock(
+                side_effect=test_module.TransactionManagerError()
             )
             request_context.message = RefusedTransactionResponse()
             request_context.connection_ready = True

@@ -3,7 +3,7 @@ import json
 import pytest
 
 from aiohttp.test_utils import AioHTTPTestCase, unused_port
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 
 from ....core.in_memory import InMemoryProfile
 
@@ -72,7 +72,7 @@ class TestWsTransport(AioHTTPTestCase):
             test_module.web, "TCPSite", async_mock.MagicMock()
         ) as mock_site:
             mock_site.return_value = async_mock.MagicMock(
-                start=async_mock.CoroutineMock(side_effect=OSError())
+                start=async_mock.AsyncMock(side_effect=OSError())
             )
             with pytest.raises(test_module.InboundTransportSetupError):
                 await self.transport.start()

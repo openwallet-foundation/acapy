@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -12,7 +13,7 @@ from ...messages.credential_problem_report import (
 from .. import credential_problem_report_handler as test_module
 
 
-class TestCredentialProblemReportHandler(AsyncTestCase):
+class TestCredentialProblemReportHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
@@ -22,9 +23,7 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             request_context.connection_ready = True
-            mock_cred_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock()
-            )
+            mock_cred_mgr.return_value.receive_problem_report = async_mock.AsyncMock()
             request_context.message = CredentialProblemReport(
                 description={
                     "en": "Change of plans",
@@ -50,10 +49,8 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             request_context.connection_ready = True
-            mock_cred_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError("Disk full")
-                )
+            mock_cred_mgr.return_value.receive_problem_report = async_mock.AsyncMock(
+                side_effect=test_module.StorageError("Disk full")
             )
             request_context.message = CredentialProblemReport(
                 description={

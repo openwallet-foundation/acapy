@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -9,7 +10,7 @@ from ...messages.pres_problem_report import V20PresProblemReport, ProblemReportR
 from .. import pres_problem_report_handler as test_module
 
 
-class TestV20PresProblemReportHandler(AsyncTestCase):
+class TestV20PresProblemReportHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
@@ -18,9 +19,7 @@ class TestV20PresProblemReportHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock()
-            )
+            mock_pres_mgr.return_value.receive_problem_report = async_mock.AsyncMock()
             request_context.message = V20PresProblemReport(
                 description={
                     "en": "Change of plans",
@@ -45,10 +44,8 @@ class TestV20PresProblemReportHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError("Disk full")
-                )
+            mock_pres_mgr.return_value.receive_problem_report = async_mock.AsyncMock(
+                side_effect=test_module.StorageError("Disk full")
             )
             request_context.message = V20PresProblemReport(
                 description={

@@ -1,6 +1,7 @@
 import importlib
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import ValidationError
 
@@ -14,13 +15,13 @@ from .....storage.error import StorageNotFoundError
 from .. import routes as test_module
 
 
-class TestProofRoutes(AsyncTestCase):
+class TestProofRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
         self.context = AdminRequestContext.test_context()
         self.profile = self.context.profile
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.CoroutineMock(),
+            "outbound_message_router": async_mock.AsyncMock(),
         }
         self.request = async_mock.MagicMock(
             app={},
@@ -70,7 +71,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.query = async_mock.CoroutineMock()
+            mock_presentation_exchange.query = async_mock.AsyncMock()
             mock_presentation_exchange.query.return_value = [mock_presentation_exchange]
             mock_presentation_exchange.serialize = async_mock.MagicMock()
             mock_presentation_exchange.serialize.return_value = {
@@ -103,7 +104,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.query = async_mock.CoroutineMock(
+            mock_presentation_exchange.query = async_mock.AsyncMock(
                 side_effect=test_module.StorageError()
             )
 
@@ -123,7 +124,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock()
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock()
 
             # Emulate storage not found (bad presentation exchange id)
             mock_presentation_exchange.retrieve_by_id.side_effect = StorageNotFoundError
@@ -142,11 +143,11 @@ class TestProofRoutes(AsyncTestCase):
             IndyHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
-                    async_mock.CoroutineMock(side_effect=test_module.IndyHolderError())
+                    async_mock.AsyncMock(side_effect=test_module.IndyHolderError())
                 )
             ),
         )
-        mock_px_rec = async_mock.MagicMock(save_error_state=async_mock.CoroutineMock())
+        mock_px_rec = async_mock.MagicMock(save_error_state=async_mock.AsyncMock())
 
         with async_mock.patch(
             (
@@ -174,7 +175,7 @@ class TestProofRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
-                get_credentials_for_presentation_request_by_referent=async_mock.CoroutineMock(
+                get_credentials_for_presentation_request_by_referent=async_mock.AsyncMock(
                     return_value=returned_credentials
                 )
             ),
@@ -212,7 +213,7 @@ class TestProofRoutes(AsyncTestCase):
             IndyHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
-                    async_mock.CoroutineMock(return_value=returned_credentials)
+                    async_mock.AsyncMock(return_value=returned_credentials)
                 )
             ),
         )
@@ -250,7 +251,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock()
+            mock_pres_ex.retrieve_by_id = async_mock.AsyncMock()
             mock_pres_ex.retrieve_by_id.return_value = mock_pres_ex
             mock_pres_ex.serialize = async_mock.MagicMock()
             mock_pres_ex.serialize.return_value = {"thread_id": "sample-thread-id"}
@@ -276,7 +277,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock()
+            mock_pres_ex.retrieve_by_id = async_mock.AsyncMock()
 
             # Emulate storage not found (bad presentation exchange id)
             mock_pres_ex.retrieve_by_id.side_effect = StorageNotFoundError
@@ -290,7 +291,7 @@ class TestProofRoutes(AsyncTestCase):
         mock_pres_ex_rec = async_mock.MagicMock(
             connection_id="abc123",
             thread_id="thid123",
-            save_error_state=async_mock.CoroutineMock(),
+            save_error_state=async_mock.AsyncMock(),
         )
         with async_mock.patch(
             (
@@ -302,7 +303,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock(
+            mock_pres_ex.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_pres_ex_rec
             )
             mock_pres_ex_rec.serialize = async_mock.MagicMock(
@@ -313,7 +314,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_retrieve(self.request)
 
     async def test_presentation_exchange_send_proposal(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         with async_mock.patch(
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
@@ -330,7 +331,7 @@ class TestProofRoutes(AsyncTestCase):
 
             mock_presentation_exchange_record = async_mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_proposal = (
-                async_mock.CoroutineMock(return_value=mock_presentation_exchange_record)
+                async_mock.AsyncMock(return_value=mock_presentation_exchange_record)
             )
 
             mock_preview.return_value.deserialize.return_value = async_mock.MagicMock()
@@ -344,7 +345,7 @@ class TestProofRoutes(AsyncTestCase):
                 )
 
     async def test_presentation_exchange_send_proposal_no_conn_record(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         with async_mock.patch(
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
@@ -354,7 +355,7 @@ class TestProofRoutes(AsyncTestCase):
             importlib.reload(test_module)
 
             # Emulate storage not found (bad connection id)
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 side_effect=StorageNotFoundError
             )
 
@@ -362,7 +363,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_proposal(self.request)
 
     async def test_presentation_exchange_send_proposal_not_ready(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         with async_mock.patch(
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
@@ -380,14 +381,14 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock()
             mock_connection_record.retrieve_by_id.return_value.is_ready = False
 
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.presentation_exchange_send_proposal(self.request)
 
     async def test_presentation_exchange_send_proposal_x(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
 
         with async_mock.patch(
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
@@ -404,12 +405,12 @@ class TestProofRoutes(AsyncTestCase):
 
             mock_presentation_exchange_record = async_mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_proposal = (
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=async_mock.MagicMock(
                         serialize=async_mock.MagicMock(
                             side_effect=test_module.StorageError()
                         ),
-                        save_error_state=async_mock.CoroutineMock(),
+                        save_error_state=async_mock.AsyncMock(),
                     )
                 )
             )
@@ -418,7 +419,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_proposal(self.request)
 
     async def test_presentation_exchange_create_request(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={"comment": "dummy", "proof_request": {}}
         )
 
@@ -446,7 +447,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_generate_nonce = async_mock.CoroutineMock()
+            mock_generate_nonce = async_mock.AsyncMock()
 
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator
@@ -456,7 +457,7 @@ class TestProofRoutes(AsyncTestCase):
                 "thread_id": "sample-thread-id"
             }
             mock_mgr = async_mock.MagicMock(
-                create_exchange_for_request=async_mock.CoroutineMock(
+                create_exchange_for_request=async_mock.AsyncMock(
                     return_value=mock_presentation_exchange
                 )
             )
@@ -471,7 +472,7 @@ class TestProofRoutes(AsyncTestCase):
                 )
 
     async def test_presentation_exchange_create_request_x(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={"comment": "dummy", "proof_request": {}}
         )
 
@@ -501,12 +502,12 @@ class TestProofRoutes(AsyncTestCase):
 
             mock_presentation_exchange_record = async_mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_request = (
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=async_mock.MagicMock(
                         serialize=async_mock.MagicMock(
                             side_effect=test_module.StorageError()
                         ),
-                        save_error_state=async_mock.CoroutineMock(),
+                        save_error_state=async_mock.AsyncMock(),
                     )
                 )
             )
@@ -515,7 +516,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_create_request(self.request)
 
     async def test_presentation_exchange_send_free_request(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "connection_id": "dummy",
                 "comment": "dummy",
@@ -550,7 +551,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
@@ -562,7 +563,7 @@ class TestProofRoutes(AsyncTestCase):
             }
 
             mock_mgr = async_mock.MagicMock(
-                create_exchange_for_request=async_mock.CoroutineMock(
+                create_exchange_for_request=async_mock.AsyncMock(
                     return_value=mock_presentation_exchange
                 )
             )
@@ -577,7 +578,7 @@ class TestProofRoutes(AsyncTestCase):
                 )
 
     async def test_presentation_exchange_send_free_request_not_found(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={"connection_id": "dummy"}
         )
 
@@ -588,14 +589,14 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock()
             mock_connection_record.retrieve_by_id.side_effect = StorageNotFoundError
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.presentation_exchange_send_free_request(self.request)
 
     async def test_presentation_exchange_send_free_request_not_ready(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={"connection_id": "dummy", "proof_request": {}}
         )
 
@@ -607,7 +608,7 @@ class TestProofRoutes(AsyncTestCase):
             importlib.reload(test_module)
 
             mock_connection_record.is_ready = False
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
 
@@ -615,7 +616,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_free_request(self.request)
 
     async def test_presentation_exchange_send_free_request_x(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "connection_id": "dummy",
                 "comment": "dummy",
@@ -649,21 +650,21 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_generate_nonce = async_mock.CoroutineMock()
+            mock_generate_nonce = async_mock.AsyncMock()
 
             mock_presentation_exchange_record = async_mock.MagicMock()
             mock_presentation_manager.return_value.create_exchange_for_request = (
-                async_mock.CoroutineMock(
+                async_mock.AsyncMock(
                     return_value=async_mock.MagicMock(
                         serialize=async_mock.MagicMock(
                             side_effect=test_module.StorageError()
                         ),
-                        save_error_state=async_mock.CoroutineMock(),
+                        save_error_state=async_mock.AsyncMock(),
                     )
                 )
             )
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
             mock_attach_decorator.data_base64 = async_mock.MagicMock(
@@ -674,20 +675,20 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_free_request(self.request)
 
     async def test_presentation_exchange_send_bound_request(self):
-        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.json = async_mock.AsyncMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         self.profile.context.injector.bind_instance(
             BaseLedger,
             async_mock.MagicMock(
-                __aenter__=async_mock.CoroutineMock(),
-                __aexit__=async_mock.CoroutineMock(),
+                __aenter__=async_mock.AsyncMock(),
+                __aexit__=async_mock.AsyncMock(),
             ),
         )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
             async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
+                verify_presentation=async_mock.AsyncMock(),
             ),
         )
 
@@ -719,7 +720,7 @@ class TestProofRoutes(AsyncTestCase):
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_presentation_exchange
             )
             mock_presentation_exchange.serialize = async_mock.MagicMock()
@@ -727,12 +728,12 @@ class TestProofRoutes(AsyncTestCase):
                 "thread_id": "sample-thread-id"
             }
             mock_connection_record.is_ready = True
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
 
             mock_mgr = async_mock.MagicMock(
-                create_bound_request=async_mock.CoroutineMock(
+                create_bound_request=async_mock.AsyncMock(
                     return_value=(mock_presentation_exchange, mock_presentation_request)
                 )
             )
@@ -747,7 +748,7 @@ class TestProofRoutes(AsyncTestCase):
                 )
 
     async def test_presentation_exchange_send_bound_request_not_found(self):
-        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.json = async_mock.AsyncMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
@@ -780,18 +781,18 @@ class TestProofRoutes(AsyncTestCase):
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_presentation_exchange
             )
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock()
             mock_connection_record.retrieve_by_id.side_effect = StorageNotFoundError
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.presentation_exchange_send_bound_request(self.request)
 
     async def test_presentation_exchange_send_bound_request_not_ready(self):
-        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.json = async_mock.AsyncMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
@@ -824,12 +825,12 @@ class TestProofRoutes(AsyncTestCase):
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_presentation_exchange
             )
 
             mock_connection_record.is_ready = False
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
 
@@ -837,13 +838,13 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_bound_request(self.request)
 
     async def test_presentation_exchange_send_bound_request_px_rec_not_found(self):
-        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.json = async_mock.AsyncMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.V10PresentationExchange,
             "retrieve_by_id",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError("no such record")
             with self.assertRaises(test_module.web.HTTPNotFound) as context:
@@ -851,7 +852,7 @@ class TestProofRoutes(AsyncTestCase):
             assert "no such record" in str(context.exception)
 
     async def test_presentation_exchange_send_bound_request_bad_state(self):
-        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.json = async_mock.AsyncMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
@@ -865,7 +866,7 @@ class TestProofRoutes(AsyncTestCase):
             importlib.reload(test_module)
 
             mock_presentation_exchange.connection_id = "dummy"
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
                 )
@@ -874,7 +875,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_bound_request(self.request)
 
     async def test_presentation_exchange_send_bound_request_x(self):
-        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.json = async_mock.AsyncMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
@@ -908,7 +909,7 @@ class TestProofRoutes(AsyncTestCase):
                 test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
             )
             mock_presentation_exchange.connection_id = "abc123"
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_presentation_exchange
             )
             mock_presentation_exchange.serialize = async_mock.MagicMock()
@@ -916,12 +917,12 @@ class TestProofRoutes(AsyncTestCase):
                 "thread_id": "sample-thread-id",
             }
             mock_connection_record.is_ready = True
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
 
             mock_mgr = async_mock.MagicMock(
-                create_bound_request=async_mock.CoroutineMock(
+                create_bound_request=async_mock.AsyncMock(
                     side_effect=[
                         test_module.LedgerError(),
                         test_module.StorageError(),
@@ -936,7 +937,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_bound_request(self.request)
 
     async def test_presentation_exchange_send_presentation(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "comment": "dummy",
                 "self_attested_attributes": {},
@@ -948,14 +949,14 @@ class TestProofRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             BaseLedger,
             async_mock.MagicMock(
-                __aenter__=async_mock.CoroutineMock(),
-                __aexit__=async_mock.CoroutineMock(),
+                __aenter__=async_mock.AsyncMock(),
+                __aexit__=async_mock.AsyncMock(),
             ),
         )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
             async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
+                verify_presentation=async_mock.AsyncMock(),
             ),
         )
 
@@ -981,7 +982,7 @@ class TestProofRoutes(AsyncTestCase):
                 test_module.V10PresentationExchange.STATE_REQUEST_RECEIVED
             )
             mock_presentation_exchange.connection_id = "dummy"
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
                     connection_id="dummy",
@@ -991,11 +992,11 @@ class TestProofRoutes(AsyncTestCase):
                 )
             )
             mock_connection_record.is_ready = True
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
             mock_mgr = async_mock.MagicMock(
-                create_presentation=async_mock.CoroutineMock(
+                create_presentation=async_mock.AsyncMock(
                     return_value=(mock_presentation_exchange, async_mock.MagicMock())
                 )
             )
@@ -1010,13 +1011,13 @@ class TestProofRoutes(AsyncTestCase):
                 )
 
     async def test_presentation_exchange_send_presentation_px_rec_not_found(self):
-        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.json = async_mock.AsyncMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.V10PresentationExchange,
             "retrieve_by_id",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError("no such record")
             with self.assertRaises(test_module.web.HTTPNotFound) as context:
@@ -1024,7 +1025,7 @@ class TestProofRoutes(AsyncTestCase):
             assert "no such record" in str(context.exception)
 
     async def test_presentation_exchange_send_presentation_not_found(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
@@ -1053,14 +1054,14 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
                     connection_id="dummy",
                 )
             )
 
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 side_effect=StorageNotFoundError
             )
 
@@ -1068,7 +1069,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_presentation(self.request)
 
     async def test_presentation_exchange_send_presentation_not_ready(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
@@ -1097,7 +1098,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
                     connection_id="dummy",
@@ -1105,7 +1106,7 @@ class TestProofRoutes(AsyncTestCase):
             )
 
             mock_connection_record.is_ready = False
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
 
@@ -1113,7 +1114,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_presentation(self.request)
 
     async def test_presentation_exchange_send_presentation_bad_state(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
@@ -1126,7 +1127,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
                 )
@@ -1135,7 +1136,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_send_presentation(self.request)
 
     async def test_presentation_exchange_send_presentation_x(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "comment": "dummy",
                 "self_attested_attributes": {},
@@ -1171,22 +1172,22 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,
                     connection_id="dummy",
                     serialize=async_mock.MagicMock(
                         return_value={"thread_id": "sample-thread-id"}
                     ),
-                    save_error_state=async_mock.CoroutineMock(),
+                    save_error_state=async_mock.AsyncMock(),
                 ),
             )
             mock_connection_record.is_ready = True
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
             mock_mgr = async_mock.MagicMock(
-                create_presentation=async_mock.CoroutineMock(
+                create_presentation=async_mock.AsyncMock(
                     side_effect=test_module.LedgerError()
                 )
             )
@@ -1225,7 +1226,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
                     connection_id="dummy",
@@ -1236,11 +1237,11 @@ class TestProofRoutes(AsyncTestCase):
                 )
             )
             mock_connection_record.is_ready = True
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
             mock_mgr = async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(
+                verify_presentation=async_mock.AsyncMock(
                     return_value=mock_presentation_exchange.retrieve_by_id.return_value
                 )
             )
@@ -1255,13 +1256,13 @@ class TestProofRoutes(AsyncTestCase):
                 mock_response.assert_called_once_with({"thread_id": "sample-thread-id"})
 
     async def test_presentation_exchange_verify_presentation_px_rec_not_found(self):
-        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.json = async_mock.AsyncMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch.object(
             test_module.V10PresentationExchange,
             "retrieve_by_id",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError("no such record")
             with self.assertRaises(test_module.web.HTTPNotFound) as context:
@@ -1271,7 +1272,7 @@ class TestProofRoutes(AsyncTestCase):
             assert "no such record" in str(context.exception)
 
     async def test_presentation_exchange_verify_presentation_bad_state(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
@@ -1284,7 +1285,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_ACKED
                 )
@@ -1299,14 +1300,14 @@ class TestProofRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             BaseLedger,
             async_mock.MagicMock(
-                __aenter__=async_mock.CoroutineMock(),
-                __aexit__=async_mock.CoroutineMock(),
+                __aenter__=async_mock.AsyncMock(),
+                __aexit__=async_mock.AsyncMock(),
             ),
         )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
             async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
+                verify_presentation=async_mock.AsyncMock(),
             ),
         )
 
@@ -1326,7 +1327,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_PRESENTATION_RECEIVED,
                     connection_id="dummy",
@@ -1334,16 +1335,16 @@ class TestProofRoutes(AsyncTestCase):
                     serialize=async_mock.MagicMock(
                         return_value={"thread_id": "sample-thread-id"}
                     ),
-                    save_error_state=async_mock.CoroutineMock(),
+                    save_error_state=async_mock.AsyncMock(),
                 )
             )
 
             mock_connection_record.is_ready = True
-            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+            mock_connection_record.retrieve_by_id = async_mock.AsyncMock(
                 return_value=mock_connection_record
             )
             mock_mgr = async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(
+                verify_presentation=async_mock.AsyncMock(
                     side_effect=[
                         test_module.LedgerError(),
                         test_module.StorageError(),
@@ -1362,7 +1363,7 @@ class TestProofRoutes(AsyncTestCase):
                 )
 
     async def test_presentation_exchange_problem_report(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
         self.request.match_info = {"pres_ex_id": "dummy"}
         magic_report = async_mock.MagicMock()
 
@@ -1383,9 +1384,9 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock(
+            mock_pres_ex.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
-                    save_error_state=async_mock.CoroutineMock()
+                    save_error_state=async_mock.AsyncMock()
                 )
             )
             mock_problem_report.return_value = magic_report
@@ -1396,7 +1397,7 @@ class TestProofRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({})
 
     async def test_presentation_exchange_problem_report_bad_pres_ex_id(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={"description": "Did I say no problem? I meant 'no: problem.'"}
         )
         self.request.match_info = {"pres_ex_id": "dummy"}
@@ -1414,7 +1415,7 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock(
+            mock_pres_ex.retrieve_by_id = async_mock.AsyncMock(
                 side_effect=test_module.StorageNotFoundError()
             )
 
@@ -1422,7 +1423,7 @@ class TestProofRoutes(AsyncTestCase):
                 await test_module.presentation_exchange_problem_report(self.request)
 
     async def test_presentation_exchange_problem_report_x(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
         self.request.match_info = {"pres_ex_id": "dummy"}
         magic_report = async_mock.MagicMock()
 
@@ -1442,7 +1443,7 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_response:
             # Since we are mocking import
             importlib.reload(test_module)
-            mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock(
+            mock_pres_ex.retrieve_by_id = async_mock.AsyncMock(
                 side_effect=test_module.StorageError()
             )
 
@@ -1462,11 +1463,11 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_VERIFIED,
                     connection_id="dummy",
-                    delete_record=async_mock.CoroutineMock(),
+                    delete_record=async_mock.AsyncMock(),
                 )
             )
 
@@ -1477,7 +1478,7 @@ class TestProofRoutes(AsyncTestCase):
                 mock_response.assert_called_once_with({})
 
     async def test_presentation_exchange_remove_not_found(self):
-        self.request.json = async_mock.CoroutineMock()
+        self.request.json = async_mock.AsyncMock()
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
@@ -1491,7 +1492,7 @@ class TestProofRoutes(AsyncTestCase):
             importlib.reload(test_module)
 
             # Emulate storage not found (bad pres ex id)
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 side_effect=StorageNotFoundError
             )
 
@@ -1511,11 +1512,11 @@ class TestProofRoutes(AsyncTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+            mock_presentation_exchange.retrieve_by_id = async_mock.AsyncMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_VERIFIED,
                     connection_id="dummy",
-                    delete_record=async_mock.CoroutineMock(
+                    delete_record=async_mock.AsyncMock(
                         side_effect=test_module.StorageError()
                     ),
                 )

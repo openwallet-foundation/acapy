@@ -1,6 +1,6 @@
 from unittest import mock, TestCase
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......wallet.key_type import ED25519
 from ......connections.models.diddoc import (
@@ -100,7 +100,7 @@ class TestConnectionResponse(TestCase, TestConfig):
         )
 
 
-class TestConnectionResponseSchema(AsyncTestCase, TestConfig):
+class TestConnectionResponseSchema(IsolatedAsyncioTestCase, TestConfig):
     async def test_make_model(self):
         connection_response = ConnectionResponse(
             connection=ConnectionDetail(did=self.test_did, did_doc=self.make_did_doc())

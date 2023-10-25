@@ -1,4 +1,4 @@
-from asynctest import TestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock as async_mock
 import pytest
 
 from aries_cloudagent.wallet.key_type import BLS12381G2
@@ -24,10 +24,10 @@ from ..bbs_bls_signature_2020 import BbsBlsSignature2020
 
 
 @pytest.mark.ursa_bbs_signatures
-class TestBbsBlsSignature2020(TestCase):
+class TestBbsBlsSignature2020(IsolatedAsyncioTestCase):
     test_seed = "testseed000000000000000000000001"
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
         self.key = await self.wallet.create_signing_key(

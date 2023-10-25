@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -11,7 +11,7 @@ from ..invitation import InvitationRecord
 TEST_DID = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
 
 
-class TestInvitationRecord(AsyncTestCase):
+class TestInvitationRecord(IsolatedAsyncioTestCase):
     def test_invitation_record(self):
         """Test invitation record."""
         invi_rec = InvitationRecord(invi_msg_id="12345")
@@ -28,7 +28,7 @@ class TestInvitationRecord(AsyncTestCase):
         assert invi_rec != another
 
 
-class TestInvitationRecordSchema(AsyncTestCase):
+class TestInvitationRecordSchema(IsolatedAsyncioTestCase):
     def test_make_record(self):
         """Test making record."""
         invi = InvitationMessage(

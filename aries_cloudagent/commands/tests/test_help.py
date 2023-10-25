@@ -1,9 +1,10 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from .. import help as command
 
 
-class TestHelp(AsyncTestCase):
+class TestHelp(IsolatedAsyncioTestCase):
     def test_exec_help(self):
         with async_mock.patch.object(
             command.ArgumentParser, "print_help"

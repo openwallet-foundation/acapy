@@ -3,7 +3,8 @@ import logging
 
 from io import StringIO
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 from tempfile import NamedTemporaryFile
 
 from .. import logging as test_module
@@ -14,7 +15,7 @@ from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.key_type import ED25519
 
 
-class TestLoggingConfigurator(AsyncTestCase):
+class TestLoggingConfigurator(IsolatedAsyncioTestCase):
     agent_label_arg_value = "Aries Cloud Agent"
     transport_arg_value = "transport"
     host_arg_value = "host"

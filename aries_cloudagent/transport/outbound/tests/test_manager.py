@@ -1,6 +1,7 @@
 import json
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
 from ....connections.models.connection_target import ConnectionTarget
@@ -16,7 +17,7 @@ from ..manager import (
 from ..message import OutboundMessage
 
 
-class TestOutboundTransportManager(AsyncTestCase):
+class TestOutboundTransportManager(IsolatedAsyncioTestCase):
     def test_register_path(self):
         mgr = OutboundTransportManager(InMemoryProfile.test_profile())
         mgr.register("http")
@@ -53,10 +54,10 @@ class TestOutboundTransportManager(AsyncTestCase):
             mgr.register_class(transport_cls, "transport_cls")
 
         transport = async_mock.MagicMock()
-        transport.handle_message = async_mock.CoroutineMock()
-        transport.wire_format.encode_message = async_mock.CoroutineMock()
-        transport.start = async_mock.CoroutineMock()
-        transport.stop = async_mock.CoroutineMock()
+        transport.handle_message = async_mock.AsyncMock()
+        transport.wire_format.encode_message = async_mock.AsyncMock()
+        transport.start = async_mock.AsyncMock()
+        transport.stop = async_mock.AsyncMock()
         transport.schemes = ["http"]
         transport.is_external = False
 
@@ -149,7 +150,7 @@ class TestOutboundTransportManager(AsyncTestCase):
         transport_cls.schemes = ["http"]
         transport_cls.return_value = async_mock.MagicMock()
         transport_cls.return_value.schemes = ["http"]
-        transport_cls.return_value.start = async_mock.CoroutineMock()
+        transport_cls.return_value.start = async_mock.AsyncMock()
         tid = mgr.register_class(transport_cls, "transport_cls")
         await mgr.start_transport(tid)
 
@@ -225,7 +226,7 @@ class TestOutboundTransportManager(AsyncTestCase):
         mgr.outbound_buffer.append(mock_queued)
 
         with async_mock.patch.object(
-            test_module.asyncio, "sleep", async_mock.CoroutineMock()
+            test_module.asyncio, "sleep", async_mock.AsyncMock()
         ) as mock_sleep_x:
             mock_sleep_x.side_effect = KeyError()
             with self.assertRaises(KeyError):  # cover retry logic and bail
@@ -246,7 +247,7 @@ class TestOutboundTransportManager(AsyncTestCase):
         with async_mock.patch.object(
             mgr, "deliver_queued_message", async_mock.MagicMock()
         ) as mock_deliver, async_mock.patch.object(
-            mgr.outbound_event, "wait", async_mock.CoroutineMock()
+            mgr.outbound_event, "wait", async_mock.AsyncMock()
         ) as mock_wait, async_mock.patch.object(
             test_module, "trace_event", async_mock.MagicMock()
         ) as mock_trace:
@@ -269,7 +270,7 @@ class TestOutboundTransportManager(AsyncTestCase):
         with async_mock.patch.object(
             mgr, "deliver_queued_message", async_mock.MagicMock()
         ) as mock_deliver, async_mock.patch.object(
-            mgr.outbound_event, "wait", async_mock.CoroutineMock()
+            mgr.outbound_event, "wait", async_mock.AsyncMock()
         ) as mock_wait, async_mock.patch.object(
             test_module, "trace_event", async_mock.MagicMock()
         ) as mock_trace:
@@ -318,11 +319,9 @@ class TestOutboundTransportManager(AsyncTestCase):
     async def test_should_encode_outbound_message(self):
         base_wire_format = BaseWireFormat()
         encoded_msg = "encoded_message"
-        base_wire_format.encode_message = async_mock.CoroutineMock(
-            return_value=encoded_msg
-        )
+        base_wire_format.encode_message = async_mock.AsyncMock(return_value=encoded_msg)
         profile = InMemoryProfile.test_profile(bind={BaseWireFormat: base_wire_format})
-        profile.session = async_mock.CoroutineMock(return_value=async_mock.MagicMock())
+        profile.session = async_mock.AsyncMock(return_value=async_mock.MagicMock())
         outbound = async_mock.MagicMock(payload="payload", enc_payload=None)
         target = async_mock.MagicMock()
 

@@ -5,8 +5,8 @@ from copy import deepcopy
 from time import time
 from unittest import TestCase
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 
 from ....core.in_memory import InMemoryProfile
 from ....ledger.multiple_ledger.ledger_requests_executor import (
@@ -351,7 +351,7 @@ class TestIndyPresPredSpec(TestCase):
 
 
 @pytest.mark.indy
-class TestIndyPresPreviewAsync(AsyncTestCase):
+class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
     """Presentation preview tests"""
 
     @pytest.mark.asyncio
@@ -408,7 +408,7 @@ class TestIndyPresPreviewAsync(AsyncTestCase):
             mock_get_ledger.return_value = (
                 None,
                 async_mock.MagicMock(
-                    get_credential_definition=async_mock.CoroutineMock(
+                    get_credential_definition=async_mock.AsyncMock(
                         return_value={"value": {"revocation": {"...": "..."}}}
                     )
                 ),
@@ -455,7 +455,7 @@ class TestIndyPresPreviewAsync(AsyncTestCase):
             mock_get_ledger.return_value = (
                 None,
                 async_mock.MagicMock(
-                    get_credential_definition=async_mock.CoroutineMock(
+                    get_credential_definition=async_mock.AsyncMock(
                         return_value={"value": {"revocation": {"...": "..."}}}
                     )
                 ),

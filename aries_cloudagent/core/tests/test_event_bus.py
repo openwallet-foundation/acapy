@@ -3,7 +3,7 @@
 import pytest
 import re
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 
 from .. import event_bus as test_module
 from ..event_bus import EventBus, Event

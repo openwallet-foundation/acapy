@@ -1,10 +1,11 @@
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 
 from .. import stats as test_module
 
 
-class TestStatsTracer(AsyncTestCase):
+class TestStatsTracer(IsolatedAsyncioTestCase):
     def setUp(self):
         self.context = async_mock.MagicMock(
             socket_timer=async_mock.MagicMock(

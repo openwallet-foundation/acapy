@@ -1,8 +1,8 @@
 from copy import deepcopy
 from time import time
 import json
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock as async_mock
 from marshmallow import ValidationError
 
 from .. import handler as test_module
@@ -193,8 +193,8 @@ INDY_CRED = {
 }
 
 
-class TestV20IndyCredFormatHandler(AsyncTestCase):
-    async def setUp(self):
+class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.profile = self.session.profile
         self.context = self.profile.context
@@ -205,22 +205,20 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         # Ledger
         Ledger = async_mock.MagicMock()
         self.ledger = Ledger()
-        self.ledger.get_schema = async_mock.CoroutineMock(return_value=SCHEMA)
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_schema = async_mock.AsyncMock(return_value=SCHEMA)
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value=CRED_DEF
         )
-        self.ledger.get_revoc_reg_def = async_mock.CoroutineMock(
-            return_value=REV_REG_DEF
-        )
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.ledger.credential_definition_id2schema_id = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_def = async_mock.AsyncMock(return_value=REV_REG_DEF)
+        self.ledger.__aenter__ = async_mock.AsyncMock(return_value=self.ledger)
+        self.ledger.credential_definition_id2schema_id = async_mock.AsyncMock(
             return_value=SCHEMA_ID
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -298,7 +296,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         with async_mock.patch.object(
             self.handler.format.detail,
             "query_by_cred_ex_id",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_indy_query:
             mock_indy_query.return_value = []
             await self.handler._check_uniqueness("dummy-cx-id")
@@ -306,7 +304,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         with async_mock.patch.object(
             self.handler.format.detail,
             "query_by_cred_ex_id",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_indy_query:
             mock_indy_query.return_value = [async_mock.MagicMock()]
             with self.assertRaises(V20CredFormatError) as context:
@@ -389,7 +387,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
         await self.session.storage.add_record(cred_def_record)
 
-        self.issuer.create_credential_offer = async_mock.CoroutineMock(
+        self.issuer.create_credential_offer = async_mock.AsyncMock(
             return_value=json.dumps(INDY_OFFER)
         )
 
@@ -455,7 +453,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
 
         await self.session.storage.add_record(cred_def_record)
 
-        self.issuer.create_credential_offer = async_mock.CoroutineMock(
+        self.issuer.create_credential_offer = async_mock.AsyncMock(
             return_value=json.dumps(INDY_OFFER)
         )
 
@@ -517,13 +515,13 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
         await self.session.storage.add_record(cred_def_record)
 
-        self.issuer.create_credential_offer = async_mock.CoroutineMock(
+        self.issuer.create_credential_offer = async_mock.AsyncMock(
             return_value=json.dumps(INDY_OFFER)
         )
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=(None, self.ledger)),
+            async_mock.AsyncMock(return_value=(None, self.ledger)),
         ):
             with self.assertRaises(V20CredFormatError):
                 await self.handler.create_offer(cred_proposal)
@@ -541,7 +539,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             filters_attach=[AttachDecorator.data_base64({}, ident="0")],
         )
 
-        self.issuer.create_credential_offer = async_mock.CoroutineMock(
+        self.issuer.create_credential_offer = async_mock.AsyncMock(
             return_value=json.dumps(INDY_OFFER)
         )
 
@@ -577,12 +575,12 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         cred_def = {"cred": "def"}
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value=cred_def
         )
 
         cred_req_meta = {}
-        self.holder.create_credential_request = async_mock.CoroutineMock(
+        self.holder.create_credential_request = async_mock.AsyncMock(
             return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
         )
 
@@ -617,7 +615,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=(None, self.ledger)),
+            async_mock.AsyncMock(return_value=(None, self.ledger)),
         ):
             await self.handler.create_request(
                 cred_ex_record, {"holder_did": holder_did}
@@ -646,7 +644,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         cred_ex_record = V20CredExRecord(state=V20CredExRecord.STATE_OFFER_RECEIVED)
 
         with async_mock.patch.object(
-            self.handler, "_check_uniqueness", async_mock.CoroutineMock()
+            self.handler, "_check_uniqueness", async_mock.AsyncMock()
         ) as mock_unique:
             mock_unique.side_effect = (
                 V20CredFormatError("indy detail record already exists"),
@@ -721,21 +719,21 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         cred_rev_id = "1000"
-        self.issuer.create_credential = async_mock.CoroutineMock(
+        self.issuer.create_credential = async_mock.AsyncMock(
             return_value=(json.dumps(INDY_CRED), cred_rev_id)
         )
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
-            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+            revoc.return_value.get_or_create_active_registry = async_mock.AsyncMock(
                 return_value=(
                     async_mock.MagicMock(  # active_rev_reg_rec
                         revoc_reg_id=REV_REG_ID,
                     ),
                     async_mock.MagicMock(  # rev_reg
                         tails_local_path="dummy-path",
-                        get_or_fetch_local_tails_path=(async_mock.CoroutineMock()),
+                        get_or_fetch_local_tails_path=(async_mock.AsyncMock()),
                         max_creds=10,
                     ),
                 )
@@ -809,10 +807,10 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
         )
 
-        self.issuer.create_credential = async_mock.CoroutineMock(
+        self.issuer.create_credential = async_mock.AsyncMock(
             return_value=(json.dumps(INDY_CRED), None)
         )
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_credential_definition = async_mock.AsyncMock(
             return_value=CRED_DEF_NR
         )
         self.context.injector.bind_instance(
@@ -822,7 +820,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
         ):
             (cred_format, attachment) = await self.handler.issue_credential(
                 cred_ex_record, retries=0
@@ -850,7 +848,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         cred_ex_record = V20CredExRecord(state=V20CredExRecord.STATE_REQUEST_RECEIVED)
 
         with async_mock.patch.object(
-            self.handler, "_check_uniqueness", async_mock.CoroutineMock()
+            self.handler, "_check_uniqueness", async_mock.AsyncMock()
         ) as mock_unique:
             mock_unique.side_effect = (
                 V20CredFormatError("indy detail record already exists"),
@@ -907,14 +905,14 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
         )
 
-        self.issuer.create_credential = async_mock.CoroutineMock(
+        self.issuer.create_credential = async_mock.AsyncMock(
             return_value=(json.dumps(INDY_CRED), cred_rev_id)
         )
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
-            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+            revoc.return_value.get_or_create_active_registry = async_mock.AsyncMock(
                 return_value=()
             )
             with self.assertRaises(V20CredFormatError) as context:
@@ -967,24 +965,24 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
         )
 
-        self.issuer.create_credential = async_mock.CoroutineMock(
+        self.issuer.create_credential = async_mock.AsyncMock(
             return_value=(json.dumps(INDY_CRED), cred_rev_id)
         )
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
-            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+            revoc.return_value.get_or_create_active_registry = async_mock.AsyncMock(
                 side_effect=[
                     None,
                     (
                         async_mock.MagicMock(  # active_rev_reg_rec
                             revoc_reg_id=REV_REG_ID,
-                            set_state=async_mock.CoroutineMock(),
+                            set_state=async_mock.AsyncMock(),
                         ),
                         async_mock.MagicMock(  # rev_reg
                             tails_local_path="dummy-path",
-                            get_or_fetch_local_tails_path=(async_mock.CoroutineMock()),
+                            get_or_fetch_local_tails_path=(async_mock.AsyncMock()),
                         ),
                     ),
                 ]
@@ -1040,21 +1038,21 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
         )
 
-        self.issuer.create_credential = async_mock.CoroutineMock(
+        self.issuer.create_credential = async_mock.AsyncMock(
             side_effect=test_module.IndyIssuerRevocationRegistryFullError("Nope")
         )
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
-            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+            revoc.return_value.get_or_create_active_registry = async_mock.AsyncMock(
                 return_value=(
                     async_mock.MagicMock(  # active_rev_reg_rec
                         revoc_reg_id=REV_REG_ID,
-                        set_state=async_mock.CoroutineMock(),
+                        set_state=async_mock.AsyncMock(),
                     ),
                     async_mock.MagicMock(  # rev_reg
                         tails_local_path="dummy-path",
-                        get_or_fetch_local_tails_path=(async_mock.CoroutineMock()),
+                        get_or_fetch_local_tails_path=(async_mock.AsyncMock()),
                     ),
                 )
             )
@@ -1138,9 +1136,9 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
 
         cred_id = "cred-id"
 
-        self.holder.store_credential = async_mock.CoroutineMock(return_value=cred_id)
+        self.holder.store_credential = async_mock.AsyncMock(return_value=cred_id)
         stored_cred = {"stored": "cred"}
-        self.holder.get_credential = async_mock.CoroutineMock(
+        self.holder.get_credential = async_mock.AsyncMock(
             return_value=json.dumps(stored_cred)
         )
 
@@ -1149,7 +1147,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         ) as mock_rev_reg:
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+                    get_or_fetch_local_tails_path=async_mock.AsyncMock()
                 )
             )
             with self.assertRaises(V20CredFormatError) as context:
@@ -1162,7 +1160,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
         ), async_mock.patch.object(
             test_module, "RevocationRegistry", autospec=True
         ) as mock_rev_reg, async_mock.patch.object(
@@ -1170,12 +1168,12 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         ) as mock_get_detail_record:
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+                    get_or_fetch_local_tails_path=async_mock.AsyncMock()
                 )
             )
             mock_get_detail_record.return_value = async_mock.MagicMock(
                 cred_request_metadata=cred_req_meta,
-                save=async_mock.CoroutineMock(),
+                save=async_mock.AsyncMock(),
             )
 
             self.ledger.get_credential_definition.reset_mock()
@@ -1259,7 +1257,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         cred_id = "cred-id"
-        self.holder.store_credential = async_mock.CoroutineMock(
+        self.holder.store_credential = async_mock.AsyncMock(
             side_effect=test_module.IndyHolderError("Problem", {"message": "Nope"})
         )
 
@@ -1270,10 +1268,10 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         ) as mock_rev_reg:
             mock_get_detail_record.return_value = async_mock.MagicMock(
                 cred_request_metadata=cred_req_meta,
-                save=async_mock.CoroutineMock(),
+                save=async_mock.AsyncMock(),
             )
             mock_rev_reg.return_value = async_mock.MagicMock(
-                get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+                get_or_fetch_local_tails_path=async_mock.AsyncMock()
             )
             with self.assertRaises(test_module.IndyHolderError) as context:
                 await self.handler.store_credential(stored_cx_rec, cred_id)

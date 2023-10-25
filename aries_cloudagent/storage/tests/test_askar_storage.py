@@ -2,9 +2,9 @@ import json
 import pytest
 import os
 
-from asynctest import mock as async_mock
+from unittest import mock as async_mock
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...askar.profile import AskarProfileManager
 from ...config.injection_context import InjectionContext
@@ -50,15 +50,15 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
     @pytest.mark.asyncio
     async def test_record(self):
         with async_mock.patch.object(
-            indy.wallet, "create_wallet", async_mock.CoroutineMock()
+            indy.wallet, "create_wallet", async_mock.AsyncMock()
         ) as mock_create, async_mock.patch.object(
-            indy.wallet, "open_wallet", async_mock.CoroutineMock()
+            indy.wallet, "open_wallet", async_mock.AsyncMock()
         ) as mock_open, async_mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", async_mock.CoroutineMock()
+            indy.anoncreds, "prover_create_master_secret", async_mock.AsyncMock()
         ) as mock_master, async_mock.patch.object(
-            indy.wallet, "close_wallet", async_mock.CoroutineMock()
+            indy.wallet, "close_wallet", async_mock.AsyncMock()
         ) as mock_close, async_mock.patch.object(
-            indy.wallet, "delete_wallet", async_mock.CoroutineMock()
+            indy.wallet, "delete_wallet", async_mock.AsyncMock()
         ) as mock_delete:
             fake_wallet = AskarWallet(
                 {
@@ -149,7 +149,7 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
                 await storage.get_record("connection", None)
 
             with async_mock.patch.object(
-                test_module.non_secrets, "get_wallet_record", async_mock.CoroutineMock()
+                test_module.non_secrets, "get_wallet_record", async_mock.AsyncMock()
             ) as mock_get_record:
                 mock_get_record.side_effect = test_module.IndyError(
                     test_module.ErrorCode.CommonInvalidStructure
@@ -160,15 +160,15 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
             with async_mock.patch.object(
                 test_module.non_secrets,
                 "update_wallet_record_value",
-                async_mock.CoroutineMock(),
+                async_mock.AsyncMock(),
             ) as mock_update_value, async_mock.patch.object(
                 test_module.non_secrets,
                 "update_wallet_record_tags",
-                async_mock.CoroutineMock(),
+                async_mock.AsyncMock(),
             ) as mock_update_tags, async_mock.patch.object(
                 test_module.non_secrets,
                 "delete_wallet_record",
-                async_mock.CoroutineMock(),
+                async_mock.AsyncMock(),
             ) as mock_delete:
                 mock_update_value.side_effect = test_module.IndyError(
                     test_module.ErrorCode.CommonInvalidStructure
@@ -213,15 +213,15 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
     @pytest.mark.asyncio
     async def test_storage_search_x(self):
         with async_mock.patch.object(
-            indy.wallet, "create_wallet", async_mock.CoroutineMock()
+            indy.wallet, "create_wallet", async_mock.AsyncMock()
         ) as mock_create, async_mock.patch.object(
-            indy.wallet, "open_wallet", async_mock.CoroutineMock()
+            indy.wallet, "open_wallet", async_mock.AsyncMock()
         ) as mock_open, async_mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", async_mock.CoroutineMock()
+            indy.anoncreds, "prover_create_master_secret", async_mock.AsyncMock()
         ) as mock_master, async_mock.patch.object(
-            indy.wallet, "close_wallet", async_mock.CoroutineMock()
+            indy.wallet, "close_wallet", async_mock.AsyncMock()
         ) as mock_close, async_mock.patch.object(
-            indy.wallet, "delete_wallet", async_mock.CoroutineMock()
+            indy.wallet, "delete_wallet", async_mock.AsyncMock()
         ) as mock_delete:
             fake_wallet = AskarWallet(
                 {
@@ -250,9 +250,9 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
                 await search.fetch(10)
 
             with async_mock.patch.object(
-                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+                indy.non_secrets, "open_wallet_search", async_mock.AsyncMock()
             ) as mock_indy_open_search, async_mock.patch.object(
-                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+                indy.non_secrets, "close_wallet_search", async_mock.AsyncMock()
             ) as mock_indy_close_search:
                 mock_indy_open_search.side_effect = test_module.IndyError("no open")
                 search = storage.search_records("connection")
@@ -261,13 +261,13 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
                 await search.close()
 
             with async_mock.patch.object(
-                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+                indy.non_secrets, "open_wallet_search", async_mock.AsyncMock()
             ) as mock_indy_open_search, async_mock.patch.object(
                 indy.non_secrets,
                 "fetch_wallet_search_next_records",
-                async_mock.CoroutineMock(),
+                async_mock.AsyncMock(),
             ) as mock_indy_fetch, async_mock.patch.object(
-                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+                indy.non_secrets, "close_wallet_search", async_mock.AsyncMock()
             ) as mock_indy_close_search:
                 mock_indy_fetch.side_effect = test_module.IndyError("no fetch")
                 search = storage.search_records("connection")
@@ -277,9 +277,9 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
                 await search.close()
 
             with async_mock.patch.object(
-                indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()
+                indy.non_secrets, "open_wallet_search", async_mock.AsyncMock()
             ) as mock_indy_open_search, async_mock.patch.object(
-                indy.non_secrets, "close_wallet_search", async_mock.CoroutineMock()
+                indy.non_secrets, "close_wallet_search", async_mock.AsyncMock()
             ) as mock_indy_close_search:
                 mock_indy_close_search.side_effect = test_module.IndyError("no close")
                 search = storage.search_records("connection")
@@ -357,7 +357,7 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
         await postgres_wallet.remove()
 
 
-class TestAskarStorageSearchSession(AsyncTestCase):
+class TestAskarStorageSearchSession(IsolatedAsyncioTestCase):
     @pytest.mark.asyncio
     async def test_askar_storage_search_session(self):
         profile = "profileId"

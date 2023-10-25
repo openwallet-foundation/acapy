@@ -4,7 +4,8 @@ from shutil import rmtree
 
 import indy.blob_storage
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...util import indy_client_dir, generate_pr_nonce
 
@@ -12,7 +13,7 @@ from ..util import create_tails_reader, create_tails_writer
 
 
 @pytest.mark.indy
-class TestIndyUtils(AsyncTestCase):
+class TestIndyUtils(IsolatedAsyncioTestCase):
     TAILS_HASH = "8UW1Sz5cqoUnK9hqQk7nvtKK65t7Chu3ui866J23sFyJ"
 
     def tearDown(self):
@@ -27,7 +28,7 @@ class TestIndyUtils(AsyncTestCase):
             print("1234123412431234", file=f)
 
         with async_mock.patch.object(
-            indy.blob_storage, "open_reader", async_mock.CoroutineMock()
+            indy.blob_storage, "open_reader", async_mock.AsyncMock()
         ) as mock_blob_open_reader:
             result = await create_tails_reader(tails_local)
             assert result == mock_blob_open_reader.return_value

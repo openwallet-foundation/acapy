@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
-from asynctest import TestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock as async_mock
 
 from .....messaging.util import datetime_to_str
 from ..proof_purpose import ProofPurpose
 
 
-class TestProofPurpose(TestCase):
+class TestProofPurpose(IsolatedAsyncioTestCase):
     async def test_properties(self):
         term = "TestTerm"
         date = datetime.now()

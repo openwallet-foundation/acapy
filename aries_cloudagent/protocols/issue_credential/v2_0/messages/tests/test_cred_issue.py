@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
@@ -12,7 +13,7 @@ from ..cred_format import V20CredFormat
 from ..cred_issue import V20CredIssue
 
 
-class TestV20CredIssue(AsyncTestCase):
+class TestV20CredIssue(IsolatedAsyncioTestCase):
     """Credential issue tests"""
 
     INDY_CRED = {

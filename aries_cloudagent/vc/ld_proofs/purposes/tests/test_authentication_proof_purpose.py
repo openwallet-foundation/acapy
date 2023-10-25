@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
-from asynctest import TestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock as async_mock
 
 from ...validation_result import PurposeResult
 from ..controller_proof_purpose import ControllerProofPurpose
 from ..authentication_proof_purpose import AuthenticationProofPurpose
 
 
-class TestAuthenticationProofPurpose(TestCase):
+class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
     async def test_properties(self):
         date = datetime.now()
         delta = timedelta(1)

@@ -1,9 +1,10 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from ... import commands as test_module
 
 
-class TestInit(AsyncTestCase):
+class TestInit(IsolatedAsyncioTestCase):
     def test_available(self):
         avail = test_module.available_commands()
         assert len(avail) == 4
