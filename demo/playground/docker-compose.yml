@@ -66,6 +66,7 @@ services:
       retries: 5
 
   faber-agent:
+    image: playground-image
     build:
       context: .
       dockerfile: Dockerfile.acapy
@@ -110,6 +111,7 @@ services:
       retries: 5
 
   alice-agent:
+    image: playground-image
     build:
       context: .
       dockerfile: Dockerfile.acapy
@@ -154,6 +156,7 @@ services:
       retries: 5
 
   acme-agent:
+    image: playground-image
     build:
       context: .
       dockerfile: Dockerfile.acapy
@@ -198,6 +201,7 @@ services:
       retries: 5
 
   multi-agent:
+    image: playground-image
     build:
       context: .
       dockerfile: Dockerfile.acapy
