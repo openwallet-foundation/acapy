@@ -73,6 +73,7 @@ def options():
     yield LDProofVCOptions.deserialize(VC["options"])
 
 
+@pytest.mark.asyncio
 async def test_assert_can_issue_with_id_and_proof_type(manager: VcLdpManager):
     with pytest.raises(VcLdpManagerError) as context:
         await manager.assert_can_issue_with_id_and_proof_type(
@@ -134,6 +135,7 @@ async def test_assert_can_issue_with_id_and_proof_type(manager: VcLdpManager):
             assert "Issuer did did:key:notfound not found" in str(context.value)
 
 
+@pytest.mark.asyncio
 async def test_get_did_info_for_did_sov(manager: VcLdpManager, wallet: MagicMock):
     wallet.get_local_did = async_mock.CoroutineMock()
 
@@ -142,6 +144,7 @@ async def test_get_did_info_for_did_sov(manager: VcLdpManager, wallet: MagicMock
     assert did_info == wallet.get_local_did.return_value
 
 
+@pytest.mark.asyncio
 async def test_get_did_info_for_did_key(manager: VcLdpManager, wallet: MagicMock):
     wallet.get_local_did.reset_mock()
 
@@ -150,6 +153,7 @@ async def test_get_did_info_for_did_key(manager: VcLdpManager, wallet: MagicMock
     assert did_info == wallet.get_local_did.return_value
 
 
+@pytest.mark.asyncio
 async def test_get_suite_for_credential(manager: VcLdpManager):
     vc = VerifiableCredential.deserialize(VC["credential"])
     options = LDProofVCOptions.deserialize(VC["options"])
@@ -177,6 +181,7 @@ async def test_get_suite_for_credential(manager: VcLdpManager):
         mock_did_info.assert_called_once_with(vc.issuer_id)
 
 
+@pytest.mark.asyncio
 async def test_get_suite(manager: VcLdpManager):
     proof = async_mock.MagicMock()
     did_info = async_mock.MagicMock()
@@ -224,6 +229,7 @@ async def test_get_suite(manager: VcLdpManager):
     assert suite.key_pair.public_key_base58 == did_info.verkey
 
 
+@pytest.mark.asyncio
 async def test_get_proof_purpose(manager: VcLdpManager):
     purpose = manager._get_proof_purpose()
     assert isinstance(purpose, CredentialIssuancePurpose)
@@ -246,6 +252,7 @@ async def test_get_proof_purpose(manager: VcLdpManager):
     assert "Unsupported proof purpose: random" in str(context.value)
 
 
+@pytest.mark.asyncio
 async def test_prepare_detail(
     manager: VcLdpManager, vc: VerifiableCredential, options: LDProofVCOptions
 ):
@@ -258,6 +265,7 @@ async def test_prepare_detail(
     assert SECURITY_CONTEXT_BBS_URL in vc.context_urls
 
 
+@pytest.mark.asyncio
 async def test_prepare_detail_ed25519_2020(
     manager: VcLdpManager, vc: VerifiableCredential, options: LDProofVCOptions
 ):
@@ -270,20 +278,24 @@ async def test_prepare_detail_ed25519_2020(
     assert SECURITY_CONTEXT_ED25519_2020_URL in vc.context_urls
 
 
+@pytest.mark.asyncio
 async def test_issue():
     raise NotImplementedError()
 
 
+@pytest.mark.asyncio
 async def test_issue_ed25519_2020():
     """Ensure ed25519 2020 context added to issued cred."""
     raise NotImplementedError()
 
 
+@pytest.mark.asyncio
 async def test_issue_bbs():
     """Ensure BBS context is added to issued cred."""
     raise NotImplementedError()
 
 
+@pytest.mark.asyncio
 async def test_get_all_suites(manager: VcLdpManager):
     suites = await manager._get_all_suites()
     assert len(suites) == 4
