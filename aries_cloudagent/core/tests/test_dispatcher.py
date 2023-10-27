@@ -116,7 +116,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as conn_mgr_mock, mock.patch.object(
             test_module,
             "get_version_from_message_type",
-            mock.CoroutineMock(return_value="1.1"),
+            mock.MagicMock(return_value="1.1"),
         ), mock.patch.object(
             test_module,
             "validate_get_response_version",
@@ -165,7 +165,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as handler_mock, mock.patch.object(
             test_module,
             "get_version_from_message_type",
-            mock.CoroutineMock(return_value="1.1"),
+            mock.MagicMock(return_value="1.1"),
         ), mock.patch.object(
             test_module,
             "validate_get_response_version",
@@ -284,7 +284,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as handler_mock, mock.patch.object(
             test_module,
             "get_version_from_message_type",
-            mock.CoroutineMock(return_value="1.1"),
+            mock.MagicMock(return_value="1.1"),
         ), mock.patch.object(
             test_module,
             "validate_get_response_version",
@@ -342,7 +342,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         rcv = Receiver()
         bad_messages = ["not even a dict", {"bad": "message"}]
         with mock.patch.object(
-            test_module, "get_version_from_message_type", mock.CoroutineMock()
+            test_module, "get_version_from_message_type", mock.MagicMock()
         ), mock.patch.object(
             test_module, "validate_get_response_version", mock.CoroutineMock()
         ):
