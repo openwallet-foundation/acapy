@@ -65,7 +65,7 @@ class TestInvitationRequestHandler(IsolatedAsyncioTestCase):
             )
 
             await handler.handle(self.context, responder)
-            assert mock_mgr.return_value.create_invitation.called_once_with()
+            mock_mgr.return_value.create_invitation.assert_called_once_with()
 
             messages = responder.messages
             assert len(messages) == 1
