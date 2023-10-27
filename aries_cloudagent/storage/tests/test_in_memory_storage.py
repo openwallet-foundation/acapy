@@ -29,19 +29,6 @@ def store_search():
     yield InMemoryStorage(profile)
 
 
-@pytest.fixture
-def record_factory():
-    def _test_record(tags={}):
-        return StorageRecord(type="TYPE", value="TEST", tags=tags)
-
-    yield _test_record
-
-
-@pytest.fixture
-def missing():
-    yield StorageRecord(type="__MISSING__", value="000000000")
-
-
 class TestInMemoryStorage:
     def test_repr(self, store):
         assert store.__class__.__name__ in str(store)
