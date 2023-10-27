@@ -41,7 +41,12 @@ class TestBasicQueue(IsolatedAsyncioTestCase):
             test_module.asyncio, "get_event_loop", mock.MagicMock()
         ) as mock_get_event_loop, mock.patch.object(
             test_module.asyncio, "wait", mock.CoroutineMock()
-        ) as mock_wait:
+        ) as mock_wait, mock.patch.object(
+            queue, "stop_event"
+        ) as mock_stop_event, mock.patch.object(
+            queue, "queue"
+        ):
+            mock_stop_event.is_set.return_value = False
             mock_wait.return_value = (
                 mock.MagicMock(),
                 [mock.MagicMock(done=mock.MagicMock(), cancel=mock.MagicMock())],
@@ -69,7 +74,12 @@ class TestBasicQueue(IsolatedAsyncioTestCase):
             test_module.asyncio, "get_event_loop", mock.MagicMock()
         ) as mock_get_event_loop, mock.patch.object(
             test_module.asyncio, "wait", mock.CoroutineMock()
-        ) as mock_wait:
+        ) as mock_wait, mock.patch.object(
+            queue, "stop_event"
+        ) as mock_stop_event, mock.patch.object(
+            queue, "queue"
+        ):
+            mock_stop_event.is_set.return_value = False
             mock_wait.return_value = (
                 mock.MagicMock(),
                 [mock.MagicMock(done=mock.MagicMock(), cancel=mock.MagicMock())],
