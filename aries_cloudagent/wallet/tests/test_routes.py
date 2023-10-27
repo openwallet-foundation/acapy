@@ -472,6 +472,8 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 SOV,
                 ED25519,
             )
+            self.wallet.get_local_did = mock.CoroutineMock()
+            self.wallet.set_did_endpoint = mock.CoroutineMock()
             result = await test_module.wallet_set_public_did(self.request)
             self.wallet.set_public_did.assert_awaited_once()
             json_response.assert_called_once_with(
@@ -650,6 +652,8 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 SOV,
                 ED25519,
             )
+            self.wallet.get_local_did = mock.CoroutineMock()
+            self.wallet.set_did_endpoint = mock.CoroutineMock()
             result = await test_module.wallet_set_public_did(self.request)
             self.wallet.set_public_did.assert_awaited_once()
             json_response.assert_called_once_with(
@@ -747,6 +751,8 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 WEB,
                 ED25519,
             )
+            self.wallet.get_local_did = mock.CoroutineMock()
+            self.wallet.set_did_endpoint = mock.CoroutineMock()
             result = await test_module.wallet_set_public_did(self.request)
             self.wallet.set_public_did.assert_awaited_once()
             self.wallet.set_did_endpoint.assert_not_called()
