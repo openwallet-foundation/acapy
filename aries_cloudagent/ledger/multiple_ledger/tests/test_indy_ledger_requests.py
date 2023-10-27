@@ -32,7 +32,7 @@ class TestIndyLedgerRequestsExecutor(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             mock.MagicMock(
-                extract_did_from_identifier=mock.CoroutineMock(
+                extract_did_from_identifier=mock.MagicMock(
                     return_value="WgWxqztrNooG92RXvxSTWv"
                 ),
                 lookup_did_in_configured_ledgers=mock.CoroutineMock(
@@ -69,7 +69,7 @@ class TestIndyLedgerRequestsExecutor(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             mock.MagicMock(
-                extract_did_from_identifier=mock.CoroutineMock(
+                extract_did_from_identifier=mock.MagicMock(
                     return_value="WgWxqztrNooG92RXvxSTWv"
                 ),
                 lookup_did_in_configured_ledgers=mock.CoroutineMock(
