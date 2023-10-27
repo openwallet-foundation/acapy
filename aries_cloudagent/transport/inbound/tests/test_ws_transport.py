@@ -86,7 +86,7 @@ class TestWsTransport(AioHTTPTestCase):
         async with self.client.ws_connect("/") as ws:
             self.result_event = asyncio.Event()
             await ws.send_json(test_message)
-            await asyncio.wait((self.result_event.wait(),), timeout=0.1)
+            await asyncio.wait_for(self.result_event.wait(), timeout=0.1)
 
             assert self.session is not None
             assert len(self.message_results) == 1
