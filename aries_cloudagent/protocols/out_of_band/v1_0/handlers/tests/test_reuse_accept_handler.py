@@ -51,7 +51,13 @@ class TestHandshakeReuseAcceptHandler:
 
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "OutOfBandManager")
-    async def test_exception(self, mock_oob_mgr, request_context, connection_record):
+    async def test_exception(
+        self,
+        mock_oob_mgr,
+        request_context,
+        connection_record,
+        caplog: pytest.LogCaptureFixture,
+    ):
         mock_oob_mgr.return_value.receive_reuse_accepted_message = mock.CoroutineMock()
         mock_oob_mgr.return_value.receive_reuse_accepted_message.side_effect = (
             OutOfBandManagerError("error")
@@ -59,5 +65,6 @@ class TestHandshakeReuseAcceptHandler:
         request_context.message = HandshakeReuseAccept()
         handler = test_module.HandshakeReuseAcceptMessageHandler()
         responder = MockResponder()
-        await handler.handle(context=request_context, responder=responder)
-        mock_oob_mgr.return_value._logger.exception.assert_called_once_("error")
+        with caplog.at_level("ERROR"):
+            await handler.handle(request_context, responder)
+        assert "Error processing" in caplog.text

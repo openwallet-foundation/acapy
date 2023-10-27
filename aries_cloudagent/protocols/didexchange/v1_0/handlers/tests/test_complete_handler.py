@@ -39,7 +39,9 @@ class TestDIDXCompleteHandler:
 
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "DIDXManager")
-    async def test_x(self, mock_conn_mgr, request_context):
+    async def test_x(
+        self, mock_conn_mgr, request_context, caplog: pytest.LogCaptureFixture
+    ):
         mock_conn_mgr.return_value.accept_complete = mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value
@@ -49,8 +51,6 @@ class TestDIDXCompleteHandler:
         request_context.message = DIDXComplete()
         handler_inst = test_module.DIDXCompleteHandler()
         responder = MockResponder()
-        await handler_inst.handle(request_context, responder)
-
-        mock_conn_mgr.return_value._logger.exception.assert_called_once_(
-            "Error receiving connection complete"
-        )
+        with caplog.at_level("ERROR"):
+            await handler_inst.handle(request_context, responder)
+        assert "Error receiving connection complete" in caplog.text
