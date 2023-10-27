@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ....core.in_memory import InMemoryProfile
 
@@ -32,13 +32,13 @@ class TestIndyLedgerRequestsExecutor(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             mock.MagicMock(
-                extract_did_from_identifier=mock.AsyncMock(
+                extract_did_from_identifier=mock.CoroutineMock(
                     return_value="WgWxqztrNooG92RXvxSTWv"
                 ),
-                lookup_did_in_configured_ledgers=mock.AsyncMock(
+                lookup_did_in_configured_ledgers=mock.CoroutineMock(
                     return_value=("test_prod_1", self.ledger)
                 ),
-                get_ledger_inst_by_id=mock.AsyncMock(return_value=self.ledger),
+                get_ledger_inst_by_id=mock.CoroutineMock(return_value=self.ledger),
             ),
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -69,10 +69,10 @@ class TestIndyLedgerRequestsExecutor(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             mock.MagicMock(
-                extract_did_from_identifier=mock.AsyncMock(
+                extract_did_from_identifier=mock.CoroutineMock(
                     return_value="WgWxqztrNooG92RXvxSTWv"
                 ),
-                lookup_did_in_configured_ledgers=mock.AsyncMock(
+                lookup_did_in_configured_ledgers=mock.CoroutineMock(
                     side_effect=MultipleLedgerManagerError
                 ),
             ),

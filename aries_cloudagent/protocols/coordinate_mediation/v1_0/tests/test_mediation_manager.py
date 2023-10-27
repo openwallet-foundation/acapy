@@ -2,7 +2,7 @@
 import logging
 from typing import AsyncIterable, Iterable
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from .. import manager as test_module
@@ -252,7 +252,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_set_default_mediator_by_id(self, manager: MediationManager):
         with mock.patch.object(
-            test_module.MediationRecord, "retrieve_by_id", mock.AsyncMock()
+            test_module.MediationRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_retrieve:
             await manager.set_default_mediator_by_id("test")
 
@@ -405,7 +405,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         ]
 
         with mock.patch.object(
-            RouteRecord, "query", mock.AsyncMock()
+            RouteRecord, "query", mock.CoroutineMock()
         ) as mock_route_rec_query, mock.patch.object(
             test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_logger_error:
@@ -415,12 +415,12 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
             mock_logger_error.assert_called_once()
 
         with mock.patch.object(
-            RouteRecord, "query", mock.AsyncMock()
+            RouteRecord, "query", mock.CoroutineMock()
         ) as mock_route_rec_query, mock.patch.object(
             test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_logger_error:
             mock_route_rec_query.return_value = [
-                mock.MagicMock(delete_record=mock.AsyncMock())
+                mock.MagicMock(delete_record=mock.CoroutineMock())
             ] * 2
 
             await manager.store_update_results(TEST_CONN_ID, results)

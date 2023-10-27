@@ -1,7 +1,7 @@
 """Test Reuse Accept Message Handler."""
 import pytest
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......connections.models.conn_record import ConnRecord
 from ......core.profile import ProfileSession
@@ -38,7 +38,7 @@ class TestHandshakeReuseAcceptHandler:
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "OutOfBandManager")
     async def test_called(self, mock_oob_mgr, request_context, connection_record):
-        mock_oob_mgr.return_value.receive_reuse_accepted_message = mock.AsyncMock()
+        mock_oob_mgr.return_value.receive_reuse_accepted_message = mock.CoroutineMock()
         request_context.message = HandshakeReuseAccept()
         handler = test_module.HandshakeReuseAcceptMessageHandler()
         responder = MockResponder()
@@ -52,7 +52,7 @@ class TestHandshakeReuseAcceptHandler:
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "OutOfBandManager")
     async def test_exception(self, mock_oob_mgr, request_context, connection_record):
-        mock_oob_mgr.return_value.receive_reuse_accepted_message = mock.AsyncMock()
+        mock_oob_mgr.return_value.receive_reuse_accepted_message = mock.CoroutineMock()
         mock_oob_mgr.return_value.receive_reuse_accepted_message.side_effect = (
             OutOfBandManagerError("error")
         )

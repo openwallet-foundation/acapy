@@ -3,7 +3,7 @@ import pytest
 
 from copy import deepcopy
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 from indy.error import IndyError
 
@@ -295,7 +295,7 @@ REV_REG_DEFS = {
 class TestIndySdkVerifier(IsolatedAsyncioTestCase):
     def setUp(self):
         self.ledger = mock.MagicMock(
-            get_credential_definition=mock.AsyncMock(
+            get_credential_definition=mock.CoroutineMock(
                 return_value={
                     "...": "...",
                     "value": {
@@ -329,7 +329,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         mock_verify.return_value = "val"
 
         with mock.patch.object(
-            self.verifier, "pre_verify", mock.AsyncMock()
+            self.verifier, "pre_verify", mock.CoroutineMock()
         ) as mock_pre_verify, mock.patch.object(
             self.verifier, "non_revoc_intervals", mock.MagicMock()
         ) as mock_non_revox, mock.patch.object(
@@ -364,7 +364,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         mock_verify.side_effect = IndyError(error_code=1)
 
         with mock.patch.object(
-            self.verifier, "pre_verify", mock.AsyncMock()
+            self.verifier, "pre_verify", mock.CoroutineMock()
         ) as mock_pre_verify, mock.patch.object(
             self.verifier, "non_revoc_intervals", mock.MagicMock()
         ) as mock_non_revox, mock.patch.object(

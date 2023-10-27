@@ -1,6 +1,6 @@
 import logging
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from ....config.injection_context import InjectionContext
@@ -20,7 +20,7 @@ async def open_wallet():
         handle=1,
         master_secret_id="master-secret",
     )
-    with mock.patch.object(opened, "close", mock.AsyncMock()):
+    with mock.patch.object(opened, "close", mock.CoroutineMock()):
         yield opened
 
 
@@ -86,7 +86,7 @@ async def test_properties(profile: IndySdkProfile):
         with pytest.raises(ProfileError):
             await profile.remove()
 
-    with mock.patch.object(profile.opened, "close", mock.AsyncMock()):
+    with mock.patch.object(profile.opened, "close", mock.CoroutineMock()):
         await profile.remove()
         assert profile.opened is None
 

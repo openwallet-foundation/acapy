@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
@@ -25,11 +25,11 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         self.profile = InMemoryProfile.test_profile()
         self.profile_injector = self.profile.context.injector
         self.ledger = mock.create_autospec(BaseLedger)
-        self.ledger.__aenter__ = mock.AsyncMock(return_value=self.ledger)
-        self.ledger.create_and_send_schema = mock.AsyncMock(
+        self.ledger.__aenter__ = mock.CoroutineMock(return_value=self.ledger)
+        self.ledger.create_and_send_schema = mock.CoroutineMock(
             return_value=(SCHEMA_ID, {"schema": "def", "signed_txn": "..."})
         )
-        self.ledger.get_schema = mock.AsyncMock(
+        self.ledger.get_schema = mock.CoroutineMock(
             return_value={"schema": "def", "signed_txn": "..."}
         )
         self.profile_injector.bind_instance(BaseLedger, self.ledger)
@@ -38,7 +38,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         self.profile_injector.bind_instance(IndyIssuer, self.issuer)
 
         self.storage = mock.create_autospec(BaseStorage)
-        self.storage.find_all_records = mock.AsyncMock(
+        self.storage.find_all_records = mock.CoroutineMock(
             return_value=[mock.MagicMock(value=SCHEMA_ID)]
         )
         self.session_inject[BaseStorage] = self.storage
@@ -47,7 +47,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         )
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": mock.AsyncMock(),
+            "outbound_message_router": mock.CoroutineMock(),
         }
         self.request = mock.MagicMock(
             app={},
@@ -57,7 +57,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         )
 
     async def test_send_schema(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
                 "schema_version": "1.0",
@@ -88,7 +88,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_send_schema_create_transaction_for_endorser(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
                 "schema_version": "1.0",
@@ -102,21 +102,21 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, mock.patch.object(
             test_module, "TransactionManager", mock.MagicMock()
         ) as mock_txn_mgr, mock.patch.object(
             test_module.web, "json_response", mock.MagicMock()
         ) as mock_response:
             mock_txn_mgr.return_value = mock.MagicMock(
-                create_record=mock.AsyncMock(
+                create_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     )
                 )
             )
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(
+                metadata_get=mock.CoroutineMock(
                     return_value={
                         "endorser_did": ("did"),
                         "endorser_name": ("name"),
@@ -139,7 +139,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_send_schema_create_transaction_for_endorser_storage_x(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
                 "schema_version": "1.0",
@@ -153,15 +153,15 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, mock.patch.object(
             test_module, "TransactionManager", mock.MagicMock()
         ) as mock_txn_mgr:
             mock_txn_mgr.return_value = mock.MagicMock(
-                create_record=mock.AsyncMock(side_effect=test_module.StorageError())
+                create_record=mock.CoroutineMock(side_effect=test_module.StorageError())
             )
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(
+                metadata_get=mock.CoroutineMock(
                     return_value={
                         "endorser_did": ("did"),
                         "endorser_name": ("name"),
@@ -173,7 +173,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
                 await test_module.schemas_send_schema(self.request)
 
     async def test_send_schema_create_transaction_for_endorser_not_found_x(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
                 "schema_version": "1.0",
@@ -187,7 +187,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.side_effect = test_module.StorageNotFoundError()
 
@@ -195,7 +195,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
                 await test_module.schemas_send_schema(self.request)
 
     async def test_send_schema_create_transaction_for_endorser_base_model_x(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
                 "schema_version": "1.0",
@@ -209,7 +209,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
 
@@ -217,7 +217,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
                 await test_module.schemas_send_schema(self.request)
 
     async def test_send_schema_create_transaction_for_endorser_no_endorser_info_x(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
                 "schema_version": "1.0",
@@ -231,16 +231,16 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(return_value=None)
+                metadata_get=mock.CoroutineMock(return_value=None)
             )
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.schemas_send_schema(self.request)
 
     async def test_send_schema_create_transaction_for_endorser_no_endorser_did_x(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
                 "schema_version": "1.0",
@@ -254,10 +254,10 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(
+                metadata_get=mock.CoroutineMock(
                     return_value={
                         "endorser_name": ("name"),
                     }
@@ -267,7 +267,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
                 await test_module.schemas_send_schema(self.request)
 
     async def test_send_schema_no_ledger(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
                 "schema_version": "1.0",
@@ -280,7 +280,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
             await test_module.schemas_send_schema(self.request)
 
     async def test_send_schema_x_ledger(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_name": "schema_name",
                 "schema_version": "1.0",
@@ -288,7 +288,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
             }
         )
         self.request.query = {"create_transaction_for_endorser": "false"}
-        self.ledger.create_and_send_schema = mock.AsyncMock(
+        self.ledger.create_and_send_schema = mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")
         )
 
@@ -307,7 +307,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
-                get_ledger_for_identifier=mock.AsyncMock(
+                get_ledger_for_identifier=mock.CoroutineMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -332,7 +332,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
+            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
         ), mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.schemas_get_schema(self.request)
             assert result == mock_response.return_value
@@ -347,7 +347,7 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
-                get_ledger_for_identifier=mock.AsyncMock(
+                get_ledger_for_identifier=mock.CoroutineMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -364,11 +364,11 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
-                get_ledger_for_identifier=mock.AsyncMock(return_value=(None, None))
+                get_ledger_for_identifier=mock.CoroutineMock(return_value=(None, None))
             ),
         )
         self.request.match_info = {"schema_id": SCHEMA_ID}
-        self.ledger.get_schema = mock.AsyncMock(
+        self.ledger.get_schema = mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")
         )
 
@@ -380,13 +380,13 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
-                get_ledger_for_identifier=mock.AsyncMock(
+                get_ledger_for_identifier=mock.CoroutineMock(
                     return_value=(None, self.ledger)
                 )
             ),
         )
         self.request.match_info = {"schema_id": SCHEMA_ID}
-        self.ledger.get_schema = mock.AsyncMock(
+        self.ledger.get_schema = mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")
         )
 

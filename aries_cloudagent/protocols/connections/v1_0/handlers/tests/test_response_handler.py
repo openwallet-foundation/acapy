@@ -1,5 +1,5 @@
 import pytest
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......connections.models import connection_target
 from ......connections.models.diddoc import (
@@ -69,7 +69,7 @@ class TestResponseHandler:
     @pytest.mark.asyncio
     @mock.patch.object(handler, "ConnectionManager")
     async def test_called(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
         request_context.message = ConnectionResponse()
         handler_inst = handler.ConnectionResponseHandler()
         responder = MockResponder()
@@ -83,7 +83,7 @@ class TestResponseHandler:
     @mock.patch.object(handler, "ConnectionManager")
     async def test_called_auto_ping(self, mock_conn_mgr, request_context):
         request_context.update_settings({"auto_ping_connection": True})
-        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
         request_context.message = ConnectionResponse()
         handler_inst = handler.ConnectionResponseHandler()
         responder = MockResponder()
@@ -99,7 +99,7 @@ class TestResponseHandler:
     @pytest.mark.asyncio
     @mock.patch.object(handler, "ConnectionManager")
     async def test_problem_report(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
         )
@@ -122,7 +122,7 @@ class TestResponseHandler:
     async def test_problem_report_did_doc(
         self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
-        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
@@ -150,7 +150,7 @@ class TestResponseHandler:
     async def test_problem_report_did_doc_no_conn_target(
         self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
-        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )

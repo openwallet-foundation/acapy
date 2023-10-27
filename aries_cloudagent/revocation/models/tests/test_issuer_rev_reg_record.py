@@ -4,7 +4,7 @@ import json
 from os.path import join
 from typing import Any, Mapping, Type
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile, InMemoryProfileSession
@@ -62,13 +62,13 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
 
         Ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.send_revoc_reg_def = mock.AsyncMock()
-        self.ledger.send_revoc_reg_entry = mock.AsyncMock()
+        self.ledger.send_revoc_reg_def = mock.CoroutineMock()
+        self.ledger.send_revoc_reg_entry = mock.CoroutineMock()
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
         TailsServer = mock.MagicMock(BaseTailsServer, autospec=True)
         self.tails_server = TailsServer()
-        self.tails_server.upload_tails_file = mock.AsyncMock(
+        self.tails_server.upload_tails_file = mock.CoroutineMock(
             return_value=(True, "http://1.2.3.4:8088/rev-reg-id")
         )
         self.profile.context.injector.bind_instance(BaseTailsServer, self.tails_server)
@@ -173,7 +173,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
                 if self.handle_counter == 0:
                     self.handle_counter = self.handle_counter + 1
                     return mock.MagicMock(
-                        fetch=mock.AsyncMock(
+                        fetch=mock.CoroutineMock(
                             return_value=mock.MagicMock(
                                 value_json=json.dumps(mock_cred_def)
                             )
@@ -181,7 +181,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
                     )
                 else:
                     return mock.MagicMock(
-                        fetch=mock.AsyncMock(
+                        fetch=mock.CoroutineMock(
                             return_value=mock.MagicMock(
                                 value_json=json.dumps(mock_reg_rev_def_private),
                             ),
@@ -214,13 +214,13 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             "ver": "1.0",
             "value": {"accum": "ACCUM", "issued": [1, 2], "revoked": [3, 4]},
         }
-        self.ledger.get_revoc_reg_delta = mock.AsyncMock(
+        self.ledger.get_revoc_reg_delta = mock.CoroutineMock(
             return_value=(
                 _test_rev_reg_delta,
                 1234567890,
             )
         )
-        self.ledger.send_revoc_reg_entry = mock.AsyncMock(
+        self.ledger.send_revoc_reg_entry = mock.CoroutineMock(
             return_value={
                 "result": {"...": "..."},
             },
@@ -233,7 +233,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.IssuerCredRevRecord,
             "query_by_ids",
-            mock.AsyncMock(
+            mock.CoroutineMock(
                 return_value=[
                     test_module.IssuerCredRevRecord(
                         record_id=test_module.UUID4_EXAMPLE,
@@ -247,11 +247,11 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         ), mock.patch.object(
             test_module.IssuerRevRegRecord,
             "retrieve_by_revoc_reg_id",
-            mock.AsyncMock(return_value=rec),
+            mock.CoroutineMock(return_value=rec),
         ), mock.patch.object(
             test_module,
             "generate_ledger_rrrecovery_txn",
-            mock.AsyncMock(return_value=rev_reg_delta),
+            mock.CoroutineMock(return_value=rev_reg_delta),
         ):
             assert (
                 _test_rev_reg_delta,
@@ -278,7 +278,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
         with mock.patch.object(
-            issuer, "create_and_store_revocation_registry", mock.AsyncMock()
+            issuer, "create_and_store_revocation_registry", mock.CoroutineMock()
         ) as mock_create_store_rr:
             mock_create_store_rr.side_effect = IndyIssuerError("Not this time")
 

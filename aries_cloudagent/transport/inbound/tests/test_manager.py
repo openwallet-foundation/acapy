@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
@@ -59,8 +59,8 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
 
     async def test_start_stop(self):
         transport = mock.MagicMock()
-        transport.start = mock.AsyncMock()
-        transport.stop = mock.AsyncMock()
+        transport.start = mock.CoroutineMock()
+        transport.stop = mock.CoroutineMock()
 
         mgr = InboundTransportManager(self.profile, None)
         mgr.register_transport(transport, "transport_cls")
@@ -76,7 +76,7 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
         test_wire_format = mock.MagicMock()
         self.profile.context.injector.bind_instance(BaseWireFormat, test_wire_format)
 
-        test_inbound_handler = mock.AsyncMock()
+        test_inbound_handler = mock.CoroutineMock()
         mgr = InboundTransportManager(self.profile, test_inbound_handler)
         test_transport = "http"
         test_accept = True
@@ -148,7 +148,7 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
     async def test_dispatch_complete_undelivered(self):
         mgr = InboundTransportManager(self.profile, None)
         test_wire_format = mock.MagicMock(
-            parse_message=mock.AsyncMock(return_value=("payload", "receipt"))
+            parse_message=mock.CoroutineMock(return_value=("payload", "receipt"))
         )
         session = await mgr.create_session(
             "http", wire_format=test_wire_format, accept_undelivered=True

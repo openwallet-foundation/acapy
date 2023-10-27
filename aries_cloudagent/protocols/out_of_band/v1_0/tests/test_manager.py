@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List
 from unittest.mock import ANY
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from .....connections.models.conn_record import ConnRecord
@@ -312,7 +312,7 @@ class TestConfig:
 class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
     def setUp(self):
         self.responder = MockResponder()
-        self.responder.send = mock.AsyncMock()
+        self.responder.send = mock.CoroutineMock()
 
         self.test_mediator_routing_keys = [
             "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
@@ -321,7 +321,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         self.test_mediator_endpoint = "http://mediator.example.com"
 
         self.route_manager = mock.MagicMock(RouteManager)
-        self.route_manager.routing_info = mock.AsyncMock(
+        self.route_manager.routing_info = mock.CoroutineMock(
             return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
         )
 
@@ -340,7 +340,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
 
         self.profile.context.injector.bind_instance(BaseResponder, self.responder)
         self.profile.context.injector.bind_instance(
-            EventBus, mock.MagicMock(notify=mock.AsyncMock())
+            EventBus, mock.MagicMock(notify=mock.CoroutineMock())
         )
         self.mt_mgr = mock.MagicMock()
         self.mt_mgr = mock.create_autospec(MultitenantManager)
@@ -352,7 +352,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         )
         self.manager = OutOfBandManager(self.profile)
         assert self.manager.profile
-        self.manager.resolve_invitation = mock.AsyncMock()
+        self.manager.resolve_invitation = mock.CoroutineMock()
         self.manager.resolve_invitation.return_value = (
             TestConfig.test_endpoint,
             [TestConfig.test_verkey],
@@ -366,7 +366,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             their_role=ConnRecord.Role.REQUESTER,
             state=ConnRecord.State.COMPLETED,
             their_public_did=self.their_public_did,
-            save=mock.AsyncMock(),
+            save=mock.CoroutineMock(),
         )
 
     async def test_create_invitation_handshake_succeeds(self):
@@ -466,7 +466,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                 MediationManager,
                 "get_default_mediator_id",
             ) as mock_get_default_mediator, mock.patch.object(
-                mock_conn_rec, "metadata_set", mock.AsyncMock()
+                mock_conn_rec, "metadata_set", mock.CoroutineMock()
             ) as mock_metadata_set:
                 invite = await self.manager.create_invitation(
                     my_endpoint=TestConfig.test_endpoint,
@@ -508,7 +508,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_wallet_get_public_did, mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_cxid:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did,
@@ -542,7 +542,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_wallet_get_public_did, mock.patch.object(
             V10CredentialExchange,
             "retrieve_by_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_cxid:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did,
@@ -576,11 +576,11 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_wallet_get_public_did, mock.patch.object(
             test_module.V10CredentialExchange,
             "retrieve_by_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_cxid_v1, mock.patch.object(
             test_module.V20CredExRecord,
             "retrieve_by_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_cxid_v2:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did,
@@ -618,7 +618,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_wallet_get_public_did, mock.patch.object(
             test_module.V10PresentationExchange,
             "retrieve_by_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_pxid:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did,
@@ -653,11 +653,11 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_wallet_get_public_did, mock.patch.object(
             test_module.V10PresentationExchange,
             "retrieve_by_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_pxid_1, mock.patch.object(
             test_module.V20PresExRecord,
             "retrieve_by_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_pxid_2:
             mock_wallet_get_public_did.return_value = DIDInfo(
                 TestConfig.test_did,
@@ -854,7 +854,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         with mock.patch.object(
             ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(
+            mock.CoroutineMock(
                 return_value=mock.MagicMock(connection_id="the-retrieved-connection-id")
             ),
         ):
@@ -871,7 +871,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         ) as oob_mgr_fetch_conn, mock.patch.object(
             ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=self.test_conn_rec),
+            mock.CoroutineMock(return_value=self.test_conn_rec),
         ):
             oob_mgr_fetch_conn.return_value = ConnectionTarget(
                 did=TestConfig.test_did,
@@ -946,8 +946,8 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             self.profile, "notify", autospec=True
         ) as mock_notify:
             mock_retrieve_oob.return_value = mock.MagicMock(
-                emit_event=mock.AsyncMock(),
-                delete_record=mock.AsyncMock(),
+                emit_event=mock.CoroutineMock(),
+                delete_record=mock.CoroutineMock(),
                 multi_use=False,
             )
 
@@ -1003,8 +1003,8 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             self.profile, "notify", autospec=True
         ) as mock_notify:
             mock_retrieve_oob.return_value = mock.MagicMock(
-                emit_event=mock.AsyncMock(),
-                delete_record=mock.AsyncMock(),
+                emit_event=mock.CoroutineMock(),
+                delete_record=mock.CoroutineMock(),
                 multi_use=True,
             )
 
@@ -1051,8 +1051,8 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             OobRecord, "retrieve_by_tag_filter", autospec=True
         ) as mock_retrieve_oob:
             mock_retrieve_oob.return_value = mock.MagicMock(
-                emit_event=mock.AsyncMock(),
-                delete_record=mock.AsyncMock(),
+                emit_event=mock.CoroutineMock(),
+                delete_record=mock.CoroutineMock(),
             )
 
             await self.manager.receive_reuse_accepted_message(
@@ -1125,9 +1125,9 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             OobRecord, "retrieve_by_tag_filter", autospec=True
         ) as mock_retrieve_oob:
             mock_retrieve_oob.return_value = mock.MagicMock(
-                emit_event=mock.AsyncMock(),
-                delete_record=mock.AsyncMock(),
-                save=mock.AsyncMock(),
+                emit_event=mock.CoroutineMock(),
+                delete_record=mock.CoroutineMock(),
+                save=mock.CoroutineMock(),
             )
 
             await self.manager.receive_problem_report(
@@ -1180,9 +1180,9 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
             await mediation_record.save(session)
             with mock.patch.object(
-                DIDXManager, "receive_invitation", mock.AsyncMock()
+                DIDXManager, "receive_invitation", mock.CoroutineMock()
             ) as mock_didx_recv_invi, mock.patch.object(
-                ConnRecord, "retrieve_by_id", mock.AsyncMock()
+                ConnRecord, "retrieve_by_id", mock.CoroutineMock()
             ) as mock_retrieve_conn_by_id:
                 invite = await self.manager.create_invitation(
                     my_endpoint=TestConfig.test_endpoint,
@@ -1211,11 +1211,11 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         with mock.patch.object(
             DIDXManager,
             "receive_invitation",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_didx_recv_invi, mock.patch.object(
             ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_conn_by_id:
             invite = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -1225,7 +1225,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             mock_didx_recv_invi.return_value = mock_conn
             mock_retrieve_conn_by_id.return_value = mock_conn
             invi_msg = invite.invitation
-            self.route_manager.mediation_record_if_id = mock.AsyncMock(
+            self.route_manager.mediation_record_if_id = mock.CoroutineMock(
                 side_effect=StorageNotFoundError
             )
             await self.manager.receive_invitation(
@@ -1248,10 +1248,10 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         with mock.patch.object(
             test_module, "DIDXManager", autospec=True
         ) as didx_mgr_cls, mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_retrieve_conn_by_id:
             didx_mgr_cls.return_value = mock.MagicMock(
-                receive_invitation=mock.AsyncMock(return_value=mock_conn)
+                receive_invitation=mock.CoroutineMock(return_value=mock_conn)
             )
             mock_retrieve_conn_by_id.return_value = mock_conn
             oob_invitation = InvitationMessage(
@@ -1277,10 +1277,10 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as conn_mgr_cls, mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_retrieve_by_id:
             conn_mgr_cls.return_value = mock.MagicMock(
-                receive_invitation=mock.AsyncMock(return_value=mock_conn)
+                receive_invitation=mock.CoroutineMock(return_value=mock_conn)
             )
             mock_conn_retrieve_by_id.return_value = mock_conn
             oob_invitation = InvitationMessage(
@@ -1366,11 +1366,11 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         with mock.patch.object(
             ConnRecord,
             "find_existing_connection",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as oob_mgr_find_existing_conn, mock.patch.object(
-            OobRecord, "save", mock.AsyncMock()
+            OobRecord, "save", mock.CoroutineMock()
         ) as oob_record_save, mock.patch.object(
-            OobRecord, "retrieve_by_id", mock.AsyncMock()
+            OobRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as oob_record_retrieve_by_id, mock.patch.object(
             OutOfBandManager, "fetch_connection_targets", autospec=True
         ) as oob_mgr_fetch_conn:
@@ -1413,15 +1413,15 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         with mock.patch.object(
             test_module.OutOfBandManager,
             "_handle_hanshake_reuse",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as handle_handshake_reuse, mock.patch.object(
             test_module.OutOfBandManager,
             "_perform_handshake",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as perform_handshake, mock.patch.object(
             ConnRecord,
             "find_existing_connection",
-            mock.AsyncMock(return_value=test_exist_conn),
+            mock.CoroutineMock(return_value=test_exist_conn),
         ):
             oob_invitation = InvitationMessage(
                 handshake_protocols=[
@@ -1461,19 +1461,19 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         with mock.patch.object(
             test_module.OutOfBandManager,
             "_handle_hanshake_reuse",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as handle_handshake_reuse, mock.patch.object(
             test_module.OutOfBandManager,
             "_perform_handshake",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as perform_handshake, mock.patch.object(
             ConnRecord,
             "find_existing_connection",
-            mock.AsyncMock(return_value=test_exist_conn),
+            mock.CoroutineMock(return_value=test_exist_conn),
         ), mock.patch.object(
             ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=test_exist_conn),
+            mock.CoroutineMock(return_value=test_exist_conn),
         ):
             oob_invitation = InvitationMessage(
                 handshake_protocols=[
@@ -1484,8 +1484,8 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
 
             mock_oob = mock.MagicMock(
-                delete_record=mock.AsyncMock(),
-                emit_event=mock.AsyncMock(),
+                delete_record=mock.CoroutineMock(),
+                emit_event=mock.CoroutineMock(),
             )
             perform_handshake.return_value = mock_oob
 
@@ -1527,10 +1527,10 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         ) as didx_mgr_cls, mock.patch.object(
             ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=mock_conn),
+            mock.CoroutineMock(return_value=mock_conn),
         ):
             didx_mgr_cls.return_value = mock.MagicMock(
-                receive_invitation=mock.AsyncMock(return_value=mock_conn)
+                receive_invitation=mock.CoroutineMock(return_value=mock_conn)
             )
             oob_invitation = InvitationMessage(
                 handshake_protocols=[
@@ -1548,7 +1548,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             AttachDecorator.deserialize(deepcopy(TestConfig.req_attach_v1))
         ]
 
-        mock_oob_processor = mock.MagicMock(handle_message=mock.AsyncMock())
+        mock_oob_processor = mock.MagicMock(handle_message=mock.CoroutineMock())
         self.profile.context.injector.bind_instance(
             OobMessageProcessor, mock_oob_processor
         )
@@ -1560,11 +1560,11 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         with mock.patch.object(
             InMemoryWallet,
             "create_signing_key",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_signing_key, mock.patch.object(
             OutOfBandManager,
             "_service_decorator_from_service",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_service_decorator_from_service:
             mock_create_signing_key.return_value = KeyInfo(
                 verkey="a-verkey", metadata={}, key_type=ED25519
@@ -1609,7 +1609,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                 AttachDecorator.deserialize(deepcopy(TestConfig.req_attach_v1))
             ]
 
-            mock_oob_processor = mock.MagicMock(handle_message=mock.AsyncMock())
+            mock_oob_processor = mock.MagicMock(handle_message=mock.CoroutineMock())
             self.profile.context.injector.bind_instance(
                 OobMessageProcessor, mock_oob_processor
             )
@@ -1617,7 +1617,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             with mock.patch.object(
                 ConnRecord,
                 "find_existing_connection",
-                mock.AsyncMock(),
+                mock.CoroutineMock(),
             ) as oob_mgr_find_existing_conn:
                 oob_mgr_find_existing_conn.return_value = test_exist_conn
                 oob_invitation = InvitationMessage(
@@ -1655,7 +1655,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             ) as mock_wait_for_conn_rec_active, mock.patch.object(
                 ConnRecord,
                 "find_existing_connection",
-                mock.AsyncMock(),
+                mock.CoroutineMock(),
             ) as oob_mgr_find_existing_conn:
                 oob_mgr_find_existing_conn.return_value = test_exist_conn
                 mock_wait_for_conn_rec_active.return_value = None
@@ -1681,7 +1681,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
     async def test_service_decorator_from_service_did(self):
         did = "did:sov:something"
 
-        self.manager.resolve_invitation = mock.AsyncMock()
+        self.manager.resolve_invitation = mock.CoroutineMock()
         self.manager.resolve_invitation.return_value = (
             TestConfig.test_endpoint,
             [TestConfig.test_verkey],
@@ -1714,7 +1714,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
     async def test_service_decorator_from_service_str_empty_endpoint(self):
         did = "did:sov:something"
 
-        self.manager.resolve_invitation = mock.AsyncMock()
+        self.manager.resolve_invitation = mock.CoroutineMock()
         self.manager.resolve_invitation.return_value = (
             "",  # empty endpoint
             [TestConfig.test_verkey],
@@ -1728,7 +1728,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
     async def test_service_decorator_from_service_str_none_endpoint(self):
         did = "did:sov:something"
 
-        self.manager.resolve_invitation = mock.AsyncMock()
+        self.manager.resolve_invitation = mock.CoroutineMock()
         self.manager.resolve_invitation.return_value = (
             None,  # None endpoint
             [TestConfig.test_verkey],
@@ -1792,9 +1792,9 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
         ]
         with mock.patch.object(
-            ConnRecord, "query", mock.AsyncMock()
+            ConnRecord, "query", mock.CoroutineMock()
         ) as mock_connrecord_query, mock.patch.object(
-            ConnRecord, "delete_record", mock.AsyncMock()
+            ConnRecord, "delete_record", mock.CoroutineMock()
         ) as mock_connrecord_delete:
             mock_connrecord_query.return_value = records
             await self.manager.delete_stale_connection_by_invitation("test123")

@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -60,7 +60,7 @@ class TestInvitationRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.create_invitation = mock.AsyncMock(
+            mock_mgr.return_value.create_invitation = mock.CoroutineMock(
                 return_value=(mock_conn_rec, conn_invitation)
             )
 

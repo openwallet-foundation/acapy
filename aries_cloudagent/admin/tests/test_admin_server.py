@@ -1,7 +1,7 @@
 import json
 
 import pytest
-import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
@@ -44,9 +44,9 @@ class TestAdminServer(IsolatedAsyncioTestCase):
                 method="GET",
                 path_qs="/hello/world?a=1&b=2",
                 match_info={"match": "info"},
-                text=mock.AsyncMock(return_value="abc123"),
+                text=mock.CoroutineMock(return_value="abc123"),
             )
-            handler = mock.AsyncMock()
+            handler = mock.CoroutineMock()
 
             await test_module.debug_middleware(request, handler)
             mock_logger.isEnabledFor.assert_called_once()
@@ -62,7 +62,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             request = mock.MagicMock(
                 rel_url="/", app=mock.MagicMock(_state={"ready": False})
             )
-            handler = mock.AsyncMock(return_value="OK")
+            handler = mock.CoroutineMock(return_value="OK")
             with self.assertRaises(test_module.web.HTTPServiceUnavailable):
                 await test_module.ready_middleware(request, handler)
 
@@ -70,28 +70,28 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             assert await test_module.ready_middleware(request, handler) == "OK"
 
             request.app._state["ready"] = True
-            handler = mock.AsyncMock(
+            handler = mock.CoroutineMock(
                 side_effect=test_module.LedgerConfigError("Bad config")
             )
             with self.assertRaises(test_module.LedgerConfigError):
                 await test_module.ready_middleware(request, handler)
 
             request.app._state["ready"] = True
-            handler = mock.AsyncMock(
+            handler = mock.CoroutineMock(
                 side_effect=test_module.web.HTTPFound(location="/api/doc")
             )
             with self.assertRaises(test_module.web.HTTPFound):
                 await test_module.ready_middleware(request, handler)
 
             request.app._state["ready"] = True
-            handler = mock.AsyncMock(
+            handler = mock.CoroutineMock(
                 side_effect=test_module.asyncio.CancelledError("Cancelled")
             )
             with self.assertRaises(test_module.asyncio.CancelledError):
                 await test_module.ready_middleware(request, handler)
 
             request.app._state["ready"] = True
-            handler = mock.AsyncMock(side_effect=KeyError("No such thing"))
+            handler = mock.CoroutineMock(side_effect=KeyError("No such thing"))
             with self.assertRaises(KeyError):
                 await test_module.ready_middleware(request, handler)
 
@@ -123,10 +123,10 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             profile,
             self.outbound_message_router,
             self.webhook_router,
-            conductor_stop=mock.AsyncMock(),
+            conductor_stop=mock.CoroutineMock(),
             task_queue=TaskQueue(max_active=4) if task_queue else None,
             conductor_stats=(
-                None if task_queue else mock.AsyncMock(return_value={"a": 1})
+                None if task_queue else mock.CoroutineMock(return_value={"a": 1})
             ),
         )
 
@@ -167,7 +167,9 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             )
             await server.stop()
 
-        with mock.patch.object(web.TCPSite, "start", mock.AsyncMock()) as mock_start:
+        with mock.patch.object(
+            web.TCPSite, "start", mock.CoroutineMock()
+        ) as mock_start:
             mock_start.side_effect = OSError("Failure to launch")
             with self.assertRaises(AdminSetupError):
                 await self.get_admin_server(settings).start()
@@ -216,7 +218,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             method="GET",
             headers={"Authorization": "Bearer ..."},
             path="/multitenancy/etc",
-            text=mock.AsyncMock(return_value="abc123"),
+            text=mock.CoroutineMock(return_value="abc123"),
         )
         with self.assertRaises(test_module.web.HTTPUnauthorized):
             await mt_authz_middle(mock_request, None)
@@ -225,7 +227,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             method="GET",
             headers={},
             path="/protected/non-multitenancy/non-server",
-            text=mock.AsyncMock(return_value="abc123"),
+            text=mock.CoroutineMock(return_value="abc123"),
         )
         with self.assertRaises(test_module.web.HTTPUnauthorized):
             await mt_authz_middle(mock_request, None)
@@ -234,9 +236,9 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             method="GET",
             headers={"Authorization": "Bearer ..."},
             path="/protected/non-multitenancy/non-server",
-            text=mock.AsyncMock(return_value="abc123"),
+            text=mock.CoroutineMock(return_value="abc123"),
         )
-        mock_handler = mock.AsyncMock()
+        mock_handler = mock.CoroutineMock()
         await mt_authz_middle(mock_request, mock_handler)
         assert mock_handler.called_once_with(mock_request)
 
@@ -244,9 +246,9 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             method="GET",
             headers={"Authorization": "Non-bearer ..."},
             path="/test",
-            text=mock.AsyncMock(return_value="abc123"),
+            text=mock.CoroutineMock(return_value="abc123"),
         )
-        mock_handler = mock.AsyncMock()
+        mock_handler = mock.CoroutineMock()
         await mt_authz_middle(mock_request, mock_handler)
         assert mock_handler.called_once_with(mock_request)
 
@@ -257,7 +259,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             method="GET",
             headers={"Authorization": "Non-bearer ..."},
             path="/protected/non-multitenancy/non-server",
-            text=mock.AsyncMock(return_value="abc123"),
+            text=mock.CoroutineMock(return_value="abc123"),
         )
         with self.assertRaises(test_module.web.HTTPUnauthorized):
             await setup_ctx_middle(mock_request, None)
@@ -266,12 +268,12 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             method="GET",
             headers={"Authorization": "Bearer ..."},
             path="/protected/non-multitenancy/non-server",
-            text=mock.AsyncMock(return_value="abc123"),
+            text=mock.CoroutineMock(return_value="abc123"),
         )
         with mock.patch.object(
             server.multitenant_manager,
             "get_profile_for_token",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_get_profile:
             mock_get_profile.side_effect = [
                 test_module.MultitenantManagerError("corrupt token"),
@@ -486,7 +488,7 @@ async def server():
 async def test_on_record_event(server, event_topic, webhook_topic):
     profile = InMemoryProfile.test_profile()
     with mock.patch.object(
-        server, "send_webhook", mock.AsyncMock()
+        server, "send_webhook", mock.CoroutineMock()
     ) as mock_send_webhook:
         await server._on_record_event(profile, Event(event_topic, None))
         mock_send_webhook.assert_called_once_with(profile, webhook_topic, None)

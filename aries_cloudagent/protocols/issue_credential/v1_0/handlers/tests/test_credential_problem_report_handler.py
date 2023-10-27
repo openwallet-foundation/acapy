@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
@@ -23,7 +23,7 @@ class TestCredentialProblemReportHandler(IsolatedAsyncioTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             request_context.connection_ready = True
-            mock_cred_mgr.return_value.receive_problem_report = mock.AsyncMock()
+            mock_cred_mgr.return_value.receive_problem_report = mock.CoroutineMock()
             request_context.message = CredentialProblemReport(
                 description={
                     "en": "Change of plans",
@@ -49,7 +49,7 @@ class TestCredentialProblemReportHandler(IsolatedAsyncioTestCase):
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
             request_context.connection_ready = True
-            mock_cred_mgr.return_value.receive_problem_report = mock.AsyncMock(
+            mock_cred_mgr.return_value.receive_problem_report = mock.CoroutineMock(
                 side_effect=test_module.StorageError("Disk full")
             )
             request_context.message = CredentialProblemReport(

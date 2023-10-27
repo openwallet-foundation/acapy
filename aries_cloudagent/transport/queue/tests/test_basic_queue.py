@@ -1,6 +1,6 @@
 import asyncio
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from .. import basic as test_module
@@ -40,7 +40,7 @@ class TestBasicQueue(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.asyncio, "get_event_loop", mock.MagicMock()
         ) as mock_get_event_loop, mock.patch.object(
-            test_module.asyncio, "wait", mock.AsyncMock()
+            test_module.asyncio, "wait", mock.CoroutineMock()
         ) as mock_wait:
             mock_wait.return_value = (
                 mock.MagicMock(),
@@ -68,7 +68,7 @@ class TestBasicQueue(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.asyncio, "get_event_loop", mock.MagicMock()
         ) as mock_get_event_loop, mock.patch.object(
-            test_module.asyncio, "wait", mock.AsyncMock()
+            test_module.asyncio, "wait", mock.CoroutineMock()
         ) as mock_wait:
             mock_wait.return_value = (
                 mock.MagicMock(),

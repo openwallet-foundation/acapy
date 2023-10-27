@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
@@ -18,7 +18,7 @@ class TestTransactionRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_request = mock.AsyncMock()
+            mock_tran_mgr.return_value.receive_request = mock.CoroutineMock()
             request_context.message = TransactionRequest()
             request_context.connection_record = ConnRecord(
                 connection_id="b5dc1636-a19a-4209-819f-e8f9984d9897"
@@ -41,7 +41,7 @@ class TestTransactionRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_request = mock.AsyncMock()
+            mock_tran_mgr.return_value.receive_request = mock.CoroutineMock()
             request_context.message = TransactionRequest()
             request_context.connection_ready = False
             handler = test_module.TransactionRequestHandler()
@@ -58,7 +58,7 @@ class TestTransactionRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_request = mock.AsyncMock(
+            mock_tran_mgr.return_value.receive_request = mock.CoroutineMock(
                 side_effect=test_module.TransactionManagerError()
             )
             request_context.message = TransactionRequest()

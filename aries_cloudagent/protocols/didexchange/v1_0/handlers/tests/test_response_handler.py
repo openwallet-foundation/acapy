@@ -1,5 +1,5 @@
 import pytest
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models import connection_target
@@ -80,7 +80,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_didx_mgr):
-        mock_didx_mgr.return_value.accept_response = mock.AsyncMock()
+        mock_didx_mgr.return_value.accept_response = mock.CoroutineMock()
         self.ctx.message = DIDXResponse()
         handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
@@ -95,7 +95,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called_auto_ping(self, mock_didx_mgr):
         self.ctx.update_settings({"auto_ping_connection": True})
-        mock_didx_mgr.return_value.accept_response = mock.AsyncMock()
+        mock_didx_mgr.return_value.accept_response = mock.CoroutineMock()
         self.ctx.message = DIDXResponse()
         handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
@@ -112,7 +112,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "DIDXManager")
     async def test_problem_report(self, mock_didx_mgr):
-        mock_didx_mgr.return_value.accept_response = mock.AsyncMock(
+        mock_didx_mgr.return_value.accept_response = mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
@@ -142,7 +142,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         mock_conn_target,
         mock_didx_mgr,
     ):
-        mock_didx_mgr.return_value.accept_response = mock.AsyncMock(
+        mock_didx_mgr.return_value.accept_response = mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
@@ -178,7 +178,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         mock_conn_target,
         mock_didx_mgr,
     ):
-        mock_didx_mgr.return_value.accept_response = mock.AsyncMock(
+        mock_didx_mgr.return_value.accept_response = mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )

@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from .....admin.request_context import AdminRequestContext
@@ -12,7 +12,7 @@ class TestIntroductionRoutes(IsolatedAsyncioTestCase):
         self.context = AdminRequestContext.test_context(self.session_inject)
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": mock.AsyncMock(),
+            "outbound_message_router": mock.CoroutineMock(),
         }
         self.request = mock.MagicMock(
             app={},
@@ -22,7 +22,7 @@ class TestIntroductionRoutes(IsolatedAsyncioTestCase):
         )
 
     async def test_introduction_start_no_service(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -44,7 +44,7 @@ class TestIntroductionRoutes(IsolatedAsyncioTestCase):
             await test_module.introduction_start(self.request)
 
     async def test_introduction_start(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -70,7 +70,7 @@ class TestIntroductionRoutes(IsolatedAsyncioTestCase):
             test_module.web, "json_response"
         ) as mock_response:
             mock_ctx_inject.return_value = mock.MagicMock(
-                start_introduction=mock.AsyncMock()
+                start_introduction=mock.CoroutineMock()
             )
 
             await test_module.introduction_start(self.request)
@@ -84,7 +84,7 @@ class TestIntroductionRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with({})
 
     async def test_introduction_start_x(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -108,7 +108,7 @@ class TestIntroductionRoutes(IsolatedAsyncioTestCase):
             self.context, "inject_or", mock.MagicMock()
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = mock.MagicMock(
-                start_introduction=mock.AsyncMock(
+                start_introduction=mock.CoroutineMock(
                     side_effect=test_module.IntroductionError()
                 )
             )

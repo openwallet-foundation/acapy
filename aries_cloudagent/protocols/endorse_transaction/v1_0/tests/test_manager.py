@@ -3,7 +3,7 @@ import json
 import uuid
 
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from .....admin.request_context import AdminRequestContext
 from .....cache.base import BaseCache
@@ -103,10 +103,10 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
         self.test_refuser_did = "AGDEjaMunDtFtBVrn1qPKQ"
 
         self.ledger = mock.create_autospec(BaseLedger)
-        self.ledger.txn_endorse = mock.AsyncMock(
+        self.ledger.txn_endorse = mock.CoroutineMock(
             return_value=self.test_endorsed_message
         )
-        self.ledger.register_nym = mock.AsyncMock(return_value=(True, {}))
+        self.ledger.register_nym = mock.CoroutineMock(return_value=(True, {}))
 
         self.context = AdminRequestContext.test_context()
         self.profile = self.context.profile
@@ -459,10 +459,10 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
         )
         future = asyncio.Future()
         future.set_result(
-            mock.MagicMock(return_value=mock.MagicMock(add_record=mock.AsyncMock()))
+            mock.MagicMock(return_value=mock.MagicMock(add_record=mock.CoroutineMock()))
         )
         self.ledger.get_indy_storage = future
-        self.ledger.txn_submit = mock.AsyncMock(
+        self.ledger.txn_submit = mock.CoroutineMock(
             return_value=json.dumps(
                 {
                     "result": {
@@ -479,7 +479,7 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
             ConnRecord, "retrieve_by_id"
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(
+                metadata_get=mock.CoroutineMock(
                     return_value={
                         "transaction_their_job": (
                             TransactionJob.TRANSACTION_ENDORSER.name
@@ -732,13 +732,13 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
 
     async def test_set_transaction_my_job(self):
         conn_record = mock.MagicMock(
-            metadata_get=mock.AsyncMock(
+            metadata_get=mock.CoroutineMock(
                 side_effect=[
                     None,
                     {"meta": "data"},
                 ]
             ),
-            metadata_set=mock.AsyncMock(),
+            metadata_set=mock.CoroutineMock(),
         )
 
         for i in range(2):
@@ -749,16 +749,16 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
         mock_receipt = mock.MagicMock()
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_did", mock.AsyncMock()
+            ConnRecord, "retrieve_by_did", mock.CoroutineMock()
         ) as mock_retrieve:
             mock_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(
+                metadata_get=mock.CoroutineMock(
                     side_effect=[
                         None,
                         {"meta": "data"},
                     ]
                 ),
-                metadata_set=mock.AsyncMock(),
+                metadata_set=mock.CoroutineMock(),
             )
 
             for i in range(2):
@@ -769,7 +769,7 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
         mock_receipt = mock.MagicMock()
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_did", mock.AsyncMock()
+            ConnRecord, "retrieve_by_did", mock.CoroutineMock()
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError()
 

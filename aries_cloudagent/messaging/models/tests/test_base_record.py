@@ -1,6 +1,6 @@
 import json
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 from marshmallow import EXCLUDE, fields
 
@@ -86,10 +86,10 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
     async def test_post_save_new(self):
         session = InMemoryProfile.test_session()
         mock_storage = mock.MagicMock()
-        mock_storage.add_record = mock.AsyncMock()
+        mock_storage.add_record = mock.CoroutineMock()
         session.context.injector.bind_instance(BaseStorage, mock_storage)
         record = BaseRecordImpl()
-        with mock.patch.object(record, "post_save", mock.AsyncMock()) as post_save:
+        with mock.patch.object(record, "post_save", mock.CoroutineMock()) as post_save:
             await record.save(session, reason="reason", event=True)
             post_save.assert_called_once_with(session, True, None, True)
         mock_storage.add_record.assert_called_once()
@@ -97,13 +97,13 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
     async def test_post_save_exist(self):
         session = InMemoryProfile.test_session()
         mock_storage = mock.MagicMock()
-        mock_storage.update_record = mock.AsyncMock()
+        mock_storage.update_record = mock.CoroutineMock()
         session.context.injector.bind_instance(BaseStorage, mock_storage)
         record = BaseRecordImpl()
         last_state = "last_state"
         record._last_state = last_state
         record._id = "id"
-        with mock.patch.object(record, "post_save", mock.AsyncMock()) as post_save:
+        with mock.patch.object(record, "post_save", mock.CoroutineMock()) as post_save:
             await record.save(session, reason="reason", event=False)
             post_save.assert_called_once_with(session, False, last_state, False)
         mock_storage.update_record.assert_called_once()
@@ -146,7 +146,7 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
         rec = ARecordImpl(a="1", b="0", code="one")
         with mock.patch.object(session, "inject", mock.MagicMock()) as mock_inject:
             mock_inject.return_value = mock.MagicMock(
-                add_record=mock.AsyncMock(side_effect=ZeroDivisionError())
+                add_record=mock.CoroutineMock(side_effect=ZeroDivisionError())
             )
             with self.assertRaises(ZeroDivisionError):
                 await rec.save(session)

@@ -3,7 +3,7 @@ import pytest
 
 from aiohttp.test_utils import AioHTTPTestCase
 from aiohttp import web
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ....core.in_memory import InMemoryProfile
 from ....utils.stats import Collector
@@ -15,7 +15,7 @@ from ..http import HttpTransport
 
 
 class TestHttpTransport(AioHTTPTestCase):
-    async def asyncSetUpAsync(self):
+    async def setUpAsync(self):
         self.profile = InMemoryProfile.test_profile()
         self.message_results = []
         self.headers = {}
@@ -135,7 +135,7 @@ class TestHttpTransport(AioHTTPTestCase):
             mock_response = mock.MagicMock(status=404)
             mock_session.post = mock.MagicMock(
                 return_value=mock.MagicMock(
-                    __aenter__=mock.AsyncMock(return_value=mock_response)
+                    __aenter__=mock.CoroutineMock(return_value=mock_response)
                 )
             )
             with pytest.raises(OutboundTransportError):

@@ -2,7 +2,7 @@ import json
 import tempfile
 import pytest
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....askar.profile import AskarProfileManager
@@ -47,15 +47,15 @@ class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         context = InjectionContext(enforce_typing=False)
         mock_ledger = mock.MagicMock(
-            get_credential_definition=mock.AsyncMock(return_value={"value": {}}),
-            get_revoc_reg_delta=mock.AsyncMock(
+            get_credential_definition=mock.CoroutineMock(return_value={"value": {}}),
+            get_revoc_reg_delta=mock.CoroutineMock(
                 return_value=(
                     {"value": {"...": "..."}},
                     1234567890,
                 )
             ),
         )
-        mock_ledger.__aenter__ = mock.AsyncMock(return_value=mock_ledger)
+        mock_ledger.__aenter__ = mock.CoroutineMock(return_value=mock_ledger)
         self.ledger = mock_ledger
 
         self.holder_profile = await AskarProfileManager().provision(
@@ -78,7 +78,7 @@ class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
         self.issuer_profile._context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
-                get_ledger_for_identifier=mock.AsyncMock(
+                get_ledger_for_identifier=mock.CoroutineMock(
                     return_value=(None, mock_ledger)
                 )
             ),

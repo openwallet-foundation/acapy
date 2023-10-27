@@ -1,6 +1,6 @@
 import pytest
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...storage.error import (
@@ -182,7 +182,7 @@ class TestInMemoryStorageSearch:
 
         # search again with with iterator mystery error
         search = store_search.search_records(record.type, {}, None)
-        with mock.patch.object(search, "fetch", mock.AsyncMock()) as mock_fetch:
+        with mock.patch.object(search, "fetch", mock.CoroutineMock()) as mock_fetch:
             mock_fetch.return_value = mock.MagicMock(
                 pop=mock.MagicMock(side_effect=IndexError())
             )

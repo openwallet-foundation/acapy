@@ -9,7 +9,7 @@ import indy.did
 import indy.wallet
 
 from indy.error import ErrorCode
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ...config.injection_context import InjectionContext
 from ...indy.sdk.profile import IndySdkProfileManager, IndySdkProfile
@@ -67,15 +67,15 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
             "aries_cloudagent.indy.sdk.wallet_plugin.load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete, mock.patch.object(
             IndySdkProfile, "_make_finalizer"
         ):
@@ -172,7 +172,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 await storage.get_record("connection", None)
 
             with mock.patch.object(
-                indy.non_secrets, "get_wallet_record", mock.AsyncMock()
+                indy.non_secrets, "get_wallet_record", mock.CoroutineMock()
             ) as mock_get_record:
                 mock_get_record.side_effect = test_module.IndyError(
                     ErrorCode.CommonInvalidStructure
@@ -183,15 +183,15 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
             with mock.patch.object(
                 indy.non_secrets,
                 "update_wallet_record_value",
-                mock.AsyncMock(),
+                mock.CoroutineMock(),
             ) as mock_update_value, mock.patch.object(
                 indy.non_secrets,
                 "update_wallet_record_tags",
-                mock.AsyncMock(),
+                mock.CoroutineMock(),
             ) as mock_update_tags, mock.patch.object(
                 indy.non_secrets,
                 "delete_wallet_record",
-                mock.AsyncMock(),
+                mock.CoroutineMock(),
             ) as mock_delete:
                 mock_update_value.side_effect = test_module.IndyError(
                     ErrorCode.CommonInvalidStructure
@@ -238,15 +238,15 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
             "aries_cloudagent.indy.sdk.wallet_plugin.load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete, mock.patch.object(
             IndySdkProfile, "_make_finalizer"
         ):
@@ -280,9 +280,9 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 await search.fetch(10)
 
             with mock.patch.object(
-                indy.non_secrets, "open_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "open_wallet_search", mock.CoroutineMock()
             ) as mock_indy_open_search, mock.patch.object(
-                indy.non_secrets, "close_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "close_wallet_search", mock.CoroutineMock()
             ) as mock_indy_close_search:
                 mock_indy_open_search.side_effect = test_module.IndyError("no open")
                 search = storage.search_records("connection")
@@ -291,13 +291,13 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 await search.close()
 
             with mock.patch.object(
-                indy.non_secrets, "open_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "open_wallet_search", mock.CoroutineMock()
             ) as mock_indy_open_search, mock.patch.object(
                 indy.non_secrets,
                 "fetch_wallet_search_next_records",
-                mock.AsyncMock(),
+                mock.CoroutineMock(),
             ) as mock_indy_fetch, mock.patch.object(
-                indy.non_secrets, "close_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "close_wallet_search", mock.CoroutineMock()
             ) as mock_indy_close_search:
                 mock_indy_fetch.side_effect = test_module.IndyError("no fetch")
                 search = storage.search_records("connection")
@@ -306,9 +306,9 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 await search.close()
 
             with mock.patch.object(
-                indy.non_secrets, "open_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "open_wallet_search", mock.CoroutineMock()
             ) as mock_indy_open_search, mock.patch.object(
-                indy.non_secrets, "close_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "close_wallet_search", mock.CoroutineMock()
             ) as mock_indy_close_search:
                 mock_indy_close_search.side_effect = test_module.IndyError("no close")
                 search = storage.search_records("connection")
@@ -318,15 +318,15 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
     @pytest.mark.asyncio
     async def test_storage_del_close(self):
         with mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete, mock.patch.object(
             IndySdkProfile, "_make_finalizer"
         ):
@@ -346,9 +346,9 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
             storage = session.inject(BaseStorage)
 
             with mock.patch.object(
-                indy.non_secrets, "open_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "open_wallet_search", mock.CoroutineMock()
             ) as mock_indy_open_search, mock.patch.object(
-                indy.non_secrets, "close_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "close_wallet_search", mock.CoroutineMock()
             ) as mock_indy_close_search:
                 mock_indy_open_search.return_value = 1
                 search = storage.search_records("connection")
@@ -364,9 +364,9 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 mock_indy_close_search.assert_awaited_with(1)
 
             with mock.patch.object(  # error on close
-                indy.non_secrets, "open_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "open_wallet_search", mock.CoroutineMock()
             ) as mock_indy_open_search, mock.patch.object(
-                indy.non_secrets, "close_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "close_wallet_search", mock.CoroutineMock()
             ) as mock_indy_close_search:
                 mock_indy_close_search.side_effect = test_module.IndyError("no close")
                 mock_indy_open_search.return_value = 1
@@ -376,9 +376,9 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                     await search.close()
 
             with mock.patch.object(  # run on event loop until complete
-                indy.non_secrets, "open_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "open_wallet_search", mock.CoroutineMock()
             ) as mock_indy_open_search, mock.patch.object(
-                indy.non_secrets, "close_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "close_wallet_search", mock.CoroutineMock()
             ) as mock_indy_close_search, mock.patch.object(
                 asyncio, "get_event_loop", mock.MagicMock()
             ) as mock_get_event_loop:
@@ -402,9 +402,9 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                     await coro
 
             with mock.patch.object(  # run on event loop until complete
-                indy.non_secrets, "open_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "open_wallet_search", mock.CoroutineMock()
             ) as mock_indy_open_search, mock.patch.object(
-                indy.non_secrets, "close_wallet_search", mock.AsyncMock()
+                indy.non_secrets, "close_wallet_search", mock.CoroutineMock()
             ) as mock_indy_close_search, mock.patch.object(
                 asyncio, "get_event_loop", mock.MagicMock()
             ) as mock_get_event_loop:

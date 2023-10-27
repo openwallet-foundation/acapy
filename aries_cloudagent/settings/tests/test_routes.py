@@ -3,7 +3,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
@@ -43,7 +43,7 @@ async def test_get_profile_settings(mock_response):
     }
     request = mock.MagicMock(
         query={},
-        json=mock.AsyncMock(return_value={}),
+        json=mock.CoroutineMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
     )
     await test_module.get_profile_settings(request)
@@ -73,7 +73,7 @@ async def test_get_profile_settings(mock_response):
     }
     request = mock.MagicMock(
         query={},
-        json=mock.AsyncMock(return_value={}),
+        json=mock.CoroutineMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
     )
     with mock.patch.object(
@@ -122,7 +122,7 @@ async def test_update_profile_settings(mock_response):
     }
     request = mock.MagicMock(
         query={},
-        json=mock.AsyncMock(
+        json=mock.CoroutineMock(
             return_value={
                 "extra_settings": {
                     "ACAPY_INVITE_PUBLIC": False,
@@ -163,7 +163,7 @@ async def test_update_profile_settings(mock_response):
     }
     request = mock.MagicMock(
         query={},
-        json=mock.AsyncMock(
+        json=mock.CoroutineMock(
             return_value={
                 "extra_settings": {
                     "ACAPY_INVITE_PUBLIC": False,

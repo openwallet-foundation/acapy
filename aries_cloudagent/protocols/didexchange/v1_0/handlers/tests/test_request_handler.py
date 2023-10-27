@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models import conn_record, connection_target
@@ -93,7 +93,7 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
 
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_didx_mgr):
-        mock_didx_mgr.return_value.receive_request = mock.AsyncMock()
+        mock_didx_mgr.return_value.receive_request = mock.CoroutineMock()
         self.ctx.message = DIDXRequest()
         handler_inst = test_module.DIDXRequestHandler()
         responder = MockResponder()
@@ -110,11 +110,11 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
     async def test_called_with_auto_response(self, mock_didx_mgr):
         mock_conn_rec = mock.MagicMock()
         mock_conn_rec.accept = conn_record.ConnRecord.ACCEPT_AUTO
-        mock_conn_rec.save = mock.AsyncMock()
-        mock_didx_mgr.return_value.receive_request = mock.AsyncMock(
+        mock_conn_rec.save = mock.CoroutineMock()
+        mock_didx_mgr.return_value.receive_request = mock.CoroutineMock(
             return_value=mock_conn_rec
         )
-        mock_didx_mgr.return_value.create_response = mock.AsyncMock()
+        mock_didx_mgr.return_value.create_response = mock.CoroutineMock()
         self.ctx.message = DIDXRequest()
         handler_inst = test_module.DIDXRequestHandler()
         responder = MockResponder()
@@ -141,15 +141,15 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
             invitation_msg_id="12345678-1234-5678-1234-567812345678",
             their_role=conn_record.ConnRecord.Role.REQUESTER,
         )
-        test_exist_conn.metadata_get = mock.AsyncMock(
+        test_exist_conn.metadata_get = mock.CoroutineMock(
             return_value={"id": "mediation-test-id"}
         )
         test_exist_conn.accept = conn_record.ConnRecord.ACCEPT_AUTO
-        test_exist_conn.save = mock.AsyncMock()
-        mock_didx_mgr.return_value.receive_request = mock.AsyncMock(
+        test_exist_conn.save = mock.CoroutineMock()
+        mock_didx_mgr.return_value.receive_request = mock.CoroutineMock(
             return_value=test_exist_conn
         )
-        mock_didx_mgr.return_value.create_response = mock.AsyncMock()
+        mock_didx_mgr.return_value.create_response = mock.CoroutineMock()
         test_ctx = RequestContext.test_context()
         test_ctx.message = DIDXRequest()
         test_ctx.message_receipt = MessageReceipt()
@@ -164,7 +164,7 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
 
     @mock.patch.object(test_module, "DIDXManager")
     async def test_problem_report(self, mock_didx_mgr):
-        mock_didx_mgr.return_value.receive_request = mock.AsyncMock(
+        mock_didx_mgr.return_value.receive_request = mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value
             )
@@ -189,7 +189,7 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
     @mock.patch.object(test_module, "DIDXManager")
     @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(self, mock_conn_target, mock_didx_mgr):
-        mock_didx_mgr.return_value.receive_request = mock.AsyncMock(
+        mock_didx_mgr.return_value.receive_request = mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value
             )
@@ -225,7 +225,7 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
         mock_conn_target,
         mock_didx_mgr,
     ):
-        mock_didx_mgr.return_value.receive_request = mock.AsyncMock(
+        mock_didx_mgr.return_value.receive_request = mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value
             )

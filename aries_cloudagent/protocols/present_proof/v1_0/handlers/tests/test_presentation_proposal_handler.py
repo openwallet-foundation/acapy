@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
@@ -20,7 +20,7 @@ class TestPresentationProposalHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_proposal = mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_proposal = mock.CoroutineMock(
                 return_value=mock.MagicMock()
             )
             request_context.message = PresentationProposal()
@@ -47,10 +47,10 @@ class TestPresentationProposalHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_proposal = mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_proposal = mock.CoroutineMock(
                 return_value="presentation_exchange_record"
             )
-            mock_pres_mgr.return_value.create_bound_request = mock.AsyncMock(
+            mock_pres_mgr.return_value.create_bound_request = mock.CoroutineMock(
                 return_value=(
                     mock_pres_mgr.return_value.receive_proposal.return_value,
                     "presentation_request_message",
@@ -86,10 +86,10 @@ class TestPresentationProposalHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_proposal = mock.AsyncMock(
-                return_value=mock.MagicMock(save_error_state=mock.AsyncMock())
+            mock_pres_mgr.return_value.receive_proposal = mock.CoroutineMock(
+                return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
             )
-            mock_pres_mgr.return_value.create_bound_request = mock.AsyncMock(
+            mock_pres_mgr.return_value.create_bound_request = mock.CoroutineMock(
                 side_effect=test_module.LedgerError()
             )
 
@@ -112,7 +112,7 @@ class TestPresentationProposalHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_proposal = mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_proposal = mock.CoroutineMock()
             request_context.message = PresentationProposal()
             request_context.connection_ready = False
             handler = test_module.PresentationProposalHandler()

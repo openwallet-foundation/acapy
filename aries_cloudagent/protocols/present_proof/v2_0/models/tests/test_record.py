@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.in_memory import InMemoryProfile
@@ -128,7 +128,7 @@ class TestRecord(IsolatedAsyncioTestCase):
         await record.save(session)
 
         with mock.patch.object(
-            record, "save", mock.AsyncMock()
+            record, "save", mock.CoroutineMock()
         ) as mock_save, mock.patch.object(
             test_module.LOGGER, "exception", mock.MagicMock()
         ) as mock_log_exc:

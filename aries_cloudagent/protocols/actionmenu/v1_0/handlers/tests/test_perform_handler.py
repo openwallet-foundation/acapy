@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -21,7 +21,9 @@ class TestPerformHandler(IsolatedAsyncioTestCase):
 
         responder = MockResponder()
         self.context.message = handler.Perform()
-        self.menu_service.perform_menu_action = mock.AsyncMock(return_value="perform")
+        self.menu_service.perform_menu_action = mock.CoroutineMock(
+            return_value="perform"
+        )
 
         handler_inst = handler.PerformHandler()
         await handler_inst.handle(self.context, responder)
@@ -42,7 +44,7 @@ class TestPerformHandler(IsolatedAsyncioTestCase):
 
         responder = MockResponder()
         self.context.message = handler.Perform()
-        self.menu_service.perform_menu_action = mock.AsyncMock(return_value=None)
+        self.menu_service.perform_menu_action = mock.CoroutineMock(return_value=None)
 
         handler_inst = handler.PerformHandler()
         await handler_inst.handle(self.context, responder)

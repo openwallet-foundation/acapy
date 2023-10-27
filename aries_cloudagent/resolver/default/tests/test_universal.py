@@ -3,7 +3,7 @@
 import re
 from typing import Dict, Union
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from ....config.settings import Settings
@@ -125,7 +125,7 @@ async def test_get_supported_did_regex():
     with mock.patch.object(
         UniversalResolver,
         "_fetch_resolver_props",
-        mock.AsyncMock(return_value=props),
+        mock.CoroutineMock(return_value=props),
     ):
         pattern = await UniversalResolver()._get_supported_did_regex()
         assert pattern.fullmatch("match a test string")
@@ -172,7 +172,7 @@ async def test_setup_endpoint_set(resolver: UniversalResolver):
     with mock.patch.object(
         UniversalResolver,
         "_get_supported_did_regex",
-        mock.AsyncMock(return_value="pattern"),
+        mock.CoroutineMock(return_value="pattern"),
     ):
         await resolver.setup(context)
 
@@ -192,7 +192,7 @@ async def test_setup_endpoint_default(resolver: UniversalResolver):
     with mock.patch.object(
         UniversalResolver,
         "_get_supported_did_regex",
-        mock.AsyncMock(return_value="pattern"),
+        mock.CoroutineMock(return_value="pattern"),
     ):
         await resolver.setup(context)
 
@@ -208,7 +208,7 @@ async def test_setup_endpoint_unset(resolver: UniversalResolver):
     with mock.patch.object(
         UniversalResolver,
         "_get_supported_did_regex",
-        mock.AsyncMock(return_value="pattern"),
+        mock.CoroutineMock(return_value="pattern"),
     ):
         await resolver.setup(context)
 

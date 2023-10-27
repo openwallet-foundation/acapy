@@ -1,7 +1,7 @@
 """Test Problem Report Handler."""
 import pytest
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......connections.models.conn_record import ConnRecord
 from ......core.profile import ProfileSession
@@ -38,7 +38,7 @@ class TestOOBProblemReportHandler:
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "OutOfBandManager")
     async def test_called(self, mock_oob_mgr, request_context, connection_record):
-        mock_oob_mgr.return_value.receive_problem_report = mock.AsyncMock()
+        mock_oob_mgr.return_value.receive_problem_report = mock.CoroutineMock()
         request_context.message = OOBProblemReport(
             description={
                 "en": "No such connection",
@@ -57,7 +57,7 @@ class TestOOBProblemReportHandler:
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "OutOfBandManager")
     async def test_exception(self, mock_oob_mgr, request_context, connection_record):
-        mock_oob_mgr.return_value.receive_problem_report = mock.AsyncMock()
+        mock_oob_mgr.return_value.receive_problem_report = mock.CoroutineMock()
         mock_oob_mgr.return_value.receive_problem_report.side_effect = (
             OutOfBandManagerError("error")
         )

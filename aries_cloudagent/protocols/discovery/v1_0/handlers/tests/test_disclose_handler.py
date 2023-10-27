@@ -1,6 +1,6 @@
 import pytest
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.base_handler import HandlerException
@@ -56,7 +56,7 @@ class TestDiscloseHandler:
         with mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=discovery_record),
+            mock.CoroutineMock(return_value=discovery_record),
         ) as mock_get_rec_thread_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages

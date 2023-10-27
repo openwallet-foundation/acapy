@@ -24,7 +24,7 @@ class TempFile:
 
 
 class TestTransportUtils(AioHTTPTestCase):
-    async def asyncSetUpAsync(self):
+    async def setUpAsync(self):
         self.fail_calls = 0
         self.succeed_calls = 0
         self.redirects = 0

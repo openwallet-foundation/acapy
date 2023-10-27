@@ -6,7 +6,7 @@ from time import time
 from unittest import TestCase
 
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ....core.in_memory import InMemoryProfile
 from ....ledger.multiple_ledger.ledger_requests_executor import (
@@ -408,7 +408,7 @@ class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
             mock_get_ledger.return_value = (
                 None,
                 mock.MagicMock(
-                    get_credential_definition=mock.AsyncMock(
+                    get_credential_definition=mock.CoroutineMock(
                         return_value={"value": {"revocation": {"...": "..."}}}
                     )
                 ),
@@ -455,7 +455,7 @@ class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
             mock_get_ledger.return_value = (
                 None,
                 mock.MagicMock(
-                    get_credential_definition=mock.AsyncMock(
+                    get_credential_definition=mock.CoroutineMock(
                         return_value={"value": {"revocation": {"...": "..."}}}
                     )
                 ),

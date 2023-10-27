@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...core.in_memory import InMemoryProfile
@@ -26,15 +26,15 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
 
         Ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.get_credential_definition = mock.AsyncMock(
+        self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {"revocation": True}}
         )
-        self.ledger.get_revoc_reg_def = mock.AsyncMock()
+        self.ledger.get_revoc_reg_def = mock.CoroutineMock()
         self.context.injector.bind_instance(BaseLedger, self.ledger)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
-                get_ledger_for_identifier=mock.AsyncMock(
+                get_ledger_for_identifier=mock.CoroutineMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -61,7 +61,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            mock.AsyncMock(return_value=(None, self.ledger)),
+            mock.CoroutineMock(return_value=(None, self.ledger)),
         ):
             result = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         assert result.cred_def_id == CRED_DEF_ID
@@ -74,7 +74,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         self.profile.context.injector.clear_binding(BaseLedger)
-        self.ledger.get_credential_definition = mock.AsyncMock(return_value=None)
+        self.ledger.get_credential_definition = mock.CoroutineMock(return_value=None)
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
         with self.assertRaises(RevocationNotSupportedError) as x_revo:
@@ -85,7 +85,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         self.profile.context.injector.clear_binding(BaseLedger)
-        self.ledger.get_credential_definition = mock.AsyncMock(
+        self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {"revocation": "..."}}
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -118,7 +118,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         self.profile.context.injector.clear_binding(BaseLedger)
-        self.ledger.get_credential_definition = mock.AsyncMock(
+        self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {}}
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -132,10 +132,10 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
 
         rec = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         rec.revoc_reg_id = "dummy"
-        rec.generate_registry = mock.AsyncMock()
+        rec.generate_registry = mock.CoroutineMock()
 
         with mock.patch.object(
-            IssuerRevRegRecord, "retrieve_by_revoc_reg_id", mock.AsyncMock()
+            IssuerRevRegRecord, "retrieve_by_revoc_reg_id", mock.CoroutineMock()
         ) as mock_retrieve_by_rr_id:
             mock_retrieve_by_rr_id.return_value = rec
             await rec.generate_registry(self.profile, None)
@@ -242,7 +242,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            mock.AsyncMock(return_value=(None, self.ledger)),
+            mock.CoroutineMock(return_value=(None, self.ledger)),
         ), mock.patch.object(
             RevocationRegistry, "from_definition", mock.MagicMock()
         ) as mock_from_def:

@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from .. import routes as test_module
@@ -15,7 +15,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         self.profile = InMemoryProfile.test_profile()
         self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.context = AdminRequestContext.test_context(profile=self.profile)
-        self.outbound_message_router = mock.AsyncMock()
+        self.outbound_message_router = mock.CoroutineMock()
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": self.outbound_message_router,
@@ -26,7 +26,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
                 "conn_id": "test-conn-id",
             },
             query={},
-            json=mock.AsyncMock(return_value={}),
+            json=mock.CoroutineMock(return_value={}),
             __getitem__=lambda _, k: self.request_dict[k],
         )
         serialized = {
@@ -41,7 +41,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         self.mock_record = mock.MagicMock(
             **serialized,
             serialize=mock.MagicMock(return_value=serialized),
-            save=mock.AsyncMock()
+            save=mock.CoroutineMock()
         )
 
     def test_mediation_sort_key(self):
@@ -69,7 +69,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "query",
-            mock.AsyncMock(return_value=[self.mock_record]),
+            mock.CoroutineMock(return_value=[self.mock_record]),
         ) as mock_query, mock.patch.object(
             test_module.web, "json_response"
         ) as json_response, mock.patch.object(
@@ -91,7 +91,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "query",
-            mock.AsyncMock(return_value=[self.mock_record]),
+            mock.CoroutineMock(return_value=[self.mock_record]),
         ) as mock_query, mock.patch.object(
             test_module.web, "json_response"
         ) as json_response, mock.patch.object(
@@ -116,7 +116,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
             test_module,
             "MediationRecord",
             mock.MagicMock(
-                query=mock.AsyncMock(side_effect=test_module.StorageError())
+                query=mock.CoroutineMock(side_effect=test_module.StorageError())
             ),
         ) as mock_med_rec:
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -126,7 +126,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "MediationRecord",
-            mock.MagicMock(query=mock.AsyncMock(return_value=[])),
+            mock.MagicMock(query=mock.CoroutineMock(return_value=[])),
         ) as mock_med_rec, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -135,7 +135,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
 
     async def test_retrieve_mediation_request(self):
         with mock.patch.object(
-            test_module.MediationRecord, "retrieve_by_id", mock.AsyncMock()
+            test_module.MediationRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -150,7 +150,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageNotFoundError()),
+            mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response, self.assertRaises(
@@ -162,7 +162,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response, self.assertRaises(
@@ -172,9 +172,9 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
 
     async def test_delete_mediation_request(self):
         with mock.patch.object(
-            test_module.MediationRecord, "retrieve_by_id", mock.AsyncMock()
+            test_module.MediationRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_mediation_record_retrieve, mock.patch.object(
-            self.mock_record, "delete_record", mock.AsyncMock()
+            self.mock_record, "delete_record", mock.CoroutineMock()
         ) as mock_delete_record, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -190,7 +190,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageNotFoundError()),
+            mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response, self.assertRaises(
@@ -202,7 +202,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response, self.assertRaises(
@@ -220,11 +220,11 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         ) as mock_response, mock.patch.object(
             test_module.MediationRecord,
             "exists_for_connection_id",
-            mock.AsyncMock(return_value=False),
+            mock.CoroutineMock(return_value=False),
         ) as mock_mediation_record_exists, mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve_by_id:
-            mock_med_mgr.return_value.prepare_request = mock.AsyncMock(
+            mock_med_mgr.return_value.prepare_request = mock.CoroutineMock(
                 return_value=(
                     self.mock_record,
                     mock.MagicMock(  # mediation request
@@ -244,7 +244,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=mock.MagicMock(is_ready=False)),
+            mock.CoroutineMock(return_value=mock.MagicMock(is_ready=False)),
         ) as mock_conn_rec_retrieve_by_id, self.assertRaises(
             test_module.web.HTTPBadRequest
         ) as exc:
@@ -255,11 +255,11 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         body = {}
         self.request.json.return_value = body
         with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module.MediationRecord,
             "exists_for_connection_id",
-            mock.AsyncMock(return_value=True),
+            mock.CoroutineMock(return_value=True),
         ) as mock_exists_for_conn, self.assertRaises(
             test_module.web.HTTPBadRequest
         ) as exc:
@@ -272,7 +272,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageNotFoundError()),
+            mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ) as mock_conn_rec_retrieve_by_id, self.assertRaises(
             test_module.web.HTTPNotFound
         ):
@@ -284,7 +284,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_conn_rec_retrieve_by_id, self.assertRaises(
             test_module.web.HTTPBadRequest
         ):
@@ -295,7 +295,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=self.mock_record),
+            mock.CoroutineMock(return_value=self.mock_record),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -310,7 +310,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=self.mock_record),
+            mock.CoroutineMock(return_value=self.mock_record),
         ), self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.mediation_request_grant(self.request)
 
@@ -318,7 +318,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageNotFoundError()),
+            mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ), self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.mediation_request_grant(self.request)
 
@@ -326,7 +326,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ), self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.mediation_request_grant(self.request)
 
@@ -335,7 +335,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=self.mock_record),
+            mock.CoroutineMock(return_value=self.mock_record),
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -348,7 +348,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
     async def test_mediation_request_deny_role_client_x(self):
         self.mock_record.role = MediationRecord.ROLE_CLIENT
         with mock.patch.object(
-            test_module.MediationRecord, "retrieve_by_id", mock.AsyncMock()
+            test_module.MediationRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_mediation_record_retrieve, mock.patch.object(
             test_module.web, "json_response"
         ):
@@ -362,7 +362,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageNotFoundError()),
+            mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ), self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.mediation_request_deny(self.request)
 
@@ -370,7 +370,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ), self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.mediation_request_deny(self.request)
 
@@ -388,7 +388,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.RouteRecord,
             "query",
-            mock.AsyncMock(return_value=query_results),
+            mock.CoroutineMock(return_value=query_results),
         ) as mock_query, mock.patch.object(
             self.profile,
             "session",
@@ -410,7 +410,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.RouteRecord,
             "query",
-            mock.AsyncMock(return_value=[]),
+            mock.CoroutineMock(return_value=[]),
         ) as mock_query, mock.patch.object(
             self.profile,
             "session",
@@ -426,7 +426,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.RouteRecord,
             "query",
-            mock.AsyncMock(side_effect=test_module.StorageError),
+            mock.CoroutineMock(side_effect=test_module.StorageError),
         ) as mock_query, self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.get_keylist(self.request)
 
@@ -461,7 +461,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(
+            mock.CoroutineMock(
                 return_value=mock.MagicMock(
                     state=MediationRecord.STATE_GRANTED, connection_id="test-conn-id"
                 )
@@ -503,7 +503,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(
+            mock.CoroutineMock(
                 return_value=mock.MagicMock(
                     state=MediationRecord.STATE_DENIED, connection_id="test-conn-id"
                 )
@@ -528,7 +528,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageNotFoundError()),
+            mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ), self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.send_keylist_update(self.request)
 
@@ -545,7 +545,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ), self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.send_keylist_update(self.request)
 
@@ -556,11 +556,11 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=self.mock_record),
+            mock.CoroutineMock(return_value=self.mock_record),
         ) as mock_retrieve_by_id, mock.patch.object(
             mock_manager.return_value,
             "prepare_keylist_query",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_prepare_keylist_query, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -578,7 +578,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageNotFoundError()),
+            mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ) as mock_retrieve_by_id, self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.send_keylist_query(self.request)
 
@@ -586,7 +586,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_retrieve_by_id, self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.send_keylist_query(self.request)
 
@@ -597,7 +597,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         ) as json_response, mock.patch.object(
             test_module.MediationManager,
             "get_default_mediator",
-            mock.AsyncMock(return_value=self.mock_record),
+            mock.CoroutineMock(return_value=self.mock_record),
         ) as mock_mgr_get_default_record:
             await test_module.get_default_mediator(self.request)
             json_response.assert_called_once_with(
@@ -612,7 +612,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         ) as json_response, mock.patch.object(
             test_module.MediationManager,
             "get_default_mediator",
-            mock.AsyncMock(return_value=None),
+            mock.CoroutineMock(return_value=None),
         ) as mock_mgr_get_default_record:
             await test_module.get_default_mediator(self.request)
             json_response.assert_called_once_with(
@@ -627,7 +627,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         ) as json_response, mock.patch.object(
             test_module.MediationManager,
             "get_default_mediator",
-            mock.AsyncMock(side_effect=test_module.StorageNotFoundError()),
+            mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
         ) as mock_mgr_get_default_record:
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.get_default_mediator(self.request)
@@ -640,11 +640,11 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationManager,
             "get_default_mediator",
-            mock.AsyncMock(return_value=self.mock_record),
+            mock.CoroutineMock(return_value=self.mock_record),
         ) as mock_mgr_get_default_record, mock.patch.object(
             test_module.MediationManager,
             "set_default_mediator_by_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_mgr_set_default_record_by_id, mock.patch.object(
             test_module.web, "json_response"
         ) as json_response:
@@ -662,11 +662,11 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationManager,
             "get_default_mediator",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_mgr_get_default_record, mock.patch.object(
             test_module.MediationManager,
             "set_default_mediator_by_id",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_mgr_set_default_record_by_id, mock.patch.object(
             test_module.web, "json_response"
         ) as json_response:
@@ -678,11 +678,11 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationManager,
             "get_default_mediator",
-            mock.AsyncMock(return_value=self.mock_record),
+            mock.CoroutineMock(return_value=self.mock_record),
         ) as mock_mgr_get_default_record, mock.patch.object(
             test_module.MediationManager,
             "clear_default_mediator",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_mgr_clear_default_record_by_id, mock.patch.object(
             test_module.web, "json_response"
         ) as json_response:
@@ -697,11 +697,11 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.MediationManager,
             "get_default_mediator",
-            mock.AsyncMock(side_effect=test_module.StorageError()),
+            mock.CoroutineMock(side_effect=test_module.StorageError()),
         ) as mock_mgr_get_default_record, mock.patch.object(
             test_module.MediationManager,
             "clear_default_mediator",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_mgr_clear_default_record_by_id, mock.patch.object(
             test_module.web, "json_response"
         ) as json_response:
@@ -717,13 +717,13 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         mock_route_manager = mock.MagicMock(RouteManager)
         mock_keylist_update = mock.MagicMock()
         mock_keylist_update.serialize.return_value = {"mock": "serialized"}
-        mock_route_manager.route_connection = mock.AsyncMock(
+        mock_route_manager.route_connection = mock.CoroutineMock(
             return_value=mock_keylist_update
         )
-        mock_route_manager.mediation_record_for_connection = mock.AsyncMock()
+        mock_route_manager.mediation_record_for_connection = mock.CoroutineMock()
         self.context.injector.bind_instance(RouteManager, mock_route_manager)
         with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module.web, "json_response"
         ) as json_response:
@@ -739,15 +739,15 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         mock_route_manager = mock.MagicMock(RouteManager)
         mock_keylist_update = mock.MagicMock()
         mock_keylist_update.serialize.return_value = {"mock": "serialized"}
-        mock_route_manager.route_connection = mock.AsyncMock(
+        mock_route_manager.route_connection = mock.CoroutineMock(
             return_value=mock_keylist_update
         )
-        mock_route_manager.mediation_record_for_connection = mock.AsyncMock()
+        mock_route_manager.mediation_record_for_connection = mock.CoroutineMock()
         self.context.injector.bind_instance(RouteManager, mock_route_manager)
         with mock.patch.object(
             test_module.ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=StorageNotFoundError),
+            mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as mock_conn_rec_retrieve_by_id:
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.update_keylist_for_connection(self.request)
@@ -761,15 +761,15 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
         mock_route_manager = mock.MagicMock(RouteManager)
         mock_keylist_update = mock.MagicMock()
         mock_keylist_update.serialize.return_value = {"mock": "serialized"}
-        mock_route_manager.route_connection = mock.AsyncMock(
+        mock_route_manager.route_connection = mock.CoroutineMock(
             return_value=mock_keylist_update
         )
-        mock_route_manager.mediation_record_for_connection = mock.AsyncMock()
+        mock_route_manager.mediation_record_for_connection = mock.CoroutineMock()
         self.context.injector.bind_instance(RouteManager, mock_route_manager)
         with mock.patch.object(
             test_module.ConnRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=StorageError),
+            mock.CoroutineMock(side_effect=StorageError),
         ) as mock_conn_rec_retrieve_by_id:
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.update_keylist_for_connection(self.request)

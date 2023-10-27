@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -47,7 +47,7 @@ class TestInvitationHandler(IsolatedAsyncioTestCase):
             self.context, "inject_or", mock.MagicMock()
         ) as mock_ctx_inject:
             mock_ctx_inject.return_value = mock.MagicMock(
-                return_invitation=mock.AsyncMock()
+                return_invitation=mock.CoroutineMock()
             )
 
             await handler.handle(self.context, responder)

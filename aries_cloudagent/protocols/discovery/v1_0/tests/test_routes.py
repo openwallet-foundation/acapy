@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 
 from .....admin.request_context import AdminRequestContext
@@ -18,7 +18,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
         self.profile = self.context.profile
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": mock.AsyncMock(),
+            "outbound_message_router": mock.CoroutineMock(),
         }
         self.request = mock.MagicMock(
             app={},
@@ -28,7 +28,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
         )
 
     async def test_query_features(self):
-        self.request.json = mock.AsyncMock()
+        self.request.json = mock.CoroutineMock()
 
         self.request.query = {"query": "*"}
 
@@ -46,7 +46,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(test_rec.serialize())
 
     async def test_query_features_with_connection(self):
-        self.request.json = mock.AsyncMock()
+        self.request.json = mock.CoroutineMock()
 
         self.request.query = {"query": "*", "connection_id": "test", "comment": "test"}
 
@@ -65,7 +65,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(test_rec.serialize())
 
     async def test_query_records(self):
-        self.request.json = mock.AsyncMock()
+        self.request.json = mock.CoroutineMock()
 
         self.request.query = {"connection_id": "test"}
 
@@ -84,7 +84,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with({"results": [test_rec.serialize()]})
 
     async def test_query_records_x(self):
-        self.request.json = mock.AsyncMock()
+        self.request.json = mock.CoroutineMock()
 
         self.request.query = {"connection_id": "test"}
 
@@ -98,7 +98,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
                 await test_module.query_records(self.request)
 
     async def test_query_records_all(self):
-        self.request.json = mock.AsyncMock()
+        self.request.json = mock.CoroutineMock()
 
         test_recs = [
             V10DiscoveryExchangeRecord(
@@ -123,7 +123,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_query_records_connection_x(self):
-        self.request.json = mock.AsyncMock()
+        self.request.json = mock.CoroutineMock()
 
         with mock.patch.object(
             test_module.web, "json_response"

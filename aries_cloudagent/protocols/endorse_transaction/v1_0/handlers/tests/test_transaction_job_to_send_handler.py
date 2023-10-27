@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
@@ -18,7 +18,7 @@ class TestTransactionJobToSendHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.set_transaction_their_job = mock.AsyncMock()
+            mock_tran_mgr.return_value.set_transaction_their_job = mock.CoroutineMock()
             request_context.message = TransactionJobToSend()
             request_context.connection_ready = True
             handler = test_module.TransactionJobToSendHandler()
@@ -38,7 +38,7 @@ class TestTransactionJobToSendHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.set_transaction_their_job = mock.AsyncMock(
+            mock_tran_mgr.return_value.set_transaction_their_job = mock.CoroutineMock(
                 side_effect=test_module.TransactionManagerError()
             )
             request_context.message = TransactionJobToSend()

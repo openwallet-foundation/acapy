@@ -1,6 +1,6 @@
 import json
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...core.in_memory import InMemoryProfile
@@ -50,7 +50,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             IndyHolder,
             mock.MagicMock(
-                get_credential=mock.AsyncMock(
+                get_credential=mock.CoroutineMock(
                     return_value=json.dumps({"hello": "world"})
                 )
             ),
@@ -68,7 +68,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             IndyHolder,
             mock.MagicMock(
-                get_credential=mock.AsyncMock(
+                get_credential=mock.CoroutineMock(
                     side_effect=test_module.WalletNotFoundError()
                 )
             ),
@@ -84,7 +84,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(
             IndyHolder,
-            mock.MagicMock(credential_revoked=mock.AsyncMock(return_value=False)),
+            mock.MagicMock(credential_revoked=mock.CoroutineMock(return_value=False)),
         )
 
         with mock.patch.object(
@@ -108,7 +108,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             IndyHolder,
             mock.MagicMock(
-                credential_revoked=mock.AsyncMock(
+                credential_revoked=mock.CoroutineMock(
                     side_effect=test_module.WalletNotFoundError("no such cred")
                 )
             ),
@@ -126,7 +126,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             IndyHolder,
             mock.MagicMock(
-                credential_revoked=mock.AsyncMock(
+                credential_revoked=mock.CoroutineMock(
                     side_effect=test_module.LedgerError("down for maintenance")
                 )
             ),
@@ -140,7 +140,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             IndyHolder,
             mock.MagicMock(
-                get_mime_type=mock.AsyncMock(
+                get_mime_type=mock.CoroutineMock(
                     side_effect=[None, {"a": "application/jpeg"}]
                 )
             ),
@@ -160,7 +160,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"credential_id": "dummy"}
         self.profile.context.injector.bind_instance(
             IndyHolder,
-            mock.MagicMock(delete_credential=mock.AsyncMock(return_value=None)),
+            mock.MagicMock(delete_credential=mock.CoroutineMock(return_value=None)),
         )
 
         with mock.patch.object(
@@ -175,7 +175,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             IndyHolder,
             mock.MagicMock(
-                delete_credential=mock.AsyncMock(
+                delete_credential=mock.CoroutineMock(
                     side_effect=test_module.WalletNotFoundError()
                 )
             ),
@@ -188,7 +188,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             IndyHolder,
             mock.MagicMock(
-                get_credentials=mock.AsyncMock(return_value=[{"hello": "world"}])
+                get_credentials=mock.CoroutineMock(return_value=[{"hello": "world"}])
             ),
         )
 
@@ -204,7 +204,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             IndyHolder,
             mock.MagicMock(
-                get_credentials=mock.AsyncMock(
+                get_credentials=mock.CoroutineMock(
                     side_effect=test_module.IndyHolderError()
                 )
             ),
@@ -218,7 +218,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             VCHolder,
             mock.MagicMock(
-                retrieve_credential_by_id=mock.AsyncMock(return_value=VC_RECORD)
+                retrieve_credential_by_id=mock.CoroutineMock(return_value=VC_RECORD)
             ),
         )
 
@@ -233,7 +233,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             VCHolder,
             mock.MagicMock(
-                retrieve_credential_by_id=mock.AsyncMock(
+                retrieve_credential_by_id=mock.CoroutineMock(
                     side_effect=test_module.StorageNotFoundError()
                 )
             ),
@@ -247,7 +247,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             VCHolder,
             mock.MagicMock(
-                retrieve_credential_by_id=mock.AsyncMock(
+                retrieve_credential_by_id=mock.CoroutineMock(
                     side_effect=test_module.StorageError()
                 )
             ),
@@ -261,8 +261,8 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             VCHolder,
             mock.MagicMock(
-                retrieve_credential_by_id=mock.AsyncMock(return_value=VC_RECORD),
-                delete_credential=mock.AsyncMock(return_value=None),
+                retrieve_credential_by_id=mock.CoroutineMock(return_value=VC_RECORD),
+                delete_credential=mock.CoroutineMock(return_value=None),
             ),
         )
 
@@ -278,7 +278,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             VCHolder,
             mock.MagicMock(
-                retrieve_credential_by_id=mock.AsyncMock(
+                retrieve_credential_by_id=mock.CoroutineMock(
                     side_effect=test_module.StorageNotFoundError()
                 )
             ),
@@ -292,8 +292,8 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(
             VCHolder,
             mock.MagicMock(
-                retrieve_credential_by_id=mock.AsyncMock(return_value=VC_RECORD),
-                delete_credential=mock.AsyncMock(
+                retrieve_credential_by_id=mock.CoroutineMock(return_value=VC_RECORD),
+                delete_credential=mock.CoroutineMock(
                     side_effect=test_module.StorageError()
                 ),
             ),
@@ -303,7 +303,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             await test_module.w3c_cred_remove(self.request)
 
     async def test_w3c_creds_list(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "types": [
                     "VerifiableCredential",
@@ -319,7 +319,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             mock.MagicMock(
                 search_credentials=mock.MagicMock(
                     return_value=mock.MagicMock(
-                        fetch=mock.AsyncMock(return_value=[VC_RECORD])
+                        fetch=mock.CoroutineMock(return_value=[VC_RECORD])
                     )
                 )
             ),
@@ -332,7 +332,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             json_response.assert_called_once_with({"results": [VC_RECORD.serialize()]})
 
     async def test_w3c_creds_list_not_found_x(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "types": [
                     "VerifiableCredential",
@@ -348,7 +348,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             mock.MagicMock(
                 search_credentials=mock.MagicMock(
                     return_value=mock.MagicMock(
-                        fetch=mock.AsyncMock(
+                        fetch=mock.CoroutineMock(
                             side_effect=test_module.StorageNotFoundError()
                         )
                     )
@@ -360,7 +360,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             await test_module.w3c_creds_list(self.request)
 
     async def test_w3c_creds_list_storage_x(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "types": [
                     "VerifiableCredential",
@@ -376,7 +376,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             mock.MagicMock(
                 search_credentials=mock.MagicMock(
                     return_value=mock.MagicMock(
-                        fetch=mock.AsyncMock(side_effect=test_module.StorageError())
+                        fetch=mock.CoroutineMock(side_effect=test_module.StorageError())
                     )
                 )
             ),

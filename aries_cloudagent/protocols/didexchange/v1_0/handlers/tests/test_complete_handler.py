@@ -1,5 +1,5 @@
 import pytest
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -27,7 +27,7 @@ class TestDIDXCompleteHandler:
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.accept_complete = mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_complete = mock.CoroutineMock()
         request_context.message = DIDXComplete()
         handler_inst = test_module.DIDXCompleteHandler()
         responder = MockResponder()
@@ -40,7 +40,7 @@ class TestDIDXCompleteHandler:
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "DIDXManager")
     async def test_x(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.accept_complete = mock.AsyncMock(
+        mock_conn_mgr.return_value.accept_complete = mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value
             )

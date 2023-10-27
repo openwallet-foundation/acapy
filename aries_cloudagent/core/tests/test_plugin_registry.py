@@ -1,6 +1,6 @@
 import pytest
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import call
 
@@ -38,7 +38,7 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
         self.registry._plugins[mod_name] = mod
         assert list(self.registry.plugin_names) == [mod_name]
         assert list(self.registry.plugins) == [mod]
-        mod.setup = mock.AsyncMock()
+        mod.setup = mock.CoroutineMock()
         await self.registry.init_context(ctx)
         mod.setup.assert_awaited_once_with(ctx)
 
@@ -48,7 +48,7 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
         mod.__name__ = mod_name
         app = mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.register = mock.AsyncMock()
+        mod.routes.register = mock.CoroutineMock()
         definition = mock.MagicMock()
         definition.versions = [
             {
@@ -93,7 +93,7 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
         mod.__name__ = mod_name
         app = mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.register = mock.AsyncMock()
+        mod.routes.register = mock.CoroutineMock()
 
         with mock.patch.object(
             ClassLoader,
@@ -171,7 +171,7 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
         mod.__name__ = mod_name
         app = mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.register = mock.AsyncMock()
+        mod.routes.register = mock.CoroutineMock()
 
         with mock.patch.object(
             ClassLoader,

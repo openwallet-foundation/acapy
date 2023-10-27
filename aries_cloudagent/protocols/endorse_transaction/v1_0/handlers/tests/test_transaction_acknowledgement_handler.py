@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.conn_record import ConnRecord
@@ -19,7 +19,7 @@ class TestTransactionAcknowledgementHandler(IsolatedAsyncioTestCase):
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
             mock_tran_mgr.return_value.receive_transaction_acknowledgement = (
-                mock.AsyncMock()
+                mock.CoroutineMock()
             )
             request_context.message = TransactionAcknowledgement()
             request_context.connection_record = ConnRecord(
@@ -44,7 +44,7 @@ class TestTransactionAcknowledgementHandler(IsolatedAsyncioTestCase):
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
             mock_tran_mgr.return_value.receive_transaction_acknowledgement = (
-                mock.AsyncMock()
+                mock.CoroutineMock()
             )
             request_context.message = TransactionAcknowledgement()
             request_context.connection_ready = False
@@ -63,7 +63,7 @@ class TestTransactionAcknowledgementHandler(IsolatedAsyncioTestCase):
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
             mock_tran_mgr.return_value.receive_transaction_acknowledgement = (
-                mock.AsyncMock(side_effect=test_module.TransactionManagerError())
+                mock.CoroutineMock(side_effect=test_module.TransactionManagerError())
             )
             request_context.message = TransactionAcknowledgement()
             request_context.connection_record = ConnRecord(

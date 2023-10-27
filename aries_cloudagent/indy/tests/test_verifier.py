@@ -4,7 +4,7 @@ from copy import deepcopy
 from time import time
 
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...ledger.multiple_ledger.ledger_requests_executor import (
@@ -310,7 +310,7 @@ class MockVerifier(IndyVerifier):
 class TestIndySdkVerifier(IsolatedAsyncioTestCase):
     def setUp(self):
         self.ledger = mock.MagicMock(
-            get_credential_definition=mock.AsyncMock(
+            get_credential_definition=mock.CoroutineMock(
                 return_value={
                     "...": "...",
                     "value": {
@@ -380,7 +380,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             mock_get_ledger.return_value = (
                 None,
                 mock.MagicMock(
-                    get_credential_definition=mock.AsyncMock(
+                    get_credential_definition=mock.CoroutineMock(
                         return_value={
                             "...": "...",
                             "value": {"no": "revocation"},

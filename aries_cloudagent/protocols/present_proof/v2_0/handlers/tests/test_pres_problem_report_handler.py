@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
@@ -19,7 +19,7 @@ class TestV20PresProblemReportHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_problem_report = mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_problem_report = mock.CoroutineMock()
             request_context.message = V20PresProblemReport(
                 description={
                     "en": "Change of plans",
@@ -44,7 +44,7 @@ class TestV20PresProblemReportHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_problem_report = mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_problem_report = mock.CoroutineMock(
                 side_effect=test_module.StorageError("Disk full")
             )
             request_context.message = V20PresProblemReport(

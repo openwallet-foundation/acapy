@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
@@ -19,14 +19,16 @@ class TestV20PresHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres = mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_pres = mock.CoroutineMock()
             request_context.message = V20Pres()
             request_context.connection_ready = True
             request_context.connection_record = mock.MagicMock()
@@ -47,15 +49,17 @@ class TestV20PresHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres = mock.AsyncMock()
-            mock_pres_mgr.return_value.verify_pres = mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_pres = mock.CoroutineMock()
+            mock_pres_mgr.return_value.verify_pres = mock.CoroutineMock()
             request_context.message = V20Pres()
             request_context.connection_ready = True
             request_context.connection_record = mock.MagicMock()
@@ -76,7 +80,9 @@ class TestV20PresHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -84,10 +90,10 @@ class TestV20PresHandler(IsolatedAsyncioTestCase):
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
             mock_pres_mgr.return_value = mock.MagicMock(
-                receive_pres=mock.AsyncMock(
-                    return_value=mock.MagicMock(save_error_state=mock.AsyncMock())
+                receive_pres=mock.CoroutineMock(
+                    return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
                 ),
-                verify_pres=mock.AsyncMock(side_effect=test_module.LedgerError()),
+                verify_pres=mock.CoroutineMock(side_effect=test_module.LedgerError()),
             )
 
             request_context.message = V20Pres()

@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import TestCase
 
 from ....admin.server import AdminResponder
@@ -90,7 +90,7 @@ class TestInboundSession(TestCase):
         test_session_id = "session-id"
         test_transport_type = "transport-type"
         test_wire_format = mock.MagicMock()
-        test_wire_format.parse_message = mock.AsyncMock()
+        test_wire_format.parse_message = mock.CoroutineMock()
         test_parsed = "parsed-payload"
         test_receipt = mock.MagicMock()
         test_wire_format.parse_message.return_value = (test_parsed, test_receipt)
@@ -115,10 +115,10 @@ class TestInboundSession(TestCase):
 
     async def test_receive(self):
         self.multitenant_mgr = mock.MagicMock(MultitenantManager, autospec=True)
-        self.multitenant_mgr.get_wallets_by_message = mock.AsyncMock(
+        self.multitenant_mgr.get_wallets_by_message = mock.CoroutineMock(
             return_value=[mock.MagicMock(is_managed=True)]
         )
-        self.multitenant_mgr.get_wallet_profile = mock.AsyncMock(
+        self.multitenant_mgr.get_wallet_profile = mock.CoroutineMock(
             return_value=self.profile
         )
         self.profile.context.injector.bind_instance(
@@ -137,7 +137,7 @@ class TestInboundSession(TestCase):
         test_msg = mock.MagicMock()
 
         with mock.patch.object(
-            sess, "parse_inbound", mock.AsyncMock()
+            sess, "parse_inbound", mock.CoroutineMock()
         ) as encode, mock.patch.object(
             sess, "receive_inbound", mock.MagicMock()
         ) as receive:
@@ -148,10 +148,10 @@ class TestInboundSession(TestCase):
 
     async def test_receive_no_wallet_found(self):
         self.multitenant_mgr = mock.MagicMock(MultitenantManager, autospec=True)
-        self.multitenant_mgr.get_wallets_by_message = mock.AsyncMock(
+        self.multitenant_mgr.get_wallets_by_message = mock.CoroutineMock(
             side_effect=ValueError("no such wallet")
         )
-        self.multitenant_mgr.get_wallet_profile = mock.AsyncMock(
+        self.multitenant_mgr.get_wallet_profile = mock.CoroutineMock(
             return_value=self.profile
         )
         self.profile.context.injector.bind_instance(
@@ -168,7 +168,7 @@ class TestInboundSession(TestCase):
         test_msg = mock.MagicMock()
 
         with mock.patch.object(
-            sess, "parse_inbound", mock.AsyncMock()
+            sess, "parse_inbound", mock.CoroutineMock()
         ) as encode, mock.patch.object(
             sess, "receive_inbound", mock.MagicMock()
         ) as receive:
@@ -267,7 +267,7 @@ class TestInboundSession(TestCase):
         assert sess.response_event.is_set()
         assert sess.response_buffered
 
-        with mock.patch.object(sess, "encode_outbound", mock.AsyncMock()) as encode:
+        with mock.patch.object(sess, "encode_outbound", mock.CoroutineMock()) as encode:
             result = await asyncio.wait_for(sess.wait_response(), 0.1)
             assert encode.awaited_once_with(test_msg)
             assert result is encode.return_value
@@ -290,7 +290,7 @@ class TestInboundSession(TestCase):
         assert sess.response_event.is_set()
         assert sess.response_buffered
 
-        with mock.patch.object(sess, "encode_outbound", mock.AsyncMock()) as encode:
+        with mock.patch.object(sess, "encode_outbound", mock.CoroutineMock()) as encode:
             encode.side_effect = WireFormatError()
             with pytest.raises(asyncio.TimeoutError):
                 await asyncio.wait_for(sess.wait_response(), 0.1)
@@ -302,7 +302,7 @@ class TestInboundSession(TestCase):
 
     async def test_encode_response(self):
         test_wire_format = mock.MagicMock()
-        test_wire_format.encode_message = mock.AsyncMock()
+        test_wire_format.encode_message = mock.CoroutineMock()
         sess = InboundSession(
             profile=self.profile,
             inbound_handler=None,

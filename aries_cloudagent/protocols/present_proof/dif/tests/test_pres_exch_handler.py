@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Sequence
 from uuid import uuid4
 
-import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from aries_cloudagent.wallet.key_type import BLS12381G2, ED25519
@@ -2040,7 +2040,7 @@ class TestPresExchHandler:
         with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:sov:LjgpST2rjsoxYegQDRm7EL",
@@ -2105,7 +2105,7 @@ class TestPresExchHandler:
         with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:sov:LjgpST2rjsoxYegQDRm7EL",
@@ -2173,7 +2173,7 @@ class TestPresExchHandler:
         with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
@@ -2243,23 +2243,23 @@ class TestPresExchHandler:
         with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info, mock.patch.object(
             DIFPresExchHandler,
             "make_requirement",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_make_req, mock.patch.object(
             DIFPresExchHandler,
             "apply_requirements",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_apply_req, mock.patch.object(
             DIFPresExchHandler,
             "merge",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_merge, mock.patch.object(
             test_module,
             "create_presentation",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_make_req.return_value = mock.MagicMock()
             mock_apply_req.return_value = mock.MagicMock()
@@ -2296,27 +2296,27 @@ class TestPresExchHandler:
         with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info, mock.patch.object(
             DIFPresExchHandler,
             "make_requirement",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_make_req, mock.patch.object(
             DIFPresExchHandler,
             "apply_requirements",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_apply_req, mock.patch.object(
             DIFPresExchHandler,
             "merge",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_merge, mock.patch.object(
             test_module,
             "create_presentation",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp, mock.patch.object(
             test_module,
             "sign_presentation",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_sign_vp:
             mock_make_req.return_value = mock.MagicMock()
             mock_apply_req.return_value = mock.MagicMock()
@@ -2354,27 +2354,27 @@ class TestPresExchHandler:
         with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info, mock.patch.object(
             DIFPresExchHandler,
             "make_requirement",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_make_req, mock.patch.object(
             DIFPresExchHandler,
             "apply_requirements",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_apply_req, mock.patch.object(
             DIFPresExchHandler,
             "merge",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_merge, mock.patch.object(
             test_module,
             "create_presentation",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp, mock.patch.object(
             DIFPresExchHandler,
             "get_sign_key_credential_subject_id",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_sign_key_cred_subject:
             mock_make_req.return_value = mock.MagicMock()
             mock_apply_req.return_value = mock.MagicMock()

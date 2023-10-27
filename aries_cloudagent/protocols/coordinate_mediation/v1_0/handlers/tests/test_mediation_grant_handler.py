@@ -1,7 +1,7 @@
 """Test mediate grant message handler."""
 
 import pytest
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from aries_cloudagent.core.profile import ProfileSession
 
@@ -84,7 +84,7 @@ class TestMediationGrantHandler:
         with mock.patch.object(
             context.connection_record,
             "metadata_get",
-            mock.AsyncMock(return_value=True),
+            mock.CoroutineMock(return_value=True),
         ), mock.patch.object(
             test_module, "MediationManager", autospec=True
         ) as mock_mediation_manager:
@@ -96,19 +96,19 @@ class TestMediationGrantHandler:
     async def test_handler_multitenant_base_mediation(
         self, session: ProfileSession, context: RequestContext
     ):
-        handler, responder = MediationGrantHandler(), mock.AsyncMock()
-        responder.send = mock.AsyncMock()
+        handler, responder = MediationGrantHandler(), mock.CoroutineMock()
+        responder.send = mock.CoroutineMock()
         profile = context.profile
 
         profile.context.update_settings(
             {"multitenant.enabled": True, "wallet.id": "test_wallet"}
         )
 
-        multitenant_mgr = mock.AsyncMock()
+        multitenant_mgr = mock.CoroutineMock()
         profile.context.injector.bind_instance(BaseMultitenantManager, multitenant_mgr)
 
         default_base_mediator = MediationRecord(routing_keys=["key1", "key2"])
-        multitenant_mgr.get_default_mediator = mock.AsyncMock()
+        multitenant_mgr.get_default_mediator = mock.CoroutineMock()
         multitenant_mgr.get_default_mediator.return_value = default_base_mediator
 
         record = MediationRecord(connection_id=TEST_CONN_ID)
@@ -133,7 +133,7 @@ class TestMediationGrantHandler:
         with mock.patch.object(
             context.connection_record,
             "metadata_get",
-            mock.AsyncMock(return_value=False),
+            mock.CoroutineMock(return_value=False),
         ), mock.patch.object(
             test_module, "MediationManager", autospec=True
         ) as mock_mediation_manager:

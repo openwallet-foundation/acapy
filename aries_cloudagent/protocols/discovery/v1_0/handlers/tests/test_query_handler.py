@@ -1,6 +1,6 @@
 import pytest
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.request_context import RequestContext
@@ -68,9 +68,9 @@ class TestQueryHandler:
         handler = QueryHandler()
         responder = MockResponder()
         with mock.patch.object(
-            ProtocolRegistry, "protocols_matching_query", mock.AsyncMock()
+            ProtocolRegistry, "protocols_matching_query", mock.CoroutineMock()
         ) as mock_query_match, mock.patch.object(
-            ProtocolRegistry, "prepare_disclosed", mock.AsyncMock()
+            ProtocolRegistry, "prepare_disclosed", mock.CoroutineMock()
         ) as mock_prepare_disclosed:
             mock_prepare_disclosed.return_value = [
                 {"test": "test"},

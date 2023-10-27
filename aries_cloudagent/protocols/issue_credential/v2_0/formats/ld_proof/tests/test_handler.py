@@ -1,7 +1,7 @@
 from copy import deepcopy
 from .......vc.ld_proofs.error import LinkedDataProofException
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest.mock import patch
 from marshmallow import ValidationError
 
@@ -238,7 +238,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_did_info_for_did",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did=TEST_DID_SOV,
@@ -277,7 +277,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
             assert "Issuer did did:key:notfound not found" in str(context.exception)
 
     async def test_get_did_info_for_did_sov(self):
-        self.wallet.get_local_did = mock.AsyncMock()
+        self.wallet.get_local_did = mock.CoroutineMock()
 
         did_info = await self.handler._did_info_for_did(TEST_DID_SOV)
         self.wallet.get_local_did.assert_called_once_with(
@@ -298,11 +298,11 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_can_issue, mock.patch.object(
             LDProofCredFormatHandler,
             "_did_info_for_did",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info:
             suite = await self.handler._get_suite_for_detail(detail)
 
@@ -454,7 +454,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_can_issue, patch.object(
             test_module, "get_properties_without_context", return_value=[]
         ):
@@ -494,7 +494,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ), patch.object(test_module, "get_properties_without_context", return_value=[]):
             (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
@@ -519,7 +519,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ), patch.object(test_module, "get_properties_without_context", return_value=[]):
             (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
@@ -541,7 +541,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ), patch.object(
             test_module,
             "get_properties_without_context",
@@ -790,9 +790,9 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_get_suite_for_detail",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_get_suite, mock.patch.object(
-            test_module, "issue", mock.AsyncMock(return_value=LD_PROOF_VC)
+            test_module, "issue", mock.CoroutineMock(return_value=LD_PROOF_VC)
         ) as mock_issue, mock.patch.object(
             LDProofCredFormatHandler,
             "_get_proof_purpose",
@@ -843,9 +843,9 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_get_suite_for_detail",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_get_suite, mock.patch.object(
-            test_module, "issue", mock.AsyncMock(return_value=LD_PROOF_VC)
+            test_module, "issue", mock.CoroutineMock(return_value=LD_PROOF_VC)
         ) as mock_issue, mock.patch.object(
             LDProofCredFormatHandler,
             "_get_proof_purpose",
@@ -887,9 +887,9 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_get_suite_for_detail",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_get_suite, mock.patch.object(
-            test_module, "issue", mock.AsyncMock(return_value=LD_PROOF_VC)
+            test_module, "issue", mock.CoroutineMock(return_value=LD_PROOF_VC)
         ) as mock_issue, mock.patch.object(
             LDProofCredFormatHandler,
             "_get_proof_purpose",
@@ -1141,16 +1141,16 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         cred_id = "cred_id"
-        self.holder.store_credential = mock.AsyncMock()
+        self.holder.store_credential = mock.CoroutineMock()
 
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_get_suite",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_get_suite, mock.patch.object(
             test_module,
             "verify_credential",
-            mock.AsyncMock(return_value=DocumentVerificationResult(verified=True)),
+            mock.CoroutineMock(return_value=DocumentVerificationResult(verified=True)),
         ) as mock_verify_credential, mock.patch.object(
             LDProofCredFormatHandler,
             "_get_proof_purpose",
@@ -1202,16 +1202,16 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         cred_id = "cred_id"
-        self.holder.store_credential = mock.AsyncMock()
+        self.holder.store_credential = mock.CoroutineMock()
 
         with mock.patch.object(
             LDProofCredFormatHandler,
             "_get_suite",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_get_suite, mock.patch.object(
             test_module,
             "verify_credential",
-            mock.AsyncMock(return_value=DocumentVerificationResult(verified=False)),
+            mock.CoroutineMock(return_value=DocumentVerificationResult(verified=False)),
         ) as mock_verify_credential, mock.patch.object(
             LDProofCredFormatHandler,
             "_get_proof_purpose",

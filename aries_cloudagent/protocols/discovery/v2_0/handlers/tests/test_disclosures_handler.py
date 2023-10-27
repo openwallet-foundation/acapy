@@ -1,6 +1,6 @@
 import pytest
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from aries_cloudagent.storage.error import StorageNotFoundError
 
@@ -64,7 +64,7 @@ class TestDisclosuresHandler:
         with mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_id",
-            mock.AsyncMock(return_value=discovery_record),
+            mock.CoroutineMock(return_value=discovery_record),
         ) as mock_get_rec_thread_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
@@ -104,11 +104,11 @@ class TestDisclosuresHandler:
         with mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=StorageNotFoundError),
+            mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as mock_get_rec_thread_id, mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_connection_id",
-            mock.AsyncMock(return_value=discovery_record),
+            mock.CoroutineMock(return_value=discovery_record),
         ) as mock_get_rec_conn_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
@@ -142,11 +142,11 @@ class TestDisclosuresHandler:
         with mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_id",
-            mock.AsyncMock(side_effect=StorageNotFoundError),
+            mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as mock_get_rec_thread_id, mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_connection_id",
-            mock.AsyncMock(side_effect=StorageNotFoundError),
+            mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as mock_get_rec_conn_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages

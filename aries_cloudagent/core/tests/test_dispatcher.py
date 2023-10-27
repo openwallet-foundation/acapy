@@ -1,7 +1,7 @@
 import json
 
 from unittest import IsolatedAsyncioTestCase
-import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from marshmallow import EXCLUDE
@@ -116,14 +116,14 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as conn_mgr_mock, mock.patch.object(
             test_module,
             "get_version_from_message_type",
-            mock.AsyncMock(return_value="1.1"),
+            mock.CoroutineMock(return_value="1.1"),
         ), mock.patch.object(
             test_module,
             "validate_get_response_version",
-            mock.AsyncMock(return_value=("1.1", None)),
+            mock.CoroutineMock(return_value=("1.1", None)),
         ):
             conn_mgr_mock.return_value = mock.MagicMock(
-                find_inbound_connection=mock.AsyncMock(
+                find_inbound_connection=mock.CoroutineMock(
                     return_value=mock.MagicMock(connection_id="dummy")
                 )
             )
@@ -165,11 +165,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as handler_mock, mock.patch.object(
             test_module,
             "get_version_from_message_type",
-            mock.AsyncMock(return_value="1.1"),
+            mock.CoroutineMock(return_value="1.1"),
         ), mock.patch.object(
             test_module,
             "validate_get_response_version",
-            mock.AsyncMock(return_value=("1.1", None)),
+            mock.CoroutineMock(return_value=("1.1", None)),
         ):
             await dispatcher.queue_message(
                 dispatcher.profile, make_inbound(message), rcv.send
@@ -284,11 +284,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as handler_mock, mock.patch.object(
             test_module,
             "get_version_from_message_type",
-            mock.AsyncMock(return_value="1.1"),
+            mock.CoroutineMock(return_value="1.1"),
         ), mock.patch.object(
             test_module,
             "validate_get_response_version",
-            mock.AsyncMock(return_value=("1.1", None)),
+            mock.CoroutineMock(return_value=("1.1", None)),
         ):
             await dispatcher.queue_message(
                 dispatcher.profile, make_inbound(message), rcv.send
@@ -342,9 +342,9 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         rcv = Receiver()
         bad_messages = ["not even a dict", {"bad": "message"}]
         with mock.patch.object(
-            test_module, "get_version_from_message_type", mock.AsyncMock()
+            test_module, "get_version_from_message_type", mock.CoroutineMock()
         ), mock.patch.object(
-            test_module, "validate_get_response_version", mock.AsyncMock()
+            test_module, "validate_get_response_version", mock.CoroutineMock()
         ):
             for bad in bad_messages:
                 await dispatcher.queue_message(
@@ -425,10 +425,12 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         outbound_message = await responder.create_outbound(
             json.dumps(message.serialize())
         )
-        with mock.patch.object(responder, "_send", mock.AsyncMock()), mock.patch.object(
+        with mock.patch.object(
+            responder, "_send", mock.CoroutineMock()
+        ), mock.patch.object(
             test_module.BaseResponder,
             "conn_rec_active_state_check",
-            mock.AsyncMock(return_value=True),
+            mock.CoroutineMock(return_value=True),
         ):
             await responder.send_outbound(outbound_message)
 
@@ -448,10 +450,12 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         outbound_message = await responder.create_outbound(message)
-        with mock.patch.object(responder, "_send", mock.AsyncMock()), mock.patch.object(
+        with mock.patch.object(
+            responder, "_send", mock.CoroutineMock()
+        ), mock.patch.object(
             test_module.BaseResponder,
             "conn_rec_active_state_check",
-            mock.AsyncMock(return_value=True),
+            mock.CoroutineMock(return_value=True),
         ):
             await responder.send_outbound(
                 message=outbound_message,
@@ -479,7 +483,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.BaseResponder,
             "conn_rec_active_state_check",
-            mock.AsyncMock(return_value=False),
+            mock.CoroutineMock(return_value=False),
         ):
             with self.assertRaises(RuntimeError):
                 await responder.send_outbound(
@@ -503,7 +507,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_ret_by_id:
             conn_rec = test_module.ConnRecord()
             conn_rec.state = test_module.ConnRecord.State.COMPLETED
@@ -523,13 +527,13 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         profile = make_profile()
         profile.context.injector.bind_instance(BaseCache, InMemoryCache())
         profile.context.injector.bind_instance(
-            EventBus, mock.MagicMock(notify=mock.AsyncMock())
+            EventBus, mock.MagicMock(notify=mock.CoroutineMock())
         )
         context = RequestContext(profile)
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_ret_by_id:
             conn_rec_a = test_module.ConnRecord()
             conn_rec_a.state = test_module.ConnRecord.State.REQUEST
@@ -548,27 +552,27 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         with mock.patch.object(
-            responder, "send_outbound", mock.AsyncMock()
+            responder, "send_outbound", mock.CoroutineMock()
         ) as mock_send_outbound:
             await responder.send(message)
             assert mock_send_outbound.called_once()
         msg_json = json.dumps(StubAgentMessage().serialize())
         message = msg_json.encode("utf-8")
         with mock.patch.object(
-            responder, "send_outbound", mock.AsyncMock()
+            responder, "send_outbound", mock.CoroutineMock()
         ) as mock_send_outbound:
             await responder.send(message)
 
         message = StubAgentMessage()
         with mock.patch.object(
-            responder, "send_outbound", mock.AsyncMock()
+            responder, "send_outbound", mock.CoroutineMock()
         ) as mock_send_outbound:
             await responder.send_reply(message)
             assert mock_send_outbound.called_once()
 
         message = json.dumps(StubAgentMessage().serialize())
         with mock.patch.object(
-            responder, "send_outbound", mock.AsyncMock()
+            responder, "send_outbound", mock.CoroutineMock()
         ) as mock_send_outbound:
             await responder.send_reply(message)
 
@@ -608,11 +612,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
     #     with mock.patch.object(
     #         test_module,
     #         "get_version_from_message_type",
-    #         mock.AsyncMock(return_value="1.1"),
+    #         mock.CoroutineMock(return_value="1.1"),
     #     ), mock.patch.object(
     #         test_module,
     #         "validate_get_response_version",
-    #         mock.AsyncMock(return_value=("1.1", "fields-ignored-due-to-version-mismatch")),
+    #         mock.CoroutineMock(return_value=("1.1", "fields-ignored-due-to-version-mismatch")),
     #     ):
     #         await dispatcher.queue_message(
     #             dispatcher.profile, make_inbound(message), rcv.send
@@ -637,11 +641,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
     #     with mock.patch.object(
     #         test_module,
     #         "get_version_from_message_type",
-    #         mock.AsyncMock(return_value="1.1"),
+    #         mock.CoroutineMock(return_value="1.1"),
     #     ), mock.patch.object(
     #         test_module,
     #         "validate_get_response_version",
-    #         mock.AsyncMock(return_value=("1.1", "version-with-degraded-features")),
+    #         mock.CoroutineMock(return_value=("1.1", "version-with-degraded-features")),
     #     ):
     #         await dispatcher.queue_message(
     #             dispatcher.profile, make_inbound(message), rcv.send
@@ -666,11 +670,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
     #     with mock.patch.object(
     #         test_module,
     #         "get_version_from_message_type",
-    #         mock.AsyncMock(return_value="1.1"),
+    #         mock.CoroutineMock(return_value="1.1"),
     #     ), mock.patch.object(
     #         test_module,
     #         "validate_get_response_version",
-    #         mock.AsyncMock(return_value=("1.1", "version-not-supported")),
+    #         mock.CoroutineMock(return_value=("1.1", "version-not-supported")),
     #     ):
     #         with self.assertRaises(test_module.MessageParseError):
     #             await dispatcher.queue_message(

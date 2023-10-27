@@ -1,5 +1,5 @@
 import pytest
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from .. import argparse
@@ -16,12 +16,14 @@ TEST_GENESIS = "GENESIS"
 
 class TestLedgerConfig(IsolatedAsyncioTestCase):
     async def test_fetch_genesis_transactions(self):
-        with mock.patch.object(test_module, "fetch", mock.AsyncMock()) as mock_fetch:
+        with mock.patch.object(
+            test_module, "fetch", mock.CoroutineMock()
+        ) as mock_fetch:
             await test_module.fetch_genesis_transactions("http://1.2.3.4:9000/genesis")
 
     async def test_fetch_genesis_transactions_x(self):
         with mock.patch.object(
-            test_module, "fetch", mock.AsyncMock(return_value=TEST_GENESIS)
+            test_module, "fetch", mock.CoroutineMock(return_value=TEST_GENESIS)
         ) as mock_fetch:
             mock_fetch.side_effect = test_module.FetchError("404 Not Found")
             with self.assertRaises(test_module.ConfigError):
@@ -36,7 +38,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "fetch_genesis_transactions",
-            mock.AsyncMock(return_value=TEST_GENESIS),
+            mock.CoroutineMock(return_value=TEST_GENESIS),
         ) as mock_fetch:
             await test_module.get_genesis_transactions(settings)
         self.assertEqual(settings["ledger.genesis_transactions"], TEST_GENESIS)
@@ -72,7 +74,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             "default_endpoint": "http://1.2.3.4:8051",
         }
         mock_ledger = mock.MagicMock(
-            get_txn_author_agreement=mock.AsyncMock(
+            get_txn_author_agreement=mock.CoroutineMock(
                 return_value={
                     "taa_required": True,
                     "taa_record": {
@@ -80,7 +82,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
                     },
                 }
             ),
-            get_latest_txn_author_acceptance=mock.AsyncMock(
+            get_latest_txn_author_acceptance=mock.CoroutineMock(
                 return_value={"digest": b"1234567890123456789012345678901234567890"}
             ),
             read_only=False,
@@ -96,7 +98,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         session.context.injector.bind_instance(BaseLedger, mock_ledger)
 
         with mock.patch.object(
-            test_module, "accept_taa", mock.AsyncMock()
+            test_module, "accept_taa", mock.CoroutineMock()
         ) as mock_accept_taa:
             mock_accept_taa.return_value = False
             assert not await test_module.ledger_config(
@@ -108,7 +110,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             "ledger.genesis_transactions": TEST_GENESIS,
         }
         mock_ledger = mock.MagicMock(
-            get_txn_author_agreement=mock.AsyncMock(
+            get_txn_author_agreement=mock.CoroutineMock(
                 return_value={
                     "taa_required": True,
                     "taa_record": {
@@ -116,13 +118,13 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
                     },
                 }
             ),
-            get_latest_txn_author_acceptance=mock.AsyncMock(
+            get_latest_txn_author_acceptance=mock.CoroutineMock(
                 return_value={"digest": b"1234567890123456789012345678901234567890"}
             ),
-            update_endpoint_for_did=mock.AsyncMock(),
+            update_endpoint_for_did=mock.CoroutineMock(),
             read_only=False,
         )
-        mock_wallet = mock.MagicMock(set_did_endpoint=mock.AsyncMock())
+        mock_wallet = mock.MagicMock(set_did_endpoint=mock.CoroutineMock())
 
         session = InMemoryProfile.test_session(settings=settings)
         profile = session.profile
@@ -135,7 +137,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         session.context.injector.bind_instance(BaseWallet, mock_wallet)
 
         with mock.patch.object(
-            test_module, "accept_taa", mock.AsyncMock()
+            test_module, "accept_taa", mock.CoroutineMock()
         ) as mock_accept_taa:
             mock_accept_taa.return_value = True
             await test_module.ledger_config(profile, TEST_DID, provision=True)
@@ -146,12 +148,12 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             "ledger.genesis_transactions": TEST_GENESIS,
         }
         mock_ledger = mock.MagicMock(
-            get_txn_author_agreement=mock.AsyncMock(),
-            get_latest_txn_author_acceptance=mock.AsyncMock(),
+            get_txn_author_agreement=mock.CoroutineMock(),
+            get_latest_txn_author_acceptance=mock.CoroutineMock(),
             read_only=True,
         )
         mock_wallet = mock.MagicMock(
-            set_did_endpoint=mock.AsyncMock(
+            set_did_endpoint=mock.CoroutineMock(
                 side_effect=LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"
                 )
@@ -169,7 +171,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         session.context.injector.bind_instance(BaseWallet, mock_wallet)
 
         with mock.patch.object(
-            test_module, "accept_taa", mock.AsyncMock()
+            test_module, "accept_taa", mock.CoroutineMock()
         ) as mock_accept_taa:
             with self.assertRaises(test_module.ConfigError) as x_context:
                 await test_module.ledger_config(profile, TEST_DID, provision=True)
@@ -183,12 +185,12 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             "profile_endpoint": "http://agent.ca",
         }
         mock_ledger = mock.MagicMock(
-            get_txn_author_agreement=mock.AsyncMock(),
-            get_latest_txn_author_acceptance=mock.AsyncMock(),
+            get_txn_author_agreement=mock.CoroutineMock(),
+            get_latest_txn_author_acceptance=mock.CoroutineMock(),
             read_only=True,
         )
         mock_wallet = mock.MagicMock(
-            set_did_endpoint=mock.AsyncMock(),
+            set_did_endpoint=mock.CoroutineMock(),
         )
 
         session = InMemoryProfile.test_session(settings=settings)
@@ -202,7 +204,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         session.context.injector.bind_instance(BaseWallet, mock_wallet)
 
         with mock.patch.object(
-            test_module, "accept_taa", mock.AsyncMock()
+            test_module, "accept_taa", mock.CoroutineMock()
         ) as mock_accept_taa:
             await test_module.ledger_config(profile, TEST_DID, provision=True)
             mock_ledger.get_txn_author_agreement.assert_not_called()
@@ -216,15 +218,15 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
             "profile_endpoint": "http://agent-profile.ca",
         }
         mock_ledger = mock.MagicMock(
-            get_txn_author_agreement=mock.AsyncMock(
+            get_txn_author_agreement=mock.CoroutineMock(
                 return_value={"taa_required": False}
             ),
-            get_latest_txn_author_acceptance=mock.AsyncMock(),
-            update_endpoint_for_did=mock.AsyncMock(),
+            get_latest_txn_author_acceptance=mock.CoroutineMock(),
+            update_endpoint_for_did=mock.CoroutineMock(),
             read_only=False,
         )
         mock_wallet = mock.MagicMock(
-            set_did_endpoint=mock.AsyncMock(),
+            set_did_endpoint=mock.CoroutineMock(),
         )
 
         session = InMemoryProfile.test_session(settings=settings)
@@ -238,7 +240,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         session.context.injector.bind_instance(BaseWallet, mock_wallet)
 
         with mock.patch.object(
-            test_module, "accept_taa", mock.AsyncMock()
+            test_module, "accept_taa", mock.CoroutineMock()
         ) as mock_accept_taa:
             await test_module.ledger_config(
                 profile,
@@ -338,7 +340,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "fetch_genesis_transactions",
-            mock.AsyncMock(return_value=TEST_GENESIS_TXNS),
+            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
         ) as mock_fetch, mock.patch("builtins.open", mock.MagicMock()) as mock_open:
             mock_open.return_value = mock.MagicMock(
                 __enter__=mock.MagicMock(
@@ -433,7 +435,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "fetch_genesis_transactions",
-            mock.AsyncMock(return_value=TEST_GENESIS_TXNS),
+            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
         ) as mock_fetch, mock.patch("builtins.open", mock.MagicMock()) as mock_open:
             mock_open.return_value = mock.MagicMock(
                 __enter__=mock.MagicMock(
@@ -495,7 +497,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "fetch_genesis_transactions",
-            mock.AsyncMock(return_value=TEST_GENESIS_TXNS),
+            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
         ) as mock_fetch, mock.patch("builtins.open", mock.MagicMock()) as mock_open:
             mock_open.return_value = mock.MagicMock(
                 __enter__=mock.MagicMock(
@@ -560,7 +562,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "fetch_genesis_transactions",
-            mock.AsyncMock(return_value=TEST_GENESIS_TXNS),
+            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
         ) as mock_fetch, mock.patch("builtins.open", mock.MagicMock()) as mock_open:
             mock_open.return_value = mock.MagicMock(
                 __enter__=mock.MagicMock(
@@ -619,7 +621,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "fetch_genesis_transactions",
-            mock.AsyncMock(return_value=TEST_GENESIS_TXNS),
+            mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
         ) as mock_fetch, mock.patch("builtins.open", mock.MagicMock()) as mock_open:
             mock_open.side_effect = IOError("no read permission")
             with self.assertRaises(test_module.ConfigError):
@@ -654,7 +656,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "use_asyncio_event_loop", mock.MagicMock()
         ) as mock_use_aio_loop, mock.patch.object(
-            test_module.prompt_toolkit, "prompt", mock.AsyncMock()
+            test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
         ) as mock_prompt:
             mock_prompt.side_effect = EOFError()
             assert not await test_module.accept_taa(
@@ -664,7 +666,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "use_asyncio_event_loop", mock.MagicMock()
         ) as mock_use_aio_loop, mock.patch.object(
-            test_module.prompt_toolkit, "prompt", mock.AsyncMock()
+            test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
         ) as mock_prompt:
             mock_prompt.return_value = "x"
             assert not await test_module.accept_taa(
@@ -674,9 +676,11 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "use_asyncio_event_loop", mock.MagicMock()
         ) as mock_use_aio_loop, mock.patch.object(
-            test_module.prompt_toolkit, "prompt", mock.AsyncMock()
+            test_module.prompt_toolkit, "prompt", mock.CoroutineMock()
         ) as mock_prompt:
-            mock_ledger = mock.MagicMock(accept_txn_author_agreement=mock.AsyncMock())
+            mock_ledger = mock.MagicMock(
+                accept_txn_author_agreement=mock.CoroutineMock()
+            )
             mock_prompt.return_value = ""
             assert await test_module.accept_taa(
                 mock_ledger, mock_profile, taa_info, provision=False
@@ -719,7 +723,7 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
                 "ledger.taa_acceptance_version": "1.0",
             }
         )
-        mock_ledger = mock.MagicMock(accept_txn_author_agreement=mock.AsyncMock())
+        mock_ledger = mock.MagicMock(accept_txn_author_agreement=mock.CoroutineMock())
         assert await test_module.accept_taa(
             mock_ledger, mock_profile, taa_info, provision=False
         )

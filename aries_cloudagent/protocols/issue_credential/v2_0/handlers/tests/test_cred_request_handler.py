@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
@@ -22,14 +22,16 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock(
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=mock.MagicMock()
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = False
@@ -52,7 +54,9 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -61,11 +65,11 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock(
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
-            mock_cred_mgr.return_value.issue_credential = mock.AsyncMock(
+            mock_cred_mgr.return_value.issue_credential = mock.CoroutineMock(
                 return_value=(None, "cred_issue_message")
             )
             request_context.message = V20CredRequest()
@@ -96,20 +100,22 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr, mock.patch.object(
-            cred_ex_rec, "save_error_state", mock.AsyncMock()
+            cred_ex_rec, "save_error_state", mock.CoroutineMock()
         ):
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock(
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
-            mock_cred_mgr.return_value.issue_credential = mock.AsyncMock(
+            mock_cred_mgr.return_value.issue_credential = mock.CoroutineMock(
                 side_effect=test_module.IndyIssuerError()
             )
 
@@ -119,9 +125,9 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
             responder = MockResponder()
 
             with mock.patch.object(
-                responder, "send_reply", mock.AsyncMock()
+                responder, "send_reply", mock.CoroutineMock()
             ) as mock_send_reply, mock.patch.object(
-                handler._logger, "exception", mock.AsyncMock()
+                handler._logger, "exception", mock.CoroutineMock()
             ) as mock_log_exc:
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
@@ -134,7 +140,7 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock()
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock()
             request_context.message = V20CredRequest()
             request_context.connection_ready = False
             handler = test_module.V20CredRequestHandler()
@@ -153,7 +159,7 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
         request_context.message_receipt = MessageReceipt()
 
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
                 # No oob record found
                 return_value=None
             )

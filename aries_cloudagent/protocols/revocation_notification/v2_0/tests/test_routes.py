@@ -1,5 +1,5 @@
 """Test routes.py"""
-from unittest import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from .. import routes as test_module
@@ -41,10 +41,10 @@ async def test_on_revocation_published(profile: Profile, responder: MockResponde
     """Test revocation published event handler."""
     mock_rec = mock.MagicMock()
     mock_rec.cred_rev_id = "mock"
-    mock_rec.delete_record = mock.AsyncMock()
+    mock_rec.delete_record = mock.CoroutineMock()
 
     MockRec = mock.MagicMock()
-    MockRec.query_by_rev_reg_id = mock.AsyncMock(return_value=[mock_rec])
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(return_value=[mock_rec])
 
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::mock"
     event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
@@ -67,10 +67,10 @@ async def test_on_revocation_published_no_notify(
     """Test revocation published event handler."""
     mock_rec = mock.MagicMock()
     mock_rec.cred_rev_id = "mock"
-    mock_rec.delete_record = mock.AsyncMock()
+    mock_rec.delete_record = mock.CoroutineMock()
 
     MockRec = mock.MagicMock()
-    MockRec.query_by_rev_reg_id = mock.AsyncMock(return_value=[mock_rec])
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(return_value=[mock_rec])
 
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::mock"
     event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
@@ -92,7 +92,7 @@ async def test_on_revocation_published_x_not_found(
 ):
     """Test revocation published event handler."""
     MockRec = mock.MagicMock()
-    MockRec.query_by_rev_reg_id = mock.AsyncMock(side_effect=StorageNotFoundError)
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(side_effect=StorageNotFoundError)
 
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::mock"
     event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
@@ -110,7 +110,7 @@ async def test_on_revocation_published_x_storage_error(
 ):
     """Test revocation published event handler."""
     MockRec = mock.MagicMock()
-    MockRec.query_by_rev_reg_id = mock.AsyncMock(side_effect=StorageError)
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(side_effect=StorageError)
 
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::mock"
     event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
@@ -126,10 +126,10 @@ async def test_on_revocation_published_x_storage_error(
 async def test_on_pending_cleared(profile: Profile):
     """Test pending revocation cleared event."""
     mock_rec = mock.MagicMock()
-    mock_rec.delete_record = mock.AsyncMock()
+    mock_rec.delete_record = mock.CoroutineMock()
 
     MockRec = mock.MagicMock()
-    MockRec.query_by_rev_reg_id = mock.AsyncMock(return_value=[mock_rec])
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(return_value=[mock_rec])
 
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_CLEAR_PENDING_EVENT}::mock"
     event = Event(topic, {"rev_reg_id": "mock"})

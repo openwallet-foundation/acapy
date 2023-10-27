@@ -1,7 +1,7 @@
 import asyncio
 
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ...config.injection_context import InjectionContext
 from ...core.in_memory import InMemoryProfile
@@ -17,7 +17,7 @@ class TestAskarProfileMultitenantManager(IsolatedAsyncioTestCase):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
 
-        self.responder = mock.AsyncMock(send=mock.AsyncMock())
+        self.responder = mock.CoroutineMock(send=mock.CoroutineMock())
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
         self.manager = AskarProfileMultitenantManager(self.profile)

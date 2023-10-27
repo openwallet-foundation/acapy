@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
@@ -23,14 +23,16 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock(
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=mock.MagicMock()
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = False
@@ -56,7 +58,9 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -73,11 +77,11 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock(
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
-            mock_cred_mgr.return_value.issue_credential = mock.AsyncMock(
+            mock_cred_mgr.return_value.issue_credential = mock.CoroutineMock(
                 return_value=(None, "credential_issue_message")
             )
             request_context.message = CredentialRequest()
@@ -109,7 +113,9 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -126,13 +132,13 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr, mock.patch.object(
-            cred_ex_rec, "save_error_state", mock.AsyncMock()
+            cred_ex_rec, "save_error_state", mock.CoroutineMock()
         ):
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock(
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
-            mock_cred_mgr.return_value.issue_credential = mock.AsyncMock(
+            mock_cred_mgr.return_value.issue_credential = mock.CoroutineMock(
                 side_effect=test_module.IndyIssuerError()
             )
 
@@ -142,7 +148,7 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
             responder = MockResponder()
 
             with mock.patch.object(
-                responder, "send_reply", mock.AsyncMock()
+                responder, "send_reply", mock.CoroutineMock()
             ) as mock_send_reply, mock.patch.object(
                 handler._logger, "exception", mock.MagicMock()
             ) as mock_log_exc:
@@ -156,7 +162,9 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -167,11 +175,11 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock(
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock(
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
-            mock_cred_mgr.return_value.issue_credential = mock.AsyncMock(
+            mock_cred_mgr.return_value.issue_credential = mock.CoroutineMock(
                 return_value=(None, "credential_issue_message")
             )
 
@@ -199,7 +207,7 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock()
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock()
             request_context.message = CredentialRequest()
             request_context.connection_ready = False
             handler = test_module.CredentialRequestHandler()
@@ -218,7 +226,7 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         request_context.message_receipt = MessageReceipt()
 
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
                 # No oob record found
                 return_value=None
             )
@@ -228,7 +236,7 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_request = mock.AsyncMock()
+            mock_cred_mgr.return_value.receive_request = mock.CoroutineMock()
             request_context.message = CredentialRequest()
             handler = test_module.CredentialRequestHandler()
             responder = MockResponder()

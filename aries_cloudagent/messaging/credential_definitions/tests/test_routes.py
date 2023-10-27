@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
@@ -27,15 +27,15 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         self.profile_injector = self.profile.context.injector
 
         self.ledger = mock.create_autospec(BaseLedger)
-        self.ledger.__aenter__ = mock.AsyncMock(return_value=self.ledger)
-        self.ledger.create_and_send_credential_definition = mock.AsyncMock(
+        self.ledger.__aenter__ = mock.CoroutineMock(return_value=self.ledger)
+        self.ledger.create_and_send_credential_definition = mock.CoroutineMock(
             return_value=(
                 CRED_DEF_ID,
                 {"cred": "def", "signed_txn": "..."},
                 True,
             )
         )
-        self.ledger.get_credential_definition = mock.AsyncMock(
+        self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"cred": "def", "signed_txn": "..."}
         )
         self.profile_injector.bind_instance(BaseLedger, self.ledger)
@@ -44,7 +44,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         self.profile_injector.bind_instance(IndyIssuer, self.issuer)
 
         self.storage = mock.create_autospec(BaseStorage)
-        self.storage.find_all_records = mock.AsyncMock(
+        self.storage.find_all_records = mock.CoroutineMock(
             return_value=[mock.MagicMock(value=CRED_DEF_ID)]
         )
         self.session_inject[BaseStorage] = self.storage
@@ -54,7 +54,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         )
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": mock.AsyncMock(),
+            "outbound_message_router": mock.CoroutineMock(),
         }
         self.request = mock.MagicMock(
             app={},
@@ -64,7 +64,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         )
 
     async def test_send_credential_definition(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
                 "support_revocation": False,
@@ -89,7 +89,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_send_credential_definition_create_transaction_for_endorser(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
                 "support_revocation": False,
@@ -103,21 +103,21 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, mock.patch.object(
             test_module, "TransactionManager", mock.MagicMock()
         ) as mock_txn_mgr, mock.patch.object(
             test_module.web, "json_response", mock.MagicMock()
         ) as mock_response:
             mock_txn_mgr.return_value = mock.MagicMock(
-                create_record=mock.AsyncMock(
+                create_record=mock.CoroutineMock(
                     return_value=mock.MagicMock(
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     )
                 )
             )
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(
+                metadata_get=mock.CoroutineMock(
                     return_value={
                         "endorser_did": ("did"),
                         "endorser_name": ("name"),
@@ -140,7 +140,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
     async def test_send_credential_definition_create_transaction_for_endorser_storage_x(
         self,
     ):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
                 "support_revocation": False,
@@ -154,12 +154,12 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, mock.patch.object(
             test_module, "TransactionManager", mock.MagicMock()
         ) as mock_txn_mgr:
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(
+                metadata_get=mock.CoroutineMock(
                     return_value={
                         "endorser_did": ("did"),
                         "endorser_name": ("name"),
@@ -167,7 +167,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
                 )
             )
             mock_txn_mgr.return_value = mock.MagicMock(
-                create_record=mock.AsyncMock(side_effect=test_module.StorageError())
+                create_record=mock.CoroutineMock(side_effect=test_module.StorageError())
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -178,7 +178,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
     async def test_send_credential_definition_create_transaction_for_endorser_not_found_x(
         self,
     ):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
                 "support_revocation": False,
@@ -192,7 +192,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.side_effect = test_module.StorageNotFoundError()
 
@@ -204,7 +204,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
     async def test_send_credential_definition_create_transaction_for_endorser_base_model_x(
         self,
     ):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
                 "support_revocation": False,
@@ -218,7 +218,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
 
@@ -230,7 +230,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
     async def test_send_credential_definition_create_transaction_for_endorser_no_endorser_info_x(
         self,
     ):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
                 "support_revocation": False,
@@ -244,10 +244,10 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(return_value=None)
+                metadata_get=mock.CoroutineMock(return_value=None)
             )
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.credential_definitions_send_credential_definition(
@@ -257,7 +257,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
     async def test_send_credential_definition_create_transaction_for_endorser_no_endorser_did_x(
         self,
     ):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
                 "support_revocation": False,
@@ -271,10 +271,10 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         }
 
         with mock.patch.object(
-            ConnRecord, "retrieve_by_id", mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = mock.MagicMock(
-                metadata_get=mock.AsyncMock(
+                metadata_get=mock.CoroutineMock(
                     return_value={
                         "endorser_name": ("name"),
                     }
@@ -286,7 +286,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
                 )
 
     async def test_send_credential_definition_no_ledger(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
                 "support_revocation": False,
@@ -302,7 +302,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_send_credential_definition_ledger_x(self):
-        self.request.json = mock.AsyncMock(
+        self.request.json = mock.CoroutineMock(
             return_value={
                 "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
                 "support_revocation": False,
@@ -312,7 +312,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
 
         self.request.query = {"create_transaction_for_endorser": "false"}
 
-        self.ledger.__aenter__ = mock.AsyncMock(
+        self.ledger.__aenter__ = mock.CoroutineMock(
             side_effect=test_module.LedgerError("oops")
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -334,7 +334,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
-                get_ledger_for_identifier=mock.AsyncMock(
+                get_ledger_for_identifier=mock.CoroutineMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -361,7 +361,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
+            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
         ), mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.credential_definitions_get_credential_definition(
                 self.request
@@ -378,7 +378,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
-                get_ledger_for_identifier=mock.AsyncMock(return_value=(None, None))
+                get_ledger_for_identifier=mock.CoroutineMock(return_value=(None, None))
             ),
         )
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}

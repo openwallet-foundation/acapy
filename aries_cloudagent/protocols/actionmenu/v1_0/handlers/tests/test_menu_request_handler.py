@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -21,7 +21,7 @@ class TestMenuRequestHandler(IsolatedAsyncioTestCase):
 
         responder = MockResponder()
         self.context.message = handler.MenuRequest()
-        self.menu_service.get_active_menu = mock.AsyncMock(return_value="menu")
+        self.menu_service.get_active_menu = mock.CoroutineMock(return_value="menu")
 
         handler_inst = handler.MenuRequestHandler()
         await handler_inst.handle(self.context, responder)
@@ -42,7 +42,7 @@ class TestMenuRequestHandler(IsolatedAsyncioTestCase):
 
         responder = MockResponder()
         self.context.message = handler.MenuRequest()
-        self.menu_service.get_active_menu = mock.AsyncMock(return_value=None)
+        self.menu_service.get_active_menu = mock.CoroutineMock(return_value=None)
 
         handler_inst = handler.MenuRequestHandler()
         await handler_inst.handle(self.context, responder)

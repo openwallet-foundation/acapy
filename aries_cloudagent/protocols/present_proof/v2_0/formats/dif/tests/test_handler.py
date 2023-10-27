@@ -1,6 +1,6 @@
 from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 from marshmallow import ValidationError
 from pyld import jsonld
 
@@ -602,7 +602,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -645,7 +645,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -687,7 +687,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -755,7 +755,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             mock.MagicMock(
                 search_credentials=mock.MagicMock(
                     return_value=mock.MagicMock(
-                        fetch=mock.AsyncMock(return_value=cred_list)
+                        fetch=mock.CoroutineMock(return_value=cred_list)
                     )
                 )
             ),
@@ -764,7 +764,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -849,7 +849,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             mock.MagicMock(
                 search_credentials=mock.MagicMock(
                     return_value=mock.MagicMock(
-                        fetch=mock.AsyncMock(return_value=cred_list)
+                        fetch=mock.CoroutineMock(return_value=cred_list)
                     )
                 )
             ),
@@ -858,7 +858,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -932,7 +932,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             mock.MagicMock(
                 search_credentials=mock.MagicMock(
                     return_value=mock.MagicMock(
-                        fetch=mock.AsyncMock(return_value=cred_list)
+                        fetch=mock.CoroutineMock(return_value=cred_list)
                     )
                 )
             ),
@@ -941,7 +941,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -982,7 +982,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -1023,7 +1023,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             mock.MagicMock(
                 search_credentials=mock.MagicMock(
                     return_value=mock.MagicMock(
-                        fetch=mock.AsyncMock(
+                        fetch=mock.CoroutineMock(
                             side_effect=test_module.StorageNotFoundError()
                         )
                     )
@@ -1070,7 +1070,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -1113,7 +1113,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -1164,7 +1164,9 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "verify_presentation",
-            mock.AsyncMock(return_value=PresentationVerificationResult(verified=True)),
+            mock.CoroutineMock(
+                return_value=PresentationVerificationResult(verified=True)
+            ),
         ):
             output = await self.handler.verify_pres(record)
             assert output.verified
@@ -1172,7 +1174,9 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "verify_presentation",
-            mock.AsyncMock(return_value=PresentationVerificationResult(verified=False)),
+            mock.CoroutineMock(
+                return_value=PresentationVerificationResult(verified=False)
+            ),
         ):
             output = await self.handler.verify_pres(record)
             assert output.verified == "false"
@@ -1217,7 +1221,9 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module,
             "verify_presentation",
-            mock.AsyncMock(return_value=PresentationVerificationResult(verified=True)),
+            mock.CoroutineMock(
+                return_value=PresentationVerificationResult(verified=True)
+            ),
         ) as mock_vr:
             output = await self.handler.verify_pres(record)
             assert output.verified
@@ -1408,7 +1414,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -2325,7 +2331,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             mock.MagicMock(
                 search_credentials=mock.MagicMock(
                     return_value=mock.MagicMock(
-                        fetch=mock.AsyncMock(return_value=cred_list)
+                        fetch=mock.CoroutineMock(return_value=cred_list)
                     )
                 )
             ),

@@ -1,6 +1,6 @@
 import json
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
@@ -54,10 +54,10 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
             mgr.register_class(transport_cls, "transport_cls")
 
         transport = mock.MagicMock()
-        transport.handle_message = mock.AsyncMock()
-        transport.wire_format.encode_message = mock.AsyncMock()
-        transport.start = mock.AsyncMock()
-        transport.stop = mock.AsyncMock()
+        transport.handle_message = mock.CoroutineMock()
+        transport.wire_format.encode_message = mock.CoroutineMock()
+        transport.start = mock.CoroutineMock()
+        transport.stop = mock.CoroutineMock()
         transport.schemes = ["http"]
         transport.is_external = False
 
@@ -148,7 +148,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
         transport_cls.schemes = ["http"]
         transport_cls.return_value = mock.MagicMock()
         transport_cls.return_value.schemes = ["http"]
-        transport_cls.return_value.start = mock.AsyncMock()
+        transport_cls.return_value.start = mock.CoroutineMock()
         tid = mgr.register_class(transport_cls, "transport_cls")
         await mgr.start_transport(tid)
 
@@ -224,7 +224,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
         mgr.outbound_buffer.append(mock_queued)
 
         with mock.patch.object(
-            test_module.asyncio, "sleep", mock.AsyncMock()
+            test_module.asyncio, "sleep", mock.CoroutineMock()
         ) as mock_sleep_x:
             mock_sleep_x.side_effect = KeyError()
             with self.assertRaises(KeyError):  # cover retry logic and bail
@@ -245,7 +245,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
         with mock.patch.object(
             mgr, "deliver_queued_message", mock.MagicMock()
         ) as mock_deliver, mock.patch.object(
-            mgr.outbound_event, "wait", mock.AsyncMock()
+            mgr.outbound_event, "wait", mock.CoroutineMock()
         ) as mock_wait, mock.patch.object(
             test_module, "trace_event", mock.MagicMock()
         ) as mock_trace:
@@ -268,7 +268,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
         with mock.patch.object(
             mgr, "deliver_queued_message", mock.MagicMock()
         ) as mock_deliver, mock.patch.object(
-            mgr.outbound_event, "wait", mock.AsyncMock()
+            mgr.outbound_event, "wait", mock.CoroutineMock()
         ) as mock_wait, mock.patch.object(
             test_module, "trace_event", mock.MagicMock()
         ) as mock_trace:
@@ -315,9 +315,9 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
     async def test_should_encode_outbound_message(self):
         base_wire_format = BaseWireFormat()
         encoded_msg = "encoded_message"
-        base_wire_format.encode_message = mock.AsyncMock(return_value=encoded_msg)
+        base_wire_format.encode_message = mock.CoroutineMock(return_value=encoded_msg)
         profile = InMemoryProfile.test_profile(bind={BaseWireFormat: base_wire_format})
-        profile.session = mock.AsyncMock(return_value=mock.MagicMock())
+        profile.session = mock.CoroutineMock(return_value=mock.MagicMock())
         outbound = mock.MagicMock(payload="payload", enc_payload=None)
         target = mock.MagicMock()
 

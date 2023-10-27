@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
@@ -17,7 +17,7 @@ class TestActionMenuController(IsolatedAsyncioTestCase):
         self.context.injector.bind_instance(
             test_module.BaseMenuService, self.menu_service
         )
-        self.context.inject = mock.AsyncMock(return_value=self.menu_service)
+        self.context.inject = mock.CoroutineMock(return_value=self.menu_service)
 
         controller = test_module.Controller("protocol")
 

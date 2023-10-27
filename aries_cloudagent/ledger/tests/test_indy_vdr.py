@@ -2,7 +2,7 @@ import json
 
 import indy_vdr
 import pytest
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 
 from ...core.in_memory import InMemoryProfile
@@ -48,7 +48,7 @@ def ledger():
     with mock.patch.object(ledger.pool, "open", open), mock.patch.object(
         ledger.pool, "close", close
     ), mock.patch.object(
-        ledger, "is_ledger_read_only", mock.AsyncMock(return_value=False)
+        ledger, "is_ledger_read_only", mock.CoroutineMock(return_value=False)
     ):
         yield ledger
 
@@ -104,7 +104,7 @@ class TestIndyVdrLedger:
             with mock.patch.object(
                 ledger.pool_handle,
                 "submit_request",
-                mock.AsyncMock(
+                mock.CoroutineMock(
                     side_effect=[
                         {"data": {"aml": ".."}},
                         {"data": {"text": "text", "version": "1.0"}},
@@ -227,7 +227,7 @@ class TestIndyVdrLedger:
             with mock.patch.object(
                 ledger,
                 "check_existing_schema",
-                mock.AsyncMock(return_value=None),
+                mock.CoroutineMock(return_value=None),
             ):
                 schema_id, schema_def = await ledger.create_and_send_schema(
                     issuer, "schema_name", "9.1", ["a", "b"]
@@ -287,7 +287,7 @@ class TestIndyVdrLedger:
             with mock.patch.object(
                 ledger,
                 "check_existing_schema",
-                mock.AsyncMock(
+                mock.CoroutineMock(
                     return_value=(
                         issuer.create_schema.return_value[0],
                         {"schema": "result"},
@@ -321,11 +321,11 @@ class TestIndyVdrLedger:
             with mock.patch.object(
                 ledger,
                 "check_existing_schema",
-                mock.AsyncMock(return_value=False),
+                mock.CoroutineMock(return_value=False),
             ), mock.patch.object(
                 ledger,
                 "is_ledger_read_only",
-                mock.AsyncMock(return_value=True),
+                mock.CoroutineMock(return_value=True),
             ):
                 with pytest.raises(LedgerError):
                     schema_id, schema_def = await ledger.create_and_send_schema(
@@ -354,7 +354,7 @@ class TestIndyVdrLedger:
             with mock.patch.object(
                 ledger,
                 "check_existing_schema",
-                mock.AsyncMock(return_value=False),
+                mock.CoroutineMock(return_value=False),
             ):
                 with pytest.raises(LedgerTransactionError):
                     schema_id, schema_def = await ledger.create_and_send_schema(
@@ -743,7 +743,7 @@ class TestIndyVdrLedger:
             with mock.patch.object(
                 ledger,
                 "_construct_attr_json",
-                mock.AsyncMock(
+                mock.CoroutineMock(
                     return_value=json.dumps(
                         {
                             "endpoint": {
@@ -758,7 +758,7 @@ class TestIndyVdrLedger:
             ) as mock_construct_attr_json, mock.patch.object(
                 ledger,
                 "get_all_endpoints_for_did",
-                mock.AsyncMock(return_value={}),
+                mock.CoroutineMock(return_value={}),
             ):
                 await ledger.update_endpoint_for_did(
                     test_did.did,
@@ -1011,7 +1011,7 @@ class TestIndyVdrLedger:
             with mock.patch.object(
                 ledger,
                 "get_schema",
-                mock.AsyncMock(return_value={"id": S_ID}),
+                mock.CoroutineMock(return_value={"id": S_ID}),
             ) as mock_get_schema:
                 s_id_short = await ledger.credential_definition_id2schema_id(
                     f"55GkHamhTU1ZbTbV2ab9DE:3:CL:{SEQ_NO}:tag"
@@ -1034,7 +1034,7 @@ class TestIndyVdrLedger:
             with mock.patch.object(
                 ledger.pool_handle,
                 "submit_request",
-                mock.AsyncMock(
+                mock.CoroutineMock(
                     side_effect=[
                         {"data": json.dumps({"seqNo": 1234})},
                         {"data": {"txn": {"data": {"role": "101", "alias": "Billy"}}}},

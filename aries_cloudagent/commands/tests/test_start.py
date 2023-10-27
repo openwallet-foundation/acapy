@@ -1,6 +1,6 @@
 import sys
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...config.error import ArgsParseError
@@ -18,9 +18,9 @@ class TestStart(IsolatedAsyncioTestCase):
 
     async def test_start_shutdown_app(self):
         mock_conductor = mock.MagicMock(
-            setup=mock.AsyncMock(),
-            start=mock.AsyncMock(),
-            stop=mock.AsyncMock(),
+            setup=mock.CoroutineMock(),
+            start=mock.CoroutineMock(),
+            stop=mock.CoroutineMock(),
         )
         await test_module.start_app(mock_conductor)
         await test_module.shutdown_app(mock_conductor)
@@ -57,9 +57,9 @@ class TestStart(IsolatedAsyncioTestCase):
             run_loop.assert_called_once()
 
     async def test_run_loop(self):
-        startup = mock.AsyncMock()
+        startup = mock.CoroutineMock()
         startup_call = startup()
-        shutdown = mock.AsyncMock()
+        shutdown = mock.CoroutineMock()
         shutdown_call = shutdown()
         with mock.patch.object(test_module, "asyncio", autospec=True) as mock_asyncio:
             test_module.run_loop(startup_call, shutdown_call)
@@ -79,7 +79,7 @@ class TestStart(IsolatedAsyncioTestCase):
                 mock.MagicMock(),
                 mock.MagicMock(cancel=mock.MagicMock()),
             ]
-            mock_asyncio.gather = mock.AsyncMock()
+            mock_asyncio.gather = mock.CoroutineMock()
 
             if sys.version_info.major == 3 and sys.version_info.minor > 6:
                 mock_asyncio.all_tasks.return_value = tasks
@@ -92,9 +92,9 @@ class TestStart(IsolatedAsyncioTestCase):
             shutdown.assert_awaited_once()
 
     async def test_run_loop_init_x(self):
-        startup = mock.AsyncMock(side_effect=KeyError("the front fell off"))
+        startup = mock.CoroutineMock(side_effect=KeyError("the front fell off"))
         startup_call = startup()
-        shutdown = mock.AsyncMock()
+        shutdown = mock.CoroutineMock()
         shutdown_call = shutdown()
         with mock.patch.object(
             test_module, "asyncio", autospec=True
@@ -115,7 +115,7 @@ class TestStart(IsolatedAsyncioTestCase):
             done_calls[0][1]()  # exec partial
             done_coro = mock_asyncio.ensure_future.call_args[0][0]
             task = mock.MagicMock()
-            mock_asyncio.gather = mock.AsyncMock()
+            mock_asyncio.gather = mock.CoroutineMock()
 
             if sys.version_info.major == 3 and sys.version_info.minor > 6:
                 mock_asyncio.all_tasks.return_value = [task]

@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.in_memory import InMemoryProfile
@@ -93,7 +93,7 @@ class TestV10DiscoveryExchangeRecord(IsolatedAsyncioTestCase):
         with mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_tag_filter",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_by_tag_filter:
             mock_retrieve_by_tag_filter.side_effect = StorageNotFoundError
             check = await V10DiscoveryExchangeRecord.exists_for_connection_id(
@@ -106,7 +106,7 @@ class TestV10DiscoveryExchangeRecord(IsolatedAsyncioTestCase):
         with mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_tag_filter",
-            mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_by_tag_filter:
             mock_retrieve_by_tag_filter.side_effect = StorageDuplicateError
             check = await V10DiscoveryExchangeRecord.exists_for_connection_id(

@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
@@ -19,14 +19,16 @@ class TestPresentationHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_presentation = mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_presentation = mock.CoroutineMock()
             request_context.message = Presentation()
             request_context.connection_ready = True
             request_context.connection_record = mock.MagicMock()
@@ -47,15 +49,17 @@ class TestPresentationHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_presentation = mock.AsyncMock()
-            mock_pres_mgr.return_value.verify_presentation = mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_presentation = mock.CoroutineMock()
+            mock_pres_mgr.return_value.verify_presentation = mock.CoroutineMock()
             request_context.message = Presentation()
             request_context.connection_ready = True
             request_context.connection_record = mock.MagicMock()
@@ -76,7 +80,9 @@ class TestPresentationHandler(IsolatedAsyncioTestCase):
 
         oob_record = mock.MagicMock()
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(return_value=oob_record)
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=oob_record
+            )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
@@ -84,10 +90,10 @@ class TestPresentationHandler(IsolatedAsyncioTestCase):
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
             mock_pres_mgr.return_value = mock.MagicMock(
-                receive_presentation=mock.AsyncMock(
-                    return_value=mock.MagicMock(save_error_state=mock.AsyncMock())
+                receive_presentation=mock.CoroutineMock(
+                    return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
                 ),
-                verify_presentation=mock.AsyncMock(
+                verify_presentation=mock.CoroutineMock(
                     side_effect=test_module.LedgerError()
                 ),
             )

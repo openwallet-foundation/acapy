@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from .. import problem_report_handler as test_module
@@ -21,7 +21,7 @@ class TestDIDXProblemReportHandler:
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, manager, request_context):
-        manager.return_value.receive_problem_report = mock.AsyncMock()
+        manager.return_value.receive_problem_report = mock.CoroutineMock()
         request_context.message = DIDXProblemReport()
         request_context.connection_record = mock.MagicMock()
         handler_inst = test_module.DIDXProblemReportHandler()
@@ -33,7 +33,7 @@ class TestDIDXProblemReportHandler:
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called_no_conn(self, manager, request_context):
-        manager.return_value.receive_problem_report = mock.AsyncMock()
+        manager.return_value.receive_problem_report = mock.CoroutineMock()
         request_context.message = DIDXProblemReport()
         handler_inst = test_module.DIDXProblemReportHandler()
         responder = MockResponder()
@@ -45,7 +45,7 @@ class TestDIDXProblemReportHandler:
     async def test_called_unrecognized_report_exception(
         self, manager, request_context, caplog
     ):
-        manager.return_value.receive_problem_report = mock.AsyncMock(
+        manager.return_value.receive_problem_report = mock.CoroutineMock(
             side_effect=DIDXManagerError()
         )
         request_context.message = DIDXProblemReport()

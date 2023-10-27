@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
@@ -18,7 +18,7 @@ class TestPresentationAckHandler(IsolatedAsyncioTestCase):
         session = request_context.session()
 
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
                 return_value=mock.MagicMock()
             )
         )
@@ -27,7 +27,7 @@ class TestPresentationAckHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_presentation_ack = mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_presentation_ack = mock.CoroutineMock()
             request_context.message = PresentationAck()
             request_context.connection_ready = True
             request_context.connection_record = mock.MagicMock()
@@ -49,7 +49,7 @@ class TestPresentationAckHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_presentation_ack = mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_presentation_ack = mock.CoroutineMock()
             request_context.message = PresentationAck()
             request_context.connection_ready = False
             handler = test_module.PresentationAckHandler()
@@ -65,7 +65,7 @@ class TestPresentationAckHandler(IsolatedAsyncioTestCase):
         request_context.message_receipt = MessageReceipt()
 
         mock_oob_processor = mock.MagicMock(
-            find_oob_record_for_inbound_message=mock.AsyncMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
                 # No oob record found
                 return_value=None
             )

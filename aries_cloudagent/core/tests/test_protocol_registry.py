@@ -1,4 +1,4 @@
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...config.injection_context import InjectionContext
@@ -206,9 +206,9 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
             {self.test_message_type: self.test_message_handler}
         )
         mocked = mock.MagicMock()
-        mocked.return_value.check_access = mock.AsyncMock()
+        mocked.return_value.check_access = mock.CoroutineMock()
         mocked.return_value.check_access.return_value = True
-        mocked.return_value.determine_roles = mock.AsyncMock()
+        mocked.return_value.determine_roles = mock.CoroutineMock()
         mocked.return_value.determine_roles.return_value = ["ROLE"]
         self.registry.register_controllers({self.test_protocol: mocked})
         protocols = [self.test_protocol]

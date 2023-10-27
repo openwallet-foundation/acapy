@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from marshmallow import ValidationError
 
@@ -71,7 +71,7 @@ class TestRoutingManager(IsolatedAsyncioTestCase):
 
     async def test_get_recipient_duplicate_routes(self):
         with mock.patch.object(
-            RouteRecord, "retrieve_by_recipient_key", mock.AsyncMock()
+            RouteRecord, "retrieve_by_recipient_key", mock.CoroutineMock()
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageDuplicateError()
             with self.assertRaises(RouteNotFoundError) as context:
@@ -80,7 +80,7 @@ class TestRoutingManager(IsolatedAsyncioTestCase):
 
     async def test_get_recipient_no_routes(self):
         with mock.patch.object(
-            RouteRecord, "retrieve_by_recipient_key", mock.AsyncMock()
+            RouteRecord, "retrieve_by_recipient_key", mock.CoroutineMock()
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError()
             with self.assertRaises(RouteNotFoundError) as context:

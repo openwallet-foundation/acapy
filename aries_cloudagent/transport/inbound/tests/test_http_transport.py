@@ -3,7 +3,7 @@ import pytest
 import json
 
 from aiohttp.test_utils import AioHTTPTestCase, unused_port
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
@@ -61,7 +61,7 @@ class TestHttpTransport(AioHTTPTestCase):
         message: InboundMessage,
         can_respond: bool = False,
     ):
-        message.wait_processing_complete = mock.AsyncMock()
+        message.wait_processing_complete = mock.CoroutineMock()
         self.message_results.append((message.payload, message.receipt, can_respond))
         if self.result_event:
             self.result_event.set()
@@ -76,7 +76,7 @@ class TestHttpTransport(AioHTTPTestCase):
             test_module.web, "TCPSite", mock.MagicMock()
         ) as mock_site:
             mock_site.return_value = mock.MagicMock(
-                start=mock.AsyncMock(side_effect=OSError())
+                start=mock.CoroutineMock(side_effect=OSError())
             )
             with pytest.raises(test_module.InboundTransportSetupError):
                 await self.transport.start()
@@ -114,19 +114,19 @@ class TestHttpTransport(AioHTTPTestCase):
 
         test_message = {"test": "message"}
         with mock.patch.object(
-            test_module.HttpTransport, "create_session", mock.AsyncMock()
+            test_module.HttpTransport, "create_session", mock.CoroutineMock()
         ) as mock_session:
             mock_session.return_value = mock.MagicMock(
-                receive=mock.AsyncMock(
+                receive=mock.CoroutineMock(
                     return_value=mock.MagicMock(
                         receipt=mock.MagicMock(direct_response_requested=True),
-                        wait_processing_complete=mock.AsyncMock(),
+                        wait_processing_complete=mock.CoroutineMock(),
                     )
                 ),
                 can_respond=True,
                 profile=InMemoryProfile.test_profile(),
                 clear_response=mock.MagicMock(),
-                wait_response=mock.AsyncMock(return_value=b"Hello world"),
+                wait_response=mock.CoroutineMock(return_value=b"Hello world"),
                 response_buffer="something",
             )
             async with self.client.post("/", data=test_message) as resp:
@@ -134,7 +134,9 @@ class TestHttpTransport(AioHTTPTestCase):
             assert result == "Hello world"
 
             mock_session.return_value = mock.MagicMock(
-                receive=mock.AsyncMock(side_effect=test_module.WireFormatParseError()),
+                receive=mock.CoroutineMock(
+                    side_effect=test_module.WireFormatParseError()
+                ),
                 profile=InMemoryProfile.test_profile(),
             )
             async with self.client.post("/", data=test_message) as resp:

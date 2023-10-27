@@ -10,7 +10,7 @@ from ..ws import WsTransport
 
 
 class TestWsTransport(AioHTTPTestCase):
-    async def asyncSetUpAsync(self):
+    async def setUpAsync(self):
         self.profile = InMemoryProfile.test_profile()
         self.message_results = []
         await super().setUpAsync()

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock
+from aries_cloudagent.tests import mock
 import jwt
 
 from .. import base as test_module
@@ -49,7 +49,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
 
-        self.responder = mock.AsyncMock(send=mock.AsyncMock())
+        self.responder = mock.CoroutineMock(send=mock.CoroutineMock())
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
         self.manager = MockMultitenantManager(self.profile)
@@ -209,7 +209,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
 
     async def test_create_wallet_saves_wallet_record_creates_profile(self):
         mock_route_manager = mock.MagicMock()
-        mock_route_manager.route_verkey = mock.AsyncMock()
+        mock_route_manager.route_verkey = mock.CoroutineMock()
         self.context.injector.bind_instance(RouteManager, mock_route_manager)
 
         with mock.patch.object(
@@ -247,7 +247,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         )
 
         mock_route_manager = mock.MagicMock()
-        mock_route_manager.route_verkey = mock.AsyncMock()
+        mock_route_manager.route_verkey = mock.CoroutineMock()
 
         with mock.patch.object(
             WalletRecord, "save"
@@ -371,7 +371,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
             key_management_mode=WalletRecord.MODE_MANAGED,
             requires_external_key=False,
             settings={},
-            save=mock.AsyncMock(),
+            save=mock.CoroutineMock(),
         )
 
         utc_now = datetime(2020, 1, 1, 0, 0, 0)
@@ -395,7 +395,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
             key_management_mode=WalletRecord.MODE_UNMANAGED,
             requires_external_key=True,
             settings={"wallet.type": "indy"},
-            save=mock.AsyncMock(),
+            save=mock.CoroutineMock(),
         )
 
         utc_now = datetime(2020, 1, 1, 0, 0, 0)
@@ -681,9 +681,9 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         with mock.patch.object(
             self.manager,
             "_get_wallet_by_key",
-            mock.AsyncMock(return_value=mock_wallet),
+            mock.CoroutineMock(return_value=mock_wallet),
         ), mock.patch.object(
-            self.manager, "get_wallet_profile", mock.AsyncMock()
+            self.manager, "get_wallet_profile", mock.CoroutineMock()
         ) as mock_get_wallet_profile:
             profile = await self.manager.get_profile_for_key(
                 self.context, "test-verkey"

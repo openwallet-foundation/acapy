@@ -1,6 +1,6 @@
 """Test LegacyPeerDIDResolver."""
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 import pydid
 import pytest
 
@@ -39,7 +39,7 @@ class TestLegacyPeerDIDResolver:
         """Test supports."""
         with mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
             mock_mgr.return_value = mock.MagicMock(
-                fetch_did_document=mock.AsyncMock(
+                fetch_did_document=mock.CoroutineMock(
                     return_value=(DIDDoc(TEST_DID0), None)
                 )
             )
@@ -53,7 +53,7 @@ class TestLegacyPeerDIDResolver:
         profile.context.injector.clear_binding(BaseCache)
         with mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
             mock_mgr.return_value = mock.MagicMock(
-                fetch_did_document=mock.AsyncMock(
+                fetch_did_document=mock.CoroutineMock(
                     return_value=(DIDDoc(TEST_DID0), None)
                 )
             )
@@ -73,7 +73,7 @@ class TestLegacyPeerDIDResolver:
         """Test supports returns false for unknown DID."""
         with mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
             mock_mgr.return_value = mock.MagicMock(
-                fetch_did_document=mock.AsyncMock(side_effect=StorageNotFoundError)
+                fetch_did_document=mock.CoroutineMock(side_effect=StorageNotFoundError)
             )
             assert not await resolver.supports(profile, TEST_DID2)
 
@@ -88,7 +88,7 @@ class TestLegacyPeerDIDResolver:
             doc = object()
             mock_corrections.apply = mock.MagicMock(return_value=doc)
             mock_mgr.return_value = mock.MagicMock(
-                fetch_did_document=mock.AsyncMock(
+                fetch_did_document=mock.CoroutineMock(
                     return_value=(DIDDoc(TEST_DID0), None)
                 )
             )
@@ -113,9 +113,9 @@ class TestLegacyPeerDIDResolver:
             doc = object
             mock_corrections.apply = mock.MagicMock(return_value=doc)
             mock_mgr.return_value = mock.MagicMock(
-                fetch_did_document=mock.AsyncMock(side_effect=StorageNotFoundError)
+                fetch_did_document=mock.CoroutineMock(side_effect=StorageNotFoundError)
             )
-            resolver.supports = mock.AsyncMock(return_value=True)
+            resolver.supports = mock.CoroutineMock(return_value=True)
             result = await resolver.resolve(profile, TEST_DID0)
             assert result == doc
 

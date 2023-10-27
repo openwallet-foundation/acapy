@@ -7,7 +7,7 @@ import indy.crypto
 import indy.did
 import indy.wallet
 import pytest
-from unittest import mock
+from aries_cloudagent.tests import mock
 
 from ...config.injection_context import InjectionContext
 from ...core.error import ProfileDuplicateError, ProfileError, ProfileNotFoundError
@@ -69,7 +69,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
         )
 
         with mock.patch.object(
-            indy.did, "replace_keys_start", mock.AsyncMock()
+            indy.did, "replace_keys_start", mock.CoroutineMock()
         ) as mock_repl_start:
             mock_repl_start.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -79,7 +79,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
             assert "outlier" in str(excinfo.value)
 
         with mock.patch.object(
-            indy.did, "replace_keys_apply", mock.AsyncMock()
+            indy.did, "replace_keys_apply", mock.CoroutineMock()
         ) as mock_repl_apply:
             mock_repl_apply.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -91,7 +91,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_create_signing_key_x(self, wallet: IndySdkWallet):
         with mock.patch.object(
-            indy.crypto, "create_key", mock.AsyncMock()
+            indy.crypto, "create_key", mock.CoroutineMock()
         ) as mock_create_key:
             mock_create_key.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -103,7 +103,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_create_local_did_x(self, wallet: IndySdkWallet):
         with mock.patch.object(
-            indy.did, "create_and_store_my_did", mock.AsyncMock()
+            indy.did, "create_and_store_my_did", mock.CoroutineMock()
         ) as mock_create:
             mock_create.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -115,7 +115,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_set_did_endpoint_ledger(self, wallet: IndySdkWallet):
         mock_ledger = mock.MagicMock(
-            read_only=False, update_endpoint_for_did=mock.AsyncMock()
+            read_only=False, update_endpoint_for_did=mock.CoroutineMock()
         )
         info_pub = await wallet.create_public_did(
             SOV,
@@ -143,7 +143,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     ):
         routing_keys = ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
         mock_ledger = mock.MagicMock(
-            read_only=False, update_endpoint_for_did=mock.AsyncMock()
+            read_only=False, update_endpoint_for_did=mock.CoroutineMock()
         )
         info_pub = await wallet.create_public_did(SOV, ED25519)
         await wallet.set_did_endpoint(
@@ -162,7 +162,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_set_did_endpoint_readonly_ledger(self, wallet: IndySdkWallet):
         mock_ledger = mock.MagicMock(
-            read_only=True, update_endpoint_for_did=mock.AsyncMock()
+            read_only=True, update_endpoint_for_did=mock.CoroutineMock()
         )
         info_pub = await wallet.create_public_did(
             SOV,
@@ -180,7 +180,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_get_signing_key_x(self, wallet: IndySdkWallet):
         with mock.patch.object(
-            indy.crypto, "get_key_metadata", mock.AsyncMock()
+            indy.crypto, "get_key_metadata", mock.CoroutineMock()
         ) as mock_signing:
             mock_signing.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -192,7 +192,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_get_local_did_x(self, wallet: IndySdkWallet):
         with mock.patch.object(
-            indy.did, "get_my_did_with_meta", mock.AsyncMock()
+            indy.did, "get_my_did_with_meta", mock.CoroutineMock()
         ) as mock_my:
             mock_my.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -215,7 +215,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
         assert info.metadata == self.test_metadata
 
         with mock.patch.object(
-            indy.did, "set_did_metadata", mock.AsyncMock()
+            indy.did, "set_did_metadata", mock.CoroutineMock()
         ) as mock_set_did_metadata:
             mock_set_did_metadata.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -227,7 +227,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_verify_message_x(self, wallet: IndySdkWallet):
         with mock.patch.object(
-            indy.crypto, "crypto_verify", mock.AsyncMock()
+            indy.crypto, "crypto_verify", mock.CoroutineMock()
         ) as mock_verify:
             mock_verify.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -251,7 +251,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_pack_message_x(self, wallet: IndySdkWallet):
         with mock.patch.object(
-            indy.crypto, "pack_message", mock.AsyncMock()
+            indy.crypto, "pack_message", mock.CoroutineMock()
         ) as mock_pack:
             mock_pack.side_effect = test_module.IndyError(  # outlier
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -316,15 +316,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             fake_wallet = IndyWalletConfig(
                 {
@@ -364,15 +364,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             mock_create.side_effect = test_module.IndyError(
                 test_module.ErrorCode.WalletAlreadyExistsError
@@ -410,15 +410,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             mock_create.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -459,15 +459,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             mock_delete.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -512,15 +512,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             mock_open.side_effect = test_module.IndyError(
                 test_module.ErrorCode.WalletNotFoundError, {"message": "outlier"}
@@ -562,15 +562,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             mock_open.side_effect = test_module.IndyError(
                 test_module.ErrorCode.WalletNotFoundError, {"message": "outlier"}
@@ -610,15 +610,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             mock_open.side_effect = test_module.IndyError(
                 test_module.ErrorCode.WalletAlreadyOpenedError, {"message": "outlier"}
@@ -658,15 +658,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             mock_open.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -706,15 +706,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             mock_master.side_effect = test_module.IndyError(
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
@@ -756,15 +756,15 @@ class TestWalletCompat:
             "load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
-            indy.wallet, "create_wallet", mock.AsyncMock()
+            indy.wallet, "create_wallet", mock.CoroutineMock()
         ) as mock_create, mock.patch.object(
-            indy.wallet, "open_wallet", mock.AsyncMock()
+            indy.wallet, "open_wallet", mock.CoroutineMock()
         ) as mock_open, mock.patch.object(
-            indy.anoncreds, "prover_create_master_secret", mock.AsyncMock()
+            indy.anoncreds, "prover_create_master_secret", mock.CoroutineMock()
         ) as mock_master, mock.patch.object(
-            indy.wallet, "close_wallet", mock.AsyncMock()
+            indy.wallet, "close_wallet", mock.CoroutineMock()
         ) as mock_close, mock.patch.object(
-            indy.wallet, "delete_wallet", mock.AsyncMock()
+            indy.wallet, "delete_wallet", mock.CoroutineMock()
         ) as mock_delete:
             mock_master.side_effect = test_module.IndyError(
                 test_module.ErrorCode.AnoncredsMasterSecretDuplicateNameError

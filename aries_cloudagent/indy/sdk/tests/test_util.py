@@ -4,7 +4,7 @@ from shutil import rmtree
 
 import indy.blob_storage
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...util import indy_client_dir, generate_pr_nonce
@@ -28,7 +28,7 @@ class TestIndyUtils(IsolatedAsyncioTestCase):
             print("1234123412431234", file=f)
 
         with mock.patch.object(
-            indy.blob_storage, "open_reader", mock.AsyncMock()
+            indy.blob_storage, "open_reader", mock.CoroutineMock()
         ) as mock_blob_open_reader:
             result = await create_tails_reader(tails_local)
             assert result == mock_blob_open_reader.return_value

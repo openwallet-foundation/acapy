@@ -1,6 +1,6 @@
 import asyncio
 
-from unittest import mock
+from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ..task_queue import CompletedTask, PendingTask, TaskQueue, task_exc_info
@@ -109,7 +109,7 @@ class TestTaskQueue(IsolatedAsyncioTestCase):
         with mock.patch.object(
             queue, "drain", mock.MagicMock()
         ) as mock_drain, mock.patch.object(
-            queue, "wait_for", mock.AsyncMock()
+            queue, "wait_for", mock.CoroutineMock()
         ) as mock_wait_for:
             mock_drain.side_effect = [queue.loop.create_task(noop()), None]
             await queue.complete(cleanup=True)
