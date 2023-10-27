@@ -1988,11 +1988,11 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
             async with ledger:
                 response = await ledger.get_key_for_did(self.test_did)
 
-                assert mock_build_get_nym_req.called_once_with(
+                mock_build_get_nym_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_get_nym_req.return_value,
                     sign_did=mock_wallet_get_public_did.return_value,
                 )
@@ -2019,14 +2019,14 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
             async with ledger:
                 response = await ledger.get_endpoint_for_did(self.test_did)
 
-                assert mock_build_get_attrib_req.called_once_with(
+                mock_build_get_attrib_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                     "endpoint",
                     None,
                     None,
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_get_attrib_req.return_value,
                     sign_did=mock_wallet_get_public_did.return_value,
                 )
@@ -2063,14 +2063,14 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
                     endpoint_type,
                 )
 
-                assert mock_build_get_attrib_req.called_once_with(
+                mock_build_get_attrib_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                     "endpoint",
                     None,
                     None,
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_get_attrib_req.return_value,
                     sign_did=mock_wallet_get_public_did.return_value,
                 )
@@ -2099,14 +2099,14 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
             async with ledger:
                 response = await ledger.get_all_endpoints_for_did(self.test_did)
 
-                assert mock_build_get_attrib_req.called_once_with(
+                mock_build_get_attrib_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                     "endpoint",
                     None,
                     None,
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_get_attrib_req.return_value,
                     sign_did=mock_wallet_get_public_did.return_value,
                 )
@@ -2132,14 +2132,14 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
             async with ledger:
                 response = await ledger.get_all_endpoints_for_did(self.test_did)
 
-                assert mock_build_get_attrib_req.called_once_with(
+                mock_build_get_attrib_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                     "endpoint",
                     None,
                     None,
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_get_attrib_req.return_value,
                     sign_did=mock_wallet_get_public_did.return_value,
                 )
@@ -2165,14 +2165,14 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
             async with ledger:
                 response = await ledger.get_endpoint_for_did(self.test_did)
 
-                assert mock_build_get_attrib_req.called_once_with(
+                mock_build_get_attrib_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                     "endpoint",
                     None,
                     None,
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_get_attrib_req.return_value,
                     sign_did=mock_wallet_get_public_did.return_value,
                 )
@@ -2196,14 +2196,14 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
             async with ledger:
                 response = await ledger.get_endpoint_for_did(self.test_did)
 
-                assert mock_build_get_attrib_req.called_once_with(
+                mock_build_get_attrib_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                     "endpoint",
                     None,
                     None,
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_get_attrib_req.return_value,
                     sign_did=mock_wallet_get_public_did.return_value,
                 )
@@ -2248,7 +2248,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
                     self.test_did, endpoint[1]
                 )
 
-                assert mock_build_get_attrib_req.called_once_with(
+                mock_build_get_attrib_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                     "endpoint",
@@ -2400,7 +2400,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
                         self.test_did, endpoint
                     )
 
-                    assert mock_build_get_attrib_req.called_once_with(
+                    mock_build_get_attrib_req.assert_called_once_with(
                         self.test_did,
                         ledger.did_to_nym(self.test_did),
                         "endpoint",
@@ -2461,7 +2461,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
                     self.test_did, endpoint[1], endpoint_type
                 )
 
-                assert mock_build_get_attrib_req.called_once_with(
+                mock_build_get_attrib_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                     "endpoint",
@@ -2500,14 +2500,14 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
             async with ledger:
                 response = await ledger.update_endpoint_for_did(self.test_did, endpoint)
 
-                assert mock_build_get_attrib_req.called_once_with(
+                mock_build_get_attrib_req.assert_called_once_with(
                     self.test_did,
                     ledger.did_to_nym(self.test_did),
                     "endpoint",
                     None,
                     None,
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_get_attrib_req.return_value,
                     sign_did=mock_wallet_get_public_did.return_value,
                 )
@@ -2576,14 +2576,14 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
                     "alias",
                     None,
                 )
-                assert mock_build_nym_req.called_once_with(
+                mock_build_nym_req.assert_called_once_with(
                     self.test_did,
                     self.test_did,
                     self.test_verkey,
                     "alias",
                     None,
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_nym_req.return_value,
                     True,
                     True,
@@ -2717,14 +2717,14 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
                     "alias",
                     None,
                 )
-                assert mock_build_nym_req.called_once_with(
+                mock_build_nym_req.assert_called_once_with(
                     self.test_did,
                     self.test_did,
                     self.test_verkey,
                     "alias",
                     None,
                 )
-                assert mock_submit.called_once_with(
+                mock_submit.assert_called_once_with(
                     mock_build_nym_req.return_value,
                     True,
                     True,
@@ -2786,11 +2786,11 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
             mock_wallet_get_public_did.return_value = self.test_did_info
             async with ledger:
                 assert await ledger.get_nym_role(self.test_did) == Role.ENDORSER
-                assert mock_build_get_nym_req.called_once_with(
+                mock_build_get_nym_req.assert_called_once_with(
                     self.test_did,
                     self.test_did,
                 )
-                assert mock_submit.called_once_with(mock_build_get_nym_req.return_value)
+                mock_submit.assert_called_once_with(mock_build_get_nym_req.return_value)
 
     @mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
@@ -3346,10 +3346,10 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
             async with ledger:
                 response = await ledger.get_txn_author_agreement(reload=True)
 
-                assert mock_build_get_acc_mech_req.called_once_with(
+                mock_build_get_acc_mech_req.assert_called_once_with(
                     self.test_did, None, None
                 )
-                assert mock_build_get_taa_req.called_once_with(
+                mock_build_get_taa_req.assert_called_once_with(
                     self.test_did,
                     None,
                 )

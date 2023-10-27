@@ -247,9 +247,9 @@ class TestLedgerConfig(IsolatedAsyncioTestCase):
                 public_did=TEST_DID,
                 provision=False,
             )
-            mock_ledger.get_txn_author_agreement.called_once_with()
+            mock_ledger.get_txn_author_agreement.assert_called_once_with()
             mock_ledger.get_latest_txn_author_acceptance.assert_not_called()
-            mock_ledger.update_endpoint_for_did.called_once_with(
+            mock_ledger.update_endpoint_for_did.assert_called_once_with(
                 TEST_DID,
                 settings["profile_endpoint"],
                 test_module.EndpointType.PROFILE,

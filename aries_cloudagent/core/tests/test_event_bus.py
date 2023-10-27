@@ -110,7 +110,7 @@ async def test_sub_notify_error_logged_and_exec_continues(
     ) as mock_log_exc:
         await event_bus.notify(profile, event)
 
-    assert mock_log_exc.called_once_with("Error occurred while processing event")
+    mock_log_exc.assert_called_once_with("Error occurred while processing event")
     assert processor.profile == profile
     assert processor.event == event
 

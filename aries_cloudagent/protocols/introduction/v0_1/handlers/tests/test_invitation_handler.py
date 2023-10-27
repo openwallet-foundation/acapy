@@ -52,7 +52,7 @@ class TestInvitationHandler(IsolatedAsyncioTestCase):
 
             await handler.handle(self.context, responder)
 
-            assert mock_ctx_inject.return_value.return_invitation.called_once_with(
+            mock_ctx_inject.return_value.return_invitation.assert_called_once_with(
                 self.context.connection_record.connection_id,
                 self.context.message,
                 responder.send,

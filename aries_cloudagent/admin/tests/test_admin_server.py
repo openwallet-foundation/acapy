@@ -240,7 +240,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         )
         mock_handler = mock.CoroutineMock()
         await mt_authz_middle(mock_request, mock_handler)
-        assert mock_handler.called_once_with(mock_request)
+        mock_handler.assert_called_once_with(mock_request)
 
         mock_request = mock.MagicMock(
             method="GET",
@@ -250,7 +250,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         )
         mock_handler = mock.CoroutineMock()
         await mt_authz_middle(mock_request, mock_handler)
-        assert mock_handler.called_once_with(mock_request)
+        mock_handler.assert_called_once_with(mock_request)
 
         # multitenant setup context exception paths
         [setup_ctx_middle] = [m for m in app.middlewares if ".setup_context" in str(m)]
