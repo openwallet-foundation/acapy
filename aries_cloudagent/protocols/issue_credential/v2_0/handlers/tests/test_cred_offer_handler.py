@@ -116,7 +116,7 @@ class TestV20CredOfferHandler(IsolatedAsyncioTestCase):
             with mock.patch.object(
                 responder, "send_reply", mock.CoroutineMock()
             ) as mock_send_reply, mock.patch.object(
-                handler._logger, "exception", mock.CoroutineMock()
+                handler._logger, "exception", mock.MagicMock()
             ) as mock_log_exc:
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
