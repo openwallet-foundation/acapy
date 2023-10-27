@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..domain_txn_handler import (
     prepare_for_state_read,
@@ -28,7 +28,7 @@ from .test_data import (
 )
 
 
-class TestSubTrie(TestCase):
+class TestSubTrie(IsolatedAsyncioTestCase):
     def test_get_setter_root_hash(self):
         test_trie = SubTrie()
         test_trie.root_hash = 530343892119126197
@@ -43,7 +43,7 @@ class TestSubTrie(TestCase):
         )
 
 
-class TestMPTStateProofValidation(TestCase):
+class TestMPTStateProofValidation(IsolatedAsyncioTestCase):
     async def test_validate_get_nym(self):
         reply = GET_NYM_REPLY
         assert await SubTrie.verify_spv_proof(
@@ -135,7 +135,7 @@ class TestMPTStateProofValidation(TestCase):
         )
 
 
-class TestMerkleRootHashValidation(TestCase):
+class TestMerkleRootHashValidation(IsolatedAsyncioTestCase):
     async def test_verify_leaf_inclusion_x(self):
         merkle_verifier = MerkleVerifier(HexTreeHasher())
         leaf_index = 848049
