@@ -3,7 +3,7 @@
 import json
 
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
@@ -64,7 +64,7 @@ class TestOps(IsolatedAsyncioTestCase):
         setattr(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.session),
+            mock.MagicMock(return_value=self.session),
         )
 
         self.context.injector.bind_instance(DocumentLoader, custom_document_loader)

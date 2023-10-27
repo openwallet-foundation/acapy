@@ -4,7 +4,7 @@ from shutil import rmtree
 
 import indy.blob_storage
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...util import indy_client_dir, generate_pr_nonce
@@ -27,8 +27,8 @@ class TestIndyUtils(IsolatedAsyncioTestCase):
         with open(tails_local, "a") as f:
             print("1234123412431234", file=f)
 
-        with async_mock.patch.object(
-            indy.blob_storage, "open_reader", async_mock.AsyncMock()
+        with mock.patch.object(
+            indy.blob_storage, "open_reader", mock.AsyncMock()
         ) as mock_blob_open_reader:
             result = await create_tails_reader(tails_local)
             assert result == mock_blob_open_reader.return_value

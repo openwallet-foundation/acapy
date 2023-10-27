@@ -2,7 +2,7 @@
 import logging
 from typing import AsyncIterable, Iterable
 
-from unittest import mock as async_mock
+from unittest import mock
 import pytest
 
 from .. import manager as test_module
@@ -251,8 +251,8 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert await manager.get_default_mediator_id() == "updated"
 
     async def test_set_default_mediator_by_id(self, manager: MediationManager):
-        with async_mock.patch.object(
-            test_module.MediationRecord, "retrieve_by_id", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_retrieve:
             await manager.set_default_mediator_by_id("test")
 
@@ -404,23 +404,23 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
             ),
         ]
 
-        with async_mock.patch.object(
-            RouteRecord, "query", async_mock.AsyncMock()
-        ) as mock_route_rec_query, async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+        with mock.patch.object(
+            RouteRecord, "query", mock.AsyncMock()
+        ) as mock_route_rec_query, mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_logger_error:
             mock_route_rec_query.side_effect = StorageNotFoundError("no record")
 
             await manager.store_update_results(TEST_CONN_ID, results)
             mock_logger_error.assert_called_once()
 
-        with async_mock.patch.object(
-            RouteRecord, "query", async_mock.AsyncMock()
-        ) as mock_route_rec_query, async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+        with mock.patch.object(
+            RouteRecord, "query", mock.AsyncMock()
+        ) as mock_route_rec_query, mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_logger_error:
             mock_route_rec_query.return_value = [
-                async_mock.MagicMock(delete_record=async_mock.AsyncMock())
+                mock.MagicMock(delete_record=mock.AsyncMock())
             ] * 2
 
             await manager.store_update_results(TEST_CONN_ID, results)

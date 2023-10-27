@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from marshmallow import ValidationError
 
@@ -70,8 +70,8 @@ class TestRoutingManager(IsolatedAsyncioTestCase):
         assert "Must pass non-empty" in str(context.exception)
 
     async def test_get_recipient_duplicate_routes(self):
-        with async_mock.patch.object(
-            RouteRecord, "retrieve_by_recipient_key", async_mock.AsyncMock()
+        with mock.patch.object(
+            RouteRecord, "retrieve_by_recipient_key", mock.AsyncMock()
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageDuplicateError()
             with self.assertRaises(RouteNotFoundError) as context:
@@ -79,8 +79,8 @@ class TestRoutingManager(IsolatedAsyncioTestCase):
         assert "More than one route" in str(context.exception)
 
     async def test_get_recipient_no_routes(self):
-        with async_mock.patch.object(
-            RouteRecord, "retrieve_by_recipient_key", async_mock.AsyncMock()
+        with mock.patch.object(
+            RouteRecord, "retrieve_by_recipient_key", mock.AsyncMock()
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError()
             with self.assertRaises(RouteNotFoundError) as context:

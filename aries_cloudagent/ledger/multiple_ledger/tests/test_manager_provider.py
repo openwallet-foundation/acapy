@@ -1,6 +1,6 @@
 import pytest
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....askar.profile import AskarProfileManager
@@ -69,7 +69,7 @@ class TestMultiIndyLedgerManagerProvider(IsolatedAsyncioTestCase):
     @pytest.mark.indy
     async def test_provide_indy_manager(self):
         context = InjectionContext()
-        with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
+        with mock.patch.object(IndySdkProfile, "_make_finalizer"):
             profile = IndySdkProfile(
                 IndyOpenWallet(
                     config=IndyWalletConfig({"name": "test-profile"}),

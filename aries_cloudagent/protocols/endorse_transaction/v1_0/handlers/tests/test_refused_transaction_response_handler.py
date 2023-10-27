@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
@@ -13,12 +13,12 @@ class TestRefusedTransactionResponseHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_refuse_response = async_mock.AsyncMock()
+            mock_tran_mgr.return_value.receive_refuse_response = mock.AsyncMock()
             request_context.message = RefusedTransactionResponse()
             request_context.connection_ready = True
             handler = test_module.RefusedTransactionResponseHandler()
@@ -33,12 +33,12 @@ class TestRefusedTransactionResponseHandler(IsolatedAsyncioTestCase):
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_refuse_response = async_mock.AsyncMock()
+            mock_tran_mgr.return_value.receive_refuse_response = mock.AsyncMock()
             request_context.message = RefusedTransactionResponse()
             request_context.connection_ready = False
             handler = test_module.RefusedTransactionResponseHandler()
@@ -51,12 +51,12 @@ class TestRefusedTransactionResponseHandler(IsolatedAsyncioTestCase):
     async def test_called_x(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_refuse_response = async_mock.AsyncMock(
+            mock_tran_mgr.return_value.receive_refuse_response = mock.AsyncMock(
                 side_effect=test_module.TransactionManagerError()
             )
             request_context.message = RefusedTransactionResponse()

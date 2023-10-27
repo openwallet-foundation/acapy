@@ -1,5 +1,5 @@
 import pytest
-from unittest import mock as async_mock
+from unittest import mock
 
 
 from ....config.injection_context import InjectionContext
@@ -27,7 +27,7 @@ async def make_profile():
     context = InjectionContext()
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
 
-    with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
+    with mock.patch.object(IndySdkProfile, "_make_finalizer"):
         return await IndySdkProfileManager().provision(
             context,
             {

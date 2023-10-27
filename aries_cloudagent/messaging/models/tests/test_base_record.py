@@ -1,6 +1,6 @@
 import json
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 from marshmallow import EXCLUDE, fields
 
@@ -85,29 +85,25 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
 
     async def test_post_save_new(self):
         session = InMemoryProfile.test_session()
-        mock_storage = async_mock.MagicMock()
-        mock_storage.add_record = async_mock.AsyncMock()
+        mock_storage = mock.MagicMock()
+        mock_storage.add_record = mock.AsyncMock()
         session.context.injector.bind_instance(BaseStorage, mock_storage)
         record = BaseRecordImpl()
-        with async_mock.patch.object(
-            record, "post_save", async_mock.AsyncMock()
-        ) as post_save:
+        with mock.patch.object(record, "post_save", mock.AsyncMock()) as post_save:
             await record.save(session, reason="reason", event=True)
             post_save.assert_called_once_with(session, True, None, True)
         mock_storage.add_record.assert_called_once()
 
     async def test_post_save_exist(self):
         session = InMemoryProfile.test_session()
-        mock_storage = async_mock.MagicMock()
-        mock_storage.update_record = async_mock.AsyncMock()
+        mock_storage = mock.MagicMock()
+        mock_storage.update_record = mock.AsyncMock()
         session.context.injector.bind_instance(BaseStorage, mock_storage)
         record = BaseRecordImpl()
         last_state = "last_state"
         record._last_state = last_state
         record._id = "id"
-        with async_mock.patch.object(
-            record, "post_save", async_mock.AsyncMock()
-        ) as post_save:
+        with mock.patch.object(record, "post_save", mock.AsyncMock()) as post_save:
             await record.save(session, reason="reason", event=False)
             post_save.assert_called_once_with(session, False, last_state, False)
         mock_storage.update_record.assert_called_once()
@@ -117,7 +113,7 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
         await BaseRecordImpl.set_cached_key(None, None, None)
         await BaseRecordImpl.clear_cached_key(None, None)
         session = InMemoryProfile.test_session()
-        mock_cache = async_mock.MagicMock(BaseCache, autospec=True)
+        mock_cache = mock.MagicMock(BaseCache, autospec=True)
         session.context.injector.bind_instance(BaseCache, mock_cache)
         record = BaseRecordImpl()
         cache_key = "cache_key"
@@ -148,11 +144,9 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
     async def test_save_x(self):
         session = InMemoryProfile.test_session()
         rec = ARecordImpl(a="1", b="0", code="one")
-        with async_mock.patch.object(
-            session, "inject", async_mock.MagicMock()
-        ) as mock_inject:
-            mock_inject.return_value = async_mock.MagicMock(
-                add_record=async_mock.AsyncMock(side_effect=ZeroDivisionError())
+        with mock.patch.object(session, "inject", mock.MagicMock()) as mock_inject:
+            mock_inject.return_value = mock.MagicMock(
+                add_record=mock.AsyncMock(side_effect=ZeroDivisionError())
             )
             with self.assertRaises(ZeroDivisionError):
                 await rec.save(session)
@@ -164,7 +158,7 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
 
     async def test_query(self):
         session = InMemoryProfile.test_session()
-        mock_storage = async_mock.MagicMock(BaseStorage, autospec=True)
+        mock_storage = mock.MagicMock(BaseStorage, autospec=True)
         session.context.injector.bind_instance(BaseStorage, mock_storage)
         record_id = "record_id"
         record_value = {"created_at": time_now(), "updated_at": time_now()}
@@ -184,7 +178,7 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
 
     async def test_query_x(self):
         session = InMemoryProfile.test_session()
-        mock_storage = async_mock.MagicMock(BaseStorage, autospec=True)
+        mock_storage = mock.MagicMock(BaseStorage, autospec=True)
         session.context.injector.bind_instance(BaseStorage, mock_storage)
         record_id = "record_id"
         record_value = {"created_at": time_now(), "updated_at": time_now()}
@@ -194,17 +188,17 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
         )
 
         mock_storage.find_all_records.return_value = [stored]
-        with async_mock.patch.object(
+        with mock.patch.object(
             BaseRecordImpl,
             "from_storage",
-            async_mock.MagicMock(side_effect=BaseModelError),
+            mock.MagicMock(side_effect=BaseModelError),
         ):
             with self.assertRaises(BaseModelError):
                 await BaseRecordImpl.query(session, tag_filter)
 
     async def test_query_post_filter(self):
         session = InMemoryProfile.test_session()
-        mock_storage = async_mock.MagicMock(BaseStorage, autospec=True)
+        mock_storage = mock.MagicMock(BaseStorage, autospec=True)
         session.context.injector.bind_instance(BaseStorage, mock_storage)
         record_id = "record_id"
         a_record = ARecordImpl(ident=record_id, a="one", b="two", code="red")
@@ -260,21 +254,19 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
         )
         assert not result
 
-    @async_mock.patch("builtins.print")
+    @mock.patch("builtins.print")
     def test_log_state(self, mock_print):
         test_param = "test.log"
-        with async_mock.patch.object(
-            BaseRecordImpl, "LOG_STATE_FLAG", test_param
-        ) as cls:
+        with mock.patch.object(BaseRecordImpl, "LOG_STATE_FLAG", test_param) as cls:
             record = BaseRecordImpl()
             record.log_state(
                 msg="state",
                 params={"a": "1", "b": "2"},
-                settings=async_mock.MagicMock(get={test_param: 1}.get),
+                settings=mock.MagicMock(get={test_param: 1}.get),
             )
         mock_print.assert_called_once()
 
-    @async_mock.patch("builtins.print")
+    @mock.patch("builtins.print")
     def test_skip_log(self, mock_print):
         record = BaseRecordImpl()
         record.log_state("state", settings=None)

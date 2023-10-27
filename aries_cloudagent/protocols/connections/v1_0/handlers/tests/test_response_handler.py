@@ -1,5 +1,5 @@
 import pytest
-from unittest import mock as async_mock
+from unittest import mock
 
 from ......connections.models import connection_target
 from ......connections.models.diddoc import (
@@ -67,9 +67,9 @@ def did_doc():
 
 class TestResponseHandler:
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_called(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.accept_response = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
         request_context.message = ConnectionResponse()
         handler_inst = handler.ConnectionResponseHandler()
         responder = MockResponder()
@@ -80,10 +80,10 @@ class TestResponseHandler:
         assert not responder.messages
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_called_auto_ping(self, mock_conn_mgr, request_context):
         request_context.update_settings({"auto_ping_connection": True})
-        mock_conn_mgr.return_value.accept_response = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
         request_context.message = ConnectionResponse()
         handler_inst = handler.ConnectionResponseHandler()
         responder = MockResponder()
@@ -97,9 +97,9 @@ class TestResponseHandler:
         assert isinstance(result, Ping)
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_problem_report(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.accept_response = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
         )
@@ -117,16 +117,16 @@ class TestResponseHandler:
         assert target == {"target_list": None}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
-    @async_mock.patch.object(connection_target, "ConnectionTarget")
+    @mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
         self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
-        mock_conn_mgr.return_value.accept_response = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             return_value=[mock_conn_target]
         )
         request_context.message = ConnectionResponse(
@@ -145,16 +145,16 @@ class TestResponseHandler:
         assert target == {"target_list": [mock_conn_target]}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
-    @async_mock.patch.object(connection_target, "ConnectionTarget")
+    @mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
         self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
-        mock_conn_mgr.return_value.accept_response = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.accept_response = mock.AsyncMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             side_effect=ConnectionManagerError("no target")
         )
         request_context.message = ConnectionResponse(

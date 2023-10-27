@@ -4,7 +4,7 @@ from copy import deepcopy
 from time import time
 
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...ledger.multiple_ledger.ledger_requests_executor import (
@@ -309,8 +309,8 @@ class MockVerifier(IndyVerifier):
 @pytest.mark.indy
 class TestIndySdkVerifier(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.ledger = async_mock.MagicMock(
-            get_credential_definition=async_mock.AsyncMock(
+        self.ledger = mock.MagicMock(
+            get_credential_definition=mock.AsyncMock(
                 return_value={
                     "...": "...",
                     "value": {
@@ -343,9 +343,9 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         )
         context.injector.bind_instance(
             BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
+            mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
@@ -362,7 +362,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         context.injector.bind_instance(
             IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
@@ -374,13 +374,13 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             )
 
         # timestamp for irrevocable credential
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (
                 None,
-                async_mock.MagicMock(
-                    get_credential_definition=async_mock.AsyncMock(
+                mock.MagicMock(
+                    get_credential_definition=mock.AsyncMock(
                         return_value={
                             "...": "...",
                             "value": {"no": "revocation"},
@@ -398,7 +398,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             assert "Timestamp in presentation identifier #" in str(context.exception)
 
         # all clear, no timestamps
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
@@ -442,9 +442,9 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
         proof_req_x["non_revoked"] = {"from": 1600000000, "to": 1600001000}
         proof_x["identifiers"][0]["timestamp"] = 1579890000
-        with async_mock.patch.object(
-            test_module, "LOGGER", async_mock.MagicMock()
-        ) as mock_logger, async_mock.patch.object(
+        with mock.patch.object(
+            test_module, "LOGGER", mock.MagicMock()
+        ) as mock_logger, mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
@@ -461,7 +461,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
         proof_x = deepcopy(INDY_PROOF_NAME)
         proof_req_x.pop("non_revoked")
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)

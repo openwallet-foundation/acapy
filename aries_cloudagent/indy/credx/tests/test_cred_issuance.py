@@ -2,7 +2,7 @@ import json
 import tempfile
 import pytest
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....askar.profile import AskarProfileManager
@@ -46,16 +46,16 @@ PRES_REQ_REV = {
 class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         context = InjectionContext(enforce_typing=False)
-        mock_ledger = async_mock.MagicMock(
-            get_credential_definition=async_mock.AsyncMock(return_value={"value": {}}),
-            get_revoc_reg_delta=async_mock.AsyncMock(
+        mock_ledger = mock.MagicMock(
+            get_credential_definition=mock.AsyncMock(return_value={"value": {}}),
+            get_revoc_reg_delta=mock.AsyncMock(
                 return_value=(
                     {"value": {"...": "..."}},
                     1234567890,
                 )
             ),
         )
-        mock_ledger.__aenter__ = async_mock.AsyncMock(return_value=mock_ledger)
+        mock_ledger.__aenter__ = mock.AsyncMock(return_value=mock_ledger)
         self.ledger = mock_ledger
 
         self.holder_profile = await AskarProfileManager().provision(
@@ -77,8 +77,8 @@ class TestIndyCredxIssuance(IsolatedAsyncioTestCase):
         self.issuer_profile._context.injector.bind_instance(BaseLedger, mock_ledger)
         self.issuer_profile._context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.AsyncMock(
+            mock.MagicMock(
+                get_ledger_for_identifier=mock.AsyncMock(
                     return_value=(None, mock_ledger)
                 )
             ),

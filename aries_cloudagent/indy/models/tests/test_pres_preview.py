@@ -6,7 +6,7 @@ from time import time
 from unittest import TestCase
 
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from ....core.in_memory import InMemoryProfile
 from ....ledger.multiple_ledger.ledger_requests_executor import (
@@ -402,13 +402,13 @@ class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
         context.injector.bind_instance(
             IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (
                 None,
-                async_mock.MagicMock(
-                    get_credential_definition=async_mock.AsyncMock(
+                mock.MagicMock(
+                    get_credential_definition=mock.AsyncMock(
                         return_value={"value": {"revocation": {"...": "..."}}}
                     )
                 ),
@@ -447,15 +447,15 @@ class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
         )
         context.injector.bind_instance(
             BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
+            mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (
                 None,
-                async_mock.MagicMock(
-                    get_credential_definition=async_mock.AsyncMock(
+                mock.MagicMock(
+                    get_credential_definition=mock.AsyncMock(
                         return_value={"value": {"revocation": {"...": "..."}}}
                     )
                 ),

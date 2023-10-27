@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.in_memory import InMemoryProfile
@@ -126,10 +126,10 @@ class TestV20CredExRecord(IsolatedAsyncioTestCase):
         record.state = V20CredExRecord.STATE_PROPOSAL_RECEIVED
         await record.save(session)
 
-        with async_mock.patch.object(
-            record, "save", async_mock.AsyncMock()
-        ) as mock_save, async_mock.patch.object(
-            test_module.LOGGER, "exception", async_mock.MagicMock()
+        with mock.patch.object(
+            record, "save", mock.AsyncMock()
+        ) as mock_save, mock.patch.object(
+            test_module.LOGGER, "exception", mock.MagicMock()
         ) as mock_log_exc:
             mock_save.side_effect = test_module.StorageError()
             await record.save_error_state(session, reason="test")

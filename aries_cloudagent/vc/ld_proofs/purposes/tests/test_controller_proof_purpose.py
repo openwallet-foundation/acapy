@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from unittest import IsolatedAsyncioTestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock
 
 from ....tests.data import TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519
 from ....tests.document_loader import custom_document_loader
@@ -31,7 +31,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
 
         document = TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519.copy()
         proof = document.pop("proof")
-        suite = async_mock.MagicMock()
+        suite = mock.MagicMock()
         verification_method = {
             "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"][
                 "verificationMethod"
@@ -54,7 +54,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
 
         document = TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519.copy()
         proof = document.pop("proof")
-        suite = async_mock.MagicMock()
+        suite = mock.MagicMock()
         verification_method = {
             "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"][
                 "verificationMethod"
@@ -78,7 +78,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
 
         document = TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519.copy()
         proof = document.pop("proof")
-        suite = async_mock.MagicMock()
+        suite = mock.MagicMock()
         verification_method = {
             "id": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["proof"][
                 "verificationMethod"
@@ -100,15 +100,15 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
     async def test_validate_x_super_invalid(self):
         proof_purpose = ControllerProofPurpose(term="assertionMethod")
 
-        with async_mock.patch.object(ProofPurpose, "validate") as validate_mock:
-            validate_mock.return_value = async_mock.MagicMock(valid=False)
+        with mock.patch.object(ProofPurpose, "validate") as validate_mock:
+            validate_mock.return_value = mock.MagicMock(valid=False)
 
             result = proof_purpose.validate(
-                proof=async_mock.MagicMock(),
-                document=async_mock.MagicMock(),
-                suite=async_mock.MagicMock(),
-                verification_method=async_mock.MagicMock(),
-                document_loader=async_mock.MagicMock(),
+                proof=mock.MagicMock(),
+                document=mock.MagicMock(),
+                suite=mock.MagicMock(),
+                verification_method=mock.MagicMock(),
+                document_loader=mock.MagicMock(),
             )
 
             assert not result.valid

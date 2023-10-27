@@ -1,4 +1,4 @@
-from unittest import IsolatedAsyncioTestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock
 
 from aries_cloudagent.wallet.key_type import ED25519
 
@@ -27,12 +27,12 @@ class TestWalletKeyPair(IsolatedAsyncioTestCase):
             key_type=ED25519,
             public_key_base58=public_key_base58,
         )
-        signed = async_mock.MagicMock()
+        signed = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             InMemoryWallet,
             "sign_message",
-            async_mock.AsyncMock(return_value=signed),
+            mock.AsyncMock(return_value=signed),
         ) as sign_message:
             singed_ret = await key_pair.sign(b"Message")
 
@@ -56,10 +56,10 @@ class TestWalletKeyPair(IsolatedAsyncioTestCase):
             public_key_base58=public_key_base58,
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             InMemoryWallet,
             "verify_message",
-            async_mock.AsyncMock(return_value=True),
+            mock.AsyncMock(return_value=True),
         ) as verify_message:
             verified = await key_pair.verify(b"Message", b"signature")
 

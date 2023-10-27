@@ -1,4 +1,4 @@
-from unittest import IsolatedAsyncioTestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock
 from datetime import datetime
 
 import pytest
@@ -112,8 +112,8 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
         with self.assertRaises(LinkedDataProofException) as context:
             await issue(
                 credential=credential,
-                suite=async_mock.MagicMock(),
-                document_loader=async_mock.MagicMock(),
+                suite=mock.MagicMock(),
+                document_loader=mock.MagicMock(),
             )
         assert "invalid structure" in str(context.exception)
 
@@ -124,9 +124,9 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
         with self.assertRaises(LinkedDataProofException) as context:
             await derive_credential(
                 credential=credential,
-                reveal_document=async_mock.MagicMock(),
-                suite=async_mock.MagicMock(),
-                document_loader=async_mock.MagicMock(),
+                reveal_document=mock.MagicMock(),
+                suite=mock.MagicMock(),
+                document_loader=mock.MagicMock(),
             )
         assert "invalid structure" in str(context.exception)
 
@@ -163,7 +163,7 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
         result = await verify_credential(
             credential=credential,
             suites=[],
-            document_loader=async_mock.MagicMock(),
+            document_loader=mock.MagicMock(),
         )
 
         assert not result.verified
@@ -305,8 +305,8 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
         with self.assertRaises(LinkedDataProofException) as context:
             await sign_presentation(
                 presentation=PRESENTATION_UNSIGNED,
-                suite=async_mock.MagicMock(),
-                document_loader=async_mock.MagicMock(),
+                suite=mock.MagicMock(),
+                document_loader=mock.MagicMock(),
             )
         assert 'A "challenge" param is required' in str(context.exception)
 

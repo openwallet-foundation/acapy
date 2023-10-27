@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -35,19 +35,19 @@ class TestInvitationHandler(IsolatedAsyncioTestCase):
             ),
             message="Hello World",
         )
-        self.context.connection_record = async_mock.MagicMock(connection_id="dummy")
+        self.context.connection_record = mock.MagicMock(connection_id="dummy")
 
     async def test_handle(self):
         handler = test_module.InvitationHandler()
 
-        mock_conn_rec = async_mock.MagicMock(connection_id="dummy")
+        mock_conn_rec = mock.MagicMock(connection_id="dummy")
 
         responder = MockResponder()
-        with async_mock.patch.object(
-            self.context, "inject_or", async_mock.MagicMock()
+        with mock.patch.object(
+            self.context, "inject_or", mock.MagicMock()
         ) as mock_ctx_inject:
-            mock_ctx_inject.return_value = async_mock.MagicMock(
-                return_invitation=async_mock.AsyncMock()
+            mock_ctx_inject.return_value = mock.MagicMock(
+                return_invitation=mock.AsyncMock()
             )
 
             await handler.handle(self.context, responder)

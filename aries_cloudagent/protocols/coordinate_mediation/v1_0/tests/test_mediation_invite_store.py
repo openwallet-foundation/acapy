@@ -1,6 +1,6 @@
 from unittest import IsolatedAsyncioTestCase
 from unittest import TestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from aries_cloudagent.protocols.coordinate_mediation.mediation_invite_store import (
     MediationInviteStore,
@@ -49,7 +49,7 @@ class TestMediationInviteRecord(TestCase):
 
 class TestMediationInviteStore(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.storage = async_mock.MagicMock(spec=BaseStorage)
+        self.storage = mock.MagicMock(spec=BaseStorage)
         self.mediation_invite_store = MediationInviteStore(self.storage)
 
     async def test_store_create_record_to_store_mediation_invite_when_no_record_exists(

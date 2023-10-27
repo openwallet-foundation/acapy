@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import TestCase
 
 from ....admin.server import AdminResponder
@@ -23,11 +23,11 @@ class TestInboundSession(TestCase):
         self.profile = InMemoryProfile.test_profile()
 
     def test_init(self):
-        test_inbound = async_mock.MagicMock()
+        test_inbound = mock.MagicMock()
         test_session_id = "session-id"
-        test_wire_format = async_mock.MagicMock()
+        test_wire_format = mock.MagicMock()
         test_client_info = {"client": "info"}
-        test_close = async_mock.MagicMock()
+        test_close = mock.MagicMock()
         test_reply_mode = MessageReceipt.REPLY_MODE_ALL
         test_reply_thread_ids = {"1", "2"}
         test_reply_verkeys = {"3", "4"}
@@ -54,8 +54,8 @@ class TestInboundSession(TestCase):
         assert "1" in sess.reply_thread_ids
         assert "3" in sess.reply_verkeys
 
-        test_msg = async_mock.MagicMock()
-        with async_mock.patch.object(sess, "process_inbound") as process:
+        test_msg = mock.MagicMock()
+        with mock.patch.object(sess, "process_inbound") as process:
             sess.receive_inbound(test_msg)
             process.assert_called_once_with(test_msg)
             test_inbound.assert_called_once_with(
@@ -89,10 +89,10 @@ class TestInboundSession(TestCase):
     async def test_parse_inbound(self):
         test_session_id = "session-id"
         test_transport_type = "transport-type"
-        test_wire_format = async_mock.MagicMock()
-        test_wire_format.parse_message = async_mock.AsyncMock()
+        test_wire_format = mock.MagicMock()
+        test_wire_format.parse_message = mock.AsyncMock()
         test_parsed = "parsed-payload"
-        test_receipt = async_mock.MagicMock()
+        test_receipt = mock.MagicMock()
         test_wire_format.parse_message.return_value = (test_parsed, test_receipt)
         sess = InboundSession(
             profile=self.profile,
@@ -103,7 +103,7 @@ class TestInboundSession(TestCase):
         )
 
         session = self.profile.session()
-        setattr(self.profile, "session", async_mock.MagicMock(return_value=session))
+        setattr(self.profile, "session", mock.MagicMock(return_value=session))
 
         test_payload = "{}"
         result = await sess.parse_inbound(test_payload)
@@ -114,18 +114,18 @@ class TestInboundSession(TestCase):
         assert result.transport_type == test_transport_type
 
     async def test_receive(self):
-        self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
-        self.multitenant_mgr.get_wallets_by_message = async_mock.AsyncMock(
-            return_value=[async_mock.MagicMock(is_managed=True)]
+        self.multitenant_mgr = mock.MagicMock(MultitenantManager, autospec=True)
+        self.multitenant_mgr.get_wallets_by_message = mock.AsyncMock(
+            return_value=[mock.MagicMock(is_managed=True)]
         )
-        self.multitenant_mgr.get_wallet_profile = async_mock.AsyncMock(
+        self.multitenant_mgr.get_wallet_profile = mock.AsyncMock(
             return_value=self.profile
         )
         self.profile.context.injector.bind_instance(
             BaseMultitenantManager, self.multitenant_mgr
         )
         self.profile.context.update_settings({"multitenant.enabled": True})
-        self.base_responder = async_mock.MagicMock(AdminResponder, autospec=True)
+        self.base_responder = mock.MagicMock(AdminResponder, autospec=True)
         self.profile.context.injector.bind_instance(BaseResponder, self.base_responder)
 
         sess = InboundSession(
@@ -134,12 +134,12 @@ class TestInboundSession(TestCase):
             session_id=None,
             wire_format=None,
         )
-        test_msg = async_mock.MagicMock()
+        test_msg = mock.MagicMock()
 
-        with async_mock.patch.object(
-            sess, "parse_inbound", async_mock.AsyncMock()
-        ) as encode, async_mock.patch.object(
-            sess, "receive_inbound", async_mock.MagicMock()
+        with mock.patch.object(
+            sess, "parse_inbound", mock.AsyncMock()
+        ) as encode, mock.patch.object(
+            sess, "receive_inbound", mock.MagicMock()
         ) as receive:
             result = await sess.receive(test_msg)
             encode.assert_awaited_once_with(test_msg)
@@ -147,11 +147,11 @@ class TestInboundSession(TestCase):
             assert result is encode.return_value
 
     async def test_receive_no_wallet_found(self):
-        self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
-        self.multitenant_mgr.get_wallets_by_message = async_mock.AsyncMock(
+        self.multitenant_mgr = mock.MagicMock(MultitenantManager, autospec=True)
+        self.multitenant_mgr.get_wallets_by_message = mock.AsyncMock(
             side_effect=ValueError("no such wallet")
         )
-        self.multitenant_mgr.get_wallet_profile = async_mock.AsyncMock(
+        self.multitenant_mgr.get_wallet_profile = mock.AsyncMock(
             return_value=self.profile
         )
         self.profile.context.injector.bind_instance(
@@ -165,12 +165,12 @@ class TestInboundSession(TestCase):
             session_id=None,
             wire_format=None,
         )
-        test_msg = async_mock.MagicMock()
+        test_msg = mock.MagicMock()
 
-        with async_mock.patch.object(
-            sess, "parse_inbound", async_mock.AsyncMock()
-        ) as encode, async_mock.patch.object(
-            sess, "receive_inbound", async_mock.MagicMock()
+        with mock.patch.object(
+            sess, "parse_inbound", mock.AsyncMock()
+        ) as encode, mock.patch.object(
+            sess, "receive_inbound", mock.MagicMock()
         ) as receive:
             result = await sess.receive(test_msg)
             encode.assert_awaited_once_with(test_msg)
@@ -267,9 +267,7 @@ class TestInboundSession(TestCase):
         assert sess.response_event.is_set()
         assert sess.response_buffered
 
-        with async_mock.patch.object(
-            sess, "encode_outbound", async_mock.AsyncMock()
-        ) as encode:
+        with mock.patch.object(sess, "encode_outbound", mock.AsyncMock()) as encode:
             result = await asyncio.wait_for(sess.wait_response(), 0.1)
             assert encode.awaited_once_with(test_msg)
             assert result is encode.return_value
@@ -292,9 +290,7 @@ class TestInboundSession(TestCase):
         assert sess.response_event.is_set()
         assert sess.response_buffered
 
-        with async_mock.patch.object(
-            sess, "encode_outbound", async_mock.AsyncMock()
-        ) as encode:
+        with mock.patch.object(sess, "encode_outbound", mock.AsyncMock()) as encode:
             encode.side_effect = WireFormatError()
             with pytest.raises(asyncio.TimeoutError):
                 await asyncio.wait_for(sess.wait_response(), 0.1)
@@ -305,8 +301,8 @@ class TestInboundSession(TestCase):
         assert await asyncio.wait_for(sess.wait_response(), 0.1) is None
 
     async def test_encode_response(self):
-        test_wire_format = async_mock.MagicMock()
-        test_wire_format.encode_message = async_mock.AsyncMock()
+        test_wire_format = mock.MagicMock()
+        test_wire_format.encode_message = mock.AsyncMock()
         sess = InboundSession(
             profile=self.profile,
             inbound_handler=None,
@@ -318,7 +314,7 @@ class TestInboundSession(TestCase):
         test_to_verkey = "to-verkey"
 
         session = self.profile.session()
-        setattr(self.profile, "session", async_mock.MagicMock(return_value=session))
+        setattr(self.profile, "session", mock.MagicMock(return_value=session))
 
         with self.assertRaises(WireFormatError):
             await sess.encode_outbound(test_msg)
@@ -347,7 +343,7 @@ class TestInboundSession(TestCase):
         )
         test_msg = OutboundMessage(payload=None)
 
-        with async_mock.patch.object(sess, "select_outbound") as selector:
+        with mock.patch.object(sess, "select_outbound") as selector:
             selector.return_value = False
 
             accepted = sess.accept_response(test_msg)

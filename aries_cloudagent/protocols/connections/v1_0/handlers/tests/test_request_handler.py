@@ -1,5 +1,5 @@
 import pytest
-from unittest import mock as async_mock
+from unittest import mock
 
 from ......core.profile import ProfileSession
 from ......connections.models import connection_target
@@ -75,9 +75,9 @@ def did_doc():
 
 class TestRequestHandler:
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_called(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.receive_request = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.receive_request = mock.AsyncMock()
         request_context.message = ConnectionRequest()
         handler_inst = handler.ConnectionRequestHandler()
         responder = MockResponder()
@@ -88,14 +88,14 @@ class TestRequestHandler:
         assert not responder.messages
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_called_with_auto_response(self, mock_conn_mgr, request_context):
-        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
         mock_conn_rec.accept = ConnRecord.ACCEPT_AUTO
-        mock_conn_mgr.return_value.receive_request = async_mock.AsyncMock(
+        mock_conn_mgr.return_value.receive_request = mock.AsyncMock(
             return_value=mock_conn_rec
         )
-        mock_conn_mgr.return_value.create_response = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.create_response = mock.AsyncMock()
         request_context.message = ConnectionRequest()
         handler_inst = handler.ConnectionRequestHandler()
         responder = MockResponder()
@@ -109,21 +109,21 @@ class TestRequestHandler:
         assert responder.messages
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_connection_record_with_mediation_metadata_auto_response(
         self, mock_conn_mgr, request_context, connection_record
     ):
-        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
         mock_conn_rec.accept = ConnRecord.ACCEPT_AUTO
-        mock_conn_mgr.return_value.receive_request = async_mock.AsyncMock(
+        mock_conn_mgr.return_value.receive_request = mock.AsyncMock(
             return_value=mock_conn_rec
         )
-        mock_conn_mgr.return_value.create_response = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.create_response = mock.AsyncMock()
         request_context.message = ConnectionRequest()
-        with async_mock.patch.object(
+        with mock.patch.object(
             connection_record,
             "metadata_get",
-            async_mock.AsyncMock(return_value={"id": "test-mediation-id"}),
+            mock.AsyncMock(return_value={"id": "test-mediation-id"}),
         ):
             handler_inst = handler.ConnectionRequestHandler()
             responder = MockResponder()
@@ -135,17 +135,17 @@ class TestRequestHandler:
             assert responder.messages
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_connection_record_without_mediation_metadata(
         self, mock_conn_mgr, request_context, session, connection_record
     ):
-        mock_conn_mgr.return_value.receive_request = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.receive_request = mock.AsyncMock()
         request_context.message = ConnectionRequest()
         storage: BaseStorage = session.inject(BaseStorage)
-        with async_mock.patch.object(
+        with mock.patch.object(
             storage,
             "find_record",
-            async_mock.AsyncMock(raises=StorageNotFoundError),
+            mock.AsyncMock(raises=StorageNotFoundError),
         ) as mock_storage_find_record:
             handler_inst = handler.ConnectionRequestHandler()
             responder = MockResponder()
@@ -157,9 +157,9 @@ class TestRequestHandler:
             assert not responder.messages
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_problem_report(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.receive_request = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.receive_request = mock.AsyncMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
@@ -177,16 +177,16 @@ class TestRequestHandler:
         assert target == {"target_list": None}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
-    @async_mock.patch.object(connection_target, "ConnectionTarget")
+    @mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
         self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
-        mock_conn_mgr.return_value.receive_request = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.receive_request = mock.AsyncMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             return_value=[mock_conn_target]
         )
         request_context.message = ConnectionRequest(
@@ -207,16 +207,16 @@ class TestRequestHandler:
         assert target == {"target_list": [mock_conn_target]}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
-    @async_mock.patch.object(connection_target, "ConnectionTarget")
+    @mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
         self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
-        mock_conn_mgr.return_value.receive_request = async_mock.AsyncMock()
+        mock_conn_mgr.return_value.receive_request = mock.AsyncMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
         )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             side_effect=ConnectionManagerError("no targets")
         )
         request_context.message = ConnectionRequest(

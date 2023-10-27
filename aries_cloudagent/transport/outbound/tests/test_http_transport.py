@@ -3,7 +3,7 @@ import pytest
 
 from aiohttp.test_utils import AioHTTPTestCase
 from aiohttp import web
-from unittest import mock as async_mock
+from unittest import mock
 
 from ....core.in_memory import InMemoryProfile
 from ....utils.stats import Collector
@@ -129,13 +129,13 @@ class TestHttpTransport(AioHTTPTestCase):
         with pytest.raises(OutboundTransportError):
             await transport.handle_message(None, None, None)
 
-        with async_mock.patch.object(
-            transport, "client_session", async_mock.MagicMock()
+        with mock.patch.object(
+            transport, "client_session", mock.MagicMock()
         ) as mock_session:
-            mock_response = async_mock.MagicMock(status=404)
-            mock_session.post = async_mock.MagicMock(
-                return_value=async_mock.MagicMock(
-                    __aenter__=async_mock.AsyncMock(return_value=mock_response)
+            mock_response = mock.MagicMock(status=404)
+            mock_session.post = mock.MagicMock(
+                return_value=mock.MagicMock(
+                    __aenter__=mock.AsyncMock(return_value=mock_response)
                 )
             )
             with pytest.raises(OutboundTransportError):

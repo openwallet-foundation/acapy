@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from unittest import IsolatedAsyncioTestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .....messaging.util import datetime_to_str
 from ..proof_purpose import ProofPurpose
@@ -24,11 +24,11 @@ class TestProofPurpose(IsolatedAsyncioTestCase):
         proof_purpose = ProofPurpose(term="ProofTerm", date=datetime.now())
 
         result = proof_purpose.validate(
-            proof=async_mock.MagicMock(),
-            document=async_mock.MagicMock(),
-            suite=async_mock.MagicMock(),
-            verification_method=async_mock.MagicMock(),
-            document_loader=async_mock.MagicMock(),
+            proof=mock.MagicMock(),
+            document=mock.MagicMock(),
+            suite=mock.MagicMock(),
+            verification_method=mock.MagicMock(),
+            document_loader=mock.MagicMock(),
         )
         assert result.valid
 
@@ -40,10 +40,10 @@ class TestProofPurpose(IsolatedAsyncioTestCase):
 
         result = proof_purpose.validate(
             proof={"created": datetime_to_str(date + timedelta(5))},
-            document=async_mock.MagicMock(),
-            suite=async_mock.MagicMock(),
-            verification_method=async_mock.MagicMock(),
-            document_loader=async_mock.MagicMock(),
+            document=mock.MagicMock(),
+            suite=mock.MagicMock(),
+            verification_method=mock.MagicMock(),
+            document_loader=mock.MagicMock(),
         )
         assert result.valid
 
@@ -55,10 +55,10 @@ class TestProofPurpose(IsolatedAsyncioTestCase):
 
         result = proof_purpose.validate(
             proof={"created": datetime_to_str(date + timedelta(15))},
-            document=async_mock.MagicMock(),
-            suite=async_mock.MagicMock(),
-            verification_method=async_mock.MagicMock(),
-            document_loader=async_mock.MagicMock(),
+            document=mock.MagicMock(),
+            suite=mock.MagicMock(),
+            verification_method=mock.MagicMock(),
+            document_loader=mock.MagicMock(),
         )
 
         assert not result.valid

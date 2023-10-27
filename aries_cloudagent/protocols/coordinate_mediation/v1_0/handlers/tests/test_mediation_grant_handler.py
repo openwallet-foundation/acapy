@@ -1,7 +1,7 @@
 """Test mediate grant message handler."""
 
 import pytest
-from unittest import mock as async_mock
+from unittest import mock
 
 from aries_cloudagent.core.profile import ProfileSession
 
@@ -81,11 +81,11 @@ class TestMediationGrantHandler:
         handler, responder = MediationGrantHandler(), MockResponder()
         record = MediationRecord(connection_id=TEST_CONN_ID)
         await record.save(session)
-        with async_mock.patch.object(
+        with mock.patch.object(
             context.connection_record,
             "metadata_get",
-            async_mock.AsyncMock(return_value=True),
-        ), async_mock.patch.object(
+            mock.AsyncMock(return_value=True),
+        ), mock.patch.object(
             test_module, "MediationManager", autospec=True
         ) as mock_mediation_manager:
             await handler.handle(context, responder)
@@ -96,25 +96,25 @@ class TestMediationGrantHandler:
     async def test_handler_multitenant_base_mediation(
         self, session: ProfileSession, context: RequestContext
     ):
-        handler, responder = MediationGrantHandler(), async_mock.AsyncMock()
-        responder.send = async_mock.AsyncMock()
+        handler, responder = MediationGrantHandler(), mock.AsyncMock()
+        responder.send = mock.AsyncMock()
         profile = context.profile
 
         profile.context.update_settings(
             {"multitenant.enabled": True, "wallet.id": "test_wallet"}
         )
 
-        multitenant_mgr = async_mock.AsyncMock()
+        multitenant_mgr = mock.AsyncMock()
         profile.context.injector.bind_instance(BaseMultitenantManager, multitenant_mgr)
 
         default_base_mediator = MediationRecord(routing_keys=["key1", "key2"])
-        multitenant_mgr.get_default_mediator = async_mock.AsyncMock()
+        multitenant_mgr.get_default_mediator = mock.AsyncMock()
         multitenant_mgr.get_default_mediator.return_value = default_base_mediator
 
         record = MediationRecord(connection_id=TEST_CONN_ID)
         await record.save(session)
-        with async_mock.patch.object(MediationManager, "add_key") as add_key:
-            keylist_updates = async_mock.MagicMock()
+        with mock.patch.object(MediationManager, "add_key") as add_key:
+            keylist_updates = mock.MagicMock()
             add_key.return_value = keylist_updates
 
             await handler.handle(context, responder)
@@ -130,11 +130,11 @@ class TestMediationGrantHandler:
         handler, responder = MediationGrantHandler(), MockResponder()
         record = MediationRecord(connection_id=TEST_CONN_ID)
         await record.save(session)
-        with async_mock.patch.object(
+        with mock.patch.object(
             context.connection_record,
             "metadata_get",
-            async_mock.AsyncMock(return_value=False),
-        ), async_mock.patch.object(
+            mock.AsyncMock(return_value=False),
+        ), mock.patch.object(
             test_module, "MediationManager", autospec=True
         ) as mock_mediation_manager:
             await handler.handle(context, responder)

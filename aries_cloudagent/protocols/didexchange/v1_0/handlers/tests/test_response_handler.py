@@ -1,5 +1,5 @@
 import pytest
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models import connection_target
@@ -78,9 +78,9 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         )
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "DIDXManager")
+    @mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_didx_mgr):
-        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock()
+        mock_didx_mgr.return_value.accept_response = mock.AsyncMock()
         self.ctx.message = DIDXResponse()
         handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
@@ -92,10 +92,10 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         assert not responder.messages
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "DIDXManager")
+    @mock.patch.object(test_module, "DIDXManager")
     async def test_called_auto_ping(self, mock_didx_mgr):
         self.ctx.update_settings({"auto_ping_connection": True})
-        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock()
+        mock_didx_mgr.return_value.accept_response = mock.AsyncMock()
         self.ctx.message = DIDXResponse()
         handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
@@ -110,9 +110,9 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         assert isinstance(result, Ping)
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "DIDXManager")
+    @mock.patch.object(test_module, "DIDXManager")
     async def test_problem_report(self, mock_didx_mgr):
-        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock(
+        mock_didx_mgr.return_value.accept_response = mock.AsyncMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
@@ -135,19 +135,19 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         assert target == {"target_list": None}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "DIDXManager")
-    @async_mock.patch.object(connection_target, "ConnectionTarget")
+    @mock.patch.object(test_module, "DIDXManager")
+    @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
         self,
         mock_conn_target,
         mock_didx_mgr,
     ):
-        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock(
+        mock_didx_mgr.return_value.accept_response = mock.AsyncMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
         )
-        mock_didx_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_didx_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             return_value=[mock_conn_target]
         )
         self.ctx.message = DIDXResponse(
@@ -171,19 +171,19 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         assert target == {"target_list": [mock_conn_target]}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "DIDXManager")
-    @async_mock.patch.object(connection_target, "ConnectionTarget")
+    @mock.patch.object(test_module, "DIDXManager")
+    @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
         self,
         mock_conn_target,
         mock_didx_mgr,
     ):
-        mock_didx_mgr.return_value.accept_response = async_mock.AsyncMock(
+        mock_didx_mgr.return_value.accept_response = mock.AsyncMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
             )
         )
-        mock_didx_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
+        mock_didx_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             side_effect=DIDXManagerError("no target")
         )
         self.ctx.message = DIDXResponse(

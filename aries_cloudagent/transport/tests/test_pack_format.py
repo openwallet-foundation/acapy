@@ -2,7 +2,7 @@ import json
 from base64 import b64encode
 
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...protocols.didcomm_prefix import DIDCommPrefix
@@ -54,9 +54,7 @@ class TestPackWireFormat(IsolatedAsyncioTestCase):
         }
 
         serializer.task_queue = None
-        with async_mock.patch.object(
-            serializer, "unpack", async_mock.AsyncMock()
-        ) as mock_unpack:
+        with mock.patch.object(serializer, "unpack", mock.AsyncMock()) as mock_unpack:
             mock_unpack.return_value = "{missing-brace"
             with self.assertRaises(WireFormatParseError) as context:
                 await serializer.parse_message(self.session, json.dumps(x_message))
@@ -64,9 +62,7 @@ class TestPackWireFormat(IsolatedAsyncioTestCase):
 
         serializer = PackWireFormat()
         serializer.task_queue = None
-        with async_mock.patch.object(
-            serializer, "unpack", async_mock.AsyncMock()
-        ) as mock_unpack:
+        with mock.patch.object(serializer, "unpack", mock.AsyncMock()) as mock_unpack:
             mock_unpack.return_value = json.dumps([1, 2, 3])
             with self.assertRaises(WireFormatParseError) as context:
                 await serializer.parse_message(self.session, json.dumps(x_message))
@@ -92,25 +88,23 @@ class TestPackWireFormat(IsolatedAsyncioTestCase):
                 ["key"],
             )
 
-        mock_wallet = async_mock.MagicMock(
-            pack_message=async_mock.AsyncMock(side_effect=WalletError())
+        mock_wallet = mock.MagicMock(
+            pack_message=mock.AsyncMock(side_effect=WalletError())
         )
         session = InMemoryProfile.test_session(bind={BaseWallet: mock_wallet})
         with self.assertRaises(WireFormatEncodeError):
             await serializer.pack(session, None, ["key"], None, ["key"])
 
-        mock_wallet = async_mock.MagicMock(
-            pack_message=async_mock.AsyncMock(
+        mock_wallet = mock.MagicMock(
+            pack_message=mock.AsyncMock(
                 side_effect=[json.dumps("message").encode("utf-8"), WalletError()]
             )
         )
         session = InMemoryProfile.test_session(bind={BaseWallet: mock_wallet})
-        with async_mock.patch.object(
-            test_module, "Forward", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module, "Forward", mock.MagicMock()
         ) as mock_forward:
-            mock_forward.return_value = async_mock.MagicMock(
-                to_json=async_mock.MagicMock()
-            )
+            mock_forward.return_value = mock.MagicMock(to_json=mock.MagicMock())
             with self.assertRaises(WireFormatEncodeError):
                 await serializer.pack(session, None, ["key"], ["key"], ["key"])
 

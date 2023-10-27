@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
@@ -22,8 +22,8 @@ class TestV20CredAck(IsolatedAsyncioTestCase):
         """Test deserialization."""
         obj = V20CredAck()
 
-        with async_mock.patch.object(
-            test_module.V20CredAckSchema, "load", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.V20CredAckSchema, "load", mock.MagicMock()
         ) as mock_load:
             cred_ack = V20CredAck.deserialize(obj)
             mock_load.assert_called_once_with(obj)
@@ -34,8 +34,8 @@ class TestV20CredAck(IsolatedAsyncioTestCase):
         """Test serialization."""
         obj = V20CredAck()
 
-        with async_mock.patch.object(
-            test_module.V20CredAckSchema, "dump", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.V20CredAckSchema, "dump", mock.MagicMock()
         ) as mock_dump:
             cred_ack_dict = obj.serialize()
             mock_dump.assert_called_once_with(obj)

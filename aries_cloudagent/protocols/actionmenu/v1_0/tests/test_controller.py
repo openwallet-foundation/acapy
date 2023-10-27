@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
@@ -12,12 +12,12 @@ class TestActionMenuController(IsolatedAsyncioTestCase):
         self.context = RequestContext(self.session.profile)
 
     async def test_controller(self):
-        MenuService = async_mock.MagicMock(test_module.BaseMenuService, autospec=True)
+        MenuService = mock.MagicMock(test_module.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(
             test_module.BaseMenuService, self.menu_service
         )
-        self.context.inject = async_mock.AsyncMock(return_value=self.menu_service)
+        self.context.inject = mock.AsyncMock(return_value=self.menu_service)
 
         controller = test_module.Controller("protocol")
 

@@ -3,7 +3,7 @@ import pytest
 
 from copy import deepcopy
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 from indy.error import IndyError
 
@@ -294,8 +294,8 @@ REV_REG_DEFS = {
 @pytest.mark.indy
 class TestIndySdkVerifier(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.ledger = async_mock.MagicMock(
-            get_credential_definition=async_mock.AsyncMock(
+        self.ledger = mock.MagicMock(
+            get_credential_definition=mock.AsyncMock(
                 return_value={
                     "...": "...",
                     "value": {
@@ -324,15 +324,15 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         self.verifier = IndySdkVerifier(mock_profile)
         assert repr(self.verifier) == "<IndySdkVerifier>"
 
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_verify_presentation(self, mock_verify):
         mock_verify.return_value = "val"
 
-        with async_mock.patch.object(
-            self.verifier, "pre_verify", async_mock.AsyncMock()
-        ) as mock_pre_verify, async_mock.patch.object(
-            self.verifier, "non_revoc_intervals", async_mock.MagicMock()
-        ) as mock_non_revox, async_mock.patch.object(
+        with mock.patch.object(
+            self.verifier, "pre_verify", mock.AsyncMock()
+        ) as mock_pre_verify, mock.patch.object(
+            self.verifier, "non_revoc_intervals", mock.MagicMock()
+        ) as mock_non_revox, mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
@@ -359,15 +359,15 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
 
         assert verified == "val"
 
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_verify_presentation_x_indy(self, mock_verify):
         mock_verify.side_effect = IndyError(error_code=1)
 
-        with async_mock.patch.object(
-            self.verifier, "pre_verify", async_mock.AsyncMock()
-        ) as mock_pre_verify, async_mock.patch.object(
-            self.verifier, "non_revoc_intervals", async_mock.MagicMock()
-        ) as mock_non_revox, async_mock.patch.object(
+        with mock.patch.object(
+            self.verifier, "pre_verify", mock.AsyncMock()
+        ) as mock_pre_verify, mock.patch.object(
+            self.verifier, "non_revoc_intervals", mock.MagicMock()
+        ) as mock_non_revox, mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = ("test", self.ledger)
@@ -391,9 +391,9 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
 
         assert not verified
 
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr(self, mock_verify):
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
@@ -419,13 +419,13 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         assert len(msgs) == 1
         assert "TS_OUT_NRI::19_uuid" in msgs
 
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr_tamper_raw(self, mock_verify):
         INDY_PROOF_X = deepcopy(INDY_PROOF_NAME)
         INDY_PROOF_X["requested_proof"]["revealed_attrs"]["19_uuid"][
             "raw"
         ] = "Mock chicken"
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = ("test", self.ledger)
@@ -447,13 +447,13 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
         )
 
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr_tamper_encoded(self, mock_verify):
         INDY_PROOF_X = deepcopy(INDY_PROOF_NAME)
         INDY_PROOF_X["requested_proof"]["revealed_attrs"]["19_uuid"][
             "encoded"
         ] = "1234567890"
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
@@ -475,9 +475,9 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
         )
 
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names(self, mock_verify):
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = ("test", self.ledger)
@@ -509,13 +509,13 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         assert "TS_OUT_NRI::18_id_GE_uuid" in msgs
         assert "TS_OUT_NRI::18_busid_GE_uuid" in msgs
 
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_pred_value(self, mock_verify):
         INDY_PROOF_X = deepcopy(INDY_PROOF_PRED_NAMES)
         INDY_PROOF_X["proof"]["proofs"][0]["primary_proof"]["ge_proofs"][0][
             "predicate"
         ]["value"] = 0
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
@@ -540,11 +540,11 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             in msgs
         )
 
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_pred_req_attr(self, mock_verify):
         INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
         INDY_PROOF_REQ_X["requested_predicates"]["18_busid_GE_uuid"]["name"] = "dummy"
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
@@ -569,13 +569,13 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
             in msgs
         )
 
-    @async_mock.patch("indy.anoncreds.verifier_verify_proof")
+    @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_attr_groups(self, mock_verify):
         INDY_PROOF_X = deepcopy(INDY_PROOF_PRED_NAMES)
         INDY_PROOF_X["requested_proof"]["revealed_attr_groups"][
             "x_uuid"
         ] = INDY_PROOF_X["requested_proof"]["revealed_attr_groups"].pop("18_uuid")
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = ("test", self.ledger)

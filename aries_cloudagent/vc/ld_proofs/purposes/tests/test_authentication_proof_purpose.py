@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from unittest import IsolatedAsyncioTestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock
 
 from ...validation_result import PurposeResult
 from ..controller_proof_purpose import ControllerProofPurpose
@@ -33,18 +33,16 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
             challenge="8378c56e-4926-4a54-9587-0f2ef564619a", domain="example.com"
         )
 
-        with async_mock.patch.object(
-            ControllerProofPurpose, "validate"
-        ) as validate_mock:
+        with mock.patch.object(ControllerProofPurpose, "validate") as validate_mock:
             validate_mock.return_value = PurposeResult(valid=True)
             proof = {
                 "challenge": "8378c56e-4926-4a54-9587-0f2ef564619a",
                 "domain": "example.com",
             }
-            document = async_mock.MagicMock()
-            suite = async_mock.MagicMock()
+            document = mock.MagicMock()
+            suite = mock.MagicMock()
             verification_method = {"controller": "controller"}
-            document_loader = async_mock.MagicMock()
+            document_loader = mock.MagicMock()
 
             result = proof_purpose.validate(
                 proof=proof,
@@ -67,9 +65,7 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
             challenge="8378c56e-4926-4a54-9587-0f2ef564619a", domain="example.com"
         )
 
-        with async_mock.patch.object(
-            ControllerProofPurpose, "validate"
-        ) as validate_mock:
+        with mock.patch.object(ControllerProofPurpose, "validate") as validate_mock:
             validate_mock.return_value = PurposeResult(valid=True)
 
             result = proof_purpose.validate(
@@ -77,10 +73,10 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
                     "challenge": "another8378c56e-4926-4a54-9587-0f2ef564619a",
                     "domain": "example.com",
                 },
-                document=async_mock.MagicMock(),
-                suite=async_mock.MagicMock(),
-                verification_method=async_mock.MagicMock(),
-                document_loader=async_mock.MagicMock(),
+                document=mock.MagicMock(),
+                suite=mock.MagicMock(),
+                verification_method=mock.MagicMock(),
+                document_loader=mock.MagicMock(),
             )
             assert not result.valid
             assert "The challenge is not as expected" in str(result.error)
@@ -90,9 +86,7 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
             challenge="8378c56e-4926-4a54-9587-0f2ef564619a", domain="example.com"
         )
 
-        with async_mock.patch.object(
-            ControllerProofPurpose, "validate"
-        ) as validate_mock:
+        with mock.patch.object(ControllerProofPurpose, "validate") as validate_mock:
             validate_mock.return_value = PurposeResult(valid=True)
 
             result = proof_purpose.validate(
@@ -100,10 +94,10 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
                     "challenge": "8378c56e-4926-4a54-9587-0f2ef564619a",
                     "domain": "anotherexample.com",
                 },
-                document=async_mock.MagicMock(),
-                suite=async_mock.MagicMock(),
-                verification_method=async_mock.MagicMock(),
-                document_loader=async_mock.MagicMock(),
+                document=mock.MagicMock(),
+                suite=mock.MagicMock(),
+                verification_method=mock.MagicMock(),
+                document_loader=mock.MagicMock(),
             )
             assert not result.valid
             assert "The domain is not as expected" in str(result.error)

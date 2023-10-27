@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -37,7 +37,7 @@ class TestInvitationRequestHandler(IsolatedAsyncioTestCase):
         responder = MockResponder()
         inv_req = InvitationRequest(responder=responder, message="Hello")
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
             await handler.handle(self.context, responder)
@@ -54,13 +54,13 @@ class TestInvitationRequestHandler(IsolatedAsyncioTestCase):
             routing_keys=[TEST_ROUTE_VERKEY],
             image_url=TEST_IMAGE_URL,
         )
-        mock_conn_rec = async_mock.MagicMock(connection_id="dummy")
+        mock_conn_rec = mock.MagicMock(connection_id="dummy")
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.create_invitation = async_mock.AsyncMock(
+            mock_mgr.return_value.create_invitation = mock.AsyncMock(
                 return_value=(mock_conn_rec, conn_invitation)
             )
 

@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
@@ -45,7 +45,7 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
         )
         mgr = InboundTransportManager(self.profile, None)
 
-        with async_mock.patch.object(mgr, "register") as mock_register:
+        with mock.patch.object(mgr, "register") as mock_register:
             await mgr.setup()
             mock_register.assert_called_once()
             tcfg: InboundTransportConfiguration = mock_register.call_args[0][0]
@@ -58,9 +58,9 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
         assert mgr.undelivered_queue
 
     async def test_start_stop(self):
-        transport = async_mock.MagicMock()
-        transport.start = async_mock.AsyncMock()
-        transport.stop = async_mock.AsyncMock()
+        transport = mock.MagicMock()
+        transport.start = mock.AsyncMock()
+        transport.stop = mock.AsyncMock()
 
         mgr = InboundTransportManager(self.profile, None)
         mgr.register_transport(transport, "transport_cls")
@@ -73,10 +73,10 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
         transport.stop.assert_awaited_once_with()
 
     async def test_create_session(self):
-        test_wire_format = async_mock.MagicMock()
+        test_wire_format = mock.MagicMock()
         self.profile.context.injector.bind_instance(BaseWireFormat, test_wire_format)
 
-        test_inbound_handler = async_mock.AsyncMock()
+        test_inbound_handler = mock.AsyncMock()
         mgr = InboundTransportManager(self.profile, test_inbound_handler)
         test_transport = "http"
         test_accept = True
@@ -104,14 +104,14 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
 
     async def test_return_to_session(self):
         mgr = InboundTransportManager(self.profile, None)
-        test_wire_format = async_mock.MagicMock()
+        test_wire_format = mock.MagicMock()
 
         session = await mgr.create_session("http", wire_format=test_wire_format)
 
         test_outbound = OutboundMessage(payload=None)
         test_outbound.reply_session_id = session.session_id
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             session, "accept_response", return_value=True
         ) as mock_accept:
             assert mgr.return_to_session(test_outbound) is True
@@ -120,22 +120,22 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
         test_outbound = OutboundMessage(payload=None)
         test_outbound.reply_session_id = None
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             session, "accept_response", return_value=False
         ) as mock_accept:
             assert mgr.return_to_session(test_outbound) is False
             mock_accept.assert_called_once_with(test_outbound)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             session, "accept_response", return_value=True
         ) as mock_accept:
             assert mgr.return_to_session(test_outbound) is True
             mock_accept.assert_called_once_with(test_outbound)
 
     async def test_close_return(self):
-        test_return = async_mock.MagicMock()
+        test_return = mock.MagicMock()
         mgr = InboundTransportManager(self.profile, None, return_inbound=test_return)
-        test_wire_format = async_mock.MagicMock()
+        test_wire_format = mock.MagicMock()
 
         session = await mgr.create_session("http", wire_format=test_wire_format)
 
@@ -147,8 +147,8 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
 
     async def test_dispatch_complete_undelivered(self):
         mgr = InboundTransportManager(self.profile, None)
-        test_wire_format = async_mock.MagicMock(
-            parse_message=async_mock.AsyncMock(return_value=("payload", "receipt"))
+        test_wire_format = mock.MagicMock(
+            parse_message=mock.AsyncMock(return_value=("payload", "receipt"))
         )
         session = await mgr.create_session(
             "http", wire_format=test_wire_format, accept_undelivered=True
@@ -158,7 +158,7 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
 
     async def test_close_x(self):
         mgr = InboundTransportManager(self.profile, None)
-        mock_session = async_mock.MagicMock(response_buffer=async_mock.MagicMock())
+        mock_session = mock.MagicMock(response_buffer=mock.MagicMock())
         mgr.closed_session(mock_session)
 
     async def test_process_undelivered(self):
@@ -166,7 +166,7 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
             {"transport.enable_undelivered_queue": True}
         )
         test_verkey = "test-verkey"
-        test_wire_format = async_mock.MagicMock()
+        test_wire_format = mock.MagicMock()
         mgr = InboundTransportManager(self.profile, None)
         await mgr.setup()
 
@@ -180,7 +180,7 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
         )
         session.add_reply_verkeys(test_verkey)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             session, "accept_response", return_value=True
         ) as mock_accept:
             mgr.process_undelivered(session)
@@ -192,7 +192,7 @@ class TestInboundTransportManager(IsolatedAsyncioTestCase):
             {"transport.enable_undelivered_queue": False}
         )
         test_verkey = "test-verkey"
-        test_wire_format = async_mock.MagicMock()
+        test_wire_format = mock.MagicMock()
         mgr = InboundTransportManager(self.profile, None)
         await mgr.setup()
 

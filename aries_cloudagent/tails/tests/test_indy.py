@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...config.injection_context import InjectionContext
@@ -30,9 +30,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         )
         indy_tails = test_module.IndyTailsServer()
 
-        with async_mock.patch.object(
-            test_module, "put_file", async_mock.AsyncMock()
-        ) as mock_put:
+        with mock.patch.object(test_module, "put_file", mock.AsyncMock()) as mock_put:
             mock_put.return_value = "tails-hash"
             (ok, text) = await indy_tails.upload_tails_file(
                 context,
@@ -49,8 +47,8 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         profile.settings["tails_server_upload_url"] = "http://1.2.3.4:8088"
         profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
-            async_mock.MagicMock(
-                get_write_ledgers=async_mock.AsyncMock(
+            mock.MagicMock(
+                get_write_ledgers=mock.AsyncMock(
                     return_value=[
                         "test_ledger_id_1",
                         "test_ledger_id_2",
@@ -58,12 +56,10 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
                 )
             ),
         )
-        profile.context.injector.bind_instance(BaseLedger, async_mock.MagicMock())
+        profile.context.injector.bind_instance(BaseLedger, mock.MagicMock())
         indy_tails = test_module.IndyTailsServer()
 
-        with async_mock.patch.object(
-            test_module, "put_file", async_mock.AsyncMock()
-        ) as mock_put:
+        with mock.patch.object(test_module, "put_file", mock.AsyncMock()) as mock_put:
             mock_put.return_value = "tails-hash"
             (ok, text) = await indy_tails.upload_tails_file(
                 profile.context,
@@ -80,8 +76,8 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         profile.settings["tails_server_upload_url"] = "http://1.2.3.4:8088"
         profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
-            async_mock.MagicMock(
-                get_write_ledgers=async_mock.AsyncMock(
+            mock.MagicMock(
+                get_write_ledgers=mock.AsyncMock(
                     return_value=[
                         "test_ledger_id_1",
                         "test_ledger_id_2",
@@ -89,12 +85,10 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
                 )
             ),
         )
-        profile.context.injector.bind_instance(BaseLedger, async_mock.MagicMock())
+        profile.context.injector.bind_instance(BaseLedger, mock.MagicMock())
         indy_tails = test_module.IndyTailsServer()
 
-        with async_mock.patch.object(
-            test_module, "put_file", async_mock.AsyncMock()
-        ) as mock_put:
+        with mock.patch.object(test_module, "put_file", mock.AsyncMock()) as mock_put:
             mock_put.return_value = "tails-hash"
             (ok, text) = await indy_tails.upload_tails_file(
                 profile.context,
@@ -115,9 +109,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         )
         indy_tails = test_module.IndyTailsServer()
 
-        with async_mock.patch.object(
-            test_module, "put_file", async_mock.AsyncMock()
-        ) as mock_put:
+        with mock.patch.object(test_module, "put_file", mock.AsyncMock()) as mock_put:
             mock_put.side_effect = test_module.PutError("Server down for maintenance")
 
             (ok, text) = await indy_tails.upload_tails_file(

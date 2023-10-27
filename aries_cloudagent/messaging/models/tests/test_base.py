@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import EXCLUDE, INCLUDE, fields, validates_schema, ValidationError
@@ -82,12 +82,12 @@ class TestBase(IsolatedAsyncioTestCase):
 
     def test_ser_x(self):
         model = ModelImpl(attr="hello world")
-        with async_mock.patch.object(
-            model, "_get_schema_class", async_mock.MagicMock()
+        with mock.patch.object(
+            model, "_get_schema_class", mock.MagicMock()
         ) as mock_get_schema_class:
-            mock_get_schema_class.return_value = async_mock.MagicMock(
-                return_value=async_mock.MagicMock(
-                    dump=async_mock.MagicMock(side_effect=ValidationError("error"))
+            mock_get_schema_class.return_value = mock.MagicMock(
+                return_value=mock.MagicMock(
+                    dump=mock.MagicMock(side_effect=ValidationError("error"))
                 )
             )
             with self.assertRaises(BaseModelError):

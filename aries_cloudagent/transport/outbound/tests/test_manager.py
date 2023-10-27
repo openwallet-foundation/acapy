@@ -1,6 +1,6 @@
 import json
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
@@ -41,7 +41,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
     async def test_setup(self):
         profile = InMemoryProfile.test_profile({"transport.outbound_configs": ["http"]})
         mgr = OutboundTransportManager(profile)
-        with async_mock.patch.object(mgr, "register") as mock_register:
+        with mock.patch.object(mgr, "register") as mock_register:
             await mgr.setup()
             mock_register.assert_called_once_with("http")
 
@@ -49,19 +49,19 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
         profile = InMemoryProfile.test_profile()
         mgr = OutboundTransportManager(profile)
 
-        transport_cls = async_mock.Mock(spec=[])
+        transport_cls = mock.Mock(spec=[])
         with self.assertRaises(OutboundTransportRegistrationError):
             mgr.register_class(transport_cls, "transport_cls")
 
-        transport = async_mock.MagicMock()
-        transport.handle_message = async_mock.AsyncMock()
-        transport.wire_format.encode_message = async_mock.AsyncMock()
-        transport.start = async_mock.AsyncMock()
-        transport.stop = async_mock.AsyncMock()
+        transport = mock.MagicMock()
+        transport.handle_message = mock.AsyncMock()
+        transport.wire_format.encode_message = mock.AsyncMock()
+        transport.start = mock.AsyncMock()
+        transport.stop = mock.AsyncMock()
         transport.schemes = ["http"]
         transport.is_external = False
 
-        transport_cls = async_mock.MagicMock()
+        transport_cls = mock.MagicMock()
         transport_cls.schemes = ["http"]
         transport_cls.return_value = transport
         mgr.register_class(transport_cls, "transport_cls")
@@ -83,9 +83,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
 
         send_session = InMemoryProfile.test_session()
         send_profile = send_session.profile
-        setattr(
-            send_profile, "session", async_mock.MagicMock(return_value=send_session)
-        )
+        setattr(send_profile, "session", mock.MagicMock(return_value=send_session))
         await mgr.enqueue_message(send_profile, message)
         await mgr.flush()
 
@@ -125,8 +123,8 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
     async def test_stop_cancel(self):
         profile = InMemoryProfile.test_profile({"transport.outbound_configs": ["http"]})
         mgr = OutboundTransportManager(profile)
-        mgr._process_task = async_mock.MagicMock(
-            done=async_mock.MagicMock(return_value=False), cancel=async_mock.MagicMock()
+        mgr._process_task = mock.MagicMock(
+            done=mock.MagicMock(return_value=False), cancel=mock.MagicMock()
         )
         mgr.running_transports = {}
         await mgr.stop()
@@ -146,15 +144,15 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
                 test_topic, test_payload, test_endpoint, max_attempts=test_attempts
             )
 
-        transport_cls = async_mock.MagicMock()
+        transport_cls = mock.MagicMock()
         transport_cls.schemes = ["http"]
-        transport_cls.return_value = async_mock.MagicMock()
+        transport_cls.return_value = mock.MagicMock()
         transport_cls.return_value.schemes = ["http"]
-        transport_cls.return_value.start = async_mock.AsyncMock()
+        transport_cls.return_value.start = mock.AsyncMock()
         tid = mgr.register_class(transport_cls, "transport_cls")
         await mgr.start_transport(tid)
 
-        with async_mock.patch.object(mgr, "process_queued") as mock_process:
+        with mock.patch.object(mgr, "process_queued") as mock_process:
             mgr.enqueue_webhook(
                 test_topic, test_payload, test_endpoint, max_attempts=test_attempts
             )
@@ -167,47 +165,47 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
             assert queued.state == QueuedOutboundMessage.STATE_PENDING
 
     async def test_process_done_x(self):
-        mock_task = async_mock.MagicMock(
-            done=async_mock.MagicMock(return_value=True),
-            exception=async_mock.MagicMock(return_value=KeyError("No such key")),
+        mock_task = mock.MagicMock(
+            done=mock.MagicMock(return_value=True),
+            exception=mock.MagicMock(return_value=KeyError("No such key")),
         )
         profile = InMemoryProfile.test_profile()
         mgr = OutboundTransportManager(profile)
 
-        with async_mock.patch.object(
-            mgr, "_process_task", async_mock.MagicMock()
+        with mock.patch.object(
+            mgr, "_process_task", mock.MagicMock()
         ) as mock_mgr_process:
-            mock_mgr_process.done = async_mock.MagicMock(return_value=True)
+            mock_mgr_process.done = mock.MagicMock(return_value=True)
             mgr._process_done(mock_task)
 
     async def test_process_finished_x(self):
-        mock_queued = async_mock.MagicMock(retries=1)
-        mock_task = async_mock.MagicMock(
+        mock_queued = mock.MagicMock(retries=1)
+        mock_task = mock.MagicMock(
             exc_info=(KeyError, KeyError("nope"), None),
         )
         profile = InMemoryProfile.test_profile()
         mgr = OutboundTransportManager(profile)
 
-        with async_mock.patch.object(
-            mgr, "process_queued", async_mock.MagicMock()
+        with mock.patch.object(
+            mgr, "process_queued", mock.MagicMock()
         ) as mock_mgr_process:
             mgr.finished_encode(mock_queued, mock_task)
             mgr.finished_deliver(mock_queued, mock_task)
             mgr.finished_deliver(mock_queued, mock_task)
 
     async def test_process_loop_retry_now(self):
-        mock_queued = async_mock.MagicMock(
+        mock_queued = mock.MagicMock(
             state=QueuedOutboundMessage.STATE_RETRY,
             retry_at=test_module.get_timer() - 1,
         )
 
         profile = InMemoryProfile.test_profile()
-        mock_handle_not_delivered = async_mock.MagicMock()
+        mock_handle_not_delivered = mock.MagicMock()
         mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
 
-        with async_mock.patch.object(
-            test_module, "trace_event", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module, "trace_event", mock.MagicMock()
         ) as mock_trace:
             mock_trace.side_effect = KeyError()
             with self.assertRaises(KeyError):  # cover retry logic and bail
@@ -215,18 +213,18 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
             assert mock_queued.retry_at is None
 
     async def test_process_loop_retry_later(self):
-        mock_queued = async_mock.MagicMock(
+        mock_queued = mock.MagicMock(
             state=QueuedOutboundMessage.STATE_RETRY,
             retry_at=test_module.get_timer() + 3600,
         )
 
         profile = InMemoryProfile.test_profile()
-        mock_handle_not_delivered = async_mock.MagicMock()
+        mock_handle_not_delivered = mock.MagicMock()
         mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
 
-        with async_mock.patch.object(
-            test_module.asyncio, "sleep", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.asyncio, "sleep", mock.AsyncMock()
         ) as mock_sleep_x:
             mock_sleep_x.side_effect = KeyError()
             with self.assertRaises(KeyError):  # cover retry logic and bail
@@ -235,21 +233,21 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
 
     async def test_process_loop_new(self):
         profile = InMemoryProfile.test_profile()
-        mock_handle_not_delivered = async_mock.MagicMock()
+        mock_handle_not_delivered = mock.MagicMock()
         mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
 
         mgr.outbound_new = [
-            async_mock.MagicMock(
+            mock.MagicMock(
                 state=test_module.QueuedOutboundMessage.STATE_NEW,
-                message=async_mock.MagicMock(enc_payload=b"encr"),
+                message=mock.MagicMock(enc_payload=b"encr"),
             )
         ]
-        with async_mock.patch.object(
-            mgr, "deliver_queued_message", async_mock.MagicMock()
-        ) as mock_deliver, async_mock.patch.object(
-            mgr.outbound_event, "wait", async_mock.AsyncMock()
-        ) as mock_wait, async_mock.patch.object(
-            test_module, "trace_event", async_mock.MagicMock()
+        with mock.patch.object(
+            mgr, "deliver_queued_message", mock.MagicMock()
+        ) as mock_deliver, mock.patch.object(
+            mgr.outbound_event, "wait", mock.AsyncMock()
+        ) as mock_wait, mock.patch.object(
+            test_module, "trace_event", mock.MagicMock()
         ) as mock_trace:
             mock_wait.side_effect = KeyError()  # cover state=NEW logic and bail
 
@@ -258,21 +256,21 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
 
     async def test_process_loop_new_deliver(self):
         profile = InMemoryProfile.test_profile()
-        mock_handle_not_delivered = async_mock.MagicMock()
+        mock_handle_not_delivered = mock.MagicMock()
         mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
 
         mgr.outbound_new = [
-            async_mock.MagicMock(
+            mock.MagicMock(
                 state=test_module.QueuedOutboundMessage.STATE_DELIVER,
-                message=async_mock.MagicMock(enc_payload=b"encr"),
+                message=mock.MagicMock(enc_payload=b"encr"),
             )
         ]
-        with async_mock.patch.object(
-            mgr, "deliver_queued_message", async_mock.MagicMock()
-        ) as mock_deliver, async_mock.patch.object(
-            mgr.outbound_event, "wait", async_mock.AsyncMock()
-        ) as mock_wait, async_mock.patch.object(
-            test_module, "trace_event", async_mock.MagicMock()
+        with mock.patch.object(
+            mgr, "deliver_queued_message", mock.MagicMock()
+        ) as mock_deliver, mock.patch.object(
+            mgr.outbound_event, "wait", mock.AsyncMock()
+        ) as mock_wait, mock.patch.object(
+            test_module, "trace_event", mock.MagicMock()
         ) as mock_trace:
             mock_wait.side_effect = KeyError()  # cover state=DELIVER logic and bail
 
@@ -280,7 +278,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
                 await mgr._process_loop()
 
     async def test_process_loop_x(self):
-        mock_queued = async_mock.MagicMock(
+        mock_queued = mock.MagicMock(
             state=QueuedOutboundMessage.STATE_DONE,
             error=KeyError(),
             endpoint="http://1.2.3.4:8081",
@@ -288,30 +286,28 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
         )
 
         profile = InMemoryProfile.test_profile()
-        mock_handle_not_delivered = async_mock.MagicMock()
+        mock_handle_not_delivered = mock.MagicMock()
         mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
 
         await mgr._process_loop()
 
     async def test_finished_deliver_x_log_debug(self):
-        mock_queued = async_mock.MagicMock(
-            state=QueuedOutboundMessage.STATE_DONE, retries=1
-        )
-        mock_completed_x = async_mock.MagicMock(exc_info=KeyError("an error occurred"))
+        mock_queued = mock.MagicMock(state=QueuedOutboundMessage.STATE_DONE, retries=1)
+        mock_completed_x = mock.MagicMock(exc_info=KeyError("an error occurred"))
 
         profile = InMemoryProfile.test_profile()
-        mock_handle_not_delivered = async_mock.MagicMock()
+        mock_handle_not_delivered = mock.MagicMock()
         mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
-        with async_mock.patch.object(
-            test_module.LOGGER, "exception", async_mock.MagicMock()
-        ) as mock_logger_exception, async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
-        ) as mock_logger_error, async_mock.patch.object(
-            test_module.LOGGER, "isEnabledFor", async_mock.MagicMock()
-        ) as mock_logger_enabled, async_mock.patch.object(
-            mgr, "process_queued", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.LOGGER, "exception", mock.MagicMock()
+        ) as mock_logger_exception, mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
+        ) as mock_logger_error, mock.patch.object(
+            test_module.LOGGER, "isEnabledFor", mock.MagicMock()
+        ) as mock_logger_enabled, mock.patch.object(
+            mgr, "process_queued", mock.MagicMock()
         ) as mock_process:
             mock_logger_enabled.return_value = True  # cover debug logging
             mgr.finished_deliver(mock_queued, mock_completed_x)
@@ -319,11 +315,11 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
     async def test_should_encode_outbound_message(self):
         base_wire_format = BaseWireFormat()
         encoded_msg = "encoded_message"
-        base_wire_format.encode_message = async_mock.AsyncMock(return_value=encoded_msg)
+        base_wire_format.encode_message = mock.AsyncMock(return_value=encoded_msg)
         profile = InMemoryProfile.test_profile(bind={BaseWireFormat: base_wire_format})
-        profile.session = async_mock.AsyncMock(return_value=async_mock.MagicMock())
-        outbound = async_mock.MagicMock(payload="payload", enc_payload=None)
-        target = async_mock.MagicMock()
+        profile.session = mock.AsyncMock(return_value=mock.MagicMock())
+        outbound = mock.MagicMock(payload="payload", enc_payload=None)
+        target = mock.MagicMock()
 
         mgr = OutboundTransportManager(profile)
         result = await mgr.encode_outbound_message(profile, outbound, target)
@@ -340,8 +336,8 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
     async def test_should_not_encode_already_packed_message(self):
         profile = InMemoryProfile.test_session().profile
         enc_payload = "enc_payload"
-        outbound = async_mock.MagicMock(enc_payload=enc_payload)
-        target = async_mock.MagicMock()
+        outbound = mock.MagicMock(enc_payload=enc_payload)
+        target = mock.MagicMock()
 
         mgr = OutboundTransportManager(profile)
         result = await mgr.encode_outbound_message(profile, outbound, target)

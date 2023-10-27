@@ -1,7 +1,7 @@
 """Test Reuse Accept Message Handler."""
 import pytest
 
-from unittest import mock as async_mock
+from unittest import mock
 
 from ......connections.models.conn_record import ConnRecord
 from ......core.profile import ProfileSession
@@ -36,11 +36,9 @@ async def session(request_context) -> ProfileSession:
 
 class TestHandshakeReuseAcceptHandler:
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "OutOfBandManager")
+    @mock.patch.object(test_module, "OutOfBandManager")
     async def test_called(self, mock_oob_mgr, request_context, connection_record):
-        mock_oob_mgr.return_value.receive_reuse_accepted_message = (
-            async_mock.AsyncMock()
-        )
+        mock_oob_mgr.return_value.receive_reuse_accepted_message = mock.AsyncMock()
         request_context.message = HandshakeReuseAccept()
         handler = test_module.HandshakeReuseAcceptMessageHandler()
         responder = MockResponder()
@@ -52,11 +50,9 @@ class TestHandshakeReuseAcceptHandler:
         )
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "OutOfBandManager")
+    @mock.patch.object(test_module, "OutOfBandManager")
     async def test_exception(self, mock_oob_mgr, request_context, connection_record):
-        mock_oob_mgr.return_value.receive_reuse_accepted_message = (
-            async_mock.AsyncMock()
-        )
+        mock_oob_mgr.return_value.receive_reuse_accepted_message = mock.AsyncMock()
         mock_oob_mgr.return_value.receive_reuse_accepted_message.side_effect = (
             OutOfBandManagerError("error")
         )

@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -12,18 +12,16 @@ class TestPerformHandler(IsolatedAsyncioTestCase):
         self.context = RequestContext.test_context()
 
     async def test_called(self):
-        MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
+        MenuService = mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
 
-        self.context.connection_record = async_mock.MagicMock()
+        self.context.connection_record = mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"
 
         responder = MockResponder()
         self.context.message = handler.Perform()
-        self.menu_service.perform_menu_action = async_mock.AsyncMock(
-            return_value="perform"
-        )
+        self.menu_service.perform_menu_action = mock.AsyncMock(return_value="perform")
 
         handler_inst = handler.PerformHandler()
         await handler_inst.handle(self.context, responder)
@@ -35,16 +33,16 @@ class TestPerformHandler(IsolatedAsyncioTestCase):
         assert target == {}
 
     async def test_called_no_active_menu(self):
-        MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
+        MenuService = mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
 
-        self.context.connection_record = async_mock.MagicMock()
+        self.context.connection_record = mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"
 
         responder = MockResponder()
         self.context.message = handler.Perform()
-        self.menu_service.perform_menu_action = async_mock.AsyncMock(return_value=None)
+        self.menu_service.perform_menu_action = mock.AsyncMock(return_value=None)
 
         handler_inst = handler.PerformHandler()
         await handler_inst.handle(self.context, responder)

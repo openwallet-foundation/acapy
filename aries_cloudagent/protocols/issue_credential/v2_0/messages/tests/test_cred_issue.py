@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -161,8 +161,8 @@ class TestV20CredIssue(IsolatedAsyncioTestCase):
         """Test serialization."""
         obj = TestV20CredIssue.CRED_ISSUE
 
-        with async_mock.patch.object(
-            test_module.V20CredIssueSchema, "dump", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.V20CredIssueSchema, "dump", mock.MagicMock()
         ) as mock_dump:
             cred_issue_dict = obj.serialize()
             mock_dump.assert_called_once_with(obj)

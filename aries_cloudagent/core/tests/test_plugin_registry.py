@@ -1,6 +1,6 @@
 import pytest
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import call
 
@@ -20,36 +20,36 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
         self.registry = PluginRegistry(blocklist=[self.blocked_module])
 
         self.context = InjectionContext(enforce_typing=False)
-        self.proto_registry = async_mock.MagicMock(
-            register_message_types=async_mock.MagicMock(),
-            register_controllers=async_mock.MagicMock(),
+        self.proto_registry = mock.MagicMock(
+            register_message_types=mock.MagicMock(),
+            register_controllers=mock.MagicMock(),
         )
-        self.goal_code_registry = async_mock.MagicMock(
-            register_controllers=async_mock.MagicMock(),
+        self.goal_code_registry = mock.MagicMock(
+            register_controllers=mock.MagicMock(),
         )
         self.context.injector.bind_instance(ProtocolRegistry, self.proto_registry)
         self.context.injector.bind_instance(GoalCodeRegistry, self.goal_code_registry)
 
     async def test_setup(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
-        ctx = async_mock.MagicMock()
+        ctx = mock.MagicMock()
         self.registry._plugins[mod_name] = mod
         assert list(self.registry.plugin_names) == [mod_name]
         assert list(self.registry.plugins) == [mod]
-        mod.setup = async_mock.AsyncMock()
+        mod.setup = mock.AsyncMock()
         await self.registry.init_context(ctx)
         mod.setup.assert_awaited_once_with(ctx)
 
     async def test_register_routes(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
-        app = async_mock.MagicMock()
+        app = mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.register = async_mock.AsyncMock()
-        definition = async_mock.MagicMock()
+        mod.routes.register = mock.AsyncMock()
+        definition = mock.MagicMock()
         definition.versions = [
             {
                 "major_version": 1,
@@ -59,10 +59,10 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             }
         ]
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             ClassLoader,
             "load_module",
-            async_mock.MagicMock(side_effect=[definition, mod.routes]),
+            mock.MagicMock(side_effect=[definition, mod.routes]),
         ) as load_module:
             await self.registry.register_admin_routes(app)
 
@@ -73,10 +73,10 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             load_module.assert_has_calls(calls)
         assert mod.routes.register.call_count == 1
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             ClassLoader,
             "load_module",
-            async_mock.MagicMock(side_effect=[definition, ModuleLoadError()]),
+            mock.MagicMock(side_effect=[definition, ModuleLoadError()]),
         ) as load_module:
             await self.registry.register_admin_routes(app)
 
@@ -89,16 +89,16 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
 
     async def test_register_routes_mod_no_version(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
-        app = async_mock.MagicMock()
+        app = mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.register = async_mock.AsyncMock()
+        mod.routes.register = mock.AsyncMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             ClassLoader,
             "load_module",
-            async_mock.MagicMock(side_effect=[None, mod.routes]),
+            mock.MagicMock(side_effect=[None, mod.routes]),
         ) as load_module:
             await self.registry.register_admin_routes(app)
 
@@ -106,10 +106,10 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             load_module.assert_has_calls(calls)
         assert mod.routes.register.call_count == 1
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             ClassLoader,
             "load_module",
-            async_mock.MagicMock(side_effect=[None, ModuleLoadError()]),
+            mock.MagicMock(side_effect=[None, ModuleLoadError()]),
         ) as load_module:
             await self.registry.register_admin_routes(app)
 
@@ -122,12 +122,12 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
 
     async def test_post_process_routes(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
-        app = async_mock.MagicMock()
+        app = mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.post_process_routes = async_mock.MagicMock()
-        definition = async_mock.MagicMock()
+        mod.routes.post_process_routes = mock.MagicMock()
+        definition = mock.MagicMock()
         definition.versions = [
             {
                 "major_version": 1,
@@ -137,10 +137,10 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             }
         ]
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             ClassLoader,
             "load_module",
-            async_mock.MagicMock(side_effect=[definition, mod.routes]),
+            mock.MagicMock(side_effect=[definition, mod.routes]),
         ) as load_module:
             self.registry.post_process_routes(app)
 
@@ -151,10 +151,10 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             load_module.assert_has_calls(calls)
         assert mod.routes.post_process_routes.call_count == 1
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             ClassLoader,
             "load_module",
-            async_mock.MagicMock(side_effect=[definition, ModuleLoadError()]),
+            mock.MagicMock(side_effect=[definition, ModuleLoadError()]),
         ) as load_module:
             self.registry.post_process_routes(app)
 
@@ -167,16 +167,16 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
 
     async def test_post_process_routes_mod_no_version(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
-        app = async_mock.MagicMock()
+        app = mock.MagicMock()
         self.registry._plugins[mod_name] = mod
-        mod.routes.register = async_mock.AsyncMock()
+        mod.routes.register = mock.AsyncMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             ClassLoader,
             "load_module",
-            async_mock.MagicMock(side_effect=[None, mod.routes]),
+            mock.MagicMock(side_effect=[None, mod.routes]),
         ) as load_module:
             self.registry.post_process_routes(app)
 
@@ -184,10 +184,10 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             load_module.assert_has_calls(calls)
         assert mod.routes.post_process_routes.call_count == 1
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             ClassLoader,
             "load_module",
-            async_mock.MagicMock(side_effect=[None, ModuleLoadError()]),
+            mock.MagicMock(side_effect=[None, ModuleLoadError()]),
         ) as load_module:
             self.registry.post_process_routes(app)
 
@@ -197,46 +197,46 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
 
     async def test_validate_version_not_a_list(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions_not_a_list = {}
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions_not_a_list, mod_name)
 
     async def test_validate_version_list_element_not_an_object(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = [{}, []]
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions, mod_name)
 
     async def test_validate_version_list_element_empty(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = []
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions, mod_name)
 
     async def test_validate_version_list_missing_attribute(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = [
@@ -248,15 +248,15 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             }
         ]
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions, mod_name)
 
     async def test_validate_version_negative_version(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = [
@@ -268,15 +268,15 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             }
         ]
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions, mod_name)
 
     async def test_validate_version_min_greater_current(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = [
@@ -288,15 +288,15 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             }
         ]
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions, mod_name)
 
     async def test_validate_version_multiple_major(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = [
@@ -314,15 +314,15 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             },
         ]
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions, mod_name)
 
     async def test_validate_version_bad_path(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = [
@@ -334,15 +334,15 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             }
         ]
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock(return_value=None)
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock(return_value=None)
         ) as load_module:
             with pytest.raises(ProtocolDefinitionValidationError):
                 self.registry.validate_version(versions, mod_name)
 
     async def test_validate_version_list_correct(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = [
@@ -360,8 +360,8 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             },
         ]
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             assert self.registry.validate_version(versions, mod_name) is True
 
@@ -372,7 +372,7 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
 
     async def test_validate_version_list_extra_attributes_ok(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = [
@@ -385,14 +385,14 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             }
         ]
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             assert self.registry.validate_version(versions, mod_name) is True
 
     async def test_validate_version_no_such_mod(self):
         mod_name = "no_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         mod.__name__ = mod_name
 
         versions = [
@@ -404,8 +404,8 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             }
         ]
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.return_value = None
 
@@ -414,20 +414,20 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
 
     async def test_register_plugin_already_present(self):
         mod_name = "test_mod"
-        mod = async_mock.MagicMock()
+        mod = mock.MagicMock()
         self.registry._plugins[mod_name] = mod
         assert mod == self.registry.register_plugin(mod_name)
 
     async def test_register_plugin_load_x(self):
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = ModuleLoadError("failure to load")
             assert self.registry.register_plugin("dummy") is None
 
     async def test_register_plugin_no_mod(self):
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.return_value = None
             assert self.registry.register_plugin("dummy") is None
@@ -437,8 +437,8 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             no_setup = "no setup attr"
 
         obj = MODULE()
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [
                 obj,  # module
@@ -453,8 +453,8 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             no_setup = "no setup attr"
 
         obj = MODULE()
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [
                 obj,  # module
@@ -469,8 +469,8 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             setup = "present"
 
         obj = MODULE()
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [
                 obj,  # module
@@ -485,8 +485,8 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             setup = "present"
 
         obj = MODULE()
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [
                 obj,  # module
@@ -502,58 +502,58 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             no_setup = "no setup attr"
 
         obj = MODULE()
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [
                 obj,  # module
                 None,  # routes
                 None,  # message types
-                async_mock.MagicMock(versions="not-a-list"),
+                mock.MagicMock(versions="not-a-list"),
             ]
             assert self.registry.register_plugin("dummy") is None
 
     async def test_register_package_x(self):
-        with async_mock.patch.object(
-            ClassLoader, "scan_subpackages", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "scan_subpackages", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = ModuleLoadError()
             assert not self.registry.register_package("dummy")
 
     async def test_load_protocols_load_x(self):
-        mock_plugin = async_mock.MagicMock(__name__="dummy")
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        mock_plugin = mock.MagicMock(__name__="dummy")
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = ModuleLoadError()
             await self.registry.load_protocols(None, mock_plugin)
             assert load_module.call_count == 1
 
     async def test_load_protocols_load_mod(self):
-        mock_plugin = async_mock.MagicMock(__name__="dummy")
-        mock_mod = async_mock.MagicMock()
-        mock_mod.MESSAGE_TYPES = async_mock.MagicMock()
-        mock_mod.CONTROLLERS = async_mock.MagicMock()
+        mock_plugin = mock.MagicMock(__name__="dummy")
+        mock_mod = mock.MagicMock()
+        mock_mod.MESSAGE_TYPES = mock.MagicMock()
+        mock_mod.CONTROLLERS = mock.MagicMock()
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.return_value = mock_mod
             await self.registry.load_protocols(self.context, mock_plugin)
 
     async def test_load_protocols_no_mod_load_x(self):
-        mock_plugin = async_mock.MagicMock(__name__="dummy")
+        mock_plugin = mock.MagicMock(__name__="dummy")
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [None, ModuleLoadError()]
             await self.registry.load_protocols(self.context, mock_plugin)
             assert load_module.call_count == 2
 
     async def test_load_protocols_no_mod_def_no_message_types(self):
-        mock_plugin = async_mock.MagicMock(__name__="dummy")
-        mock_def = async_mock.MagicMock(
+        mock_plugin = mock.MagicMock(__name__="dummy")
+        mock_def = mock.MagicMock(
             versions=[
                 {
                     "major_version": 1,
@@ -564,16 +564,16 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
             ]
         )
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [None, mock_def, ModuleLoadError()]
             await self.registry.load_protocols(self.context, mock_plugin)
             assert load_module.call_count == 3
 
     async def test_load_protocols_no_mod_def_message_types(self):
-        mock_plugin = async_mock.MagicMock(__name__="dummy")
-        mock_def = async_mock.MagicMock(
+        mock_plugin = mock.MagicMock(__name__="dummy")
+        mock_def = mock.MagicMock(
             versions=[
                 {
                     "major_version": 1,
@@ -589,12 +589,12 @@ class TestPluginRegistry(IsolatedAsyncioTestCase):
                 },
             ]
         )
-        mock_mod = async_mock.MagicMock()
-        mock_mod.MESSAGE_TYPES = async_mock.MagicMock()
-        mock_mod.CONTROLLERS = async_mock.MagicMock()
+        mock_mod = mock.MagicMock()
+        mock_mod.MESSAGE_TYPES = mock.MagicMock()
+        mock_mod.CONTROLLERS = mock.MagicMock()
 
-        with async_mock.patch.object(
-            ClassLoader, "load_module", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_module", mock.MagicMock()
         ) as load_module:
             load_module.side_effect = [None, mock_def, mock_mod, mock_mod]
             await self.registry.load_protocols(self.context, mock_plugin)

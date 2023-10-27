@@ -1,6 +1,6 @@
 """Test LegacyPeerDIDResolver."""
 
-from unittest import mock as async_mock
+from unittest import mock
 import pydid
 import pytest
 
@@ -37,9 +37,9 @@ class TestLegacyPeerDIDResolver:
     @pytest.mark.asyncio
     async def test_supports(self, resolver: LegacyPeerDIDResolver, profile: Profile):
         """Test supports."""
-        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.AsyncMock(
+        with mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
+            mock_mgr.return_value = mock.MagicMock(
+                fetch_did_document=mock.AsyncMock(
                     return_value=(DIDDoc(TEST_DID0), None)
                 )
             )
@@ -51,9 +51,9 @@ class TestLegacyPeerDIDResolver:
     ):
         """Test supports."""
         profile.context.injector.clear_binding(BaseCache)
-        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.AsyncMock(
+        with mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
+            mock_mgr.return_value = mock.MagicMock(
+                fetch_did_document=mock.AsyncMock(
                     return_value=(DIDDoc(TEST_DID0), None)
                 )
             )
@@ -71,26 +71,24 @@ class TestLegacyPeerDIDResolver:
         self, resolver: LegacyPeerDIDResolver, profile: Profile
     ):
         """Test supports returns false for unknown DID."""
-        with async_mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.AsyncMock(
-                    side_effect=StorageNotFoundError
-                )
+        with mock.patch.object(test_module, "BaseConnectionManager") as mock_mgr:
+            mock_mgr.return_value = mock.MagicMock(
+                fetch_did_document=mock.AsyncMock(side_effect=StorageNotFoundError)
             )
             assert not await resolver.supports(profile, TEST_DID2)
 
     @pytest.mark.asyncio
     async def test_resolve(self, resolver: LegacyPeerDIDResolver, profile: Profile):
         """Test resolve."""
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "BaseConnectionManager"
-        ) as mock_mgr, async_mock.patch.object(
+        ) as mock_mgr, mock.patch.object(
             test_module, "LegacyDocCorrections"
         ) as mock_corrections:
             doc = object()
-            mock_corrections.apply = async_mock.MagicMock(return_value=doc)
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.AsyncMock(
+            mock_corrections.apply = mock.MagicMock(return_value=doc)
+            mock_mgr.return_value = mock.MagicMock(
+                fetch_did_document=mock.AsyncMock(
                     return_value=(DIDDoc(TEST_DID0), None)
                 )
             )
@@ -105,21 +103,19 @@ class TestLegacyPeerDIDResolver:
 
         This should be impossible in practice but still.
         """
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "BaseConnectionManager"
-        ) as mock_mgr, async_mock.patch.object(
+        ) as mock_mgr, mock.patch.object(
             test_module, "LegacyDocCorrections"
         ) as mock_corrections, pytest.raises(
             test_module.DIDNotFound
         ):
             doc = object
-            mock_corrections.apply = async_mock.MagicMock(return_value=doc)
-            mock_mgr.return_value = async_mock.MagicMock(
-                fetch_did_document=async_mock.AsyncMock(
-                    side_effect=StorageNotFoundError
-                )
+            mock_corrections.apply = mock.MagicMock(return_value=doc)
+            mock_mgr.return_value = mock.MagicMock(
+                fetch_did_document=mock.AsyncMock(side_effect=StorageNotFoundError)
             )
-            resolver.supports = async_mock.AsyncMock(return_value=True)
+            resolver.supports = mock.AsyncMock(return_value=True)
             result = await resolver.resolve(profile, TEST_DID0)
             assert result == doc
 

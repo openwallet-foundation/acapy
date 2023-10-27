@@ -1,6 +1,6 @@
 import asyncio
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ..task_queue import CompletedTask, PendingTask, TaskQueue, task_exc_info
@@ -84,7 +84,7 @@ class TestTaskQueue(IsolatedAsyncioTestCase):
         assert pend.cancelled
         task.cancel()
 
-        with async_mock.patch.object(pend, "task_future", autospec=True) as mock_future:
+        with mock.patch.object(pend, "task_future", autospec=True) as mock_future:
             mock_future.cancelled.return_value = True
             pend.task = "a suffusion of yellow"
             mock_future.set_result.assert_not_called()
@@ -106,10 +106,10 @@ class TestTaskQueue(IsolatedAsyncioTestCase):
         async def noop():
             return
 
-        with async_mock.patch.object(
-            queue, "drain", async_mock.MagicMock()
-        ) as mock_drain, async_mock.patch.object(
-            queue, "wait_for", async_mock.AsyncMock()
+        with mock.patch.object(
+            queue, "drain", mock.MagicMock()
+        ) as mock_drain, mock.patch.object(
+            queue, "wait_for", mock.AsyncMock()
         ) as mock_wait_for:
             mock_drain.side_effect = [queue.loop.create_task(noop()), None]
             await queue.complete(cleanup=True)
@@ -138,7 +138,7 @@ class TestTaskQueue(IsolatedAsyncioTestCase):
         queue = TaskQueue(1)
         queue.add_pending(pend)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             queue.pending_tasks[0], "task_future", autospec=True
         ) as mock_future:
             mock_future.cancelled.return_value = False

@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...core.in_memory import InMemoryProfile
@@ -24,17 +24,17 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
 
-        Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
+        Ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.get_credential_definition = async_mock.AsyncMock(
+        self.ledger.get_credential_definition = mock.AsyncMock(
             return_value={"value": {"revocation": True}}
         )
-        self.ledger.get_revoc_reg_def = async_mock.AsyncMock()
+        self.ledger.get_revoc_reg_def = mock.AsyncMock()
         self.context.injector.bind_instance(BaseLedger, self.ledger)
         self.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.AsyncMock(
+            mock.MagicMock(
+                get_ledger_for_identifier=mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -56,12 +56,12 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
 
         self.context.injector.bind_instance(
             BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
+            mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.AsyncMock(return_value=(None, self.ledger)),
+            mock.AsyncMock(return_value=(None, self.ledger)),
         ):
             result = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         assert result.cred_def_id == CRED_DEF_ID
@@ -74,7 +74,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         self.profile.context.injector.clear_binding(BaseLedger)
-        self.ledger.get_credential_definition = async_mock.AsyncMock(return_value=None)
+        self.ledger.get_credential_definition = mock.AsyncMock(return_value=None)
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
         with self.assertRaises(RevocationNotSupportedError) as x_revo:
@@ -85,7 +85,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         self.profile.context.injector.clear_binding(BaseLedger)
-        self.ledger.get_credential_definition = async_mock.AsyncMock(
+        self.ledger.get_credential_definition = mock.AsyncMock(
             return_value={"value": {"revocation": "..."}}
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -118,7 +118,7 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
 
         self.profile.context.injector.clear_binding(BaseLedger)
-        self.ledger.get_credential_definition = async_mock.AsyncMock(
+        self.ledger.get_credential_definition = mock.AsyncMock(
             return_value={"value": {}}
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -132,10 +132,10 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
 
         rec = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         rec.revoc_reg_id = "dummy"
-        rec.generate_registry = async_mock.AsyncMock()
+        rec.generate_registry = mock.AsyncMock()
 
-        with async_mock.patch.object(
-            IssuerRevRegRecord, "retrieve_by_revoc_reg_id", async_mock.AsyncMock()
+        with mock.patch.object(
+            IssuerRevRegRecord, "retrieve_by_revoc_reg_id", mock.AsyncMock()
         ) as mock_retrieve_by_rr_id:
             mock_retrieve_by_rr_id.return_value = rec
             await rec.generate_registry(self.profile, None)
@@ -222,8 +222,8 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
     async def test_get_ledger_registry(self):
         CRED_DEF_ID = "{self.test_did}:3:CL:1234:default"
 
-        with async_mock.patch.object(
-            RevocationRegistry, "from_definition", async_mock.MagicMock()
+        with mock.patch.object(
+            RevocationRegistry, "from_definition", mock.MagicMock()
         ) as mock_from_def:
             result = await self.revoc.get_ledger_registry("dummy")
             assert result == mock_from_def.return_value
@@ -237,14 +237,14 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
 
         self.context.injector.bind_instance(
             BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
+            mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.AsyncMock(return_value=(None, self.ledger)),
-        ), async_mock.patch.object(
-            RevocationRegistry, "from_definition", async_mock.MagicMock()
+            mock.AsyncMock(return_value=(None, self.ledger)),
+        ), mock.patch.object(
+            RevocationRegistry, "from_definition", mock.MagicMock()
         ) as mock_from_def:
             result = await self.revoc.get_ledger_registry("dummy2")
             assert result == mock_from_def.return_value

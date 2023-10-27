@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 
 from .....admin.request_context import AdminRequestContext
@@ -18,9 +18,9 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
         self.profile = self.context.profile
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.AsyncMock(),
+            "outbound_message_router": mock.AsyncMock(),
         }
-        self.request = async_mock.MagicMock(
+        self.request = mock.MagicMock(
             app={},
             match_info={},
             query={},
@@ -28,7 +28,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
         )
 
     async def test_query_features(self):
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
 
         self.request.query = {"query": "*"}
 
@@ -36,9 +36,9 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
             query_msg=Query(query="*"),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, async_mock.patch.object(
+        ) as mock_response, mock.patch.object(
             V10DiscoveryMgr, "create_and_send_query", autospec=True
         ) as mock_create_query:
             mock_create_query.return_value = test_rec
@@ -46,7 +46,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(test_rec.serialize())
 
     async def test_query_features_with_connection(self):
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
 
         self.request.query = {"query": "*", "connection_id": "test", "comment": "test"}
 
@@ -55,9 +55,9 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             query_msg=Query(query="*"),
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, async_mock.patch.object(
+        ) as mock_response, mock.patch.object(
             V10DiscoveryMgr, "create_and_send_query", autospec=True
         ) as mock_create_query:
             mock_create_query.return_value = test_rec
@@ -65,7 +65,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(test_rec.serialize())
 
     async def test_query_records(self):
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
 
         self.request.query = {"connection_id": "test"}
 
@@ -74,9 +74,9 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             query_msg=Query(query="*"),
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, async_mock.patch.object(
+        ) as mock_response, mock.patch.object(
             test_module, "V10DiscoveryExchangeRecord", autospec=True
         ) as mock_ex_rec:
             mock_ex_rec.retrieve_by_connection_id.return_value = test_rec
@@ -84,13 +84,13 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with({"results": [test_rec.serialize()]})
 
     async def test_query_records_x(self):
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
 
         self.request.query = {"connection_id": "test"}
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, async_mock.patch.object(
+        ) as mock_response, mock.patch.object(
             test_module, "V10DiscoveryExchangeRecord", autospec=True
         ) as mock_ex_rec:
             mock_ex_rec.retrieve_by_connection_id.side_effect = StorageError
@@ -98,7 +98,7 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
                 await test_module.query_records(self.request)
 
     async def test_query_records_all(self):
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
 
         test_recs = [
             V10DiscoveryExchangeRecord(
@@ -111,9 +111,9 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             ),
         ]
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, async_mock.patch.object(
+        ) as mock_response, mock.patch.object(
             test_module, "V10DiscoveryExchangeRecord", autospec=True
         ) as mock_ex_rec:
             mock_ex_rec.query.return_value = test_recs
@@ -123,11 +123,11 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_query_records_connection_x(self):
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response, async_mock.patch.object(
+        ) as mock_response, mock.patch.object(
             test_module, "V10DiscoveryExchangeRecord", autospec=True
         ) as mock_ex_rec:
             mock_ex_rec.query.side_effect = StorageError
@@ -135,13 +135,13 @@ class TestDiscoveryRoutes(IsolatedAsyncioTestCase):
                 await test_module.query_records(self.request)
 
     async def test_register(self):
-        mock_app = async_mock.MagicMock()
-        mock_app.add_routes = async_mock.MagicMock()
+        mock_app = mock.MagicMock()
+        mock_app.add_routes = mock.MagicMock()
 
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()
 
     async def test_post_process_routes(self):
-        mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
+        mock_app = mock.MagicMock(_state={"swagger_dict": {}})
         test_module.post_process_routes(mock_app)
         assert "tags" in mock_app._state["swagger_dict"]

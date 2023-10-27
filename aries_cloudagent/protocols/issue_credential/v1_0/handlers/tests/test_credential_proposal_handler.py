@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
@@ -14,13 +14,13 @@ class TestCredentialProposalHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_proposal = async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+            mock_cred_mgr.return_value.receive_proposal = mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
             mock_cred_mgr.return_value.receive_proposal.return_value.auto_offer = False
             request_context.message = CredentialProposal()
@@ -38,16 +38,16 @@ class TestCredentialProposalHandler(IsolatedAsyncioTestCase):
     async def test_called_auto_offer(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_proposal = async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+            mock_cred_mgr.return_value.receive_proposal = mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
             mock_cred_mgr.return_value.receive_proposal.return_value.auto_offer = True
-            mock_cred_mgr.return_value.create_offer = async_mock.AsyncMock(
+            mock_cred_mgr.return_value.create_offer = mock.AsyncMock(
                 return_value=(None, "credential_offer_message")
             )
             request_context.message = CredentialProposal()
@@ -69,18 +69,16 @@ class TestCredentialProposalHandler(IsolatedAsyncioTestCase):
     async def test_called_auto_offer_x(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_proposal = async_mock.AsyncMock(
-                return_value=async_mock.MagicMock(
-                    save_error_state=async_mock.AsyncMock()
-                )
+            mock_cred_mgr.return_value.receive_proposal = mock.AsyncMock(
+                return_value=mock.MagicMock(save_error_state=mock.AsyncMock())
             )
             mock_cred_mgr.return_value.receive_proposal.return_value.auto_offer = True
-            mock_cred_mgr.return_value.create_offer = async_mock.AsyncMock(
+            mock_cred_mgr.return_value.create_offer = mock.AsyncMock(
                 side_effect=test_module.IndyIssuerError()
             )
 
@@ -89,10 +87,10 @@ class TestCredentialProposalHandler(IsolatedAsyncioTestCase):
             handler = test_module.CredentialProposalHandler()
             responder = MockResponder()
 
-            with async_mock.patch.object(
-                responder, "send_reply", async_mock.AsyncMock()
-            ) as mock_send_reply, async_mock.patch.object(
-                handler._logger, "exception", async_mock.MagicMock()
+            with mock.patch.object(
+                responder, "send_reply", mock.AsyncMock()
+            ) as mock_send_reply, mock.patch.object(
+                handler._logger, "exception", mock.MagicMock()
             ) as mock_log_exc:
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
@@ -100,12 +98,12 @@ class TestCredentialProposalHandler(IsolatedAsyncioTestCase):
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_proposal = async_mock.AsyncMock()
+            mock_cred_mgr.return_value.receive_proposal = mock.AsyncMock()
             request_context.message = CredentialProposal()
             request_context.connection_ready = False
             handler = test_module.CredentialProposalHandler()

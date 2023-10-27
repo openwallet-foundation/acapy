@@ -1,6 +1,6 @@
 import asyncio
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...core.in_memory import InMemoryProfile
@@ -52,21 +52,21 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             test_module.execute(["bad"])
 
     async def test_upgrade_storage_from_version_included(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.AsyncMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.AsyncMock()
+            mock.AsyncMock(return_value=[ConnRecord()]),
+        ), mock.patch.object(
+            ConnRecord, "save", mock.AsyncMock()
         ):
             await test_module.upgrade(
                 settings={
@@ -76,21 +76,21 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             )
 
     async def test_upgrade_storage_missing_from_version(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.AsyncMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.AsyncMock()
+            mock.AsyncMock(return_value=[ConnRecord()]),
+        ), mock.patch.object(
+            ConnRecord, "save", mock.AsyncMock()
         ):
             await test_module.upgrade(settings={})
 
@@ -100,11 +100,11 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 "upgrade.from_version": "v0.7.2",
             }
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.AsyncMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(ConnRecord, "save", async_mock.AsyncMock()):
+            mock.AsyncMock(return_value=[ConnRecord()]),
+        ), mock.patch.object(ConnRecord, "save", mock.AsyncMock()):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -118,11 +118,11 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 "upgrade.page_size": 1,
             }
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.AsyncMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(ConnRecord, "save", async_mock.AsyncMock()):
+            mock.AsyncMock(return_value=[ConnRecord()]),
+        ), mock.patch.object(ConnRecord, "save", mock.AsyncMock()):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -140,11 +140,11 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 "upgrade.force_upgrade": True,
             }
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.AsyncMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(ConnRecord, "save", async_mock.AsyncMock()):
+            mock.AsyncMock(return_value=[ConnRecord()]),
+        ), mock.patch.object(ConnRecord, "save", mock.AsyncMock()):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -157,11 +157,11 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 "upgrade.page_size": 1,
             }
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.AsyncMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(ConnRecord, "save", async_mock.AsyncMock()):
+            mock.AsyncMock(return_value=[ConnRecord()]),
+        ), mock.patch.object(ConnRecord, "save", mock.AsyncMock()):
             await test_module.upgrade(
                 profile=self.profile,
             )
@@ -171,19 +171,19 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             type_filter="acapy_version", tag_query={}
         )
         await self.storage.delete_record(version_storage_record)
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(
+            mock.MagicMock(
                 return_value={
                     "v0.7.2": {
                         "resave_records": {
@@ -207,19 +207,19 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             type_filter="acapy_version", tag_query={}
         )
         await self.storage.delete_record(version_storage_record)
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(
+            mock.MagicMock(
                 return_value={
                     "v0.7.2": {
                         "resave_records": {
@@ -245,13 +245,13 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             type_filter="acapy_version", tag_query={}
         )
         await self.storage.update_record(version_storage_record, f"v{__version__}", {})
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
         ):
@@ -266,21 +266,21 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             type_filter="acapy_version", tag_query={}
         )
         await self.storage.delete_record(version_storage_record)
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.AsyncMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.AsyncMock()
+            mock.AsyncMock(return_value=[ConnRecord()]),
+        ), mock.patch.object(
+            ConnRecord, "save", mock.AsyncMock()
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
@@ -297,19 +297,19 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             type_filter="acapy_version", tag_query={}
         )
         await self.storage.delete_record(version_storage_record)
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(
+            mock.MagicMock(
                 return_value={
                     "v0.7.2": {
                         "resave_records": {
@@ -332,19 +332,19 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             assert "No function specified for" in str(ctx.exception)
 
     async def test_upgrade_x_class_not_found(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(
+            mock.MagicMock(
                 return_value={
                     "v0.7.2": {
                         "resave_records": {
@@ -365,26 +365,26 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             assert "Unknown Record type" in str(ctx.exception)
 
     async def test_execute(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             ConnRecord,
             "query",
-            async_mock.AsyncMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.AsyncMock()
-        ), async_mock.patch.object(
-            asyncio, "get_event_loop", async_mock.MagicMock()
+            mock.AsyncMock(return_value=[ConnRecord()]),
+        ), mock.patch.object(
+            ConnRecord, "save", mock.AsyncMock()
+        ), mock.patch.object(
+            asyncio, "get_event_loop", mock.MagicMock()
         ) as mock_get_event_loop:
-            mock_get_event_loop.return_value = async_mock.MagicMock(
-                run_until_complete=async_mock.MagicMock(),
+            mock_get_event_loop.return_value = mock.MagicMock(
+                run_until_complete=mock.MagicMock(),
             )
             test_module.execute(
                 [
@@ -397,19 +397,19 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             )
 
     async def test_upgrade_x_invalid_record_type(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(
+            mock.MagicMock(
                 return_value={
                     "v0.7.2": {
                         "resave_records": {
@@ -430,19 +430,19 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             assert "Only BaseRecord can be resaved" in str(ctx.exception)
 
     async def test_upgrade_force(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=(
                     self.profile,
-                    async_mock.AsyncMock(did="public DID", verkey="verkey"),
+                    mock.AsyncMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(
+            mock.MagicMock(
                 return_value={
                     "v0.7.2": {
                         "resave_records": {
@@ -487,10 +487,10 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         assert version_storage_record.value == "v0.7.5"
 
     async def test_upgrade_x_invalid_config(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(return_value={}),
+            mock.MagicMock(return_value={}),
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(profile=self.profile)
@@ -505,10 +505,10 @@ class TestUpgrade(IsolatedAsyncioTestCase):
         assert "upgrade requires either profile or settings" in str(ctx.exception)
 
     def test_main(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "__name__", "__main__"
-        ) as mock_name, async_mock.patch.object(
-            test_module, "execute", async_mock.MagicMock()
+        ) as mock_name, mock.patch.object(
+            test_module, "execute", mock.MagicMock()
         ) as mock_execute:
             test_module.main()
             mock_execute.assert_called_once
@@ -652,10 +652,10 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 "upgrade.from_version": "v0.7.0",
             }
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(
+            mock.MagicMock(
                 return_value={
                     "v0.7.2": {
                         "resave_records": {
@@ -681,10 +681,10 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 ctx.exception
             )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(
+            mock.MagicMock(
                 return_value={
                     "v0.7.2": {
                         "resave_records": {
@@ -711,12 +711,12 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                 ctx.exception
             )
 
-        with async_mock.patch.object(
-            test_module, "LOGGER", async_mock.MagicMock()
-        ) as mock_logger, async_mock.patch.object(
+        with mock.patch.object(
+            test_module, "LOGGER", mock.MagicMock()
+        ) as mock_logger, mock.patch.object(
             test_module.yaml,
             "safe_load",
-            async_mock.MagicMock(
+            mock.MagicMock(
                 return_value={
                     "v0.7.2": {
                         "resave_records": {

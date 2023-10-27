@@ -3,7 +3,7 @@ import pytest
 import json
 
 from aiohttp.test_utils import AioHTTPTestCase, unused_port
-from unittest import mock as async_mock
+from unittest import mock
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
@@ -61,7 +61,7 @@ class TestHttpTransport(AioHTTPTestCase):
         message: InboundMessage,
         can_respond: bool = False,
     ):
-        message.wait_processing_complete = async_mock.AsyncMock()
+        message.wait_processing_complete = mock.AsyncMock()
         self.message_results.append((message.payload, message.receipt, can_respond))
         if self.result_event:
             self.result_event.set()
@@ -72,11 +72,11 @@ class TestHttpTransport(AioHTTPTestCase):
         return self.transport.make_application()
 
     async def test_start_x(self):
-        with async_mock.patch.object(
-            test_module.web, "TCPSite", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.web, "TCPSite", mock.MagicMock()
         ) as mock_site:
-            mock_site.return_value = async_mock.MagicMock(
-                start=async_mock.AsyncMock(side_effect=OSError())
+            mock_site.return_value = mock.MagicMock(
+                start=mock.AsyncMock(side_effect=OSError())
             )
             with pytest.raises(test_module.InboundTransportSetupError):
                 await self.transport.start()
@@ -113,30 +113,28 @@ class TestHttpTransport(AioHTTPTestCase):
         await self.transport.start()
 
         test_message = {"test": "message"}
-        with async_mock.patch.object(
-            test_module.HttpTransport, "create_session", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.HttpTransport, "create_session", mock.AsyncMock()
         ) as mock_session:
-            mock_session.return_value = async_mock.MagicMock(
-                receive=async_mock.AsyncMock(
-                    return_value=async_mock.MagicMock(
-                        receipt=async_mock.MagicMock(direct_response_requested=True),
-                        wait_processing_complete=async_mock.AsyncMock(),
+            mock_session.return_value = mock.MagicMock(
+                receive=mock.AsyncMock(
+                    return_value=mock.MagicMock(
+                        receipt=mock.MagicMock(direct_response_requested=True),
+                        wait_processing_complete=mock.AsyncMock(),
                     )
                 ),
                 can_respond=True,
                 profile=InMemoryProfile.test_profile(),
-                clear_response=async_mock.MagicMock(),
-                wait_response=async_mock.AsyncMock(return_value=b"Hello world"),
+                clear_response=mock.MagicMock(),
+                wait_response=mock.AsyncMock(return_value=b"Hello world"),
                 response_buffer="something",
             )
             async with self.client.post("/", data=test_message) as resp:
                 result = await resp.text()
             assert result == "Hello world"
 
-            mock_session.return_value = async_mock.MagicMock(
-                receive=async_mock.AsyncMock(
-                    side_effect=test_module.WireFormatParseError()
-                ),
+            mock_session.return_value = mock.MagicMock(
+                receive=mock.AsyncMock(side_effect=test_module.WireFormatParseError()),
                 profile=InMemoryProfile.test_profile(),
             )
             async with self.client.post("/", data=test_message) as resp:
@@ -150,12 +148,12 @@ class TestHttpTransport(AioHTTPTestCase):
     async def test_invite_message_handler(self):
         await self.transport.start()
 
-        request = async_mock.MagicMock(query={"c_i": "dummy"})
+        request = mock.MagicMock(query={"c_i": "dummy"})
         resp = await self.transport.invite_message_handler(request)
         assert b"You have received a connection invitation" in resp.body
         assert resp.status == 200
 
-        request = async_mock.MagicMock(query={})
+        request = mock.MagicMock(query={})
         resp = await self.transport.invite_message_handler(request)
         assert resp.body is None
         assert resp.status == 200

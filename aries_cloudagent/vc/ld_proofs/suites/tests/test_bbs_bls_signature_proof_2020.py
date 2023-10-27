@@ -1,4 +1,4 @@
-from unittest import IsolatedAsyncioTestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock
 import pytest
 
 from aries_cloudagent.wallet.key_type import BLS12381G2
@@ -202,8 +202,8 @@ class TestBbsBlsSignatureProof2020(IsolatedAsyncioTestCase):
 
         with self.assertRaises(LinkedDataProofException):
             await suite.derive_proof(
-                reveal_document=async_mock.MagicMock(),
-                document=async_mock.MagicMock(),
+                reveal_document=mock.MagicMock(),
+                document=mock.MagicMock(),
                 proof={"type": "incorrect type"},
-                document_loader=async_mock.MagicMock(),
+                document_loader=mock.MagicMock(),
             )

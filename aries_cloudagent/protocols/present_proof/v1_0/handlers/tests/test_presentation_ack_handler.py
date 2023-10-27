@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
@@ -17,20 +17,20 @@ class TestPresentationAckHandler(IsolatedAsyncioTestCase):
         request_context.message_receipt = MessageReceipt()
         session = request_context.session()
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_presentation_ack = async_mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_presentation_ack = mock.AsyncMock()
             request_context.message = PresentationAck()
             request_context.connection_ready = True
-            request_context.connection_record = async_mock.MagicMock()
+            request_context.connection_record = mock.MagicMock()
             handler = test_module.PresentationAckHandler()
             responder = MockResponder()
             await handler.handle(request_context, responder)
@@ -44,12 +44,12 @@ class TestPresentationAckHandler(IsolatedAsyncioTestCase):
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_presentation_ack = async_mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_presentation_ack = mock.AsyncMock()
             request_context.message = PresentationAck()
             request_context.connection_ready = False
             handler = test_module.PresentationAckHandler()
@@ -64,8 +64,8 @@ class TestPresentationAckHandler(IsolatedAsyncioTestCase):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
                 # No oob record found
                 return_value=None
             )

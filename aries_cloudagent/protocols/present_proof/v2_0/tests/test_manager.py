@@ -3,7 +3,7 @@ import json
 from copy import deepcopy
 from time import time
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from .....core.in_memory import InMemoryProfile
@@ -387,15 +387,13 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         self.profile = InMemoryProfile.test_profile()
         injector = self.profile.context.injector
 
-        Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
+        Ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.get_schema = async_mock.AsyncMock(
-            return_value=async_mock.MagicMock()
-        )
-        self.ledger.get_credential_definition = async_mock.AsyncMock(
+        self.ledger.get_schema = mock.AsyncMock(return_value=mock.MagicMock())
+        self.ledger.get_credential_definition = mock.AsyncMock(
             return_value={"value": {"revocation": {"...": "..."}}}
         )
-        self.ledger.get_revoc_reg_def = async_mock.AsyncMock(
+        self.ledger.get_revoc_reg_def = mock.AsyncMock(
             return_value={
                 "ver": "1.0",
                 "id": RR_ID,
@@ -411,7 +409,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 },
             }
         )
-        self.ledger.get_revoc_reg_delta = async_mock.AsyncMock(
+        self.ledger.get_revoc_reg_delta = mock.AsyncMock(
             return_value=(
                 {
                     "ver": "1.0",
@@ -420,7 +418,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 NOW,
             )
         )
-        self.ledger.get_revoc_reg_entry = async_mock.AsyncMock(
+        self.ledger.get_revoc_reg_entry = mock.AsyncMock(
             return_value=(
                 {
                     "ver": "1.0",
@@ -432,16 +430,16 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         injector.bind_instance(BaseLedger, self.ledger)
         injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.AsyncMock(
+            mock.MagicMock(
+                get_ledger_for_identifier=mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
         )
 
-        Holder = async_mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        get_creds = async_mock.AsyncMock(
+        get_creds = mock.AsyncMock(
             return_value=(
                 {
                     "cred_info": {
@@ -456,7 +454,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             )
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
-        self.holder.get_credential = async_mock.AsyncMock(
+        self.holder.get_credential = mock.AsyncMock(
             return_value=json.dumps(
                 {
                     "schema_id": S_ID,
@@ -466,8 +464,8 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.AsyncMock(return_value="{}")
-        self.holder.create_revocation_state = async_mock.AsyncMock(
+        self.holder.create_presentation = mock.AsyncMock(return_value="{}")
+        self.holder.create_revocation_state = mock.AsyncMock(
             return_value=json.dumps(
                 {
                     "witness": {"omega": "1 ..."},
@@ -478,11 +476,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         injector.bind_instance(IndyHolder, self.holder)
 
-        Verifier = async_mock.MagicMock(IndyVerifier, autospec=True)
+        Verifier = mock.MagicMock(IndyVerifier, autospec=True)
         self.verifier = Verifier()
-        self.verifier.verify_presentation = async_mock.AsyncMock(
-            return_value=("true", [])
-        )
+        self.verifier.verify_presentation = mock.AsyncMock(return_value=("true", []))
         injector.bind_instance(IndyVerifier, self.verifier)
 
         self.manager = V20PresManager(self.profile)
@@ -527,11 +523,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             ]
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
-            V20PresProposal, "serialize", autospec=True
-        ):
+        ) as save_ex, mock.patch.object(V20PresProposal, "serialize", autospec=True):
             px_rec = await self.manager.create_exchange_for_proposal(
                 CONN_ID,
                 proposal,
@@ -547,13 +541,13 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert px_rec.auto_remove is True
 
     async def test_receive_proposal(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         proposal = V20PresProposal(
             formats=[
                 V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ]
         )
-        with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+        with mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
             px_rec = await self.manager.receive_pres_proposal(
                 proposal,
                 connection_record,
@@ -582,7 +576,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_proposal=proposal.serialize(),
             role=V20PresExRecord.ROLE_VERIFIER,
         )
-        px_rec.save = async_mock.AsyncMock()
+        px_rec.save = mock.AsyncMock()
         request_data = {
             "name": PROOF_REQ_NAME,
             "version": PROOF_REQ_VERSION,
@@ -616,7 +610,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_proposal=proposal.serialize(),
             role=V20PresExRecord.ROLE_VERIFIER,
         )
-        px_rec.save = async_mock.AsyncMock()
+        px_rec.save = mock.AsyncMock()
         (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
             pres_ex_record=px_rec,
             comment=comment,
@@ -674,7 +668,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 ],
             ).serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresFormatHandler, "create_pres", autospec=True
         ) as mock_create_pres:
             mock_create_pres.return_value = None
@@ -689,7 +683,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             )
 
     async def test_receive_pres_catch_diferror(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         pres_x = V20Pres(
             formats=[
                 V20PresFormat(
@@ -721,9 +715,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_request=pres_req.serialize(),
             pres=pres_x.serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresFormatHandler, "receive_pres", autospec=True
-        ) as mock_receive_pres, async_mock.patch.object(
+        ) as mock_receive_pres, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             mock_receive_pres.return_value = False
@@ -750,7 +744,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         pres_req.assign_thread_id("dummy")
 
-        with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+        with mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
             px_rec = await self.manager.create_exchange_for_request(
                 CONN_ID,
                 pres_req,
@@ -767,7 +761,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
     async def test_receive_pres_request(self):
         px_rec_in = V20PresExRecord()
 
-        with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+        with mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
             px_rec_out = await self.manager.receive_pres_request(px_rec_in)
             save_ex.assert_called_once()
 
@@ -788,21 +782,21 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.AsyncMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.AsyncMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -842,23 +836,23 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.AsyncMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.AsyncMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator_indy, async_mock.patch.object(
+        ) as mock_attach_decorator_indy, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr, async_mock.patch.object(
+        ) as mock_rr, mock.patch.object(
             DIFPresFormatHandler, "create_pres", autospec=True
         ) as mock_create_pres:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator_indy.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator_indy.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator_indy
             )
 
@@ -899,29 +893,29 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.AsyncMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.AsyncMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
         self.profile.context.injector.bind_instance(
             BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
+            mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
-        ), async_mock.patch.object(
+            mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
+        ), mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -955,21 +949,21 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.AsyncMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.AsyncMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -989,12 +983,10 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
 
     async def test_create_pres_no_revocation(self):
-        Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
+        Ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.get_schema = async_mock.AsyncMock(
-            return_value=async_mock.MagicMock()
-        )
-        self.ledger.get_credential_definition = async_mock.AsyncMock(
+        self.ledger.get_schema = mock.AsyncMock(return_value=mock.MagicMock())
+        self.ledger.get_credential_definition = mock.AsyncMock(
             return_value={"value": {"revocation": None}}
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -1014,9 +1006,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = async_mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        get_creds = async_mock.AsyncMock(
+        get_creds = mock.AsyncMock(
             return_value=(
                 {
                     "cred_info": {"referent": "dummy_reft"},
@@ -1029,7 +1021,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             )
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
-        self.holder.get_credential = async_mock.AsyncMock(
+        self.holder.get_credential = mock.AsyncMock(
             return_value=json.dumps(
                 {
                     "schema_id": S_ID,
@@ -1039,17 +1031,17 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.AsyncMock(return_value="{}")
+        self.holder.create_presentation = mock.AsyncMock(return_value="{}")
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
-            test_indy_util_module.LOGGER, "info", async_mock.MagicMock()
+        ) as mock_attach_decorator, mock.patch.object(
+            test_indy_util_module.LOGGER, "info", mock.MagicMock()
         ) as mock_log_info:
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -1099,9 +1091,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = async_mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        get_creds = async_mock.AsyncMock(
+        get_creds = mock.AsyncMock(
             return_value=(
                 {
                     "cred_info": {"referent": "dummy_reft"},
@@ -1115,7 +1107,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
-        self.holder.get_credential = async_mock.AsyncMock(
+        self.holder.get_credential = mock.AsyncMock(
             return_value=json.dumps(
                 {
                     "schema_id": S_ID,
@@ -1125,31 +1117,31 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.AsyncMock(return_value="{}")
-        self.holder.create_revocation_state = async_mock.AsyncMock(
+        self.holder.create_presentation = mock.AsyncMock(return_value="{}")
+        self.holder.create_revocation_state = mock.AsyncMock(
             side_effect=test_indy_util_module.IndyHolderError(
                 "Problem", {"message": "Nope"}
             )
         )
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.AsyncMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.AsyncMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
-        ) as mock_rr, async_mock.patch.object(
-            test_indy_util_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_rr, mock.patch.object(
+            test_indy_util_module.LOGGER, "error", mock.MagicMock()
         ) as mock_log_error:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
             request_data = {}
@@ -1172,9 +1164,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = async_mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        get_creds = async_mock.AsyncMock(
+        get_creds = mock.AsyncMock(
             return_value=(
                 {
                     "cred_info": {
@@ -1201,7 +1193,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             )
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
-        self.holder.get_credential = async_mock.AsyncMock(
+        self.holder.get_credential = mock.AsyncMock(
             return_value=json.dumps(
                 {
                     "schema_id": S_ID,
@@ -1211,8 +1203,8 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.AsyncMock(return_value="{}")
-        self.holder.create_revocation_state = async_mock.AsyncMock(
+        self.holder.create_presentation = mock.AsyncMock(return_value="{}")
+        self.holder.create_revocation_state = mock.AsyncMock(
             return_value=json.dumps(
                 {
                     "witness": {"omega": "1 ..."},
@@ -1223,21 +1215,21 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.AsyncMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.AsyncMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -1269,7 +1261,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
-        get_creds = async_mock.AsyncMock(return_value=())
+        get_creds = mock.AsyncMock(return_value=())
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
         with self.assertRaises(ValueError):
@@ -1277,7 +1269,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 INDY_PROOF_REQ_NAMES, preview=None, holder=self.holder
             )
 
-        get_creds = async_mock.AsyncMock(
+        get_creds = mock.AsyncMock(
             return_value=(
                 {
                     "cred_info": {"referent": "dummy_reft"},
@@ -1309,15 +1301,15 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             ],
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
-        get_creds = async_mock.AsyncMock(return_value=())
+        get_creds = mock.AsyncMock(return_value=())
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
         ) as mock_attach_decorator:
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
             request_data = {}
@@ -1330,7 +1322,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert "No matching Indy" in str(context.exception)
 
     async def test_receive_pres(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
@@ -1381,14 +1373,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         assert by_format.get("pres_proposal").get("indy") == INDY_PROOF_REQ_NAME
         assert by_format.get("pres_request").get("indy") == INDY_PROOF_REQ_NAME
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, async_mock.patch.object(
+        ) as retrieve_ex, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
@@ -1401,7 +1393,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
     async def test_receive_pres_receive_pred_value_mismatch_punt_to_indy(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
@@ -1456,14 +1448,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         assert by_format.get("pres_proposal").get("indy") == INDY_PROOF_REQ_NAME
         assert by_format.get("pres_request").get("indy") == indy_proof_req
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, async_mock.patch.object(
+        ) as retrieve_ex, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
@@ -1476,7 +1468,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
     async def test_receive_pres_indy_no_predicate_restrictions(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = {
             "name": PROOF_REQ_NAME,
             "version": PROOF_REQ_VERSION,
@@ -1538,14 +1530,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
 
         assert by_format.get("pres_request").get("indy") == indy_proof_req
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, async_mock.patch.object(
+        ) as retrieve_ex, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
@@ -1558,7 +1550,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
     async def test_receive_pres_indy_no_attr_restrictions(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = {
             "name": PROOF_REQ_NAME,
             "version": PROOF_REQ_VERSION,
@@ -1614,14 +1606,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
 
         assert by_format.get("pres_request").get("indy") == indy_proof_req
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, async_mock.patch.object(
+        ) as retrieve_ex, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
@@ -1634,7 +1626,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
     async def test_receive_pres_bait_and_switch_attr_name(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
         indy_proof_req["requested_attributes"]["0_screencapture_uuid"]["restrictions"][
             0
@@ -1683,9 +1675,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -1739,9 +1731,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -1750,7 +1742,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert "Presentation referent" in str(context.exception)
 
     async def test_receive_pres_bait_and_switch_attr_names(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = deepcopy(INDY_PROOF_REQ_NAMES)
         indy_proof_req["requested_attributes"]["0_player_uuid"]["restrictions"][0][
             "attr::screenCapture::value"
@@ -1798,9 +1790,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -1854,9 +1846,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -1865,7 +1857,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert "Presentation referent" in str(context.exception)
 
     async def test_receive_pres_bait_and_switch_pred(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
         indy_proof_req["requested_predicates"] = {}
         pres_proposal = V20PresProposal(
@@ -1911,9 +1903,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -1969,9 +1961,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -2027,9 +2019,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -2085,9 +2077,9 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             pres_request=pres_request.serialize(),
             pres=pres_x.serialize(),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -2129,13 +2121,13 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(
             BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
+            mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
-        ), async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+            mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
+        ), mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
             px_rec_out = await self.manager.verify_pres(px_rec_in)
             save_ex.assert_called_once()
 
@@ -2189,34 +2181,30 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(
             BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
+            mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
-        ), async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+            mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
+        ), mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
             px_rec_out = await self.manager.verify_pres(px_rec_in)
             save_ex.assert_called_once()
 
             assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
-        ), async_mock.patch(
+            mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
+        ), mock.patch(
             "aries_cloudagent.vc.vc_ld.verify.verify_presentation",
-            async_mock.AsyncMock(
-                return_value=PresentationVerificationResult(verified=False)
-            ),
-        ), async_mock.patch.object(
+            mock.AsyncMock(return_value=PresentationVerificationResult(verified=False)),
+        ), mock.patch.object(
             IndyVerifier,
             "verify_presentation",
-            async_mock.AsyncMock(
-                return_value=PresentationVerificationResult(verified=True)
-            ),
-        ), async_mock.patch.object(
+            mock.AsyncMock(return_value=PresentationVerificationResult(verified=True)),
+        ), mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex:
             px_rec_out = await self.manager.verify_pres(px_rec_in)
@@ -2259,14 +2247,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         await self.manager.send_pres_ack(px_rec)
 
     async def test_receive_pres_ack_a(self):
-        conn_record = async_mock.MagicMock(connection_id=CONN_ID)
+        conn_record = mock.MagicMock(connection_id=CONN_ID)
 
         px_rec_dummy = V20PresExRecord()
-        message = async_mock.MagicMock()
+        message = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -2276,14 +2264,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             assert px_rec_out.state == V20PresExRecord.STATE_DONE
 
     async def test_receive_pres_ack_b(self):
-        conn_record = async_mock.MagicMock(connection_id=CONN_ID)
+        conn_record = mock.MagicMock(connection_id=CONN_ID)
 
         px_rec_dummy = V20PresExRecord()
-        message = async_mock.MagicMock(_verification_result="true")
+        message = mock.MagicMock(_verification_result="true")
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = px_rec_dummy
@@ -2310,16 +2298,16 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             }
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V20PresExRecord,
             "retrieve_by_tag_filter",
-            async_mock.AsyncMock(),
-        ) as retrieve_ex, async_mock.patch.object(
+            mock.AsyncMock(),
+        ) as retrieve_ex, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.return_value = stored_exchange
 
@@ -2352,10 +2340,10 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             }
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20PresExRecord,
             "retrieve_by_tag_filter",
-            async_mock.AsyncMock(),
+            mock.AsyncMock(),
         ) as retrieve_ex:
             retrieve_ex.side_effect = StorageNotFoundError("No such record")
 

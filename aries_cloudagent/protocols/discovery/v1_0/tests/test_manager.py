@@ -2,7 +2,7 @@ import asyncio
 import logging
 import pytest
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from .....core.in_memory import InMemoryProfile
@@ -30,9 +30,7 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
         self.session = InMemoryProfile.test_session()
         self.profile = self.session.profile
         self.context = self.profile.context
-        setattr(
-            self.profile, "session", async_mock.MagicMock(return_value=self.session)
-        )
+        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
         self.manager = V10DiscoveryMgr(self.profile)
         self.disclose = Disclose(
             protocols=[
@@ -53,10 +51,10 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
     async def test_receive_disclosure(self):
         test_conn_id = "test123"
         self.disclose.assign_thread_id("test123")
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
-            V10DiscoveryExchangeRecord, "retrieve_by_id", async_mock.AsyncMock()
+        ) as save_ex, mock.patch.object(
+            V10DiscoveryExchangeRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_retrieve:
             mock_retrieve.return_value = TEST_DISCOVERY_EX_REC
             ex_rec = await self.manager.receive_disclose(
@@ -72,18 +70,18 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
     async def test_receive_disclosure_retreive_by_conn(self):
         test_conn_id = "test123"
         self.disclose.assign_thread_id("test123")
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10DiscoveryExchangeRecord,
             "exists_for_connection_id",
-            async_mock.AsyncMock(),
-        ) as mock_exists_for_connection_id, async_mock.patch.object(
+            mock.AsyncMock(),
+        ) as mock_exists_for_connection_id, mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_connection_id",
-            async_mock.AsyncMock(),
-        ) as mock_retrieve_by_connection_id, async_mock.patch.object(
-            V10DiscoveryExchangeRecord, "retrieve_by_id", async_mock.AsyncMock()
+            mock.AsyncMock(),
+        ) as mock_retrieve_by_connection_id, mock.patch.object(
+            V10DiscoveryExchangeRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_retrieve_by_id:
             mock_retrieve_by_id.side_effect = StorageNotFoundError
             mock_exists_for_connection_id.return_value = True
@@ -101,14 +99,14 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
     async def test_receive_disclosure_retreive_by_conn_not_found(self):
         test_conn_id = "test123"
         self.disclose.assign_thread_id("test123")
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10DiscoveryExchangeRecord,
             "exists_for_connection_id",
-            async_mock.AsyncMock(),
-        ) as mock_exists_for_connection_id, async_mock.patch.object(
-            V10DiscoveryExchangeRecord, "retrieve_by_id", async_mock.AsyncMock()
+            mock.AsyncMock(),
+        ) as mock_exists_for_connection_id, mock.patch.object(
+            V10DiscoveryExchangeRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_retrieve_by_id:
             mock_retrieve_by_id.side_effect = StorageNotFoundError
             mock_exists_for_connection_id.return_value = False
@@ -124,14 +122,14 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
 
     async def test_receive_disclosure_retreive_new_ex_rec(self):
         test_conn_id = "test123"
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10DiscoveryExchangeRecord,
             "exists_for_connection_id",
-            async_mock.AsyncMock(),
-        ) as mock_exists_for_connection_id, async_mock.patch.object(
-            V10DiscoveryExchangeRecord, "retrieve_by_id", async_mock.AsyncMock()
+            mock.AsyncMock(),
+        ) as mock_exists_for_connection_id, mock.patch.object(
+            V10DiscoveryExchangeRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_retrieve_by_id:
             mock_retrieve_by_id.side_effect = StorageNotFoundError
             mock_exists_for_connection_id.return_value = False
@@ -145,10 +143,10 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
             )
 
     async def test_check_if_disclosure_received(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_id",
-            async_mock.AsyncMock(),
+            mock.AsyncMock(),
         ) as mock_retrieve_by_id:
             mock_retrieve_by_id.side_effect = [
                 V10DiscoveryExchangeRecord(),
@@ -158,22 +156,22 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
 
     async def test_create_and_send_query_with_connection(self):
         return_ex_rec = V10DiscoveryExchangeRecord(query_msg=Query(query="*"))
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord,
             "exists_for_connection_id",
-            async_mock.AsyncMock(),
-        ) as mock_exists_for_connection_id, async_mock.patch.object(
+            mock.AsyncMock(),
+        ) as mock_exists_for_connection_id, mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_connection_id",
-            async_mock.AsyncMock(),
-        ) as mock_retrieve_by_connection_id, async_mock.patch.object(
+            mock.AsyncMock(),
+        ) as mock_retrieve_by_connection_id, mock.patch.object(
             V10DiscoveryExchangeRecord,
             "save",
-            async_mock.AsyncMock(),
-        ) as save_ex, async_mock.patch.object(
-            V10DiscoveryMgr, "check_if_disclosure_received", async_mock.AsyncMock()
-        ) as mock_disclosure_received, async_mock.patch.object(
-            self.responder, "send", async_mock.AsyncMock()
+            mock.AsyncMock(),
+        ) as save_ex, mock.patch.object(
+            V10DiscoveryMgr, "check_if_disclosure_received", mock.AsyncMock()
+        ) as mock_disclosure_received, mock.patch.object(
+            self.responder, "send", mock.AsyncMock()
         ) as mock_send:
             mock_exists_for_connection_id.return_value = True
             mock_retrieve_by_connection_id.return_value = V10DiscoveryExchangeRecord()
@@ -186,16 +184,16 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
 
     async def test_create_and_send_query_with_connection_no_responder(self):
         self.profile.context.injector.clear_binding(BaseResponder)
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord,
             "exists_for_connection_id",
-            async_mock.AsyncMock(),
-        ) as mock_exists_for_connection_id, async_mock.patch.object(
+            mock.AsyncMock(),
+        ) as mock_exists_for_connection_id, mock.patch.object(
             V10DiscoveryExchangeRecord,
             "save",
-            async_mock.AsyncMock(),
-        ) as save_ex, async_mock.patch.object(
-            V10DiscoveryMgr, "check_if_disclosure_received", async_mock.AsyncMock()
+            mock.AsyncMock(),
+        ) as save_ex, mock.patch.object(
+            V10DiscoveryMgr, "check_if_disclosure_received", mock.AsyncMock()
         ) as mock_disclosure_received:
             self._caplog.set_level(logging.WARNING)
             mock_exists_for_connection_id.return_value = False
@@ -207,10 +205,10 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
             assert "Unable to send discover-features v1" in self._caplog.text
 
     async def test_create_and_send_query_with_no_connection(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryMgr,
             "receive_query",
-            async_mock.AsyncMock(),
+            mock.AsyncMock(),
         ) as mock_receive_query:
             mock_receive_query.return_value = Disclose()
             received_ex_rec = await self.manager.create_and_send_query(query="*")

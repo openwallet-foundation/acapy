@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 import json
 
 from ......connections.models.connection_target import ConnectionTarget
@@ -29,24 +29,22 @@ class TestForwardHandler(IsolatedAsyncioTestCase):
         handler = test_module.ForwardHandler()
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "RoutingManager", autospec=True
-        ) as mock_mgr, async_mock.patch.object(
+        ) as mock_mgr, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_connection_mgr, async_mock.patch.object(
+        ) as mock_connection_mgr, mock.patch.object(
             self.context.profile, "notify", autospec=True
         ) as mock_notify:
-            mock_mgr.return_value.get_recipient = async_mock.AsyncMock(
+            mock_mgr.return_value.get_recipient = mock.AsyncMock(
                 return_value=RouteRecord(connection_id="dummy")
             )
-            mock_connection_mgr.return_value.get_connection_targets = (
-                async_mock.AsyncMock(
-                    return_value=[
-                        ConnectionTarget(
-                            recipient_keys=["recip_key"],
-                        )
-                    ]
-                )
+            mock_connection_mgr.return_value.get_connection_targets = mock.AsyncMock(
+                return_value=[
+                    ConnectionTarget(
+                        recipient_keys=["recip_key"],
+                    )
+                ]
             )
 
             await handler.handle(self.context, responder)
@@ -77,10 +75,10 @@ class TestForwardHandler(IsolatedAsyncioTestCase):
         handler = test_module.ForwardHandler()
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "RoutingManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.get_recipient = async_mock.AsyncMock(
+            mock_mgr.return_value.get_recipient = mock.AsyncMock(
                 side_effect=test_module.RoutingManagerError()
             )
 

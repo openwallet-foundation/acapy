@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from .....core.event_bus import EventBus, MockEventBus
 from .....core.in_memory import InMemoryProfile
@@ -21,7 +21,7 @@ class TestActionMenuService(IsolatedAsyncioTestCase):
             self.context
         )
 
-        connection = async_mock.MagicMock()
+        connection = mock.MagicMock()
         connection.connection_id = "connid"
         thread_id = "thid"
 
@@ -47,7 +47,7 @@ class TestActionMenuService(IsolatedAsyncioTestCase):
 
         action_name = "action"
         action_params = {"a": 1, "b": 2}
-        connection = async_mock.MagicMock()
+        connection = mock.MagicMock()
         connection.connection_id = "connid"
         thread_id = "thid"
 

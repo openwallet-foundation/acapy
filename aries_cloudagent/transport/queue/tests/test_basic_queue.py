@@ -1,6 +1,6 @@
 import asyncio
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from .. import basic as test_module
@@ -37,26 +37,22 @@ class TestBasicQueue(IsolatedAsyncioTestCase):
         test_value = "test value"
         await queue.enqueue(test_value)
 
-        with async_mock.patch.object(
-            test_module.asyncio, "get_event_loop", async_mock.MagicMock()
-        ) as mock_get_event_loop, async_mock.patch.object(
-            test_module.asyncio, "wait", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.asyncio, "get_event_loop", mock.MagicMock()
+        ) as mock_get_event_loop, mock.patch.object(
+            test_module.asyncio, "wait", mock.AsyncMock()
         ) as mock_wait:
             mock_wait.return_value = (
-                async_mock.MagicMock(),
-                [
-                    async_mock.MagicMock(
-                        done=async_mock.MagicMock(), cancel=async_mock.MagicMock()
-                    )
-                ],
+                mock.MagicMock(),
+                [mock.MagicMock(done=mock.MagicMock(), cancel=mock.MagicMock())],
             )
-            mock_get_event_loop.return_value = async_mock.MagicMock(
-                create_task=async_mock.MagicMock(
+            mock_get_event_loop.return_value = mock.MagicMock(
+                create_task=mock.MagicMock(
                     side_effect=[
-                        async_mock.MagicMock(),  # stopped
-                        async_mock.MagicMock(  # dequeued
-                            done=async_mock.MagicMock(return_value=True),
-                            exception=async_mock.MagicMock(return_value=KeyError()),
+                        mock.MagicMock(),  # stopped
+                        mock.MagicMock(  # dequeued
+                            done=mock.MagicMock(return_value=True),
+                            exception=mock.MagicMock(return_value=KeyError()),
                         ),
                     ]
                 )
@@ -69,27 +65,23 @@ class TestBasicQueue(IsolatedAsyncioTestCase):
         test_value = "test value"
         await queue.enqueue(test_value)
 
-        with async_mock.patch.object(
-            test_module.asyncio, "get_event_loop", async_mock.MagicMock()
-        ) as mock_get_event_loop, async_mock.patch.object(
-            test_module.asyncio, "wait", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.asyncio, "get_event_loop", mock.MagicMock()
+        ) as mock_get_event_loop, mock.patch.object(
+            test_module.asyncio, "wait", mock.AsyncMock()
         ) as mock_wait:
             mock_wait.return_value = (
-                async_mock.MagicMock(),
-                [
-                    async_mock.MagicMock(
-                        done=async_mock.MagicMock(), cancel=async_mock.MagicMock()
-                    )
-                ],
+                mock.MagicMock(),
+                [mock.MagicMock(done=mock.MagicMock(), cancel=mock.MagicMock())],
             )
-            mock_get_event_loop.return_value = async_mock.MagicMock(
-                create_task=async_mock.MagicMock(
+            mock_get_event_loop.return_value = mock.MagicMock(
+                create_task=mock.MagicMock(
                     side_effect=[
-                        async_mock.MagicMock(  # stopped
-                            done=async_mock.MagicMock(return_value=True)
+                        mock.MagicMock(  # stopped
+                            done=mock.MagicMock(return_value=True)
                         ),
-                        async_mock.MagicMock(  # dequeued
-                            done=async_mock.MagicMock(return_value=False)
+                        mock.MagicMock(  # dequeued
+                            done=mock.MagicMock(return_value=False)
                         ),
                     ]
                 )

@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 
@@ -67,17 +67,17 @@ PRES_PREVIEW = IndyPresPreview(
 class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message_receipt = MessageReceipt()
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value=INDY_PROOF_REQ
         )
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
@@ -98,17 +98,17 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
             mock_pres_mgr.return_value.receive_request.return_value.auto_present = False
 
@@ -127,17 +127,17 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
 
     async def test_called_not_found(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message_receipt = MessageReceipt()
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value=INDY_PROOF_REQ
         )
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
@@ -158,18 +158,18 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 side_effect=StorageNotFoundError
             )
             mock_pres_ex_cls.return_value = px_rec_instance
 
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
             mock_pres_mgr.return_value.receive_request.return_value.auto_present = False
 
@@ -188,10 +188,10 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
 
     async def test_called_auto_present(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value={
                 "name": "proof-request",
                 "version": "1.0",
@@ -226,33 +226,33 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
-        mock_holder = async_mock.MagicMock(
-            get_credentials_for_presentation_request_by_referent=async_mock.AsyncMock(
+        mock_holder = mock.MagicMock(
+            get_credentials_for_presentation_request_by_referent=mock.AsyncMock(
                 return_value=[{"cred_info": {"referent": "dummy"}}]
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
         request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
             mock_pres_ex_cls.return_value = px_rec_instance
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_presentation = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.create_presentation = mock.AsyncMock(
                 return_value=(px_rec_instance, "presentation_message")
             )
             request_context.connection_ready = True
@@ -275,10 +275,10 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
 
     async def test_called_auto_present_x(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value={
                 "name": "proof-request",
                 "version": "1.0",
@@ -308,41 +308,39 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         presentation_proposal = PresentationProposal(
             comment="Hello World", presentation_proposal=PRES_PREVIEW
         )
-        mock_px_rec = async_mock.MagicMock(
+        mock_px_rec = mock.MagicMock(
             presentation_proposal_dict=presentation_proposal,
             auto_present=True,
-            save_error_state=async_mock.AsyncMock(),
+            save_error_state=mock.AsyncMock(),
         )
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
-        mock_holder = async_mock.MagicMock(
+        mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.AsyncMock(
-                    return_value=[{"cred_info": {"referent": "dummy"}}]
-                )
+                mock.AsyncMock(return_value=[{"cred_info": {"referent": "dummy"}}])
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
         request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
             mock_pres_ex_cls.return_value = mock_px_rec
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 return_value=mock_px_rec
             )
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
                 return_value=mock_px_rec
             )
 
-            mock_pres_mgr.return_value.create_presentation = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.create_presentation = mock.AsyncMock(
                 side_effect=test_module.IndyHolderError()
             )
 
@@ -350,18 +348,18 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             handler = test_module.PresentationRequestHandler()
             responder = MockResponder()
 
-            with async_mock.patch.object(
-                handler._logger, "exception", async_mock.MagicMock()
+            with mock.patch.object(
+                handler._logger, "exception", mock.MagicMock()
             ) as mock_log_exc:
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
 
     async def test_called_auto_present_no_preview(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value={
                 "name": "proof-request",
                 "version": "1.0",
@@ -390,14 +388,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         request_context.message_receipt = MessageReceipt()
         px_rec_instance = test_module.V10PresentationExchange(auto_present=True)
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
-        mock_holder = async_mock.MagicMock(
+        mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.AsyncMock(
+                mock.AsyncMock(
                     return_value=[
                         {"cred_info": {"referent": "dummy-0"}},
                         {"cred_info": {"referent": "dummy-1"}},
@@ -408,20 +406,20 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
         request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
             mock_pres_ex_cls.return_value = px_rec_instance
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_presentation = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.create_presentation = mock.AsyncMock(
                 return_value=(px_rec_instance, "presentation_message")
             )
             request_context.connection_ready = True
@@ -444,10 +442,10 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
 
     async def test_called_auto_present_pred_no_match(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value={
                 "name": "proof-request",
                 "version": "1.0",
@@ -470,33 +468,33 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         request_context.message_receipt = MessageReceipt()
         px_rec_instance = test_module.V10PresentationExchange(auto_present=True)
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
-        mock_holder = async_mock.MagicMock(
+        mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.AsyncMock(return_value=[])
+                mock.AsyncMock(return_value=[])
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
         request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
             mock_pres_ex_cls.return_value = px_rec_instance
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_presentation = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.create_presentation = mock.AsyncMock(
                 return_value=(px_rec_instance, "presentation_message")
             )
             request_context.connection_ready = True
@@ -515,10 +513,10 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
 
     async def test_called_auto_present_pred_single_match(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value={
                 "name": "proof-request",
                 "version": "1.0",
@@ -541,35 +539,33 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         request_context.message_receipt = MessageReceipt()
         px_rec_instance = test_module.V10PresentationExchange(auto_present=True)
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
-        mock_holder = async_mock.MagicMock(
+        mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.AsyncMock(
-                    return_value=[{"cred_info": {"referent": "dummy-0"}}]
-                )
+                mock.AsyncMock(return_value=[{"cred_info": {"referent": "dummy-0"}}])
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
         request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
             mock_pres_ex_cls.return_value = px_rec_instance
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_presentation = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.create_presentation = mock.AsyncMock(
                 return_value=(px_rec_instance, "presentation_message")
             )
             request_context.connection_ready = True
@@ -592,10 +588,10 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
 
     async def test_called_auto_present_pred_multi_match(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value={
                 "name": "proof-request",
                 "version": "1.0",
@@ -618,14 +614,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         request_context.message_receipt = MessageReceipt()
         px_rec_instance = test_module.V10PresentationExchange(auto_present=True)
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
-        mock_holder = async_mock.MagicMock(
+        mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.AsyncMock(
+                mock.AsyncMock(
                     return_value=[
                         {"cred_info": {"referent": "dummy-0"}},
                         {"cred_info": {"referent": "dummy-1"}},
@@ -636,20 +632,20 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         request_context.injector.bind_instance(IndyHolder, mock_holder)
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
             mock_pres_ex_cls.return_value = px_rec_instance
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_presentation = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.create_presentation = mock.AsyncMock(
                 return_value=(px_rec_instance, "presentation_message")
             )
             request_context.connection_ready = True
@@ -672,10 +668,10 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
 
     async def test_called_auto_present_multi_cred_match_reft(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value={
                 "name": "proof-request",
                 "version": "1.0",
@@ -718,14 +714,14 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
-        mock_holder = async_mock.MagicMock(
+        mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=(
-                async_mock.AsyncMock(
+                mock.AsyncMock(
                     return_value=[
                         {
                             "cred_info": {
@@ -767,20 +763,20 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
         request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
             mock_pres_ex_cls.return_value = px_rec_instance
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_presentation = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.create_presentation = mock.AsyncMock(
                 return_value=(px_rec_instance, "presentation_message")
             )
             request_context.connection_ready = True
@@ -803,10 +799,10 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
 
     async def test_called_auto_present_bait_and_switch(self):
         request_context = RequestContext.test_context()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = PresentationRequest()
-        request_context.message.indy_proof_request = async_mock.MagicMock(
+        request_context.message.indy_proof_request = mock.MagicMock(
             return_value={
                 "name": "proof-request",
                 "version": "1.0",
@@ -840,7 +836,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             auto_present=True,
         )
 
-        by_reft = async_mock.AsyncMock(
+        by_reft = mock.AsyncMock(
             return_value=[
                 {
                     "cred_info": {
@@ -868,32 +864,32 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
                 },
             ]
         )
-        mock_holder = async_mock.MagicMock(
+        mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=by_reft
         )
         request_context.injector.bind_instance(IndyHolder, mock_holder)
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
+                return_value=mock.MagicMock()
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
-        ) as mock_pres_mgr, async_mock.patch.object(
+        ) as mock_pres_mgr, mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
             mock_pres_ex_cls.return_value = px_rec_instance
-            mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.AsyncMock(
+            mock_pres_ex_cls.retrieve_by_tag_filter = mock.AsyncMock(
                 return_value=px_rec_instance
             )
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock(
                 return_value=px_rec_instance
             )
 
-            mock_pres_mgr.return_value.create_presentation = async_mock.AsyncMock(
+            mock_pres_mgr.return_value.create_presentation = mock.AsyncMock(
                 return_value=(px_rec_instance, "presentation_message")
             )
             request_context.connection_ready = True
@@ -914,12 +910,12 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_request = async_mock.AsyncMock()
+            mock_pres_mgr.return_value.receive_request = mock.AsyncMock()
             request_context.message = PresentationRequest()
             request_context.connection_ready = False
             handler = test_module.PresentationRequestHandler()
@@ -937,8 +933,8 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.AsyncMock(
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.AsyncMock(
                 # No oob record found
                 return_value=None
             )

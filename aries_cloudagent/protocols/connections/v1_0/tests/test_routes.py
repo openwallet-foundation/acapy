@@ -2,7 +2,7 @@ import json
 
 from unittest.mock import ANY
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from .....admin.request_context import AdminRequestContext
 from .....cache.base import BaseCache
@@ -19,9 +19,9 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         self.context = AdminRequestContext.test_context(self.session_inject)
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.AsyncMock(),
+            "outbound_message_router": mock.AsyncMock(),
         }
-        self.request = async_mock.MagicMock(
+        self.request = mock.MagicMock(
             app={},
             match_info={},
             query={},
@@ -42,16 +42,16 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         STATE_INVITATION = ConnRecord.State.INVITATION
         STATE_ABANDONED = ConnRecord.State.ABANDONED
         ROLE_REQUESTER = ConnRecord.Role.REQUESTER
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec:
-            mock_conn_rec.query = async_mock.AsyncMock()
+            mock_conn_rec.query = mock.AsyncMock()
             mock_conn_rec.Role = ConnRecord.Role
-            mock_conn_rec.State = async_mock.MagicMock(
+            mock_conn_rec.State = mock.MagicMock(
                 COMPLETED=STATE_COMPLETED,
                 INVITATION=STATE_INVITATION,
                 ABANDONED=STATE_ABANDONED,
-                get=async_mock.MagicMock(
+                get=mock.MagicMock(
                     side_effect=[
                         ConnRecord.State.ABANDONED,
                         ConnRecord.State.COMPLETED,
@@ -60,24 +60,24 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                 ),
             )
             conns = [  # in ascending order here
-                async_mock.MagicMock(
-                    serialize=async_mock.MagicMock(
+                mock.MagicMock(
+                    serialize=mock.MagicMock(
                         return_value={
                             "state": ConnRecord.State.COMPLETED.rfc23,
                             "created_at": "1234567890",
                         }
                     )
                 ),
-                async_mock.MagicMock(
-                    serialize=async_mock.MagicMock(
+                mock.MagicMock(
+                    serialize=mock.MagicMock(
                         return_value={
                             "state": ConnRecord.State.INVITATION.rfc23,
                             "created_at": "1234567890",
                         }
                     )
                 ),
-                async_mock.MagicMock(
-                    serialize=async_mock.MagicMock(
+                mock.MagicMock(
+                    serialize=mock.MagicMock(
                         return_value={
                             "state": ConnRecord.State.ABANDONED.rfc23,
                             "created_at": "1234567890",
@@ -87,9 +87,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             ]
             mock_conn_rec.query.return_value = [conns[2], conns[0], conns[1]]  # jumbled
 
-            with async_mock.patch.object(
-                test_module.web, "json_response"
-            ) as mock_response:
+            with mock.patch.object(test_module.web, "json_response") as mock_response:
                 await test_module.connections_list(self.request)
                 mock_conn_rec.query.assert_called_once_with(
                     ANY,
@@ -126,29 +124,27 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
         STATE_COMPLETED = ConnRecord.State.COMPLETED
         ROLE_REQUESTER = ConnRecord.Role.REQUESTER
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec:
-            mock_conn_rec.Role = async_mock.MagicMock(return_value=ROLE_REQUESTER)
-            mock_conn_rec.State = async_mock.MagicMock(
+            mock_conn_rec.Role = mock.MagicMock(return_value=ROLE_REQUESTER)
+            mock_conn_rec.State = mock.MagicMock(
                 COMPLETED=STATE_COMPLETED,
-                get=async_mock.MagicMock(return_value=ConnRecord.State.COMPLETED),
+                get=mock.MagicMock(return_value=ConnRecord.State.COMPLETED),
             )
-            mock_conn_rec.query = async_mock.AsyncMock(
-                side_effect=test_module.StorageError()
-            )
+            mock_conn_rec.query = mock.AsyncMock(side_effect=test_module.StorageError())
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.connections_list(self.request)
 
     async def test_connections_retrieve(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.serialize = async_mock.MagicMock(return_value={"hello": "world"})
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.serialize = mock.MagicMock(return_value={"hello": "world"})
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
@@ -158,15 +154,15 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_endpoints(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr_cls, async_mock.patch.object(
+        ) as mock_conn_mgr_cls, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_conn_mgr_cls.return_value = async_mock.MagicMock(
-                get_endpoints=async_mock.AsyncMock(
+            mock_conn_mgr_cls.return_value = mock.MagicMock(
+                get_endpoints=mock.AsyncMock(
                     return_value=("localhost:8080", "1.2.3.4:8081")
                 )
             )
@@ -180,24 +176,22 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_endpoints_x(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr_cls, async_mock.patch.object(
+        ) as mock_conn_mgr_cls, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_conn_mgr_cls.return_value = async_mock.MagicMock(
-                get_endpoints=async_mock.AsyncMock(side_effect=StorageNotFoundError())
+            mock_conn_mgr_cls.return_value = mock.MagicMock(
+                get_endpoints=mock.AsyncMock(side_effect=StorageNotFoundError())
             )
 
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.connections_endpoints(self.request)
 
-            mock_conn_mgr_cls.return_value = async_mock.MagicMock(
-                get_endpoints=async_mock.AsyncMock(
-                    side_effect=test_module.WalletError()
-                )
+            mock_conn_mgr_cls.return_value = mock.MagicMock(
+                get_endpoints=mock.AsyncMock(side_effect=test_module.WalletError())
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -205,13 +199,13 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_metadata(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
-            mock_conn_rec, "metadata_get_all", async_mock.AsyncMock()
-        ) as mock_metadata_get_all, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
+            mock_conn_rec, "metadata_get_all", mock.AsyncMock()
+        ) as mock_metadata_get_all, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
@@ -223,16 +217,16 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_metadata_get_single(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
         self.request.query = {"key": "test"}
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
-            mock_conn_rec, "metadata_get_all", async_mock.AsyncMock()
-        ) as mock_metadata_get_all, async_mock.patch.object(
-            mock_conn_rec, "metadata_get", async_mock.AsyncMock()
-        ) as mock_metadata_get, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
+            mock_conn_rec, "metadata_get_all", mock.AsyncMock()
+        ) as mock_metadata_get_all, mock.patch.object(
+            mock_conn_rec, "metadata_get", mock.AsyncMock()
+        ) as mock_metadata_get, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
@@ -244,13 +238,13 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_metadata_x(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
-            mock_conn_rec, "metadata_get_all", async_mock.AsyncMock()
-        ) as mock_metadata_get_all, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
+            mock_conn_rec, "metadata_get_all", mock.AsyncMock()
+        ) as mock_metadata_get_all, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
@@ -265,18 +259,18 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_metadata_set(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
-        self.request.json = async_mock.AsyncMock(
+        mock_conn_rec = mock.MagicMock()
+        self.request.json = mock.AsyncMock(
             return_value={"metadata": {"hello": "world"}}
         )
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
-            mock_conn_rec, "metadata_get_all", async_mock.AsyncMock()
-        ) as mock_metadata_get_all, async_mock.patch.object(
-            mock_conn_rec, "metadata_set", async_mock.AsyncMock()
-        ) as mock_metadata_set, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
+            mock_conn_rec, "metadata_get_all", mock.AsyncMock()
+        ) as mock_metadata_get_all, mock.patch.object(
+            mock_conn_rec, "metadata_set", mock.AsyncMock()
+        ) as mock_metadata_set, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
@@ -288,18 +282,18 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_metadata_set_x(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
-        self.request.json = async_mock.AsyncMock(
+        mock_conn_rec = mock.MagicMock()
+        self.request.json = mock.AsyncMock(
             return_value={"metadata": {"hello": "world"}}
         )
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
-            mock_conn_rec, "metadata_get_all", async_mock.AsyncMock()
-        ) as mock_metadata_get_all, async_mock.patch.object(
-            mock_conn_rec, "metadata_set", async_mock.AsyncMock()
-        ) as mock_metadata_set, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
+            mock_conn_rec, "metadata_get_all", mock.AsyncMock()
+        ) as mock_metadata_get_all, mock.patch.object(
+            mock_conn_rec, "metadata_set", mock.AsyncMock()
+        ) as mock_metadata_set, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
@@ -315,8 +309,8 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_retrieve_not_found(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
 
@@ -325,13 +319,13 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_retrieve_x(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.serialize = async_mock.MagicMock(
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.serialize = mock.MagicMock(
             side_effect=test_module.BaseModelError()
         )
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
 
@@ -347,7 +341,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             "metadata": {"hello": "world"},
             "mediation_id": "some-id",
         }
-        self.request.json = async_mock.AsyncMock(return_value=body)
+        self.request.json = mock.AsyncMock(return_value=body)
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
@@ -355,19 +349,19 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             "multi_use": "true",
         }
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, async_mock.patch.object(
+        ) as mock_conn_mgr, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_conn_mgr.return_value.create_invitation = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.create_invitation = mock.AsyncMock(
                 return_value=(
-                    async_mock.MagicMock(  # connection record
+                    mock.MagicMock(  # connection record
                         connection_id="dummy", alias="conn-alias"
                     ),
-                    async_mock.MagicMock(  # invitation
-                        serialize=async_mock.MagicMock(return_value={"a": "value"}),
-                        to_url=async_mock.MagicMock(return_value="http://endpoint.ca"),
+                    mock.MagicMock(  # invitation
+                        serialize=mock.MagicMock(return_value={"a": "value"}),
+                        to_url=mock.MagicMock(return_value="http://endpoint.ca"),
                     ),
                 )
             )
@@ -396,7 +390,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_create_invitation_x(self):
         self.context.update_settings({"public_invites": True})
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
@@ -404,10 +398,10 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             "multi_use": "true",
         }
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_conn_mgr:
-            mock_conn_mgr.return_value.create_invitation = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.create_invitation = mock.AsyncMock(
                 side_effect=test_module.ConnectionManagerError()
             )
 
@@ -423,17 +417,17 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             "metadata": {"hello": "world"},
             "mediation_id": "some-id",
         }
-        self.request.json = async_mock.AsyncMock(return_value=body)
+        self.request.json = mock.AsyncMock(return_value=body)
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
             "public": "true",
             "multi_use": "true",
         }
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_conn_mgr:
-            mock_conn_mgr.return_value.create_invitation = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.create_invitation = mock.AsyncMock(
                 side_effect=StorageNotFoundError()
             )
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -441,7 +435,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_create_invitation_public_forbidden(self):
         self.context.update_settings({"public_invites": False})
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
@@ -453,23 +447,23 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             await test_module.connections_create_invitation(self.request)
 
     async def test_connections_receive_invitation(self):
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
         }
 
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.serialize = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.serialize = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.ConnectionInvitation, "deserialize", autospec=True
-        ) as mock_inv_deser, async_mock.patch.object(
+        ) as mock_inv_deser, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, async_mock.patch.object(
+        ) as mock_conn_mgr, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_conn_mgr.return_value.receive_invitation = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.receive_invitation = mock.AsyncMock(
                 return_value=mock_conn_rec
             )
 
@@ -477,18 +471,18 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
 
     async def test_connections_receive_invitation_bad(self):
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
         }
 
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.serialize = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.serialize = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.ConnectionInvitation, "deserialize", autospec=True
-        ) as mock_inv_deser, async_mock.patch.object(
+        ) as mock_inv_deser, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_conn_mgr:
             mock_inv_deser.side_effect = test_module.BaseModelError()
@@ -503,22 +497,22 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             await test_module.connections_receive_invitation(self.request)
 
     async def test_connections_receive_invitation_x_bad_mediation_id(self):
-        self.request.json = async_mock.AsyncMock()
+        self.request.json = mock.AsyncMock()
         self.request.query = {
             "auto_accept": "true",
             "alias": "alias",
             "mediation_id": "some-id",
         }
 
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.serialize = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.serialize = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.ConnectionInvitation, "deserialize", autospec=True
-        ) as mock_inv_deser, async_mock.patch.object(
+        ) as mock_inv_deser, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_conn_mgr:
-            mock_conn_mgr.return_value.receive_invitation = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.receive_invitation = mock.AsyncMock(
                 side_effect=StorageNotFoundError()
             )
 
@@ -532,18 +526,18 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             "my_endpoint": "http://endpoint.ca",
         }
 
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.serialize = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.serialize = mock.MagicMock()
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, async_mock.patch.object(
+        ) as mock_conn_mgr, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
-            mock_conn_mgr.return_value.create_request = async_mock.AsyncMock()
+            mock_conn_mgr.return_value.create_request = mock.AsyncMock()
 
             await test_module.connections_accept_invitation(self.request)
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
@@ -551,8 +545,8 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_accept_invitation_not_found(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
 
@@ -562,12 +556,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_accept_invitation_x(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_conn_mgr:
-            mock_conn_mgr.return_value.create_request = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.create_request = mock.AsyncMock(
                 side_effect=test_module.ConnectionManagerError()
             )
 
@@ -578,12 +572,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {"conn_id": "dummy"}
         self.request.query["mediation_id"] = "some-id"
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_conn_mgr:
-            mock_conn_mgr.return_value.create_request = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.create_request = mock.AsyncMock(
                 side_effect=StorageNotFoundError()
             )
 
@@ -596,18 +590,18 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             "my_endpoint": "http://endpoint.ca",
         }
 
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.serialize = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.serialize = mock.MagicMock()
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, async_mock.patch.object(
+        ) as mock_conn_mgr, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
-            mock_conn_mgr.return_value.create_response = async_mock.AsyncMock()
+            mock_conn_mgr.return_value.create_response = mock.AsyncMock()
 
             await test_module.connections_accept_request(self.request)
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
@@ -615,8 +609,8 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_accept_request_not_found(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
 
@@ -626,14 +620,14 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_accept_request_x(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, async_mock.patch.object(
+        ) as mock_conn_mgr, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_conn_mgr.return_value.create_response = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.create_response = mock.AsyncMock(
                 side_effect=test_module.ConnectionManagerError()
             )
 
@@ -642,12 +636,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_remove(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.delete_record = async_mock.AsyncMock()
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.delete_record = mock.AsyncMock()
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
@@ -661,12 +655,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         await cache.set("conn_rec_state::dummy", "active")
         profile.context.injector.bind_instance(BaseCache, cache)
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.delete_record = async_mock.AsyncMock()
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.delete_record = mock.AsyncMock()
         assert (await cache.get("conn_rec_state::dummy")) == "active"
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
-        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
+        ) as mock_conn_rec_retrieve_by_id, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
@@ -678,10 +672,10 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
     async def test_connections_remove_not_found(self):
         self.request.match_info = {"conn_id": "dummy"}
 
-        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
 
@@ -690,12 +684,12 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
 
     async def test_connections_remove_x(self):
         self.request.match_info = {"conn_id": "dummy"}
-        mock_conn_rec = async_mock.MagicMock(
-            delete_record=async_mock.AsyncMock(side_effect=test_module.StorageError())
+        mock_conn_rec = mock.MagicMock(
+            delete_record=mock.AsyncMock(side_effect=test_module.StorageError())
         )
 
-        with async_mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+        with mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", mock.AsyncMock()
         ) as mock_conn_rec_retrieve_by_id:
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
 
@@ -703,7 +697,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                 await test_module.connections_remove(self.request)
 
     async def test_connections_create_static(self):
-        self.request.json = async_mock.AsyncMock(
+        self.request.json = mock.AsyncMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -721,21 +715,21 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         }
         self.request.match_info = {"conn_id": "dummy"}
 
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.serialize = async_mock.MagicMock()
-        mock_my_info = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.serialize = mock.MagicMock()
+        mock_my_info = mock.MagicMock()
         mock_my_info.did = "my_did"
         mock_my_info.verkey = "my_verkey"
-        mock_their_info = async_mock.MagicMock()
+        mock_their_info = mock.MagicMock()
         mock_their_info.did = "their_did"
         mock_their_info.verkey = "their_verkey"
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_conn_mgr, async_mock.patch.object(
+        ) as mock_conn_mgr, mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_conn_mgr.return_value.create_static_connection = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.create_static_connection = mock.AsyncMock(
                 return_value=(mock_my_info, mock_their_info, mock_conn_rec)
             )
 
@@ -752,7 +746,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
             )
 
     async def test_connections_create_static_x(self):
-        self.request.json = async_mock.AsyncMock(
+        self.request.json = mock.AsyncMock(
             return_value={
                 "my_seed": "my_seed",
                 "my_did": "my_did",
@@ -770,19 +764,19 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         }
         self.request.match_info = {"conn_id": "dummy"}
 
-        mock_conn_rec = async_mock.MagicMock()
-        mock_conn_rec.serialize = async_mock.MagicMock()
-        mock_my_info = async_mock.MagicMock()
+        mock_conn_rec = mock.MagicMock()
+        mock_conn_rec.serialize = mock.MagicMock()
+        mock_my_info = mock.MagicMock()
         mock_my_info.did = "my_did"
         mock_my_info.verkey = "my_verkey"
-        mock_their_info = async_mock.MagicMock()
+        mock_their_info = mock.MagicMock()
         mock_their_info.did = "their_did"
         mock_their_info.verkey = "their_verkey"
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_conn_mgr:
-            mock_conn_mgr.return_value.create_static_connection = async_mock.AsyncMock(
+            mock_conn_mgr.return_value.create_static_connection = mock.AsyncMock(
                 side_effect=test_module.WalletError()
             )
 
@@ -790,13 +784,13 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                 await test_module.connections_create_static(self.request)
 
     async def test_register(self):
-        mock_app = async_mock.MagicMock()
-        mock_app.add_routes = async_mock.MagicMock()
+        mock_app = mock.MagicMock()
+        mock_app.add_routes = mock.MagicMock()
 
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()
 
     async def test_post_process_routes(self):
-        mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
+        mock_app = mock.MagicMock(_state={"swagger_dict": {}})
         test_module.post_process_routes(mock_app)
         assert "tags" in mock_app._state["swagger_dict"]

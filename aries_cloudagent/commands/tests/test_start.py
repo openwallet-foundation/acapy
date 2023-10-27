@@ -1,6 +1,6 @@
 import sys
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...config.error import ArgsParseError
@@ -17,25 +17,25 @@ class TestStart(IsolatedAsyncioTestCase):
             test_module.execute(["bad"])
 
     async def test_start_shutdown_app(self):
-        mock_conductor = async_mock.MagicMock(
-            setup=async_mock.AsyncMock(),
-            start=async_mock.AsyncMock(),
-            stop=async_mock.AsyncMock(),
+        mock_conductor = mock.MagicMock(
+            setup=mock.AsyncMock(),
+            start=mock.AsyncMock(),
+            stop=mock.AsyncMock(),
         )
         await test_module.start_app(mock_conductor)
         await test_module.shutdown_app(mock_conductor)
 
     def test_exec_start(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "start_app", autospec=True
-        ) as start_app, async_mock.patch.object(
+        ) as start_app, mock.patch.object(
             test_module, "run_loop"
-        ) as run_loop, async_mock.patch.object(
+        ) as run_loop, mock.patch.object(
             test_module, "shutdown_app", autospec=True
-        ) as shutdown_app, async_mock.patch.object(
-            test_module, "uvloop", async_mock.MagicMock()
+        ) as shutdown_app, mock.patch.object(
+            test_module, "uvloop", mock.MagicMock()
         ) as mock_uvloop:
-            mock_uvloop.install = async_mock.MagicMock()
+            mock_uvloop.install = mock.MagicMock()
             test_module.execute(
                 [
                     "-it",
@@ -57,13 +57,11 @@ class TestStart(IsolatedAsyncioTestCase):
             run_loop.assert_called_once()
 
     async def test_run_loop(self):
-        startup = async_mock.AsyncMock()
+        startup = mock.AsyncMock()
         startup_call = startup()
-        shutdown = async_mock.AsyncMock()
+        shutdown = mock.AsyncMock()
         shutdown_call = shutdown()
-        with async_mock.patch.object(
-            test_module, "asyncio", autospec=True
-        ) as mock_asyncio:
+        with mock.patch.object(test_module, "asyncio", autospec=True) as mock_asyncio:
             test_module.run_loop(startup_call, shutdown_call)
             mock_add = mock_asyncio.get_event_loop.return_value.add_signal_handler
             mock_add.assert_called_once()
@@ -78,10 +76,10 @@ class TestStart(IsolatedAsyncioTestCase):
             done_calls[0][1]()  # exec partial
             done_coro = mock_asyncio.ensure_future.call_args[0][0]
             tasks = [
-                async_mock.MagicMock(),
-                async_mock.MagicMock(cancel=async_mock.MagicMock()),
+                mock.MagicMock(),
+                mock.MagicMock(cancel=mock.MagicMock()),
             ]
-            mock_asyncio.gather = async_mock.AsyncMock()
+            mock_asyncio.gather = mock.AsyncMock()
 
             if sys.version_info.major == 3 and sys.version_info.minor > 6:
                 mock_asyncio.all_tasks.return_value = tasks
@@ -94,13 +92,13 @@ class TestStart(IsolatedAsyncioTestCase):
             shutdown.assert_awaited_once()
 
     async def test_run_loop_init_x(self):
-        startup = async_mock.AsyncMock(side_effect=KeyError("the front fell off"))
+        startup = mock.AsyncMock(side_effect=KeyError("the front fell off"))
         startup_call = startup()
-        shutdown = async_mock.AsyncMock()
+        shutdown = mock.AsyncMock()
         shutdown_call = shutdown()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "asyncio", autospec=True
-        ) as mock_asyncio, async_mock.patch.object(
+        ) as mock_asyncio, mock.patch.object(
             test_module, "LOGGER", autospec=True
         ) as mock_logger:
             test_module.run_loop(startup_call, shutdown_call)
@@ -116,8 +114,8 @@ class TestStart(IsolatedAsyncioTestCase):
             )
             done_calls[0][1]()  # exec partial
             done_coro = mock_asyncio.ensure_future.call_args[0][0]
-            task = async_mock.MagicMock()
-            mock_asyncio.gather = async_mock.AsyncMock()
+            task = mock.MagicMock()
+            mock_asyncio.gather = mock.AsyncMock()
 
             if sys.version_info.major == 3 and sys.version_info.minor > 6:
                 mock_asyncio.all_tasks.return_value = [task]
@@ -131,10 +129,10 @@ class TestStart(IsolatedAsyncioTestCase):
             mock_logger.exception.assert_called_once()
 
     def test_main(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "__name__", "__main__"
-        ) as mock_name, async_mock.patch.object(
-            test_module, "execute", async_mock.MagicMock()
+        ) as mock_name, mock.patch.object(
+            test_module, "execute", mock.MagicMock()
         ) as mock_execute:
             test_module.main()
             mock_execute.assert_called_once

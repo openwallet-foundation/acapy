@@ -3,7 +3,7 @@
 import pytest
 import re
 
-from unittest import mock as async_mock
+from unittest import mock
 from pydid import DIDDocument
 
 from ..base import BaseDIDResolver, DIDMethodNotSupported, ResolverType
@@ -40,7 +40,7 @@ def non_native_resolver():
 
 @pytest.fixture
 def profile():
-    yield async_mock.MagicMock()
+    yield mock.MagicMock()
 
 
 def test_native_on_native(native_resolver):

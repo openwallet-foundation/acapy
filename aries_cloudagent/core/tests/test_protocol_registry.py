@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...config.injection_context import InjectionContext
@@ -205,17 +205,17 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
         self.registry.register_message_types(
             {self.test_message_type: self.test_message_handler}
         )
-        mock = async_mock.MagicMock()
-        mock.return_value.check_access = async_mock.AsyncMock()
-        mock.return_value.check_access.return_value = True
-        mock.return_value.determine_roles = async_mock.AsyncMock()
-        mock.return_value.determine_roles.return_value = ["ROLE"]
-        self.registry.register_controllers({self.test_protocol: mock})
+        mocked = mock.MagicMock()
+        mocked.return_value.check_access = mock.AsyncMock()
+        mocked.return_value.check_access.return_value = True
+        mocked.return_value.determine_roles = mock.AsyncMock()
+        mocked.return_value.determine_roles.return_value = ["ROLE"]
+        self.registry.register_controllers({self.test_protocol: mocked})
         protocols = [self.test_protocol]
         ctx = InjectionContext()
         published = await self.registry.prepare_disclosed(ctx, protocols)
-        mock.return_value.check_access.assert_called_once_with(ctx)
-        mock.return_value.determine_roles.assert_called_once_with(ctx)
+        mocked.return_value.check_access.assert_called_once_with(ctx)
+        mocked.return_value.determine_roles.assert_called_once_with(ctx)
         assert len(published) == 1
         assert published[0]["pid"] == self.test_protocol
         assert published[0]["roles"] == ["ROLE"]
@@ -235,8 +235,8 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
             async def check_access(self, context):
                 return False
 
-        with async_mock.patch.object(
-            ClassLoader, "load_class", async_mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_class", mock.MagicMock()
         ) as load_class:
             load_class.return_value = Mockery
             published = await self.registry.prepare_disclosed(ctx, protocols)
@@ -246,9 +246,9 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
         self.registry.register_message_types(
             {self.test_message_type: self.test_message_handler}
         )
-        mock_class = async_mock.MagicMock()
-        with async_mock.patch.object(
-            ClassLoader, "load_class", async_mock.MagicMock()
+        mock_class = mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_class", mock.MagicMock()
         ) as load_class:
             load_class.return_value = mock_class
             result = self.registry.resolve_message_class(self.test_message_type)
@@ -269,9 +269,9 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
                 "path": "v1_2",
             },
         )
-        mock_class = async_mock.MagicMock()
-        with async_mock.patch.object(
-            ClassLoader, "load_class", async_mock.MagicMock()
+        mock_class = mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_class", mock.MagicMock()
         ) as load_class:
             load_class.side_effect = [mock_class, mock_class]
             result = self.registry.resolve_message_class("proto/1.1/aaa")
@@ -288,9 +288,9 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
                 "path": "v1_2",
             },
         )
-        mock_class = async_mock.MagicMock()
-        with async_mock.patch.object(
-            ClassLoader, "load_class", async_mock.MagicMock()
+        mock_class = mock.MagicMock()
+        with mock.patch.object(
+            ClassLoader, "load_class", mock.MagicMock()
         ) as load_class:
             load_class.side_effect = [mock_class, mock_class]
             result = self.registry.resolve_message_class("proto/1.2/bbb")

@@ -4,7 +4,7 @@ from functools import partial
 from typing import AsyncGenerator
 import pytest
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 
 from ......connections.models.conn_record import ConnRecord
@@ -60,9 +60,9 @@ class TestKeylistUpdateResponseHandler(IsolatedAsyncioTestCase):
 
     async def test_handler(self):
         handler, responder = KeylistUpdateResponseHandler(), MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             MediationManager, "store_update_results"
-        ) as mock_store, async_mock.patch.object(
+        ) as mock_store, mock.patch.object(
             handler, "notify_keylist_updated"
         ) as mock_notify:
             await handler.handle(self.context, responder)
@@ -84,7 +84,7 @@ class TestKeylistUpdateResponseHandler(IsolatedAsyncioTestCase):
         ):
             return await generator.__anext__()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             self.route_manager,
             "connection_from_recipient_key",
             partial(_retrieve_by_invitation_key, _result_generator()),

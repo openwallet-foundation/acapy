@@ -3,7 +3,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from unittest import mock as async_mock
+from unittest import mock
 
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
@@ -15,7 +15,7 @@ from .. import routes as test_module
 
 @pytest.fixture
 def mock_response():
-    json_response = async_mock.MagicMock()
+    json_response = mock.MagicMock()
     temp_value = test_module.web.json_response
     test_module.web.json_response = json_response
     yield json_response
@@ -41,9 +41,9 @@ async def test_get_profile_settings(mock_response):
             profile=profile,
         ),
     }
-    request = async_mock.MagicMock(
+    request = mock.MagicMock(
         query={},
-        json=async_mock.AsyncMock(return_value={}),
+        json=mock.AsyncMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
     )
     await test_module.get_profile_settings(request)
@@ -71,16 +71,16 @@ async def test_get_profile_settings(mock_response):
             },
         ),
     }
-    request = async_mock.MagicMock(
+    request = mock.MagicMock(
         query={},
-        json=async_mock.AsyncMock(return_value={}),
+        json=mock.AsyncMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
     )
-    with async_mock.patch.object(
+    with mock.patch.object(
         multi_tenant_manager, "get_wallet_and_profile"
     ) as get_wallet_and_profile:
         get_wallet_and_profile.return_value = (
-            async_mock.MagicMock(
+            mock.MagicMock(
                 settings={
                     "admin.admin_client_max_request_size": 1,
                     "debug.auto_respond_credential_offer": True,
@@ -120,9 +120,9 @@ async def test_update_profile_settings(mock_response):
             profile=profile,
         ),
     }
-    request = async_mock.MagicMock(
+    request = mock.MagicMock(
         query={},
-        json=async_mock.AsyncMock(
+        json=mock.AsyncMock(
             return_value={
                 "extra_settings": {
                     "ACAPY_INVITE_PUBLIC": False,
@@ -161,9 +161,9 @@ async def test_update_profile_settings(mock_response):
             },
         ),
     }
-    request = async_mock.MagicMock(
+    request = mock.MagicMock(
         query={},
-        json=async_mock.AsyncMock(
+        json=mock.AsyncMock(
             return_value={
                 "extra_settings": {
                     "ACAPY_INVITE_PUBLIC": False,
@@ -176,13 +176,13 @@ async def test_update_profile_settings(mock_response):
         ),
         __getitem__=lambda _, k: request_dict[k],
     )
-    with async_mock.patch.object(
+    with mock.patch.object(
         multi_tenant_manager, "update_wallet"
-    ) as update_wallet, async_mock.patch.object(
+    ) as update_wallet, mock.patch.object(
         multi_tenant_manager, "get_wallet_and_profile"
     ) as get_wallet_and_profile:
         get_wallet_and_profile.return_value = (
-            async_mock.MagicMock(
+            mock.MagicMock(
                 settings={
                     "admin.admin_client_max_request_size": 1,
                     "debug.auto_respond_credential_offer": True,
@@ -198,7 +198,7 @@ async def test_update_profile_settings(mock_response):
             ),
             profile,
         )
-        update_wallet.return_value = async_mock.MagicMock(
+        update_wallet.return_value = mock.MagicMock(
             settings={
                 "public_invites": False,
                 "debug.invite_public": False,

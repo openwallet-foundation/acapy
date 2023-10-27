@@ -1,5 +1,5 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest import mock as async_mock
+from unittest import mock
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
@@ -42,10 +42,10 @@ class TestForwardInvitationHandler(IsolatedAsyncioTestCase):
         handler = test_module.ForwardInvitationHandler()
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.receive_invitation = async_mock.AsyncMock(
+            mock_mgr.return_value.receive_invitation = mock.AsyncMock(
                 return_value=ConnRecord(connection_id="dummy")
             )
 
@@ -56,10 +56,10 @@ class TestForwardInvitationHandler(IsolatedAsyncioTestCase):
         handler = test_module.ForwardInvitationHandler()
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.receive_invitation = async_mock.AsyncMock(
+            mock_mgr.return_value.receive_invitation = mock.AsyncMock(
                 side_effect=test_module.ConnectionManagerError("oops")
             )
 

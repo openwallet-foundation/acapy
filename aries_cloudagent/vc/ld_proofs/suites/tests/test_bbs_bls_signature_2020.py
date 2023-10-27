@@ -1,4 +1,4 @@
-from unittest import IsolatedAsyncioTestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase, mock
 import pytest
 
 from aries_cloudagent.wallet.key_type import BLS12381G2
@@ -138,9 +138,9 @@ class TestBbsBlsSignature2020(IsolatedAsyncioTestCase):
 
         with self.assertRaises(LinkedDataProofException):
             await suite.verify_signature(
-                verify_data=async_mock.MagicMock(),
-                verification_method=async_mock.MagicMock(),
-                document=async_mock.MagicMock(),
+                verify_data=mock.MagicMock(),
+                verification_method=mock.MagicMock(),
+                document=mock.MagicMock(),
                 proof={"proofValue": {"not": "a string"}},
-                document_loader=async_mock.MagicMock(),
+                document_loader=mock.MagicMock(),
             )

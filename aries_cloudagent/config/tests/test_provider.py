@@ -1,7 +1,7 @@
 from tempfile import NamedTemporaryFile
 from weakref import ref
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...utils.stats import Collector
@@ -34,7 +34,7 @@ class TestProvider(IsolatedAsyncioTestCase):
 
         timing_log = NamedTemporaryFile().name
         settings = {"timing.enabled": True, "timing.log.file": timing_log}
-        mock_provider = async_mock.MagicMock(BaseProvider, autospec=True)
+        mock_provider = mock.MagicMock(BaseProvider, autospec=True)
         mock_provider.provide.return_value.mock_method = lambda: ()
         stats_provider = StatsProvider(mock_provider, ("mock_method",))
         collector = Collector(log_path=timing_log)

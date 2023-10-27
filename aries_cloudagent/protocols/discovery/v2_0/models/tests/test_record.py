@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......core.in_memory import InMemoryProfile
@@ -147,10 +147,10 @@ class TestV20DiscoveryExchangeRecord(IsolatedAsyncioTestCase):
 
     async def test_exists_for_connection_id_not_found(self):
         session = InMemoryProfile.test_session()
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_tag_filter",
-            async_mock.AsyncMock(),
+            mock.AsyncMock(),
         ) as mock_retrieve_by_tag_filter:
             mock_retrieve_by_tag_filter.side_effect = StorageNotFoundError
             check = await V20DiscoveryExchangeRecord.exists_for_connection_id(
@@ -160,10 +160,10 @@ class TestV20DiscoveryExchangeRecord(IsolatedAsyncioTestCase):
 
     async def test_exists_for_connection_id_duplicate(self):
         session = InMemoryProfile.test_session()
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_tag_filter",
-            async_mock.AsyncMock(),
+            mock.AsyncMock(),
         ) as mock_retrieve_by_tag_filter:
             mock_retrieve_by_tag_filter.side_effect = StorageDuplicateError
             check = await V20DiscoveryExchangeRecord.exists_for_connection_id(

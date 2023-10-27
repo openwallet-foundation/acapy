@@ -1,6 +1,6 @@
 import pytest
 
-from unittest import mock as async_mock
+from unittest import mock
 
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.request_context import RequestContext
@@ -67,10 +67,10 @@ class TestQueryHandler:
         request_context.message = query_msg
         handler = QueryHandler()
         responder = MockResponder()
-        with async_mock.patch.object(
-            ProtocolRegistry, "protocols_matching_query", async_mock.AsyncMock()
-        ) as mock_query_match, async_mock.patch.object(
-            ProtocolRegistry, "prepare_disclosed", async_mock.AsyncMock()
+        with mock.patch.object(
+            ProtocolRegistry, "protocols_matching_query", mock.AsyncMock()
+        ) as mock_query_match, mock.patch.object(
+            ProtocolRegistry, "prepare_disclosed", mock.AsyncMock()
         ) as mock_prepare_disclosed:
             mock_prepare_disclosed.return_value = [
                 {"test": "test"},

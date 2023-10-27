@@ -4,7 +4,7 @@ import json
 from os.path import join
 from typing import Any, Mapping, Type
 
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile, InMemoryProfileSession
@@ -60,15 +60,15 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         )
         self.context = self.profile.context
 
-        Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
+        Ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.send_revoc_reg_def = async_mock.AsyncMock()
-        self.ledger.send_revoc_reg_entry = async_mock.AsyncMock()
+        self.ledger.send_revoc_reg_def = mock.AsyncMock()
+        self.ledger.send_revoc_reg_entry = mock.AsyncMock()
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
+        TailsServer = mock.MagicMock(BaseTailsServer, autospec=True)
         self.tails_server = TailsServer()
-        self.tails_server.upload_tails_file = async_mock.AsyncMock(
+        self.tails_server.upload_tails_file = mock.AsyncMock(
             return_value=(True, "http://1.2.3.4:8088/rev-reg-id")
         )
         self.profile.context.injector.bind_instance(BaseTailsServer, self.tails_server)
@@ -172,17 +172,17 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             def handle(self):
                 if self.handle_counter == 0:
                     self.handle_counter = self.handle_counter + 1
-                    return async_mock.MagicMock(
-                        fetch=async_mock.AsyncMock(
-                            return_value=async_mock.MagicMock(
+                    return mock.MagicMock(
+                        fetch=mock.AsyncMock(
+                            return_value=mock.MagicMock(
                                 value_json=json.dumps(mock_cred_def)
                             )
                         )
                     )
                 else:
-                    return async_mock.MagicMock(
-                        fetch=async_mock.AsyncMock(
-                            return_value=async_mock.MagicMock(
+                    return mock.MagicMock(
+                        fetch=mock.AsyncMock(
+                            return_value=mock.MagicMock(
                                 value_json=json.dumps(mock_reg_rev_def_private),
                             ),
                         )
@@ -214,13 +214,13 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             "ver": "1.0",
             "value": {"accum": "ACCUM", "issued": [1, 2], "revoked": [3, 4]},
         }
-        self.ledger.get_revoc_reg_delta = async_mock.AsyncMock(
+        self.ledger.get_revoc_reg_delta = mock.AsyncMock(
             return_value=(
                 _test_rev_reg_delta,
                 1234567890,
             )
         )
-        self.ledger.send_revoc_reg_entry = async_mock.AsyncMock(
+        self.ledger.send_revoc_reg_entry = mock.AsyncMock(
             return_value={
                 "result": {"...": "..."},
             },
@@ -230,10 +230,10 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         )
         _test_profile = _test_session.profile
         _test_profile.context.injector.bind_instance(BaseLedger, self.ledger)
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.IssuerCredRevRecord,
             "query_by_ids",
-            async_mock.AsyncMock(
+            mock.AsyncMock(
                 return_value=[
                     test_module.IssuerCredRevRecord(
                         record_id=test_module.UUID4_EXAMPLE,
@@ -244,14 +244,14 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
                     )
                 ]
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             test_module.IssuerRevRegRecord,
             "retrieve_by_revoc_reg_id",
-            async_mock.AsyncMock(return_value=rec),
-        ), async_mock.patch.object(
+            mock.AsyncMock(return_value=rec),
+        ), mock.patch.object(
             test_module,
             "generate_ledger_rrrecovery_txn",
-            async_mock.AsyncMock(return_value=rev_reg_delta),
+            mock.AsyncMock(return_value=rev_reg_delta),
         ):
             assert (
                 _test_rev_reg_delta,
@@ -274,11 +274,11 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             cred_def_id=CRED_DEF_ID,
             revoc_reg_id=REV_REG_ID,
         )
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
-        with async_mock.patch.object(
-            issuer, "create_and_store_revocation_registry", async_mock.AsyncMock()
+        with mock.patch.object(
+            issuer, "create_and_store_revocation_registry", mock.AsyncMock()
         ) as mock_create_store_rr:
             mock_create_store_rr.side_effect = IndyIssuerError("Not this time")
 
@@ -291,9 +291,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             json.dumps(REV_REG_ENTRY),
         )
 
-        with async_mock.patch.object(
-            test_module, "move", async_mock.MagicMock()
-        ) as mock_move:
+        with mock.patch.object(test_module, "move", mock.MagicMock()) as mock_move:
             await rec.generate_registry(self.profile)
 
         assert rec.revoc_reg_id == REV_REG_ID
@@ -313,7 +311,7 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
         assert rec.state == IssuerRevRegRecord.STATE_POSTED
         self.ledger.send_revoc_reg_def.assert_called_once()
 
-        with async_mock.patch.object(test_module.Path, "is_file", lambda _: True):
+        with mock.patch.object(test_module.Path, "is_file", lambda _: True):
             await rec.upload_tails_file(self.profile)
         assert (
             rec.tails_public_uri

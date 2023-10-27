@@ -1,4 +1,4 @@
-from unittest import mock as async_mock
+from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.conn_record import ConnRecord
@@ -15,11 +15,11 @@ class TestTransactionAcknowledgementHandler(IsolatedAsyncioTestCase):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
             mock_tran_mgr.return_value.receive_transaction_acknowledgement = (
-                async_mock.AsyncMock()
+                mock.AsyncMock()
             )
             request_context.message = TransactionAcknowledgement()
             request_context.connection_record = ConnRecord(
@@ -38,13 +38,13 @@ class TestTransactionAcknowledgementHandler(IsolatedAsyncioTestCase):
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
             mock_tran_mgr.return_value.receive_transaction_acknowledgement = (
-                async_mock.AsyncMock()
+                mock.AsyncMock()
             )
             request_context.message = TransactionAcknowledgement()
             request_context.connection_ready = False
@@ -59,11 +59,11 @@ class TestTransactionAcknowledgementHandler(IsolatedAsyncioTestCase):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
             mock_tran_mgr.return_value.receive_transaction_acknowledgement = (
-                async_mock.AsyncMock(side_effect=test_module.TransactionManagerError())
+                mock.AsyncMock(side_effect=test_module.TransactionManagerError())
             )
             request_context.message = TransactionAcknowledgement()
             request_context.connection_record = ConnRecord(
