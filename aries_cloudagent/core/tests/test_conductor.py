@@ -708,7 +708,10 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             ) as mock_conn_mgr, mock.patch.object(
                 conductor.dispatcher, "run_task", mock.MagicMock()
             ) as mock_run_task:
-                mock_conn_mgr.return_value.get_connection_targets = mock.CoroutineMock()
+                # Normally this should be a coroutine mock; however, the coroutine
+                # is awaited by dispatcher.run_task, which is mocked here. MagicMock
+                # to prevent unawaited coroutine warning.
+                mock_conn_mgr.return_value.get_connection_targets = mock.MagicMock()
                 mock_run_task.side_effect = test_module.ConnectionManagerError()
                 await conductor.queue_outbound(conductor.root_profile, message)
                 mock_outbound_mgr.return_value.enqueue_message.assert_not_called()
@@ -749,7 +752,12 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         with mock.patch.object(
             conductor.dispatcher, "run_task", mock.MagicMock()
         ) as mock_dispatch_run, mock.patch.object(
-            conductor, "queue_outbound", mock.CoroutineMock()
+            # Normally this should be a coroutine mock; however, the coroutine
+            # is awaited by dispatcher.run_task, which is mocked here. MagicMock
+            # to prevent unawaited coroutine warning.
+            conductor,
+            "queue_outbound",
+            mock.MagicMock(),
         ) as mock_queue, mock.patch.object(
             conductor.admin_server, "notify_fatal_error", mock.MagicMock()
         ) as mock_notify:
@@ -789,7 +797,10 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_dispatch_run, mock.patch.object(
             conductor.admin_server, "notify_fatal_error", mock.MagicMock()
         ) as mock_notify:
-            conn_mgr.return_value.get_connection_targets = mock.CoroutineMock()
+            # Normally this should be a coroutine mock; however, the coroutine
+            # is awaited by dispatcher.run_task, which is mocked here. MagicMock
+            # to prevent unawaited coroutine warning.
+            conn_mgr.return_value.get_connection_targets = mock.MagicMock()
             mock_dispatch_run.side_effect = test_module.LedgerConfigError(
                 "No such ledger"
             )
