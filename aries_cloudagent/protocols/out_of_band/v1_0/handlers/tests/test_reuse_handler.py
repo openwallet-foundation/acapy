@@ -72,4 +72,4 @@ class TestHandshakeReuseHandler:
         request_context.connection_record = ConnRecord()
         responder = MockResponder()
         await handler.handle(request_context, responder)
-        assert mock_oob_mgr.return_value._logger.exception.called_once_("error")
+        mock_oob_mgr.return_value._logger.exception.assert_called_once_("error")

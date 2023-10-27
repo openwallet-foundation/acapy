@@ -555,7 +555,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             responder, "send_outbound", mock.CoroutineMock()
         ) as mock_send_outbound:
             await responder.send(message)
-            assert mock_send_outbound.called_once()
+            mock_send_outbound.assert_called_once()
         msg_json = json.dumps(StubAgentMessage().serialize())
         message = msg_json.encode("utf-8")
         with mock.patch.object(
@@ -568,7 +568,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             responder, "send_outbound", mock.CoroutineMock()
         ) as mock_send_outbound:
             await responder.send_reply(message)
-            assert mock_send_outbound.called_once()
+            mock_send_outbound.assert_called_once()
 
         message = json.dumps(StubAgentMessage().serialize())
         with mock.patch.object(

@@ -60,4 +60,4 @@ class TestHandshakeReuseAcceptHandler:
         handler = test_module.HandshakeReuseAcceptMessageHandler()
         responder = MockResponder()
         await handler.handle(context=request_context, responder=responder)
-        assert mock_oob_mgr.return_value._logger.exception.called_once_("error")
+        mock_oob_mgr.return_value._logger.exception.assert_called_once_("error")

@@ -2135,7 +2135,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             }
         )
         await self.manager.receive_problem_report(mock_conn, report)
-        assert mock_conn.abandon.called_once()
+        mock_conn.abandon.assert_called_once()
 
     async def test_receive_problem_report_x_missing_description(self):
         mock_conn = mock.MagicMock(

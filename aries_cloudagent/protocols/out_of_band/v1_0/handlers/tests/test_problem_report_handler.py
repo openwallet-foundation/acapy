@@ -74,4 +74,4 @@ class TestOOBProblemReportHandler:
             responder = MockResponder()
             await handler.handle(context=request_context, responder=responder)
 
-        assert mock_exc_logger.called_once()
+        mock_exc_logger.assert_called_once()

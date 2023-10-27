@@ -28,7 +28,7 @@ class TestDIDXProblemReportHandler:
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         assert not responder.messages
-        assert manager.return_value.receive_problem_report.called_once()
+        manager.return_value.receive_problem_report.assert_called_once()
 
     @pytest.mark.asyncio
     @mock.patch.object(test_module, "DIDXManager")

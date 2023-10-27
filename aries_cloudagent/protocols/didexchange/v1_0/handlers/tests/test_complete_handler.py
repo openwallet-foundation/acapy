@@ -51,6 +51,6 @@ class TestDIDXCompleteHandler:
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
 
-        assert mock_conn_mgr.return_value._logger.exception.called_once_(
+        mock_conn_mgr.return_value._logger.exception.assert_called_once_(
             "Error receiving connection complete"
         )
