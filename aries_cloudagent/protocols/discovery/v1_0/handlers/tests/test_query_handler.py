@@ -68,7 +68,7 @@ class TestQueryHandler:
         handler = QueryHandler()
         responder = MockResponder()
         with mock.patch.object(
-            ProtocolRegistry, "protocols_matching_query", mock.CoroutineMock()
+            ProtocolRegistry, "protocols_matching_query", mock.MagicMock()
         ) as mock_query_match, mock.patch.object(
             ProtocolRegistry, "prepare_disclosed", mock.CoroutineMock()
         ) as mock_prepare_disclosed:
