@@ -4,7 +4,7 @@ from ..validation_result import PresentationVerificationResult
 
 
 class TestValidationResult(TestCase):
-    async def test_properties(self):
+    def test_properties(self):
         result = PresentationVerificationResult(verified=True)
         result2 = PresentationVerificationResult(verified=True)
 
