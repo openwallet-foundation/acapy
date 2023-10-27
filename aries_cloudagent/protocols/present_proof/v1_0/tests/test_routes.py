@@ -189,9 +189,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.return_value.retrieve_by_id.return_value = (
-                mock_presentation_exchange
-            )
+            mock_presentation_exchange.retrieve_by_id.return_value = mock.MagicMock()
 
             with mock.patch.object(test_module.web, "json_response") as mock_response:
                 await test_module.presentation_exchange_credentials_list(self.request)
@@ -224,8 +222,8 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             # Since we are mocking import
             importlib.reload(test_module)
 
-            mock_presentation_exchange.return_value.retrieve_by_id.return_value = (
-                mock_presentation_exchange
+            mock_presentation_exchange.retrieve_by_id = mock.CoroutineMock(
+                return_value=mock.MagicMock()
             )
 
             with mock.patch.object(test_module.web, "json_response") as mock_response:
