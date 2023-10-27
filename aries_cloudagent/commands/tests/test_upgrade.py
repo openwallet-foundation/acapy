@@ -382,7 +382,14 @@ class TestUpgrade(IsolatedAsyncioTestCase):
             ConnRecord, "save", mock.CoroutineMock()
         ), mock.patch.object(
             asyncio, "get_event_loop", mock.MagicMock()
-        ) as mock_get_event_loop:
+        ) as mock_get_event_loop, mock.patch.object(
+            # Normally, this would be a CoroutingMock. However, the coroutine
+            # is awaited by run_until_complete, which is mocked out.
+            # Use MagicMock to prevent unawaited coroutine warnings.
+            test_module,
+            "upgrade",
+            mock.MagicMock(),
+        ):
             mock_get_event_loop.return_value = mock.MagicMock(
                 run_until_complete=mock.MagicMock(),
             )
