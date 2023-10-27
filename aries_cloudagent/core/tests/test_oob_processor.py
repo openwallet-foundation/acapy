@@ -23,7 +23,7 @@ from ..oob_processor import OobMessageProcessor, OobMessageProcessorError
 class TestOobProcessor(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
-        self.inbound_message_router = mock.CoroutineMock()
+        self.inbound_message_router = mock.MagicMock()
         self.oob_processor = OobMessageProcessor(
             inbound_message_router=self.inbound_message_router
         )
