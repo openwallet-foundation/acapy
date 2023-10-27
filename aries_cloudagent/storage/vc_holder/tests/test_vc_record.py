@@ -1,4 +1,6 @@
-from unittest import IsolatedAsyncioTestCase
+from typing import Callable
+
+import pytest
 
 from ....messaging.models.base import BaseModelError
 
@@ -120,38 +122,41 @@ CRED_TAGS = {"tag": "value"}
 CRED_VALUE = {"...": "..."}
 
 
-def test_record() -> VCRecord:
-    return VCRecord(
-        contexts=CONTEXTS,
-        expanded_types=TYPES,
-        schema_ids=SCHEMA_IDS,
-        issuer_id=ISSUER_ID,
-        subject_ids=SUBJECT_IDS,
-        proof_types=PROOF_TYPES,
-        cred_value=CRED_VALUE,
-        given_id=GIVEN_ID,
-        cred_tags=CRED_TAGS,
-    )
+@pytest.fixture
+def record():
+    def _record():
+        return VCRecord(
+            contexts=CONTEXTS,
+            expanded_types=TYPES,
+            schema_ids=SCHEMA_IDS,
+            issuer_id=ISSUER_ID,
+            subject_ids=SUBJECT_IDS,
+            proof_types=PROOF_TYPES,
+            cred_value=CRED_VALUE,
+            given_id=GIVEN_ID,
+            cred_tags=CRED_TAGS,
+        )
+
+    yield _record
 
 
-class TestVCRecord(IsolatedAsyncioTestCase):
-    def test_create(self):
-        record = test_record()
+class TestVCRecord:
+    def test_create(self, record: Callable[[], VCRecord]):
+        record_a = record()
+        assert record_a.contexts == set(CONTEXTS)
+        assert record_a.expanded_types == set(TYPES)
+        assert record_a.schema_ids == set(SCHEMA_IDS)
+        assert record_a.subject_ids == set(SUBJECT_IDS)
+        assert record_a.proof_types == set(PROOF_TYPES)
+        assert record_a.issuer_id == ISSUER_ID
+        assert record_a.given_id == GIVEN_ID
+        assert record_a.record_id and isinstance(record_a.record_id, str)
+        assert record_a.cred_tags == CRED_TAGS
+        assert record_a.cred_value == CRED_VALUE
 
-        assert record.contexts == set(CONTEXTS)
-        assert record.expanded_types == set(TYPES)
-        assert record.schema_ids == set(SCHEMA_IDS)
-        assert record.subject_ids == set(SUBJECT_IDS)
-        assert record.proof_types == set(PROOF_TYPES)
-        assert record.issuer_id == ISSUER_ID
-        assert record.given_id == GIVEN_ID
-        assert record.record_id and isinstance(record.record_id, str)
-        assert record.cred_tags == CRED_TAGS
-        assert record.cred_value == CRED_VALUE
-
-    def test_eq(self):
-        record_a = test_record()
-        record_b = test_record()
+    def test_eq(self, record: Callable[[], VCRecord]):
+        record_a = record()
+        record_b = record()
 
         assert record_a != record_b
         record_b.record_id = record_a.record_id
@@ -160,12 +165,12 @@ class TestVCRecord(IsolatedAsyncioTestCase):
         record_b.contexts.clear()
         assert record_a != record_b
 
-    async def test_serde(self):
-        obj = test_record().serialize()
-        record = VCRecord.deserialize(obj)
-        assert type(record) == VCRecord
+    def test_serde(self, record: Callable[[], VCRecord]):
+        obj = record().serialize()
+        rec = VCRecord.deserialize(obj)
+        assert isinstance(rec, VCRecord)
 
-        obj_x = test_record()
+        obj_x = record()
         obj_x.cred_tags = -1  # not a dict
-        with self.assertRaises(BaseModelError):
+        with pytest.raises(BaseModelError):
             obj_x.serialize()
