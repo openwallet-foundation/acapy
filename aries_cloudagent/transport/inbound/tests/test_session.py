@@ -2,7 +2,7 @@ import asyncio
 import pytest
 
 from aries_cloudagent.tests import mock
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ....admin.server import AdminResponder
 from ....core.in_memory import InMemoryProfile
@@ -18,7 +18,7 @@ from ..receipt import MessageReceipt
 from ..session import InboundSession
 
 
-class TestInboundSession(TestCase):
+class TestInboundSession(IsolatedAsyncioTestCase):
     def setUp(self):
         self.profile = InMemoryProfile.test_profile()
 
@@ -269,7 +269,7 @@ class TestInboundSession(TestCase):
 
         with mock.patch.object(sess, "encode_outbound", mock.CoroutineMock()) as encode:
             result = await asyncio.wait_for(sess.wait_response(), 0.1)
-            assert encode.awaited_once_with(test_msg)
+            assert encode.assert_awaited_once_with(test_msg)
             assert result is encode.return_value
 
         sess.clear_response()
