@@ -27,11 +27,18 @@ class TestStart(IsolatedAsyncioTestCase):
 
     def test_exec_start(self):
         with mock.patch.object(
-            test_module, "start_app", autospec=True
+            # Normally this would be a CoroutineMock. However, it is awaited by
+            # run_loop, which is mocked out. So we mock it as a MagicMock.
+            test_module,
+            "start_app",
+            mock.MagicMock(),
         ) as start_app, mock.patch.object(
             test_module, "run_loop"
         ) as run_loop, mock.patch.object(
-            test_module, "shutdown_app", autospec=True
+            # Same here as note above
+            test_module,
+            "shutdown_app",
+            mock.MagicMock(),
         ) as shutdown_app, mock.patch.object(
             test_module, "uvloop", mock.MagicMock()
         ) as mock_uvloop:
