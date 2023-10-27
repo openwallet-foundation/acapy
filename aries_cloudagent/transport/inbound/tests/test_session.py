@@ -269,7 +269,7 @@ class TestInboundSession(IsolatedAsyncioTestCase):
 
         with mock.patch.object(sess, "encode_outbound", mock.CoroutineMock()) as encode:
             result = await asyncio.wait_for(sess.wait_response(), 0.1)
-            assert encode.assert_awaited_once_with(test_msg)
+            encode.assert_awaited_once_with(test_msg)
             assert result is encode.return_value
 
         sess.clear_response()

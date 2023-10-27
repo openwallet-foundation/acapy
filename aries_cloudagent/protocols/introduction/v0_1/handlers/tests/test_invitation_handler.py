@@ -55,6 +55,7 @@ class TestInvitationHandler(IsolatedAsyncioTestCase):
             mock_ctx_inject.return_value.return_invitation.assert_called_once_with(
                 self.context.connection_record.connection_id,
                 self.context.message,
+                mock.ANY,
                 responder.send,
             )
 
