@@ -1,4 +1,5 @@
-from unittest import mock, TestCase
+from unittest import mock
+from unittest import TestCase
 
 from unittest import IsolatedAsyncioTestCase
 

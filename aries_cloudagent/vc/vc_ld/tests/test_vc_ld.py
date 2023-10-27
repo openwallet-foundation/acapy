@@ -1,4 +1,5 @@
-from unittest import IsolatedAsyncioTestCase, mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock
 from datetime import datetime
 
 import pytest

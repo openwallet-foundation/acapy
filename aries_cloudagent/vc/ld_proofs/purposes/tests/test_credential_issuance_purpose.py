@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from unittest import IsolatedAsyncioTestCase, mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock
 
 from ...validation_result import PurposeResult
 from ..assertion_proof_purpose import AssertionProofPurpose

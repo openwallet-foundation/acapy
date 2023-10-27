@@ -1,4 +1,5 @@
-from unittest import IsolatedAsyncioTestCase, mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock
 
 from aries_cloudagent.wallet.key_type import ED25519
 
