@@ -1,4 +1,4 @@
-from asynctest import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from .....connections.models.conn_record import ConnRecord

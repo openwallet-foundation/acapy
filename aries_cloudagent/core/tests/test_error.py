@@ -1,9 +1,9 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..error import BaseError
 
 
-class TestBaseError(AsyncTestCase):
+class TestBaseError(IsolatedAsyncioTestCase):
     async def test_base_error(self):
         err = BaseError()
         assert err.error_code is None

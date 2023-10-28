@@ -1,8 +1,8 @@
 import json
 
-from asynctest import ANY
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
+from unittest.mock import ANY
 
 from ...connections.models.conn_record import ConnRecord
 from ...messaging.decorators.attach_decorator import AttachDecorator
@@ -20,15 +20,15 @@ from ..in_memory.profile import InMemoryProfile
 from ..oob_processor import OobMessageProcessor, OobMessageProcessorError
 
 
-class TestOobProcessor(AsyncTestCase):
-    async def setUp(self):
+class TestOobProcessor(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
-        self.inbound_message_router = async_mock.CoroutineMock()
+        self.inbound_message_router = mock.MagicMock()
         self.oob_processor = OobMessageProcessor(
             inbound_message_router=self.inbound_message_router
         )
 
-        self.oob_record = async_mock.MagicMock(
+        self.oob_record = mock.MagicMock(
             connection_id="a-connection-id",
             attach_thread_id="the-thid",
             their_service={
@@ -36,9 +36,9 @@ class TestOobProcessor(AsyncTestCase):
                 "routingKeys": ["6QSduYdf8Bi6t8PfNm5vNomGWDtXhmMmTRzaciudBXYJ"],
                 "serviceEndpoint": "http://their-service-endpoint.com",
             },
-            emit_event=async_mock.CoroutineMock(),
-            delete_record=async_mock.CoroutineMock(),
-            save=async_mock.CoroutineMock(),
+            emit_event=mock.CoroutineMock(),
+            delete_record=mock.CoroutineMock(),
+            save=mock.CoroutineMock(),
         )
         self.context = RequestContext.test_context()
         self.context.message = ConnectionInvitation()
@@ -47,17 +47,17 @@ class TestOobProcessor(AsyncTestCase):
         test_message = InvitationMessage()
         test_message.assign_thread_id("the-thid", "the-pthid")
 
-        mock_oob = async_mock.MagicMock(
-            emit_event=async_mock.CoroutineMock(),
-            delete_record=async_mock.CoroutineMock(),
+        mock_oob = mock.MagicMock(
+            emit_event=mock.CoroutineMock(),
+            delete_record=mock.CoroutineMock(),
             multi_use=False,
-            invitation=async_mock.MagicMock(requests_attach=[]),
+            invitation=mock.MagicMock(requests_attach=[]),
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=mock_oob),
+            mock.CoroutineMock(return_value=mock_oob),
         ) as mock_retrieve_oob:
             await self.oob_processor.clean_finished_oob_record(
                 self.profile, test_message
@@ -75,17 +75,17 @@ class TestOobProcessor(AsyncTestCase):
         test_message = InvitationMessage()
         test_message.assign_thread_id("the-thid", "the-pthid")
 
-        mock_oob = async_mock.MagicMock(
-            emit_event=async_mock.CoroutineMock(),
-            delete_record=async_mock.CoroutineMock(),
+        mock_oob = mock.MagicMock(
+            emit_event=mock.CoroutineMock(),
+            delete_record=mock.CoroutineMock(),
             multi_use=True,
-            invitation=async_mock.MagicMock(requests_attach=[]),
+            invitation=mock.MagicMock(requests_attach=[]),
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=mock_oob),
+            mock.CoroutineMock(return_value=mock_oob),
         ) as mock_retrieve_oob:
             await self.oob_processor.clean_finished_oob_record(
                 self.profile, test_message
@@ -102,10 +102,10 @@ class TestOobProcessor(AsyncTestCase):
         test_message = InvitationMessage()
         test_message.assign_thread_id("the-thid", "the-pthid")
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_oob:
             mock_retrieve_oob.side_effect = (StorageNotFoundError(),)
 
@@ -114,11 +114,11 @@ class TestOobProcessor(AsyncTestCase):
             )
 
     async def test_find_oob_target_for_outbound_message(self):
-        mock_oob = async_mock.MagicMock(
-            emit_event=async_mock.CoroutineMock(),
-            delete_record=async_mock.CoroutineMock(),
+        mock_oob = mock.MagicMock(
+            emit_event=mock.CoroutineMock(),
+            delete_record=mock.CoroutineMock(),
             multi_use=True,
-            invitation=async_mock.MagicMock(requests_attach=[]),
+            invitation=mock.MagicMock(requests_attach=[]),
             invi_msg_id="the-pthid",
             our_recipient_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
             their_service={
@@ -136,10 +136,10 @@ class TestOobProcessor(AsyncTestCase):
         message = json.dumps({"~thread": {"thid": "the-thid"}})
         outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=mock_oob),
+            mock.CoroutineMock(return_value=mock_oob),
         ) as mock_retrieve_oob:
             target = await self.oob_processor.find_oob_target_for_outbound_message(
                 self.profile, outbound
@@ -174,10 +174,10 @@ class TestOobProcessor(AsyncTestCase):
         message = json.dumps({})
         outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(side_effect=(StorageNotFoundError(),)),
+            mock.CoroutineMock(side_effect=(StorageNotFoundError(),)),
         ) as mock_retrieve_oob:
             target = await self.oob_processor.find_oob_target_for_outbound_message(
                 self.profile, outbound
@@ -189,11 +189,11 @@ class TestOobProcessor(AsyncTestCase):
             )
 
     async def test_find_oob_target_for_outbound_message_update_service_thread(self):
-        mock_oob = async_mock.MagicMock(
-            emit_event=async_mock.CoroutineMock(),
-            delete_record=async_mock.CoroutineMock(),
+        mock_oob = mock.MagicMock(
+            emit_event=mock.CoroutineMock(),
+            delete_record=mock.CoroutineMock(),
             multi_use=True,
-            invitation=async_mock.MagicMock(requests_attach=[]),
+            invitation=mock.MagicMock(requests_attach=[]),
             invi_msg_id="the-pthid",
             our_recipient_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
             their_service={
@@ -208,10 +208,10 @@ class TestOobProcessor(AsyncTestCase):
             },
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=mock_oob),
+            mock.CoroutineMock(return_value=mock_oob),
         ):
             message = json.dumps({})
             outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
@@ -247,10 +247,10 @@ class TestOobProcessor(AsyncTestCase):
 
     async def test_find_oob_record_for_inbound_message_parent_thread_id(self):
         # With pthid
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid", parent_thread_id="the-pthid"
@@ -263,10 +263,10 @@ class TestOobProcessor(AsyncTestCase):
             mock_retrieve.assert_called_once_with(ANY, {"invi_msg_id": "the-pthid"})
 
         # With pthid, throws error
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(side_effect=(StorageNotFoundError(),)),
+            mock.CoroutineMock(side_effect=(StorageNotFoundError(),)),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid", parent_thread_id="the-pthid"
@@ -279,10 +279,10 @@ class TestOobProcessor(AsyncTestCase):
             mock_retrieve.assert_called_once_with(ANY, {"invi_msg_id": "the-pthid"})
 
         # Without pthid
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt()
 
@@ -295,10 +295,10 @@ class TestOobProcessor(AsyncTestCase):
         self,
     ):
         # With thread_id and recipient_verkey
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid",
@@ -319,10 +319,10 @@ class TestOobProcessor(AsyncTestCase):
             )
 
         # With thread_id and recipient_verkey, throws error
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(side_effect=(StorageNotFoundError(),)),
+            mock.CoroutineMock(side_effect=(StorageNotFoundError(),)),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid", recipient_verkey="our-recipient-key"
@@ -341,15 +341,15 @@ class TestOobProcessor(AsyncTestCase):
             )
 
         # With connection
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=None),
+            mock.CoroutineMock(return_value=None),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid", recipient_verkey="our-recipient-key"
             )
-            self.context.connection_record = async_mock.MagicMock()
+            self.context.connection_record = mock.MagicMock()
 
             assert not await self.oob_processor.find_oob_record_for_inbound_message(
                 self.context
@@ -357,10 +357,10 @@ class TestOobProcessor(AsyncTestCase):
             mock_retrieve.assert_not_called()
 
         # Without thread_id and recipient_verkey
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=None),
+            mock.CoroutineMock(return_value=None),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt()
 
@@ -372,14 +372,14 @@ class TestOobProcessor(AsyncTestCase):
     async def test_find_oob_record_for_inbound_message_sender_connection_id_no_match(
         self,
     ):
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.oob_record.role = OobRecord.ROLE_SENDER
             self.oob_record.state = OobRecord.STATE_AWAIT_RESPONSE
-            self.context.connection_record = async_mock.MagicMock(
+            self.context.connection_record = mock.MagicMock(
                 connection_id="a-connection-id"
             )
             self.context.message_receipt = MessageReceipt(
@@ -393,14 +393,14 @@ class TestOobProcessor(AsyncTestCase):
             mock_retrieve.assert_called_once_with(ANY, {"invi_msg_id": "the-pthid"})
 
         # Connection id is different
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.oob_record.role = OobRecord.ROLE_SENDER
             self.oob_record.state = OobRecord.STATE_ACCEPTED
-            self.context.connection_record = async_mock.MagicMock(
+            self.context.connection_record = mock.MagicMock(
                 connection_id="another-connection-id"
             )
             self.context.message_receipt = MessageReceipt(
@@ -414,14 +414,14 @@ class TestOobProcessor(AsyncTestCase):
             mock_retrieve.assert_called_once_with(ANY, {"invi_msg_id": "the-pthid"})
 
         # Connection id is not the same, state is not await response
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.oob_record.role = OobRecord.ROLE_SENDER
             self.oob_record.state = OobRecord.STATE_ACCEPTED
-            self.context.connection_record = async_mock.MagicMock(
+            self.context.connection_record = mock.MagicMock(
                 connection_id="another-connection-id"
             )
             self.context.message_receipt = MessageReceipt(
@@ -435,22 +435,20 @@ class TestOobProcessor(AsyncTestCase):
             mock_retrieve.assert_called_once_with(ANY, {"invi_msg_id": "the-pthid"})
 
         # Connection id is not the same, state is AWAIT_RESPONSE. oob has connection_id
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
-        ) as mock_retrieve, async_mock.patch.object(
+            mock.CoroutineMock(return_value=self.oob_record),
+        ) as mock_retrieve, mock.patch.object(
             ConnRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(
-                    delete_record=async_mock.CoroutineMock()
-                )
+            mock.CoroutineMock(
+                return_value=mock.MagicMock(delete_record=mock.CoroutineMock())
             ),
         ) as mock_retrieve_conn:
             self.oob_record.role = OobRecord.ROLE_SENDER
             self.oob_record.state = OobRecord.STATE_AWAIT_RESPONSE
-            self.context.connection_record = async_mock.MagicMock(
+            self.context.connection_record = mock.MagicMock(
                 connection_id="another-connection-id"
             )
             self.context.message_receipt = MessageReceipt(
@@ -475,10 +473,10 @@ class TestOobProcessor(AsyncTestCase):
             AttachDecorator.data_json({"@id": "the-thid"})
         ]
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid", parent_thread_id="the-pthid"
@@ -502,10 +500,10 @@ class TestOobProcessor(AsyncTestCase):
             AttachDecorator.data_json({"@id": "another-thid"})
         ]
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid", parent_thread_id="the-pthid"
@@ -520,10 +518,10 @@ class TestOobProcessor(AsyncTestCase):
     async def test_find_oob_record_for_inbound_message_not_attach_thread_id_matching(
         self,
     ):
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid", parent_thread_id="the-pthid"
@@ -540,10 +538,10 @@ class TestOobProcessor(AsyncTestCase):
     ):
         self.oob_record.attach_thread_id = "another-thid"
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid", parent_thread_id="the-pthid"
@@ -558,10 +556,10 @@ class TestOobProcessor(AsyncTestCase):
     async def test_find_oob_record_for_inbound_message_recipient_verkey_not_in_their_service(
         self,
     ):
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid",
@@ -579,10 +577,10 @@ class TestOobProcessor(AsyncTestCase):
     async def test_find_oob_record_for_inbound_message_their_service_matching_with_message_receipt(
         self,
     ):
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid",
@@ -608,10 +606,10 @@ class TestOobProcessor(AsyncTestCase):
 
         self.oob_record.their_service = None
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid",
@@ -633,10 +631,10 @@ class TestOobProcessor(AsyncTestCase):
     async def test_find_oob_record_for_inbound_message_session_emit_delete(
         self,
     ):
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid",
@@ -659,10 +657,10 @@ class TestOobProcessor(AsyncTestCase):
     ):
         self.oob_record.connection_id = None
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(return_value=self.oob_record),
+            mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
                 thread_id="the-thid",
@@ -680,9 +678,9 @@ class TestOobProcessor(AsyncTestCase):
             self.oob_record.save.assert_called_once()
 
     async def test_handle_message_connection(self):
-        oob_record = async_mock.MagicMock(
+        oob_record = mock.MagicMock(
             connection_id="the-conn-id",
-            save=async_mock.CoroutineMock(),
+            save=mock.CoroutineMock(),
             attach_thread_id=None,
             their_service=None,
         )
@@ -711,9 +709,7 @@ class TestOobProcessor(AsyncTestCase):
         self.inbound_message_router.assert_called_once_with(self.profile, ANY, False)
 
     async def test_handle_message_connectionless(self):
-        oob_record = async_mock.MagicMock(
-            save=async_mock.CoroutineMock(), connection_id=None
-        )
+        oob_record = mock.MagicMock(save=mock.CoroutineMock(), connection_id=None)
 
         await self.oob_processor.handle_message(
             self.profile,
@@ -745,7 +741,7 @@ class TestOobProcessor(AsyncTestCase):
     async def test_handle_message_unsupported_message_type(self):
         with self.assertRaises(OobMessageProcessorError) as err:
             await self.oob_processor.handle_message(
-                self.profile, [{"@type": "unsupported"}], async_mock.MagicMock()
+                self.profile, [{"@type": "unsupported"}], mock.MagicMock()
             )
         assert (
             "None of the oob attached messages supported. Supported message types are issue-credential/1.0/offer-credential, issue-credential/2.0/offer-credential, present-proof/1.0/request-presentation, present-proof/2.0/request-presentation"

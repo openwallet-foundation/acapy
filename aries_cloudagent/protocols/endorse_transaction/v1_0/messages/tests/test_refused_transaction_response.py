@@ -1,6 +1,7 @@
-from unittest import mock, TestCase
+from unittest import mock
+from unittest import TestCase
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -90,7 +91,7 @@ class TestRefusedTransactionResponse(TestCase, TestConfig):
         )
 
 
-class TestRefusedTransactionResponseSchema(AsyncTestCase, TestConfig):
+class TestRefusedTransactionResponseSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test refused transaction response schema."""
 
     async def test_make_model(self):

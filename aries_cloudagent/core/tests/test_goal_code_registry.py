@@ -1,11 +1,11 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...protocols.issue_credential.v1_0.message_types import CONTROLLERS
 
 from ..goal_code_registry import GoalCodeRegistry
 
 
-class TestGoalCodeRegistry(AsyncTestCase):
+class TestGoalCodeRegistry(IsolatedAsyncioTestCase):
     test_goal_code_queries = "*"
     test_goal_code_queries_fail = "aries.fake.*"
 

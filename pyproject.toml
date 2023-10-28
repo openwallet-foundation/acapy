@@ -73,7 +73,6 @@ pydevd="1.5.1"
 pydevd-pycharm="~193.6015.39"
 
 # testing
-asynctest= "0.13.0"
 pytest= "~7.4.0"
 pytest-asyncio= "^0.21.1"
 pytest-cov= "4.1.0"

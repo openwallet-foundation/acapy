@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -12,19 +13,17 @@ from ...messages.presentation_problem_report import (
 from .. import presentation_problem_report_handler as test_module
 
 
-class TestPresentationProblemReportHandler(AsyncTestCase):
+class TestPresentationProblemReportHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
             request_context.connection_ready = True
-            mock_pres_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock()
-            )
+            mock_pres_mgr.return_value.receive_problem_report = mock.CoroutineMock()
             request_context.message = PresentationProblemReport(
                 description={
                     "en": "Change of plans",
@@ -44,16 +43,14 @@ class TestPresentationProblemReportHandler(AsyncTestCase):
     async def test_called_x(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
             request_context.connection_ready = True
-            mock_pres_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError("Disk full")
-                )
+            mock_pres_mgr.return_value.receive_problem_report = mock.CoroutineMock(
+                side_effect=test_module.StorageError("Disk full")
             )
             request_context.message = PresentationProblemReport(
                 description={

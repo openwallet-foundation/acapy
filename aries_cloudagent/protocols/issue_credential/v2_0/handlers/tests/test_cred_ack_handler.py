@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
@@ -10,25 +11,23 @@ from ...messages.cred_ack import V20CredAck
 from .. import cred_ack_handler as test_module
 
 
-class TestCredentialAckHandler(AsyncTestCase):
+class TestCredentialAckHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_credential_ack = (
-                async_mock.CoroutineMock()
-            )
+            mock_cred_mgr.return_value.receive_credential_ack = mock.CoroutineMock()
             request_context.message = V20CredAck()
             request_context.connection_ready = True
             handler = test_module.V20CredAckHandler()
@@ -48,12 +47,12 @@ class TestCredentialAckHandler(AsyncTestCase):
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_cred_ack = async_mock.CoroutineMock()
+            mock_cred_mgr.return_value.receive_cred_ack = mock.CoroutineMock()
             request_context.message = V20CredAck()
             request_context.connection_ready = False
             handler = test_module.V20CredAckHandler()
@@ -70,8 +69,8 @@ class TestCredentialAckHandler(AsyncTestCase):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
                 # No oob record found
                 return_value=None
             )

@@ -1,4 +1,5 @@
-from asynctest import TestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock
 import pytest
 
 from aries_cloudagent.wallet.key_type import BLS12381G2
@@ -33,10 +34,10 @@ from ..bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
 
 
 @pytest.mark.ursa_bbs_signatures
-class TestBbsBlsSignatureProof2020(TestCase):
+class TestBbsBlsSignatureProof2020(IsolatedAsyncioTestCase):
     test_seed = "testseed000000000000000000000001"
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
         self.key = await self.wallet.create_signing_key(
@@ -202,8 +203,8 @@ class TestBbsBlsSignatureProof2020(TestCase):
 
         with self.assertRaises(LinkedDataProofException):
             await suite.derive_proof(
-                reveal_document=async_mock.MagicMock(),
-                document=async_mock.MagicMock(),
+                reveal_document=mock.MagicMock(),
+                document=mock.MagicMock(),
                 proof={"type": "incorrect type"},
-                document_loader=async_mock.MagicMock(),
+                document_loader=mock.MagicMock(),
             )

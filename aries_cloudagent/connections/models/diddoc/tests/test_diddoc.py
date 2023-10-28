@@ -16,13 +16,13 @@ limitations under the License.
 """
 
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .. import DIDDoc, PublicKey, PublicKeyType, Service
 from ..util import canon_did, canon_ref
 
 
-class TestDIDDoc(AsyncTestCase):
+class TestDIDDoc(IsolatedAsyncioTestCase):
     async def test_basic(self):
         # One authn key by reference
         dd_in = {

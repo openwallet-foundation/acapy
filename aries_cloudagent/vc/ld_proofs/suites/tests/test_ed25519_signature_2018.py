@@ -1,9 +1,7 @@
-from asynctest import TestCase
-
-from aries_cloudagent.wallet.key_type import ED25519
-
+from unittest import IsolatedAsyncioTestCase
 
 from .....did.did_key import DIDKey
+from .....wallet.key_type import ED25519
 from .....wallet.in_memory import InMemoryWallet
 from .....core.in_memory import InMemoryProfile
 
@@ -23,10 +21,10 @@ from ...ld_proofs import sign, verify
 from ..ed25519_signature_2018 import Ed25519Signature2018
 
 
-class TestEd25519Signature2018(TestCase):
+class TestEd25519Signature2018(IsolatedAsyncioTestCase):
     test_seed = "testseed000000000000000000000001"
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
         self.key = await self.wallet.create_signing_key(

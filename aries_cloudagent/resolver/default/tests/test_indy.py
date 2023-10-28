@@ -2,7 +2,7 @@
 
 import pytest
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
@@ -31,14 +31,14 @@ def resolver():
 @pytest.fixture
 def ledger():
     """Ledger fixture."""
-    ledger = async_mock.MagicMock(spec=BaseLedger)
-    ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
+    ledger = mock.MagicMock(spec=BaseLedger)
+    ledger.get_all_endpoints_for_did = mock.CoroutineMock(
         return_value={
             "endpoint": "https://github.com/",
             "profile": "https://example.com/profile",
         }
     )
-    ledger.get_key_for_did = async_mock.CoroutineMock(return_value="key")
+    ledger.get_key_for_did = mock.CoroutineMock(return_value="key")
     yield ledger
 
 
@@ -48,10 +48,8 @@ def profile(ledger):
     profile = InMemoryProfile.test_profile()
     profile.context.injector.bind_instance(
         IndyLedgerRequestsExecutor,
-        async_mock.MagicMock(
-            get_ledger_for_identifier=async_mock.CoroutineMock(
-                return_value=(None, ledger)
-            )
+        mock.MagicMock(
+            get_ledger_for_identifier=mock.CoroutineMock(return_value=(None, ledger))
         ),
     )
     yield profile
@@ -85,12 +83,12 @@ class TestIndyResolver:
         """Test resolve method."""
         profile.context.injector.bind_instance(
             BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
+            mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=("test_ledger_id", ledger)),
+            mock.CoroutineMock(return_value=("test_ledger_id", ledger)),
         ):
             assert await resolver.resolve(profile, TEST_DID0)
 
@@ -101,10 +99,8 @@ class TestIndyResolver:
         """Test resolve method with no ledger."""
         profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, None)
-                )
+            mock.MagicMock(
+                get_ledger_for_identifier=mock.CoroutineMock(return_value=(None, None))
             ),
         )
         with pytest.raises(ResolverError):
@@ -132,9 +128,7 @@ class TestIndyResolver:
             "linked_domains": "https://example.com",
         }
 
-        ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
-            return_value=example
-        )
+        ledger.get_all_endpoints_for_did = mock.CoroutineMock(return_value=example)
         assert await resolver.resolve(profile, TEST_DID0)
 
     @pytest.mark.asyncio
@@ -147,9 +141,7 @@ class TestIndyResolver:
             "types": ["DIDComm", "did-communication", "endpoint"],
         }
 
-        ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
-            return_value=example
-        )
+        ledger.get_all_endpoints_for_did = mock.CoroutineMock(return_value=example)
         result = await resolver.resolve(profile, TEST_DID0)
         assert "service" not in result
 

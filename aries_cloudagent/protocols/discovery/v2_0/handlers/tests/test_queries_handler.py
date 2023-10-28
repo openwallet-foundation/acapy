@@ -1,6 +1,6 @@
 import pytest
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 
 from ......core.protocol_registry import ProtocolRegistry
 from ......core.goal_code_registry import GoalCodeRegistry
@@ -131,10 +131,10 @@ class TestQueriesHandler:
         request_context.message = queries_msg
         handler = QueriesHandler()
         responder = MockResponder()
-        with async_mock.patch.object(
-            V20DiscoveryMgr, "execute_protocol_query", async_mock.CoroutineMock()
-        ) as mock_exec_protocol_query, async_mock.patch.object(
-            V20DiscoveryMgr, "execute_goal_code_query", async_mock.CoroutineMock()
+        with mock.patch.object(
+            V20DiscoveryMgr, "execute_protocol_query", mock.CoroutineMock()
+        ) as mock_exec_protocol_query, mock.patch.object(
+            V20DiscoveryMgr, "execute_goal_code_query", mock.CoroutineMock()
         ) as mock_goal_code_protocol_query:
             mock_exec_protocol_query.return_value = [
                 {"test": "test"},

@@ -5,8 +5,8 @@ from copy import deepcopy
 from time import time
 from unittest import TestCase
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 
 from ....core.in_memory import InMemoryProfile
 from ....ledger.multiple_ledger.ledger_requests_executor import (
@@ -351,7 +351,7 @@ class TestIndyPresPredSpec(TestCase):
 
 
 @pytest.mark.indy
-class TestIndyPresPreviewAsync(AsyncTestCase):
+class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
     """Presentation preview tests"""
 
     @pytest.mark.asyncio
@@ -402,13 +402,13 @@ class TestIndyPresPreviewAsync(AsyncTestCase):
         context.injector.bind_instance(
             IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (
                 None,
-                async_mock.MagicMock(
-                    get_credential_definition=async_mock.CoroutineMock(
+                mock.MagicMock(
+                    get_credential_definition=mock.CoroutineMock(
                         return_value={"value": {"revocation": {"...": "..."}}}
                     )
                 ),
@@ -447,15 +447,15 @@ class TestIndyPresPreviewAsync(AsyncTestCase):
         )
         context.injector.bind_instance(
             BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
+            mock.MagicMock(MultitenantManager, autospec=True),
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (
                 None,
-                async_mock.MagicMock(
-                    get_credential_definition=async_mock.CoroutineMock(
+                mock.MagicMock(
+                    get_credential_definition=mock.CoroutineMock(
                         return_value={"value": {"revocation": {"...": "..."}}}
                     )
                 ),

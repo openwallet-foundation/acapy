@@ -1,6 +1,6 @@
 from unittest import mock
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......core.in_memory import InMemoryProfile
@@ -46,8 +46,8 @@ class TestConfig:
         return doc
 
 
-class TestDIDXResponse(AsyncTestCase, TestConfig):
-    async def setUp(self):
+class TestDIDXResponse(IsolatedAsyncioTestCase, TestConfig):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet
@@ -101,10 +101,10 @@ class TestDIDXResponse(AsyncTestCase, TestConfig):
         assert response_dict is mock_response_schema_dump.return_value
 
 
-class TestDIDXResponseSchema(AsyncTestCase, TestConfig):
+class TestDIDXResponseSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test response schema."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet

@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...messaging.responder import BaseResponder
@@ -7,12 +7,12 @@ from ...wallet.models.wallet_record import WalletRecord
 from ..manager import MultitenantManager
 
 
-class TestMultitenantManager(AsyncTestCase):
-    async def setUp(self):
+class TestMultitenantManager(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
 
-        self.responder = async_mock.CoroutineMock(send=async_mock.CoroutineMock())
+        self.responder = mock.CoroutineMock(send=mock.CoroutineMock())
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
         self.manager = MultitenantManager(self.profile)
@@ -21,7 +21,7 @@ class TestMultitenantManager(AsyncTestCase):
         wallet_record = WalletRecord(wallet_id="test")
         self.manager._profiles.put("test", InMemoryProfile.test_profile())
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_cloudagent.config.wallet.wallet_config"
         ) as wallet_config:
             profile = await self.manager.get_wallet_profile(
@@ -37,7 +37,7 @@ class TestMultitenantManager(AsyncTestCase):
             {"admin.webhook_urls": ["http://localhost:8020"]}
         )
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_cloudagent.config.wallet.wallet_config"
         ) as wallet_config:
             profile = await self.manager.get_wallet_profile(
@@ -78,7 +78,7 @@ class TestMultitenantManager(AsyncTestCase):
                 settings=wallet_record_settings,
             )
 
-            with async_mock.patch(
+            with mock.patch(
                 "aries_cloudagent.multitenant.manager.wallet_config"
             ) as wallet_config:
                 wallet_config.side_effect = side_effect
@@ -98,7 +98,7 @@ class TestMultitenantManager(AsyncTestCase):
             settings={},
         )
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_cloudagent.multitenant.manager.wallet_config"
         ) as wallet_config:
 
@@ -151,7 +151,7 @@ class TestMultitenantManager(AsyncTestCase):
             },
         )
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_cloudagent.multitenant.manager.wallet_config"
         ) as wallet_config:
 
@@ -175,9 +175,9 @@ class TestMultitenantManager(AsyncTestCase):
             assert profile.settings.get("mediation.clear") is True
 
     async def test_update_wallet_update_wallet_profile(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             WalletRecord, "retrieve_by_id"
-        ) as retrieve_by_id, async_mock.patch.object(
+        ) as retrieve_by_id, mock.patch.object(
             WalletRecord, "save"
         ) as wallet_record_save:
             wallet_id = "test-wallet-id"
@@ -213,7 +213,7 @@ class TestMultitenantManager(AsyncTestCase):
         )
         self.manager._profiles.put("test", test_profile)
 
-        with async_mock.patch.object(InMemoryProfile, "remove") as profile_remove:
+        with mock.patch.object(InMemoryProfile, "remove") as profile_remove:
             await self.manager.remove_wallet_profile(test_profile)
             assert not self.manager._profiles.has("test")
             profile_remove.assert_called_once_with()

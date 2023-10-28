@@ -3,7 +3,7 @@
 import pytest
 import re
 
-from asynctest import mock as async_mock
+from unittest import mock
 
 from .. import event_bus as test_module
 from ..event_bus import EventBus, Event
@@ -18,7 +18,7 @@ def event_bus():
 
 @pytest.fixture
 def profile():
-    yield async_mock.MagicMock()
+    yield mock.MagicMock()
 
 
 @pytest.fixture
@@ -105,12 +105,12 @@ async def test_sub_notify_error_logged_and_exec_continues(
     bad_processor = _raise_exception
     event_bus.subscribe(re.compile(".*"), bad_processor)
     event_bus.subscribe(re.compile(".*"), processor)
-    with async_mock.patch.object(
-        test_module.LOGGER, "exception", async_mock.MagicMock()
+    with mock.patch.object(
+        test_module.LOGGER, "exception", mock.MagicMock()
     ) as mock_log_exc:
         await event_bus.notify(profile, event)
 
-    assert mock_log_exc.called_once_with("Error occurred while processing event")
+    mock_log_exc.assert_called_once_with("Error occurred while processing event")
     assert processor.profile == profile
     assert processor.event == event
 

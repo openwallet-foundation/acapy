@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ....connections.models.connection_target import ConnectionTarget
 from ....transport.outbound.message import OutboundMessage
@@ -6,7 +6,7 @@ from ....transport.outbound.message import OutboundMessage
 from ..delivery_queue import DeliveryQueue
 
 
-class TestDeliveryQueue(AsyncTestCase):
+class TestDeliveryQueue(IsolatedAsyncioTestCase):
     async def test_message_add_and_check(self):
         queue = DeliveryQueue()
 
