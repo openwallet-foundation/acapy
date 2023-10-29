@@ -14,7 +14,8 @@
         "vscode": {
             "extensions": [
 				"ms-python.python",
-				"ms-python.vscode-pylance"
+				"ms-python.vscode-pylance",
+                "ms-python.black-formatter"
 			],
             "settings": {
                 "python.testing.pytestArgs": [
@@ -27,6 +28,7 @@
                 "editor.defaultFormatter": null,
                 "editor.formatOnSave": false, // enable per language
                 "[python]": {
+                    "editor.defaultFormatter": "ms-python.black-formatter",
                     "editor.formatOnSave": true
                 },
                 "python.formatting.provider": "black",
