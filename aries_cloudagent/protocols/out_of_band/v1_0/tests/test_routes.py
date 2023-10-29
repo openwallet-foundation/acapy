@@ -59,6 +59,8 @@ class TestOutOfBandRoutes(AsyncTestCase):
                 mediation_id=None,
                 service_accept=None,
                 protocol_version=None,
+                goal_code=None,
+                goal=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
 
@@ -100,6 +102,8 @@ class TestOutOfBandRoutes(AsyncTestCase):
                 mediation_id=None,
                 service_accept=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
                 protocol_version=None,
+                goal_code=None,
+                goal=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
 

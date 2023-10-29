@@ -1,7 +1,6 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
 import logging
-
 from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields, validate
@@ -12,15 +11,17 @@ from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSch
 from .....indy.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
 from .....indy.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
-from .....storage.base import StorageError
-
-from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
-from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
-from ..messages.credential_exchange_webhook import (
-    V10CredentialExchangeWebhook,
+from .....messaging.valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    UUID4_EXAMPLE,
 )
-
+from .....storage.base import StorageError
+from ..messages.credential_exchange_webhook import V10CredentialExchangeWebhook
+from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
+from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
 from . import UNENCRYPTED_TAGS
 
 LOGGER = logging.getLogger(__name__)
@@ -335,105 +336,141 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
 
     credential_exchange_id = fields.Str(
         required=False,
-        description="Credential exchange identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     connection_id = fields.Str(
-        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.Str(
-        required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     parent_thread_id = fields.Str(
-        required=False, description="Parent thread identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={
+            "description": "Parent thread identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     initiator = fields.Str(
         required=False,
-        description="Issue-credential exchange initiator: self or external",
-        example=V10CredentialExchange.INITIATOR_SELF,
         validate=validate.OneOf(["self", "external"]),
+        metadata={
+            "description": "Issue-credential exchange initiator: self or external",
+            "example": V10CredentialExchange.INITIATOR_SELF,
+        },
     )
     role = fields.Str(
         required=False,
-        description="Issue-credential exchange role: holder or issuer",
-        example=V10CredentialExchange.ROLE_ISSUER,
         validate=validate.OneOf(["holder", "issuer"]),
+        metadata={
+            "description": "Issue-credential exchange role: holder or issuer",
+            "example": V10CredentialExchange.ROLE_ISSUER,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Issue-credential exchange state",
-        example=V10CredentialExchange.STATE_ACKED,
+        metadata={
+            "description": "Issue-credential exchange state",
+            "example": V10CredentialExchange.STATE_ACKED,
+        },
     )
     credential_definition_id = fields.Str(
         required=False,
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     schema_id = fields.Str(
-        required=False, description="Schema identifier", **INDY_SCHEMA_ID
+        required=False,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
     credential_proposal_dict = fields.Nested(
         CredentialProposalSchema(),
         required=False,
-        description="Credential proposal message",
+        metadata={"description": "Credential proposal message"},
     )
     credential_offer_dict = fields.Nested(
         CredentialOfferSchema(),
         required=False,
-        description="Credential offer message",
+        metadata={"description": "Credential offer message"},
     )
     credential_offer = fields.Nested(
         IndyCredAbstractSchema(),
         required=False,
-        description="(Indy) credential offer",
+        metadata={"description": "(Indy) credential offer"},
     )
     credential_request = fields.Nested(
         IndyCredRequestSchema(),
         required=False,
-        description="(Indy) credential request",
+        metadata={"description": "(Indy) credential request"},
     )
     credential_request_metadata = fields.Dict(
-        required=False, description="(Indy) credential request metadata"
+        required=False, metadata={"description": "(Indy) credential request metadata"}
     )
     credential_id = fields.Str(
-        required=False, description="Credential identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Credential identifier", "example": UUID4_EXAMPLE},
     )
     raw_credential = fields.Nested(
         IndyCredentialSchema(),
         required=False,
-        description="Credential as received, prior to storage in holder wallet",
+        metadata={
+            "description": "Credential as received, prior to storage in holder wallet"
+        },
     )
     credential = fields.Nested(
         IndyCredInfoSchema(),
         required=False,
-        description="Credential as stored",
+        metadata={"description": "Credential as stored"},
     )
     auto_offer = fields.Bool(
         required=False,
-        description="Holder choice to accept offer in this credential exchange",
-        example=False,
+        metadata={
+            "description": "Holder choice to accept offer in this credential exchange",
+            "example": False,
+        },
     )
     auto_issue = fields.Bool(
         required=False,
-        description="Issuer choice to issue to request in this credential exchange",
-        example=False,
+        metadata={
+            "description": (
+                "Issuer choice to issue to request in this credential exchange"
+            ),
+            "example": False,
+        },
     )
     auto_remove = fields.Bool(
         required=False,
-        default=True,
-        description=(
-            "Issuer choice to remove this credential exchange record when complete"
-        ),
-        example=False,
+        dump_default=True,
+        metadata={
+            "description": (
+                "Issuer choice to remove this credential exchange record when complete"
+            ),
+            "example": False,
+        },
     )
     error_msg = fields.Str(
         required=False,
-        description="Error message",
-        example="Credential definition identifier is not set in proposal",
+        metadata={
+            "description": "Error message",
+            "example": "Credential definition identifier is not set in proposal",
+        },
     )
     revoc_reg_id = fields.Str(
-        required=False, description="Revocation registry identifier"
+        required=False, metadata={"description": "Revocation registry identifier"}
     )
     revocation_id = fields.Str(
-        required=False, description="Credential identifier within revocation registry"
+        required=False,
+        metadata={"description": "Credential identifier within revocation registry"},
     )

@@ -10,7 +10,7 @@ from typing import Mapping
 from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import UUIDFour
+from ..valid import UUID4_EXAMPLE
 
 
 class ThreadDecorator(BaseModel):
@@ -122,32 +122,39 @@ class ThreadDecoratorSchema(BaseModelSchema):
     thid = fields.Str(
         required=False,
         allow_none=True,
-        description="Thread identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     pthid = fields.Str(
         required=False,
         allow_none=True,
-        description="Parent thread identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={
+            "description": "Parent thread identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     sender_order = fields.Int(
         required=False,
         allow_none=True,
-        description="Ordinal of message among all from current sender in thread",
-        example=11,
-        strict=True,
+        metadata={
+            "description": "Ordinal of message among all from current sender in thread",
+            "example": 11,
+            "strict": True,
+        },
     )
     received_orders = fields.Dict(
-        keys=fields.Str(description="Sender key"),
+        keys=fields.Str(metadata={"description": "Sender key"}),
         values=fields.Int(
-            description="Highest sender_order value for sender",
-            example=3,
-            strict=True,
+            metadata={
+                "description": "Highest sender_order value for sender",
+                "example": 3,
+                "strict": True,
+            }
         ),
         required=False,
         allow_none=True,
-        description=(
-            "Highest sender_order value that sender has seen from others on thread"
-        ),
+        metadata={
+            "description": (
+                "Highest sender_order value that sender has seen from others on thread"
+            )
+        },
     )

@@ -45,6 +45,8 @@ LEDGER_CONFIG = [
         "is_production": True,
         "is_write": True,
         "genesis_transactions": TEST_GENESIS_TXN,
+        "endorser_did": "public_staging_endorser_did",
+        "endorser_alias": "endorser_staging",
     },
     {
         "id": "sovrinTest",

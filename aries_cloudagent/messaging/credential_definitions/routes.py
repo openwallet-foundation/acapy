@@ -3,7 +3,6 @@
 import functools
 import json
 
-
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -23,7 +22,6 @@ from ...wallet.base import BaseWallet
 
 from ...admin.request_context import AdminRequestContext
 
-
 from ...indy.models.cred_def import CredentialDefinitionSchema
 
 from ...ledger.error import BadLedgerRequestError
@@ -38,20 +36,25 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
 )
 from ...protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
+    is_author_role,
 )
-
 
 from ...storage.error import StorageError
 
 from ..models.openapi import OpenAPISchema
-from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID
-
-
+from ..valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_REV_REG_SIZE_EXAMPLE,
+    INDY_REV_REG_SIZE_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    UUID4_EXAMPLE,
+)
 from .util import (
     CredDefQueryStringSchema,
     notify_cred_def_event,
 )
-
 
 from ..valid import UUIDFour
 
@@ -59,21 +62,32 @@ from ..valid import UUIDFour
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
-    schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
+    schema_id = fields.Str(
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
+    )
     support_revocation = fields.Boolean(
-        required=False, description="Revocation supported flag"
+        required=False, metadata={"description": "Revocation supported flag"}
     )
     revocation_registry_size = fields.Int(
-        description="Revocation registry size",
         required=False,
-        strict=True,
-        **INDY_REV_REG_SIZE,
+        validate=INDY_REV_REG_SIZE_VALIDATE,
+        metadata={
+            "description": "Revocation registry size",
+            "strict": True,
+            "example": INDY_REV_REG_SIZE_EXAMPLE,
+        },
     )
     tag = fields.Str(
         required=False,
-        description="Credential definition identifier tag",
-        default="default",
-        example="default",
+        dump_default="default",
+        metadata={
+            "description": "Credential definition identifier tag",
+            "example": "default",
+        },
     )
 
 
@@ -81,7 +95,11 @@ class CredentialDefinitionSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     credential_definition_id = fields.Str(
-        description="Credential definition identifier", **INDY_CRED_DEF_ID
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
 
 
@@ -91,12 +109,12 @@ class TxnOrCredentialDefinitionSendResultSchema(OpenAPISchema):
     sent = fields.Nested(
         CredentialDefinitionSendResultSchema(),
         required=False,
-        definition="Content sent",
+        metadata={"definition": "Content sent"},
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Credential definition transaction to endorse",
+        metadata={"description": "Credential definition transaction to endorse"},
     )
 
 
@@ -110,7 +128,13 @@ class CredentialDefinitionsCreatedResultSchema(OpenAPISchema):
     """Result schema for cred-defs-created request."""
 
     credential_definition_ids = fields.List(
-        fields.Str(description="Credential definition identifiers", **INDY_CRED_DEF_ID)
+        fields.Str(
+            validate=INDY_CRED_DEF_ID_VALIDATE,
+            metadata={
+                "description": "Credential definition identifiers",
+                "example": INDY_CRED_DEF_ID_EXAMPLE,
+            },
+        )
     )
 
 
@@ -118,9 +142,12 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking cred def id."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
 
 
@@ -128,8 +155,8 @@ class CreateCredDefTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -137,7 +164,8 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

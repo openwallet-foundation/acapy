@@ -12,6 +12,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
+
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
@@ -31,17 +32,21 @@ from ..indy.models.revocation import IndyRevRegDef
 from ..admin.request_context import AdminRequestContext
 from ..indy.issuer import IndyIssuerError
 from ..ledger.base import BaseLedger
-from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
-    INDY_REV_REG_ID,
-    INDY_REV_REG_SIZE,
-    UUID4,
-    WHOLE_NUM,
-    UUIDFour,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_CRED_REV_ID_EXAMPLE,
+    INDY_CRED_REV_ID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    INDY_REV_REG_SIZE_EXAMPLE,
+    INDY_REV_REG_SIZE_VALIDATE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
+    WHOLE_NUM_EXAMPLE,
+    WHOLE_NUM_VALIDATE,
 )
 from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
@@ -56,7 +61,6 @@ from .models.issuer_cred_rev_record import (
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -68,13 +72,20 @@ class RevRegCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     credential_definition_id = fields.Str(
-        description="Credential definition identifier", **INDY_CRED_DEF_ID
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     max_cred_num = fields.Int(
         required=False,
-        description="Revocation registry size",
-        strict=True,
-        **INDY_REV_REG_SIZE,
+        validate=INDY_REV_REG_SIZE_VALIDATE,
+        metadata={
+            "description": "Revocation registry size",
+            "strict": True,
+            "example": INDY_REV_REG_SIZE_EXAMPLE,
+        },
     )
 
 
@@ -88,14 +99,14 @@ class TxnOrRevRegResultSchema(OpenAPISchema):
     """Result schema for credential definition send request."""
 
     sent = fields.Nested(
-        RevRegResultSchema(),
-        required=False,
-        definition="Content sent",
+        RevRegResultSchema(), required=False, metadata={"definition": "Content sent"}
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Revocation registry definition transaction to endorse",
+        metadata={
+            "description": "Revocation registry definition transaction to endorse"
+        },
     )
 
 
@@ -119,19 +130,28 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
             )
 
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
         required=False,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
     cred_rev_id = fields.Str(
-        description="Credential revocation identifier",
         required=False,
-        **INDY_CRED_REV_ID,
+        validate=INDY_CRED_REV_ID_VALIDATE,
+        metadata={
+            "description": "Credential revocation identifier",
+            "example": INDY_CRED_REV_ID_EXAMPLE,
+        },
     )
     cred_ex_id = fields.Str(
-        description="Credential exchange identifier",
         required=False,
-        **UUID4,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
 
@@ -149,14 +169,20 @@ class RevRegId(OpenAPISchema):
             raise ValidationError("Request must have either rev_reg_id or cred_def_id")
 
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
         required=False,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
 
 
@@ -182,39 +208,52 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
             )
 
     publish = fields.Boolean(
-        description=(
-            "(True) publish revocation to ledger immediately, or "
-            "(default, False) mark it pending"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "(True) publish revocation to ledger immediately, or (default, False)"
+                " mark it pending"
+            )
+        },
     )
     notify = fields.Boolean(
-        description="Send a notification to the credential recipient",
         required=False,
+        metadata={"description": "Send a notification to the credential recipient"},
     )
     notify_version = fields.String(
-        description="Specify which version of the revocation notification should be sent",
         validate=validate.OneOf(["v1_0", "v2_0"]),
         required=False,
+        metadata={
+            "description": (
+                "Specify which version of the revocation notification should be sent"
+            )
+        },
     )
     connection_id = fields.Str(
-        description=(
-            "Connection ID to which the revocation notification will be sent; "
-            "required if notify is true"
-        ),
         required=False,
-        **UUID4,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": (
+                "Connection ID to which the revocation notification will be sent;"
+                " required if notify is true"
+            ),
+            "example": UUID4_EXAMPLE,
+        },
     )
     thread_id = fields.Str(
-        description=(
-            "Thread ID of the credential exchange message thread resulting in "
-            "the credential now being revoked; required if notify is true"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Thread ID of the credential exchange message thread resulting in the"
+                " credential now being revoked; required if notify is true"
+            )
+        },
     )
     comment = fields.Str(
-        description="Optional comment to include in revocation notification",
         required=False,
+        metadata={
+            "description": "Optional comment to include in revocation notification"
+        },
     )
 
 
@@ -223,13 +262,17 @@ class PublishRevocationsSchema(OpenAPISchema):
 
     rrid2crid = fields.Dict(
         required=False,
-        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
+        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
+                validate=INDY_CRED_REV_ID_VALIDATE,
+                metadata={
+                    "description": "Credential revocation identifier",
+                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                },
             )
         ),
-        description="Credential revocation ids by revocation registry id",
+        metadata={"description": "Credential revocation ids by revocation registry id"},
     )
 
 
@@ -239,12 +282,14 @@ class TxnOrPublishRevocationsResultSchema(OpenAPISchema):
     sent = fields.Nested(
         PublishRevocationsSchema(),
         required=False,
-        definition="Content sent",
+        metadata={"definition": "Content sent"},
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Revocation registry revocations transaction to endorse",
+        metadata={
+            "description": "Revocation registry revocations transaction to endorse"
+        },
     )
 
 
@@ -253,16 +298,22 @@ class ClearPendingRevocationsRequestSchema(OpenAPISchema):
 
     purge = fields.Dict(
         required=False,
-        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
+        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
+                validate=INDY_CRED_REV_ID_VALIDATE,
+                metadata={
+                    "description": "Credential revocation identifier",
+                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                },
             )
         ),
-        description=(
-            "Credential revocation ids by revocation registry id: omit for all, "
-            "specify null or empty list for all pending per revocation registry"
-        ),
+        metadata={
+            "description": (
+                "Credential revocation ids by revocation registry id: omit for all,"
+                " specify null or empty list for all pending per revocation registry"
+            )
+        },
     )
 
 
@@ -282,7 +333,7 @@ class CredRevIndyRecordsResultSchema(OpenAPISchema):
     """Result schema for revoc reg delta."""
 
     rev_reg_delta = fields.Dict(
-        description="Indy revocation registry delta",
+        metadata={"description": "Indy revocation registry delta"}
     )
 
 
@@ -290,9 +341,12 @@ class RevRegIssuedResultSchema(OpenAPISchema):
     """Result schema for revocation registry credentials issued request."""
 
     result = fields.Int(
-        description="Number of credentials issued against revocation registry",
-        strict=True,
-        **WHOLE_NUM,
+        validate=WHOLE_NUM_VALIDATE,
+        metadata={
+            "description": "Number of credentials issued against revocation registry",
+            "strict": True,
+            "example": WHOLE_NUM_EXAMPLE,
+        },
     )
 
 
@@ -300,8 +354,8 @@ class RevRegUpdateRequestMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking rev reg id."""
 
     apply_ledger_update = fields.Bool(
-        description="Apply updated accumulator transaction to ledger",
         required=True,
+        metadata={"description": "Apply updated accumulator transaction to ledger"},
     )
 
 
@@ -309,13 +363,13 @@ class RevRegWalletUpdatedResultSchema(OpenAPISchema):
     """Number of wallet revocation entries status updated."""
 
     rev_reg_delta = fields.Dict(
-        description="Indy revocation registry delta",
+        metadata={"description": "Indy revocation registry delta"}
     )
     accum_calculated = fields.Dict(
-        description="Calculated accumulator for phantom revocations",
+        metadata={"description": "Calculated accumulator for phantom revocations"}
     )
     accum_fixed = fields.Dict(
-        description="Applied ledger transaction to fix revocations",
+        metadata={"description": "Applied ledger transaction to fix revocations"}
     )
 
 
@@ -323,7 +377,13 @@ class RevRegsCreatedSchema(OpenAPISchema):
     """Result schema for request for revocation registries created."""
 
     rev_reg_ids = fields.List(
-        fields.Str(description="Revocation registry identifiers", **INDY_REV_REG_ID)
+        fields.Str(
+            validate=INDY_REV_REG_ID_VALIDATE,
+            metadata={
+                "description": "Revocation registry identifiers",
+                "example": INDY_REV_REG_ID_EXAMPLE,
+            },
+        )
     )
 
 
@@ -331,12 +391,14 @@ class RevRegUpdateTailsFileUriSchema(OpenAPISchema):
     """Request schema for updating tails file URI."""
 
     tails_public_uri = fields.Url(
-        description="Public URI to the tails file",
-        example=(
-            "http://192.168.56.133:6543/revocation/registry/"
-            f"{INDY_REV_REG_ID['example']}/tails-file"
-        ),
         required=True,
+        metadata={
+            "description": "Public URI to the tails file",
+            "example": (
+                "http://192.168.56.133:6543/revocation/registry/"
+                f"{INDY_REV_REG_ID_EXAMPLE}/tails-file"
+            ),
+        },
     )
 
 
@@ -344,12 +406,14 @@ class RevRegsCreatedQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for rev regs created request."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     state = fields.Str(
-        description="Revocation registry state",
         required=False,
         validate=validate.OneOf(
             [
@@ -358,6 +422,7 @@ class RevRegsCreatedQueryStringSchema(OpenAPISchema):
                 if m.startswith("STATE_")
             ]
         ),
+        metadata={"description": "Revocation registry state"},
     )
 
 
@@ -365,7 +430,6 @@ class SetRevRegStateQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for request to set rev reg state."""
 
     state = fields.Str(
-        description="Revocation registry state to set",
         required=True,
         validate=validate.OneOf(
             [
@@ -374,6 +438,7 @@ class SetRevRegStateQueryStringSchema(OpenAPISchema):
                 if m.startswith("STATE_")
             ]
         ),
+        metadata={"description": "Revocation registry state to set"},
     )
 
 
@@ -381,9 +446,12 @@ class RevRegIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking rev reg id."""
 
     rev_reg_id = fields.Str(
-        description="Revocation Registry identifier",
         required=True,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation Registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
 
 
@@ -391,9 +459,12 @@ class RevocationCredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking cred def id."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
 
 
@@ -401,8 +472,8 @@ class CreateRevRegTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -410,7 +481,8 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -840,9 +912,11 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
         genesis_transactions = context.settings.get("ledger.genesis_transactions")
         if not genesis_transactions:
             ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
-            write_ledgers = await ledger_manager.get_write_ledger()
-            LOGGER.debug(f"write_ledgers = {write_ledgers}")
-            pool = write_ledgers[1].pool
+            write_ledger = context.injector.inject(BaseLedger)
+            available_write_ledgers = await ledger_manager.get_write_ledgers()
+            LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
+            LOGGER.debug(f"write_ledger = {write_ledger}")
+            pool = write_ledger[1].pool
             LOGGER.debug(f"write_ledger pool = {pool}")
 
             genesis_transactions = pool.genesis_txns

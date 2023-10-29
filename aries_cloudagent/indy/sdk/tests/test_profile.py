@@ -6,7 +6,9 @@ import pytest
 
 from ....config.injection_context import InjectionContext
 from ....core.error import ProfileError
+from ....ledger.base import BaseLedger
 from ....ledger.indy import IndySdkLedgerPool
+
 from ..profile import IndySdkProfile
 from ..wallet_setup import IndyOpenWallet, IndyWalletConfig
 
@@ -33,6 +35,41 @@ async def profile(open_wallet):
 
     # Trigger finalizer before event loop fixture is closed
     profile._finalizer()
+
+
+@pytest.mark.asyncio
+async def test_init_multi_ledger(open_wallet):
+    context = InjectionContext(
+        settings={
+            "ledger.ledger_config_list": [
+                {
+                    "id": "BCovrinDev",
+                    "is_production": True,
+                    "is_write": True,
+                    "endorser_did": "9QPa6tHvBHttLg6U4xvviv",
+                    "endorser_alias": "endorser_dev",
+                    "genesis_transactions": async_mock.MagicMock(),
+                },
+                {
+                    "id": "SovrinStagingNet",
+                    "is_production": False,
+                    "genesis_transactions": async_mock.MagicMock(),
+                },
+            ]
+        }
+    )
+    askar_profile = IndySdkProfile(
+        open_wallet,
+        context=context,
+    )
+
+    assert askar_profile.opened == open_wallet
+    assert askar_profile.settings["endorser.endorser_alias"] == "endorser_dev"
+    assert (
+        askar_profile.settings["endorser.endorser_public_did"]
+        == "9QPa6tHvBHttLg6U4xvviv"
+    )
+    assert (askar_profile.inject_or(BaseLedger)).pool_name == "BCovrinDev"
 
 
 @pytest.mark.asyncio
@@ -64,7 +101,14 @@ def test_settings_genesis_transactions(open_wallet):
 
 
 def test_settings_ledger_config(open_wallet):
-    context = InjectionContext(settings={"ledger.ledger_config_list": True})
+    context = InjectionContext(
+        settings={
+            "ledger.ledger_config_list": [
+                async_mock.MagicMock(),
+                async_mock.MagicMock(),
+            ]
+        }
+    )
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
     profile = IndySdkProfile(open_wallet, context)
 

@@ -14,7 +14,7 @@ from indy_credx import (
     Credential,
     CredentialRequest,
     CredentialRevocationState,
-    MasterSecret,
+    LinkSecret,
     Presentation,
     PresentCredentials,
 )
@@ -28,7 +28,7 @@ from ..holder import IndyHolder, IndyHolderError
 LOGGER = logging.getLogger(__name__)
 
 CATEGORY_CREDENTIAL = "credential"
-CATEGORY_MASTER_SECRET = "master_secret"
+CATEGORY_LINK_SECRET = "master_secret"
 
 
 def _make_cred_info(cred_id, cred: Credential):
@@ -51,7 +51,7 @@ def _normalize_attr_name(name: str) -> str:
 class IndyCredxHolder(IndyHolder):
     """Indy-credx holder class."""
 
-    MASTER_SECRET_ID = "default"
+    LINK_SECRET_ID = "default"
 
     def __init__(self, profile: AskarProfile):
         """
@@ -68,37 +68,37 @@ class IndyCredxHolder(IndyHolder):
         """Accessor for the profile instance."""
         return self._profile
 
-    async def get_master_secret(self) -> MasterSecret:
-        """Get or create the default master secret."""
+    async def get_link_secret(self) -> LinkSecret:
+        """Get or create the default link secret."""
 
         while True:
             async with self._profile.session() as session:
                 try:
                     record = await session.handle.fetch(
-                        CATEGORY_MASTER_SECRET, IndyCredxHolder.MASTER_SECRET_ID
+                        CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
                     )
                 except AskarError as err:
-                    raise IndyHolderError("Error fetching master secret") from err
+                    raise IndyHolderError("Error fetching link secret") from err
                 if record:
                     try:
-                        secret = MasterSecret.load(record.raw_value)
+                        secret = LinkSecret.load(record.raw_value)
                     except CredxError as err:
-                        raise IndyHolderError("Error loading master secret") from err
+                        raise IndyHolderError("Error loading link secret") from err
                     break
                 else:
                     try:
-                        secret = MasterSecret.create()
+                        secret = LinkSecret.create()
                     except CredxError as err:
-                        raise IndyHolderError("Error creating master secret") from err
+                        raise IndyHolderError("Error creating link secret") from err
                     try:
                         await session.handle.insert(
-                            CATEGORY_MASTER_SECRET,
-                            IndyCredxHolder.MASTER_SECRET_ID,
+                            CATEGORY_LINK_SECRET,
+                            IndyCredxHolder.LINK_SECRET_ID,
                             secret.to_json_buffer(),
                         )
                     except AskarError as err:
                         if err.code != AskarErrorCode.DUPLICATE:
-                            raise IndyHolderError("Error saving master secret") from err
+                            raise IndyHolderError("Error saving link secret") from err
                         # else: lost race to create record, retry
                     else:
                         break
@@ -120,7 +120,7 @@ class IndyCredxHolder(IndyHolder):
 
         """
         try:
-            secret = await self.get_master_secret()
+            secret = await self.get_link_secret()
             (
                 cred_req,
                 cred_req_metadata,
@@ -130,7 +130,7 @@ class IndyCredxHolder(IndyHolder):
                 holder_did,
                 credential_definition,
                 secret,
-                IndyCredxHolder.MASTER_SECRET_ID,
+                IndyCredxHolder.LINK_SECRET_ID,
                 credential_offer,
             )
         except CredxError as err:
@@ -176,7 +176,7 @@ class IndyCredxHolder(IndyHolder):
 
         """
         try:
-            secret = await self.get_master_secret()
+            secret = await self.get_link_secret()
             cred = Credential.load(credential_data)
             cred_recvd = await asyncio.get_event_loop().run_in_executor(
                 None,
@@ -523,7 +523,7 @@ class IndyCredxHolder(IndyHolder):
             )
 
         try:
-            secret = await self.get_master_secret()
+            secret = await self.get_link_secret()
             presentation = await asyncio.get_event_loop().run_in_executor(
                 None,
                 Presentation.create,

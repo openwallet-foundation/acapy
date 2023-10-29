@@ -1,11 +1,11 @@
 """Represents a Handshake Reuse Accept message under RFC 0434."""
 
-from marshmallow import EXCLUDE, fields, pre_dump, ValidationError
 from typing import Optional, Text
 
-from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from marshmallow import EXCLUDE, ValidationError, fields, pre_dump
 
-from ..message_types import MESSAGE_REUSE_ACCEPT, PROTOCOL_PACKAGE, DEFAULT_VERSION
+from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from ..message_types import DEFAULT_VERSION, MESSAGE_REUSE_ACCEPT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
@@ -45,8 +45,10 @@ class HandshakeReuseAcceptSchema(AgentMessageSchema):
     _type = fields.Str(
         data_key="@type",
         required=False,
-        description="Message type",
-        example="https://didcomm.org/my-family/1.0/my-message-type",
+        metadata={
+            "description": "Message type",
+            "example": "https://didcomm.org/my-family/1.0/my-message-type",
+        },
     )
 
     @pre_dump

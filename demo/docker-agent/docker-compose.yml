@@ -29,7 +29,7 @@ services:
         ./ngrok-wait.sh"
       ]
     volumes:
-      - ./ngrok-wait.sh:/home/indy/ngrok-wait.sh
+      - ./ngrok-wait.sh:/home/aries/ngrok-wait.sh
 
   wallet-db:
     image: postgres:12

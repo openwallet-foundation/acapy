@@ -1,8 +1,9 @@
 """Revoke message."""
 
 from marshmallow import fields
+
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 from ..message_types import PROTOCOL_PACKAGE, REVOKE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.revoke_handler.RevokeHandler"
@@ -37,12 +38,16 @@ class RevokeSchema(AgentMessageSchema):
     # TODO support please ack
     thread_id = fields.Str(
         required=True,
-        description=(
-            "Thread ID of credential exchange resulting in this issued credential"
-        ),
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": (
+                "Thread ID of credential exchange resulting in this issued credential"
+            ),
+            "example": UUID4_EXAMPLE,
+        },
     )
     comment = fields.Str(
         required=False,
-        description="Human readable information about revocation notification",
+        metadata={
+            "description": "Human readable information about revocation notification"
+        },
     )

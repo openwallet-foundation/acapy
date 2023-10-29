@@ -7,7 +7,12 @@ from ....wallet.key_type import BLS12381G2, ED25519
 from ....did.did_key import DIDKey
 from ....wallet.in_memory import InMemoryWallet
 from ....core.in_memory import InMemoryProfile
-from ...ld_proofs import Ed25519Signature2018, WalletKeyPair, BbsBlsSignature2020
+from ...ld_proofs import (
+    Ed25519Signature2018,
+    Ed25519Signature2020,
+    WalletKeyPair,
+    BbsBlsSignature2020,
+)
 from ...vc_ld import (
     issue_vc as issue,
     verify_credential,
@@ -22,6 +27,9 @@ from .test_credential import (
     CREDENTIAL_TEMPLATE,
     CREDENTIAL_ISSUED,
     CREDENTIAL_VERIFIED,
+    CREDENTIAL_TEMPLATE_2020,
+    CREDENTIAL_ISSUED_2020,
+    CREDENTIAL_VERIFIED_2020,
     PRESENTATION_SIGNED,
     PRESENTATION_UNSIGNED,
     CREDENTIAL_TEMPLATE_BBS,
@@ -75,6 +83,28 @@ class TestLinkedDataVerifiableCredential(TestCase):
 
         assert issued == CREDENTIAL_ISSUED
 
+    async def test_issue_Ed25519Signature2020(self):
+        # Use different key pair and suite for signing and verification
+        # as during verification a lot of information can be extracted
+        # from the proof / document
+        suite = Ed25519Signature2020(
+            verification_method=self.ed25519_verification_method,
+            key_pair=WalletKeyPair(
+                wallet=self.wallet,
+                key_type=ED25519,
+                public_key_base58=self.ed25519_key_info.verkey,
+            ),
+            date=datetime.strptime("2019-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
+        )
+
+        issued = await issue(
+            credential=CREDENTIAL_TEMPLATE_2020,
+            suite=suite,
+            document_loader=custom_document_loader,
+        )
+
+        assert issued == CREDENTIAL_ISSUED_2020
+
     async def test_issue_x_invalid_credential_structure(self):
         credential = CREDENTIAL_TEMPLATE.copy()
         credential.pop("issuer")
@@ -112,6 +142,19 @@ class TestLinkedDataVerifiableCredential(TestCase):
         )
 
         assert verified == CREDENTIAL_VERIFIED
+
+    async def test_verify_Ed25519Signature2020(self):
+        # Verification requires lot less input parameters
+        suite = Ed25519Signature2020(
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
+        )
+        verified = await verify_credential(
+            credential=CREDENTIAL_ISSUED_2020,
+            suites=[suite],
+            document_loader=custom_document_loader,
+        )
+
+        assert verified == CREDENTIAL_VERIFIED_2020
 
     async def test_verify_x_invalid_credential_structure(self):
         credential = CREDENTIAL_ISSUED.copy()

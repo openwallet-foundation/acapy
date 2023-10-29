@@ -1,19 +1,24 @@
 """Verifiable Credential marshmallow schema classes."""
 
 from datetime import datetime
-from pytz import utc
 from typing import List, Optional, Union
 
-from marshmallow import INCLUDE, fields, post_dump, ValidationError
+from pytz import utc
+
+from marshmallow import INCLUDE, ValidationError, fields, post_dump
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
-    CREDENTIAL_CONTEXT,
-    CREDENTIAL_TYPE,
-    CREDENTIAL_SUBJECT,
-    DIDKey,
+    CREDENTIAL_CONTEXT_EXAMPLE,
+    CREDENTIAL_CONTEXT_VALIDATE,
+    CREDENTIAL_SUBJECT_EXAMPLE,
+    CREDENTIAL_SUBJECT_VALIDATE,
+    CREDENTIAL_TYPE_EXAMPLE,
+    CREDENTIAL_TYPE_VALIDATE,
+    RFC3339_DATETIME_EXAMPLE,
+    RFC3339_DATETIME_VALIDATE,
     DictOrDictListField,
-    RFC3339_DATETIME,
+    DIDKey,
     StrOrDictField,
     Uri,
     UriOrDictField,
@@ -22,10 +27,7 @@ from ...ld_proofs.constants import (
     CREDENTIALS_CONTEXT_V1_URL,
     VERIFIABLE_CREDENTIAL_TYPE,
 )
-from .linked_data_proof import (
-    LDProof,
-    LinkedDataProofSchema,
-)
+from .linked_data_proof import LDProof, LinkedDataProofSchema
 
 
 class VerifiableCredential(BaseModel):
@@ -272,74 +274,91 @@ class CredentialSchema(BaseModelSchema):
         model_class = VerifiableCredential
 
     context = fields.List(
-        UriOrDictField(
-            required=True,
-        ),
+        UriOrDictField(required=True),
         data_key="@context",
         required=True,
-        description="The JSON-LD context of the credential",
-        **CREDENTIAL_CONTEXT,
+        validate=CREDENTIAL_CONTEXT_VALIDATE,
+        metadata={
+            "description": "The JSON-LD context of the credential",
+            "example": CREDENTIAL_CONTEXT_EXAMPLE,
+        },
     )
 
     id = fields.Str(
         required=False,
-        desscription="The ID of the credential",
-        example="http://example.edu/credentials/1872",
         validate=Uri(),
+        metadata={
+            "desscription": "The ID of the credential",
+            "example": "http://example.edu/credentials/1872",
+        },
     )
 
     type = fields.List(
         fields.Str(required=True),
         required=True,
-        description="The JSON-LD type of the credential",
-        **CREDENTIAL_TYPE,
+        validate=CREDENTIAL_TYPE_VALIDATE,
+        metadata={
+            "description": "The JSON-LD type of the credential",
+            "example": CREDENTIAL_TYPE_EXAMPLE,
+        },
     )
 
     issuer = StrOrDictField(
         required=True,
-        description=(
-            "The JSON-LD Verifiable Credential Issuer."
-            " Either string of object with id field."
-        ),
-        example=DIDKey.EXAMPLE,
+        metadata={
+            "description": (
+                "The JSON-LD Verifiable Credential Issuer. Either string of object with"
+                " id field."
+            ),
+            "example": DIDKey.EXAMPLE,
+        },
     )
 
     issuance_date = fields.Str(
         data_key="issuanceDate",
         required=True,
-        description="The issuance date",
-        **RFC3339_DATETIME,
+        validate=RFC3339_DATETIME_VALIDATE,
+        metadata={
+            "description": "The issuance date",
+            "example": RFC3339_DATETIME_EXAMPLE,
+        },
     )
 
     expiration_date = fields.Str(
         data_key="expirationDate",
         required=False,
-        description="The expiration date",
-        **RFC3339_DATETIME,
+        validate=RFC3339_DATETIME_VALIDATE,
+        metadata={
+            "description": "The expiration date",
+            "example": RFC3339_DATETIME_EXAMPLE,
+        },
     )
 
     credential_subject = DictOrDictListField(
         required=True,
         data_key="credentialSubject",
-        **CREDENTIAL_SUBJECT,
+        validate=CREDENTIAL_SUBJECT_VALIDATE,
+        metadata={"example": CREDENTIAL_SUBJECT_EXAMPLE},
     )
 
     proof = fields.Nested(
         LinkedDataProofSchema(),
         required=False,
-        description="The proof of the credential",
-        example={
-            "type": "Ed25519Signature2018",
-            "verificationMethod": (
-                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyG"
-                "o38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            ),
-            "created": "2019-12-11T03:50:55",
-            "proofPurpose": "assertionMethod",
-            "jws": (
-                "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df"
-                "_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
-            ),
+        metadata={
+            "description": "The proof of the credential",
+            "example": {
+                "type": "Ed25519Signature2018",
+                "verificationMethod": (
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38Ee"
+                    "fXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                ),
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "jws": (
+                    "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_k"
+                    "eblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
+                ),
+            },
         },
     )
 
@@ -362,18 +381,20 @@ class VerifiableCredentialSchema(CredentialSchema):
     proof = fields.Nested(
         LinkedDataProofSchema(),
         required=True,
-        description="The proof of the credential",
-        example={
-            "type": "Ed25519Signature2018",
-            "verificationMethod": (
-                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyG"
-                "o38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            ),
-            "created": "2019-12-11T03:50:55",
-            "proofPurpose": "assertionMethod",
-            "jws": (
-                "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df"
-                "_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
-            ),
+        metadata={
+            "description": "The proof of the credential",
+            "example": {
+                "type": "Ed25519Signature2018",
+                "verificationMethod": (
+                    "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38Ee"
+                    "fXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+                ),
+                "created": "2019-12-11T03:50:55",
+                "proofPurpose": "assertionMethod",
+                "jws": (
+                    "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_k"
+                    "eblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ"
+                ),
+            },
         },
     )

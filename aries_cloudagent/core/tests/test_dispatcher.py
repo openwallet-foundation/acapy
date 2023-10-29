@@ -1,6 +1,6 @@
 import json
 
-from async_case import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase
 import mock as async_mock
 import pytest
 
@@ -112,7 +112,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         with async_mock.patch.object(
             StubAgentMessageHandler, "handle", autospec=True
         ) as handler_mock, async_mock.patch.object(
-            test_module, "ConnectionManager", autospec=True
+            test_module, "BaseConnectionManager", autospec=True
         ) as conn_mgr_mock, async_mock.patch.object(
             test_module,
             "get_version_from_message_type",

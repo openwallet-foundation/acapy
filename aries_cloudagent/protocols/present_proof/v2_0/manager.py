@@ -44,6 +44,7 @@ class V20PresManager:
         connection_id: str,
         pres_proposal_message: V20PresProposal,
         auto_present: bool = None,
+        auto_remove: bool = None,
     ):
         """
         Create a presentation exchange record for input presentation proposal.
@@ -54,11 +55,14 @@ class V20PresManager:
                 to exchange record
             auto_present: whether to present proof upon receiving proof request
                 (default to configuration setting)
+            auto_remove: whether to remove this presentation exchange upon completion
 
         Returns:
             Presentation exchange record, created
 
         """
+        if auto_remove is None:
+            auto_remove = not self._profile.settings.get("preserve_exchange_records")
         pres_ex_record = V20PresExRecord(
             connection_id=connection_id,
             thread_id=pres_proposal_message._thread_id,
@@ -68,6 +72,7 @@ class V20PresManager:
             pres_proposal=pres_proposal_message,
             auto_present=auto_present,
             trace=(pres_proposal_message._trace is not None),
+            auto_remove=auto_remove,
         )
 
         async with self._profile.session() as session:
@@ -95,6 +100,7 @@ class V20PresManager:
             state=V20PresExRecord.STATE_PROPOSAL_RECEIVED,
             pres_proposal=message,
             trace=(message._trace is not None),
+            auto_remove=not self._profile.settings.get("preserve_exchange_records"),
         )
 
         async with self._profile.session() as session:
@@ -165,6 +171,7 @@ class V20PresManager:
         connection_id: str,
         pres_request_message: V20PresRequest,
         auto_verify: bool = None,
+        auto_remove: bool = None,
     ):
         """
         Create a presentation exchange record for input presentation request.
@@ -173,11 +180,15 @@ class V20PresManager:
             connection_id: connection identifier
             pres_request_message: presentation request to use in creating
                 exchange record, extracting indy proof request and thread id
+            auto_verify: whether to auto-verify presentation exchange
+            auto_remove: whether to remove this presentation exchange upon completion
 
         Returns:
             Presentation exchange record, updated
 
         """
+        if auto_remove is None:
+            auto_remove = not self._profile.settings.get("preserve_exchange_records")
         pres_ex_record = V20PresExRecord(
             connection_id=connection_id,
             thread_id=pres_request_message._thread_id,
@@ -187,6 +198,7 @@ class V20PresManager:
             pres_request=pres_request_message,
             auto_verify=auto_verify,
             trace=(pres_request_message._trace is not None),
+            auto_remove=auto_remove,
         )
         async with self._profile.session() as session:
             await pres_ex_record.save(
@@ -432,6 +444,11 @@ class V20PresManager:
                 # connection_id can be none in case of connectionless
                 connection_id=pres_ex_record.connection_id,
             )
+
+            # all done: delete
+            if pres_ex_record.auto_remove:
+                async with self._profile.session() as session:
+                    await pres_ex_record.delete_record(session)
         else:
             LOGGER.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
@@ -461,6 +478,11 @@ class V20PresManager:
             pres_ex_record.state = V20PresExRecord.STATE_DONE
 
             await pres_ex_record.save(session, reason="receive v2.0 presentation ack")
+
+            # all done: delete
+            if pres_ex_record.auto_remove:
+                async with self._profile.session() as session:
+                    await pres_ex_record.delete_record(session)
 
         return pres_ex_record
 

@@ -6,7 +6,7 @@ Represents single item in keylist-update-response.updated list.
 from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
-from ......messaging.valid import DID_KEY
+from ......messaging.valid import DID_KEY_EXAMPLE, DID_KEY_VALIDATE
 from ...normalization import normalize_from_public_key
 
 
@@ -55,6 +55,8 @@ class KeylistUpdatedSchema(BaseModelSchema):
         model_class = KeylistUpdated
         unknown = EXCLUDE
 
-    recipient_key = fields.Str(required=True, **DID_KEY)
+    recipient_key = fields.Str(
+        required=True, validate=DID_KEY_VALIDATE, metadata={"example": DID_KEY_EXAMPLE}
+    )
     action = fields.Str(required=True)
     result = fields.Str(required=True)

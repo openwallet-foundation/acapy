@@ -6,8 +6,7 @@ from marshmallow import EXCLUDE, fields
 
 from ......core.profile import ProfileSession
 from ......messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ......messaging.valid import UUIDFour
-
+from ......messaging.valid import UUID4_EXAMPLE
 from .. import UNENCRYPTED_TAGS
 
 
@@ -76,16 +75,19 @@ class V20CredExRecordLDProofSchema(BaseRecordSchema):
 
     cred_ex_ld_proof_id = fields.Str(
         required=False,
-        description="Record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Record identifier", "example": UUID4_EXAMPLE},
     )
     cred_ex_id = fields.Str(
         required=False,
-        description="Corresponding v2.0 credential exchange record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Corresponding v2.0 credential exchange record identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     cred_id_stored = fields.Str(
         required=False,
-        description="Credential identifier stored in wallet",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential identifier stored in wallet",
+            "example": UUID4_EXAMPLE,
+        },
     )

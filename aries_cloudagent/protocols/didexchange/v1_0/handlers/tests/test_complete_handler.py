@@ -7,7 +7,7 @@ from ......transport.inbound.receipt import MessageReceipt
 
 from ...manager import DIDXManagerError
 from ...messages.complete import DIDXComplete
-from ...messages.problem_report_reason import ProblemReportReason
+from ...messages.problem_report import ProblemReportReason
 
 from .. import complete_handler as test_module
 from ......wallet.did_method import DIDMethods

@@ -5,7 +5,14 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, NUM_STR_WHOLE
+from ...messaging.valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
+)
 
 
 class IndyKeyCorrectnessProof(BaseModel):
@@ -42,27 +49,36 @@ class IndyKeyCorrectnessProofSchema(BaseModelSchema):
 
     c = fields.Str(
         required=True,
-        description="c in key correctness proof",
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "c in key correctness proof",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
     )
     xz_cap = fields.Str(
         required=True,
-        description="xz_cap in key correctness proof",
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "xz_cap in key correctness proof",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
     )
     xr_cap = fields.List(
         fields.List(
             fields.Str(
                 required=True,
-                description="xr_cap component values in key correctness proof",
+                metadata={
+                    "description": "xr_cap component values in key correctness proof"
+                },
             ),
             required=True,
-            description="xr_cap components in key correctness proof",
-            many=True,
+            metadata={
+                "description": "xr_cap components in key correctness proof",
+                "many": True,
+            },
         ),
         required=True,
-        description="xr_cap in key correctness proof",
-        many=True,
+        metadata={"description": "xr_cap in key correctness proof", "many": True},
     )
 
 
@@ -110,21 +126,30 @@ class IndyCredAbstractSchema(BaseModelSchema):
 
     schema_id = fields.Str(
         required=True,
-        description="Schema identifier",
-        **INDY_SCHEMA_ID,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
     cred_def_id = fields.Str(
         required=True,
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     nonce = fields.Str(
         required=True,
-        description="Nonce in credential abstract",
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Nonce in credential abstract",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
     )
     key_correctness_proof = fields.Nested(
         IndyKeyCorrectnessProofSchema(),
         required=True,
-        description="Key correctness proof",
+        metadata={"description": "Key correctness proof"},
     )

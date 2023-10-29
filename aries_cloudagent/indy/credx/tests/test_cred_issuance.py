@@ -302,7 +302,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
             rev_delta_init = {"ver": "1.0", "value": rev_state_init["rev_reg"]}
 
             (rev_delta_2_json, skipped_ids) = await self.issuer.revoke_credentials(
-                reg_id, tails_path, (1,)
+                cd_id, reg_id, tails_path, (1,)
             )
             assert not skipped_ids
             rev_delta_2 = json.loads(rev_delta_2_json)

@@ -3,7 +3,6 @@
 import pytest
 
 from asynctest import mock as async_mock
-from pydid.verification_method import VerificationMethod
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile

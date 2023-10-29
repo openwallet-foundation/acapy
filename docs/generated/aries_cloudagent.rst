@@ -28,6 +28,7 @@ Subpackages
    aries_cloudagent.protocols
    aries_cloudagent.resolver
    aries_cloudagent.revocation
+   aries_cloudagent.settings
    aries_cloudagent.storage
    aries_cloudagent.tails
    aries_cloudagent.transport

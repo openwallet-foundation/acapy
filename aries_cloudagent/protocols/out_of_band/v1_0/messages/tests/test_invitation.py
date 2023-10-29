@@ -153,3 +153,88 @@ class TestInvitationMessage(TestCase):
         assert "1.0" in test_req._type
         assert "1.2" in test_msg._type
         assert "1.1" in InvitationMessage.Meta.message_type
+
+    def test_goal_and_code_model(self):
+        test_msg = InvitationMessage()
+        assert test_msg.goal is None
+        assert test_msg.goal_code is None
+        test_msg = InvitationMessage(goal="pass test", goal_code="pytest.pass")
+        assert test_msg.goal == "pass test"
+        assert test_msg.goal_code == "pytest.pass"
+
+    def test_mutual_inclusive_goal_and_goal_code(self):
+        msg = {"aries": "message"}
+        deco = InvitationMessage.wrap_message(msg)
+
+        # populate both goal and goal_code - good
+        obj_x = {
+            "label": "label",
+            "requests~attach": [deco.serialize()],
+            "goal_code": "pytest.pass",
+            "goal": "pass test",
+        }
+
+        errs = InvitationMessageSchema().validate(obj_x)
+        assert errs == {}
+
+        # do not include goal and goal_code - good
+        obj_x = {
+            "label": "label",
+            "requests~attach": [deco.serialize()],
+        }
+
+        errs = InvitationMessageSchema().validate(obj_x)
+        assert errs == {}
+
+        # no value for both goal and goal_code - good
+        obj_x = {
+            "label": "label",
+            "requests~attach": [deco.serialize()],
+            "goal_code": "",
+            "goal": "",
+        }
+
+        errs = InvitationMessageSchema().validate(obj_x)
+        assert errs == {}
+
+        errs = InvitationMessageSchema().validate(obj_x)
+        assert errs == {}
+
+        # populate only goal - bad
+        obj_x = {
+            "label": "label",
+            "requests~attach": [deco.serialize()],
+            "goal": "pass test",
+        }
+
+        errs = InvitationMessageSchema().validate(obj_x)
+        assert errs and len(errs)
+        assert errs and errs["_schema"]
+        assert len(errs["_schema"]) == 1
+        assert "goal" in errs["_schema"][0]
+
+        # populate only goal_code - bad
+        obj_x = {
+            "label": "label",
+            "requests~attach": [deco.serialize()],
+            "goal_code": "pytest.pass",
+        }
+
+        errs = InvitationMessageSchema().validate(obj_x)
+        assert errs and len(errs)
+        assert errs and errs["_schema"]
+        assert len(errs["_schema"]) == 1
+        assert "goal_code" in errs["_schema"][0]
+
+        # goal and goal code cannot be set to null/none
+        obj_x = {
+            "label": "label",
+            "requests~attach": [deco.serialize()],
+            "goal_code": None,
+            "goal": None,
+        }
+
+        errs = InvitationMessageSchema().validate(obj_x)
+        assert len(errs) == 2
+        assert errs["goal"]
+        assert errs["goal_code"]

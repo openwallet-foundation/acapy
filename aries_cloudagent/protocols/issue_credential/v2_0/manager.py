@@ -57,6 +57,7 @@ class V20CredManager:
         cred_proposal: V20CredProposal,
         verification_method: Optional[str] = None,
         auto_remove: bool = None,
+        replacement_id: str = None,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
         """
         Set up a new credential exchange record for an automated send.
@@ -66,6 +67,7 @@ class V20CredManager:
             cred_proposal: credential proposal with preview
             verification_method: an optional verification method to be used when issuing
             auto_remove: flag to remove the record automatically on completion
+            replacement_id: identifier to help coordinate credential replacement
 
         Returns:
             A tuple of the new credential exchange record and credential offer message
@@ -87,6 +89,7 @@ class V20CredManager:
             cred_ex_record=cred_ex_record,
             counter_proposal=None,
             comment="create automated v2.0 credential exchange record",
+            replacement_id=replacement_id,
         )
 
     async def create_proposal(

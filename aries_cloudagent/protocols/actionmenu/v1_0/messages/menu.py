@@ -5,7 +5,6 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import MENU, PROTOCOL_PACKAGE
 from ..models.menu_option import MenuOption, MenuOptionSchema
 
@@ -55,19 +54,25 @@ class MenuSchema(AgentMessageSchema):
         model_class = Menu
         unknown = EXCLUDE
 
-    title = fields.Str(required=False, description="Menu title", example="My Menu")
+    title = fields.Str(
+        required=False, metadata={"description": "Menu title", "example": "My Menu"}
+    )
     description = fields.Str(
         required=False,
-        description="Introductory text for the menu",
-        example="This menu presents options",
+        metadata={
+            "description": "Introductory text for the menu",
+            "example": "This menu presents options",
+        },
     )
     errormsg = fields.Str(
         required=False,
-        description="An optional error message to display in menu header",
-        example="Error: item not found",
+        metadata={
+            "description": "An optional error message to display in menu header",
+            "example": "Error: item not found",
+        },
     )
     options = fields.List(
         fields.Nested(MenuOptionSchema),
         required=True,
-        description="List of menu options",
+        metadata={"description": "List of menu options"},
     )

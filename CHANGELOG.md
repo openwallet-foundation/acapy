@@ -1,6 +1,242 @@
-# 0.8.2-rc0
+# 0.10.1
 
-## June 9, 2023
+## August 29, 2023
+
+Release 0.10.1 contains a breaking change, an important fix for a regression
+introduced in 0.8.2 that impacts certain deployments, and a number of fixes and
+updates. Included in the updates is a significant internal reorganization of the
+DID and connection management code that was done to enable more flexible uses of
+different DID Methods, such as being able to use `did:web` DIDs for DIDComm
+messaging connections. The work also paves the way for coming updates related to
+support for `did:peer` DIDs for DIDComm. For details on the change see
+[PR \#2409], which includes some of the best pull request documentation ever
+created.
+
+Release 0.10.1 has the same contents as 0.10.0. An error on PyPi prevented the
+0.10.0 release from being properly uploaded because of an existing file of the same
+name. We immediately released 0.10.1 as a replacement.
+
+[PR \#2409]: https://github.com/hyperledger/aries-cloudagent-python/pull/2409
+
+The regression fix is for ACA-Py deployments that use multi-use invitations but
+do **NOT** use the `--auto-accept-connection-requests` flag/processing. A change
+in [0.8.2](#082) (PR [\#2223]) suppressed an extra webhook event firing during
+the processing after receiving a connection request. An unexpected side effect
+of that change was that the subsequent webhook event also did not fire, and as a
+result, the controller did not get any event signalling a new connection request
+had been received via the multi-use invitation. The update in this release
+ensures the proper event fires and the controller receives the webhook.
+
+[\#2413]: https://github.com/hyperledger/aries-cloudagent-python/pull/2413
+[\#2223]: https://github.com/hyperledger/aries-cloudagent-python/pull/2223
+
+See below for the breaking changes and a categorized list of the pull requests
+included in this release.
+
+Updates in the CI/CD area include adding the publishing of a `nightly` container
+image that includes any changes in the main branch since the last `nightly` was
+published. This allows getting the "latest and greatest" code via a container image
+vs. having to install ACA-Py from the repository. In addition, Snyk scanning
+was added to the CI pipeline, and Indy SDK tests were removed from the pipeline.
+
+## 0.10.1 Breaking Changes
+
+[\#2352] is a breaking change related to the storage of presentation exchange
+records in ACA-Py. In previous releases, presentation exchange protocol state
+data records were retained in ACA-Py secure storage after the completion of
+protocol instances. With this release the default behavior changes to **deleting
+those records by default**, unless the `----preserve-exchange-records` flag is
+set in the configuration. This extends the use of that flag that previously
+applied only to issue credential records. The extension matches the initial
+intention of the flag--that it cover both issue credential and present proof
+exchanges. The "best practices" for ACA-Py is that the controller (business
+logic) store any long-lasting business information needed for the service that
+is using the Aries Agent, and ACA-Py storage should be used only for data
+necessary for the operation of the agent. In particular, protocol state data
+should be held in ACA-Py only as long as the protocol is running (as it is
+needed by ACA-Py), and once a protocol instance completes, the controller should
+extract and store the business information from the protocol state before it is
+deleted from ACA-Py storage.
+
+[\#2352]: https://github.com/hyperledger/aries-cloudagent-python/pull/2352
+
+### 0.10.0 Categorized List of Pull Requests
+
+- DIDComm Messaging Improvements/Fixes
+  - fix: outbound send status missing on path [\#2393](https://github.com/hyperledger/aries-cloudagent-python/pull/2393) [dbluhm](https://github.com/dbluhm)
+  - fix: keylist update response race condition [\#2391](https://github.com/hyperledger/aries-cloudagent-python/pull/2391) [dbluhm](https://github.com/dbluhm)
+- DID Handling and Connection Establishment Updates/Fixes
+  - fix: handle stored afgo and findy docs in corrections [\#2450](https://github.com/hyperledger/aries-cloudagent-python/pull/2450) [dbluhm](https://github.com/dbluhm)
+  - chore: relax connections filter DID format [\#2451](https://github.com/hyperledger/aries-cloudagent-python/pull/2451) [chumbert](https://github.com/chumbert)
+  - fix: ignore duplicate record errors on add key [\#2447](https://github.com/hyperledger/aries-cloudagent-python/pull/2447) [dbluhm](https://github.com/dbluhm)
+  - fix: ignore duplicate record errors on add key [\#2447](https://github.com/hyperledger/aries-cloudagent-python/pull/2447) [dbluhm](https://github.com/dbluhm)
+  - fix: more diddoc corrections [\#2446](https://github.com/hyperledger/aries-cloudagent-python/pull/2446) [dbluhm](https://github.com/dbluhm)
+  - feat: resolve connection targets and permit connecting via public DID [\#2409](https://github.com/hyperledger/aries-cloudagent-python/pull/2409) [dbluhm](https://github.com/dbluhm)
+  - feat: add legacy peer did resolver [\#2404](https://github.com/hyperledger/aries-cloudagent-python/pull/2404) [dbluhm](https://github.com/dbluhm)
+  - Fix: Ensure event/webhook is emitted for multi-use invitations [\#2413](https://github.com/hyperledger/aries-cloudagent-python/pull/2413) [esune](https://github.com/esune)
+  - feat: add DID Exchange specific problem reports and reject endpoint [\#2394](https://github.com/hyperledger/aries-cloudagent-python/pull/2394) [dbluhm](https://github.com/dbluhm)
+  - fix: additional tweaks for did:web and other methods as public DIDs [\#2392](https://github.com/hyperledger/aries-cloudagent-python/pull/2392) [dbluhm](https://github.com/dbluhm)
+  - Fix empty ServiceDecorator in OobRecord causing 422 Unprocessable Entity Error [\#2362](https://github.com/hyperledger/aries-cloudagent-python/pull/2362) [ff137](https://github.com/ff137)
+  - Feat: Added support for Ed25519Signature2020 signature type and Ed25519VerificationKey2020 [\#2241](https://github.com/hyperledger/aries-cloudagent-python/pull/2241) [dkulic](https://github.com/dkulic)
+- Upgrading to Aries Askar Updates
+  - Add symlink to /home/indy/.indy_client for backwards compatibility [\#2443](https://github.com/hyperledger/aries-cloudagent-python/pull/2443) [esune](https://github.com/esune)
+- Credential Exchange (Issue, Present) Updates
+  - fix: ensure request matches offer in JSON-LD exchanges, if sent [\#2341](https://github.com/hyperledger/aries-cloudagent-python/pull/2341) [dbluhm](https://github.com/dbluhm)
+  - BREAKING Extend --preserve-exchange-records to include Presentation Exchange. [\#2352](https://github.com/hyperledger/aries-cloudagent-python/pull/2352) [usingtechnology](https://github.com/usingtechnology)
+  - Correct the response type in send_rev_reg_def [\#2355](https://github.com/hyperledger/aries-cloudagent-python/pull/2355) [ff137](https://github.com/ff137)
+- Multitenancy Updates and Fixes
+  - Multitenant check endorser_info before saving [\#2395](https://github.com/hyperledger/aries-cloudagent-python/pull/2395) [usingtechnology](https://github.com/usingtechnology)
+  - Feat: Support Selectable Write Ledger [\#2339](https://github.com/hyperledger/aries-cloudagent-python/pull/2339) [shaangill025](https://github.com/shaangill025)
+- Other Fixes, Demo, and Documentation Fixes
+  - Redis Plugins [redis_cache & redis_queue] documentation and docker related updates [\#1937](https://github.com/hyperledger/aries-cloudagent-python/pull/1937) [shaangill025](https://github.com/shaangill025)
+  - Chore: fix marshmallow warnings [\#2398](https://github.com/hyperledger/aries-cloudagent-python/pull/2398) [ff137](https://github.com/ff137)
+  - Upgrade pre-commit and flake8 dependencies; fix flake8 warnings [\#2399](https://github.com/hyperledger/aries-cloudagent-python/pull/2399) [ff137](https://github.com/ff137)
+  - Corrected typo on mediator invitation configuration argument [\#2365](https://github.com/hyperledger/aries-cloudagent-python/pull/2365) [jorgefl0](https://github.com/jorgefl0)
+  - Add workaround for ARM based macs [\#2313](https://github.com/hyperledger/aries-cloudagent-python/pull/2313) [finnformica](https://github.com/finnformica)
+- Dependencies and Internal Updates
+  - chore(deps): Bump certifi from 2023.5.7 to 2023.7.22 in /demo/playground/scripts dependencies [\#2354](https://github.com/hyperledger/aries-cloudagent-python/pull/2354) [dependabot bot](https://github.com/dependabot bot)
+- CI/CD and Developer Tools/Productivity Updates
+  - Fix for nightly tests failing on Python 3.10 [\#2435](https://github.com/hyperledger/aries-cloudagent-python/pull/2435) [Gavinok](https://github.com/Gavinok)
+  - Don't run Snyk on forks [\#2429](https://github.com/hyperledger/aries-cloudagent-python/pull/2429) [ryjones](https://github.com/ryjones)
+  - Issue #2250 Nightly publish workflow [\#2421](https://github.com/hyperledger/aries-cloudagent-python/pull/2421) [Gavinok](https://github.com/Gavinok)
+  - Enable Snyk scanning [\#2418](https://github.com/hyperledger/aries-cloudagent-python/pull/2418) [ryjones](https://github.com/ryjones)
+  - Remove Indy tests from workflows [\#2415](https://github.com/hyperledger/aries-cloudagent-python/pull/2415) [dbluhm](https://github.com/dbluhm)
+- Release management pull requests
+  - 0.10.1 [\#2454](https://github.com/hyperledger/aries-cloudagent-python/pull/2454) [swcurran](https://github.com/swcurran)
+  - 0.10.0 [\#2452](https://github.com/hyperledger/aries-cloudagent-python/pull/2452) [swcurran](https://github.com/swcurran)
+  - 0.10.0-rc2 [\#2448](https://github.com/hyperledger/aries-cloudagent-python/pull/2448) [swcurran](https://github.com/swcurran)
+  - 0.10.0-rc1 [\#2442](https://github.com/hyperledger/aries-cloudagent-python/pull/2442) [swcurran](https://github.com/swcurran)
+  - 0.10.0-rc0 [\#2414](https://github.com/hyperledger/aries-cloudagent-python/pull/2414) [swcurran](https://github.com/swcurran)
+
+# 0.10.0
+
+## August 29, 2023
+
+Release 0.10.1 has the same contents as 0.10.0. An error on PyPi prevented the
+0.10.0 release from being properly uploaded because of an existing file of the
+same name. We immediately released 0.10.1 as a replacement.
+
+# 0.9.0
+
+## July 24, 2023
+
+Release 0.9.0 is an important upgrade that changes (PR [\#2302]) the dependency
+on the now archived Hyperledger Ursa project to its updated, improved
+replacement, [AnonCreds CL-Signatures]. This important change is ONLY available
+when using [Aries Askar] as the wallet type, which brings in both [Indy VDR] and
+the CL-Signatures via the latest version of [CredX from the indy-shared-rs
+repository]. The update is **NOT** available to those that are using the [Indy
+SDK]. All new deployments of ACA-Py SHOULD use [Aries Askar]. Further, we
+**strongly** recommend that all deployments using the [Indy SDK] with ACA-Py
+upgrade their installation to use [Aries Askar] and the related components using
+the migration scripts available. An [Indy SDK to Askar migration document] added
+to the [aca-py.org] documentation site, and a deprecation warning added to the
+ACA-Py startup.
+
+[AnonCreds CL-Signatures]: https://github.com/hyperledger/anoncreds-rs
+[Aries Askar]: https://github.com/hyperledger/aries-askar
+[CredX from the indy-shared-rs repository]: https://github.com/hyperledger/indy-shared-rs
+[Indy SDK]: https://github.com/hyperledger/indy-sdk
+[Indy SDK to Askar migration document]: https://aca-py.org/main/deploying/IndySDKtoAskarMigration/
+[aca-py.org]: https://aca-py.org
+
+The second big change in this release is that we have upgraded the primary
+Python version from 3.6 to 3.9 (PR [\#2247]). In this case, primary means that
+Python 3.9 is used to run the unit and integration tests on all Pull Requests.
+We also do nightly runs of the main branch using Python 3.10. As
+of this release we have **dropped** Python 3.6, 3.7 and 3.8, and introduced new
+dependencies that are not supported in those versions of Python. For those that
+use the published ACA-Py container images, the upgrade should be easily handled.
+If you are pulling ACA-Py into your own image, or a non-containerized
+environment, this is a breaking change that you will need to address.
+
+Please see the next section for all breaking changes, and the subsequent section
+for a categorized list of all pull requests in this release.
+
+## Breaking Changes
+
+In addition to the breaking Python 3.6 to 3.9 upgrade, there are two other
+breaking changes that may impact some deployments.
+
+[\#2034] allows for additional flexibility in using public DIDs in invitations,
+and adds a restriction that "implicit" invitations must be proactively enabled
+using a flag (`--requests-through-public-did`). Previously, such requests
+would always be accepted if `--auto-accept` was enabled, which could lead to
+unexpected connections being established.
+
+[\#2170] is a change to improve message handling in the face of delivery errors
+when using a persistent queue implementation such as the [ACA-Py Redis Plugin].
+If you are using the Redis plugin, you **MUST** upgrade to [Redis Plugin Release
+0.1.0] in conjunction with deploying this ACA-Py release. For those using their
+own persistent queue solution, see the PR [\#2170] comments for information
+about changes you might need to make to your deployment.
+
+[ACA-Py Redis Plugin]: https://github.com/bcgov/aries-acapy-plugin-redis-events
+[Redis Plugin Release 0.1.0]: https://github.com/bcgov/aries-acapy-plugin-redis-events/releases/tag/v0.1.0
+
+[\#2302]: https://github.com/hyperledger/aries-cloudagent-python/pull/2302
+[\#2034]: https://github.com/hyperledger/aries-cloudagent-python/pull/2034
+[\#2247]: https://github.com/hyperledger/aries-cloudagent-python/pull/2247
+[\#2170]: https://github.com/hyperledger/aries-cloudagent-python/pull/2170
+
+### Categorized List of Pull Requests
+
+- DIDComm Messaging Improvements/Fixes
+  - BREAKING: feat: get queued outbound message in transport handle message [\#2170](https://github.com/hyperledger/aries-cloudagent-python/pull/2170) [dbluhm](https://github.com/dbluhm)
+- DID Handling and Connection Establishment Updates/Fixes
+  - Allow any did to be public [\#2295](https://github.com/hyperledger/aries-cloudagent-python/pull/2295) [mkempa](https://github.com/mkempa)
+  - Feat: Added support for Ed25519Signature2020 signature type and Ed25519VerificationKey2020 [\#2241](https://github.com/hyperledger/aries-cloudagent-python/pull/2241) [dkulic](https://github.com/dkulic)
+  - Add Goal and Goal Code to OOB and DIDex Request [\#2294](https://github.com/hyperledger/aries-cloudagent-python/pull/2294) [usingtechnology](https://github.com/usingtechnology)
+  - Fix routing in set public did [\#2288](https://github.com/hyperledger/aries-cloudagent-python/pull/2288) [mkempa](https://github.com/mkempa)  - Fix: Do not replace public verkey on mediator [\#2269](https://github.com/hyperledger/aries-cloudagent-python/pull/2269) [mkempa](https://github.com/mkempa)  - BREAKING: Allow multi-use public invites and public invites with metadata [\#2034](https://github.com/hyperledger/aries-cloudagent-python/pull/2034) [mepeltier](https://github.com/mepeltier)
+  - fix: public did mediator routing keys as did keys [\#1977](https://github.com/hyperledger/aries-cloudagent-python/pull/1977) [dbluhm](https://github.com/dbluhm)
+- Credential Exchange (Issue, Present) Updates
+  - Add revocation registry rotate to faber demo [\#2333](https://github.com/hyperledger/aries-cloudagent-python/pull/2333) [usingtechnology](https://github.com/usingtechnology)
+  - Update to indy-credx 1.0 [\#2302](https://github.com/hyperledger/aries-cloudagent-python/pull/2302) [andrewwhitehead](https://github.com/andrewwhitehead)
+  - feat(anoncreds): Implement automated setup of revocation [\#2292](https://github.com/hyperledger/aries-cloudagent-python/pull/2292) [dbluhm](https://github.com/dbluhm)
+  - fix: schema class can set Meta.unknown [\#1885](https://github.com/hyperledger/aries-cloudagent-python/pull/1885) [dbluhm](https://github.com/dbluhm)
+  - Respect auto-verify-presentation flag in present proof v1 and v2 [\#2097](https://github.com/hyperledger/aries-cloudagent-python/pull/2097) [dbluhm](https://github.com/dbluhm)
+  - Feature: JWT Sign and Verify Admin Endpoints with DID Support [\#2300](https://github.com/hyperledger/aries-cloudagent-python/pull/2300) [burdettadam](https://github.com/burdettadam)
+- Multitenancy Updates and Fixes
+  - Fix: Track endorser and author roles in per-tenant settings [\#2331](https://github.com/hyperledger/aries-cloudagent-python/pull/2331) [shaangill025](https://github.com/shaangill025)
+  - Added base wallet provisioning details to Multitenancy.md [\#2328](https://github.com/hyperledger/aries-cloudagent-python/pull/2328) [esune](https://github.com/esune)
+- Other Fixes, Demo, and Documentation Fixes
+  - Add more context to the ACA-Py Revocation handling documentation [\#2343](https://github.com/hyperledger/aries-cloudagent-python/pull/2343) [swcurran](https://github.com/swcurran)
+  - Document the Indy SDK to Askar Migration process [\#2340](https://github.com/hyperledger/aries-cloudagent-python/pull/2340) [swcurran](https://github.com/swcurran)
+  - Add revocation registry rotate to faber demo [\#2333](https://github.com/hyperledger/aries-cloudagent-python/pull/2333) [usingtechnology](https://github.com/usingtechnology)
+  - chore: add indy deprecation warnings [\#2332](https://github.com/hyperledger/aries-cloudagent-python/pull/2332) [dbluhm](https://github.com/dbluhm)
+  - Fix alice/faber demo execution [\#2305](https://github.com/hyperledger/aries-cloudagent-python/pull/2305) [andrewwhitehead](https://github.com/andrewwhitehead)
+  - Add .indy_client folder to Askar only image. [\#2308](https://github.com/hyperledger/aries-cloudagent-python/pull/2308) [WadeBarnes](https://github.com/WadeBarnes)
+  - Add build step for indy-base image in run_demo [\#2299](https://github.com/hyperledger/aries-cloudagent-python/pull/2299) [usingtechnology](https://github.com/usingtechnology)
+  - Webhook over websocket clarification [\#2287](https://github.com/hyperledger/aries-cloudagent-python/pull/2287) [dbluhm](https://github.com/dbluhm)
+- ACA-Py Deployment Upgrade Changes
+  - Add Explicit/Offline marking mechanism for Upgrade [\#2204](https://github.com/hyperledger/aries-cloudagent-python/pull/2204) [shaangill025](https://github.com/shaangill025)
+- Plugin Handling Updates
+  - Feature: Add the ability to deny specific plugins from loading  0.7.4 [\#1737](https://github.com/hyperledger/aries-cloudagent-python/pull/1737) [frostyfrog](https://github.com/frostyfrog)
+- Dependencies and Internal Updates
+  - upgrade pyjwt to latest; introduce leeway to jwt.decodet [\#2335](https://github.com/hyperledger/aries-cloudagent-python/pull/2335) [ff137](https://github.com/ff137)
+  - upgrade requests to latest [\#2336](https://github.com/hyperledger/aries-cloudagent-python/pull/2336) [ff137](https://github.com/ff137)
+  - upgrade packaging to latest [\#2334](https://github.com/hyperledger/aries-cloudagent-python/pull/2334) [ff137](https://github.com/ff137)
+  - chore: update PyYAML [\#2329](https://github.com/hyperledger/aries-cloudagent-python/pull/2329) [dbluhm](https://github.com/dbluhm)
+  - chore(deps): Bump aiohttp from 3.8.4 to 3.8.5 in /demo/playground/scripts dependencies [\#2325](https://github.com/hyperledger/aries-cloudagent-python/pull/2325) [dependabot bot](https://github.com/dependabot bot)
+  - ⬆️ upgrade marshmallow to latest [\#2322](https://github.com/hyperledger/aries-cloudagent-python/pull/2322) [ff137](https://github.com/ff137)
+  - fix: use python 3.9 in run_docker [\#2291](https://github.com/hyperledger/aries-cloudagent-python/pull/2291) [dbluhm](https://github.com/dbluhm)
+  - BREAKING!: drop python 3.6 support [\#2247](https://github.com/hyperledger/aries-cloudagent-python/pull/2247) [dbluhm](https://github.com/dbluhm)
+  - Minor revisions to the README.md and DevReadMe.md [\#2272](https://github.com/hyperledger/aries-cloudagent-python/pull/2272) [swcurran](https://github.com/swcurran)
+- ACA-Py Administrative Updates
+  - Updating Maintainers list to be accurate and using the TOC format [\#2258](https://github.com/hyperledger/aries-cloudagent-python/pull/2258) [swcurran](https://github.com/swcurran)
+- CI/CD and Developer Tools/Productivity Updates
+  - Cancel in-progress workflows when PR is updated [\#2303](https://github.com/hyperledger/aries-cloudagent-python/pull/2303) [andrewwhitehead](https://github.com/andrewwhitehead)
+  - ci: add gha for pr-tests [\#2058](https://github.com/hyperledger/aries-cloudagent-python/pull/2058) [dbluhm](https://github.com/dbluhm)
+  - Add devcontainer for ACA-Py [\#2267](https://github.com/hyperledger/aries-cloudagent-python/pull/2267) [usingtechnology](https://github.com/usingtechnology)
+  - Docker images and GHA for publishing images  help wanted [\#2076](https://github.com/hyperledger/aries-cloudagent-python/pull/2076) [dbluhm](https://github.com/dbluhm)
+  - ci: test additional versions of python nightly [\#2059](https://github.com/hyperledger/aries-cloudagent-python/pull/2059) [dbluhm](https://github.com/dbluhm)
+- Release management pull requests
+  - 0.9.0 [\#2344](https://github.com/hyperledger/aries-cloudagent-python/pull/2344) [swcurran](https://github.com/swcurran)
+  - 0.9.0-rc0 [\#2338](https://github.com/hyperledger/aries-cloudagent-python/pull/2338) [swcurran](https://github.com/swcurran)
+
+# 0.8.2
+
+## June 29, 2023
 
 Release 0.8.2 contains a number of minor fixes and updates to ACA-Py, including
 the correction of a regression in Release 0.8.0 related to the use of plugins
@@ -8,12 +244,26 @@ the correction of a regression in Release 0.8.0 related to the use of plugins
 development environment to collect detailed performance information about what
 is going in within ACA-Py.
 
+This release pulls in [indy-shared-rs] Release 3.3 which fixes a serious issue in AnonCreds verification, as described in issue [\#2036], where the verification of a presentation with multiple revocable credentials fails when using [Aries Askar] and the
+other shared components. This issue occurs only when using [Aries Askar] and [indy-credx Release 3.3].
+
+An important new feature in this release is the ability to set some instance
+configuration settings at the tenant level of a multi-tenant deployment. See PR
+[\#2233].
+
 There are no breaking changes in this release.
+
+[\#2255]: https://github.com/hyperledger/aries-cloudagent-python/pull/2255
+[\#2233]: https://github.com/hyperledger/aries-cloudagent-python/pull/2233
+[\#2036]: https://github.com/hyperledger/aries-cloudagent-python/issues/2036
+[indy-shared-rs]: https://github.com/hyperledger/indy-shared-rs
+[Aries Askar]: https://github.com/hyperledger/aries-askar
+[indy-credx Release 3.3]: https://github.com/hyperledger/indy-shared-rs/releases/tag/v0.3.3
 
 ### Categorized List of Pull Requests
 
 - Connections Fixes/Updates
-  - Resolve definitions.py fix [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) [usingtechnology](https://github.com/usingtechnology)
+  - Resolve definitions.py fix to fix backwards compatibility break in plugins [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) [usingtechnology](https://github.com/usingtechnology)
   - Add support for JsonWebKey2020 for the connection invitations [\#2173](https://github.com/hyperledger/aries-cloudagent-python/pull/2173) [dkulic](https://github.com/dkulic)
   - fix: only cache completed connection targets [\#2240](https://github.com/hyperledger/aries-cloudagent-python/pull/2240) [dbluhm](https://github.com/dbluhm)
   - Connection target should not be limited only to indy dids [\#2229](https://github.com/hyperledger/aries-cloudagent-python/pull/2229) [dkulic](https://github.com/dkulic)
@@ -21,11 +271,18 @@ There are no breaking changes in this release.
 - Credential Exchange (Issue, Present) Updates
   - Pass document loader to jsonld.expand [\#2175](https://github.com/hyperledger/aries-cloudagent-python/pull/2175) [andrewwhitehead](https://github.com/andrewwhitehead)
 - Multi-tenancy fixes/updates
+  - Allow Configuration Settings on a per-tenant basis [\#2233](https://github.com/hyperledger/aries-cloudagent-python/pull/2233) [shaangill025](https://github.com/shaangill025)
   - stand up multiple agents (single and multi) for local development and testing [\#2230](https://github.com/hyperledger/aries-cloudagent-python/pull/2230) [usingtechnology](https://github.com/usingtechnology)
   - Multi-tenant self-managed mediation verkey lookup [\#2232](https://github.com/hyperledger/aries-cloudagent-python/pull/2232) [usingtechnology](https://github.com/usingtechnology)
   - fix: route multitenant connectionless oob invitation [\#2243](https://github.com/hyperledger/aries-cloudagent-python/pull/2243) [TimoGlastra](https://github.com/TimoGlastra)
   - Fix multitenant/mediation in demo [\#2075](https://github.com/hyperledger/aries-cloudagent-python/pull/2075) [ianco](https://github.com/ianco)
 - Other Bug and Documentation Fixes
+  - Assign ~thread.thid with thread_id value [\#2261](https://github.com/hyperledger/aries-cloudagent-python/pull/2261) [usingtechnology](https://github.com/usingtechnology)
+  - Fix: Do not replace public verkey on mediator [\#2269](https://github.com/hyperledger/aries-cloudagent-python/pull/2269) [mkempa](https://github.com/mkempa)
+  - Provide an optional Profile to the verification key strategy [\#2265](https://github.com/hyperledger/aries-cloudagent-python/pull/2265) [yvgny](https://github.com/yvgny)
+  - refactor: Extract verification method ID generation to a separate class [\#2235](https://github.com/hyperledger/aries-cloudagent-python/pull/2235) [yvgny](https://github.com/yvgny)
+  - Create .readthedocs.yaml file [\#2268](https://github.com/hyperledger/aries-cloudagent-python/pull/2268) [swcurran](https://github.com/swcurran)
+  - feat(did creation route): reject unregistered did methods [\#2262](https://github.com/hyperledger/aries-cloudagent-python/pull/2262) [chumbert](https://github.com/chumbert)
   - ./run_demo performance -c 1 --mediation --timing --trace-log [#2245](https://github.com/hyperledger/aries-cloudagent-python/pull/2245) [usingtechnology](https://github.com/usingtechnology)
   - Fix formatting and grammatical errors in different readme's [\#2222](https://github.com/hyperledger/aries-cloudagent-python/pull/2222) [ff137](https://github.com/ff137)
   - Fix broken link in README [\#2221](https://github.com/hyperledger/aries-cloudagent-python/pull/2221) [ff137](https://github.com/ff137)
@@ -34,9 +291,15 @@ There are no breaking changes in this release.
 - Dependencies and Internal Updates
   - Bump requests from 2.30.0 to 2.31.0 in /demo/playground/scripts dependenciesPull requests that update a dependency file [\#2238](https://github.com/hyperledger/aries-cloudagent-python/pull/2238) [dependabot bot](https://github.com/dependabot)
   - Upgrade codegen tools in scripts/generate-open-api-spec and publish Swagger 2.0 and OpenAPI 3.0 specs [\#2246](https://github.com/hyperledger/aries-cloudagent-python/pull/2246) [ff137](https://github.com/ff137)
+- ACA-Py Administrative Updates
+  - Propose adding Jason Sherman [usingtechnology](https://github.com/usingtechnology) as a Maintainer [\#2263](https://github.com/hyperledger/aries-cloudagent-python/pull/2263) [swcurran](https://github.com/swcurran)
+  - Updating Maintainers list to be accurate and using the TOC format [\#2258](https://github.com/hyperledger/aries-cloudagent-python/pull/2258) [swcurran](https://github.com/swcurran)
 - Message Tracing/Timing Updates
   - Add updated ELK stack for demos. [\#2236](https://github.com/hyperledger/aries-cloudagent-python/pull/2236) [usingtechnology](https://github.com/usingtechnology)
 - Release management pull requests
+  - 0.8.2 [\#2285](https://github.com/hyperledger/aries-cloudagent-python/pull/2285) [swcurran](https://github.com/swcurran)
+  - 0.8.2-rc2 [\#2284](https://github.com/hyperledger/aries-cloudagent-python/pull/2283) [swcurran](https://github.com/swcurran)
+  - 0.8.2-rc1 [\#2282](https://github.com/hyperledger/aries-cloudagent-python/pull/2282) [swcurran](https://github.com/swcurran)
   - 0.8.2-rc0 [\#2260](https://github.com/hyperledger/aries-cloudagent-python/pull/2260) [swcurran](https://github.com/swcurran)
 
 # 0.8.1

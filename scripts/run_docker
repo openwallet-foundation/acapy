@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Set default platform to linux/amd64 when running on Arm based MAC since there are no arm based images available currently.
+if [[ $OSTYPE == 'darwin'* ]]; then
+  architecture=$(uname -m)
+  if [[ "${architecture}" == 'arm'* ]] || [[ "${architecture}" == 'aarch'* ]]; then
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64
+  fi
+fi
+
 cd "$(dirname "$0")" || exit 1
 CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 

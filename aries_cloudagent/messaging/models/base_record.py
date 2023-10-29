@@ -4,7 +4,6 @@ import json
 import logging
 import sys
 import uuid
-
 from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Type, TypeVar, Union
 
@@ -15,11 +14,9 @@ from ...config.settings import BaseSettings
 from ...core.profile import ProfileSession
 from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
 from ...storage.record import StorageRecord
-
 from ..util import datetime_to_str, time_now
-from ..valid import INDY_ISO8601_DATETIME
-
-from .base import BaseModel, BaseModelSchema, BaseModelError
+from ..valid import INDY_ISO8601_DATETIME_EXAMPLE, INDY_ISO8601_DATETIME_VALIDATE
+from .base import BaseModel, BaseModelError, BaseModelSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -555,16 +552,23 @@ class BaseRecordSchema(BaseModelSchema):
 
     state = fields.Str(
         required=False,
-        description="Current record state",
-        example="active",
+        metadata={"description": "Current record state", "example": "active"},
     )
     created_at = fields.Str(
-        required=False, description="Time of record creation", **INDY_ISO8601_DATETIME
+        required=False,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time of record creation",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
     )
     updated_at = fields.Str(
         required=False,
-        description="Time of last record update",
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time of last record update",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
     )
 
 
@@ -577,7 +581,9 @@ class BaseExchangeSchema(BaseRecordSchema):
         model_class = BaseExchangeRecord
 
     trace = fields.Boolean(
-        description="Record trace information, based on agent configuration",
         required=False,
-        default=False,
+        dump_default=False,
+        metadata={
+            "description": "Record trace information, based on agent configuration"
+        },
     )

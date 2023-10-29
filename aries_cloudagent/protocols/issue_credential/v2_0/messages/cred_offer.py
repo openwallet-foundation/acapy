@@ -2,17 +2,15 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import UUIDFour
-
+from .....messaging.valid import UUID4_EXAMPLE
 from ..message_types import CRED_20_OFFER, PROTOCOL_PACKAGE
-
 from .cred_format import V20CredFormat, V20CredFormatSchema
 from .inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 
@@ -94,29 +92,33 @@ class V20CredOfferSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     replacement_id = fields.Str(
-        description="Issuer-unique identifier to coordinate credential replacement",
         required=False,
         allow_none=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": (
+                "Issuer-unique identifier to coordinate credential replacement"
+            ),
+            "example": UUID4_EXAMPLE,
+        },
     )
     comment = fields.Str(
-        description="Human-readable comment",
         required=False,
         allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
     formats = fields.Nested(
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable credential formats",
+        metadata={"description": "Acceptable credential formats"},
     )
     offers_attach = fields.Nested(
         AttachDecoratorSchema,
         required=True,
         many=True,
         data_key="offers~attach",
-        description="Offer attachments",
+        metadata={"description": "Offer attachments"},
     )
 
     @validates_schema

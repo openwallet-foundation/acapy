@@ -29,6 +29,18 @@ When ACA-Py is started with the `--webhook-url {URL}` command line parameter, st
 
 When a webhook is dispatched, the record `topic` is appended as a path component to the URL. For example, `https://webhook.host.example` becomes `https://webhook.host.example/topic/connections` when a connection record is updated. A POST request is made to the resulting URL with the body of the request comprising a serialized JSON object. The full set of properties of the current set of webhook payloads are listed below. Note that empty (null-value) properties are omitted.
 
+### Webhooks over WebSocket
+
+ACA-Py's Admin API also supports delivering webhooks over WebSocket. This can be especially useful when working with scripts that interact with the Admin API but don't have a web server listening to recieve webhooks in response to its actions. No additional command line parameters are required to enable WebSocket support.
+
+Webhooks received over WebSocket will contain the same data as webhooks posted over http but the structure differs in order to communicate details that would have been received as part of the HTTP request path and headers.
+
+* `topic`: The topic of the webhook, such as `connections` or `basicmessages`
+* `payload`: The payload of the webhook; this is the data usually received in the request body when webhooks are delivered over HTTP
+* `wallet_id`: If using multitenancy, this is the wallet ID of the subwallet that emitted the webhook. This value will be omitted if not using multitenancy.
+
+To open a WebSocket, connect to the `/ws` endpoint of the Admin API.
+
 ### Pairwise Connection Record Updated (`/connections`)
 
 * `connection_id`: the unique connection identifier

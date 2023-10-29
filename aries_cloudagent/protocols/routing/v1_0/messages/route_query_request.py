@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import PROTOCOL_PACKAGE, ROUTE_QUERY_REQUEST
 from ..models.paginate import Paginate, PaginateSchema
 
@@ -45,12 +44,13 @@ class RouteQueryRequestSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     filter = fields.Dict(
-        keys=fields.Str(description="field"),
+        keys=fields.Str(metadata={"description": "field"}),
         values=fields.List(
-            fields.Str(description="value"), description="List of values"
+            fields.Str(metadata={"description": "value"}),
+            metadata={"description": "List of values"},
         ),
         required=False,
         allow_none=True,
-        description="Filter by field name and value",
+        metadata={"description": "Filter by field name and value"},
     )
     paginate = fields.Nested(PaginateSchema(), required=False, allow_none=True)

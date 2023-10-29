@@ -6,6 +6,7 @@ from asynctest import mock
 
 from ...askar.profile import AskarProfile
 from ...config.injection_context import InjectionContext
+from ...ledger.base import BaseLedger
 
 from .. import profile as test_module
 
@@ -22,6 +23,41 @@ async def test_init_success(open_store):
     )
 
     assert askar_profile.opened == open_store
+
+
+@pytest.mark.asyncio
+async def test_init_multi_ledger(open_store):
+    context = InjectionContext(
+        settings={
+            "ledger.ledger_config_list": [
+                {
+                    "id": "BCovrinDev",
+                    "is_production": True,
+                    "is_write": True,
+                    "endorser_did": "9QPa6tHvBHttLg6U4xvviv",
+                    "endorser_alias": "endorser_dev",
+                    "genesis_transactions": mock.MagicMock(),
+                },
+                {
+                    "id": "SovrinStagingNet",
+                    "is_production": False,
+                    "genesis_transactions": mock.MagicMock(),
+                },
+            ]
+        }
+    )
+    askar_profile = AskarProfile(
+        open_store,
+        context=context,
+    )
+
+    assert askar_profile.opened == open_store
+    assert askar_profile.settings["endorser.endorser_alias"] == "endorser_dev"
+    assert (
+        askar_profile.settings["endorser.endorser_public_did"]
+        == "9QPa6tHvBHttLg6U4xvviv"
+    )
+    assert (askar_profile.inject_or(BaseLedger)).pool_name == "BCovrinDev"
 
 
 @pytest.mark.asyncio

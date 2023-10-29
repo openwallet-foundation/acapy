@@ -37,11 +37,8 @@ class KeylistQueryPaginateSchema(BaseModelSchema):
 
     limit = fields.Int(
         required=False,
-        description="Limit for keylist query",
-        example=30,
+        metadata={"description": "Limit for keylist query", "example": 30},
     )
     offset = fields.Int(
-        required=False,
-        description="Offset value for query",
-        example=0,
+        required=False, metadata={"description": "Offset value for query", "example": 0}
     )

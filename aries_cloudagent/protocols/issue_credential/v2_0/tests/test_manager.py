@@ -139,12 +139,13 @@ class TestV20CredManager(AsyncTestCase):
         ) as create_offer:
             create_offer.return_value = (async_mock.MagicMock(), async_mock.MagicMock())
             ret_cred_ex_rec, ret_cred_offer = await self.manager.prepare_send(
-                connection_id, cred_proposal
+                connection_id, cred_proposal, replacement_id="123"
             )
             create_offer.assert_called_once()
             assert ret_cred_ex_rec is create_offer.return_value[0]
             arg_cred_ex_rec = create_offer.call_args[1]["cred_ex_record"]
             assert arg_cred_ex_rec.auto_issue
+            assert create_offer.call_args[1]["replacement_id"] == "123"
             assert arg_cred_ex_rec.connection_id == connection_id
             assert arg_cred_ex_rec.role == V20CredExRecord.ROLE_ISSUER
             assert arg_cred_ex_rec.cred_proposal == cred_proposal
@@ -349,7 +350,7 @@ class TestV20CredManager(AsyncTestCase):
             (ret_cx_rec, ret_offer) = await self.manager.create_offer(
                 cred_ex_record=cx_rec,
                 counter_proposal=None,
-                replacement_id="0",
+                replacement_id="123",
                 comment=comment,
             )
             assert ret_cx_rec == cx_rec
@@ -361,6 +362,7 @@ class TestV20CredManager(AsyncTestCase):
 
             assert cx_rec.cred_ex_id == ret_cx_rec._id  # cover property
             assert cx_rec.thread_id == ret_offer._thread_id
+            assert cx_rec.cred_offer.replacement_id == ret_offer.replacement_id
             assert cx_rec.role == V20CredExRecord.ROLE_ISSUER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_SENT
             assert cx_rec.cred_offer.attachment(V20CredFormat.Format.INDY) == INDY_OFFER
@@ -368,7 +370,7 @@ class TestV20CredManager(AsyncTestCase):
             await self.manager.create_offer(
                 cred_ex_record=cx_rec,
                 counter_proposal=None,
-                replacement_id="0",
+                replacement_id="123",
                 comment=comment,
             )  # once more to cover case where offer is available in cache
 
@@ -425,6 +427,7 @@ class TestV20CredManager(AsyncTestCase):
                 cred_ex_record=cx_rec,
                 counter_proposal=None,
                 comment=comment,
+                replacement_id="123",
             )
             assert ret_cx_rec == cx_rec
             mock_save.assert_called_once()
@@ -434,6 +437,7 @@ class TestV20CredManager(AsyncTestCase):
             )
 
             assert cx_rec.thread_id == ret_offer._thread_id
+            assert cx_rec.cred_offer.replacement_id == ret_offer.replacement_id
             assert cx_rec.role == V20CredExRecord.ROLE_ISSUER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_SENT
             assert cx_rec.cred_offer.attachment(V20CredFormat.Format.INDY) == INDY_OFFER
@@ -497,6 +501,7 @@ class TestV20CredManager(AsyncTestCase):
                 )
             ],
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+            replacement_id="123",
         )
         cred_offer.assign_thread_id(thread_id)
 
@@ -528,6 +533,7 @@ class TestV20CredManager(AsyncTestCase):
 
             assert cx_rec.connection_id == connection_id
             assert cx_rec.thread_id == cred_offer._thread_id
+            assert cx_rec.cred_offer.replacement_id == cred_offer.replacement_id
             assert cx_rec.role == V20CredExRecord.ROLE_HOLDER
             assert cx_rec.state == V20CredExRecord.STATE_OFFER_RECEIVED
             assert cx_rec.cred_offer.attachment(V20CredFormat.Format.INDY) == INDY_OFFER

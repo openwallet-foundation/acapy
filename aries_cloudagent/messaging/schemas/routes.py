@@ -26,13 +26,18 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
 )
 
 from ..models.openapi import OpenAPISchema
-from ..valid import B58, INDY_SCHEMA_ID, INDY_VERSION
-
+from ..valid import (
+    B58,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
+    UUID4_EXAMPLE,
+)
 from .util import (
     SchemaQueryStringSchema,
     notify_schema_event,
 )
-
 
 from ..valid import UUIDFour
 
@@ -41,20 +46,17 @@ class SchemaSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
     schema_name = fields.Str(
-        required=True,
-        description="Schema name",
-        example="prefs",
+        required=True, metadata={"description": "Schema name", "example": "prefs"}
     )
     schema_version = fields.Str(
-        required=True, description="Schema version", **INDY_VERSION
+        required=True,
+        validate=INDY_VERSION_VALIDATE,
+        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
     )
     attributes = fields.List(
-        fields.Str(
-            description="attribute name",
-            example="score",
-        ),
+        fields.Str(metadata={"description": "attribute name", "example": "score"}),
         required=True,
-        description="List of schema attributes",
+        metadata={"description": "List of schema attributes"},
     )
 
 
@@ -62,11 +64,15 @@ class SchemaSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     schema_id = fields.Str(
-        description="Schema identifier", required=True, **INDY_SCHEMA_ID
+        required=True,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
     schema = fields.Nested(
-        SchemaSchema(),
-        description="Schema definition",
+        SchemaSchema(), metadata={"description": "Schema definition"}
     )
 
 
@@ -76,12 +82,12 @@ class TxnOrSchemaSendResultSchema(OpenAPISchema):
     sent = fields.Nested(
         SchemaSendResultSchema(),
         required=False,
-        description="Content sent",
+        metadata={"description": "Content sent"},
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Schema transaction to endorse",
+        metadata={"description": "Schema transaction to endorse"},
     )
 
 
@@ -95,7 +101,13 @@ class SchemasCreatedResultSchema(OpenAPISchema):
     """Result schema for a schemas-created request."""
 
     schema_ids = fields.List(
-        fields.Str(description="Schema identifiers", **INDY_SCHEMA_ID)
+        fields.Str(
+            validate=INDY_SCHEMA_ID_VALIDATE,
+            metadata={
+                "description": "Schema identifiers",
+                "example": INDY_SCHEMA_ID_EXAMPLE,
+            },
+        )
     )
 
 
@@ -103,10 +115,12 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""
 
     schema_id = fields.Str(
-        description="Schema identifier",
         required=True,
-        validate=Regexp(rf"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
-        example=INDY_SCHEMA_ID["example"],
+        validate=Regexp(f"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
 
 
@@ -114,8 +128,8 @@ class CreateSchemaTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -123,7 +137,8 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

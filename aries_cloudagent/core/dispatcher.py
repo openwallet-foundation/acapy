@@ -8,14 +8,14 @@ lifecycle hook callbacks storing state for message threads, etc.
 import asyncio
 import logging
 import os
+from typing import Callable, Coroutine, Optional, Tuple, Union
 import warnings
-
-from typing import Callable, Coroutine, Optional, Union, Tuple
 import weakref
 
 from aiohttp.web import HTTPException
 
 from ..config.logging import get_logger_inst
+from ..connections.base_manager import BaseConnectionManager
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
@@ -25,7 +25,6 @@ from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
 from ..messaging.responder import BaseResponder, SKIP_ACTIVE_CONN_CHECK_MSG_TYPES
 from ..messaging.util import datetime_now
-from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
@@ -33,16 +32,9 @@ from ..transport.outbound.status import OutboundSendStatus
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
 from ..utils.tracing import get_timer, trace_event
-
 from .error import ProtocolMinorVersionNotSupported
 from .protocol_registry import ProtocolRegistry
-from .util import (
-    get_version_from_message_type,
-    validate_get_response_version,
-    # WARNING_DEGRADED_FEATURES,
-    # WARNING_VERSION_MISMATCH,
-    # WARNING_VERSION_NOT_SUPPORTED,
-)
+from .util import get_version_from_message_type, validate_get_response_version
 
 
 class ProblemReportParseError(MessageParseError):
@@ -242,7 +234,7 @@ class Dispatcher:
                     session, inbound_message.connection_id
                 )
         else:
-            connection_mgr = ConnectionManager(profile)
+            connection_mgr = BaseConnectionManager(profile)
             connection = await connection_mgr.find_inbound_connection(
                 inbound_message.receipt
             )

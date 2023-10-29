@@ -9,7 +9,6 @@ from ...config.provider import BaseProvider
 from ...config.settings import BaseSettings
 from ...config.injector import BaseInjector, InjectionError
 from ...core.profile import Profile
-from ...ledger.base import BaseLedger
 from ...utils.classloader import ClassNotFoundError, DeferLoad
 
 from .base_manager import MultipleLedgerManagerError
@@ -73,7 +72,8 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                     indy_sdk_production_ledgers = OrderedDict()
                     indy_sdk_non_production_ledgers = OrderedDict()
                     ledger_config_list = settings.get_value("ledger.ledger_config_list")
-                    write_ledger_info = None
+                    ledger_endorser_map = {}
+                    write_ledgers = set()
                     for config in ledger_config_list:
                         keepalive = config.get("keepalive")
                         read_only = config.get("read_only")
@@ -84,57 +84,8 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                         pool_name = config.get("pool_name")
                         ledger_is_production = config.get("is_production")
                         ledger_is_write = config.get("is_write")
-                        if ledger_is_write:
-                            write_ledger_info = (ledger_id, None)
-                        else:
-                            ledger_pool = pool_class(
-                                pool_name,
-                                keepalive=keepalive,
-                                cache=cache,
-                                genesis_transactions=genesis_transactions,
-                                read_only=read_only,
-                                socks_proxy=socks_proxy,
-                            )
-                            ledger_instance = ledger_class(
-                                pool=ledger_pool,
-                                profile=self.root_profile,
-                            )
-                            if ledger_is_production:
-                                indy_sdk_production_ledgers[ledger_id] = ledger_instance
-                            else:
-                                indy_sdk_non_production_ledgers[
-                                    ledger_id
-                                ] = ledger_instance
-                    if settings.get_value("ledger.genesis_transactions"):
-                        ledger_instance = self.root_profile.inject_or(BaseLedger)
-                        ledger_id = "startup::" + ledger_instance.pool.name
-                        indy_sdk_production_ledgers[ledger_id] = ledger_instance
-                        if not write_ledger_info:
-                            write_ledger_info = (ledger_id, ledger_instance)
-                            indy_sdk_production_ledgers.move_to_end(
-                                ledger_id, last=False
-                            )
-                    self._inst[manager_type] = manager_class(
-                        self.root_profile,
-                        production_ledgers=indy_sdk_production_ledgers,
-                        non_production_ledgers=indy_sdk_non_production_ledgers,
-                        write_ledger_info=write_ledger_info,
-                    )
-                else:
-                    indy_vdr_production_ledgers = OrderedDict()
-                    indy_vdr_non_production_ledgers = OrderedDict()
-                    ledger_config_list = settings.get_value("ledger.ledger_config_list")
-                    write_ledger_info = None
-                    for config in ledger_config_list:
-                        keepalive = config.get("keepalive")
-                        read_only = config.get("read_only")
-                        socks_proxy = config.get("socks_proxy")
-                        genesis_transactions = config.get("genesis_transactions")
-                        cache = injector.inject_or(BaseCache)
-                        ledger_id = config.get("id")
-                        pool_name = config.get("pool_name")
-                        ledger_is_production = config.get("is_production")
-                        ledger_is_write = config.get("is_write")
+                        ledger_endorser_alias = config.get("endorser_alias")
+                        ledger_endorser_did = config.get("endorser_did")
                         ledger_pool = pool_class(
                             pool_name,
                             keepalive=keepalive,
@@ -148,25 +99,70 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             profile=self.root_profile,
                         )
                         if ledger_is_write:
-                            write_ledger_info = (ledger_id, ledger_instance)
+                            write_ledgers.add(ledger_id)
+                        if ledger_is_production:
+                            indy_sdk_production_ledgers[ledger_id] = ledger_instance
+                        else:
+                            indy_sdk_non_production_ledgers[ledger_id] = ledger_instance
+                        if ledger_endorser_alias and ledger_endorser_did:
+                            ledger_endorser_map[ledger_id] = {
+                                "endorser_alias": ledger_endorser_alias,
+                                "endorser_did": ledger_endorser_did,
+                            }
+                    self._inst[manager_type] = manager_class(
+                        self.root_profile,
+                        production_ledgers=indy_sdk_production_ledgers,
+                        non_production_ledgers=indy_sdk_non_production_ledgers,
+                        writable_ledgers=write_ledgers,
+                        endorser_map=ledger_endorser_map,
+                    )
+                else:
+                    indy_vdr_production_ledgers = OrderedDict()
+                    indy_vdr_non_production_ledgers = OrderedDict()
+                    ledger_config_list = settings.get_value("ledger.ledger_config_list")
+                    ledger_endorser_map = {}
+                    write_ledgers = set()
+                    for config in ledger_config_list:
+                        keepalive = config.get("keepalive")
+                        read_only = config.get("read_only")
+                        socks_proxy = config.get("socks_proxy")
+                        genesis_transactions = config.get("genesis_transactions")
+                        cache = injector.inject_or(BaseCache)
+                        ledger_id = config.get("id")
+                        pool_name = config.get("pool_name")
+                        ledger_is_production = config.get("is_production")
+                        ledger_is_write = config.get("is_write")
+                        ledger_endorser_alias = config.get("endorser_alias")
+                        ledger_endorser_did = config.get("endorser_did")
+                        ledger_pool = pool_class(
+                            pool_name,
+                            keepalive=keepalive,
+                            cache=cache,
+                            genesis_transactions=genesis_transactions,
+                            read_only=read_only,
+                            socks_proxy=socks_proxy,
+                        )
+                        ledger_instance = ledger_class(
+                            pool=ledger_pool,
+                            profile=self.root_profile,
+                        )
+                        if ledger_is_write:
+                            write_ledgers.add(ledger_id)
                         if ledger_is_production:
                             indy_vdr_production_ledgers[ledger_id] = ledger_instance
                         else:
                             indy_vdr_non_production_ledgers[ledger_id] = ledger_instance
-                    if settings.get_value("ledger.genesis_transactions"):
-                        ledger_instance = self.root_profile.inject_or(BaseLedger)
-                        ledger_id = "startup::" + ledger_instance.pool.name
-                        indy_vdr_production_ledgers[ledger_id] = ledger_instance
-                        if not write_ledger_info:
-                            write_ledger_info = (ledger_id, ledger_instance)
-                            indy_vdr_production_ledgers.move_to_end(
-                                ledger_id, last=False
-                            )
+                        if ledger_endorser_alias and ledger_endorser_did:
+                            ledger_endorser_map[ledger_id] = {
+                                "endorser_alias": ledger_endorser_alias,
+                                "endorser_did": ledger_endorser_did,
+                            }
                     self._inst[manager_type] = manager_class(
                         self.root_profile,
                         production_ledgers=indy_vdr_production_ledgers,
                         non_production_ledgers=indy_vdr_non_production_ledgers,
-                        write_ledger_info=write_ledger_info,
+                        writable_ledgers=write_ledgers,
+                        endorser_map=ledger_endorser_map,
                     )
             except ClassNotFoundError as err:
                 raise InjectionError(

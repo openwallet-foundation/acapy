@@ -4,7 +4,6 @@ from marshmallow import EXCLUDE, fields
 
 from .....indy.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import PRESENTATION_PROPOSAL, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
@@ -53,6 +52,8 @@ class PresentationProposalSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     presentation_proposal = fields.Nested(IndyPresPreviewSchema, required=True)

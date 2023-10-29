@@ -137,6 +137,15 @@ class BaseModel(ABC):
     def deserialize(
         cls: Type[ModelType],
         obj,
+    ) -> ModelType:
+        """Convert from JSON representation to a model instance."""
+        ...
+
+    @overload
+    @classmethod
+    def deserialize(
+        cls: Type[ModelType],
+        obj,
         *,
         unknown: Optional[str] = None,
     ) -> ModelType:

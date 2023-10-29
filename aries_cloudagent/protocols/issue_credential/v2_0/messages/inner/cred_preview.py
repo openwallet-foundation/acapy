@@ -6,9 +6,7 @@ from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......wallet.util import b64_to_str
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import CRED_20_PREVIEW
 
 
@@ -78,19 +76,24 @@ class V20CredAttrSpecSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     name = fields.Str(
-        description="Attribute name", required=True, example="favourite_drink"
+        required=True,
+        metadata={"description": "Attribute name", "example": "favourite_drink"},
     )
     mime_type = fields.Str(
-        description="MIME type: omit for (null) default",
         required=False,
         data_key="mime-type",
-        example="image/jpeg",
         allow_none=True,
+        metadata={
+            "description": "MIME type: omit for (null) default",
+            "example": "image/jpeg",
+        },
     )
     value = fields.Str(
-        description="Attribute value: base64-encode if MIME type is present",
         required=True,
-        example="martini",
+        metadata={
+            "description": "Attribute value: base64-encode if MIME type is present",
+            "example": "martini",
+        },
     )
 
 
@@ -146,9 +149,9 @@ class V20CredPreview(BaseModel):
         """
 
         return {
-            attr.name: b64_to_str(attr.value)
-            if attr.mime_type and decode
-            else attr.value
+            attr.name: (
+                b64_to_str(attr.value) if attr.mime_type and decode else attr.value
+            )
             for attr in self.attributes
         }
 
@@ -172,10 +175,9 @@ class V20CredPreviewSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     _type = fields.Str(
-        description="Message type identifier",
         required=False,
-        example=CRED_20_PREVIEW,
         data_key="@type",
+        metadata={"description": "Message type identifier", "example": CRED_20_PREVIEW},
     )
     attributes = fields.Nested(
         V20CredAttrSpecSchema, many=True, required=True, data_key="attributes"

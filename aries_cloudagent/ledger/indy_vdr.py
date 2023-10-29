@@ -18,6 +18,7 @@ from indy_vdr import ledger, open_pool, Pool, Request, VdrError
 
 from ..cache.base import BaseCache
 from ..core.profile import Profile
+from ..messaging.valid import IndyDID
 from ..storage.base import BaseStorage, StorageRecord
 from ..utils import sentinel
 from ..utils.env import storage_path
@@ -605,6 +606,11 @@ class IndyVdrLedger(BaseLedger):
         nym = self.did_to_nym(did)
         public_info = await self.get_wallet_public_did()
         public_did = public_info.did if public_info else None
+
+        # current public_did may be non-indy -> create nym request with empty public did
+        if public_did is not None and not bool(IndyDID.PATTERN.match(public_did)):
+            public_did = None
+
         try:
             nym_req = ledger.build_get_nym_request(public_did, nym)
         except VdrError as err:

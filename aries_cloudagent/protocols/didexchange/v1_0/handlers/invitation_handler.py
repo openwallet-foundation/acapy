@@ -7,9 +7,8 @@ from .....messaging.base_handler import (
 )
 
 from ....out_of_band.v1_0.messages.invitation import InvitationMessage
-from ....problem_report.v1_0.message import ProblemReport
 
-from ..messages.problem_report_reason import ProblemReportReason
+from ..messages.problem_report import DIDXProblemReport, ProblemReportReason
 
 
 class InvitationHandler(BaseHandler):
@@ -27,7 +26,7 @@ class InvitationHandler(BaseHandler):
         self._logger.debug(f"InvitationHandler called with context {context}")
         assert isinstance(context.message, InvitationMessage)
 
-        report = ProblemReport(
+        report = DIDXProblemReport(
             description={
                 "code": ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
                 "en": (

@@ -17,6 +17,12 @@ async def setup(context: InjectionContext):
         LOGGER.warning("No DID Resolver instance found in context")
         return
 
+    legacy_resolver = ClassProvider(
+        "aries_cloudagent.resolver.default.legacy_peer.LegacyPeerDIDResolver"
+    ).provide(context.settings, context.injector)
+    await legacy_resolver.setup(context)
+    registry.register_resolver(legacy_resolver)
+
     key_resolver = ClassProvider(
         "aries_cloudagent.resolver.default.key.KeyDIDResolver"
     ).provide(context.settings, context.injector)

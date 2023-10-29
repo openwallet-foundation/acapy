@@ -133,18 +133,24 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
 
     record_id = fields.Str(
         required=False,
-        description="Issuer credential revocation record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Issuer credential revocation record identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Issue credential revocation record state",
-        example=IssuerCredRevRecord.STATE_ISSUED,
+        metadata={
+            "description": "Issue credential revocation record state",
+            "example": IssuerCredRevRecord.STATE_ISSUED,
+        },
     )
     cred_ex_id = fields.Str(
         required=False,
-        description="Credential exchange record identifier at credential issue",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential exchange record identifier at credential issue",
+            "example": UUID4_EXAMPLE,
+        },
     )
     rev_reg_id = fields.Str(
         required=False,
@@ -159,6 +165,5 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
         description="Credential revocation identifier",
     )
     cred_ex_version = fields.Str(
-        required=False,
-        description="Credential exchange version",
+        required=False, metadata={"description": "Credential exchange version"}
     )

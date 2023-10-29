@@ -6,10 +6,14 @@ from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_REV_REG_ID,
-    INDY_SCHEMA_ID,
-    NUM_STR_ANY,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    NUM_STR_ANY_EXAMPLE,
+    NUM_STR_ANY_VALIDATE,
 )
 
 
@@ -37,14 +41,14 @@ class IndyAttrValueSchema(BaseModelSchema):
         model_class = IndyAttrValue
         unknown = EXCLUDE
 
-    raw = fields.Str(
-        required=True,
-        description="Attribute raw value",
-    )
+    raw = fields.Str(required=True, metadata={"description": "Attribute raw value"})
     encoded = fields.Str(
         required=True,
-        description="Attribute encoded value",
-        **NUM_STR_ANY,
+        validate=NUM_STR_ANY_VALIDATE,
+        metadata={
+            "description": "Attribute encoded value",
+            "example": NUM_STR_ANY_EXAMPLE,
+        },
     )
 
 
@@ -89,41 +93,46 @@ class IndyCredentialSchema(BaseModelSchema):
 
     schema_id = fields.Str(
         required=True,
-        description="Schema identifier",
-        **INDY_SCHEMA_ID,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
     cred_def_id = fields.Str(
         required=True,
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     rev_reg_id = fields.Str(
         allow_none=True,
-        description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
     values = fields.Dict(
-        keys=fields.Str(description="Attribute name"),
+        keys=fields.Str(metadata={"description": "Attribute name"}),
         values=fields.Nested(
-            IndyAttrValueSchema(),
-            description="Attribute value",
+            IndyAttrValueSchema(), metadata={"description": "Attribute value"}
         ),
         required=True,
-        description="Credential attributes",
+        metadata={"description": "Credential attributes"},
     )
     signature = fields.Dict(
-        required=True,
-        description="Credential signature",
+        required=True, metadata={"description": "Credential signature"}
     )
     signature_correctness_proof = fields.Dict(
         required=True,
-        description="Credential signature correctness proof",
+        metadata={"description": "Credential signature correctness proof"},
     )
     rev_reg = fields.Dict(
-        allow_none=True,
-        description="Revocation registry state",
+        allow_none=True, metadata={"description": "Revocation registry state"}
     )
     witness = fields.Dict(
-        allow_none=True,
-        description="Witness for revocation proof",
+        allow_none=True, metadata={"description": "Witness for revocation proof"}
     )

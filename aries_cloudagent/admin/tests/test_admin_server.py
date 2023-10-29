@@ -2,8 +2,7 @@ import json
 
 import pytest
 import mock as async_mock
-from async_case import IsolatedAsyncioTestCase
-
+from unittest import IsolatedAsyncioTestCase
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
 
@@ -334,7 +333,6 @@ class TestAdminServer(IsolatedAsyncioTestCase):
 
         await server.stop()
 
-    @pytest.mark.skip(reason="async_case library not compatible with python 3.10")
     async def test_visit_secure_mode(self):
         settings = {
             "admin.admin_insecure_mode": False,
@@ -387,7 +385,6 @@ class TestAdminServer(IsolatedAsyncioTestCase):
 
         await server.stop()
 
-    @pytest.mark.skip(reason="async_case library not compatible with python 3.10")
     async def test_query_config(self):
         settings = {
             "admin.admin_insecure_mode": False,

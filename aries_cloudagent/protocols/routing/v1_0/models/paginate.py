@@ -36,5 +36,5 @@ class PaginateSchema(BaseModelSchema):
         model_class = Paginate
         unknown = EXCLUDE
 
-    limit = fields.Int(required=False, strict=True)
-    offset = fields.Int(required=False, strict=True)
+    limit = fields.Int(required=False, metadata={"strict": True})
+    offset = fields.Int(required=False, metadata={"strict": True})

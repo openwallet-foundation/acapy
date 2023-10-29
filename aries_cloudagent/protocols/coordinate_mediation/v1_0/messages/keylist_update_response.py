@@ -6,7 +6,6 @@ from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import KEYLIST_UPDATE_RESPONSE, PROTOCOL_PACKAGE
-
 from .inner.keylist_updated import KeylistUpdated, KeylistUpdatedSchema
 
 HANDLER_CLASS = (
@@ -51,5 +50,5 @@ class KeylistUpdateResponseSchema(AgentMessageSchema):
 
     updated = fields.List(
         fields.Nested(KeylistUpdatedSchema()),
-        description="List of update results for each update",
+        metadata={"description": "List of update results for each update"},
     )

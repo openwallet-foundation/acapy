@@ -126,8 +126,8 @@ AGENT_PORT=8020
 AGENT_PORT_RANGE=8020-8079
 
 echo "Preparing agent image..."
-docker build -q -t indy-base -f ../docker/Dockerfile.indy --target=indy-base .. || exit 1
-docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
+docker build -q -t acapy-base -f ../docker/Dockerfile .. || exit 1
+docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo --build-arg from_image=acapy-base .. || exit 1
 docker build -q -t aries-bdd-image -f ../docker/Dockerfile.bdd .. || exit 1
 
 if [ ! -z "$DOCKERHOST" ]; then
@@ -236,6 +236,6 @@ DOCKER=${DOCKER:-docker}
 $DOCKER run --name $AGENT --rm ${DOCKER_OPTS} \
   --network=${DOCKER_NET} \
   -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
-  -v "/$(pwd)/../logs:/home/indy/logs" \
+  -v "/$(pwd)/../logs:/home/aries/logs" \
   $DOCKER_ENV \
   aries-bdd-image $ARGS

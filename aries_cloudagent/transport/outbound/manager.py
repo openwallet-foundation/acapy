@@ -5,7 +5,7 @@ import json
 import logging
 import time
 
-from typing import Callable, Type, Union
+from typing import Callable, Type
 from urllib.parse import urlparse
 
 from ...connections.models.connection_target import ConnectionTarget
@@ -22,44 +22,12 @@ from .base import (
     BaseOutboundTransport,
     OutboundDeliveryError,
     OutboundTransportRegistrationError,
+    QueuedOutboundMessage,
 )
 from .message import OutboundMessage
 
 LOGGER = logging.getLogger(__name__)
 MODULE_BASE_PATH = "aries_cloudagent.transport.outbound"
-
-
-class QueuedOutboundMessage:
-    """Class representing an outbound message pending delivery."""
-
-    STATE_NEW = "new"
-    STATE_PENDING = "pending"
-    STATE_ENCODE = "encode"
-    STATE_DELIVER = "deliver"
-    STATE_RETRY = "retry"
-    STATE_DONE = "done"
-
-    def __init__(
-        self,
-        profile: Profile,
-        message: OutboundMessage,
-        target: ConnectionTarget,
-        transport_id: str,
-    ):
-        """Initialize the queued outbound message."""
-        self.profile = profile
-        self.endpoint = target and target.endpoint
-        self.error: Exception = None
-        self.message = message
-        self.payload: Union[str, bytes] = None
-        self.retries = None
-        self.retry_at: float = None
-        self.state = self.STATE_NEW
-        self.target = target
-        self.task: asyncio.Task = None
-        self.transport_id: str = transport_id
-        self.metadata: dict = None
-        self.api_key: str = None
 
 
 class OutboundTransportManager:
@@ -280,7 +248,7 @@ class OutboundTransportManager:
                 profile, outbound, target
             )
             await transport.handle_message(
-                profile, encoded_outbound_message.payload, target.endpoint
+                profile, encoded_outbound_message, target.endpoint
             )
         else:
             queued = QueuedOutboundMessage(profile, outbound, target, transport_id)

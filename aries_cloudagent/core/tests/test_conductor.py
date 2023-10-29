@@ -1,7 +1,7 @@
 from io import StringIO
 
 import mock as async_mock
-from async_case import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...admin.base_server import BaseAdminServer
 from ...config.base_context import ContextBuilder

@@ -3,6 +3,8 @@
 import json
 import logging
 
+from typing import Tuple
+
 import indy.anoncreds
 from indy.error import IndyError
 
@@ -34,7 +36,7 @@ class IndySdkVerifier(IndyVerifier):
         credential_definitions,
         rev_reg_defs,
         rev_reg_entries,
-    ) -> (bool, list):
+    ) -> Tuple[bool, list]:
         """
         Verify a presentation.
 

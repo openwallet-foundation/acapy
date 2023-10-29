@@ -1,16 +1,15 @@
 """A presentation proposal content message."""
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 from typing import Sequence
+
+from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import PRES_20_PROPOSAL, PROTOCOL_PACKAGE
-
 from .pres_format import V20PresFormat, V20PresFormatSchema
 
 HANDLER_CLASS = (
@@ -85,19 +84,25 @@ class V20PresProposalSchema(AgentMessageSchema):
         model_class = V20PresProposal
         unknown = EXCLUDE
 
-    comment = fields.Str(description="Human-readable comment", required=False)
+    comment = fields.Str(
+        required=False, metadata={"description": "Human-readable comment"}
+    )
     formats = fields.Nested(
         V20PresFormatSchema,
         many=True,
         required=True,
-        descrption="Acceptable attachment formats",
+        metadata={"descrption": "Acceptable attachment formats"},
     )
     proposals_attach = fields.Nested(
         AttachDecoratorSchema,
         many=True,
         required=True,
         data_key="proposals~attach",
-        description="Attachment per acceptable format on corresponding identifier",
+        metadata={
+            "description": (
+                "Attachment per acceptable format on corresponding identifier"
+            )
+        },
     )
 
     @validates_schema

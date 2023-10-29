@@ -1,14 +1,48 @@
 """Base outbound transport."""
 
-import asyncio
 from abc import ABC, abstractmethod
+import asyncio
 from typing import Union
 
+from ...connections.models.connection_target import ConnectionTarget
 from ...core.profile import Profile
 from ...utils.stats import Collector
-
 from ..error import TransportError
 from ..wire_format import BaseWireFormat
+from .message import OutboundMessage
+
+
+class QueuedOutboundMessage:
+    """Class representing an outbound message pending delivery."""
+
+    STATE_NEW = "new"
+    STATE_PENDING = "pending"
+    STATE_ENCODE = "encode"
+    STATE_DELIVER = "deliver"
+    STATE_RETRY = "retry"
+    STATE_DONE = "done"
+
+    def __init__(
+        self,
+        profile: Profile,
+        message: OutboundMessage,
+        target: ConnectionTarget,
+        transport_id: str,
+    ):
+        """Initialize the queued outbound message."""
+        self.profile = profile
+        self.endpoint = target and target.endpoint
+        self.error: Exception = None
+        self.message = message
+        self.payload: Union[str, bytes] = None
+        self.retries = None
+        self.retry_at: float = None
+        self.state = self.STATE_NEW
+        self.target = target
+        self.task: asyncio.Task = None
+        self.transport_id: str = transport_id
+        self.metadata: dict = None
+        self.api_key: str = None
 
 
 class BaseOutboundTransport(ABC):
@@ -66,7 +100,7 @@ class BaseOutboundTransport(ABC):
     async def handle_message(
         self,
         profile: Profile,
-        payload: Union[str, bytes],
+        outbound_message: QueuedOutboundMessage,
         endpoint: str,
         metadata: dict = None,
     ):

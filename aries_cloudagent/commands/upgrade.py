@@ -6,6 +6,7 @@ import os
 import yaml
 
 from configargparse import ArgumentParser
+from enum import Enum
 from packaging import version as package_version
 from typing import (
     Callable,
@@ -15,6 +16,7 @@ from typing import (
     Union,
     Mapping,
     Any,
+    Tuple,
 )
 
 from ..core.profile import Profile
@@ -34,6 +36,21 @@ from . import PROG
 
 DEFAULT_UPGRADE_CONFIG_FILE_NAME = "default_version_upgrade_config.yml"
 LOGGER = logging.getLogger(__name__)
+
+
+class ExplicitUpgradeOption(Enum):
+    """Supported explicit upgrade codes."""
+
+    ERROR_AND_STOP = "critical"
+    LOG_AND_PROCEED = "warning"
+
+    @classmethod
+    def get(cls, code: str) -> "ExplicitUpgradeOption":
+        """Get ExplicitUpgradeOption for code."""
+        for option in ExplicitUpgradeOption:
+            if code == option.value:
+                return option
+        return None
 
 
 class UpgradeError(BaseError):
@@ -82,6 +99,14 @@ class VersionUpgradeConfig:
                     config_key_set.remove("resave_records")
                 except KeyError:
                     pass
+                if "explicit_upgrade" in provided_config:
+                    version_config_dict[version][
+                        "explicit_upgrade"
+                    ] = provided_config.get("explicit_upgrade")
+                try:
+                    config_key_set.remove("explicit_upgrade")
+                except KeyError:
+                    pass
                 for executable in config_key_set:
                     version_config_dict[version][executable] = (
                         provided_config.get(executable) or False
@@ -101,6 +126,28 @@ class VersionUpgradeConfig:
 def init_argument_parser(parser: ArgumentParser):
     """Initialize an argument parser with the module's arguments."""
     return arg.load_argument_groups(parser, *arg.group.get_registered(arg.CAT_UPGRADE))
+
+
+def explicit_upgrade_required_check(
+    to_apply_version_list: List,
+    upgrade_config: dict,
+) -> Tuple[bool, List, Optional[str]]:
+    """Check if explicit upgrade is required."""
+    to_skip_versions = []
+    for version in to_apply_version_list:
+        if "explicit_upgrade" in upgrade_config.get(version):
+            exp_upg_flag = upgrade_config.get(version).get("explicit_upgrade")
+            if (
+                ExplicitUpgradeOption.get(exp_upg_flag)
+                is ExplicitUpgradeOption.ERROR_AND_STOP
+            ):
+                return True, [], version
+            elif (
+                ExplicitUpgradeOption.get(exp_upg_flag)
+                is ExplicitUpgradeOption.LOG_AND_PROCEED
+            ):
+                to_skip_versions.append(version)
+    return False, to_skip_versions, None
 
 
 def get_upgrade_version_list(
@@ -222,6 +269,31 @@ async def upgrade(
             sorted_version_list=sorted_versions_found_in_config,
             from_version=upgrade_from_version,
         )
+        # Perform explicit upgrade check if the function was called during startup
+        if profile:
+            (
+                explicit_flag,
+                to_skip_explicit_versions,
+                explicit_upg_ver,
+            ) = explicit_upgrade_required_check(
+                to_apply_version_list=upgrade_version_in_config,
+                upgrade_config=upgrade_configs,
+            )
+            if explicit_flag:
+                raise UpgradeError(
+                    "Explicit upgrade flag with critical value found "
+                    f"for {explicit_upg_ver} config. Please use ACA-Py "
+                    "upgrade command to complete the process and proceed."
+                )
+            if len(to_skip_explicit_versions) >= 1:
+                LOGGER.warning(
+                    "Explicit upgrade flag with warning value found "
+                    f"for {str(to_skip_explicit_versions)} versions. "
+                    "Proceeding with ACA-Py startup. You can apply "
+                    "the explicit upgrades using the ACA-Py upgrade "
+                    "command later."
+                )
+                return
         to_update_flag = False
         if upgrade_from_version == upgrade_to_version:
             LOGGER.info(

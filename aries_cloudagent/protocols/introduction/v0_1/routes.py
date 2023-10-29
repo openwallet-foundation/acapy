@@ -10,9 +10,8 @@ from marshmallow import fields
 
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError
-
 from .base_service import BaseIntroductionService, IntroductionError
 
 LOGGER = logging.getLogger(__name__)
@@ -26,12 +25,15 @@ class IntroStartQueryStringSchema(OpenAPISchema):
     """Query string parameters for request to start introduction."""
 
     target_connection_id = fields.Str(
-        description="Target connection identifier",
         required=True,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Target connection identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     message = fields.Str(
-        description="Message", required=False, example="Allow me to introduce ..."
+        required=False,
+        metadata={"description": "Message", "example": "Allow me to introduce ..."},
     )
 
 
@@ -39,7 +41,8 @@ class IntroConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 

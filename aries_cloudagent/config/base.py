@@ -97,6 +97,10 @@ class BaseSettings(Mapping[str, Any]):
     def extend(self, other: Mapping[str, Any]) -> "BaseSettings":
         """Merge another mapping to produce a new settings instance."""
 
+    @abstractmethod
+    def to_dict(self) -> dict:
+        """Return a dict of the settings instance."""
+
     def __repr__(self) -> str:
         """Provide a human readable representation of this object."""
         items = ("{}={}".format(k, self[k]) for k in self)

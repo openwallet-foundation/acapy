@@ -262,6 +262,51 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.didx_accept_request(self.request)
 
+    async def test_didx_reject(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.json = async_mock.CoroutineMock(return_value={"reason": "asdf"})
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_didx_mgr.return_value.reject = async_mock.CoroutineMock()
+
+            await test_module.didx_reject(self.request)
+
+    async def test_didx_reject_x_not_found(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.json = async_mock.CoroutineMock(return_value={"reason": "asdf"})
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id:
+            mock_conn_rec_retrieve_by_id.side_effect = StorageNotFoundError()
+
+            with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.didx_reject(self.request)
+
+    async def test_didx_reject_x_bad_conn_state(self):
+        self.request.match_info = {"conn_id": "dummy"}
+        self.request.json = async_mock.CoroutineMock(return_value={"reason": "asdf"})
+
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            test_module, "DIDXManager", autospec=True
+        ) as mock_didx_mgr, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_didx_mgr.return_value.reject = async_mock.CoroutineMock(
+                side_effect=test_module.DIDXManagerError()
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.didx_reject(self.request)
+
     async def test_register(self):
         mock_app = async_mock.MagicMock()
         mock_app.add_routes = async_mock.MagicMock()
