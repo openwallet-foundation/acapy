@@ -1,0 +1,2 @@
+protocols: ["test_protocol_1", "test_protocol_2"]
+goal-codes: ["test_goal_code_1", "test_goal_code_2"]

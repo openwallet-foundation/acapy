@@ -1,0 +1,4 @@
+# see: https://pypi.org/project/ConfigArgParse/
+plugin: foo    # ... also a comment
+storage-type: bar
+endpoint: test_endpoint

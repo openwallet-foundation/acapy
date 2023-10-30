@@ -1,0 +1,9 @@
+v0.6.0:
+  update_existing_records: false
+v0.7.2:
+  resave_records:
+    base_record_path:
+      - "aries_cloudagent.connections.models.conn_record.ConnRecord"
+    base_exch_record_path:
+      - "aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange.V10CredentialExchange"
+  update_existing_records: false
