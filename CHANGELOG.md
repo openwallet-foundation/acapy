@@ -109,7 +109,7 @@ parameters to `true` even if the parameters were not set. See [PR \#2517]
   - Swap out flake8 in favor of Ruff [\#2438](https://github.com/hyperledger/aries-cloudagent-python/pull/2438) [dbluhm](https://github.com/dbluhm)
   - #2289 Migrate to Poetry [\#2436](https://github.com/hyperledger/aries-cloudagent-python/pull/2436) [Gavinok](https://github.com/Gavinok)
 - Release management pull requests
-  - 0.11.0-rc0 [\#2574](https://github.com/hyperledger/aries-cloudagent-python/pull/2574) [swcurran](https://github.com/swcurran)
+  - 0.11.0-rc0 [\#2575](https://github.com/hyperledger/aries-cloudagent-python/pull/2575) [swcurran](https://github.com/swcurran)
 
 ## 0.10.1
 
