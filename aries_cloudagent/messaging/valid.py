@@ -785,6 +785,7 @@ WHOLE_NUM_EXAMPLE = WholeNumber.EXAMPLE
 
 NUM_STR_WHOLE_VALIDATE = NumericStrWhole()
 NUM_STR_WHOLE_EXAMPLE = NumericStrWhole.EXAMPLE
+NUM_STR_WHOLE = {"validate": NumericStrWhole(), "example": NumericStrWhole.EXAMPLE}
 
 NUM_STR_ANY_VALIDATE = NumericStrAny()
 NUM_STR_ANY_EXAMPLE = NumericStrAny.EXAMPLE
