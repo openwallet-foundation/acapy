@@ -2,9 +2,8 @@ import os
 import pytest
 import shutil
 
-from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
-from aiohttp.web import HTTPBadRequest, HTTPNotFound
+from aiohttp.web import HTTPNotFound
 from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
 

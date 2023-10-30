@@ -6,7 +6,6 @@ from time import time
 
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
-from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .....core.in_memory import InMemoryProfile

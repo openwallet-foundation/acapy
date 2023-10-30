@@ -592,8 +592,7 @@ async def publish_revocations(request: web.BaseRequest):
 @querystring_schema(RevRegsCreatedQueryStringSchema())
 @response_schema(RevRegsCreatedSchema(), 200, description="")
 async def rev_regs_created(request: web.BaseRequest):
-    """
-    Request handler to get revocation registries that current agent created.
+    """Request handler to get revocation registries that current agent created.
 
     Args:
         request: aiohttp request object
@@ -604,9 +603,7 @@ async def rev_regs_created(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile: AskarProfile = context.profile
-    search_tags = [
-        tag for tag in vars(RevRegsCreatedQueryStringSchema)["_declared_fields"]
-    ]
+    search_tags = list(vars(RevRegsCreatedQueryStringSchema)["_declared_fields"])
     tag_filter = {
         tag: request.query[tag] for tag in search_tags if tag in request.query
     }
@@ -631,8 +628,7 @@ async def rev_regs_created(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def get_rev_reg(request: web.BaseRequest):
-    """
-    Request handler to get a revocation registry by rev reg id.
+    """Request handler to get a revocation registry by rev reg id.
 
     Args:
         request: aiohttp request object

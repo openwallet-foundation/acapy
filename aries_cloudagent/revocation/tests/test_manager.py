@@ -1,7 +1,6 @@
 import json
 
 from asynctest import mock as async_mock
-from asynctest import TestCase as AsyncTestCase
 import pytest
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase

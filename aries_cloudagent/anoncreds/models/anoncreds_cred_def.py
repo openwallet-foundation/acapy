@@ -19,8 +19,7 @@ class CredDefValuePrimary(BaseModel):
         schema_class = "CredDefValuePrimarySchema"
 
     def __init__(self, n: str, s: str, r: dict, rctxt: str, z: str, **kwargs):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             n: n
@@ -78,8 +77,7 @@ class CredDefValueRevocation(BaseModel):
         pk: str,
         y: str,
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             g: g
@@ -146,8 +144,7 @@ class CredDefValue(BaseModel):
         revocation: Optional[CredDefValueRevocation] = None,
         **kwargs,
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             primary: Cred Def value primary
@@ -198,8 +195,7 @@ class CredDef(BaseModel):
         value: CredDefValue,
         **kwargs,
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             issuer_id: Issuer ID
@@ -269,8 +265,7 @@ class CredDefState(BaseModel):
         credential_definition_id: Optional[str],
         credential_definition: CredDef,
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             state: State
@@ -328,8 +323,7 @@ class CredDefResult(BaseModel):
         credential_definition_metadata: dict,
         **kwargs,
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             job_id: Job ID
@@ -379,8 +373,7 @@ class GetCredDefResult(BaseModel):
         credential_definition_metadata: dict,
         **kwargs,
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             credential_definition_id: Cred Def ID

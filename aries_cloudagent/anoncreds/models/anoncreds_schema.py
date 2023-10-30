@@ -21,8 +21,7 @@ class AnonCredsSchema(BaseModel):
     def __init__(
         self, issuer_id: str, attr_names: List[str], name: str, version: str, **kwargs
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             issuer_id: Issuer ID
@@ -92,8 +91,7 @@ class GetSchemaResult(BaseModel):
         schema_metadata: Dict[str, Any],
         **kwargs
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             schema: AnonCreds Schema
@@ -201,8 +199,7 @@ class SchemaResult(BaseModel):
         schema_metadata: Optional[dict] = None,
         **kwargs
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             job_id: Job ID

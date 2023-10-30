@@ -7,9 +7,8 @@ import re
 from abc import ABC, abstractmethod, ABCMeta
 from enum import Enum
 from hashlib import sha256
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import List, Sequence, Tuple, Union
 
-from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..messaging.valid import IndyDID
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo

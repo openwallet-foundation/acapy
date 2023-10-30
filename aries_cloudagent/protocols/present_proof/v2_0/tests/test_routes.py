@@ -2,7 +2,6 @@ import pytest
 from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
-from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
 from time import time

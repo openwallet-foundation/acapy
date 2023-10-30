@@ -39,7 +39,6 @@ from .util import (
     notify_schema_event,
 )
 
-from ..valid import UUIDFour
 
 
 class SchemaSendRequestSchema(OpenAPISchema):

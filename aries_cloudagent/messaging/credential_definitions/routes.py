@@ -36,7 +36,6 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
 )
 from ...protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
-    is_author_role,
 )
 
 from ...storage.error import StorageError
@@ -56,7 +55,6 @@ from .util import (
     notify_cred_def_event,
 )
 
-from ..valid import UUIDFour
 
 
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):

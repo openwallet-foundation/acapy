@@ -21,11 +21,9 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """DIDWebRegistry."""
 
     def __init__(self):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
-
         TODO: update this docstring - Anoncreds-break.
 
         """

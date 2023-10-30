@@ -7,7 +7,6 @@ from marshmallow import fields
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    UUIDFour,
     UUID4_EXAMPLE,
 )
 
