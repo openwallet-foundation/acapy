@@ -1,6 +1,7 @@
 from .....vc.ld_proofs.error import LinkedDataProofException
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+from asynctest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
 

@@ -24,11 +24,7 @@ from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
 from .......storage.record import StorageRecord
-from .......cache.in_memory import InMemoryCache
-from .......cache.base import BaseCache
-from .......storage.record import StorageRecord
-from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from .......messaging.decorators.attach_decorator import AttachDecorator
+
 from ....models.detail.indy import V20CredExRecordIndy
 from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_format import V20CredFormat
@@ -46,14 +42,6 @@ from ....message_types import (
     CRED_20_PROPOSAL,
     CRED_20_REQUEST,
 )
-from ....messages.cred_format import V20CredFormat
-from ....messages.cred_issue import V20CredIssue
-from ....messages.cred_offer import V20CredOffer
-from ....messages.cred_proposal import V20CredProposal
-from ....messages.cred_request import V20CredRequest
-from ....messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
-from ....models.cred_ex_record import V20CredExRecord
-from ....models.detail.indy import V20CredExRecordIndy
 from ...handler import V20CredFormatError
 from ..handler import IndyCredFormatHandler
 from ..handler import LOGGER as INDY_LOGGER

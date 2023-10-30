@@ -1,5 +1,6 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+from asynctest import mock as async_mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder

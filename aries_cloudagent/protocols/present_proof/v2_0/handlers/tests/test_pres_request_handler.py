@@ -1,5 +1,6 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+from asynctest import mock as async_mock
 
 from ......core.oob_processor import OobMessageProcessor
 from ......anoncreds.holder import AnonCredsHolder

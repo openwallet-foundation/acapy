@@ -32,6 +32,7 @@ from ..indy.models.revocation import IndyRevRegDef
 from ..admin.request_context import AdminRequestContext
 from ..indy.issuer import IndyIssuerError
 from ..ledger.base import BaseLedger
+from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
