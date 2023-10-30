@@ -6,6 +6,14 @@ aries\_cloudagent.utils package
    :undoc-members:
    :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   aries_cloudagent.utils.multiformats
+
 Submodules
 ----------
 
