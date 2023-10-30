@@ -1,7 +1,7 @@
 """Wallet base class."""
 
 from abc import ABC, abstractmethod
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
@@ -17,7 +17,10 @@ class BaseWallet(ABC):
 
     @abstractmethod
     async def create_signing_key(
-        self, key_type: KeyType, seed: str = None, metadata: dict = None
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> KeyInfo:
         """Create a new public/private signing keypair.
 
@@ -29,6 +32,28 @@ class BaseWallet(ABC):
         Returns:
             A `KeyInfo` representing the new record
 
+        """
+
+    @abstractmethod
+    async def create_key(
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> KeyInfo:
+        """Create a new public/private keypair.
+
+        Args:
+            key_type: Key type to create
+            seed: Seed for key
+            metadata: Optional metadata to store with the keypair
+
+        Returns:
+            A `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateError: If the resulting verkey already exists in the wallet
+            WalletError: If there is another backend error
         """
 
     @abstractmethod
@@ -87,9 +112,9 @@ class BaseWallet(ABC):
         self,
         method: DIDMethod,
         key_type: KeyType,
-        seed: str = None,
-        did: str = None,
-        metadata: dict = None,
+        seed: Optional[str] = None,
+        did: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> DIDInfo:
         """Create and store a new local DID.
 
@@ -103,6 +128,20 @@ class BaseWallet(ABC):
         Returns:
             The created `DIDInfo`
 
+        """
+
+    @abstractmethod
+    async def store_did(self, did_info: DIDInfo) -> DIDInfo:
+        """Store a DID in the wallet.
+
+        This enables components external to the wallet to define how a DID
+        is created and then store it in the wallet for later use.
+
+        Args:
+            did_info: The DID to store
+
+        Returns:
+            The stored `DIDInfo`
         """
 
     async def create_public_did(
