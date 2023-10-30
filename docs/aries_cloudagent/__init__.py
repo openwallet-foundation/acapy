@@ -1,1 +1,0 @@
-"""Aries Cloud Agent."""

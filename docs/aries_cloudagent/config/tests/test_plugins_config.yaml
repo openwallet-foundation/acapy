@@ -1,4 +1,0 @@
-mock_resolver:
-  methods:
-       - "sov"
-       - "btcr"

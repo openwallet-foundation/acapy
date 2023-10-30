@@ -1,3 +1,0 @@
-"""
-Wallet test suite
-"""
