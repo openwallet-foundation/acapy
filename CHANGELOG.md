@@ -1,6 +1,6 @@
 # Aries Cloud Agent Python Changelog
 
-## 0.11.0-rc0
+## 0.11.0-rc1
 
 ### October 30, 2023
 
@@ -9,6 +9,8 @@ updates. 0.11.0 is planned to be the last major update before we transition
 to using the [AnonCreds Rust](https://github.com/hyperledger/anoncreds-rs)
 in a release that is expected to bring some Admin/Controller API changes. We plan
 to do patches to 0.11.0 while the transition is made to the next breaking release.
+
+*Release 0.11.0-rc0 failed to publish because of a reference to a dependency via its GitHub repository rather than to its published artifact.*
 
 A significant addition to ACA-Py is support for signing and verifying
 [SD-JWT] verifiable credentials. We expect this to be the first of the changes
@@ -38,15 +40,16 @@ expect to include at least those [ACA-Py PRs labelled "0.11.0"] in the release.
 
 In addition to the impacts of the change for developers in switching from `pip`
 to Poetry, the only significant breaking change is the (overdue) transition of
-ACA-Py to use the new DIDComm message type prefix that changes the DID Message
-prefix from the old hardcoded `did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` to the new
-hardcoded `https://didcomm.org` value. and using the new DIDComm MIME type. The
-vast majority (all?) Aries deployments have long since been updated to accept
-both values, so this change just forces the use of the newer value in sending
-messages. In updating this, we retained the old configuration parameters most
-(all?) deployments were using (`--emit-new-didcomm-prefix` and
-`--emit-new-didcomm-mime-type`) but updated the code to set the configuration
-parameters to `true` even if the parameters were not set. See [PR \#2517]
+ACA-Py to always use the new DIDComm message type prefix, changing the DID
+Message prefix from the old hardcoded `did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` to
+the new hardcoded `https://didcomm.org` value, and using the new DIDComm MIME
+type in place of the old. The vast majority (all?) Aries deployments have long
+since been updated to accept both values, so this change just forces the use of
+the newer value in sending messages. In updating this, we retained the old
+configuration parameters most deployments were using
+(`--emit-new-didcomm-prefix` and `--emit-new-didcomm-mime-type`) but updated the
+code to set the configuration parameters to `true` even if the parameters were
+not set. See [PR \#2517]
 
 [PR \#2517]: https://github.com/hyperledger/aries-cloudagent-python/pull/2517
 
@@ -73,6 +76,7 @@ parameters to `true` even if the parameters were not set. See [PR \#2517]
   - Bugfix: Issue with write ledger pool when performing Accumulator sync [\#2480](https://github.com/hyperledger/aries-cloudagent-python/pull/2480) [shaangill025](https://github.com/shaangill025)
   - Issue #2419 InvalidClientTaaAcceptanceError time too precise error if container timezone is not UTC [\#2420](https://github.com/hyperledger/aries-cloudagent-python/pull/2420) [Ennovate-com](https://github.com/Ennovate-com)
 - OpenID4VC / SD-JWT Updates
+  - chore: point to official sd-jwt lib release [\#2573](https://github.com/hyperledger/aries-cloudagent-python/pull/2573) [dbluhm](https://github.com/dbluhm)
   - Feat/sd jwt implementation [\#2487](https://github.com/hyperledger/aries-cloudagent-python/pull/2487) [cjhowland](https://github.com/cjhowland)
 - JSON-LD Verifiable Credential format updates
   - Issue #2488 KeyError raised when Subject ID is not a URI [\#2490](https://github.com/hyperledger/aries-cloudagent-python/pull/2490) [Ennovate-com](https://github.com/Ennovate-com)
@@ -109,6 +113,7 @@ parameters to `true` even if the parameters were not set. See [PR \#2517]
   - Swap out flake8 in favor of Ruff [\#2438](https://github.com/hyperledger/aries-cloudagent-python/pull/2438) [dbluhm](https://github.com/dbluhm)
   - #2289 Migrate to Poetry [\#2436](https://github.com/hyperledger/aries-cloudagent-python/pull/2436) [Gavinok](https://github.com/Gavinok)
 - Release management pull requests
+  - 0.11.0-rc1 [\#2576](https://github.com/hyperledger/aries-cloudagent-python/pull/2576) [swcurran](https://github.com/swcurran)
   - 0.11.0-rc0 [\#2575](https://github.com/hyperledger/aries-cloudagent-python/pull/2575) [swcurran](https://github.com/swcurran)
 
 ## 0.10.1
