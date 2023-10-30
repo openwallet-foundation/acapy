@@ -145,6 +145,14 @@ aries\_cloudagent.wallet.routes module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.wallet.sd\_jwt module
+---------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.sd_jwt
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.wallet.util module
 ------------------------------------
 

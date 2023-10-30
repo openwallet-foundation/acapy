@@ -33,6 +33,22 @@ aries\_cloudagent.resolver.default.legacy\_peer module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.resolver.default.peer2 module
+-----------------------------------------------
+
+.. automodule:: aries_cloudagent.resolver.default.peer2
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.resolver.default.peer3 module
+-----------------------------------------------
+
+.. automodule:: aries_cloudagent.resolver.default.peer3
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.resolver.default.universal module
 ---------------------------------------------------
 
