@@ -28,8 +28,7 @@ class CancelTransaction(AgentMessage):
         thread_id: str = None,
         **kwargs,
     ):
-        """
-        Initialize a cancel transaction object.
+        """Initialize a cancel transaction object.
 
         Args:
             state: State of the transaction record

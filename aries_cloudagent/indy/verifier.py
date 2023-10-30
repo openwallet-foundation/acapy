@@ -36,8 +36,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
     """Base class for Indy Verifier."""
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -46,8 +45,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         return "<{}>".format(self.__class__.__name__)
 
     def non_revoc_intervals(self, pres_req: dict, pres: dict, cred_defs: dict) -> list:
-        """
-        Remove superfluous non-revocation intervals in presentation request.
+        """Remove superfluous non-revocation intervals in presentation request.
 
         Irrevocable credentials constitute proof of non-revocation, but
         indy rejects proof requests with non-revocation intervals lining up
@@ -114,8 +112,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         pres: Mapping,
         rev_reg_defs: Mapping,
     ) -> list:
-        """
-        Check for suspicious, missing, and superfluous timestamps.
+        """Check for suspicious, missing, and superfluous timestamps.
 
         Raises ValueError on timestamp in the future, prior to rev reg creation,
         superfluous or missing.
@@ -289,8 +286,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         return msgs
 
     async def pre_verify(self, pres_req: dict, pres: dict) -> list:
-        """
-        Check for essential components and tampering in presentation.
+        """Check for essential components and tampering in presentation.
 
         Visit encoded attribute values against raw, and predicate bounds,
         in presentation, cross-reference against presentation request.
@@ -398,8 +394,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         rev_reg_defs,
         rev_reg_entries,
     ) -> Tuple[bool, list]:
-        """
-        Verify a presentation.
+        """Verify a presentation.
 
         Args:
             presentation_request: Presentation request data

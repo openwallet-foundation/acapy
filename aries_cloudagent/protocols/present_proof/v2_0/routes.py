@@ -129,8 +129,7 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields: data must have at least one format.
+        """Validate schema fields: data must have at least one format.
 
         Args:
             data: The data to validate
@@ -205,8 +204,7 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields: data must have at least one format.
+        """Validate schema fields: data must have at least one format.
 
         Args:
             data: The data to validate
@@ -321,8 +319,7 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields: specify exactly one format.
+        """Validate schema fields: specify exactly one format.
 
         Args:
             data: The data to validate
@@ -428,8 +425,7 @@ def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
 @querystring_schema(V20PresExRecordListQueryStringSchema)
 @response_schema(V20PresExRecordListSchema(), 200, description="")
 async def present_proof_list(request: web.BaseRequest):
-    """
-    Request handler for searching presentation exchange records.
+    """Request handler for searching presentation exchange records.
 
     Args:
         request: aiohttp request object
@@ -471,8 +467,7 @@ async def present_proof_list(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_retrieve(request: web.BaseRequest):
-    """
-    Request handler for fetching a single presentation exchange record.
+    """Request handler for fetching a single presentation exchange record.
 
     Args:
         request: aiohttp request object
@@ -518,8 +513,7 @@ async def present_proof_retrieve(request: web.BaseRequest):
 @querystring_schema(V20CredentialsFetchQueryStringSchema())
 @response_schema(IndyCredPrecisSchema(many=True), 200, description="")
 async def present_proof_credentials_list(request: web.BaseRequest):
-    """
-    Request handler for searching applicable credential records.
+    """Request handler for searching applicable credential records.
 
     Args:
         request: aiohttp request object
@@ -804,8 +798,7 @@ async def retrieve_uri_list_from_schema_filter(
 @request_schema(V20PresProposalRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_send_proposal(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation proposal.
+    """Request handler for sending a presentation proposal.
 
     Args:
         request: aiohttp request object
@@ -887,8 +880,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
 @request_schema(V20PresCreateRequestRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_create_request(request: web.BaseRequest):
-    """
-    Request handler for creating a free presentation request.
+    """Request handler for creating a free presentation request.
 
     The presentation request will not be bound to any proposal
     or existing connection.
@@ -964,8 +956,7 @@ async def present_proof_create_request(request: web.BaseRequest):
 @request_schema(V20PresSendRequestRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_send_free_request(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation request free from any proposal.
+    """Request handler for sending a presentation request free from any proposal.
 
     Args:
         request: aiohttp request object
@@ -1048,8 +1039,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
 @request_schema(V20PresentationSendRequestToProposalSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_send_bound_request(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation request bound to a proposal.
+    """Request handler for sending a presentation request bound to a proposal.
 
     Args:
         request: aiohttp request object
@@ -1139,8 +1129,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
 @request_schema(V20PresSpecByFormatRequestSchema())
 @response_schema(V20PresExRecordSchema(), description="")
 async def present_proof_send_presentation(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation.
+    """Request handler for sending a presentation.
 
     Args:
         request: aiohttp request object
@@ -1252,8 +1241,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresExRecordSchema(), description="")
 async def present_proof_verify_presentation(request: web.BaseRequest):
-    """
-    Request handler for verifying a presentation request.
+    """Request handler for verifying a presentation request.
 
     Args:
         request: aiohttp request object
@@ -1321,8 +1309,7 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
 @request_schema(V20PresProblemReportRequestSchema())
 @response_schema(V20PresentProofModuleResponseSchema(), 200, description="")
 async def present_proof_problem_report(request: web.BaseRequest):
-    """
-    Request handler for sending problem report.
+    """Request handler for sending problem report.
 
     Args:
         request: aiohttp request object
@@ -1360,8 +1347,7 @@ async def present_proof_problem_report(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresentProofModuleResponseSchema(), description="")
 async def present_proof_remove(request: web.BaseRequest):
-    """
-    Request handler for removing a presentation exchange record.
+    """Request handler for removing a presentation exchange record.
 
     Args:
         request: aiohttp request object

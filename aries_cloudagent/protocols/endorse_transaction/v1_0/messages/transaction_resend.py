@@ -28,8 +28,7 @@ class TransactionResend(AgentMessage):
         thread_id: str = None,
         **kwargs,
     ):
-        """
-        Initialize a transaction resend object.
+        """Initialize a transaction resend object.
 
         Args:
             state: State of the transaction record

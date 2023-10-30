@@ -18,8 +18,7 @@ class BaseError(Exception):
 
     @property
     def roll_up(self) -> str:
-        """
-        Accessor for nested error messages rolled into one line.
+        """Accessor for nested error messages rolled into one line.
 
         For display: aiohttp.web errors truncate after newline.
         """
@@ -72,8 +71,7 @@ class ProtocolDefinitionValidationError(BaseError):
 
 
 class ProtocolMinorVersionNotSupported(BaseError):
-    """
-    Minimum minor version protocol error.
+    """Minimum minor version protocol error.
 
     Error raised when protocol support exists
     but minimum minor version is higher than in @type parameter.

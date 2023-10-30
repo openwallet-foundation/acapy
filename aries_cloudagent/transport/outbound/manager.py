@@ -36,8 +36,7 @@ class OutboundTransportManager:
     MAX_RETRY_COUNT = 4
 
     def __init__(self, profile: Profile, handle_not_delivered: Callable = None):
-        """
-        Initialize a `OutboundTransportManager` instance.
+        """Initialize a `OutboundTransportManager` instance.
 
         Args:
             root_profile: The application root profile
@@ -69,8 +68,7 @@ class OutboundTransportManager:
             self.register(outbound_transport)
 
     def register(self, module_name: str) -> str:
-        """
-        Register a new outbound transport by module path.
+        """Register a new outbound transport by module path.
 
         Args:
             module_name: Module name to register
@@ -104,8 +102,7 @@ class OutboundTransportManager:
     def register_class(
         self, transport_class: Type[BaseOutboundTransport], transport_id: str = None
     ) -> str:
-        """
-        Register a new outbound transport class.
+        """Register a new outbound transport class.
 
         Args:
             transport_class: Transport class to register
@@ -221,8 +218,7 @@ class OutboundTransportManager:
         return self.running_transports[transport_id]
 
     async def enqueue_message(self, profile: Profile, outbound: OutboundMessage):
-        """
-        Add an outbound message to the queue.
+        """Add an outbound message to the queue.
 
         Args:
             profile: The active profile for the request
@@ -259,8 +255,7 @@ class OutboundTransportManager:
     async def encode_outbound_message(
         self, profile: Profile, outbound: OutboundMessage, target: ConnectionTarget
     ):
-        """
-        Encode outbound message for the target.
+        """Encode outbound message for the target.
 
         Args:
             profile: The active profile for the request
@@ -285,8 +280,7 @@ class OutboundTransportManager:
         max_attempts: int = None,
         metadata: dict = None,
     ):
-        """
-        Add a webhook to the queue.
+        """Add a webhook to the queue.
 
         Args:
             topic: The webhook topic
@@ -315,8 +309,7 @@ class OutboundTransportManager:
         self.process_queued()
 
     def process_queued(self) -> asyncio.Task:
-        """
-        Start the process to deliver queued messages if necessary.
+        """Start the process to deliver queued messages if necessary.
 
         Returns: the current queue processing task or None
 

@@ -16,8 +16,6 @@ RUN curl -sSL https://install.python-poetry.org | python3 - \
     && echo "fpath+=~/.zfunc\nautoload -Uz compinit && compinit" >> /home/vscode/.zshrc
 
 COPY pyproject.toml poetry.lock ./
-# we do not want the packages defined for this install, comment out the line.
-RUN sed -i 's/^[^#]*packages/#&/' pyproject.toml
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --all-extras \
+    && poetry install --no-root --no-interaction --all-extras \
     && rm -rf /root/.cache/pypoetry

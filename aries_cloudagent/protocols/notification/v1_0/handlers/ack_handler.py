@@ -12,8 +12,7 @@ class V10AckHandler(BaseHandler):
     """Message handler class for generic acks."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for presentation acks.
+        """Message handler logic for presentation acks.
 
         Args:
             context: request context

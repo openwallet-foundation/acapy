@@ -11,11 +11,9 @@ from .....didcomm_prefix import DIDCommPrefix
 from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from .....didexchange.v1_0.messages.request import DIDXRequest
 
-from ...message_types import INVITATION
 
 from .. import invitation as test_module
 from ..invitation import HSProto, InvitationMessage, InvitationMessageSchema
-from ..invitation import InvitationMessage, InvitationMessageSchema
 from ..service import Service
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
@@ -110,7 +108,10 @@ class TestInvitationMessage(TestCase):
         service = Service(
             _id="#inline",
             _type=DID_COMM,
-            recipient_keys=[DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did],
+            recipient_keys=[
+                DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did,
+                DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).key_id,
+            ],
             service_endpoint="http://1.2.3.4:8080/service",
         )
         invi_msg = InvitationMessage(

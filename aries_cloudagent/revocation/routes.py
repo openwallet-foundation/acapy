@@ -493,8 +493,7 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
 @request_schema(RevokeRequestSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def revoke(request: web.BaseRequest):
-    """
-    Request handler for storing a credential revocation.
+    """Request handler for storing a credential revocation.
 
     Args:
         request: aiohttp request object
@@ -550,8 +549,7 @@ async def revoke(request: web.BaseRequest):
 @request_schema(PublishRevocationsSchema())
 @response_schema(TxnOrPublishRevocationsResultSchema(), 200, description="")
 async def publish_revocations(request: web.BaseRequest):
-    """
-    Request handler for publishing pending revocations to the ledger.
+    """Request handler for publishing pending revocations to the ledger.
 
     Args:
         request: aiohttp request object
@@ -760,8 +758,7 @@ async def rotate_rev_reg(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegIssuedResultSchema(), 200, description="")
 async def get_rev_reg_issued_count(request: web.BaseRequest):
-    """
-    Request handler to get number of credentials issued against revocation registry.
+    """Request handler to get number of credentials issued against revocation registry.
 
     Args:
         request: aiohttp request object
@@ -798,8 +795,7 @@ async def get_rev_reg_issued_count(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(CredRevRecordDetailsResultSchema(), 200, description="")
 async def get_rev_reg_issued(request: web.BaseRequest):
-    """
-    Request handler to get credentials issued against revocation registry.
+    """Request handler to get credentials issued against revocation registry.
 
     Args:
         request: aiohttp request object
@@ -837,8 +833,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(CredRevIndyRecordsResultSchema(), 200, description="")
 async def get_rev_reg_indy_recs(request: web.BaseRequest):
-    """
-    Request handler to get details of revoked credentials from ledger.
+    """Request handler to get details of revoked credentials from ledger.
 
     Args:
         request: aiohttp request object
@@ -879,8 +874,7 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
 @querystring_schema(RevRegUpdateRequestMatchInfoSchema())
 @response_schema(RevRegWalletUpdatedResultSchema(), 200, description="")
 async def update_rev_reg_revoked_state(request: web.BaseRequest):
-    """
-    Request handler to fix ledger entry of credentials revoked against registry.
+    """Request handler to fix ledger entry of credentials revoked against registry.
 
     Args:
         request: aiohttp request object
@@ -916,7 +910,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
             available_write_ledgers = await ledger_manager.get_write_ledgers()
             LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
             LOGGER.debug(f"write_ledger = {write_ledger}")
-            pool = write_ledger[1].pool
+            pool = write_ledger.pool
             LOGGER.debug(f"write_ledger pool = {pool}")
 
             genesis_transactions = pool.genesis_txns
@@ -972,8 +966,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 @querystring_schema(CredRevRecordQueryStringSchema())
 @response_schema(CredRevRecordResultSchema(), 200, description="")
 async def get_cred_rev_record(request: web.BaseRequest):
-    """
-    Request handler to get credential revocation record.
+    """Request handler to get credential revocation record.
 
     Args:
         request: aiohttp request object
@@ -1012,8 +1005,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema, description="tails file")
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
-    """
-    Request handler to download tails file for revocation registry.
+    """Request handler to download tails file for revocation registry.
 
     Args:
         request: aiohttp request object
@@ -1048,8 +1040,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 @querystring_schema(SetRevRegStateQueryStringSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def set_rev_reg_state(request: web.BaseRequest):
-    """
-    Request handler to set a revocation registry state manually.
+    """Request handler to set a revocation registry state manually.
 
     Args:
         request: aiohttp request object

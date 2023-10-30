@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.in_memory import InMemoryProfile
 from ......indy.models.pres_preview import (
@@ -6,10 +7,8 @@ from ......indy.models.pres_preview import (
     IndyPresPredSpec,
     IndyPresPreview,
 )
-from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 
-from ...message_types import PRESENTATION_PROPOSAL
 from ...messages.presentation_proposal import PresentationProposal
 
 from .. import presentation_exchange as test_module
@@ -87,7 +86,7 @@ class BasexRecordImplSchema(BaseExchangeSchema):
         model_class = BasexRecordImpl
 
 
-class TestRecord(AsyncTestCase):
+class TestRecord(IsolatedAsyncioTestCase):
     async def test_record(self):
         presentation_proposal = PresentationProposal(
             comment="Hello World", presentation_proposal=PRES_PREVIEW
@@ -131,10 +130,10 @@ class TestRecord(AsyncTestCase):
         record.state = V10PresentationExchange.STATE_PROPOSAL_RECEIVED
         await record.save(session)
 
-        with async_mock.patch.object(
-            record, "save", async_mock.CoroutineMock()
-        ) as mock_save, async_mock.patch.object(
-            test_module.LOGGER, "exception", async_mock.MagicMock()
+        with mock.patch.object(
+            record, "save", mock.CoroutineMock()
+        ) as mock_save, mock.patch.object(
+            test_module.LOGGER, "exception", mock.MagicMock()
         ) as mock_log_exc:
             mock_save.side_effect = test_module.StorageError()
             await record.save_error_state(session, reason="testing")

@@ -14,8 +14,7 @@ def problem_report_for_record(
     record: Union[ConnRecord, V10PresentationExchange],
     desc_en: str,
 ) -> PresentationProblemReport:
-    """
-    Create problem report for record.
+    """Create problem report for record.
 
     Args:
         record: connection or exchange record
@@ -43,8 +42,7 @@ async def report_problem(
     record: Union[ConnRecord, V10PresentationExchange],
     outbound_handler: Coroutine,
 ):
-    """
-    Send problem report response and raise corresponding HTTP error.
+    """Send problem report response and raise corresponding HTTP error.
 
     Args:
         err: error for internal diagnostics

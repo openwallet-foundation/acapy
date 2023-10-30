@@ -59,9 +59,7 @@ class CredDefQueryStringSchema(OpenAPISchema):
     )
 
 
-CRED_DEF_TAGS = [
-    tag for tag in vars(CredDefQueryStringSchema).get("_declared_fields", [])
-]
+CRED_DEF_TAGS = list(vars(CredDefQueryStringSchema).get("_declared_fields", []))
 
 CRED_DEF_EVENT_PREFIX = "acapy::CRED_DEF::"
 EVENT_LISTENER_PATTERN = re.compile(f"^{CRED_DEF_EVENT_PREFIX}(.*)?$")

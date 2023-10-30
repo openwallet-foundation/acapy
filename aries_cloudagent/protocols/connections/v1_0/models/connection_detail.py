@@ -10,9 +10,8 @@ from .....messaging.valid import INDY_DID_EXAMPLE, INDY_DID_VALIDATE
 class DIDDocWrapper(fields.Field):
     """Field that loads and serializes DIDDoc."""
 
-    def _serialize(self, value, attr, obj, **kwargs):
-        """
-        Serialize the DIDDoc.
+    def _serialize(self, value: DIDDoc, attr, obj, **kwargs):
+        """Serialize the DIDDoc.
 
         Args:
             value: The value to serialize
@@ -21,11 +20,10 @@ class DIDDocWrapper(fields.Field):
             The serialized DIDDoc
 
         """
-        return value.serialize()
+        return value.serialize(normalize_routing_keys=True)
 
     def _deserialize(self, value, attr=None, data=None, **kwargs):
-        """
-        Deserialize a value into a DIDDoc.
+        """Deserialize a value into a DIDDoc.
 
         Args:
             value: The value to deserialize
@@ -46,8 +44,7 @@ class ConnectionDetail(BaseModel):
         schema_class = "ConnectionDetailSchema"
 
     def __init__(self, *, did: str = None, did_doc: DIDDoc = None, **kwargs):
-        """
-        Initialize a ConnectionDetail instance.
+        """Initialize a ConnectionDetail instance.
 
         Args:
             did: DID for the connection detail
@@ -60,8 +57,7 @@ class ConnectionDetail(BaseModel):
 
     @property
     def did(self) -> str:
-        """
-        Accessor for the connection DID.
+        """Accessor for the connection DID.
 
         Returns:
             The DID for this connection
@@ -71,8 +67,7 @@ class ConnectionDetail(BaseModel):
 
     @property
     def did_doc(self) -> DIDDoc:
-        """
-        Accessor for the connection DID Document.
+        """Accessor for the connection DID Document.
 
         Returns:
             The DIDDoc for this connection

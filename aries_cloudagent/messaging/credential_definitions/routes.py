@@ -197,8 +197,7 @@ def error_handler(func):
 @response_schema(TxnOrCredentialDefinitionSendResultSchema(), 200, description="")
 @error_handler
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
-    """
-    Request handler for sending a credential definition to the ledger.
+    """Request handler for sending a credential definition to the ledger.
 
     Args:
         request: aiohttp request object
@@ -332,8 +331,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 @response_schema(CredentialDefinitionsCreatedResultSchema(), 200, description="")
 @error_handler
 async def credential_definitions_created(request: web.BaseRequest):
-    """
-    Request handler for retrieving credential definitions that current agent created.
+    """Request handler for retrieving credential definitions that current agent created.
 
     Args:
         request: aiohttp request object
@@ -365,8 +363,7 @@ async def credential_definitions_created(request: web.BaseRequest):
 @response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
 @error_handler
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
-    """
-    Request handler for getting a credential definition from the ledger.
+    """Request handler for getting a credential definition from the ledger.
 
     Args:
         request: aiohttp request object

@@ -15,8 +15,7 @@ class TransactionCancelHandler(BaseHandler):
     """Handler class for Cancel transaction request."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle cancel transaction request.
+        """Handle cancel transaction request.
 
         Args:
             context: Request context

@@ -21,8 +21,7 @@ class Perform(AgentMessage):
         schema_class = "PerformSchema"
 
     def __init__(self, *, name: str = None, params: Mapping[str, str] = None, **kwargs):
-        """
-        Initialize a Perform object.
+        """Initialize a Perform object.
 
         Args:
             name: The name of the menu option

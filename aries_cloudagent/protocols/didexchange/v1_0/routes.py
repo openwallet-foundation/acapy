@@ -195,8 +195,7 @@ class DIDXRejectRequestSchema(OpenAPISchema):
 @querystring_schema(DIDXAcceptInvitationQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_accept_invitation(request: web.BaseRequest):
-    """
-    Request handler for accepting a stored connection invitation.
+    """Request handler for accepting a stored connection invitation.
 
     Args:
         request: aiohttp request object
@@ -242,8 +241,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
 @querystring_schema(DIDXCreateRequestImplicitQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_create_request_implicit(request: web.BaseRequest):
-    """
-    Request handler for creating and sending a request to an implicit invitation.
+    """Request handler for creating and sending a request to an implicit invitation.
 
     Args:
         request: aiohttp request object
@@ -292,8 +290,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
 @request_schema(DIDXRequestSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_receive_request_implicit(request: web.BaseRequest):
-    """
-    Request handler for receiving a request against public DID's implicit invitation.
+    """Request handler for receiving a request against public DID's implicit invitation.
 
     Args:
         request: aiohttp request object
@@ -339,8 +336,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
 @querystring_schema(DIDXAcceptRequestQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def didx_accept_request(request: web.BaseRequest):
-    """
-    Request handler for accepting a stored connection request.
+    """Request handler for accepting a stored connection request.
 
     Args:
         request: aiohttp request object

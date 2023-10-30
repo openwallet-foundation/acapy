@@ -32,8 +32,7 @@ class Presentation(AgentMessage):
         presentations_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize presentation object.
+        """Initialize presentation object.
 
         Args:
             presentations_attach: attachments
@@ -47,8 +46,7 @@ class Presentation(AgentMessage):
         )
 
     def indy_proof(self, index: int = 0):
-        """
-        Retrieve and decode indy proof from attachment.
+        """Retrieve and decode indy proof from attachment.
 
         Args:
             index: ordinal in attachment list to decode and return

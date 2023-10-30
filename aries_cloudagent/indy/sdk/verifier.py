@@ -19,8 +19,7 @@ class IndySdkVerifier(IndyVerifier):
     """Indy-SDK verifier implementation."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize an IndyVerifier instance.
+        """Initialize an IndyVerifier instance.
 
         Args:
             profile: Active Profile instance
@@ -37,8 +36,7 @@ class IndySdkVerifier(IndyVerifier):
         rev_reg_defs,
         rev_reg_entries,
     ) -> Tuple[bool, list]:
-        """
-        Verify a presentation.
+        """Verify a presentation.
 
         Args:
             pres_req: Presentation request data

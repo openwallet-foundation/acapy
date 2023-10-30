@@ -1,6 +1,5 @@
-import pytest
-
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
@@ -12,27 +11,27 @@ from ...messages.pres import V20Pres
 from .. import pres_handler as test_module
 
 
-class TestV20PresHandler(AsyncTestCase):
+class TestV20PresHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = False
 
-        oob_record = async_mock.MagicMock()
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+        oob_record = mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
                 return_value=oob_record
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres = async_mock.CoroutineMock()
+            mock_pres_mgr.return_value.receive_pres = mock.CoroutineMock()
             request_context.message = V20Pres()
             request_context.connection_ready = True
-            request_context.connection_record = async_mock.MagicMock()
+            request_context.connection_record = mock.MagicMock()
             handler = test_module.V20PresHandler()
             responder = MockResponder()
             await handler.handle(request_context, responder)
@@ -48,22 +47,22 @@ class TestV20PresHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = True
 
-        oob_record = async_mock.MagicMock()
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+        oob_record = mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
                 return_value=oob_record
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.receive_pres = async_mock.CoroutineMock()
-            mock_pres_mgr.return_value.verify_pres = async_mock.CoroutineMock()
+            mock_pres_mgr.return_value.receive_pres = mock.CoroutineMock()
+            mock_pres_mgr.return_value.verify_pres = mock.CoroutineMock()
             request_context.message = V20Pres()
             request_context.connection_ready = True
-            request_context.connection_record = async_mock.MagicMock()
+            request_context.connection_record = mock.MagicMock()
             handler = test_module.V20PresHandler()
             responder = MockResponder()
             await handler.handle(request_context, responder)
@@ -79,36 +78,32 @@ class TestV20PresHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_verify_presentation"] = True
 
-        oob_record = async_mock.MagicMock()
-        mock_oob_processor = async_mock.MagicMock(
-            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+        oob_record = mock.MagicMock()
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
                 return_value=oob_record
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value = async_mock.MagicMock(
-                receive_pres=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        save_error_state=async_mock.CoroutineMock()
-                    )
+            mock_pres_mgr.return_value = mock.MagicMock(
+                receive_pres=mock.CoroutineMock(
+                    return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
                 ),
-                verify_pres=async_mock.CoroutineMock(
-                    side_effect=test_module.LedgerError()
-                ),
+                verify_pres=mock.CoroutineMock(side_effect=test_module.LedgerError()),
             )
 
             request_context.message = V20Pres()
             request_context.connection_ready = True
-            request_context.connection_record = async_mock.MagicMock()
+            request_context.connection_record = mock.MagicMock()
             handler = test_module.V20PresHandler()
             responder = MockResponder()
 
-            with async_mock.patch.object(
-                handler._logger, "exception", async_mock.MagicMock()
+            with mock.patch.object(
+                handler._logger, "exception", mock.MagicMock()
             ) as mock_log_exc:
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()

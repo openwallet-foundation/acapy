@@ -1,10 +1,10 @@
-"""
-the did resolver.
+"""the did resolver.
 
 responsible for keeping track of all resolvers. more importantly
 retrieving did's from different sources provided by the method type.
 """
 
+import asyncio
 from datetime import datetime
 from itertools import chain
 import logging
@@ -30,6 +30,8 @@ LOGGER = logging.getLogger(__name__)
 class DIDResolver:
     """did resolver singleton."""
 
+    DEFAULT_TIMEOUT = 30
+
     def __init__(self, resolvers: Optional[List[BaseDIDResolver]] = None):
         """Create DID Resolver."""
         self.resolvers = resolvers or []
@@ -43,9 +45,14 @@ class DIDResolver:
         profile: Profile,
         did: Union[str, DID],
         service_accept: Optional[Sequence[Text]] = None,
+        *,
+        timeout: Optional[int] = None,
     ) -> Tuple[BaseDIDResolver, dict]:
-        """Retrieve doc and return with resolver."""
-        # TODO Cache results
+        """Retrieve doc and return with resolver.
+
+        This private method enables the public resolve and resolve_with_metadata
+        methods to share the same logic.
+        """
         if isinstance(did, DID):
             did = str(did)
         else:
@@ -53,10 +60,13 @@ class DIDResolver:
         for resolver in await self._match_did_to_resolver(profile, did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                document = await resolver.resolve(
-                    profile,
-                    did,
-                    service_accept,
+                document = await asyncio.wait_for(
+                    resolver.resolve(
+                        profile,
+                        did,
+                        service_accept,
+                    ),
+                    timeout if timeout is not None else self.DEFAULT_TIMEOUT,
                 )
                 return resolver, document
             except DIDNotFound:
@@ -69,18 +79,20 @@ class DIDResolver:
         profile: Profile,
         did: Union[str, DID],
         service_accept: Optional[Sequence[Text]] = None,
+        *,
+        timeout: Optional[int] = None,
     ) -> dict:
         """Resolve a DID."""
-        _, doc = await self._resolve(profile, did, service_accept)
+        _, doc = await self._resolve(profile, did, service_accept, timeout=timeout)
         return doc
 
     async def resolve_with_metadata(
-        self, profile: Profile, did: Union[str, DID]
+        self, profile: Profile, did: Union[str, DID], *, timeout: Optional[int] = None
     ) -> ResolutionResult:
         """Resolve a DID and return the ResolutionResult."""
         resolution_start_time = datetime.utcnow()
 
-        resolver, doc = await self._resolve(profile, did)
+        resolver, doc = await self._resolve(profile, did, timeout=timeout)
 
         time_now = datetime.utcnow()
         duration = int((time_now - resolution_start_time).total_seconds() * 1000)
@@ -110,7 +122,7 @@ class DIDResolver:
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
         if not resolvers:
-            raise DIDMethodNotSupported(f'No resolver supprting DID "{did}" loaded')
+            raise DIDMethodNotSupported(f'No resolver supporting DID "{did}" loaded')
         return resolvers
 
     async def dereference(
@@ -121,17 +133,16 @@ class DIDResolver:
         document: Optional[BaseDIDDocument] = None,
     ) -> Resource:
         """Dereference a DID URL to its corresponding DID Doc object."""
-        # TODO Use cached DID Docs when possible
         try:
             parsed = DIDUrl.parse(did_url)
-            if not parsed.did:
+            if not parsed.did and not document:
                 raise ValueError("Invalid DID URL")
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)
             ) from err
 
-        if document and parsed.did != document.id:
+        if document and parsed.did and parsed.did != document.id:
             document = None
 
         if not document:

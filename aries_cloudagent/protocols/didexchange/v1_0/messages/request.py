@@ -35,8 +35,7 @@ class DIDXRequest(AgentMessage):
         goal: Optional[str] = None,
         **kwargs,
     ):
-        """
-        Initialize DID exchange request object under RFC 23.
+        """Initialize DID exchange request object under RFC 23.
 
         Args:
             label: Label for this request

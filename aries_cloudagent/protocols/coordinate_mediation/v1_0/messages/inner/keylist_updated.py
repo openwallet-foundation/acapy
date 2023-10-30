@@ -31,8 +31,7 @@ class KeylistUpdated(BaseModel):
         result: str = None,
         **kwargs
     ):
-        """
-        Initialize a KeylistUpdated instance.
+        """Initialize a KeylistUpdated instance.
 
         Args:
             recipient_key: The recipient verkey of the route

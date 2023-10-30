@@ -2,13 +2,15 @@
 
 import json
 import logging
-from typing import Any, Mapping, NamedTuple, Optional
+from typing import Any, Mapping, Optional
 
+from marshmallow import fields
 from pydid import DIDUrl, Resource, VerificationMethod
 
 from ..core.profile import Profile
 from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMethod
 from ..messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
+from ..messaging.models.base import BaseModel, BaseModelSchema
 from ..resolver.did_resolver import DIDResolver
 from .default_verification_key_strategy import BaseVerificationKeyStrategy
 from .base import BaseWallet
@@ -67,10 +69,11 @@ async def jwt_sign(
         if not did:
             raise ValueError("DID URL must be absolute")
 
+    if not headers.get("typ", None):
+        headers["typ"] = "JWT"
     headers = {
         **headers,
         "alg": "EdDSA",
-        "typ": "JWT",
         "kid": verification_method,
     }
     encoded_headers = dict_to_b64(headers)
@@ -88,13 +91,45 @@ async def jwt_sign(
     return f"{encoded_headers}.{encoded_payload}.{sig}"
 
 
-class JWTVerifyResult(NamedTuple):
+class JWTVerifyResult(BaseModel):
     """Result from verify."""
 
-    headers: Mapping[str, Any]
-    payload: Mapping[str, Any]
-    valid: bool
-    kid: str
+    class Meta:
+        """JWTVerifyResult metadata."""
+
+        schema_class = "JWTVerifyResultSchema"
+
+    def __init__(
+        self,
+        headers: Mapping[str, Any],
+        payload: Mapping[str, Any],
+        valid: bool,
+        kid: str,
+    ):
+        """Initialize a JWTVerifyResult instance."""
+        self.headers = headers
+        self.payload = payload
+        self.valid = valid
+        self.kid = kid
+
+
+class JWTVerifyResultSchema(BaseModelSchema):
+    """JWTVerifyResult schema."""
+
+    class Meta:
+        """JWTVerifyResultSchema metadata."""
+
+        model_class = JWTVerifyResult
+
+    headers = fields.Dict(
+        required=True, metadata={"description": "Headers from verified JWT."}
+    )
+    payload = fields.Dict(
+        required=True, metadata={"description": "Payload from verified JWT"}
+    )
+    valid = fields.Bool(required=True)
+    kid = fields.Str(required=True, metadata={"description": "kid of signer"})
+    error = fields.Str(required=False, metadata={"description": "Error text"})
 
 
 async def resolve_public_key_by_kid_for_verify(profile: Profile, kid: str) -> str:
@@ -120,7 +155,7 @@ async def resolve_public_key_by_kid_for_verify(profile: Profile, kid: str) -> st
 
 async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
     """Verify a JWT and return the headers and payload."""
-    encoded_headers, encoded_payload, encoded_signiture = jwt.split(".", 3)
+    encoded_headers, encoded_payload, encoded_signature = jwt.split(".", 3)
     headers = b64_to_dict(encoded_headers)
     if "alg" not in headers or headers["alg"] != "EdDSA" or "kid" not in headers:
         raise BadJWSHeaderError(
@@ -129,7 +164,7 @@ async def jwt_verify(profile: Profile, jwt: str) -> JWTVerifyResult:
 
     payload = b64_to_dict(encoded_payload)
     verification_method = headers["kid"]
-    decoded_signature = b64_to_bytes(encoded_signiture, urlsafe=True)
+    decoded_signature = b64_to_bytes(encoded_signature, urlsafe=True)
 
     async with profile.session() as session:
         verkey = await resolve_public_key_by_kid_for_verify(

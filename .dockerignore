@@ -9,3 +9,4 @@ test-reports
 .python-version
 docker
 env
+.venv

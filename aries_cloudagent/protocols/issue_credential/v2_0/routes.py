@@ -184,8 +184,7 @@ class V20CredFilterSchema(OpenAPISchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Data must have indy, ld_proof, or both.
 
@@ -496,8 +495,7 @@ def _format_result_with_details(
 @querystring_schema(V20CredExRecordListQueryStringSchema)
 @response_schema(V20CredExRecordListResultSchema(), 200, description="")
 async def credential_exchange_list(request: web.BaseRequest):
-    """
-    Request handler for searching credential exchange records.
+    """Request handler for searching credential exchange records.
 
     Args:
         request: aiohttp request object
@@ -544,8 +542,7 @@ async def credential_exchange_list(request: web.BaseRequest):
 @match_info_schema(V20CredExIdMatchInfoSchema())
 @response_schema(V20CredExRecordDetailSchema(), 200, description="")
 async def credential_exchange_retrieve(request: web.BaseRequest):
-    """
-    Request handler for fetching single credential exchange record.
+    """Request handler for fetching single credential exchange record.
 
     Args:
         request: aiohttp request object
@@ -592,8 +589,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
 @request_schema(V20IssueCredSchemaCore())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_create(request: web.BaseRequest):
-    """
-    Request handler for creating a credential from attr values.
+    """Request handler for creating a credential from attr values.
 
     The internal credential record will be created without the credential
     being sent to any connection. This can be used in conjunction with
@@ -667,8 +663,7 @@ async def credential_exchange_create(request: web.BaseRequest):
 @request_schema(V20CredExFreeSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send(request: web.BaseRequest):
-    """
-    Request handler for sending credential from issuer to holder from attr values.
+    """Request handler for sending credential from issuer to holder from attr values.
 
     If both issuer and holder are configured for automatic responses, the operation
     ultimately results in credential issue; otherwise, the result waits on the first
@@ -782,8 +777,7 @@ async def credential_exchange_send(request: web.BaseRequest):
 @request_schema(V20CredExFreeSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_proposal(request: web.BaseRequest):
-    """
-    Request handler for sending credential proposal.
+    """Request handler for sending credential proposal.
 
     Args:
         request: aiohttp request object
@@ -841,13 +835,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
-        await report_problem(
-            err,
-            ProblemReportReason.ISSUANCE_ABANDONED.value,
-            web.HTTPBadRequest,
-            cred_ex_record or conn_record,
-            outbound_handler,
-        )
+        # other party cannot yet receive a problem report about our failed protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     await outbound_handler(cred_proposal_message, connection_id=connection_id)
 
@@ -912,8 +901,7 @@ async def _create_free_offer(
 @request_schema(V20CredOfferConnFreeRequestSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_create_free_offer(request: web.BaseRequest):
-    """
-    Request handler for creating free credential offer.
+    """Request handler for creating free credential offer.
 
     Unlike with `send-offer`, this credential exchange is not tied to a specific
     connection. It must be dispatched out-of-band by the controller.
@@ -983,8 +971,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
 @request_schema(V20CredOfferRequestSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_free_offer(request: web.BaseRequest):
-    """
-    Request handler for sending free credential offer.
+    """Request handler for sending free credential offer.
 
     An issuer initiates a such a credential offer, free from any
     holder-initiated corresponding credential proposal with preview.
@@ -1050,13 +1037,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
-        await report_problem(
-            err,
-            ProblemReportReason.ISSUANCE_ABANDONED.value,
-            web.HTTPBadRequest,
-            cred_ex_record or conn_record,
-            outbound_handler,
-        )
+        # other party cannot yet receive a problem report about our failed protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     await outbound_handler(cred_offer_message, connection_id=connection_id)
 
@@ -1078,8 +1060,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 @request_schema(V20CredBoundOfferRequestSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_bound_offer(request: web.BaseRequest):
-    """
-    Request handler for sending bound credential offer.
+    """Request handler for sending bound credential offer.
 
     A holder initiates this sequence with a credential proposal; this message
     responds with an offer bound to the proposal.
@@ -1189,8 +1170,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 @request_schema(V20CredRequestFreeSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_free_request(request: web.BaseRequest):
-    """
-    Request handler for sending free credential request.
+    """Request handler for sending free credential request.
 
     Args:
         request: aiohttp request object
@@ -1262,13 +1242,8 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
-        await report_problem(
-            err,
-            ProblemReportReason.ISSUANCE_ABANDONED.value,
-            web.HTTPBadRequest,
-            cred_ex_record,
-            outbound_handler,
-        )
+        # other party cannot yet receive a problem report about our failed protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     await outbound_handler(cred_request_message, connection_id=connection_id)
 
@@ -1290,8 +1265,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 @request_schema(V20CredRequestRequestSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_send_bound_request(request: web.BaseRequest):
-    """
-    Request handler for sending credential request.
+    """Request handler for sending credential request.
 
     Args:
         request: aiohttp request object
@@ -1409,8 +1383,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 @request_schema(V20CredIssueRequestSchema())
 @response_schema(V20CredExRecordDetailSchema(), 200, description="")
 async def credential_exchange_issue(request: web.BaseRequest):
-    """
-    Request handler for sending credential.
+    """Request handler for sending credential.
 
     Args:
         request: aiohttp request object
@@ -1503,8 +1476,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 @request_schema(V20CredStoreRequestSchema())
 @response_schema(V20CredExRecordDetailSchema(), 200, description="")
 async def credential_exchange_store(request: web.BaseRequest):
-    """
-    Request handler for storing credential.
+    """Request handler for storing credential.
 
     Args:
         request: aiohttp request object
@@ -1606,8 +1578,7 @@ async def credential_exchange_store(request: web.BaseRequest):
 @match_info_schema(V20CredExIdMatchInfoSchema())
 @response_schema(V20IssueCredentialModuleResponseSchema(), 200, description="")
 async def credential_exchange_remove(request: web.BaseRequest):
-    """
-    Request handler for removing a credential exchange record.
+    """Request handler for removing a credential exchange record.
 
     Args:
         request: aiohttp request object
@@ -1635,8 +1606,7 @@ async def credential_exchange_remove(request: web.BaseRequest):
 @request_schema(V20CredIssueProblemReportRequestSchema())
 @response_schema(V20IssueCredentialModuleResponseSchema(), 200, description="")
 async def credential_exchange_problem_report(request: web.BaseRequest):
-    """
-    Request handler for sending problem report.
+    """Request handler for sending problem report.
 
     Args:
         request: aiohttp request object

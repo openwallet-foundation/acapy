@@ -19,8 +19,7 @@ class DIDXResponseHandler(BaseHandler):
     """Handler class for DID exchange response message under RFC 23."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle DID exchange response under RFC 23.
+        """Handle DID exchange response under RFC 23.
 
         Args:
             context: Request context

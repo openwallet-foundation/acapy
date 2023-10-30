@@ -26,8 +26,7 @@ WARNING_VERSION_NOT_SUPPORTED = "version-not-supported"
 async def validate_get_response_version(
     profile: Profile, rec_version: str, msg_class: type
 ) -> Tuple[str, Optional[str]]:
-    """
-    Return a tuple with version to respond with and warnings.
+    """Return a tuple with version to respond with and warnings.
 
     Process received version and protocol version definition,
     returns the tuple.

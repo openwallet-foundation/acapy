@@ -167,8 +167,7 @@ def error_handler(func):
 @response_schema(TxnOrSchemaSendResultSchema(), 200, description="")
 @error_handler
 async def schemas_send_schema(request: web.BaseRequest):
-    """
-    Request handler for creating a schema.
+    """Request handler for creating a schema.
 
     Args:
         request: aiohttp request object
@@ -239,8 +238,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 @response_schema(SchemasCreatedResultSchema(), 200, description="")
 @error_handler
 async def schemas_created(request: web.BaseRequest):
-    """
-    Request handler for retrieving schemas that current agent created.
+    """Request handler for retrieving schemas that current agent created.
 
     Args:
         request: aiohttp request object
@@ -269,8 +267,7 @@ async def schemas_created(request: web.BaseRequest):
 @response_schema(SchemaGetResultSchema(), 200, description="")
 @error_handler
 async def schemas_get_schema(request: web.BaseRequest):
-    """
-    Request handler for sending a credential offer.
+    """Request handler for sending a credential offer.
 
     Args:
         request: aiohttp request object

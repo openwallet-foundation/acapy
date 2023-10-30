@@ -36,8 +36,7 @@ class CredentialOffer(AgentMessage):
         offers_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential offer object.
+        """Initialize credential offer object.
 
         Args:
             comment: optional human-readable comment
@@ -51,8 +50,7 @@ class CredentialOffer(AgentMessage):
         self.offers_attach = list(offers_attach) if offers_attach else []
 
     def indy_offer(self, index: int = 0) -> dict:
-        """
-        Retrieve and decode indy offer from attachment.
+        """Retrieve and decode indy offer from attachment.
 
         Args:
             index: ordinal in attachment list to decode and return

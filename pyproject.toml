@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "aries_cloudagent"
-version = "0.10.0-rc0"
-description = ""
+version = "0.10.1"
+description = "Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building decentralized identity applications and services running in non-mobile environments. "
 authors = ["Hyperledger Aries <aries@lists.hyperledger.org>"]
 license = "Apache-2.0"
 readme = "README.md"
@@ -19,7 +19,6 @@ python = "^3.9"
 aiohttp="~3.8.1"
 aiohttp-apispec="~2.2.1"
 aiohttp-cors="~0.7.0"
-aioredis="~2.0.0"
 apispec="~3.3.0"
 async-timeout="~4.0.2"
 base58="~2.1.0"
@@ -30,13 +29,11 @@ jsonpath_ng="1.5.2"
 Markdown="~3.1.1"
 markupsafe="2.0.1"
 marshmallow="~3.20.1"
-msgpack="~1.0"
-multiformats="~0.2.1"
 nest_asyncio="~1.5.5"
 packaging="~23.1"
 portalocker="~2.7.0"
 prompt_toolkit=">=2.0.9,<2.1.0"
-pydid="~0.3.6"
+pydid="~0.3.9"
 pyjwt="~2.8.0"
 pyld="~2.0.3"
 pynacl="~1.5.0"
@@ -48,9 +45,8 @@ qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
 requests="~2.31.0"
 rlp="1.2.0"
 unflatten="~0.1"
-asyncpg = ">=0.25.0,<0.26.0"
-web-py = ">=0.62,<1.0"
-pygments = ">=2.10,<3.0"
+sd_jwt = {git = "https://github.com/openwallet-foundation-labs/sd-jwt-python.git"}
+did-peer-2 = "^0.1.2"
 
 # askar
 aries-askar= { version = "~0.2.5", optional = true }
@@ -67,6 +63,7 @@ python3-indy= { version = "^1.11.1", optional = true }
 [tool.poetry.group.dev.dependencies]
 pre-commit="~3.3.3"
 ruff="^0.0.285"
+black="23.7.0"
 
 sphinx="1.8.4"
 sphinx-rtd-theme=">=0.4.3"
@@ -77,12 +74,13 @@ pydevd="1.5.1"
 pydevd-pycharm="~193.6015.39"
 
 # testing
-asynctest= "0.13.0"
 pytest= "~7.4.0"
-pytest-asyncio= "0.14.0"
-pytest-cov= "2.10.1"
+pytest-asyncio= "^0.21.1"
+pytest-cov= "4.1.0"
 pytest-ruff="^0.1.1"
 mock= "~4.0"
+asynctest= "~0.13.0"
+async-case= "~10.1"
 
 [tool.poetry.extras]
 askar = [

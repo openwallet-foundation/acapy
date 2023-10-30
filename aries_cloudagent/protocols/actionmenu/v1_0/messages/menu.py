@@ -30,8 +30,7 @@ class Menu(AgentMessage):
         options: Sequence[MenuOption] = None,
         **kwargs,
     ):
-        """
-        Initialize a menu object.
+        """Initialize a menu object.
 
         Args:
             title: The menu title

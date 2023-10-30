@@ -17,7 +17,6 @@ from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....multitenant.base import BaseMultitenantManager
 from ....resolver.base import ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....storage.error import StorageNotFoundError
@@ -48,8 +47,7 @@ class DIDXManager(BaseConnectionManager):
     """Class for managing connections under RFC 23 (DID exchange)."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a DIDXManager.
+        """Initialize a DIDXManager.
 
         Args:
             profile: The profile for this did exchange manager
@@ -60,8 +58,7 @@ class DIDXManager(BaseConnectionManager):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile.
+        """Accessor for the current profile.
 
         Returns:
             The profile for this did exchange manager
@@ -77,8 +74,7 @@ class DIDXManager(BaseConnectionManager):
         alias: Optional[str] = None,
         mediation_id: Optional[str] = None,
     ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band
-        """
-        Create a new connection record to track a received invitation.
+        """Create a new connection record to track a received invitation.
 
         Args:
             invitation: invitation to store
@@ -127,7 +123,7 @@ class DIDXManager(BaseConnectionManager):
             invitation_msg_id=invitation._id,
             their_label=invitation.label,
             their_role=ConnRecord.Role.RESPONDER.rfc23,
-            state=ConnRecord.State.INVITATION.rfc23,
+            state=ConnRecord.State.INVITATION.rfc160,
             accept=accept,
             alias=alias,
             their_public_did=their_public_did,
@@ -167,7 +163,7 @@ class DIDXManager(BaseConnectionManager):
                     connection_id=conn_rec.connection_id,
                 )
 
-                conn_rec.state = ConnRecord.State.REQUEST.rfc23
+                conn_rec.state = ConnRecord.State.REQUEST.rfc160
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Sent connection request")
         else:
@@ -186,8 +182,7 @@ class DIDXManager(BaseConnectionManager):
         goal_code: str = None,
         goal: str = None,
     ) -> ConnRecord:
-        """
-        Create and send a request against a public DID only (no explicit invitation).
+        """Create and send a request against a public DID only (no explicit invitation).
 
         Args:
             their_public_did: public DID to which to request a connection
@@ -253,7 +248,7 @@ class DIDXManager(BaseConnectionManager):
             use_public_did=bool(my_public_info),
         )
         conn_rec.request_id = request._id
-        conn_rec.state = ConnRecord.State.REQUEST.rfc23
+        conn_rec.state = ConnRecord.State.REQUEST.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Created connection request")
         responder = self.profile.inject_or(BaseResponder)
@@ -272,8 +267,7 @@ class DIDXManager(BaseConnectionManager):
         goal: Optional[str] = None,
         use_public_did: bool = False,
     ) -> DIDXRequest:
-        """
-        Create a new connection request for a previously-received invitation.
+        """Create a new connection request for a previously-received invitation.
 
         Args:
             conn_rec: The `ConnRecord` representing the invitation to accept
@@ -290,20 +284,12 @@ class DIDXManager(BaseConnectionManager):
 
         """
         # Mediation Support
-        mediation_record = await self._route_manager.mediation_record_for_connection(
+        mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile,
             conn_rec,
             mediation_id,
             or_default=True,
         )
-
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-
-        base_mediation_record = None
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         my_info = None
 
@@ -341,11 +327,8 @@ class DIDXManager(BaseConnectionManager):
         else:
             did_doc = await self.create_did_document(
                 my_info,
-                conn_rec.inbound_connection_id,
                 my_endpoints,
-                mediation_records=list(
-                    filter(None, [base_mediation_record, mediation_record])
-                ),
+                mediation_records=mediation_records,
             )
             attach = AttachDecorator.data_base64(did_doc.serialize())
             async with self.profile.session() as session:
@@ -376,13 +359,13 @@ class DIDXManager(BaseConnectionManager):
 
         # Update connection state
         conn_rec.request_id = request._id
-        conn_rec.state = ConnRecord.State.REQUEST.rfc23
+        conn_rec.state = ConnRecord.State.REQUEST.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Created connection request")
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
-            self.profile, conn_rec, mediation_record
+            self.profile, conn_rec, mediation_records
         )
 
         return request
@@ -396,8 +379,7 @@ class DIDXManager(BaseConnectionManager):
         alias: Optional[str] = None,
         auto_accept_implicit: Optional[bool] = None,
     ) -> ConnRecord:
-        """
-        Receive and store a connection request.
+        """Receive and store a connection request.
 
         Args:
             request: The `DIDXRequest` to accept
@@ -473,7 +455,7 @@ class DIDXManager(BaseConnectionManager):
                 new_conn_rec = ConnRecord(
                     invitation_key=connection_key,
                     my_did=my_info.did,
-                    state=ConnRecord.State.REQUEST.rfc23,
+                    state=ConnRecord.State.REQUEST.rfc160,
                     accept=conn_rec.accept,
                     their_role=conn_rec.their_role,
                     connection_protocol=DIDX_PROTO,
@@ -518,7 +500,7 @@ class DIDXManager(BaseConnectionManager):
             self._logger.debug(
                 "No DID Doc attachment in request; doc will be resolved from DID"
             )
-            await self.record_keys_for_public_did(request.did)
+            await self.record_did(request.did)
 
         if conn_rec:  # request is against explicit invitation
             auto_accept = (
@@ -529,7 +511,7 @@ class DIDXManager(BaseConnectionManager):
             if alias:
                 conn_rec.alias = alias
             conn_rec.their_did = request.did
-            conn_rec.state = ConnRecord.State.REQUEST.rfc23
+            conn_rec.state = ConnRecord.State.REQUEST.rfc160
             conn_rec.request_id = request._id
             async with self.profile.session() as session:
                 await conn_rec.save(
@@ -562,7 +544,7 @@ class DIDXManager(BaseConnectionManager):
                 invitation_key=connection_key,
                 invitation_msg_id=None,
                 request_id=request._id,
-                state=ConnRecord.State.REQUEST.rfc23,
+                state=ConnRecord.State.REQUEST.rfc160,
                 connection_protocol=DIDX_PROTO,
             )
             async with self.profile.session() as session:
@@ -587,8 +569,7 @@ class DIDXManager(BaseConnectionManager):
         mediation_id: Optional[str] = None,
         use_public_did: Optional[bool] = None,
     ) -> DIDXResponse:
-        """
-        Create a connection response for a received connection request.
+        """Create a connection response for a received connection request.
 
         Args:
             conn_rec: The `ConnRecord` with a pending connection request
@@ -606,17 +587,9 @@ class DIDXManager(BaseConnectionManager):
             settings=self.profile.settings,
         )
 
-        mediation_record = await self._route_manager.mediation_record_for_connection(
+        mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile, conn_rec, mediation_id
         )
-
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-
-        base_mediation_record = None
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         if ConnRecord.State.get(conn_rec.state) is not ConnRecord.State.REQUEST:
             raise DIDXManagerError(
@@ -652,7 +625,7 @@ class DIDXManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
-            self.profile, conn_rec, mediation_record
+            self.profile, conn_rec, mediation_records
         )
 
         # Create connection response message
@@ -672,11 +645,8 @@ class DIDXManager(BaseConnectionManager):
         else:
             did_doc = await self.create_did_document(
                 my_info,
-                conn_rec.inbound_connection_id,
                 my_endpoints,
-                mediation_records=list(
-                    filter(None, [base_mediation_record, mediation_record])
-                ),
+                mediation_records=mediation_records,
             )
             attach = AttachDecorator.data_base64(did_doc.serialize())
             async with self.profile.session() as session:
@@ -716,8 +686,7 @@ class DIDXManager(BaseConnectionManager):
         response: DIDXResponse,
         receipt: MessageReceipt,
     ) -> ConnRecord:
-        """
-        Accept a connection response under RFC 23 (DID exchange).
+        """Accept a connection response under RFC 23 (DID exchange).
 
         Process a `DIDXResponse` message by looking up
         the connection request and setting up the pairwise connection.
@@ -804,10 +773,10 @@ class DIDXManager(BaseConnectionManager):
             self._logger.debug(
                 "No DID Doc attachment in response; doc will be resolved from DID"
             )
-            await self.record_keys_for_public_did(response.did)
+            await self.record_did(response.did)
 
         conn_rec.their_did = their_did
-        conn_rec.state = ConnRecord.State.RESPONSE.rfc23
+        conn_rec.state = ConnRecord.State.RESPONSE.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Accepted connection response")
 
@@ -830,7 +799,7 @@ class DIDXManager(BaseConnectionManager):
         if responder:
             await responder.send_reply(complete, connection_id=conn_rec.connection_id)
 
-            conn_rec.state = ConnRecord.State.COMPLETED.rfc23
+            conn_rec.state = ConnRecord.State.COMPLETED.rfc160
             async with self.profile.session() as session:
                 await conn_rec.save(session, reason="Sent connection complete")
                 if session.settings.get("auto_disclose_features"):
@@ -846,8 +815,7 @@ class DIDXManager(BaseConnectionManager):
         complete: DIDXComplete,
         receipt: MessageReceipt,
     ) -> ConnRecord:
-        """
-        Accept a connection complete message under RFC 23 (DID exchange).
+        """Accept a connection complete message under RFC 23 (DID exchange).
 
         Process a `DIDXComplete` message by looking up
         the connection record and marking the exchange complete.
@@ -893,7 +861,7 @@ class DIDXManager(BaseConnectionManager):
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value,
             )
 
-        conn_rec.state = ConnRecord.State.COMPLETED.rfc23
+        conn_rec.state = ConnRecord.State.COMPLETED.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Received connection complete")
             if session.settings.get("auto_disclose_features"):
@@ -945,9 +913,9 @@ class DIDXManager(BaseConnectionManager):
         if not report.description:
             raise DIDXManagerError("Missing description in problem report")
 
-        if report.description.get("code") in set(
+        if report.description.get("code") in {
             reason.value for reason in ProblemReportReason
-        ):
+        }:
             self._logger.info("Problem report indicates connection is abandoned")
             async with self.profile.session() as session:
                 await conn_rec.abandon(

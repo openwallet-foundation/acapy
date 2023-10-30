@@ -24,8 +24,7 @@ class ConnectionResponse(AgentMessage):
         message_type = CONNECTION_RESPONSE
 
     def __init__(self, *, connection: ConnectionDetail = None, **kwargs):
-        """
-        Initialize connection response object.
+        """Initialize connection response object.
 
         Args:
             connection: Connection details object

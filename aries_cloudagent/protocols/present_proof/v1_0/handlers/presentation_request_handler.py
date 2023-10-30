@@ -23,8 +23,7 @@ class PresentationRequestHandler(BaseHandler):
     """Message handler class for Aries#0037 v1.0 presentation requests."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for Aries#0037 v1.0 presentation requests.
+        """Message handler logic for Aries#0037 v1.0 presentation requests.
 
         Args:
             context: request context

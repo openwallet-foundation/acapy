@@ -1,13 +1,13 @@
 """Record used to represent a service block of an out of band invitation."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields, post_dump
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import (
-    DID_KEY_EXAMPLE,
-    DID_KEY_VALIDATE,
+    DID_KEY_OR_REF_EXAMPLE,
+    DID_KEY_OR_REF_VALIDATE,
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
 )
@@ -24,15 +24,14 @@ class Service(BaseModel):
     def __init__(
         self,
         *,
-        _id: str = None,
-        _type: str = None,
-        did: str = None,
-        recipient_keys: Sequence[str] = None,
-        routing_keys: Sequence[str] = None,
-        service_endpoint: str = None,
+        _id: Optional[str] = None,
+        _type: Optional[str] = None,
+        did: Optional[str] = None,
+        recipient_keys: Optional[Sequence[str]] = None,
+        routing_keys: Optional[Sequence[str]] = None,
+        service_endpoint: Optional[str] = None,
     ):
-        """
-        Initialize a Service instance.
+        """Initialize a Service instance.
 
         Args:
             id: An identifier for this service block
@@ -73,10 +72,10 @@ class ServiceSchema(BaseModelSchema):
 
     recipient_keys = fields.List(
         fields.Str(
-            validate=DID_KEY_VALIDATE,
+            validate=DID_KEY_OR_REF_VALIDATE,
             metadata={
                 "description": "Recipient public key",
-                "example": DID_KEY_EXAMPLE,
+                "example": DID_KEY_OR_REF_EXAMPLE,
             },
         ),
         data_key="recipientKeys",
@@ -86,8 +85,8 @@ class ServiceSchema(BaseModelSchema):
 
     routing_keys = fields.List(
         fields.Str(
-            validate=DID_KEY_VALIDATE,
-            metadata={"description": "Routing key", "example": DID_KEY_EXAMPLE},
+            validate=DID_KEY_OR_REF_VALIDATE,
+            metadata={"description": "Routing key", "example": DID_KEY_OR_REF_EXAMPLE},
         ),
         data_key="routingKeys",
         required=False,

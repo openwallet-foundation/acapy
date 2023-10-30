@@ -18,8 +18,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
     CHUNK = 256
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -29,8 +28,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_credential(self, credential_id: str) -> str:
-        """
-        Get a credential stored in the wallet.
+        """Get a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to retrieve
@@ -41,8 +39,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
     async def credential_revoked(
         self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
     ) -> bool:
-        """
-        Check ledger for revocation status of credential by cred id.
+        """Check ledger for revocation status of credential by cred id.
 
         Args:
             credential_id: Credential id to check
@@ -51,8 +48,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def delete_credential(self, credential_id: str):
-        """
-        Remove a credential stored in the wallet.
+        """Remove a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to remove
@@ -63,8 +59,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
     async def get_mime_type(
         self, credential_id: str, attr: str = None
     ) -> Union[dict, str]:
-        """
-        Get MIME type per attribute (or for all attributes).
+        """Get MIME type per attribute (or for all attributes).
 
         Args:
             credential_id: credential id
@@ -84,8 +79,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
         credential_definitions: dict,
         rev_states: dict = None,
     ) -> str:
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             presentation_request: Valid indy format presentation request
@@ -99,8 +93,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
     async def create_credential_request(
         self, credential_offer: dict, credential_definition: dict, holder_did: str
     ) -> Tuple[str, str]:
-        """
-        Create a credential request for the given credential offer.
+        """Create a credential request for the given credential offer.
 
         Args:
             credential_offer: The credential offer to create request for
@@ -122,8 +115,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
         credential_id: str = None,
         rev_reg_def: dict = None,
     ):
-        """
-        Store a credential in the wallet.
+        """Store a credential in the wallet.
 
         Args:
             credential_definition: Credential definition for this credential
@@ -149,8 +141,7 @@ class IndyHolder(ABC, metaclass=ABCMeta):
         timestamp: int,
         tails_file_path: str,
     ) -> str:
-        """
-        Create current revocation state for a received credential.
+        """Create current revocation state for a received credential.
 
         Args:
             cred_rev_id: credential revocation id in revocation registry

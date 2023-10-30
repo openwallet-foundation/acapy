@@ -430,8 +430,7 @@ def connection_sort_key(conn):
 @querystring_schema(ConnectionsListQueryStringSchema())
 @response_schema(ConnectionListSchema(), 200, description="")
 async def connections_list(request: web.BaseRequest):
-    """
-    Request handler for searching connection records.
+    """Request handler for searching connection records.
 
     Args:
         request: aiohttp request object
@@ -459,13 +458,11 @@ async def connections_list(request: web.BaseRequest):
     if request.query.get("alias"):
         post_filter["alias"] = request.query["alias"]
     if request.query.get("state"):
-        post_filter["state"] = [
-            v for v in ConnRecord.State.get(request.query["state"]).value
-        ]
+        post_filter["state"] = list(ConnRecord.State.get(request.query["state"]).value)
     if request.query.get("their_role"):
-        post_filter["their_role"] = [
-            v for v in ConnRecord.Role.get(request.query["their_role"]).value
-        ]
+        post_filter["their_role"] = list(
+            ConnRecord.Role.get(request.query["their_role"]).value
+        )
     if request.query.get("connection_protocol"):
         post_filter["connection_protocol"] = request.query["connection_protocol"]
 
@@ -487,8 +484,7 @@ async def connections_list(request: web.BaseRequest):
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def connections_retrieve(request: web.BaseRequest):
-    """
-    Request handler for fetching a single connection record.
+    """Request handler for fetching a single connection record.
 
     Args:
         request: aiohttp request object
@@ -517,8 +513,7 @@ async def connections_retrieve(request: web.BaseRequest):
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(EndpointsResultSchema(), 200, description="")
 async def connections_endpoints(request: web.BaseRequest):
-    """
-    Request handler for fetching connection endpoints.
+    """Request handler for fetching connection endpoints.
 
     Args:
         request: aiohttp request object
@@ -601,8 +596,7 @@ async def connections_metadata_set(request: web.BaseRequest):
 @request_schema(CreateInvitationRequestSchema())
 @response_schema(InvitationResultSchema(), 200, description="")
 async def connections_create_invitation(request: web.BaseRequest):
-    """
-    Request handler for creating a new connection invitation.
+    """Request handler for creating a new connection invitation.
 
     Args:
         request: aiohttp request object
@@ -675,8 +669,7 @@ async def connections_create_invitation(request: web.BaseRequest):
 @request_schema(ReceiveInvitationRequestSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def connections_receive_invitation(request: web.BaseRequest):
-    """
-    Request handler for receiving a new connection invitation.
+    """Request handler for receiving a new connection invitation.
 
     Args:
         request: aiohttp request object
@@ -717,8 +710,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
 @querystring_schema(AcceptInvitationQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def connections_accept_invitation(request: web.BaseRequest):
-    """
-    Request handler for accepting a stored connection invitation.
+    """Request handler for accepting a stored connection invitation.
 
     Args:
         request: aiohttp request object
@@ -768,8 +760,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
 @querystring_schema(AcceptRequestQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def connections_accept_request(request: web.BaseRequest):
-    """
-    Request handler for accepting a stored connection request.
+    """Request handler for accepting a stored connection request.
 
     Args:
         request: aiohttp request object
@@ -799,45 +790,11 @@ async def connections_accept_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["connection"], summary="Assign another connection as the inbound connection"
-)
-@match_info_schema(ConnIdRefIdMatchInfoSchema())
-@response_schema(ConnectionModuleResponseSchema(), 200, description="")
-async def connections_establish_inbound(request: web.BaseRequest):
-    """
-    Request handler for setting the inbound connection on a connection record.
-
-    Args:
-        request: aiohttp request object
-    """
-    context: AdminRequestContext = request["context"]
-    connection_id = request.match_info["conn_id"]
-    outbound_handler = request["outbound_message_router"]
-    inbound_connection_id = request.match_info["ref_id"]
-
-    profile = context.profile
-    try:
-        async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
-        connection_mgr = ConnectionManager(profile)
-        await connection_mgr.establish_inbound(
-            connection, inbound_connection_id, outbound_handler
-        )
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (StorageError, WalletError, ConnectionManagerError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({})
-
-
 @docs(tags=["connection"], summary="Remove an existing connection record")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(ConnectionModuleResponseSchema, 200, description="")
 async def connections_remove(request: web.BaseRequest):
-    """
-    Request handler for removing a connection record.
+    """Request handler for removing a connection record.
 
     Args:
         request: aiohttp request object
@@ -865,8 +822,7 @@ async def connections_remove(request: web.BaseRequest):
 @request_schema(ConnectionStaticRequestSchema())
 @response_schema(ConnectionStaticResultSchema(), 200, description="")
 async def connections_create_static(request: web.BaseRequest):
-    """
-    Request handler for creating a new static connection.
+    """Request handler for creating a new static connection.
 
     Args:
         request: aiohttp request object
@@ -937,10 +893,6 @@ async def register(app: web.Application):
             web.post(
                 "/connections/{conn_id}/accept-request",
                 connections_accept_request,
-            ),
-            web.post(
-                "/connections/{conn_id}/establish-inbound/{ref_id}",
-                connections_establish_inbound,
             ),
             web.delete("/connections/{conn_id}", connections_remove),
         ]

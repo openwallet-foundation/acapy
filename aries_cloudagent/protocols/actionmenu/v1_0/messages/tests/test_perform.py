@@ -1,10 +1,11 @@
-from unittest import mock, TestCase
+from unittest import mock
+from unittest import TestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import PERFORM, PROTOCOL_PACKAGE
 
-from ..perform import Perform, PerformSchema
+from ..perform import Perform
 
 
 class TestPerform(TestCase):
@@ -47,4 +48,4 @@ class TestPerform(TestCase):
     def test_make_model(self):
         data = self.perform.serialize()
         model_instance = Perform.deserialize(data)
-        assert type(model_instance) is type(self.perform)
+        assert isinstance(model_instance, type(self.perform))

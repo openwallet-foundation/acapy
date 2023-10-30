@@ -1,5 +1,4 @@
-"""
-A message responder.
+"""A message responder.
 
 The responder is provided to message handlers to enable them to send a new message
 in response to the message being handled.
@@ -112,8 +111,7 @@ class BaseResponder(ABC):
         target: ConnectionTarget = None,
         target_list: Sequence[ConnectionTarget] = None,
     ) -> OutboundSendStatus:
-        """
-        Send a reply to an incoming message.
+        """Send a reply to an incoming message.
 
         Args:
             message: the `BaseMessage`, or pre-packed str or bytes to reply with
@@ -185,8 +183,7 @@ class BaseResponder(ABC):
     async def send_outbound(
         self, message: OutboundMessage, **kwargs
     ) -> OutboundSendStatus:
-        """
-        Send an outbound message.
+        """Send an outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
@@ -194,8 +191,7 @@ class BaseResponder(ABC):
 
     @abstractmethod
     async def send_webhook(self, topic: str, payload: dict):
-        """
-        Dispatch a webhook. DEPRECATED: use the event bus instead.
+        """Dispatch a webhook. DEPRECATED: use the event bus instead.
 
         Args:
             topic: the webhook topic identifier

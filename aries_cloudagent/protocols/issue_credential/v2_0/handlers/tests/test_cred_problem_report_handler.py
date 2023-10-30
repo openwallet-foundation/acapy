@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -9,18 +10,16 @@ from ...messages.cred_problem_report import V20CredProblemReport, ProblemReportR
 from .. import cred_problem_report_handler as test_module
 
 
-class TestCredProblemReportHandler(AsyncTestCase):
+class TestCredProblemReportHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
-            mock_cred_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock()
-            )
+            mock_cred_mgr.return_value.receive_problem_report = mock.CoroutineMock()
             request_context.connection_ready = True
             request_context.message = V20CredProblemReport(
                 description={
@@ -41,16 +40,14 @@ class TestCredProblemReportHandler(AsyncTestCase):
     async def test_called_x(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             request_context.connection_ready = True
-            mock_cred_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError("Disk full")
-                )
+            mock_cred_mgr.return_value.receive_problem_report = mock.CoroutineMock(
+                side_effect=test_module.StorageError("Disk full")
             )
             request_context.message = V20CredProblemReport(
                 description={
@@ -71,7 +68,7 @@ class TestCredProblemReportHandler(AsyncTestCase):
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
         request_context.connection_ready = False
 
         request_context.message = V20CredProblemReport(

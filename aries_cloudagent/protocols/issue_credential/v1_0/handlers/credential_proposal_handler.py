@@ -19,8 +19,7 @@ class CredentialProposalHandler(BaseHandler):
     """Message handler class for credential proposals."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for credential proposals.
+        """Message handler logic for credential proposals.
 
         Args:
             context: proposal context

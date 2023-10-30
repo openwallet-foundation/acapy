@@ -2,7 +2,7 @@
 import logging
 import pytest
 
-from unittest import mock, TestCase
+from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
 

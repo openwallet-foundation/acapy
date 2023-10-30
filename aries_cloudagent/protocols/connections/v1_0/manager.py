@@ -1,7 +1,7 @@
 """Classes to manage connections."""
 
 import logging
-from typing import Coroutine, Optional, Sequence, Tuple, cast
+from typing import Optional, Sequence, Tuple, cast
 
 
 from ....core.oob_processor import OobMessageProcessor
@@ -11,14 +11,12 @@ from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
 from ....messaging.valid import IndyDID
-from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.did_method import SOV
 from ....wallet.key_type import ED25519
 from ...coordinate_mediation.v1_0.manager import MediationManager
-from ...routing.v1_0.manager import RoutingManager
 from .message_types import ARIES_PROTOCOL as CONN_PROTO
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
@@ -35,8 +33,7 @@ class ConnectionManager(BaseConnectionManager):
     """Class for managing connections."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a ConnectionManager.
+        """Initialize a ConnectionManager.
 
         Args:
             profile: The profile for this connection manager
@@ -47,8 +44,7 @@ class ConnectionManager(BaseConnectionManager):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile.
+        """Accessor for the current profile.
 
         Returns:
             The profile for this connection manager
@@ -58,19 +54,18 @@ class ConnectionManager(BaseConnectionManager):
 
     async def create_invitation(
         self,
-        my_label: str = None,
-        my_endpoint: str = None,
-        auto_accept: bool = None,
+        my_label: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        auto_accept: Optional[bool] = None,
         public: bool = False,
         multi_use: bool = False,
-        alias: str = None,
-        routing_keys: Sequence[str] = None,
-        recipient_keys: Sequence[str] = None,
-        metadata: dict = None,
-        mediation_id: str = None,
+        alias: Optional[str] = None,
+        routing_keys: Optional[Sequence[str]] = None,
+        recipient_keys: Optional[Sequence[str]] = None,
+        metadata: Optional[dict] = None,
+        mediation_id: Optional[str] = None,
     ) -> Tuple[ConnRecord, ConnectionInvitation]:
-        """
-        Generate new connection invitation.
+        """Generate new connection invitation.
 
         This interaction represents an out-of-band communication channel. In the future
         and in practice, these sort of invitations will be received over any number of
@@ -212,10 +207,14 @@ class ConnectionManager(BaseConnectionManager):
             await self._route_manager.route_invitation(
                 self.profile, connection, mediation_record
             )
-            routing_keys, my_endpoint = await self._route_manager.routing_info(
+            routing_keys, routing_endpoint = await self._route_manager.routing_info(
                 self.profile,
-                my_endpoint or cast(str, self.profile.settings.get("default_endpoint")),
                 mediation_record,
+            )
+            my_endpoint = (
+                routing_endpoint
+                or my_endpoint
+                or cast(str, self.profile.settings.get("default_endpoint"))
             )
 
             # Create connection invitation message
@@ -247,8 +246,7 @@ class ConnectionManager(BaseConnectionManager):
         alias: Optional[str] = None,
         mediation_id: Optional[str] = None,
     ) -> ConnRecord:
-        """
-        Create a new connection record to track a received invitation.
+        """Create a new connection record to track a received invitation.
 
         Args:
             invitation: The `ConnectionInvitation` to store
@@ -329,8 +327,7 @@ class ConnectionManager(BaseConnectionManager):
         my_endpoint: str = None,
         mediation_id: str = None,
     ) -> ConnectionRequest:
-        """
-        Create a new connection request for a previously-received invitation.
+        """Create a new connection request for a previously-received invitation.
 
         Args:
             connection: The `ConnRecord` representing the invitation to accept
@@ -342,19 +339,12 @@ class ConnectionManager(BaseConnectionManager):
 
         """
 
-        mediation_record = await self._route_manager.mediation_record_for_connection(
+        mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile,
             connection,
             mediation_id,
             or_default=True,
         )
-
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-
-        base_mediation_record = None
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         if connection.my_did:
             async with self.profile.session() as session:
@@ -369,7 +359,7 @@ class ConnectionManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
-            self.profile, connection, mediation_record
+            self.profile, connection, mediation_records
         )
 
         # Create connection request message
@@ -384,11 +374,8 @@ class ConnectionManager(BaseConnectionManager):
 
         did_doc = await self.create_did_document(
             my_info,
-            connection.inbound_connection_id,
             my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
+            mediation_records=mediation_records,
         )
 
         if not my_label:
@@ -414,8 +401,7 @@ class ConnectionManager(BaseConnectionManager):
         request: ConnectionRequest,
         receipt: MessageReceipt,
     ) -> ConnRecord:
-        """
-        Receive and store a connection request.
+        """Receive and store a connection request.
 
         Args:
             request: The `ConnectionRequest` to accept
@@ -577,8 +563,7 @@ class ConnectionManager(BaseConnectionManager):
         my_endpoint: str = None,
         mediation_id: str = None,
     ) -> ConnectionResponse:
-        """
-        Create a connection response for a received connection request.
+        """Create a connection response for a received connection request.
 
         Args:
             connection: The `ConnRecord` with a pending connection request
@@ -595,17 +580,9 @@ class ConnectionManager(BaseConnectionManager):
             settings=self.profile.settings,
         )
 
-        mediation_record = await self._route_manager.mediation_record_for_connection(
+        mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile, connection, mediation_id
         )
-
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-
-        base_mediation_record = None
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         if ConnRecord.State.get(connection.state) not in (
             ConnRecord.State.REQUEST,
@@ -630,7 +607,7 @@ class ConnectionManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
-            self.profile, connection, mediation_record
+            self.profile, connection, mediation_records
         )
 
         # Create connection response message
@@ -645,11 +622,8 @@ class ConnectionManager(BaseConnectionManager):
 
         did_doc = await self.create_did_document(
             my_info,
-            connection.inbound_connection_id,
             my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
+            mediation_records=mediation_records,
         )
 
         response = ConnectionResponse(
@@ -692,8 +666,7 @@ class ConnectionManager(BaseConnectionManager):
     async def accept_response(
         self, response: ConnectionResponse, receipt: MessageReceipt
     ) -> ConnRecord:
-        """
-        Accept a connection response.
+        """Accept a connection response.
 
         Process a ConnectionResponse message by looking up
         the connection request and setting up the pairwise connection.
@@ -784,72 +757,3 @@ class ConnectionManager(BaseConnectionManager):
             await responder.send(request, connection_id=connection.connection_id)
 
         return connection
-
-    async def establish_inbound(
-        self,
-        connection: ConnRecord,
-        inbound_connection_id: str,
-        outbound_handler: Coroutine,
-    ) -> str:
-        """Assign the inbound routing connection for a connection record.
-
-        Returns: the current routing state (request or done)
-
-        """
-
-        # The connection must have a verkey, but in the case of a received
-        # invitation we might not have created one yet
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            if connection.my_did:
-                my_info = await wallet.get_local_did(connection.my_did)
-            else:
-                # Create new DID for connection
-                my_info = await wallet.create_local_did(SOV, ED25519)
-                connection.my_did = my_info.did
-
-        try:
-            async with self.profile.session() as session:
-                router = await ConnRecord.retrieve_by_id(session, inbound_connection_id)
-        except StorageNotFoundError:
-            raise ConnectionManagerError(
-                f"Routing connection not found: {inbound_connection_id}"
-            )
-        if not router.is_ready:
-            raise ConnectionManagerError(
-                f"Routing connection is not ready: {inbound_connection_id}"
-            )
-        connection.inbound_connection_id = inbound_connection_id
-
-        route_mgr = RoutingManager(self.profile)
-
-        await route_mgr.send_create_route(
-            inbound_connection_id, my_info.verkey, outbound_handler
-        )
-        connection.routing_state = ConnRecord.ROUTING_STATE_REQUEST
-        async with self.profile.session() as session:
-            await connection.save(session)
-        return connection.routing_state
-
-    async def update_inbound(
-        self, inbound_connection_id: str, recip_verkey: str, routing_state: str
-    ):
-        """Activate connections once a route has been established.
-
-        Looks up pending connections associated with the inbound routing
-        connection and marks the routing as complete.
-        """
-        async with self.profile.session() as session:
-            conns = await ConnRecord.query(
-                session, {"inbound_connection_id": inbound_connection_id}
-            )
-            wallet = session.inject(BaseWallet)
-
-            for connection in conns:
-                # check the recipient key
-                if not connection.my_did:
-                    continue
-                conn_info = await wallet.get_local_did(connection.my_did)
-                if conn_info.verkey == recip_verkey:
-                    connection.routing_state = routing_state
-                    await connection.save(session)

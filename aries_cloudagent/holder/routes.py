@@ -194,8 +194,7 @@ class CredRevokedResultSchema(OpenAPISchema):
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(IndyCredInfoSchema(), 200, description="")
 async def credentials_get(request: web.BaseRequest):
-    """
-    Request handler for retrieving credential.
+    """Request handler for retrieving credential.
 
     Args:
         request: aiohttp request object
@@ -222,8 +221,7 @@ async def credentials_get(request: web.BaseRequest):
 @querystring_schema(CredRevokedQueryStringSchema())
 @response_schema(CredRevokedResultSchema(), 200, description="")
 async def credentials_revoked(request: web.BaseRequest):
-    """
-    Request handler for querying revocation status of credential.
+    """Request handler for querying revocation status of credential.
 
     Args:
         request: aiohttp request object
@@ -266,8 +264,7 @@ async def credentials_revoked(request: web.BaseRequest):
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(AttributeMimeTypesResultSchema(), 200, description="")
 async def credentials_attr_mime_types_get(request: web.BaseRequest):
-    """
-    Request handler for getting credential attribute MIME types.
+    """Request handler for getting credential attribute MIME types.
 
     Args:
         request: aiohttp request object
@@ -289,8 +286,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(HolderModuleResponseSchema(), description="")
 async def credentials_remove(request: web.BaseRequest):
-    """
-    Request handler for searching connection records.
+    """Request handler for searching connection records.
 
     Args:
         request: aiohttp request object
@@ -321,8 +317,7 @@ async def credentials_remove(request: web.BaseRequest):
 @querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(CredInfoListSchema(), 200, description="")
 async def credentials_list(request: web.BaseRequest):
-    """
-    Request handler for searching credential records.
+    """Request handler for searching credential records.
 
     Args:
         request: aiohttp request object
@@ -360,8 +355,7 @@ async def credentials_list(request: web.BaseRequest):
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(VCRecordSchema(), 200, description="")
 async def w3c_cred_get(request: web.BaseRequest):
-    """
-    Request handler for retrieving W3C credential.
+    """Request handler for retrieving W3C credential.
 
     Args:
         request: aiohttp request object
@@ -392,8 +386,7 @@ async def w3c_cred_get(request: web.BaseRequest):
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(HolderModuleResponseSchema(), 200, description="")
 async def w3c_cred_remove(request: web.BaseRequest):
-    """
-    Request handler for deleting W3C credential.
+    """Request handler for deleting W3C credential.
 
     Args:
         request: aiohttp request object
@@ -430,8 +423,7 @@ async def w3c_cred_remove(request: web.BaseRequest):
 @querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(VCRecordListSchema(), 200, description="")
 async def w3c_creds_list(request: web.BaseRequest):
-    """
-    Request handler for searching W3C credential records.
+    """Request handler for searching W3C credential records.
 
     Args:
         request: aiohttp request object

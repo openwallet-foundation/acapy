@@ -204,8 +204,7 @@ class IndyRevocation:
     async def get_issuer_rev_reg_delta(
         self, rev_reg_id: str, fro: int = None, to: int = None
     ) -> dict:
-        """
-        Check ledger for revocation status for a given revocation registry.
+        """Check ledger for revocation status for a given revocation registry.
 
         Args:
             rev_reg_id: ID of the revocation registry

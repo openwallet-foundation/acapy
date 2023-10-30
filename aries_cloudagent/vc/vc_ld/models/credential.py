@@ -87,7 +87,7 @@ class VerifiableCredential(BaseModel):
     @property
     def context_urls(self) -> List[str]:
         """Getter for context urls."""
-        return [context for context in self.context if type(context) is str]
+        return [context for context in self.context if isinstance(context, str)]
 
     @property
     def type(self) -> List[str]:
@@ -127,7 +127,7 @@ class VerifiableCredential(BaseModel):
         """Getter for issuer id."""
         if not self._issuer:
             return None
-        elif type(self._issuer) is str:
+        elif isinstance(self._issuer, str):
             return self._issuer
 
         return self._issuer.get("id")
@@ -197,7 +197,7 @@ class VerifiableCredential(BaseModel):
         """Getter for credential subject ids."""
         if not self._credential_subject:
             return []
-        elif type(self._credential_subject) is dict:
+        elif isinstance(self._credential_subject, dict):
             subject_id = self._credential_subject.get("id")
 
             return [subject_id] if subject_id else []

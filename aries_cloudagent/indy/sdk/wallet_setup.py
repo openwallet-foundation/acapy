@@ -85,8 +85,7 @@ class IndyWalletConfig:
         return ret
 
     async def create_wallet(self) -> "IndyOpenWallet":
-        """
-        Create a new wallet.
+        """Create a new wallet.
 
         Raises:
             ProfileDuplicateError: If there was an existing wallet with the same name
@@ -125,8 +124,7 @@ class IndyWalletConfig:
             ) from err
 
     async def remove_wallet(self):
-        """
-        Remove an existing wallet.
+        """Remove an existing wallet.
 
         Raises:
             ProfileNotFoundError: If the wallet could not be found
@@ -150,8 +148,7 @@ class IndyWalletConfig:
             ) from x_indy
 
     async def open_wallet(self, created: bool = False) -> "IndyOpenWallet":
-        """
-        Open wallet, removing and/or creating it if so configured.
+        """Open wallet, removing and/or creating it if so configured.
 
         Raises:
             ProfileError: If wallet not found after creation

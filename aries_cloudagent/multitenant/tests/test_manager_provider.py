@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...config.injection_context import InjectionContext
 from ...config.base import InjectionError
@@ -6,7 +6,7 @@ from ..manager_provider import MultitenantManagerProvider
 from ...core.in_memory import InMemoryProfile
 
 
-class TestProfileManagerProvider(AsyncTestCase):
+class TestProfileManagerProvider(IsolatedAsyncioTestCase):
     async def test_provide_manager(self):
         profile = InMemoryProfile.test_profile()
         provider = MultitenantManagerProvider(profile)

@@ -46,8 +46,7 @@ class IndyPresPredSpec(BaseModel):
         threshold: int,
         **kwargs,
     ):
-        """
-        Initialize  preview object.
+        """Initialize  preview object.
 
         Args:
             name: attribute name
@@ -135,8 +134,7 @@ class IndyPresAttrSpec(BaseModel):
         referent: str = None,
         **kwargs,
     ):
-        """
-        Initialize attribute specification object.
+        """Initialize attribute specification object.
 
         Args:
             name: attribute name
@@ -157,8 +155,7 @@ class IndyPresAttrSpec(BaseModel):
 
     @staticmethod
     def list_plain(plain: dict, cred_def_id: str, referent: str = None):
-        """
-        Return a list of `IndyPresAttrSpec` on input cred def id.
+        """Return a list of `IndyPresAttrSpec` on input cred def id.
 
         Args:
             plain: dict mapping names to values
@@ -275,8 +272,7 @@ class IndyPresPreview(BaseModel):
         predicates: Sequence[IndyPresPredSpec] = None,
         **kwargs,
     ):
-        """
-        Initialize presentation preview object.
+        """Initialize presentation preview object.
 
         Args:
             _type: formalism for Marshmallow model creation: ignored
@@ -295,8 +291,7 @@ class IndyPresPreview(BaseModel):
         return DIDCommPrefix.qualify_current(IndyPresPreview.Meta.message_type)
 
     def has_attr_spec(self, cred_def_id: str, name: str, value: str) -> bool:
-        """
-        Return whether preview contains given attribute specification.
+        """Return whether preview contains given attribute specification.
 
         Args:
             cred_def_id: credential definition identifier
@@ -323,8 +318,7 @@ class IndyPresPreview(BaseModel):
         nonce: str = None,
         non_revoc_intervals: Mapping[str, IndyNonRevocationInterval] = None,
     ) -> dict:
-        """
-        Return indy proof request corresponding to presentation preview.
+        """Return indy proof request corresponding to presentation preview.
 
         Typically the verifier turns the proof preview into a proof request.
 

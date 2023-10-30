@@ -1,8 +1,7 @@
 """Test handler for keylist-query message."""
 import pytest
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
-from ......config.injection_context import InjectionContext
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -21,10 +20,10 @@ TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_VERKEY_DIDKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 
 
-class TestKeylistQueryHandler(AsyncTestCase):
+class TestKeylistQueryHandler(IsolatedAsyncioTestCase):
     """Test handler for keylist-query message."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         """Setup test dependencies."""
         self.context = RequestContext.test_context()
         self.session = await self.context.session()

@@ -1,5 +1,6 @@
 """An object for containing information on an individual route."""
 
+
 from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....core.profile import ProfileSession
@@ -125,8 +126,7 @@ class RouteRecordSchema(BaseRecordSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Args:
             data: The data to validate

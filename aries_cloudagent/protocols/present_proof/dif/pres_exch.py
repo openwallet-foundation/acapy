@@ -382,7 +382,7 @@ class FilterSchema(BaseModelSchema):
                 new_data[key] = value
             data = new_data
         if "enum" in data:
-            if type(data.get("enum")) is not list:
+            if not isinstance(data.get("enum"), list):
                 raise ValidationError("enum is not specified as a list")
         return data
 

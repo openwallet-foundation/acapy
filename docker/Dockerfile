@@ -1,4 +1,4 @@
-ARG python_version=3.9.16
+ARG python_version=3.9.18
 FROM python:${python_version}-slim-bullseye AS build
 
 WORKDIR /src
@@ -22,7 +22,7 @@ ENV HOME="/home/$user" \
     PIP_NO_CACHE_DIR=off \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    RUST_LOG=warning \
+    RUST_LOG=warn \
     SHELL=/bin/bash \
     SUMMARY="aries-cloudagent image" \
     DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \

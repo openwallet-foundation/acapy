@@ -88,8 +88,7 @@ def _get_settings_dict(
 @request_schema(UpdateProfileSettingsSchema())
 @response_schema(ProfileSettingsSchema(), 200, description="")
 async def update_profile_settings(request: web.BaseRequest):
-    """
-    Request handler for updating setting associated with profile.
+    """Request handler for updating setting associated with profile.
 
     Args:
         request: aiohttp request object
@@ -130,8 +129,7 @@ async def update_profile_settings(request: web.BaseRequest):
 )
 @response_schema(ProfileSettingsSchema(), 200, description="")
 async def get_profile_settings(request: web.BaseRequest):
-    """
-    Request handler for getting setting associated with profile.
+    """Request handler for getting setting associated with profile.
 
     Args:
         request: aiohttp request object

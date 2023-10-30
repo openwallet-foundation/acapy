@@ -60,8 +60,7 @@ class AgentMessage(BaseModel, BaseMessage):
         _version: Optional[Text] = None,
         _decorators: BaseDecoratorSet = None,
     ):
-        """
-        Initialize base agent message object.
+        """Initialize base agent message object.
 
         Args:
             _id: Agent message id
@@ -101,8 +100,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @classmethod
     def _get_handler_class(cls):
-        """
-        Get handler class.
+        """Get handler class.
 
         Returns:
             The resolved class defined on `Meta.handler_class`
@@ -112,8 +110,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @property
     def Handler(self) -> type:
-        """
-        Accessor for the agent message's handler class.
+        """Accessor for the agent message's handler class.
 
         Returns:
             Handler class
@@ -123,8 +120,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @property
     def _type(self) -> str:
-        """
-        Accessor for the message type identifier.
+        """Accessor for the message type identifier.
 
         Returns:
             Current DIDComm prefix, slash, message type defined on `Meta.message_type`
@@ -139,8 +135,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @property
     def _id(self) -> str:
-        """
-        Accessor for the unique message identifier.
+        """Accessor for the unique message identifier.
 
         Returns:
             The id of this message
@@ -168,8 +163,7 @@ class AgentMessage(BaseModel, BaseMessage):
         return sub(r"(\d+\.)?(\*|\d+)", version, self.Meta.message_type)
 
     def get_signature(self, field_name: str) -> SignatureDecorator:
-        """
-        Get the signature for a named field.
+        """Get the signature for a named field.
 
         Args:
             field_name: Field name to get the signature for
@@ -181,8 +175,7 @@ class AgentMessage(BaseModel, BaseMessage):
         return self._decorators.field(field_name).get("sig")
 
     def set_signature(self, field_name: str, signature: SignatureDecorator):
-        """
-        Add or replace the signature for a named field.
+        """Add or replace the signature for a named field.
 
         Args:
             field_name: Field to set signature on
@@ -194,8 +187,7 @@ class AgentMessage(BaseModel, BaseMessage):
     async def sign_field(  # TODO migrate to signed-attachment per RFC 17
         self, field_name: str, signer_verkey: str, wallet: BaseWallet, timestamp=None
     ) -> SignatureDecorator:
-        """
-        Create and store a signature for a named field.
+        """Create and store a signature for a named field.
 
         Args:
             field_name: Field to sign
@@ -224,8 +216,7 @@ class AgentMessage(BaseModel, BaseMessage):
     async def verify_signed_field(  # TODO migrate to signed-attachment per RFC 17
         self, field_name: str, wallet: BaseWallet, signer_verkey: str = None
     ) -> str:
-        """
-        Verify a specific field signature.
+        """Verify a specific field signature.
 
         Args:
             field_name: The field name to verify
@@ -256,8 +247,7 @@ class AgentMessage(BaseModel, BaseMessage):
         return sig.signer
 
     async def verify_signatures(self, wallet: BaseWallet) -> bool:
-        """
-        Verify all associated field signatures.
+        """Verify all associated field signatures.
 
         Args:
             wallet: Wallet to use in verification
@@ -273,8 +263,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @property
     def _service(self) -> ServiceDecorator:
-        """
-        Accessor for the message's service decorator.
+        """Accessor for the message's service decorator.
 
         Returns:
             The ServiceDecorator for this message
@@ -284,8 +273,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @_service.setter
     def _service(self, val: Union[ServiceDecorator, dict]):
-        """
-        Setter for the message's service decorator.
+        """Setter for the message's service decorator.
 
         Args:
             val: ServiceDecorator or dict to set as the service
@@ -297,8 +285,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @property
     def _thread(self) -> ThreadDecorator:
-        """
-        Accessor for the message's thread decorator.
+        """Accessor for the message's thread decorator.
 
         Returns:
             The ThreadDecorator for this message
@@ -308,8 +295,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @_thread.setter
     def _thread(self, val: Union[ThreadDecorator, dict]):
-        """
-        Setter for the message's thread decorator.
+        """Setter for the message's thread decorator.
 
         Args:
             val: ThreadDecorator or dict to set as the thread
@@ -327,8 +313,7 @@ class AgentMessage(BaseModel, BaseMessage):
         return self._message_id
 
     def assign_thread_from(self, msg: "AgentMessage"):
-        """
-        Copy thread information from a previous message.
+        """Copy thread information from a previous message.
 
         Args:
             msg: The received message containing optional thread information
@@ -340,8 +325,7 @@ class AgentMessage(BaseModel, BaseMessage):
             self.assign_thread_id(thid, pthid)
 
     def assign_thread_id(self, thid: str, pthid: str = None):
-        """
-        Assign a specific thread ID.
+        """Assign a specific thread ID.
 
         Args:
             thid: The thread identifier
@@ -354,8 +338,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @property
     def _trace(self) -> TraceDecorator:
-        """
-        Accessor for the message's trace decorator.
+        """Accessor for the message's trace decorator.
 
         Returns:
             The TraceDecorator for this message
@@ -365,8 +348,7 @@ class AgentMessage(BaseModel, BaseMessage):
 
     @_trace.setter
     def _trace(self, val: Union[TraceDecorator, dict]):
-        """
-        Setter for the message's trace decorator.
+        """Setter for the message's trace decorator.
 
         Args:
             val: TraceDecorator or dict to set as the trace
@@ -377,8 +359,7 @@ class AgentMessage(BaseModel, BaseMessage):
             self._decorators["trace"] = val
 
     def assign_trace_from(self, msg: "AgentMessage"):
-        """
-        Copy trace information from a previous message.
+        """Copy trace information from a previous message.
 
         Args:
             msg: The received message containing optional trace information
@@ -389,8 +370,7 @@ class AgentMessage(BaseModel, BaseMessage):
                 self._trace = msg._trace
 
     def assign_trace_decorator(self, context, trace):
-        """
-        Copy trace from a json structure.
+        """Copy trace from a json structure.
 
         Args:
             trace: string containing trace json stucture
@@ -404,8 +384,7 @@ class AgentMessage(BaseModel, BaseMessage):
     def add_trace_decorator(
         self, target: str = TRACE_LOG_TARGET, full_thread: bool = True
     ):
-        """
-        Create a new trace decorator.
+        """Create a new trace decorator.
 
         Args:
             target: The trace target
@@ -420,8 +399,7 @@ class AgentMessage(BaseModel, BaseMessage):
             self._trace = TraceDecorator(target=target, full_thread=full_thread)
 
     def add_trace_report(self, val: Union[TraceReport, dict]):
-        """
-        Append a new trace report.
+        """Append a new trace report.
 
         Args:
             val: The trace target
@@ -475,8 +453,7 @@ class AgentMessageSchema(BaseModelSchema):
     )
 
     def __init__(self, *args, **kwargs):
-        """
-        Initialize an instance of AgentMessageSchema.
+        """Initialize an instance of AgentMessageSchema.
 
         Raises:
             TypeError: If Meta.model_class has not been set
@@ -489,8 +466,7 @@ class AgentMessageSchema(BaseModelSchema):
 
     @pre_load
     def extract_decorators(self, data: Mapping, **kwargs):
-        """
-        Pre-load hook to extract the decorators and check the signed fields.
+        """Pre-load hook to extract the decorators and check the signed fields.
 
         Args:
             data: Incoming data to parse
@@ -529,8 +505,7 @@ class AgentMessageSchema(BaseModelSchema):
 
     @post_load
     def populate_decorators(self, obj, **kwargs):
-        """
-        Post-load hook to populate decorators on the message.
+        """Post-load hook to populate decorators on the message.
 
         Args:
             obj: The AgentMessage object
@@ -544,8 +519,7 @@ class AgentMessageSchema(BaseModelSchema):
 
     @pre_dump
     def check_dump_decorators(self, obj, **kwargs):
-        """
-        Pre-dump hook to validate and load the message decorators.
+        """Pre-dump hook to validate and load the message decorators.
 
         Args:
             obj: The AgentMessage object
@@ -575,8 +549,7 @@ class AgentMessageSchema(BaseModelSchema):
 
     @post_dump
     def dump_decorators(self, data, **kwargs):
-        """
-        Post-dump hook to write the decorators to the serialized output.
+        """Post-dump hook to write the decorators to the serialized output.
 
         Args:
             obj: The serialized data
@@ -595,8 +568,7 @@ class AgentMessageSchema(BaseModelSchema):
 
     @post_dump
     def replace_signatures(self, data, **kwargs):
-        """
-        Post-dump hook to write the signatures to the serialized output.
+        """Post-dump hook to write the signatures to the serialized output.
 
         Args:
             obj: The serialized data

@@ -1,6 +1,7 @@
 import pytest
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...config.base import ConfigError
 from ...config.error import ArgsParseError
@@ -10,7 +11,7 @@ from ...protocols.coordinate_mediation.mediation_invite_store import (
 )
 
 
-class TestProvision(AsyncTestCase):
+class TestProvision(IsolatedAsyncioTestCase):
     def test_bad_calls(self):
         with self.assertRaises(ArgsParseError):
             test_module.execute([])
@@ -39,34 +40,34 @@ class TestProvision(AsyncTestCase):
         )
 
     async def test_provision_ledger_configured(self):
-        profile = async_mock.MagicMock(close=async_mock.CoroutineMock())
-        with async_mock.patch.object(
+        profile = mock.MagicMock(close=mock.CoroutineMock())
+        with mock.patch.object(
             test_module,
             "wallet_config",
-            async_mock.CoroutineMock(
+            mock.CoroutineMock(
                 return_value=(
                     profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                    mock.CoroutineMock(did="public DID", verkey="verkey"),
                 )
             ),
-        ) as mock_wallet_config, async_mock.patch.object(
-            test_module, "ledger_config", async_mock.CoroutineMock(return_value=True)
+        ) as mock_wallet_config, mock.patch.object(
+            test_module, "ledger_config", mock.CoroutineMock(return_value=True)
         ) as mock_ledger_config:
             await test_module.provision({})
 
     async def test_provision_config_x(self):
-        with async_mock.patch.object(
-            test_module, "wallet_config", async_mock.CoroutineMock()
+        with mock.patch.object(
+            test_module, "wallet_config", mock.CoroutineMock()
         ) as mock_wallet_config:
             mock_wallet_config.side_effect = ConfigError("oops")
             with self.assertRaises(test_module.ProvisionError):
                 await test_module.provision({})
 
     def test_main(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "__name__", "__main__"
-        ) as mock_name, async_mock.patch.object(
-            test_module, "execute", async_mock.MagicMock()
+        ) as mock_name, mock.patch.object(
+            test_module, "execute", mock.MagicMock()
         ) as mock_execute:
             test_module.main()
             mock_execute.assert_called_once
@@ -75,7 +76,7 @@ class TestProvision(AsyncTestCase):
         # given
         mediation_invite = "test-invite"
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.MediationInviteStore, "store"
         ) as invite_store:
             # when

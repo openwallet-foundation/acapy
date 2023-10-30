@@ -1,8 +1,7 @@
 import asyncio
-import logging
 import pytest
 
-from asynctest import mock
+from unittest import mock
 
 from ...askar.profile import AskarProfile
 from ...config.injection_context import InjectionContext

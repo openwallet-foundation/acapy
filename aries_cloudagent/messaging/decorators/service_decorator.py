@@ -1,5 +1,4 @@
-"""
-A message decorator for services.
+"""A message decorator for services.
 
 A service decorator adds routing information to a message so agent can respond without
 needing to perform a handshake.
@@ -28,8 +27,7 @@ class ServiceDecorator(BaseModel):
         recipient_keys: List[str],
         routing_keys: Optional[List[str]] = None,
     ):
-        """
-        Initialize a ServiceDecorator instance.
+        """Initialize a ServiceDecorator instance.
 
         Args:
             endpoint: Endpoint which this agent can be reached at
@@ -44,8 +42,7 @@ class ServiceDecorator(BaseModel):
 
     @property
     def endpoint(self):
-        """
-        Accessor for service endpoint.
+        """Accessor for service endpoint.
 
         Returns:
             This service's `serviceEndpoint`
@@ -55,8 +52,7 @@ class ServiceDecorator(BaseModel):
 
     @property
     def recipient_keys(self):
-        """
-        Accessor for recipient keys.
+        """Accessor for recipient keys.
 
         Returns:
             This service's `recipientKeys`
@@ -66,8 +62,7 @@ class ServiceDecorator(BaseModel):
 
     @property
     def routing_keys(self):
-        """
-        Accessor for routing keys.
+        """Accessor for routing keys.
 
         Returns:
             This service's `routingKeys`

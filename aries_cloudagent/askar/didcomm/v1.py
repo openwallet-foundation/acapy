@@ -114,8 +114,7 @@ async def unpack_message(session: Session, enc_message: bytes) -> Tuple[str, str
 
 
 def _extract_payload_key(sender_cek: dict, recip_secret: Key) -> Tuple[bytes, str]:
-    """
-    Extract the payload key from pack recipient details.
+    """Extract the payload key from pack recipient details.
 
     Returns: A tuple of the CEK and sender verkey
     """

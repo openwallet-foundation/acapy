@@ -1,15 +1,15 @@
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock
+from unittest import IsolatedAsyncioTestCase
 
-from ...config.injection_context import InjectionContext
 
 from .. import stats as test_module
 
 
-class TestStatsTracer(AsyncTestCase):
+class TestStatsTracer(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.context = async_mock.MagicMock(
-            socket_timer=async_mock.MagicMock(
-                stop=async_mock.MagicMock(side_effect=AttributeError("wrong"))
+        self.context = mock.MagicMock(
+            socket_timer=mock.MagicMock(
+                stop=mock.MagicMock(side_effect=AttributeError("wrong"))
             )
         )
         self.tracer = test_module.StatsTracer(test_module.Collector(), "test")

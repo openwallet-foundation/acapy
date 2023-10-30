@@ -67,7 +67,7 @@ class KeyPairStorageManager:
             StorageDuplicateError: If more than one key pair is found for this verkey
             StorageNotFoundError: If no key pair is found for this verkey
 
-        Returns
+        Returns:
             dict: The key pair data
 
         """
@@ -88,8 +88,7 @@ class KeyPairStorageManager:
         return [json.loads(record.value) for record in records]
 
     async def delete_key_pair(self, verkey: str):
-        """
-        Remove a previously-stored key pair record.
+        """Remove a previously-stored key pair record.
 
         Raises:
             StorageNotFoundError: If the record is not found
@@ -101,8 +100,7 @@ class KeyPairStorageManager:
         await self._store.delete_record(record)
 
     async def update_key_pair_metadata(self, verkey: str, metadata: dict):
-        """
-        Update the metadata of a key pair record by verkey.
+        """Update the metadata of a key pair record by verkey.
 
         Raises:
             StorageNotFoundError: If the record is not found.

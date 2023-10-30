@@ -57,8 +57,7 @@ class Injector(BaseInjector):
         settings: Mapping[str, object] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
-        """
-        Get the provided instance of a given class identifier or default if not found.
+        """Get the provided instance of a given class identifier or default if not found.
 
         Args:
             base_cls: The base class to retrieve an instance of
@@ -95,8 +94,7 @@ class Injector(BaseInjector):
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
     ) -> InjectType:
-        """
-        Get the provided instance of a given class identifier.
+        """Get the provided instance of a given class identifier.
 
         Args:
             cls: The base class to retrieve an instance of

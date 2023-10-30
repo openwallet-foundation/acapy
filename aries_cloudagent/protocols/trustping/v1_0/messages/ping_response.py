@@ -19,8 +19,7 @@ class PingResponse(AgentMessage):
         schema_class = "PingResponseSchema"
 
     def __init__(self, *, comment: str = None, **kwargs):
-        """
-        Initialize a PingResponse message instance.
+        """Initialize a PingResponse message instance.
 
         Args:
             comment: An optional comment string to include in the message

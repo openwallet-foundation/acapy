@@ -57,8 +57,7 @@ class OutOfBandManager(BaseConnectionManager):
     """Class for managing out of band messages."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a OutOfBandManager.
+        """Initialize a OutOfBandManager.
 
         Args:
             profile: The profile for this out of band manager
@@ -68,8 +67,7 @@ class OutOfBandManager(BaseConnectionManager):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile.
+        """Accessor for the current profile.
 
         Returns:
             The profile for this connection manager
@@ -94,8 +92,7 @@ class OutOfBandManager(BaseConnectionManager):
         goal_code: Optional[Text] = None,
         goal: Optional[Text] = None,
     ) -> InvitationRecord:
-        """
-        Generate new connection invitation.
+        """Generate new connection invitation.
 
         This interaction represents an out-of-band communication channel. In the future
         and in practice, these sort of invitations will be received over any number of
@@ -320,9 +317,10 @@ class OutOfBandManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Created new connection")
 
-            routing_keys, my_endpoint = await self._route_manager.routing_info(
-                self.profile, my_endpoint, mediation_record
+            routing_keys, routing_endpoint = await self._route_manager.routing_info(
+                self.profile, mediation_record
             )
+            my_endpoint = routing_endpoint or my_endpoint
 
             if not conn_rec:
                 our_service = ServiceDecorator(
@@ -338,8 +336,8 @@ class OutOfBandManager(BaseConnectionManager):
             routing_keys = [
                 key
                 if len(key.split(":")) == 3
-                else DIDKey.from_public_key_b58(key, ED25519).did
-                for key in routing_keys
+                else DIDKey.from_public_key_b58(key, ED25519).key_id
+                for key in routing_keys or []
             ]
 
             # Create connection invitation message
@@ -356,7 +354,9 @@ class OutOfBandManager(BaseConnectionManager):
                     _id="#inline",
                     _type="did-communication",
                     recipient_keys=[
-                        DIDKey.from_public_key_b58(connection_key.verkey, ED25519).did
+                        DIDKey.from_public_key_b58(
+                            connection_key.verkey, ED25519
+                        ).key_id
                     ],
                     service_endpoint=my_endpoint,
                     routing_keys=routing_keys,
@@ -411,8 +411,7 @@ class OutOfBandManager(BaseConnectionManager):
         alias: Optional[str] = None,
         mediation_id: Optional[str] = None,
     ) -> OobRecord:
-        """
-        Receive an out of band invitation message.
+        """Receive an out of band invitation message.
 
         Args:
             invitation: invitation message
@@ -818,11 +817,11 @@ class OutOfBandManager(BaseConnectionManager):
                     "id": "#inline",
                     "type": "did-communication",
                     "recipientKeys": [
-                        DIDKey.from_public_key_b58(key, ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).key_id
                         for key in recipient_keys
                     ],
                     "routingKeys": [
-                        DIDKey.from_public_key_b58(key, ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).key_id
                         for key in routing_keys
                     ],
                     "serviceEndpoint": endpoint,
@@ -891,8 +890,7 @@ class OutOfBandManager(BaseConnectionManager):
         conn_record: ConnRecord,
         version: str,
     ) -> OobRecord:
-        """
-        Create and Send a Handshake Reuse message under RFC 0434.
+        """Create and Send a Handshake Reuse message under RFC 0434.
 
         Args:
             oob_record: OOB  Record
@@ -954,8 +952,7 @@ class OutOfBandManager(BaseConnectionManager):
         receipt: MessageReceipt,
         conn_rec: ConnRecord,
     ) -> None:
-        """
-        Receive and process a HandshakeReuse message under RFC 0434.
+        """Receive and process a HandshakeReuse message under RFC 0434.
 
         Process a `HandshakeReuse` message by looking up
         the connection records using the MessageReceipt sender DID.
@@ -1032,8 +1029,7 @@ class OutOfBandManager(BaseConnectionManager):
         receipt: MessageReceipt,
         conn_record: ConnRecord,
     ) -> None:
-        """
-        Receive and process a HandshakeReuseAccept message under RFC 0434.
+        """Receive and process a HandshakeReuseAccept message under RFC 0434.
 
         Process a `HandshakeReuseAccept` message by updating the OobRecord
         state to `accepted`.
@@ -1112,8 +1108,7 @@ class OutOfBandManager(BaseConnectionManager):
         receipt: MessageReceipt,
         conn_record: ConnRecord,
     ) -> None:
-        """
-        Receive and process a ProblemReport message from the inviter to invitee.
+        """Receive and process a ProblemReport message from the inviter to invitee.
 
         Process a `ProblemReport` message by updating the OobRecord
         state to `not_accepted`.

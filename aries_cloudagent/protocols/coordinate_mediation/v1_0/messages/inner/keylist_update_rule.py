@@ -24,8 +24,7 @@ class KeylistUpdateRule(BaseModel):
     RULE_REMOVE = "remove"
 
     def __init__(self, recipient_key: str, action: str, **kwargs):
-        """
-        Initialize keylist update rule object.
+        """Initialize keylist update rule object.
 
         Args:
             recipient_key: recipient key for the rule

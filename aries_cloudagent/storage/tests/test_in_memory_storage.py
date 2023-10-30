@@ -1,6 +1,6 @@
 import pytest
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...storage.error import (
@@ -29,14 +29,6 @@ def store_search():
     yield InMemoryStorage(profile)
 
 
-def test_record(tags={}):
-    return StorageRecord(type="TYPE", value="TEST", tags=tags)
-
-
-def test_missing_record(tags={}):
-    return StorageRecord(type="__MISSING__", value="000000000")
-
-
 class TestInMemoryStorage:
     def test_repr(self, store):
         assert store.__class__.__name__ in str(store)
@@ -47,20 +39,19 @@ class TestInMemoryStorage:
             await store.add_record(None)
 
     @pytest.mark.asyncio
-    async def test_add_id_required(self, store):
-        record = test_record()._replace(id=None)
+    async def test_add_id_required(self, store, record_factory):
+        record = record_factory()._replace(id=None)
         with pytest.raises(StorageError):
             await store.add_record(record)
 
     @pytest.mark.asyncio
-    async def test_retrieve_missing(self, store):
-        missing = test_missing_record()
+    async def test_retrieve_missing(self, store, missing: StorageRecord):
         with pytest.raises(StorageNotFoundError):
             await store.get_record(missing.type, missing.id)
 
     @pytest.mark.asyncio
-    async def test_add_retrieve(self, store):
-        record = test_record()
+    async def test_add_retrieve(self, store, record_factory):
+        record = record_factory()
         await store.add_record(record)
         result = await store.get_record(record.type, record.id)
         assert result
@@ -73,26 +64,25 @@ class TestInMemoryStorage:
             await store.add_record(record)
 
     @pytest.mark.asyncio
-    async def test_delete(self, store):
-        record = test_record()
+    async def test_delete(self, store, record_factory):
+        record = record_factory()
         await store.add_record(record)
         await store.delete_record(record)
         with pytest.raises(StorageNotFoundError):
             await store.get_record(record.type, record.id)
 
     @pytest.mark.asyncio
-    async def test_delete_missing(self, store):
-        missing = test_missing_record()
+    async def test_delete_missing(self, store, missing: StorageRecord):
         with pytest.raises(StorageNotFoundError):
             await store.delete_record(missing)
 
     @pytest.mark.asyncio
-    async def test_update_record(self, store):
+    async def test_update_record(self, store, record_factory):
         init_value = "a"
         init_tags = {"a": "a", "b": "b"}
         upd_value = "b"
         upd_tags = {"a": "A", "c": "C"}
-        record = test_record(init_tags)._replace(value=init_value)
+        record = record_factory(init_tags)._replace(value=init_value)
         await store.add_record(record)
         assert record.value == init_value
         assert record.tags == init_tags
@@ -102,14 +92,13 @@ class TestInMemoryStorage:
         assert result.tags == upd_tags
 
     @pytest.mark.asyncio
-    async def test_update_missing(self, store):
-        missing = test_missing_record()
+    async def test_update_missing(self, store, missing: StorageRecord):
         with pytest.raises(StorageNotFoundError):
             await store.update_record(missing, missing.value, {})
 
     @pytest.mark.asyncio
-    async def test_find_record(self, store):
-        record = test_record()
+    async def test_find_record(self, store, record_factory):
+        record = record_factory()
         await store.add_record(record)
 
         # search with find_record
@@ -125,14 +114,14 @@ class TestInMemoryStorage:
             _ = await store.find_record("NOT-MY-TYPE", {}, None)
 
         # search again with find_row on multiple rows
-        record = test_record()
+        record = record_factory()
         await store.add_record(record)
         with pytest.raises(StorageDuplicateError):
             await store.find_record(record.type, {}, None)
 
     @pytest.mark.asyncio
-    async def test_find_all(self, store):
-        record = test_record()
+    async def test_find_all(self, store, record_factory):
+        record = record_factory()
         await store.add_record(record)
 
         # search
@@ -145,8 +134,8 @@ class TestInMemoryStorage:
         assert found.tags == record.tags
 
     @pytest.mark.asyncio
-    async def test_delete_all(self, store):
-        record = test_record({"tag": "one"})
+    async def test_delete_all(self, store, record_factory):
+        record = record_factory({"tag": "one"})
         await store.add_record(record)
 
         await store.delete_all_records(record.type, {"tag": "two"})
@@ -159,8 +148,8 @@ class TestInMemoryStorage:
 
 class TestInMemoryStorageSearch:
     @pytest.mark.asyncio
-    async def test_search(self, store_search):
-        record = test_record()
+    async def test_search(self, store_search, record_factory):
+        record = record_factory()
         await store_search.add_record(record)
 
         # search
@@ -182,18 +171,16 @@ class TestInMemoryStorageSearch:
 
         # search again with with iterator mystery error
         search = store_search.search_records(record.type, {}, None)
-        with async_mock.patch.object(
-            search, "fetch", async_mock.CoroutineMock()
-        ) as mock_fetch:
-            mock_fetch.return_value = async_mock.MagicMock(
-                pop=async_mock.MagicMock(side_effect=IndexError())
+        with mock.patch.object(search, "fetch", mock.CoroutineMock()) as mock_fetch:
+            mock_fetch.return_value = mock.MagicMock(
+                pop=mock.MagicMock(side_effect=IndexError())
             )
             async for row in search:
                 pytest.fail("Should not arrive here")
 
     @pytest.mark.asyncio
-    async def test_iter_search(self, store_search):
-        record = test_record()
+    async def test_iter_search(self, store_search, record_factory):
+        record = record_factory()
         await store_search.add_record(record)
         count = 0
         search = store_search.search_records(record.type, {}, None)
@@ -215,9 +202,9 @@ class TestInMemoryStorageSearch:
 
 class TestInMemoryTagQuery:
     @pytest.mark.asyncio
-    async def test_tag_value_match(self, store):
+    async def test_tag_value_match(self, store, record_factory):
         TAGS = {"a": "aardvark", "b": "bear", "z": "0"}
-        record = test_record(TAGS)
+        record = record_factory(TAGS)
         await store.add_record(record)
 
         assert not tag_value_match(None, {"$neq": "octopus"})
@@ -245,9 +232,9 @@ class TestInMemoryTagQuery:
         assert "Unsupported match operator" in str(excinfo.value)
 
     @pytest.mark.asyncio
-    async def test_tag_query_match(self, store):
+    async def test_tag_query_match(self, store, record_factory):
         TAGS = {"a": "aardvark", "b": "bear", "z": "0"}
-        record = test_record(TAGS)
+        record = record_factory(TAGS)
         await store.add_record(record)
 
         assert tag_query_match(None, None)

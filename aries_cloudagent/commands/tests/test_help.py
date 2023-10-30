@@ -1,14 +1,15 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock
+from unittest import IsolatedAsyncioTestCase
 
 from .. import help as command
 
 
-class TestHelp(AsyncTestCase):
+class TestHelp(IsolatedAsyncioTestCase):
     def test_exec_help(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             command.ArgumentParser, "print_help"
-        ) as mock_print_help, async_mock.patch(
-            "builtins.print", async_mock.MagicMock()
+        ) as mock_print_help, mock.patch(
+            "builtins.print", mock.MagicMock()
         ) as mock_print:
             command.execute([])
             mock_print_help.assert_called_once()
@@ -17,10 +18,10 @@ class TestHelp(AsyncTestCase):
             mock_print.assert_called_once_with(command.__version__)
 
     def test_main(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             command, "__name__", "__main__"
-        ) as mock_name, async_mock.patch.object(
-            command, "execute", async_mock.MagicMock()
+        ) as mock_name, mock.patch.object(
+            command, "execute", mock.MagicMock()
         ) as mock_execute:
             command.main()
             mock_execute.assert_called_once

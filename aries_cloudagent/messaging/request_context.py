@@ -1,5 +1,4 @@
-"""
-Request context class.
+"""Request context class.
 
 A request context provides everything required by handlers and other parts
 of the system to process a message.
@@ -40,8 +39,7 @@ class RequestContext:
 
     @property
     def connection_ready(self) -> bool:
-        """
-        Accessor for the flag indicating an active connection with the sender.
+        """Accessor for the flag indicating an active connection with the sender.
 
         Returns:
             True if the connection is active, else False
@@ -51,8 +49,7 @@ class RequestContext:
 
     @connection_ready.setter
     def connection_ready(self, active: bool):
-        """
-        Setter for the flag indicating an active connection with the sender.
+        """Setter for the flag indicating an active connection with the sender.
 
         Args:
             active: The new active value
@@ -76,8 +73,7 @@ class RequestContext:
 
     @property
     def default_endpoint(self) -> str:
-        """
-        Accessor for the default agent endpoint (from agent config).
+        """Accessor for the default agent endpoint (from agent config).
 
         Returns:
             The default agent endpoint
@@ -87,8 +83,7 @@ class RequestContext:
 
     @default_endpoint.setter
     def default_endpoint(self, endpoint: str):
-        """
-        Setter for the default agent endpoint (from agent config).
+        """Setter for the default agent endpoint (from agent config).
 
         Args:
             endpoint: The new default endpoint
@@ -98,8 +93,7 @@ class RequestContext:
 
     @property
     def default_label(self) -> str:
-        """
-        Accessor for the default agent label (from agent config).
+        """Accessor for the default agent label (from agent config).
 
         Returns:
             The default label
@@ -109,8 +103,7 @@ class RequestContext:
 
     @default_label.setter
     def default_label(self, label: str):
-        """
-        Setter for the default agent label (from agent config).
+        """Setter for the default agent label (from agent config).
 
         Args:
             label: The new default label
@@ -120,8 +113,7 @@ class RequestContext:
 
     @property
     def message(self) -> AgentMessage:
-        """
-        Accessor for the deserialized message instance.
+        """Accessor for the deserialized message instance.
 
         Returns:
             This context's agent message
@@ -131,8 +123,7 @@ class RequestContext:
 
     @message.setter
     def message(self, msg: AgentMessage):
-        """
-        Setter for the deserialized message instance.
+        """Setter for the deserialized message instance.
 
         Args:
             msg: This context's new agent message
@@ -141,8 +132,7 @@ class RequestContext:
 
     @property
     def message_receipt(self) -> MessageReceipt:
-        """
-        Accessor for the message receipt information.
+        """Accessor for the message receipt information.
 
         Returns:
             This context's message receipt information
@@ -152,8 +142,7 @@ class RequestContext:
 
     @message_receipt.setter
     def message_receipt(self, receipt: MessageReceipt):
-        """
-        Setter for the message receipt information.
+        """Setter for the message receipt information.
 
         Args:
             msg: This context's new message receipt information
@@ -180,8 +169,7 @@ class RequestContext:
         return self.profile.session(self._context)
 
     def transaction(self) -> ProfileSession:
-        """
-        Start a new interactive session with commit and rollback support.
+        """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.
@@ -193,8 +181,7 @@ class RequestContext:
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
     ) -> InjectType:
-        """
-        Get the provided instance of a given class identifier.
+        """Get the provided instance of a given class identifier.
 
         Args:
             cls: The base class to retrieve an instance of
@@ -212,8 +199,7 @@ class RequestContext:
         settings: Mapping[str, object] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
-        """
-        Get the provided instance of a given class identifier or default if not found.
+        """Get the provided instance of a given class identifier or default if not found.
 
         Args:
             base_cls: The base class to retrieve an instance of
@@ -236,8 +222,7 @@ class RequestContext:
         return RequestContext(IN_MEM.resolved.test_profile())
 
     def __repr__(self) -> str:
-        """
-        Provide a human readable representation of this object.
+        """Provide a human readable representation of this object.
 
         Returns:
             A human readable representation of this object

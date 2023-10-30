@@ -35,8 +35,7 @@ class ProblemReport(AgentMessage):
         escalation_uri: str = None,
         **kwargs,
     ):
-        """
-        Initialize a ProblemReport message instance.
+        """Initialize a ProblemReport message instance.
 
         Args:
             description: Human-readable, localized string(s) explaining the problem
@@ -158,8 +157,7 @@ class ProblemReportSchema(AgentMessageSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Args:
             data: The data to validate

@@ -98,8 +98,7 @@ class IndyCredAbstract(BaseModel):
         key_correctness_proof: str = None,
         **kwargs,
     ):
-        """
-        Initialize indy cred abstract object.
+        """Initialize indy cred abstract object.
 
         Args:
             schema_id: schema identifier

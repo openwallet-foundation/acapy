@@ -31,8 +31,7 @@ class ConnectionTarget(BaseModel):
         routing_keys: Optional[Sequence[str]] = None,
         sender_key: Optional[str] = None,
     ):
-        """
-        Initialize a ConnectionTarget instance.
+        """Initialize a ConnectionTarget instance.
 
         Args:
             did: A did for the connection

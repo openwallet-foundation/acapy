@@ -28,8 +28,7 @@ DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.in
 
 
 def load_resource(path: str, encoding: str = None) -> TextIO:
-    """
-    Open a resource file located in a python package or the local filesystem.
+    """Open a resource file located in a python package or the local filesystem.
 
     Args:
         path: The resource path in the form of `dir/file` or `package:dir/file`
@@ -59,8 +58,7 @@ class LoggingConfigurator:
         log_level: str = None,
         log_file: str = None,
     ):
-        """
-        Configure logger.
+        """Configure logger.
 
         :param logging_config_path: str: (Default value = None) Optional path to
             custom logging config
@@ -101,8 +99,7 @@ class LoggingConfigurator:
         banner_length=40,
         border_character=":",
     ):
-        """
-        Print a startup banner describing the configuration.
+        """Print a startup banner describing the configuration.
 
         Args:
             agent_label: Agent Label
@@ -202,8 +199,7 @@ class LoggingConfigurator:
 # This required the following custom implementation.
 ######################################################################
 class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
-    """
-    Handler for logging to a file.
+    """Handler for logging to a file.
 
     Rotating the log file at certain timed with file lock unlock
     mechanism to support multi-process writing to log file.
@@ -220,8 +216,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         utc=False,
         atTime=None,
     ):
-        """
-        Initialize an instance of `TimedRotatingFileMultiProcessHandler`.
+        """Initialize an instance of `TimedRotatingFileMultiProcessHandler`.
 
         Args:
             filename: log file name with path
