@@ -598,6 +598,40 @@ class AttachDecorator(BaseModel):
             return None
 
     @classmethod
+    def data_base65_string(
+        cls,
+        content: str,
+        *,
+        ident: str = None,
+        description: str = None,
+        filename: str = None,
+        lastmod_time: str = None,
+        byte_count: int = None,
+    ):
+        """Create `AttachDecorator` instance on base64-encoded string data.
+
+        Given string content, base64-encode, and embed it as data; mark
+        `text/string` MIME type.
+
+        Args:
+            content: string content
+            ident: optional attachment identifier (default random UUID4)
+            description: optional attachment description
+            filename: optional attachment filename
+            lastmod_time: optional attachment last modification time
+            byte_count: optional attachment byte count
+        """
+        return AttachDecorator(
+            ident=ident or str(uuid.uuid4()),
+            description=description,
+            filename=filename,
+            mime_type="text/string",
+            lastmod_time=lastmod_time,
+            byte_count=byte_count,
+            data=AttachDecoratorData(base64_=bytes_to_b64(content.encode())),
+        )
+
+    @classmethod
     def data_base64(
         cls,
         mapping: Mapping,
