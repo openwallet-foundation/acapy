@@ -222,8 +222,10 @@ async def schemas_get(request: web.BaseRequest):
     """Request handler for getting all schemas.
 
     Args:
+        request: aiohttp request object
 
     Returns:
+        The credential definition details.
 
     """
     context: AdminRequestContext = request["context"]
@@ -246,8 +248,10 @@ async def cred_def_post(request: web.BaseRequest):
     """Request handler for creating .
 
     Args:
+        request: aiohttp request object
 
     Returns:
+        The credential definition details.
 
     """
     context: AdminRequestContext = request["context"]
@@ -276,8 +280,10 @@ async def cred_def_get(request: web.BaseRequest):
     """Request handler for getting credential definition.
 
     Args:
+        request: aiohttp request object
 
     Returns:
+        The credential definition details.
 
     """
     context: AdminRequestContext = request["context"]
@@ -306,8 +312,10 @@ async def cred_defs_get(request: web.BaseRequest):
     """Request handler for getting all credential definitions.
 
     Args:
+        request: aiohttp request object
 
     Returns:
+        The credential definition details.
 
     """
     context: AdminRequestContext = request["context"]
