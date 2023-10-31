@@ -21,6 +21,7 @@ class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     ISSUANCE_ABANDONED = "issuance-abandoned"
+    RECORD_NOT_FOUND = "record-not-found"
 
 
 class V20CredProblemReport(ProblemReport):
