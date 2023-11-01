@@ -1,7 +1,7 @@
 import asyncio
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 
 from ...config.injection_context import InjectionContext
 from ...core.in_memory import InMemoryProfile
@@ -10,14 +10,14 @@ from ...wallet.models.wallet_record import WalletRecord
 from ..askar_profile_manager import AskarProfileMultitenantManager
 
 
-class TestAskarProfileMultitenantManager(AsyncTestCase):
+class TestAskarProfileMultitenantManager(IsolatedAsyncioTestCase):
     DEFAULT_MULTIENANT_WALLET_NAME = "multitenant_sub_wallet"
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
 
-        self.responder = async_mock.CoroutineMock(send=async_mock.CoroutineMock())
+        self.responder = mock.CoroutineMock(send=mock.CoroutineMock())
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
         self.manager = AskarProfileMultitenantManager(self.profile)
@@ -41,9 +41,9 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
             },
         )
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_cloudagent.multitenant.askar_profile_manager.wallet_config"
-        ) as wallet_config, async_mock.patch(
+        ) as wallet_config, mock.patch(
             "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile",
         ) as AskarProfile:
             sub_wallet_profile_context = InjectionContext()
@@ -104,7 +104,7 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
         create_profile_stub = asyncio.Future()
         create_profile_stub.set_result("")
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile"
         ) as AskarProfile:
             sub_wallet_profile = AskarProfile(None, None)
@@ -127,10 +127,10 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
             {"multitenant.wallet_name": multitenant_sub_wallet_name}
         )
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_cloudagent.multitenant.askar_profile_manager.wallet_config"
         ) as wallet_config:
-            with async_mock.patch(
+            with mock.patch(
                 "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile"
             ) as AskarProfile:
                 sub_wallet_profile = AskarProfile(None, None)
@@ -154,7 +154,7 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
     async def test_remove_wallet_profile(self):
         test_profile = InMemoryProfile.test_profile({"wallet.id": "test"})
 
-        with async_mock.patch.object(InMemoryProfile, "remove") as profile_remove:
+        with mock.patch.object(InMemoryProfile, "remove") as profile_remove:
             await self.manager.remove_wallet_profile(test_profile)
             profile_remove.assert_called_once_with()
 
@@ -163,7 +163,7 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
 
         create_profile_stub = asyncio.Future()
         create_profile_stub.set_result("")
-        with async_mock.patch(
+        with mock.patch(
             "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile"
         ) as AskarProfile:
             sub_wallet_profile = AskarProfile(None, None)

@@ -1,7 +1,5 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -9,23 +7,21 @@ from ......messaging.responder import MockResponder
 from .. import menu_request_handler as handler
 
 
-class TestMenuRequestHandler(AsyncTestCase):
-    async def setUp(self):
+class TestMenuRequestHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = RequestContext.test_context()
 
     async def test_called(self):
-        MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
+        MenuService = mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
 
-        self.context.connection_record = async_mock.MagicMock()
+        self.context.connection_record = mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"
 
         responder = MockResponder()
         self.context.message = handler.MenuRequest()
-        self.menu_service.get_active_menu = async_mock.CoroutineMock(
-            return_value="menu"
-        )
+        self.menu_service.get_active_menu = mock.CoroutineMock(return_value="menu")
 
         handler_inst = handler.MenuRequestHandler()
         await handler_inst.handle(self.context, responder)
@@ -37,16 +33,16 @@ class TestMenuRequestHandler(AsyncTestCase):
         assert target == {}
 
     async def test_called_no_active_menu(self):
-        MenuService = async_mock.MagicMock(handler.BaseMenuService, autospec=True)
+        MenuService = mock.MagicMock(handler.BaseMenuService, autospec=True)
         self.menu_service = MenuService()
         self.context.injector.bind_instance(handler.BaseMenuService, self.menu_service)
 
-        self.context.connection_record = async_mock.MagicMock()
+        self.context.connection_record = mock.MagicMock()
         self.context.connection_record.connection_id = "dummy"
 
         responder = MockResponder()
         self.context.message = handler.MenuRequest()
-        self.menu_service.get_active_menu = async_mock.CoroutineMock(return_value=None)
+        self.menu_service.get_active_menu = mock.CoroutineMock(return_value=None)
 
         handler_inst = handler.MenuRequestHandler()
         await handler_inst.handle(self.context, responder)

@@ -1,10 +1,11 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock
+from unittest import IsolatedAsyncioTestCase
 
 
 from .. import wallet_plugin as test_module
 
 
-class TestWalletCrypto(AsyncTestCase):
+class TestWalletCrypto(IsolatedAsyncioTestCase):
     def setUp(self):
         test_module.LOADED = False
 
@@ -14,12 +15,12 @@ class TestWalletCrypto(AsyncTestCase):
     def test_load_postgres_plugin(self):
         storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
         storage_creds = '{"account":"test"}'
-        mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(return_value=0),
-            init_storagetype=async_mock.MagicMock(return_value=0),
+        mock_stg_lib = mock.MagicMock(
+            postgresstorage_init=mock.MagicMock(return_value=0),
+            init_storagetype=mock.MagicMock(return_value=0),
         )
-        with async_mock.patch.object(
-            test_module.cdll, "LoadLibrary", async_mock.Mock()
+        with mock.patch.object(
+            test_module.cdll, "LoadLibrary", mock.Mock()
         ) as mock_load:
             mock_load.return_value = mock_stg_lib
             test_module.load_postgres_plugin(storage_config, storage_creds)
@@ -29,11 +30,11 @@ class TestWalletCrypto(AsyncTestCase):
     def test_load_postgres_plugin_init_x_raise(self):
         storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
         storage_creds = '{"account":"test"}'
-        mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(return_value=2)
+        mock_stg_lib = mock.MagicMock(
+            postgresstorage_init=mock.MagicMock(return_value=2)
         )
-        with async_mock.patch.object(
-            test_module.cdll, "LoadLibrary", async_mock.Mock()
+        with mock.patch.object(
+            test_module.cdll, "LoadLibrary", mock.Mock()
         ) as mock_load:
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(OSError) as context:
@@ -45,11 +46,11 @@ class TestWalletCrypto(AsyncTestCase):
     def test_load_postgres_plugin_init_x_exit(self):
         storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
         storage_creds = '{"account":"test"}'
-        mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(return_value=2)
+        mock_stg_lib = mock.MagicMock(
+            postgresstorage_init=mock.MagicMock(return_value=2)
         )
-        with async_mock.patch.object(
-            test_module.cdll, "LoadLibrary", async_mock.Mock()
+        with mock.patch.object(
+            test_module.cdll, "LoadLibrary", mock.Mock()
         ) as mock_load:
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(SystemExit):
@@ -60,12 +61,12 @@ class TestWalletCrypto(AsyncTestCase):
     def test_load_postgres_plugin_config_x_raise(self):
         storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
         storage_creds = '{"account":"test"}'
-        mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(return_value=0),
-            init_storagetype=async_mock.MagicMock(return_value=2),
+        mock_stg_lib = mock.MagicMock(
+            postgresstorage_init=mock.MagicMock(return_value=0),
+            init_storagetype=mock.MagicMock(return_value=2),
         )
-        with async_mock.patch.object(
-            test_module.cdll, "LoadLibrary", async_mock.Mock()
+        with mock.patch.object(
+            test_module.cdll, "LoadLibrary", mock.Mock()
         ) as mock_load:
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(OSError) as context:
@@ -77,12 +78,12 @@ class TestWalletCrypto(AsyncTestCase):
     def test_load_postgres_plugin_config_x_exit(self):
         storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
         storage_creds = '{"account":"test"}'
-        mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(return_value=0),
-            init_storagetype=async_mock.MagicMock(return_value=2),
+        mock_stg_lib = mock.MagicMock(
+            postgresstorage_init=mock.MagicMock(return_value=0),
+            init_storagetype=mock.MagicMock(return_value=2),
         )
-        with async_mock.patch.object(
-            test_module.cdll, "LoadLibrary", async_mock.Mock()
+        with mock.patch.object(
+            test_module.cdll, "LoadLibrary", mock.Mock()
         ) as mock_load:
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(SystemExit):
@@ -93,12 +94,12 @@ class TestWalletCrypto(AsyncTestCase):
     def test_load_postgres_plugin_bad_json_x_raise(self):
         storage_config = '{"wallet_scheme":"MultiWalletSingleTable"}'
         storage_creds = '"account":"test"'
-        mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(return_value=0),
-            init_storagetype=async_mock.MagicMock(return_value=2),
+        mock_stg_lib = mock.MagicMock(
+            postgresstorage_init=mock.MagicMock(return_value=0),
+            init_storagetype=mock.MagicMock(return_value=2),
         )
-        with async_mock.patch.object(
-            test_module.cdll, "LoadLibrary", async_mock.Mock()
+        with mock.patch.object(
+            test_module.cdll, "LoadLibrary", mock.Mock()
         ) as mock_load:
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(OSError) as context:
@@ -110,12 +111,12 @@ class TestWalletCrypto(AsyncTestCase):
     def test_load_postgres_plugin_bad_json_x_exit(self):
         storage_config = '"wallet_scheme":"MultiWalletSingleTable"'
         storage_creds = '{"account":"test"}'
-        mock_stg_lib = async_mock.MagicMock(
-            postgresstorage_init=async_mock.MagicMock(return_value=0),
-            init_storagetype=async_mock.MagicMock(return_value=2),
+        mock_stg_lib = mock.MagicMock(
+            postgresstorage_init=mock.MagicMock(return_value=0),
+            init_storagetype=mock.MagicMock(return_value=2),
         )
-        with async_mock.patch.object(
-            test_module.cdll, "LoadLibrary", async_mock.Mock()
+        with mock.patch.object(
+            test_module.cdll, "LoadLibrary", mock.Mock()
         ) as mock_load:
             mock_load.return_value = mock_stg_lib
             with self.assertRaises(SystemExit):

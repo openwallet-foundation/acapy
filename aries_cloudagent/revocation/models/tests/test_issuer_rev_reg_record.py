@@ -4,7 +4,8 @@ import json
 from os.path import join
 from typing import Any, Mapping, Type
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile, InMemoryProfileSession
 from ....core.profile import Profile, ProfileSession
@@ -52,22 +53,22 @@ REV_REG_ENTRY = {
 }
 
 
-class TestIssuerRevRegRecord(AsyncTestCase):
-    async def setUp(self):
+class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile(
             settings={"tails_server_base_url": "http://1.2.3.4:8088"},
         )
         self.context = self.profile.context
 
-        Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
+        Ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.send_revoc_reg_def = async_mock.CoroutineMock()
-        self.ledger.send_revoc_reg_entry = async_mock.CoroutineMock()
+        self.ledger.send_revoc_reg_def = mock.CoroutineMock()
+        self.ledger.send_revoc_reg_entry = mock.CoroutineMock()
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
+        TailsServer = mock.MagicMock(BaseTailsServer, autospec=True)
         self.tails_server = TailsServer()
-        self.tails_server.upload_tails_file = async_mock.CoroutineMock(
+        self.tails_server.upload_tails_file = mock.CoroutineMock(
             return_value=(True, "http://1.2.3.4:8088/rev-reg-id")
         )
         self.profile.context.injector.bind_instance(BaseTailsServer, self.tails_server)
@@ -171,17 +172,17 @@ class TestIssuerRevRegRecord(AsyncTestCase):
             def handle(self):
                 if self.handle_counter == 0:
                     self.handle_counter = self.handle_counter + 1
-                    return async_mock.MagicMock(
-                        fetch=async_mock.CoroutineMock(
-                            return_value=async_mock.MagicMock(
+                    return mock.MagicMock(
+                        fetch=mock.CoroutineMock(
+                            return_value=mock.MagicMock(
                                 value_json=json.dumps(mock_cred_def)
                             )
                         )
                     )
                 else:
-                    return async_mock.MagicMock(
-                        fetch=async_mock.CoroutineMock(
-                            return_value=async_mock.MagicMock(
+                    return mock.MagicMock(
+                        fetch=mock.CoroutineMock(
+                            return_value=mock.MagicMock(
                                 value_json=json.dumps(mock_reg_rev_def_private),
                             ),
                         )
@@ -213,13 +214,13 @@ class TestIssuerRevRegRecord(AsyncTestCase):
             "ver": "1.0",
             "value": {"accum": "ACCUM", "issued": [1, 2], "revoked": [3, 4]},
         }
-        self.ledger.get_revoc_reg_delta = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_delta = mock.CoroutineMock(
             return_value=(
                 _test_rev_reg_delta,
                 1234567890,
             )
         )
-        self.ledger.send_revoc_reg_entry = async_mock.CoroutineMock(
+        self.ledger.send_revoc_reg_entry = mock.CoroutineMock(
             return_value={
                 "result": {"...": "..."},
             },
@@ -229,10 +230,10 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         )
         _test_profile = _test_session.profile
         _test_profile.context.injector.bind_instance(BaseLedger, self.ledger)
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.IssuerCredRevRecord,
             "query_by_ids",
-            async_mock.CoroutineMock(
+            mock.CoroutineMock(
                 return_value=[
                     test_module.IssuerCredRevRecord(
                         record_id=test_module.UUID4_EXAMPLE,
@@ -243,14 +244,14 @@ class TestIssuerRevRegRecord(AsyncTestCase):
                     )
                 ]
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             test_module.IssuerRevRegRecord,
             "retrieve_by_revoc_reg_id",
-            async_mock.CoroutineMock(return_value=rec),
-        ), async_mock.patch.object(
+            mock.CoroutineMock(return_value=rec),
+        ), mock.patch.object(
             test_module,
             "generate_ledger_rrrecovery_txn",
-            async_mock.CoroutineMock(return_value=rev_reg_delta),
+            mock.CoroutineMock(return_value=rev_reg_delta),
         ):
             assert (
                 _test_rev_reg_delta,
@@ -273,11 +274,11 @@ class TestIssuerRevRegRecord(AsyncTestCase):
             cred_def_id=CRED_DEF_ID,
             revoc_reg_id=REV_REG_ID,
         )
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
-        with async_mock.patch.object(
-            issuer, "create_and_store_revocation_registry", async_mock.CoroutineMock()
+        with mock.patch.object(
+            issuer, "create_and_store_revocation_registry", mock.CoroutineMock()
         ) as mock_create_store_rr:
             mock_create_store_rr.side_effect = IndyIssuerError("Not this time")
 
@@ -290,9 +291,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
             json.dumps(REV_REG_ENTRY),
         )
 
-        with async_mock.patch.object(
-            test_module, "move", async_mock.MagicMock()
-        ) as mock_move:
+        with mock.patch.object(test_module, "move", mock.MagicMock()) as mock_move:
             await rec.generate_registry(self.profile)
 
         assert rec.revoc_reg_id == REV_REG_ID
@@ -312,7 +311,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         assert rec.state == IssuerRevRegRecord.STATE_POSTED
         self.ledger.send_revoc_reg_def.assert_called_once()
 
-        with async_mock.patch.object(test_module.Path, "is_file", lambda _: True):
+        with mock.patch.object(test_module.Path, "is_file", lambda _: True):
             await rec.upload_tails_file(self.profile)
         assert (
             rec.tails_public_uri

@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import ProfileSession
@@ -7,7 +7,7 @@ from ...utils.stats import Collector
 from .. import request_context as test_module
 
 
-class TestAdminRequestContext(AsyncTestCase):
+class TestAdminRequestContext(IsolatedAsyncioTestCase):
     def setUp(self):
         self.ctx = test_module.AdminRequestContext(InMemoryProfile.test_profile())
         assert self.ctx.__class__.__name__ in str(self.ctx)

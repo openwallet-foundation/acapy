@@ -1,8 +1,8 @@
+from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from datetime import datetime, timezone
 
-from asynctest import TestCase
 
 from ....wallet.key_type import BLS12381G2, ED25519
 from ....did.did_key import DIDKey
@@ -36,10 +36,10 @@ from .test_doc import (
 )
 
 
-class TestLDProofs(TestCase):
+class TestLDProofs(IsolatedAsyncioTestCase):
     test_seed = "testseed000000000000000000000001"
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
 

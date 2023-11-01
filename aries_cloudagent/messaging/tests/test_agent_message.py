@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import EXCLUDE, fields
 
@@ -48,7 +48,7 @@ class BasicAgentMessage(AgentMessage):
         message_type = "basic-message"
 
 
-class TestAgentMessage(AsyncTestCase):
+class TestAgentMessage(IsolatedAsyncioTestCase):
     """Tests agent message."""
 
     def test_init(self):
@@ -194,7 +194,7 @@ class TestAgentMessage(AsyncTestCase):
         assert msg._trace
 
 
-class TestAgentMessageSchema(AsyncTestCase):
+class TestAgentMessageSchema(IsolatedAsyncioTestCase):
     """Tests agent message schema."""
 
     def test_init_x(self):

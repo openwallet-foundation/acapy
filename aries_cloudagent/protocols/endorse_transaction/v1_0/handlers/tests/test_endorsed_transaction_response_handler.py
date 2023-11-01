@@ -1,7 +1,5 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -11,18 +9,16 @@ from ...handlers import endorsed_transaction_response_handler as test_module
 from ...messages.endorsed_transaction_response import EndorsedTransactionResponse
 
 
-class TestEndorsedTransactionResponseHandler(AsyncTestCase):
+class TestEndorsedTransactionResponseHandler(IsolatedAsyncioTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_endorse_response = (
-                async_mock.CoroutineMock()
-            )
+            mock_tran_mgr.return_value.receive_endorse_response = mock.CoroutineMock()
             request_context.message = EndorsedTransactionResponse()
             request_context.connection_ready = True
             handler = test_module.EndorsedTransactionResponseHandler()
@@ -37,14 +33,12 @@ class TestEndorsedTransactionResponseHandler(AsyncTestCase):
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_endorse_response = (
-                async_mock.CoroutineMock()
-            )
+            mock_tran_mgr.return_value.receive_endorse_response = mock.CoroutineMock()
             request_context.message = EndorsedTransactionResponse()
             request_context.connection_ready = False
             handler = test_module.EndorsedTransactionResponseHandler()
@@ -57,15 +51,13 @@ class TestEndorsedTransactionResponseHandler(AsyncTestCase):
     async def test_called_x(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_record = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_endorse_response = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.TransactionManagerError()
-                )
+            mock_tran_mgr.return_value.receive_endorse_response = mock.CoroutineMock(
+                side_effect=test_module.TransactionManagerError()
             )
             request_context.message = EndorsedTransactionResponse()
             request_context.connection_ready = True
