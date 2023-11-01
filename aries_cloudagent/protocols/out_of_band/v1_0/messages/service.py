@@ -1,11 +1,16 @@
 """Record used to represent a service block of an out of band invitation."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from marshmallow import EXCLUDE, fields, post_dump
 
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import DID_KEY, INDY_DID
+from .....messaging.valid import (
+    DID_KEY_OR_REF_EXAMPLE,
+    DID_KEY_OR_REF_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+)
 
 
 class Service(BaseModel):
@@ -19,15 +24,14 @@ class Service(BaseModel):
     def __init__(
         self,
         *,
-        _id: str = None,
-        _type: str = None,
-        did: str = None,
-        recipient_keys: Sequence[str] = None,
-        routing_keys: Sequence[str] = None,
-        service_endpoint: str = None,
+        _id: Optional[str] = None,
+        _type: Optional[str] = None,
+        did: Optional[str] = None,
+        recipient_keys: Optional[Sequence[str]] = None,
+        routing_keys: Optional[Sequence[str]] = None,
+        service_endpoint: Optional[str] = None,
     ):
-        """
-        Initialize a Service instance.
+        """Initialize a Service instance.
 
         Args:
             id: An identifier for this service block
@@ -54,29 +58,48 @@ class ServiceSchema(BaseModelSchema):
         model_class = Service
         unknown = EXCLUDE
 
-    _id = fields.Str(required=True, description="Service identifier", data_key="id")
-    _type = fields.Str(required=True, description="Service type", data_key="type")
-    did = fields.Str(required=False, description="Service DID", **INDY_DID)
+    _id = fields.Str(
+        required=True, data_key="id", metadata={"description": "Service identifier"}
+    )
+    _type = fields.Str(
+        required=True, data_key="type", metadata={"description": "Service type"}
+    )
+    did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Service DID", "example": INDY_DID_EXAMPLE},
+    )
 
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **DID_KEY),
+        fields.Str(
+            validate=DID_KEY_OR_REF_VALIDATE,
+            metadata={
+                "description": "Recipient public key",
+                "example": DID_KEY_OR_REF_EXAMPLE,
+            },
+        ),
         data_key="recipientKeys",
         required=False,
-        description="List of recipient keys",
+        metadata={"description": "List of recipient keys"},
     )
 
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **DID_KEY),
+        fields.Str(
+            validate=DID_KEY_OR_REF_VALIDATE,
+            metadata={"description": "Routing key", "example": DID_KEY_OR_REF_EXAMPLE},
+        ),
         data_key="routingKeys",
         required=False,
-        description="List of routing keys",
+        metadata={"description": "List of routing keys"},
     )
 
     service_endpoint = fields.Str(
         data_key="serviceEndpoint",
         required=False,
-        description="Service endpoint at which to reach this agent",
-        example="http://192.168.56.101:8020",
+        metadata={
+            "description": "Service endpoint at which to reach this agent",
+            "example": "http://192.168.56.101:8020",
+        },
     )
 
     @post_dump

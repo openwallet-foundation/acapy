@@ -8,11 +8,15 @@ from marshmallow import EXCLUDE, fields
 
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.base import BaseWallet
-from ...wallet.util import b64_to_bytes, bytes_to_b64
 from ...wallet.key_type import ED25519
-
+from ...wallet.util import b64_to_bytes, bytes_to_b64
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import Base64URL, BASE64URL, INDY_RAW_PUBLIC_KEY
+from ..valid import (
+    BASE64URL_EXAMPLE,
+    BASE64URL_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+)
 
 
 class SignatureDecorator(BaseModel):
@@ -33,8 +37,7 @@ class SignatureDecorator(BaseModel):
         sig_data: str = None,
         signer: str = None,
     ):
-        """
-        Initialize a FieldSignature instance.
+        """Initialize a FieldSignature instance.
 
         Args:
             signature_type: Type of signature
@@ -51,8 +54,7 @@ class SignatureDecorator(BaseModel):
     async def create(
         cls, value, signer: str, wallet: BaseWallet, timestamp=None
     ) -> "SignatureDecorator":
-        """
-        Create a Signature.
+        """Create a Signature.
 
         Sign a field value and return a newly constructed `SignatureDecorator`
         representing the resulting signature.
@@ -82,8 +84,7 @@ class SignatureDecorator(BaseModel):
         )
 
     def decode(self) -> (object, int):
-        """
-        Decode the signature to its timestamp and value.
+        """Decode the signature to its timestamp and value.
 
         Returns:
             A tuple of (decoded message, timestamp)
@@ -94,8 +95,7 @@ class SignatureDecorator(BaseModel):
         return (json.loads(msg_bin[8:]), timestamp)
 
     async def verify(self, wallet: BaseWallet) -> bool:
-        """
-        Verify the signature against the signer's public key.
+        """Verify the signature against the signer's public key.
 
         Args:
             wallet: Wallet to use to verify signature
@@ -135,21 +135,35 @@ class SignatureDecoratorSchema(BaseModelSchema):
     signature_type = fields.Str(
         data_key="@type",
         required=True,
-        description="Signature type",
-        example=(DIDCommPrefix.NEW.qualify("signature/1.0/ed25519Sha512_single")),
+        metadata={
+            "description": "Signature type",
+            "example": DIDCommPrefix.NEW.qualify("signature/1.0/ed25519Sha512_single"),
+        },
     )
     signature = fields.Str(
         required=True,
-        description="signature value, base64url-encoded",
-        example=(
-            "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-"
-            "l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg=="
-        ),
-        validate=Base64URL(),
+        validate=BASE64URL_VALIDATE,
+        metadata={
+            "description": "signature value, base64url-encoded",
+            "example": (
+                "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-l4mKOz7AmkMHDj2"
+                "IgDEa1-GCFfWXNl96a7Bg=="
+            ),
+        },
     )
     sig_data = fields.Str(
-        required=True, description="Signature data, base64url-encoded", **BASE64URL
+        required=True,
+        validate=BASE64URL_VALIDATE,
+        metadata={
+            "description": "Signature data, base64url-encoded",
+            "example": BASE64URL_EXAMPLE,
+        },
     )
     signer = fields.Str(
-        required=True, description="Signer verification key", **INDY_RAW_PUBLIC_KEY
+        required=True,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Signer verification key",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
     )

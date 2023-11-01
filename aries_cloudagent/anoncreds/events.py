@@ -35,8 +35,7 @@ class CredDefFinishedEvent(Event):
         self,
         payload: CredDefFinishedPayload,
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             payload: CredDefFinishedPayload
@@ -79,8 +78,7 @@ class RevRegDefFinishedEvent(Event):
     """Event for rev reg def finished."""
 
     def __init__(self, payload: RevRegDefFinishedPayload):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             payload: RevRegDefFinishedPayload
@@ -115,8 +113,7 @@ class RevListFinishedEvent(Event):
     """Event for rev list finished."""
 
     def __init__(self, payload: RevListFinishedPayload):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             payload: RevListFinishedPayload

@@ -1,18 +1,17 @@
 import json
-from aries_cloudagent.messaging.valid import ENDPOINT_TYPE
-import pytest
-
-from asynctest import mock as async_mock
 
 import indy_vdr
+import pytest
+from aries_cloudagent.tests import mock
+
 
 from ...core.in_memory import InMemoryProfile
 from ...indy.issuer import IndyIssuer
 from ...wallet.base import BaseWallet
-from ...wallet.key_type import KeyType, ED25519
-from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.did_info import DIDInfo
-
+from ...wallet.did_method import SOV, DIDMethod, DIDMethods, HolderDefinedDid
+from ...wallet.did_posture import DIDPosture
+from ...wallet.key_type import ED25519
 from ..endpoint_type import EndpointType
 from ..indy_vdr import (
     BadLedgerRequestError,
@@ -25,22 +24,31 @@ from ..indy_vdr import (
     VdrError,
 )
 
+WEB = DIDMethod(
+    name="web",
+    key_types=[ED25519],
+    rotation=True,
+    holder_defined_did=HolderDefinedDid.REQUIRED,
+)
+
 
 @pytest.fixture()
 def ledger():
-    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
+    did_methods = DIDMethods()
+    did_methods.register(WEB)
+    profile = InMemoryProfile.test_profile(bind={DIDMethods: did_methods})
     ledger = IndyVdrLedger(IndyVdrLedgerPool("test-ledger"), profile)
 
     async def open():
-        ledger.pool.handle = async_mock.MagicMock(indy_vdr.Pool)
+        ledger.pool.handle = mock.MagicMock(indy_vdr.Pool)
 
     async def close():
         ledger.pool.handle = None
 
-    with async_mock.patch.object(ledger.pool, "open", open), async_mock.patch.object(
+    with mock.patch.object(ledger.pool, "open", open), mock.patch.object(
         ledger.pool, "close", close
-    ), async_mock.patch.object(
-        ledger, "is_ledger_read_only", async_mock.CoroutineMock(return_value=False)
+    ), mock.patch.object(
+        ledger, "is_ledger_read_only", mock.CoroutineMock(return_value=False)
     ):
         yield ledger
 
@@ -93,10 +101,10 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         async with ledger:
-            with async_mock.patch.object(
+            with mock.patch.object(
                 ledger.pool_handle,
                 "submit_request",
-                async_mock.CoroutineMock(
+                mock.CoroutineMock(
                     side_effect=[
                         {"data": {"aml": ".."}},
                         {"data": {"text": "text", "version": "1.0"}},
@@ -203,10 +211,13 @@ class TestIndyVdrLedger:
     ):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
-            r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
+            (
+                r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name":'
+                r' "schema_name", "version": "9.1", "attrNames": ["a", "b"]}'
+            ),
         )
 
         async with ledger:
@@ -214,10 +225,10 @@ class TestIndyVdrLedger:
                 "txnMetadata": {"seqNo": 1}
             }
 
-            with async_mock.patch.object(
+            with mock.patch.object(
                 ledger,
                 "check_existing_schema",
-                async_mock.CoroutineMock(return_value=None),
+                mock.CoroutineMock(return_value=None),
             ):
                 schema_id, schema_def = await ledger.create_and_send_schema(
                     issuer, "schema_name", "9.1", ["a", "b"]
@@ -251,7 +262,7 @@ class TestIndyVdrLedger:
         self,
         ledger: IndyVdrLedger,
     ):
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         async with ledger:
             with pytest.raises(BadLedgerRequestError):
                 schema_id, schema_def = await ledger.create_and_send_schema(
@@ -266,17 +277,20 @@ class TestIndyVdrLedger:
     ):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
-            r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
+            (
+                r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name":'
+                r' "schema_name", "version": "9.1", "attrNames": ["a", "b"]}'
+            ),
         )
 
         async with ledger:
-            with async_mock.patch.object(
+            with mock.patch.object(
                 ledger,
                 "check_existing_schema",
-                async_mock.CoroutineMock(
+                mock.CoroutineMock(
                     return_value=(
                         issuer.create_schema.return_value[0],
                         {"schema": "result"},
@@ -297,22 +311,25 @@ class TestIndyVdrLedger:
     ):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
-            r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
+            (
+                r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name":'
+                r' "schema_name", "version": "9.1", "attrNames": ["a", "b"]}'
+            ),
         )
 
         async with ledger:
             ledger.pool.read_only = True
-            with async_mock.patch.object(
+            with mock.patch.object(
                 ledger,
                 "check_existing_schema",
-                async_mock.CoroutineMock(return_value=False),
-            ), async_mock.patch.object(
+                mock.CoroutineMock(return_value=False),
+            ), mock.patch.object(
                 ledger,
                 "is_ledger_read_only",
-                async_mock.CoroutineMock(return_value=True),
+                mock.CoroutineMock(return_value=True),
             ):
                 with pytest.raises(LedgerError):
                     schema_id, schema_def = await ledger.create_and_send_schema(
@@ -327,24 +344,50 @@ class TestIndyVdrLedger:
     ):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
-            r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
+            (
+                r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name":'
+                r' "schema_name", "version": "9.1", "attrNames": ["a", "b"]}'
+            ),
         )
 
         async with ledger:
             ledger.pool_handle.submit_request.side_effect = VdrError(99, "message")
 
-            with async_mock.patch.object(
+            with mock.patch.object(
                 ledger,
                 "check_existing_schema",
-                async_mock.CoroutineMock(return_value=False),
+                mock.CoroutineMock(return_value=False),
             ):
                 with pytest.raises(LedgerTransactionError):
                     schema_id, schema_def = await ledger.create_and_send_schema(
                         issuer, "schema_name", "9.1", ["a", "b"]
                     )
+
+    @pytest.mark.skip(reason="Anoncreds-break")
+    @pytest.mark.asyncio
+    async def test_send_schema_no_indy_did(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        wallet = mock.MagicMock((await ledger.profile.session()).wallet)
+        wallet.create_public_did.return_value = {
+            "result": {
+                "did": "did:web:doma.in",
+                "verkey": "verkey",
+                "posture": DIDPosture.PUBLIC.moniker,
+                "key_type": ED25519.key_type,
+                "method": WEB.method_name,
+            }
+        }
+        issuer = mock.MagicMock(IndyIssuer)
+        async with ledger:
+            with pytest.raises(BadLedgerRequestError):
+                schema_id, schema_def = await ledger.create_and_send_schema(
+                    issuer, "schema_name", "9.1", ["a", "b"]
+                )
 
     @pytest.mark.asyncio
     async def test_get_schema(
@@ -407,7 +450,7 @@ class TestIndyVdrLedger:
                 }
             },
         }
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         issuer.make_credential_definition_id.return_value = cred_def_id
         issuer.credential_definition_in_wallet.return_value = False
         issuer.create_and_store_credential_definition.return_value = (
@@ -445,7 +488,7 @@ class TestIndyVdrLedger:
         self,
         ledger: IndyVdrLedger,
     ):
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         async with ledger:
             with pytest.raises(BadLedgerRequestError):
                 await ledger.create_and_send_credential_definition(
@@ -457,7 +500,7 @@ class TestIndyVdrLedger:
     async def test_send_credential_definition_no_such_schema(
         self, ledger: IndyVdrLedger
     ):
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {}
             with pytest.raises(BadLedgerRequestError):
@@ -468,7 +511,7 @@ class TestIndyVdrLedger:
     @pytest.mark.skip(reason="Anoncreds-break")
     @pytest.mark.asyncio
     async def test_send_credential_definition_read_only(self, ledger: IndyVdrLedger):
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(IndyIssuer)
         async with ledger:
             ledger.pool.read_only = True
             with pytest.raises(LedgerError):
@@ -529,6 +572,26 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         async with ledger:
+            ledger.pool_handle.submit_request.return_value = {
+                "data": r'{"verkey": "VK"}',
+            }
+            result = await ledger.get_key_for_did("55GkHamhTU1ZbTbV2ab9DE")
+            assert result == "VK"
+
+    @pytest.mark.asyncio
+    async def test_get_key_for_did_non_sov_public_did(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        async with ledger:
+            wallet = mock.MagicMock((await ledger.profile.session()).wallet)
+            wallet.get_public_did.return_value = DIDInfo(
+                "did:web:doma.in",
+                "verkey",
+                DIDPosture.PUBLIC.metadata,
+                WEB,
+                ED25519,
+            )
             ledger.pool_handle.submit_request.return_value = {
                 "data": r'{"verkey": "VK"}',
             }
@@ -687,10 +750,10 @@ class TestIndyVdrLedger:
         test_did = await wallet.create_public_did(SOV, ED25519)
 
         async with ledger:
-            with async_mock.patch.object(
+            with mock.patch.object(
                 ledger,
                 "_construct_attr_json",
-                async_mock.CoroutineMock(
+                mock.CoroutineMock(
                     return_value=json.dumps(
                         {
                             "endpoint": {
@@ -702,10 +765,10 @@ class TestIndyVdrLedger:
                         }
                     )
                 ),
-            ) as mock_construct_attr_json, async_mock.patch.object(
+            ) as mock_construct_attr_json, mock.patch.object(
                 ledger,
                 "get_all_endpoints_for_did",
-                async_mock.CoroutineMock(return_value={}),
+                mock.CoroutineMock(return_value={}),
             ):
                 await ledger.update_endpoint_for_did(
                     test_did.did,
@@ -756,7 +819,7 @@ class TestIndyVdrLedger:
         async with ledger:
             await ledger.register_nym(post_did.did, post_did.verkey)
         did = await wallet.get_local_did(post_did.did)
-        assert did.metadata["posted"] == True
+        assert did.metadata["posted"] is True
 
     @pytest.mark.asyncio
     async def test_register_nym_non_local(
@@ -951,14 +1014,14 @@ class TestIndyVdrLedger:
 
     @pytest.mark.asyncio
     async def test_credential_definition_id2schema_id(self, ledger: IndyVdrLedger):
-        S_ID = f"55GkHamhTU1ZbTbV2ab9DE:2:favourite_drink:1.0"
+        S_ID = "55GkHamhTU1ZbTbV2ab9DE:2:favourite_drink:1.0"
         SEQ_NO = "9999"
 
         async with ledger:
-            with async_mock.patch.object(
+            with mock.patch.object(
                 ledger,
                 "get_schema",
-                async_mock.CoroutineMock(return_value={"id": S_ID}),
+                mock.CoroutineMock(return_value={"id": S_ID}),
             ) as mock_get_schema:
                 s_id_short = await ledger.credential_definition_id2schema_id(
                     f"55GkHamhTU1ZbTbV2ab9DE:3:CL:{SEQ_NO}:tag"
@@ -978,10 +1041,10 @@ class TestIndyVdrLedger:
         public_did = await wallet.create_public_did(SOV, ED25519)
 
         async with ledger:
-            with async_mock.patch.object(
+            with mock.patch.object(
                 ledger.pool_handle,
                 "submit_request",
-                async_mock.CoroutineMock(
+                mock.CoroutineMock(
                     side_effect=[
                         {"data": json.dumps({"seqNo": 1234})},
                         {"data": {"txn": {"data": {"role": "101", "alias": "Billy"}}}},

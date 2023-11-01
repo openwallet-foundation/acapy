@@ -59,8 +59,7 @@ class AnonCredsHolder:
     MASTER_SECRET_ID = "default"
 
     def __init__(self, profile: Profile):
-        """
-        Initialize an AnonCredsHolder instance.
+        """Initialize an AnonCredsHolder instance.
 
         Args:
             profile: The active profile instance
@@ -123,8 +122,7 @@ class AnonCredsHolder:
     async def create_credential_request(
         self, credential_offer: dict, credential_definition: CredDef, holder_did: str
     ) -> Tuple[str, str]:
-        """
-        Create a credential request for the given credential offer.
+        """Create a credential request for the given credential offer.
 
         Args:
             credential_offer: The credential offer to create request for
@@ -175,8 +173,7 @@ class AnonCredsHolder:
         credential_id: str = None,
         rev_reg_def: dict = None,
     ) -> str:
-        """
-        Store a credential in the wallet.
+        """Store a credential in the wallet.
 
         Args:
             credential_definition: Credential definition for this credential
@@ -261,8 +258,7 @@ class AnonCredsHolder:
         return credential_id
 
     async def get_credentials(self, start: int, count: int, wql: dict):
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             start: Starting index
@@ -299,8 +295,7 @@ class AnonCredsHolder:
         count: int,
         extra_query: Optional[dict] = None,
     ):
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             presentation_request: Valid presentation request from issuer
@@ -341,7 +336,7 @@ class AnonCredsHolder:
                     f"Unknown presentation request referent: {reft}"
                 )
 
-            tag_filter = {"$exist": list(f"attr::{name}::value" for name in names)}
+            tag_filter = {"$exist": [f"attr::{name}::value" for name in names]}
             if restr:
                 # FIXME check if restr is a list or dict? validate WQL format
                 tag_filter = {"$and": [tag_filter] + restr}
@@ -374,8 +369,7 @@ class AnonCredsHolder:
         return list(creds.values())
 
     async def get_credential(self, credential_id: str) -> str:
-        """
-        Get a credential stored in the wallet.
+        """Get a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to retrieve
@@ -405,8 +399,7 @@ class AnonCredsHolder:
     async def credential_revoked(
         self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
     ) -> bool:
-        """
-        Check ledger for revocation status of credential by cred id.
+        """Check ledger for revocation status of credential by cred id.
 
         Args:
             credential_id: Credential id to check
@@ -428,8 +421,7 @@ class AnonCredsHolder:
             return False
 
     async def delete_credential(self, credential_id: str):
-        """
-        Remove a credential stored in the wallet.
+        """Remove a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to remove
@@ -450,8 +442,7 @@ class AnonCredsHolder:
     async def get_mime_type(
         self, credential_id: str, attr: str = None
     ) -> Union[dict, str]:
-        """
-        Get MIME type per attribute (or for all attributes).
+        """Get MIME type per attribute (or for all attributes).
 
         Args:
             credential_id: credential id
@@ -483,8 +474,7 @@ class AnonCredsHolder:
         credential_definitions: Dict[str, CredDef],
         rev_states: dict = None,
     ) -> str:
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             presentation_request: Valid indy format presentation request
@@ -576,8 +566,7 @@ class AnonCredsHolder:
         rev_list: dict,
         tails_file_path: str,
     ) -> str:
-        """
-        Create current revocation state for a received credential.
+        """Create current revocation state for a received credential.
 
         Args:
             cred_rev_id: credential revocation id in revocation registry

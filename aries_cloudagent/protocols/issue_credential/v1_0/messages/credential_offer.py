@@ -9,7 +9,6 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_OFFER, PROTOCOL_PACKAGE
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
@@ -37,8 +36,7 @@ class CredentialOffer(AgentMessage):
         offers_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential offer object.
+        """Initialize credential offer object.
 
         Args:
             comment: optional human-readable comment
@@ -52,8 +50,7 @@ class CredentialOffer(AgentMessage):
         self.offers_attach = list(offers_attach) if offers_attach else []
 
     def indy_offer(self, index: int = 0) -> dict:
-        """
-        Retrieve and decode indy offer from attachment.
+        """Retrieve and decode indy offer from attachment.
 
         Args:
             index: ordinal in attachment list to decode and return
@@ -80,7 +77,9 @@ class CredentialOfferSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     credential_preview = fields.Nested(CredentialPreviewSchema, required=False)
     offers_attach = fields.Nested(

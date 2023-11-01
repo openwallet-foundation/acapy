@@ -7,8 +7,9 @@ import re
 from abc import ABC, abstractmethod, ABCMeta
 from enum import Enum
 from hashlib import sha256
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import List, Sequence, Tuple, Union
 
+from ..messaging.valid import IndyDID
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
 
@@ -30,8 +31,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     BACKEND_NAME: str = None
 
     async def __aenter__(self) -> "BaseLedger":
-        """
-        Context manager entry.
+        """Context manager entry.
 
         Returns:
             The current instance
@@ -142,8 +142,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         write_ledger: bool = True,
         endorser_did: str = None,
     ) -> Tuple[bool, dict]:
-        """
-        Register a nym on the ledger.
+        """Register a nym on the ledger.
 
         Args:
             did: DID to register on the ledger.
@@ -154,8 +153,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_nym_role(self, did: str):
-        """
-        Return the role registered to input public DID on the ledger.
+        """Return the role registered to input public DID on the ledger.
 
         Args:
             did: DID to register on the ledger.
@@ -167,8 +165,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
-        """
-        Rotate keypair for public DID: create new key, submit to ledger, update wallet.
+        """Rotate keypair for public DID: create new key, submit to ledger, update wallet.
 
         Args:
             next_seed: seed for incoming ed25519 keypair (default random)
@@ -229,8 +226,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def fetch_schema_by_id(self, schema_id: str) -> dict:
-        """
-        Get schema from ledger.
+        """Get schema from ledger.
 
         Args:
             schema_id: The schema id (or stringified sequence number) to retrieve
@@ -242,8 +238,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def fetch_schema_by_seq_no(self, seq_no: int) -> dict:
-        """
-        Fetch a schema by its sequence number.
+        """Fetch a schema by its sequence number.
 
         Args:
             seq_no: schema ledger sequence number
@@ -274,21 +269,40 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         schema_id: str,
         schema_def: dict,
         write_ledger: bool = True,
-        endorser_did: Optional[str] = None,
-    ) -> int:
-        """Send an already created schema to the ledger."""
+        endorser_did: str = None,
+    ) -> Tuple[str, dict]:
+        """Send schema to ledger.
+
+        Args:
+            issuer: The issuer instance to use for schema creation
+            schema_name: The schema name
+            schema_version: The schema version
+            attribute_names: A list of schema attributes
+
+        """
+
         public_info = await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError("Cannot publish schema without a public DID")
+
+        if not bool(IndyDID.PATTERN.match(public_info.did)):
+            raise BadLedgerRequestError(
+                "Cannot publish schema when public DID is not an IndyDID"
+            )
 
         schema_info = await self.check_existing_schema(
             schema_id, schema_def["attrNames"]
         )
 
         if schema_info:
-            raise LedgerObjectAlreadyExistsError(
-                "Schema already exists on ledger", *schema_info
-            )
+            LOGGER.warning("Schema already exists on ledger. Returning details.")
+            schema_id, schema_def = schema_info
+        else:
+            if await self.is_ledger_read_only():
+                raise LedgerError(
+                    "Error cannot write schema when ledger is in read only mode, "
+                    "or TAA is required and not accepted"
+                )
 
         if await self.is_ledger_read_only():
             raise LedgerError(
@@ -390,9 +404,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         cred_def: dict,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ) -> int:
-        """
-        Send credential definition to ledger and store relevant key matter in wallet.
+    ) -> Tuple[str, dict, bool]:
+        """Send credential definition to ledger and store relevant key matter in wallet.
 
         Args:
             issuer: The issuer instance to use for credential definition creation
@@ -461,8 +474,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_credential_definition(self, credential_definition_id: str) -> dict:
-        """
-        Get a credential definition from the cache if available, otherwise the ledger.
+        """Get a credential definition from the cache if available, otherwise the ledger.
 
         Args:
             credential_definition_id: The schema id of the schema to fetch cred def for
@@ -477,8 +489,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def get_schema(self, schema_id: str) -> dict:
-        """
-        Get a schema from the cache if available, otherwise fetch from the ledger.
+        """Get a schema from the cache if available, otherwise fetch from the ledger.
 
         Args:
             schema_id: The schema id (or stringified sequence number) to retrieve
@@ -504,8 +515,7 @@ class Role(Enum):
 
     @staticmethod
     def get(token: Union[str, int] = None) -> "Role":
-        """
-        Return enum instance corresponding to input token.
+        """Return enum instance corresponding to input token.
 
         Args:
             token: token identifying role to indy-sdk:
@@ -525,8 +535,7 @@ class Role(Enum):
         return None
 
     def to_indy_num_str(self) -> str:
-        """
-        Return (typically, numeric) string value that indy-sdk associates with role.
+        """Return (typically, numeric) string value that indy-sdk associates with role.
 
         Recall that None signifies USER and "" signifies a role undergoing reset.
         """

@@ -1,9 +1,11 @@
 """Connection request handler under RFC 23 (DID exchange)."""
 
+from aries_cloudagent.protocols.didexchange.v1_0.messages.problem_report import (
+    DIDXProblemReport,
+)
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ....coordinate_mediation.v1_0.manager import MediationManager
-from ....problem_report.v1_0.message import ProblemReport
 from ..manager import DIDXManager, DIDXManagerError
 from ..messages.request import DIDXRequest
 
@@ -12,8 +14,7 @@ class DIDXRequestHandler(BaseHandler):
     """Handler class for connection request message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle connection request under RFC 23 (DID exchange).
+        """Handle connection request under RFC 23 (DID exchange).
 
         Args:
             context: Request context
@@ -75,6 +76,8 @@ class DIDXRequestHandler(BaseHandler):
                             "Error parsing DIDDoc for problem report"
                         )
                 await responder.send_reply(
-                    ProblemReport(description={"en": e.message, "code": e.error_code}),
+                    DIDXProblemReport(
+                        description={"en": e.message, "code": e.error_code}
+                    ),
                     target_list=targets,
                 )

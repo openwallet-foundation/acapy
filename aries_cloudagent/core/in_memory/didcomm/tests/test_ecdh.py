@@ -1,6 +1,10 @@
 from ecdsa import ECDH, NIST256p, SigningKey
 
-from ..derive_ecdh import *
+from ..derive_ecdh import (
+    derive_shared_secret,
+    derive_shared_secret_from_key,
+    concat_kdf,
+)
 
 
 # Generate the same shared secret from imported generated keys

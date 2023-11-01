@@ -49,6 +49,14 @@ aries\_cloudagent.utils.jwe module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.utils.multi\_ledger module
+--------------------------------------------
+
+.. automodule:: aries_cloudagent.utils.multi_ledger
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.utils.outofband module
 ----------------------------------------
 

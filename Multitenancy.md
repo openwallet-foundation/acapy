@@ -29,6 +29,7 @@ This allows ACA-Py to be used for a wider range of use cases. One use case could
 - [Tenant Management](#tenant-management)
   - [Update a tenant](#update-a-tenant)
   - [Remove a tenant](#remove-a-tenant)
+  - [Per tenant settings](#per-tenant-settings)
 
 ## General Concept
 
@@ -40,7 +41,7 @@ Multi-tenancy in ACA-Py makes a distinction between a base wallet and sub wallet
 
 The wallets used by the different tenants are called **sub wallets**. A sub wallet is almost identical to a wallet when multi-tenancy is disabled. This means that you can do everything with it that a single-tenant ACA-Py instance can also do.
 
-The **base wallet** however, takes on a different role and has limited functionality. Its main function is to manage the sub wallets, which can be done using the [Multi-tenant Admin API](#multi-tenant-admin-api). It stores all settings and information about the different sub wallets and will route incoming messages to the corresponding sub wallets. See [Message Routing](#message-routing) for more details. All other features are disabled for the base wallet. This means it cannot issue credentials, present proof, or do any of the other actions sub wallets can do. This is to keep a clear hierarchical difference between base and sub wallets
+The **base wallet** however, takes on a different role and has limited functionality. Its main function is to manage the sub wallets, which can be done using the [Multi-tenant Admin API](#multi-tenant-admin-api). It stores all settings and information about the different sub wallets and will route incoming messages to the corresponding sub wallets. See [Message Routing](#message-routing) for more details. All other features are disabled for the base wallet. This means it cannot issue credentials, present proof, or do any of the other actions sub wallets can do. This is to keep a clear hierarchical difference between base and sub wallets. For this reason, the base wallet should generally _not_ be provisioned using the `--wallet-seed` argument as not only it is not necessary for sub wallet management operations, but it will also require this DID to be correctly registered on the ledger for the service to start-up correctly.
 
 ![Multi-tenancy Architecture](/docs/assets/multitenancyDiagram.png)
 
@@ -114,7 +115,7 @@ In multi-tenant mode, ACA-Py still exposes a single endpoint for each transport.
 ACA-Py allows messages to be routed through a mediator, and multi-tenancy can be used in combination with external mediators. The following scenarios are possible:
 
 1. The base wallet has a default mediator set that will be used by sub wallets.
-   - Use `--mediation-invitation` to connect to the mediator, request mediation, and set it as the default mediator
+   - Use `--mediator-invitation` to connect to the mediator, request mediation, and set it as the default mediator
    - Use `default-mediator-id` if you're already connected to the mediator and mediation is granted (e.g. after restart).
    - When a sub wallet creates a connection or key it will be registered at the mediator via the base wallet connection. The base wallet will still act as a relay and route the messages to the correct sub wallets.
    - Pro: Not every wallet needs to create a connection with the mediator
@@ -375,3 +376,81 @@ curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
 ```jsonc
 {}
 ```
+
+### Per tenant settings
+
+To allow configurablity of ACA-Py startup parameters/environment variables at a tenant/subwallet level. [PR#2233](https://github.com/hyperledger/aries-cloudagent-python/pull/2233) will provide the ability to update the following subset of settings when creating or updating the subwallet:
+
+| Labels |   | Setting  |
+|---|---|---|
+| ACAPY_LOG_LEVEL  |  log-level |  log.level |
+| ACAPY_INVITE_PUBLIC  |  invite-public |  debug.invite_public  |
+| ACAPY_PUBLIC_INVITES  |  public-invites | public_invites  |
+| ACAPY_AUTO_ACCEPT_INVITES  |  auto-accept-invites | debug.auto_accept_invites  |
+| ACAPY_AUTO_ACCEPT_REQUESTS  |  auto-accept-requests | debug.auto_accept_requests  |
+| ACAPY_AUTO_PING_CONNECTION  |  auto-ping-connection | auto_ping_connection  |
+| ACAPY_MONITOR_PING  |  monitor-ping | debug.monitor_ping  |
+| ACAPY_AUTO_RESPOND_MESSAGES  |  auto-respond-messages | debug.auto_respond_messages  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER  |  auto-respond-credential-offer | debug.auto_resopnd_credential_offer  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST  |  auto-respond-credential-request | debug.auto_respond_credential_request  |
+| ACAPY_AUTO_VERIFY_PRESENTATION  |  auto-verify-presentation | debug.auto_verify_presentation  |
+| ACAPY_NOTIFY_REVOCATION  |  notify-revocation | revocation.notify  |
+| ACAPY_AUTO_REQUEST_ENDORSEMENT  |  auto-request-endorsement | endorser.auto_request  |
+| ACAPY_AUTO_WRITE_TRANSACTIONS  |  auto-write-transactions | endorser.auto_write  |
+| ACAPY_CREATE_REVOCATION_TRANSACTIONS  |  auto-create-revocation-transactions | endorser.auto_create_rev_reg  |
+| ACAPY_ENDORSER_ROLE  |  endorser-protocol-role | endorser.protocol_role  |
+
+- `POST /multitenancy/wallet`
+
+  Added `extra_settings` dict field to request schema. `extra_settings` can be configured in the request body as below:
+
+  **`Example Request`**
+  ```
+  {
+      "wallet_name": " ... ",
+      "default_label": " ... ",
+      "wallet_type": " ... ",
+      "wallet_key": " ... ",
+      "key_management_mode": "managed",
+      "wallet_webhook_urls": [],
+      "wallet_dispatch_type": "base",
+      "extra_settings": {
+          "ACAPY_LOG_LEVEL": "INFO",
+          "ACAPY_INVITE_PUBLIC": true,
+          "public-invites": true
+      },
+  }
+  ```
+
+  ```sh
+  echo $new_tenant | curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet" \
+    -H "Content-Type: application/json" \
+    -H "X-Api-Key: $ACAPY_ADMIN_URL_API_KEY" \
+    -d @-
+  ```
+
+- `PUT /multitenancy/wallet/{wallet_id}`
+
+  Added `extra_settings` dict field to request schema.
+
+  **`Example Request`**
+  ```
+  {
+    "wallet_webhook_urls": [ ... ],
+    "wallet_dispatch_type": "default",
+    "label": " ... ",
+    "image_url": " ... ",
+    "extra_settings": {
+        "ACAPY_LOG_LEVEL": "INFO",
+        "ACAPY_INVITE_PUBLIC": true,
+        "ACAPY_PUBLIC_INVITES": false
+    },
+  }
+  ```
+
+  ```sh
+  echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${WALLET_ID}" \
+   -H "Content-Type: application/json" \
+   -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
+   -d @-
+  ```

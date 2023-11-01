@@ -80,8 +80,7 @@ class AnonCredsIssuer:
     """
 
     def __init__(self, profile: Profile):
-        """
-        Initialize an AnonCredsIssuer instance.
+        """Initialize an AnonCredsIssuer instance.
 
         Args:
             profile: The active profile instance
@@ -159,8 +158,7 @@ class AnonCredsIssuer:
         attr_names: Sequence[str],
         options: Optional[dict] = None,
     ) -> SchemaResult:
-        """
-        Create a new credential schema and store it in the wallet.
+        """Create a new credential schema and store it in the wallet.
 
         Args:
             issuer_id: the DID issuing the credential definition
@@ -258,8 +256,7 @@ class AnonCredsIssuer:
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
     ) -> bool:
-        """
-        Check whether a given credential definition ID is present in the wallet.
+        """Check whether a given credential definition ID is present in the wallet.
 
         Args:
             credential_definition_id: The credential definition ID to check
@@ -284,8 +281,7 @@ class AnonCredsIssuer:
         signature_type: Optional[str] = None,
         options: Optional[dict] = None,
     ) -> CredDefResult:
-        """
-        Create a new credential definition and store it in the wallet.
+        """Create a new credential definition and store it in the wallet.
 
         Args:
             issuer_id: the ID of the issuer creating the credential definition
@@ -481,7 +477,7 @@ class AnonCredsIssuer:
                     },
                 )
                 cred_def_entry = max(
-                    [entry for entry in credential_definition_entries],
+                    list(credential_definition_entries),
                     key=lambda r: int(r.tags["epoch"]),
                 )
 
@@ -499,8 +495,7 @@ class AnonCredsIssuer:
         return cred_def_result.credential_definition.value.revocation is not None
 
     async def create_credential_offer(self, credential_definition_id: str) -> str:
-        """
-        Create a credential offer for the given credential definition id.
+        """Create a credential offer for the given credential definition id.
 
         Args:
             credential_definition_id: The credential definition to create an offer for

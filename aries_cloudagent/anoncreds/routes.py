@@ -222,8 +222,10 @@ async def schemas_get(request: web.BaseRequest):
     """Request handler for getting all schemas.
 
     Args:
+        request: aiohttp request object
 
     Returns:
+        The credential definition details.
 
     """
     context: AdminRequestContext = request["context"]
@@ -246,8 +248,10 @@ async def cred_def_post(request: web.BaseRequest):
     """Request handler for creating .
 
     Args:
+        request: aiohttp request object
 
     Returns:
+        The credential definition details.
 
     """
     context: AdminRequestContext = request["context"]
@@ -276,8 +280,10 @@ async def cred_def_get(request: web.BaseRequest):
     """Request handler for getting credential definition.
 
     Args:
+        request: aiohttp request object
 
     Returns:
+        The credential definition details.
 
     """
     context: AdminRequestContext = request["context"]
@@ -306,8 +312,10 @@ async def cred_defs_get(request: web.BaseRequest):
     """Request handler for getting all credential definitions.
 
     Args:
+        request: aiohttp request object
 
     Returns:
+        The credential definition details.
 
     """
     context: AdminRequestContext = request["context"]
@@ -426,8 +434,7 @@ async def rev_list_post(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def upload_tails_file(request: web.BaseRequest):
-    """
-    Request handler to upload local tails file for revocation registry.
+    """Request handler to upload local tails file for revocation registry.
 
     Args:
         request: aiohttp request object
@@ -459,8 +466,7 @@ async def upload_tails_file(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def set_active_registry(request: web.BaseRequest):
-    """
-    Request handler to upload local tails file for revocation registry.
+    """Request handler to upload local tails file for revocation registry.
 
     Args:
         request: aiohttp request object
@@ -484,8 +490,7 @@ async def set_active_registry(request: web.BaseRequest):
 @request_schema(RevokeRequestSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def revoke(request: web.BaseRequest):
-    """
-    Request handler for storing a credential revocation.
+    """Request handler for storing a credential revocation.
 
     Args:
         request: aiohttp request object
@@ -535,8 +540,7 @@ async def revoke(request: web.BaseRequest):
 @request_schema(PublishRevocationsSchema())
 @response_schema(TxnOrPublishRevocationsResultSchema(), 200, description="")
 async def publish_revocations(request: web.BaseRequest):
-    """
-    Request handler for publishing pending revocations to the ledger.
+    """Request handler for publishing pending revocations to the ledger.
 
     Args:
         request: aiohttp request object

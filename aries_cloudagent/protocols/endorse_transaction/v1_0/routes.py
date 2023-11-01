@@ -6,23 +6,24 @@ import logging
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    response_schema,
+    match_info_schema,
     querystring_schema,
     request_schema,
-    match_info_schema,
+    response_schema,
 )
+
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
-from ....core.util import STARTUP_EVENT_PATTERN, SHUTDOWN_EVENT_PATTERN
+from ....core.util import SHUTDOWN_EVENT_PATTERN, STARTUP_EVENT_PATTERN
 from ....indy.issuer import IndyIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....protocols.connections.v1_0.manager import ConnectionManager
 from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
@@ -30,11 +31,10 @@ from ....protocols.connections.v1_0.messages.connection_invitation import (
 from ....protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ....protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ....storage.error import StorageError, StorageNotFoundError
-
 from .manager import TransactionManager, TransactionManagerError
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
 from .transaction_jobs import TransactionJob
-from .util import is_author_role, get_endorser_connection_id
+from .util import get_endorser_connection_id, is_author_role
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class TransactionListSchema(OpenAPISchema):
 
     results = fields.List(
         fields.Nested(TransactionRecordSchema()),
-        description="List of transaction records",
+        metadata={"description": "List of transaction records"},
     )
 
 
@@ -56,28 +56,26 @@ class TranIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking transaction id."""
 
     tran_id = fields.Str(
-        description="Transaction identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Transaction identifier", "example": UUID4_EXAMPLE},
     )
 
 
 class EndorserDIDInfoSchema(OpenAPISchema):
     """Path parameters and validators for request Endorser DID."""
 
-    endorser_did = fields.Str(
-        description="Endorser DID",
-        required=False,
-    )
+    endorser_did = fields.Str(required=False, metadata={"description": "Endorser DID"})
 
 
 class AssignTransactionJobsSchema(OpenAPISchema):
     """Assign transaction related jobs to connection record."""
 
     transaction_my_job = fields.Str(
-        description="Transaction related jobs",
         required=False,
         validate=validate.OneOf(
             [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
         ),
+        metadata={"description": "Transaction related jobs"},
     )
 
 
@@ -85,18 +83,18 @@ class TransactionJobsSchema(OpenAPISchema):
     """Transaction jobs metadata on connection record."""
 
     transaction_my_job = fields.Str(
-        description="My transaction related job",
         required=False,
         validate=validate.OneOf(
             [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
         ),
+        metadata={"description": "My transaction related job"},
     )
     transaction_their_job = fields.Str(
-        description="Their transaction related job",
         required=False,
         validate=validate.OneOf(
             [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
         ),
+        metadata={"description": "Their transaction related job"},
     )
 
 
@@ -104,7 +102,8 @@ class TransactionConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -112,7 +111,8 @@ class DateSchema(OpenAPISchema):
     """Sets Expiry date, till when the transaction should be endorsed."""
 
     expires_time = fields.DateTime(
-        description="Expiry Date", required=True, example="2021-03-29T05:22:19Z"
+        required=True,
+        metadata={"description": "Expiry Date", "example": "2021-03-29T05:22:19Z"},
     )
 
 
@@ -120,22 +120,20 @@ class EndorserWriteLedgerTransactionSchema(OpenAPISchema):
     """Sets endorser_write_txn. Option for the endorser to write the transaction."""
 
     endorser_write_txn = fields.Boolean(
-        description="Endorser will write the transaction after endorsing it",
         required=False,
+        metadata={
+            "description": "Endorser will write the transaction after endorsing it"
+        },
     )
 
 
 class EndorserInfoSchema(OpenAPISchema):
     """Class for user to input the DID associated with the requested endorser."""
 
-    endorser_did = fields.Str(
-        description="Endorser DID",
-        required=True,
-    )
+    endorser_did = fields.Str(required=True, metadata={"description": "Endorser DID"})
 
     endorser_name = fields.Str(
-        description="Endorser Name",
-        required=False,
+        required=False, metadata={"description": "Endorser Name"}
     )
 
 
@@ -146,8 +144,7 @@ class EndorserInfoSchema(OpenAPISchema):
 @querystring_schema(TransactionsListQueryStringSchema())
 @response_schema(TransactionListSchema(), 200)
 async def transactions_list(request: web.BaseRequest):
-    """
-    Request handler for searching transaction records.
+    """Request handler for searching transaction records.
 
     Args:
         request: aiohttp request object
@@ -176,8 +173,7 @@ async def transactions_list(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transactions_retrieve(request: web.BaseRequest):
-    """
-    Request handler for fetching a single transaction record.
+    """Request handler for fetching a single transaction record.
 
     Args:
         request: aiohttp request object
@@ -211,8 +207,7 @@ async def transactions_retrieve(request: web.BaseRequest):
 @request_schema(DateSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_create_request(request: web.BaseRequest):
-    """
-    Request handler for creating a new transaction record and request.
+    """Request handler for creating a new transaction record and request.
 
     Args:
         request: aiohttp request object
@@ -302,8 +297,7 @@ async def transaction_create_request(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def endorse_transaction_response(request: web.BaseRequest):
-    """
-    Request handler for creating an endorsed transaction response.
+    """Request handler for creating an endorsed transaction response.
 
     Args:
         request: aiohttp request object
@@ -374,8 +368,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def refuse_transaction_response(request: web.BaseRequest):
-    """
-    Request handler for creating a refused transaction response.
+    """Request handler for creating a refused transaction response.
 
     Args:
         request: aiohttp request object
@@ -441,8 +434,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def cancel_transaction(request: web.BaseRequest):
-    """
-    Request handler for cancelling a Transaction request.
+    """Request handler for cancelling a Transaction request.
 
     Args:
         request: aiohttp request object
@@ -506,8 +498,7 @@ async def cancel_transaction(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_resend(request: web.BaseRequest):
-    """
-    Request handler for resending a transaction request.
+    """Request handler for resending a transaction request.
 
     Args:
         request: aiohttp request object
@@ -571,8 +562,7 @@ async def transaction_resend(request: web.BaseRequest):
 @match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(TransactionJobsSchema(), 200)
 async def set_endorser_role(request: web.BaseRequest):
-    """
-    Request handler for assigning transaction jobs.
+    """Request handler for assigning transaction jobs.
 
     Args:
         request: aiohttp request object
@@ -612,8 +602,7 @@ async def set_endorser_role(request: web.BaseRequest):
 @match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(EndorserInfoSchema(), 200)
 async def set_endorser_info(request: web.BaseRequest):
-    """
-    Request handler for assigning endorser information.
+    """Request handler for assigning endorser information.
 
     Args:
         request: aiohttp request object
@@ -676,8 +665,7 @@ async def set_endorser_info(request: web.BaseRequest):
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_write(request: web.BaseRequest):
-    """
-    Request handler for writing an endorsed transaction to the ledger.
+    """Request handler for writing an endorsed transaction to the ledger.
 
     Args:
         request: aiohttp request object
@@ -700,7 +688,9 @@ async def transaction_write(request: web.BaseRequest):
 
     if transaction.state != TransactionRecord.STATE_TRANSACTION_ENDORSED:
         raise web.HTTPForbidden(
-            reason=" The transaction cannot be written to the ledger as it is in state: "
+            reason=(
+                " The transaction cannot be written to the ledger as it is in state: "
+            )
             + transaction.state
         )
 

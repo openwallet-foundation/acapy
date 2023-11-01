@@ -1,4 +1,4 @@
-from asynctest import TestCase
+from unittest import IsolatedAsyncioTestCase
 import pytest
 
 from ...wallet.key_type import BLS12381G2
@@ -31,8 +31,8 @@ from .data import (
 
 
 @pytest.mark.ursa_bbs_signatures
-class TestBbsMattrInterop(TestCase):
-    async def setUp(self):
+class TestBbsMattrInterop(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
 
@@ -51,17 +51,17 @@ class TestBbsMattrInterop(TestCase):
         self.signature_issuer_suite = BbsBlsSignature2020(
             verification_method="did:example:489398593#test",
             key_pair=WalletKeyPair(
-                wallet=self.wallet,
+                profile=self.profile,
                 key_type=BLS12381G2,
                 public_key_base58=public_key_base58,
             ),
         )
 
         self.signature_suite = BbsBlsSignature2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2),
+            key_pair=WalletKeyPair(profile=self.profile, key_type=BLS12381G2),
         )
         self.proof_suite = BbsBlsSignatureProof2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
+            key_pair=WalletKeyPair(profile=self.profile, key_type=BLS12381G2)
         )
 
     async def test_sign_bbs_vc_mattr(self):

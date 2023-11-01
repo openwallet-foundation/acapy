@@ -49,8 +49,7 @@ class V20CredProblemReportSchema(ProblemReportSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Args:
             data: The data to validate

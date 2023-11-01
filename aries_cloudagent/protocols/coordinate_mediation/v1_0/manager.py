@@ -1,7 +1,7 @@
 """Manager for Mediation coordination."""
 import json
 import logging
-from typing import Optional, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Tuple
 
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
@@ -12,10 +12,8 @@ from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import SOV
 from ....wallet.key_type import ED25519
-from ...routing.v1_0.manager import RoutingManager
+from ...routing.v1_0.manager import RoutingManager, RoutingManagerError
 from ...routing.v1_0.models.route_record import RouteRecord
-from ...routing.v1_0.models.route_update import RouteUpdate
-from ...routing.v1_0.models.route_updated import RouteUpdated
 from .messages.inner.keylist_key import KeylistKey
 from .messages.inner.keylist_query_paginate import KeylistQueryPaginate
 from .messages.inner.keylist_update_rule import KeylistUpdateRule
@@ -28,7 +26,10 @@ from .messages.mediate_deny import MediationDeny
 from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
-from .normalization import normalize_from_did_key
+from .normalization import (
+    normalize_from_did_key,
+    normalize_to_did_key,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -141,11 +142,8 @@ class MediationManager:
                     "MediationRecord already exists for connection"
                 )
 
-            # TODO: Determine if terms are acceptable
             record = MediationRecord(
                 connection_id=connection_id,
-                mediator_terms=request.mediator_terms,
-                recipient_terms=request.recipient_terms,
             )
             await record.save(session, reason="New mediation request received")
         return record
@@ -181,26 +179,18 @@ class MediationManager:
             await mediation_record.save(session, reason="Mediation request granted")
             grant = MediationGrant(
                 endpoint=session.settings.get("default_endpoint"),
-                routing_keys=[routing_did.verkey],
+                routing_keys=[normalize_to_did_key(routing_did.verkey).key_id],
             )
         return mediation_record, grant
 
     async def deny_request(
         self,
         mediation_id: str,
-        *,
-        mediator_terms: Sequence[str] = None,
-        recipient_terms: Sequence[str] = None,
     ) -> Tuple[MediationRecord, MediationDeny]:
         """Deny a mediation request and prepare a deny message.
 
         Args:
             mediation_id: mediation record ID to deny
-            mediator_terms (Sequence[str]): updated mediator terms to return to
-            requester.
-            recipient_terms (Sequence[str]): updated recipient terms to return to
-            requester.
-
         Returns:
             MediationDeny: message to return to denied client.
 
@@ -217,10 +207,44 @@ class MediationManager:
             mediation_record.state = MediationRecord.STATE_DENIED
             await mediation_record.save(session, reason="Mediation request denied")
 
-        deny = MediationDeny(
-            mediator_terms=mediator_terms, recipient_terms=recipient_terms
-        )
+        deny = MediationDeny()
         return mediation_record, deny
+
+    async def _handle_keylist_update_add(
+        self,
+        existing_keys: Dict[str, RouteRecord],
+        client_connection_id: str,
+        recipient_key: str,
+    ):
+        """Handle creation of as directed by a keylist update."""
+        route_mgr = RoutingManager(self._profile)
+        if recipient_key in existing_keys:
+            return KeylistUpdated.RESULT_NO_CHANGE
+        try:
+            await route_mgr.create_route_record(
+                client_connection_id=client_connection_id,
+                recipient_key=recipient_key,
+            )
+        except RoutingManagerError:
+            LOGGER.exception("Error adding route record")
+            return KeylistUpdated.RESULT_SERVER_ERROR
+        return KeylistUpdated.RESULT_SUCCESS
+
+    async def _handle_keylist_update_remove(
+        self,
+        existing_keys: Dict[str, RouteRecord],
+        recipient_key: str,
+    ):
+        """Handle deletion of as directed by a keylist update."""
+        route_mgr = RoutingManager(self._profile)
+        if recipient_key not in existing_keys:
+            return KeylistUpdated.RESULT_NO_CHANGE
+        try:
+            await route_mgr.delete_route_record(existing_keys[recipient_key])
+        except RoutingManagerError:
+            LOGGER.exception("Error deleting route record")
+            return KeylistUpdated.RESULT_SERVER_ERROR
+        return KeylistUpdated.RESULT_SUCCESS
 
     async def update_keylist(
         self, record: MediationRecord, updates: Sequence[KeylistUpdateRule]
@@ -239,34 +263,35 @@ class MediationManager:
             raise MediationNotGrantedError(
                 "Mediation has not been granted for this connection."
             )
-        # TODO: Don't borrow logic from RoutingManager
-        # Bidirectional mapping of KeylistUpdateRules to RouteUpdate actions
-        action_map = {
-            KeylistUpdateRule.RULE_ADD: RouteUpdate.ACTION_CREATE,
-            KeylistUpdateRule.RULE_REMOVE: RouteUpdate.ACTION_DELETE,
-            RouteUpdate.ACTION_DELETE: KeylistUpdateRule.RULE_REMOVE,
-            RouteUpdate.ACTION_CREATE: KeylistUpdateRule.RULE_ADD,
-        }
-
-        def rule_to_update(rule: KeylistUpdateRule):
-            recipient_key = normalize_from_did_key(rule.recipient_key)
-            return RouteUpdate(
-                recipient_key=recipient_key, action=action_map[rule.action]
-            )
-
-        def updated_to_keylist_updated(updated: RouteUpdated):
-            return KeylistUpdated(
-                recipient_key=updated.recipient_key,
-                action=action_map[updated.action],
-                result=updated.result,
-            )
 
         route_mgr = RoutingManager(self._profile)
-        # Map keylist update rules to route updates
-        updates = map(rule_to_update, updates)
-        updated = await route_mgr.update_routes(record.connection_id, updates)
-        # Map RouteUpdated to KeylistUpdated
-        updated = map(updated_to_keylist_updated, updated)
+        routes = await route_mgr.get_routes(record.connection_id)
+        existing_keys = {normalize_from_did_key(r.recipient_key): r for r in routes}
+
+        updated = []
+        for update in updates:
+            normalized_key = normalize_from_did_key(update.recipient_key)
+            result = KeylistUpdated(
+                recipient_key=update.recipient_key,
+                action=update.action,
+            )
+
+            # Assign result
+            if not update.recipient_key:
+                result.result = KeylistUpdated.RESULT_CLIENT_ERROR
+            elif update.action == KeylistUpdateRule.RULE_ADD:
+                result.result = await self._handle_keylist_update_add(
+                    existing_keys, record.connection_id, normalized_key
+                )
+            elif update.action == KeylistUpdateRule.RULE_REMOVE:
+                result.result = await self._handle_keylist_update_remove(
+                    existing_keys, normalized_key
+                )
+            else:
+                result.result = KeylistUpdated.RESULT_CLIENT_ERROR
+
+            updated.append(result)
+
         return KeylistUpdateResponse(updated=updated)
 
     async def get_keylist(self, record: MediationRecord) -> Sequence[RouteRecord]:
@@ -298,9 +323,7 @@ class MediationManager:
             Keylist: message to return to client
 
         """
-        keys = list(
-            map(lambda key: KeylistKey(recipient_key=key.recipient_key), keylist)
-        )
+        keys = [KeylistKey(recipient_key=key.recipient_key) for key in keylist]
         return Keylist(keys=keys, pagination=None)
 
     # }}}
@@ -409,15 +432,11 @@ class MediationManager:
     async def prepare_request(
         self,
         connection_id: str,
-        mediator_terms: Sequence[str] = None,
-        recipient_terms: Sequence[str] = None,
     ) -> Tuple[MediationRecord, MediationRequest]:
         """Prepare a MediationRequest Message, saving a new mediation record.
 
         Args:
             connection_id (str): ID representing mediator
-            mediator_terms (Sequence[str]): mediator_terms
-            recipient_terms (Sequence[str]): recipient_terms
 
         Returns:
             MediationRequest: message to send to mediator
@@ -426,15 +445,11 @@ class MediationManager:
         record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
             connection_id=connection_id,
-            mediator_terms=mediator_terms,
-            recipient_terms=recipient_terms,
         )
 
         async with self._profile.session() as session:
             await record.save(session, reason="Creating new mediation request.")
-        request = MediationRequest(
-            mediator_terms=mediator_terms, recipient_terms=recipient_terms
-        )
+        request = MediationRequest()
         return record, request
 
     async def request_granted(self, record: MediationRecord, grant: MediationGrant):
@@ -446,11 +461,9 @@ class MediationManager:
         """
         record.state = MediationRecord.STATE_GRANTED
         record.endpoint = grant.endpoint
-        # record.routing_keys = grant.routing_keys
-        routing_keys = []
-        for key in grant.routing_keys:
-            routing_keys.append(normalize_from_did_key(key))
-        record.routing_keys = routing_keys
+        record.routing_keys = [
+            normalize_to_did_key(key).key_id for key in grant.routing_keys
+        ]
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request granted.")
 
@@ -462,9 +475,6 @@ class MediationManager:
 
         """
         record.state = MediationRecord.STATE_DENIED
-        # TODO Record terms elsewhere?
-        record.mediator_terms = deny.mediator_terms
-        record.recipient_terms = deny.recipient_terms
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request denied.")
 

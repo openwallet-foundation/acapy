@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
 from ....protocols.connections.v1_0.messages.connection_invitation import (
@@ -13,7 +13,7 @@ from ..conn_record import ConnRecord
 from ..diddoc.diddoc import DIDDoc
 
 
-class TestConnRecord(AsyncTestCase):
+class TestConnRecord(IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = InMemoryProfile.test_session()
 
@@ -255,7 +255,7 @@ class TestConnRecord(AsyncTestCase):
         connection_id = await record.save(self.session)
         fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
 
-        assert fetched.is_ready == True
+        assert fetched.is_ready is True
 
     async def test_response_is_ready(self):
         record = ConnRecord(my_did=self.test_did, state=ConnRecord.State.RESPONSE)

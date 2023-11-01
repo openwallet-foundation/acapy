@@ -74,8 +74,7 @@ def create_argument_parser(*, prog: str = None):
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
-    """
-    Log a set of argument groups into a parser.
+    """Log a set of argument groups into a parser.
 
     Returns:
         A callable to convert loaded arguments into a settings dictionary
@@ -765,6 +764,17 @@ class RevocationGroup(ArgumentGroup):
                 "revocation received."
             ),
         )
+        parser.add_argument(
+            "--anoncreds-legacy-revocation",
+            type=str,
+            default="accept",
+            choices=("accept", "reject"),
+            env_var="ACAPY_ANONCREDS_LEGACY_REVOCATION",
+            help=(
+                "Specify the handling of older proofs of non-revocation "
+                "for anoncreds credentials. Values are 'accept' or 'reject'."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract revocation settings."""
@@ -780,6 +790,10 @@ class RevocationGroup(ArgumentGroup):
             settings[
                 "revocation.monitor_notification"
             ] = args.monitor_revocation_notification
+        if args.anoncreds_legacy_revocation:
+            settings[
+                "revocation.anoncreds_legacy_support"
+            ] = args.anoncreds_legacy_revocation
         return settings
 
 
@@ -901,6 +915,7 @@ class LedgerGroup(ArgumentGroup):
             single_configured = False
             multi_configured = False
             update_pool_name = False
+            write_ledger_specified = False
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
                 single_configured = True
@@ -915,27 +930,24 @@ class LedgerGroup(ArgumentGroup):
                     txn_config_list = yaml.safe_load(stream)
                     ledger_config_list = []
                     for txn_config in txn_config_list:
-                        ledger_config_list.append(txn_config)
                         if "is_write" in txn_config and txn_config["is_write"]:
-                            if "genesis_url" in txn_config:
-                                settings["ledger.genesis_url"] = txn_config[
-                                    "genesis_url"
-                                ]
-                            elif "genesis_file" in txn_config:
-                                settings["ledger.genesis_file"] = txn_config[
-                                    "genesis_file"
-                                ]
-                            elif "genesis_transactions" in txn_config:
-                                settings["ledger.genesis_transactions"] = txn_config[
-                                    "genesis_transactions"
-                                ]
-                            else:
-                                raise ArgsParseError(
-                                    "No genesis information provided for write ledger"
-                                )
-                            if "id" in txn_config:
-                                settings["ledger.pool_name"] = txn_config["id"]
-                                update_pool_name = True
+                            write_ledger_specified = True
+                        if (
+                            "genesis_url" not in txn_config
+                            and "genesis_file" not in txn_config
+                            and "genesis_transactions" not in txn_config
+                        ):
+                            raise ArgsParseError(
+                                "No genesis information provided for write ledger"
+                            )
+                        if "id" in txn_config and "pool_name" not in txn_config:
+                            txn_config["pool_name"] = txn_config["id"]
+                        update_pool_name = True
+                        ledger_config_list.append(txn_config)
+                    if not write_ledger_specified:
+                        raise ArgsParseError(
+                            "No write ledger genesis provided in multi-ledger config"
+                        )
                     settings["ledger.ledger_config_list"] = ledger_config_list
                     multi_configured = True
             if not (single_configured or multi_configured):
@@ -1185,7 +1197,8 @@ class ProtocolGroup(ArgumentGroup):
             "--preserve-exchange-records",
             action="store_true",
             env_var="ACAPY_PRESERVE_EXCHANGE_RECORDS",
-            help="Keep credential exchange records after exchange has completed.",
+            help="Keep credential and presentation exchange records after "
+            "exchange has completed.",
         )
         parser.add_argument(
             "--emit-new-didcomm-prefix",
@@ -1194,7 +1207,8 @@ class ProtocolGroup(ArgumentGroup):
             help=(
                 "Emit protocol messages with new DIDComm prefix; i.e., "
                 "'https://didcomm.org/' instead of (default) prefix "
-                "'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'."
+                "'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'. "
+                "Forced to `true` as the old prefix must never be used."
             ),
         )
         parser.add_argument(
@@ -1204,7 +1218,8 @@ class ProtocolGroup(ArgumentGroup):
             help=(
                 "Send packed agent messages with the DIDComm MIME type "
                 "as of RFC 0044; i.e., 'application/didcomm-envelope-enc' "
-                "instead of 'application/ssi-agent-wire'."
+                "instead of 'application/ssi-agent-wire'. "
+                "Forced to `true` as the old MIME type must never be used."
             ),
         )
         parser.add_argument(
@@ -1275,10 +1290,10 @@ class ProtocolGroup(ArgumentGroup):
                 raise ArgsParseError("Error writing trace event " + str(e))
         if args.preserve_exchange_records:
             settings["preserve_exchange_records"] = True
-        if args.emit_new_didcomm_prefix:
-            settings["emit_new_didcomm_prefix"] = True
-        if args.emit_new_didcomm_mime_type:
-            settings["emit_new_didcomm_mime_type"] = True
+        # NOT setting the following two parameters `True` is no longer supported
+        # Even if the args are not set, the config setting is True.
+        settings["emit_new_didcomm_prefix"] = True
+        settings["emit_new_didcomm_mime_type"] = True
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
@@ -1455,8 +1470,7 @@ class TransportGroup(ArgumentGroup):
 
 @group(CAT_START, CAT_PROVISION)
 class MediationInviteGroup(ArgumentGroup):
-    """
-    Mediation invitation settings.
+    """Mediation invitation settings.
 
     These can be provided at provision- and start-time.
     """
@@ -2127,6 +2141,40 @@ class UpgradeGroup(ArgumentGroup):
             ),
         )
 
+        parser.add_argument(
+            "--named-tag",
+            action="append",
+            env_var="ACAPY_UPGRADE_NAMED_TAGS",
+            help=("Runs upgrade steps associated with tags provided in the config"),
+        )
+
+        parser.add_argument(
+            "--upgrade-all-subwallets",
+            action="store_true",
+            env_var="ACAPY_UPGRADE_ALL_SUBWALLETS",
+            help="Apply upgrade to all subwallets and the base wallet",
+        )
+
+        parser.add_argument(
+            "--upgrade-subwallet",
+            action="append",
+            env_var="ACAPY_UPGRADE_SUBWALLETS",
+            help=(
+                "Apply upgrade to specified subwallets (identified by wallet id)"
+                " and the base wallet"
+            ),
+        )
+
+        parser.add_argument(
+            "--upgrade-page-size",
+            type=str,
+            env_var="ACAPY_UPGRADE_PAGE_SIZE",
+            help=(
+                "Specify page/batch size to process BaseRecords, "
+                "this provides a way to prevent out-of-memory issues."
+            ),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
@@ -2136,4 +2184,19 @@ class UpgradeGroup(ArgumentGroup):
             settings["upgrade.from_version"] = args.from_version
         if args.force_upgrade:
             settings["upgrade.force_upgrade"] = args.force_upgrade
+        if args.named_tag:
+            settings["upgrade.named_tags"] = (
+                list(args.named_tag) if args.named_tag else []
+            )
+        if args.upgrade_all_subwallets:
+            settings["upgrade.upgrade_all_subwallets"] = args.upgrade_all_subwallets
+        if args.upgrade_subwallet:
+            settings["upgrade.upgrade_subwallets"] = (
+                list(args.upgrade_subwallet) if args.upgrade_subwallet else []
+            )
+        if args.upgrade_page_size:
+            try:
+                settings["upgrade.page_size"] = int(args.upgrade_page_size)
+            except ValueError:
+                raise ArgsParseError("Parameter --upgrade-page-size must be an integer")
         return settings

@@ -2,16 +2,14 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import CRED_20_REQUEST, PROTOCOL_PACKAGE
-
 from .cred_format import V20CredFormat, V20CredFormatSchema
 
 HANDLER_CLASS = (
@@ -38,8 +36,7 @@ class V20CredRequest(AgentMessage):
         requests_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential request object.
+        """Initialize credential request object.
 
         Args:
             requests_attach: requests attachments
@@ -54,8 +51,7 @@ class V20CredRequest(AgentMessage):
         self.requests_attach = list(requests_attach) if requests_attach else []
 
     def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
-        """
-        Return attached credential request.
+        """Return attached credential request.
 
         Args:
             fmt: format of attachment in list to decode and return
@@ -89,20 +85,22 @@ class V20CredRequestSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     formats = fields.Nested(
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable attachment formats",
+        metadata={"description": "Acceptable attachment formats"},
     )
     requests_attach = fields.Nested(
         AttachDecoratorSchema,
         required=True,
         many=True,
         data_key="requests~attach",
-        description="Request attachments",
+        metadata={"description": "Request attachments"},
     )
 
     @validates_schema

@@ -1,10 +1,10 @@
 """Represents a connection problem report message."""
 
 from enum import Enum
+
 from marshmallow import EXCLUDE, fields, validate
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import PROBLEM_REPORT
 
 HANDLER_CLASS = (
@@ -33,8 +33,7 @@ class ConnectionProblemReport(AgentMessage):
         schema_class = "ConnectionProblemReportSchema"
 
     def __init__(self, *, problem_code: str = None, explain: str = None, **kwargs):
-        """
-        Initialize a ProblemReport message instance.
+        """Initialize a ProblemReport message instance.
 
         Args:
             explain: The localized error explanation
@@ -56,16 +55,20 @@ class ConnectionProblemReportSchema(AgentMessageSchema):
 
     explain = fields.Str(
         required=False,
-        description="Localized error explanation",
-        example="Invitation not accepted",
+        metadata={
+            "description": "Localized error explanation",
+            "example": "Invitation not accepted",
+        },
     )
     problem_code = fields.Str(
         data_key="problem-code",
         required=False,
-        description="Standard error identifier",
         validate=validate.OneOf(
             choices=[prr.value for prr in ProblemReportReason],
             error="Value {input} must be one of {choices}.",
         ),
-        example=ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
+        metadata={
+            "description": "Standard error identifier",
+            "example": ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
+        },
     )

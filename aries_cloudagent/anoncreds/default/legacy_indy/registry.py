@@ -68,11 +68,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """LegacyIndyRegistry."""
 
     def __init__(self):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
-
         TODO: update this docstring - Anoncreds-break.
 
         """
@@ -657,11 +655,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         options: Optional[dict] = None,
     ) -> RevListResult:
         """Update a revocation list."""
-        newly_revoked_indices = [
-            # Remember: Indices in Indy are 1-based
-            index  # + 1 TODO This needs to be offset! Commented for testing
-            for index in revoked
-        ]
+        newly_revoked_indices = list(revoked)
         rev_reg_entry = {
             "ver": "1.0",
             "value": {

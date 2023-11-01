@@ -1,18 +1,23 @@
 """Issuer revocation registry storage handling."""
 
 import json
+import importlib
 import logging
 import uuid
 from functools import total_ordering
 from os.path import join
 from pathlib import Path
 from shutil import move
-from typing import Any, Mapping, Sequence, Union, Tuple
+from typing import Any, Mapping, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
 from ...core.profile import Profile, ProfileSession
+from ...indy.credx.issuer import (
+    CATEGORY_CRED_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
+)
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.revocation import (
     IndyRevRegDef,
@@ -25,17 +30,19 @@ from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError, LedgerTransactionError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    BASE58_SHA256_HASH,
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_REV_REG_ID,
-    UUIDFour,
+    BASE58_SHA256_HASH_EXAMPLE,
+    BASE58_SHA256_HASH_VALIDATE,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    UUID4_EXAMPLE,
 )
 from ...tails.base import BaseTailsServer
-
 from ..error import RevocationError
 from ..recover import generate_ledger_rrrecovery_txn
-
 from .issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation_registry import RevocationRegistry
 
@@ -72,6 +79,17 @@ class IssuerRevRegRecord(BaseRecord):
     STATE_POSTED = "posted"  # definition published
     STATE_ACTIVE = "active"  # initial entry published, possibly subsequent entries
     STATE_FULL = "full"  # includes corrupt
+    STATE_DECOMMISSIONED = "decommissioned"
+
+    STATES = [
+        STATE_INIT,
+        STATE_GENERATED,
+        STATE_POSTED,
+        STATE_ACTIVE,
+        STATE_FULL,
+        STATE_DECOMMISSIONED,
+    ]
+    TERMINAL_STATES = [STATE_FULL, STATE_DECOMMISSIONED]
 
     def __init__(
         self,
@@ -110,7 +128,7 @@ class IssuerRevRegRecord(BaseRecord):
         self.tails_local_path = tails_local_path
         self.tails_public_uri = tails_public_uri
         self.pending_pub = (
-            sorted(list(set(pending_pub))) if pending_pub else []
+            sorted(set(pending_pub)) if pending_pub else []
         )  # order for eq comparison between instances
 
     @property
@@ -285,6 +303,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state not in (
             IssuerRevRegRecord.STATE_POSTED,
             IssuerRevRegRecord.STATE_ACTIVE,
+            IssuerRevRegRecord.STATE_DECOMMISSIONED,
             IssuerRevRegRecord.STATE_FULL,  # can still publish revocation deltas
         ):
             raise RevocationError(
@@ -365,41 +384,59 @@ class IssuerRevRegRecord(BaseRecord):
                 session, rev_reg_id=self.revoc_reg_id
             )
 
-            revoked_ids = []
-            for rec in recs:
-                if rec.state == IssuerCredRevRecord.STATE_REVOKED:
-                    revoked_ids.append(int(rec.cred_rev_id))
-                    if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
-                        # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
-                        rec_count += 1
+        revoked_ids = []
+        for rec in recs:
+            if rec.state == IssuerCredRevRecord.STATE_REVOKED:
+                revoked_ids.append(int(rec.cred_rev_id))
+                if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
+                    # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
+                    rec_count += 1
 
-            LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
-            LOGGER.debug(
-                ">>> rev_reg_record.revoc_reg_entry.value: %s",
-                self.revoc_reg_entry.value,
-            )
-            LOGGER.debug(
-                '>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value")
-            )
+        LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
+        LOGGER.debug(
+            ">>> rev_reg_record.revoc_reg_entry.value: %s",
+            self.revoc_reg_entry.value,
+        )
+        LOGGER.debug('>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value"))
 
-            # if we had any revocation discrepencies, check the accumulator value
-            if rec_count > 0:
-                if (self.revoc_reg_entry.value and rev_reg_delta.get("value")) and not (
-                    self.revoc_reg_entry.value.accum == rev_reg_delta["value"]["accum"]
-                ):
-                    # self.revoc_reg_entry = rev_reg_delta["value"]
-                    # await self.save(session)
-                    accum_count += 1
-
-                calculated_txn = await generate_ledger_rrrecovery_txn(
-                    genesis_transactions,
-                    self.revoc_reg_id,
-                    revoked_ids,
+        # if we had any revocation discrepencies, check the accumulator value
+        if rec_count > 0:
+            if (self.revoc_reg_entry.value and rev_reg_delta.get("value")) and not (
+                self.revoc_reg_entry.value.accum == rev_reg_delta["value"]["accum"]
+            ):
+                # self.revoc_reg_entry = rev_reg_delta["value"]
+                # await self.save(session)
+                accum_count += 1
+            async with profile.session() as session:
+                issuer_rev_reg_record = (
+                    await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
+                        session, self.revoc_reg_id
+                    )
                 )
-                recovery_txn = json.loads(calculated_txn.to_json())
+                cred_def_id = issuer_rev_reg_record.cred_def_id
+                _cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
+                _rev_reg_def_private = await session.handle.fetch(
+                    CATEGORY_REV_REG_DEF_PRIVATE, self.revoc_reg_id
+                )
+            credx_module = importlib.import_module("indy_credx")
+            cred_defn = credx_module.CredentialDefinition.load(_cred_def.value_json)
+            rev_reg_defn_private = (
+                credx_module.RevocationRegistryDefinitionPrivate.load(
+                    _rev_reg_def_private.value_json
+                )
+            )
+            calculated_txn = await generate_ledger_rrrecovery_txn(
+                genesis_transactions,
+                self.revoc_reg_id,
+                revoked_ids,
+                cred_defn,
+                rev_reg_defn_private,
+            )
+            recovery_txn = json.loads(calculated_txn.to_json())
 
-                LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
-                if apply_ledger_update:
+            LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
+            if apply_ledger_update:
+                async with profile.session() as session:
                     ledger = session.inject_or(BaseLedger)
                     if not ledger:
                         reason = "No ledger available"
@@ -412,7 +449,7 @@ class IssuerRevRegRecord(BaseRecord):
                             self.revoc_reg_id, "CL_ACCUM", recovery_txn
                         )
 
-                    applied_txn = ledger_response["result"]
+                applied_txn = ledger_response["result"]
 
         return (rev_reg_delta, recovery_txn, applied_txn)
 
@@ -565,65 +602,94 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
 
     record_id = fields.Str(
         required=False,
-        description="Issuer revocation registry record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Issuer revocation registry record identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Issue revocation registry record state",
-        example=IssuerRevRegRecord.STATE_ACTIVE,
+        metadata={
+            "description": "Issue revocation registry record state",
+            "example": IssuerRevRegRecord.STATE_ACTIVE,
+        },
     )
     cred_def_id = fields.Str(
         required=False,
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     error_msg = fields.Str(
         required=False,
-        description="Error message",
-        example="Revocation registry undefined",
+        metadata={
+            "description": "Error message",
+            "example": "Revocation registry undefined",
+        },
     )
-    issuer_did = fields.Str(required=False, description="Issuer DID", **INDY_DID)
+    issuer_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Issuer DID", "example": INDY_DID_EXAMPLE},
+    )
     max_cred_num = fields.Int(
         required=False,
-        description="Maximum number of credentials for revocation registry",
-        strict=True,
-        example=1000,
+        metadata={
+            "description": "Maximum number of credentials for revocation registry",
+            "strict": True,
+            "example": 1000,
+        },
     )
     revoc_def_type = fields.Str(
         required=False,
-        description="Revocation registry type (specify CL_ACCUM)",
-        example="CL_ACCUM",
         validate=validate.Equal("CL_ACCUM"),
+        metadata={
+            "description": "Revocation registry type (specify CL_ACCUM)",
+            "example": "CL_ACCUM",
+        },
     )
     revoc_reg_id = fields.Str(
-        required=False, description="Revocation registry identifier", **INDY_REV_REG_ID
+        required=False,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
     revoc_reg_def = fields.Nested(
         IndyRevRegDefSchema(),
         required=False,
-        description="Revocation registry definition",
+        metadata={"description": "Revocation registry definition"},
     )
     revoc_reg_entry = fields.Nested(
-        IndyRevRegEntrySchema(), required=False, description="Revocation registry entry"
+        IndyRevRegEntrySchema(),
+        required=False,
+        metadata={"description": "Revocation registry entry"},
     )
     tag = fields.Str(
-        required=False, description="Tag within issuer revocation registry identifier"
+        required=False,
+        metadata={"description": "Tag within issuer revocation registry identifier"},
     )
     tails_hash = fields.Str(
-        required=False, description="Tails hash", **BASE58_SHA256_HASH
+        required=False,
+        validate=BASE58_SHA256_HASH_VALIDATE,
+        metadata={"description": "Tails hash", "example": BASE58_SHA256_HASH_EXAMPLE},
     )
     tails_public_uri = fields.Str(
-        required=False, description="Public URI for tails file"
+        required=False, metadata={"description": "Public URI for tails file"}
     )
     tails_local_path = fields.Str(
-        required=False, description="Local path to tails file"
+        required=False, metadata={"description": "Local path to tails file"}
     )
     pending_pub = fields.List(
-        fields.Str(example="23"),
-        description=(
-            "Credential revocation identifier for credential "
-            "revoked and pending publication to ledger"
-        ),
+        fields.Str(metadata={"example": "23"}),
         required=False,
+        metadata={
+            "description": (
+                "Credential revocation identifier for credential revoked and pending"
+                " publication to ledger"
+            )
+        },
     )

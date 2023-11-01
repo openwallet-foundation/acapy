@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
@@ -21,8 +21,8 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-class TestForwardInvitationHandler(AsyncTestCase):
-    async def setUp(self):
+class TestForwardInvitationHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = RequestContext.test_context()
 
         self.context.connection_ready = True
@@ -42,10 +42,10 @@ class TestForwardInvitationHandler(AsyncTestCase):
         handler = test_module.ForwardInvitationHandler()
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
+            mock_mgr.return_value.receive_invitation = mock.CoroutineMock(
                 return_value=ConnRecord(connection_id="dummy")
             )
 
@@ -56,10 +56,10 @@ class TestForwardInvitationHandler(AsyncTestCase):
         handler = test_module.ForwardInvitationHandler()
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
+            mock_mgr.return_value.receive_invitation = mock.CoroutineMock(
                 side_effect=test_module.ConnectionManagerError("oops")
             )
 

@@ -15,8 +15,7 @@ class TransactionAcknowledgementHandler(BaseHandler):
     """Message handler class for Acknowledging transaction."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle transaction acknowledgement message.
+        """Handle transaction acknowledgement message.
 
         Args:
             context: Request context

@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ....wallet.key_type import ED25519
 from ....core.in_memory import InMemoryProfile
@@ -9,7 +9,7 @@ from ..signature_decorator import SignatureDecorator
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
 
-class TestSignatureDecorator(AsyncTestCase):
+class TestSignatureDecorator(IsolatedAsyncioTestCase):
     async def test_init(self):
         decorator = SignatureDecorator()
         assert decorator.signature_type is None

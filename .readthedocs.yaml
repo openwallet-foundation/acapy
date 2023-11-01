@@ -8,3 +8,7 @@ build:
 sphinx:
   builder: dirhtml
   configuration: docs/conf.py
+
+python:
+  install:
+    - requirements: docs/requirements.txt

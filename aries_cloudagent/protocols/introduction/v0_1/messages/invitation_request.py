@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import INVITATION_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
@@ -22,8 +21,7 @@ class InvitationRequest(AgentMessage):
         schema_class = "InvitationRequestSchema"
 
     def __init__(self, *, responder: str = None, message: str = None, **kwargs):
-        """
-        Initialize invitation request object.
+        """Initialize invitation request object.
 
         Args:
             responder: The name of the agent initiating the introduction
@@ -45,12 +43,16 @@ class InvitationRequestSchema(AgentMessageSchema):
 
     responder = fields.Str(
         required=True,
-        description="Agent name initiating the introduction",
-        example="Alice's agent",
+        metadata={
+            "description": "Agent name initiating the introduction",
+            "example": "Alice's agent",
+        },
     )
     message = fields.Str(
         required=False,
         allow_none=True,
-        description="Comments on the introduction",
-        example="Hello Charlie, it's Alice; allow me to present Bob",
+        metadata={
+            "description": "Comments on the introduction",
+            "example": "Hello Charlie, it's Alice; allow me to present Bob",
+        },
     )

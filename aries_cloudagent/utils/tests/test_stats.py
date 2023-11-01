@@ -1,11 +1,11 @@
 from tempfile import NamedTemporaryFile
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..stats import Collector
 
 
-class TestStats(AsyncTestCase):
+class TestStats(IsolatedAsyncioTestCase):
     async def test_fn_decorator(self):
         stats = Collector()
 

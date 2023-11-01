@@ -38,8 +38,7 @@ class V20CredFormatHandler(ABC):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile instance.
+        """Accessor for the current profile instance.
 
         Returns:
             The profile instance for this credential format

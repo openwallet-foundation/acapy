@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v0.8.2-rc0"
+    "version" : "v0.10.1"
   },
   "servers" : [ {
     "url" : "/"
@@ -2773,7 +2773,7 @@
         "tags" : [ "ledger" ]
       }
     },
-    "/ledger/multiple/config" : {
+    "/ledger/config" : {
       "get" : {
         "responses" : {
           "200" : {
@@ -2791,7 +2791,49 @@
         "tags" : [ "ledger" ]
       }
     },
-    "/ledger/multiple/get-write-ledger" : {
+    "/ledger/get-write-ledgers" : {
+      "get" : {
+        "tags" : [ "ledger" ],
+        "summary" : "Fetch list of available write ledger",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "example" : "ledger id"
+            }
+          }
+        }
+      }
+    },
+    "/ledger/set-write-ledger" : {
+      "put" : {
+        "tags" : [ "ledger" ],
+        "summary" : "Set write ledger",
+        "produces" : [ "application/json" ],
+        "parameters" : [ 
+          {
+            "name" : "ledger_id",
+            "in" : "path",
+            "description" : "Ledger identifier",
+            "required" : true,
+            "type" : "string"
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/WriteLedgerResponse"
+            }
+          }
+        }
+      }
+    },
+    "/ledger/get-write-ledger" : {
       "get" : {
         "responses" : {
           "200" : {
@@ -5298,6 +5340,41 @@
         },
         "summary" : "Writes a schema non-secret record to the wallet",
         "tags" : [ "schema" ]
+      }
+    },
+    "/settings" : {
+      "get" : {
+        "tags" : [ "settings" ],
+        "summary" : "Get profile settings or config",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "type" : "object",
+            "description" : "Settings for this wallet.",
+            "properties" : { }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "settings" ],
+        "summary" : "Update profile settings or config",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/UpdateProfileSettingsRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "type" : "object",
+            "description" : "Settings for this wallet.",
+            "properties" : { }
+          }
+        }
       }
     },
     "/shutdown" : {
@@ -12987,6 +13064,24 @@
           }
         },
         "type" : "object"
+      },
+      "WriteLedgerResponse" : {
+        "type" : "object",
+        "properties" : {
+          "write_ledger" : {
+            "type" : "string"
+          }
+        }
+      },
+      "UpdateProfileSettingsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "extra_settings" : {
+            "type" : "object",
+            "description" : "Settings or config to update.",
+            "properties" : { }
+          }
+        }
       },
       "ActionMenuFetchResult_result" : {
         "allOf" : [ {

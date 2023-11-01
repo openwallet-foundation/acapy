@@ -129,7 +129,7 @@ async def _verify_presentation(
         ]
     )
 
-    verified = all([result.verified for result in credential_results])
+    verified = all(result.verified for result in credential_results)
 
     return PresentationVerificationResult(
         verified=verified,

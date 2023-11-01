@@ -1,5 +1,4 @@
-"""
-DID Document classes.
+"""DID Document classes.
 
 Copyright 2017-2019 Government of Canada
 Public Services and Procurement Canada - buyandsell.gc.ca
@@ -23,6 +22,8 @@ import logging
 
 from typing import List, Sequence, Union
 
+from ....did.did_key import DIDKey
+
 from .publickey import PublicKey, PublicKeyType
 from .service import Service
 from .util import canon_did, canon_ref, ok_did, resource
@@ -31,8 +32,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class DIDDoc:
-    """
-    DID document, grouping a DID with verification keys and services.
+    """DID document, grouping a DID with verification keys and services.
 
     Retains DIDs as raw values (orientated toward indy-facing operations),
     everything else as URIs (oriented toward W3C-facing operations).
@@ -41,8 +41,7 @@ class DIDDoc:
     CONTEXT = "https://w3id.org/did/v1"
 
     def __init__(self, did: str = None) -> None:
-        """
-        Initialize the DIDDoc instance.
+        """Initialize the DIDDoc instance.
 
         Retain DID ('id' in DIDDoc context); initialize verification keys
         and services to empty lists.
@@ -67,8 +66,7 @@ class DIDDoc:
 
     @did.setter
     def did(self, value: str) -> None:
-        """
-        Set DID ('id' in DIDDoc context).
+        """Set DID ('id' in DIDDoc context).
 
         Args:
             value: DID
@@ -99,8 +97,7 @@ class DIDDoc:
         return self._service
 
     def set(self, item: Union[Service, PublicKey]) -> "DIDDoc":
-        """
-        Add or replace service or public key; return current DIDDoc.
+        """Add or replace service or public key; return current DIDDoc.
 
         Raises:
             ValueError: if input item is neither service nor public key.
@@ -121,14 +118,36 @@ class DIDDoc:
                 "Cannot add item {} to DIDDoc on DID {}".format(item, self.did)
             )
 
-    def serialize(self) -> dict:
+    @staticmethod
+    def _normalize_routing_keys(service: dict) -> dict:
+        """Normalize routing keys in service.
+
+        Args:
+            service: service dict
+
+        Returns: service dict with routing keys normalized
         """
-        Dump current object to a JSON-compatible dictionary.
+        routing_keys = service.get("routingKeys")
+        if routing_keys:
+            routing_keys = [
+                DIDKey.from_did(key).public_key_b58
+                if key.startswith("did:key:")
+                else key
+                for key in routing_keys
+            ]
+            service["routingKeys"] = routing_keys
+        return service
+
+    def serialize(self, normalize_routing_keys: bool = False) -> dict:
+        """Dump current object to a JSON-compatible dictionary.
 
         Returns:
             dict representation of current DIDDoc
 
         """
+        service = [service.to_dict() for service in self.service.values()]
+        if normalize_routing_keys:
+            service = [self._normalize_routing_keys(s) for s in service]
 
         return {
             "@context": DIDDoc.CONTEXT,
@@ -142,12 +161,11 @@ class DIDDoc:
                 for pubkey in self.pubkey.values()
                 if pubkey.authn
             ],
-            "service": [service.to_dict() for service in self.service.values()],
+            "service": service,
         }
 
     def to_json(self) -> str:
-        """
-        Dump current object as json (JSON-LD).
+        """Dump current object as json (JSON-LD).
 
         Returns:
             json representation of current DIDDoc
@@ -159,8 +177,7 @@ class DIDDoc:
     def add_service_pubkeys(
         self, service: dict, tags: Union[Sequence[str], str]
     ) -> List[PublicKey]:
-        """
-        Add public keys specified in service. Return public keys so discovered.
+        """Add public keys specified in service. Return public keys so discovered.
 
         Args:
             service: service from DID document
@@ -214,8 +231,7 @@ class DIDDoc:
 
     @classmethod
     def deserialize(cls, did_doc: dict) -> "DIDDoc":
-        """
-        Construct DIDDoc object from dict representation.
+        """Construct DIDDoc object from dict representation.
 
         Args:
             did_doc: DIDDoc dict representation
@@ -294,7 +310,7 @@ class DIDDoc:
                 ),
                 service["type"],
                 rv.add_service_pubkeys(service, "recipientKeys"),
-                rv.add_service_pubkeys(service, ["mediatorKeys", "routingKeys"]),
+                service.get("routingKeys", []),
                 canon_ref(rv.did, endpoint, ";") if ";" in endpoint else endpoint,
                 service.get("priority", None),
             )
@@ -304,8 +320,7 @@ class DIDDoc:
 
     @classmethod
     def from_json(cls, did_doc_json: str) -> "DIDDoc":
-        """
-        Construct DIDDoc object from json representation.
+        """Construct DIDDoc object from json representation.
 
         Args:
             did_doc_json: DIDDoc json representation

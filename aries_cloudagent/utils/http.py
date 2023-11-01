@@ -157,7 +157,7 @@ async def put_file(
         json: flag to parse the result as JSON
 
     """
-    (data_key, file_path) = [k for k in file_data.items()][0]
+    (data_key, file_path) = list(file_data.items())[0]
     limit = max_attempts if retry else 1
 
     if not session:

@@ -1,5 +1,6 @@
 """Represents a DID exchange response message under RFC 23."""
 
+from typing import Optional
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -7,8 +8,7 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import INDY_DID
-
+from .....messaging.valid import GENERIC_DID_EXAMPLE, GENERIC_DID_VALIDATE
 from ..message_types import DIDX_RESPONSE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.response_handler.DIDXResponseHandler"
@@ -28,11 +28,10 @@ class DIDXResponse(AgentMessage):
         self,
         *,
         did: str = None,
-        did_doc_attach: AttachDecorator = None,
+        did_doc_attach: Optional[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize DID exchange response object under RFC 23.
+        """Initialize DID exchange response object under RFC 23.
 
         Args:
             image_url: Optional image URL for this response
@@ -52,10 +51,13 @@ class DIDXResponseSchema(AgentMessageSchema):
         model_class = DIDXResponse
         unknown = EXCLUDE
 
-    did = fields.Str(description="DID of exchange", **INDY_DID)
+    did = fields.Str(
+        validate=GENERIC_DID_VALIDATE,
+        metadata={"description": "DID of exchange", "example": GENERIC_DID_EXAMPLE},
+    )
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,
-        description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",
+        metadata={"description": "As signed attachment, DID Doc associated with DID"},
     )

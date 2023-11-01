@@ -3,7 +3,8 @@ import pytest
 
 from time import time
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
@@ -11,24 +12,19 @@ from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange
 
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder, IndyHolderError
-from .....indy.issuer import IndyIssuer
-from .....indy.sdk.holder import IndySdkHolder
 from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,
 )
-from .....indy.sdk.verifier import IndySdkVerifier
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from .....messaging.decorators.attach_decorator import AttachDecorator
-from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder, MockResponder
-from .....storage.error import StorageNotFoundError
 
 from ....didcomm_prefix import DIDCommPrefix
 
@@ -38,7 +34,6 @@ from .. import manager as test_module
 from ..manager import PresentationManager, PresentationManagerError
 from ..message_types import ATTACH_DECO_IDS, PRESENTATION, PRESENTATION_REQUEST
 from ..messages.presentation import Presentation
-from ..messages.presentation_ack import PresentationAck
 from ..messages.presentation_problem_report import PresentationProblemReport
 from ..messages.presentation_proposal import PresentationProposal
 from ..messages.presentation_request import PresentationRequest
@@ -220,20 +215,18 @@ PRES = Presentation(
 PRES.assign_thread_id("dummy")
 
 
-class TestPresentationManager(AsyncTestCase):
-    async def setUp(self):
+class TestPresentationManager(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         injector = self.profile.context.injector
 
-        Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
+        Ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.get_schema = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock()
-        )
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_schema = mock.CoroutineMock(return_value=mock.MagicMock())
+        self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {"revocation": {"...": "..."}}}
         )
-        self.ledger.get_revoc_reg_def = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_def = mock.CoroutineMock(
             return_value={
                 "ver": "1.0",
                 "id": RR_ID,
@@ -249,7 +242,7 @@ class TestPresentationManager(AsyncTestCase):
                 },
             }
         )
-        self.ledger.get_revoc_reg_delta = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_delta = mock.CoroutineMock(
             return_value=(
                 {
                     "ver": "1.0",
@@ -258,7 +251,7 @@ class TestPresentationManager(AsyncTestCase):
                 NOW,
             )
         )
-        self.ledger.get_revoc_reg_entry = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_entry = mock.CoroutineMock(
             return_value=(
                 {
                     "ver": "1.0",
@@ -270,15 +263,15 @@ class TestPresentationManager(AsyncTestCase):
         injector.bind_instance(BaseLedger, self.ledger)
         injector.bind_instance(
             IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+            mock.MagicMock(
+                get_ledger_for_identifier=mock.CoroutineMock(
                     return_value=(None, self.ledger)
                 )
             ),
         )
-        Holder = async_mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        get_creds = async_mock.CoroutineMock(
+        get_creds = mock.CoroutineMock(
             return_value=(
                 {
                     "cred_info": {
@@ -293,7 +286,7 @@ class TestPresentationManager(AsyncTestCase):
             )
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
-        self.holder.get_credential = async_mock.CoroutineMock(
+        self.holder.get_credential = mock.CoroutineMock(
             return_value=json.dumps(
                 {
                     "schema_id": S_ID,
@@ -303,8 +296,8 @@ class TestPresentationManager(AsyncTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
-        self.holder.create_revocation_state = async_mock.CoroutineMock(
+        self.holder.create_presentation = mock.CoroutineMock(return_value="{}")
+        self.holder.create_revocation_state = mock.CoroutineMock(
             return_value=json.dumps(
                 {
                     "witness": {"omega": "1 ..."},
@@ -315,9 +308,9 @@ class TestPresentationManager(AsyncTestCase):
         )
         injector.bind_instance(IndyHolder, self.holder)
 
-        Verifier = async_mock.MagicMock(IndyVerifier, autospec=True)
+        Verifier = mock.MagicMock(IndyVerifier, autospec=True)
         self.verifier = Verifier()
-        self.verifier.verify_presentation = async_mock.CoroutineMock(
+        self.verifier.verify_presentation = mock.CoroutineMock(
             return_value=("true", [])
         )
         injector.bind_instance(IndyVerifier, self.verifier)
@@ -360,13 +353,16 @@ class TestPresentationManager(AsyncTestCase):
     async def test_create_exchange_for_proposal(self):
         proposal = PresentationProposal()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             PresentationProposal, "serialize", autospec=True
         ):
             exchange = await self.manager.create_exchange_for_proposal(
-                CONN_ID, proposal, auto_present=None
+                CONN_ID,
+                proposal,
+                auto_present=None,
+                auto_remove=True,
             )
             save_ex.assert_called_once()
 
@@ -374,12 +370,13 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange.initiator == V10PresentationExchange.INITIATOR_SELF
             assert exchange.role == V10PresentationExchange.ROLE_PROVER
             assert exchange.state == V10PresentationExchange.STATE_PROPOSAL_SENT
+            assert exchange.auto_remove is True
 
     async def test_receive_proposal(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
         proposal = PresentationProposal()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
         ) as save_ex:
             exchange = await self.manager.receive_proposal(proposal, connection_record)
@@ -395,7 +392,7 @@ class TestPresentationManager(AsyncTestCase):
             presentation_proposal_dict=proposal.serialize(),
             role=V10PresentationExchange.ROLE_VERIFIER,
         )
-        exchange.save = async_mock.CoroutineMock()
+        exchange.save = mock.CoroutineMock()
         (ret_exchange, pres_req_msg) = await self.manager.create_bound_request(
             presentation_exchange_record=exchange,
             name=PROOF_REQ_NAME,
@@ -422,21 +419,26 @@ class TestPresentationManager(AsyncTestCase):
             ]
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
         ) as save_ex:
-            exchange = await self.manager.create_exchange_for_request(CONN_ID, pres_req)
+            exchange = await self.manager.create_exchange_for_request(
+                CONN_ID,
+                pres_req,
+                auto_remove=True,
+            )
             save_ex.assert_called_once()
 
             assert exchange.thread_id == pres_req._thread_id
             assert exchange.initiator == V10PresentationExchange.INITIATOR_SELF
             assert exchange.role == V10PresentationExchange.ROLE_VERIFIER
             assert exchange.state == V10PresentationExchange.STATE_REQUEST_SENT
+            assert exchange.auto_remove is True
 
     async def test_receive_request(self):
         exchange_in = V10PresentationExchange()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
         ) as save_ex:
             exchange_out = await self.manager.receive_request(exchange_in)
@@ -456,21 +458,21 @@ class TestPresentationManager(AsyncTestCase):
 
         exchange_in.presentation_request = indy_proof_req
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.CoroutineMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -500,21 +502,21 @@ class TestPresentationManager(AsyncTestCase):
 
         exchange_in.presentation_request = indy_proof_req
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.CoroutineMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -562,21 +564,21 @@ class TestPresentationManager(AsyncTestCase):
 
         exchange_in.presentation_request = indy_proof_req
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.CoroutineMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -595,12 +597,10 @@ class TestPresentationManager(AsyncTestCase):
 
     @pytest.mark.skip(reason="Anoncreds-break")
     async def test_create_presentation_no_revocation(self):
-        Ledger = async_mock.MagicMock(BaseLedger, autospec=True)
+        Ledger = mock.MagicMock(BaseLedger, autospec=True)
         self.ledger = Ledger()
-        self.ledger.get_schema = async_mock.CoroutineMock(
-            return_value=async_mock.MagicMock()
-        )
-        self.ledger.get_credential_definition = async_mock.CoroutineMock(
+        self.ledger.get_schema = mock.CoroutineMock(return_value=mock.MagicMock())
+        self.ledger.get_credential_definition = mock.CoroutineMock(
             return_value={"value": {"revocation": None}}
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -615,9 +615,9 @@ class TestPresentationManager(AsyncTestCase):
 
         exchange_in.presentation_request = indy_proof_req
 
-        Holder = async_mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        get_creds = async_mock.CoroutineMock(
+        get_creds = mock.CoroutineMock(
             return_value=(
                 {
                     "cred_info": {"referent": "dummy_reft"},
@@ -630,7 +630,7 @@ class TestPresentationManager(AsyncTestCase):
             )
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
-        self.holder.get_credential = async_mock.CoroutineMock(
+        self.holder.get_credential = mock.CoroutineMock(
             return_value=json.dumps(
                 {
                     "schema_id": S_ID,
@@ -640,17 +640,17 @@ class TestPresentationManager(AsyncTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
+        self.holder.create_presentation = mock.CoroutineMock(return_value="{}")
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
-            test_indy_util_module.LOGGER, "info", async_mock.MagicMock()
+        ) as mock_attach_decorator, mock.patch.object(
+            test_indy_util_module.LOGGER, "info", mock.MagicMock()
         ) as mock_log_info:
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -682,9 +682,9 @@ class TestPresentationManager(AsyncTestCase):
 
         exchange_in.presentation_request = indy_proof_req
 
-        Holder = async_mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        get_creds = async_mock.CoroutineMock(
+        get_creds = mock.CoroutineMock(
             return_value=(
                 {
                     "cred_info": {"referent": "dummy_reft"},
@@ -698,7 +698,7 @@ class TestPresentationManager(AsyncTestCase):
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
-        self.holder.get_credential = async_mock.CoroutineMock(
+        self.holder.get_credential = mock.CoroutineMock(
             return_value=json.dumps(
                 {
                     "schema_id": S_ID,
@@ -708,27 +708,27 @@ class TestPresentationManager(AsyncTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
-        self.holder.create_revocation_state = async_mock.CoroutineMock(
+        self.holder.create_presentation = mock.CoroutineMock(return_value="{}")
+        self.holder.create_revocation_state = mock.CoroutineMock(
             side_effect=IndyHolderError("Problem", {"message": "Nope"})
         )
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.CoroutineMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -751,9 +751,9 @@ class TestPresentationManager(AsyncTestCase):
 
         exchange_in.presentation_request = indy_proof_req
 
-        Holder = async_mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()
-        get_creds = async_mock.CoroutineMock(
+        get_creds = mock.CoroutineMock(
             return_value=(
                 {
                     "cred_info": {
@@ -780,7 +780,7 @@ class TestPresentationManager(AsyncTestCase):
             )
         )
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
-        self.holder.get_credential = async_mock.CoroutineMock(
+        self.holder.get_credential = mock.CoroutineMock(
             return_value=json.dumps(
                 {
                     "schema_id": S_ID,
@@ -790,8 +790,8 @@ class TestPresentationManager(AsyncTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
-        self.holder.create_revocation_state = async_mock.CoroutineMock(
+        self.holder.create_presentation = mock.CoroutineMock(return_value="{}")
+        self.holder.create_revocation_state = mock.CoroutineMock(
             return_value=json.dumps(
                 {
                     "witness": {"omega": "1 ..."},
@@ -802,21 +802,21 @@ class TestPresentationManager(AsyncTestCase):
         )
         self.profile.context.injector.bind_instance(IndyHolder, self.holder)
 
-        more_magic_rr = async_mock.MagicMock(
-            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+        more_magic_rr = mock.MagicMock(
+            get_or_fetch_local_tails_path=mock.CoroutineMock(
                 return_value="/tmp/sample/tails/path"
             )
         )
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             test_module, "AttachDecorator", autospec=True
-        ) as mock_attach_decorator, async_mock.patch.object(
+        ) as mock_attach_decorator, mock.patch.object(
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr:
-            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+            mock_rr.from_definition = mock.MagicMock(return_value=more_magic_rr)
 
-            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+            mock_attach_decorator.data_base64 = mock.MagicMock(
                 return_value=mock_attach_decorator
             )
 
@@ -841,7 +841,7 @@ class TestPresentationManager(AsyncTestCase):
             nonce=PROOF_REQ_NONCE,
             profile=self.profile,
         )
-        get_creds = async_mock.CoroutineMock(return_value=())
+        get_creds = mock.CoroutineMock(return_value=())
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
         with self.assertRaises(ValueError):
@@ -849,7 +849,7 @@ class TestPresentationManager(AsyncTestCase):
                 indy_proof_req, holder=self.holder
             )
 
-        get_creds = async_mock.CoroutineMock(
+        get_creds = mock.CoroutineMock(
             return_value=(
                 {
                     "cred_info": {"referent": "dummy_reft"},
@@ -864,7 +864,7 @@ class TestPresentationManager(AsyncTestCase):
         self.holder.get_credentials_for_presentation_request_by_referent = get_creds
 
     async def test_receive_presentation(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
 
         exchange_dummy = V10PresentationExchange(
             presentation_proposal_dict={
@@ -953,14 +953,14 @@ class TestPresentationManager(AsyncTestCase):
             },
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, async_mock.patch.object(
+        ) as retrieve_ex, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.side_effect = [exchange_dummy]
             exchange_out = await self.manager.receive_presentation(
@@ -1067,14 +1067,14 @@ class TestPresentationManager(AsyncTestCase):
             },
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, async_mock.patch.object(
+        ) as retrieve_ex, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.side_effect = [exchange_dummy]
             exchange_out = await self.manager.receive_presentation(PRES, None, None)
@@ -1088,7 +1088,7 @@ class TestPresentationManager(AsyncTestCase):
             )
 
     async def test_receive_presentation_bait_and_switch(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
 
         exchange_dummy = V10PresentationExchange(
             presentation_proposal_dict={
@@ -1177,9 +1177,9 @@ class TestPresentationManager(AsyncTestCase):
             },
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = exchange_dummy
@@ -1189,14 +1189,14 @@ class TestPresentationManager(AsyncTestCase):
     async def test_receive_presentation_connectionless(self):
         exchange_dummy = V10PresentationExchange()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex, async_mock.patch.object(
+        ) as retrieve_ex, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.return_value = exchange_dummy
             exchange_out = await self.manager.receive_presentation(PRES, None, None)
@@ -1236,7 +1236,7 @@ class TestPresentationManager(AsyncTestCase):
             presentation=INDY_PROOF,
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
         ) as save_ex:
             exchange_out = await self.manager.verify_presentation(exchange_in)
@@ -1264,7 +1264,7 @@ class TestPresentationManager(AsyncTestCase):
             ]
         }
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
         ) as save_ex:
             exchange_out = await self.manager.verify_presentation(exchange_in)
@@ -1289,12 +1289,12 @@ class TestPresentationManager(AsyncTestCase):
         responder = MockResponder()
         self.profile.context.injector.bind_instance(BaseResponder, responder)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.OobRecord, "retrieve_by_tag_filter"
-        ) as mock_retrieve_oob, async_mock.patch.object(
+        ) as mock_retrieve_oob, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             await self.manager.send_presentation_ack(exchange)
             messages = responder.messages
@@ -1310,14 +1310,14 @@ class TestPresentationManager(AsyncTestCase):
         await self.manager.send_presentation_ack(exchange)
 
     async def test_receive_presentation_ack_a(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
 
         exchange_dummy = V10PresentationExchange()
-        message = async_mock.MagicMock()
+        message = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = exchange_dummy
@@ -1331,14 +1331,14 @@ class TestPresentationManager(AsyncTestCase):
             )
 
     async def test_receive_presentation_ack_b(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        connection_record = mock.MagicMock(connection_id=CONN_ID)
 
         exchange_dummy = V10PresentationExchange()
-        message = async_mock.MagicMock(_verification_result="true")
+        message = mock.MagicMock(_verification_result="true")
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
         ) as retrieve_ex:
             retrieve_ex.return_value = exchange_dummy
@@ -1369,16 +1369,16 @@ class TestPresentationManager(AsyncTestCase):
             }
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange, "save", autospec=True
-        ) as save_ex, async_mock.patch.object(
+        ) as save_ex, mock.patch.object(
             V10PresentationExchange,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
-        ) as retrieve_ex, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as retrieve_ex, mock.patch.object(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.profile.session()),
+            mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.return_value = stored_exchange
 
@@ -1411,10 +1411,10 @@ class TestPresentationManager(AsyncTestCase):
             }
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10PresentationExchange,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as retrieve_ex:
             retrieve_ex.side_effect = test_module.StorageNotFoundError("No such record")
 

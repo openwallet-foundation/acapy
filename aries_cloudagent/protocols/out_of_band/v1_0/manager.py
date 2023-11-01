@@ -17,6 +17,7 @@ from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....messaging.responder import BaseResponder
+from ....messaging.valid import IndyDID
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -56,8 +57,7 @@ class OutOfBandManager(BaseConnectionManager):
     """Class for managing out of band messages."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a OutOfBandManager.
+        """Initialize a OutOfBandManager.
 
         Args:
             profile: The profile for this out of band manager
@@ -67,8 +67,7 @@ class OutOfBandManager(BaseConnectionManager):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile.
+        """Accessor for the current profile.
 
         Returns:
             The profile for this connection manager
@@ -90,9 +89,10 @@ class OutOfBandManager(BaseConnectionManager):
         mediation_id: str = None,
         service_accept: Optional[Sequence[Text]] = None,
         protocol_version: Optional[Text] = None,
+        goal_code: Optional[Text] = None,
+        goal: Optional[Text] = None,
     ) -> InvitationRecord:
-        """
-        Generate new connection invitation.
+        """Generate new connection invitation.
 
         This interaction represents an out-of-band communication channel. In the future
         and in practice, these sort of invitations will be received over any number of
@@ -111,7 +111,8 @@ class OutOfBandManager(BaseConnectionManager):
             service_accept: Optional list of mime types in the order of preference of
             the sender that the receiver can use in responding to the message
             protocol_version: OOB protocol version [1.0, 1.1]
-
+            goal_code: Optional self-attested code for receiver logic
+            goal: Optional self-attested string for receiver logic
         Returns:
             Invitation record
 
@@ -220,12 +221,16 @@ class OutOfBandManager(BaseConnectionManager):
                     "Cannot create public invitation with no public DID"
                 )
 
+            public_did_did = public_did.did
+            if bool(IndyDID.PATTERN.match(public_did.did)):
+                public_did_did = f"did:sov:{public_did.did}"
+
             invi_msg = InvitationMessage(  # create invitation message
                 _id=invitation_message_id,
                 label=my_label or self.profile.settings.get("default_label"),
                 handshake_protocols=handshake_protocols,
                 requests_attach=message_attachments,
-                services=[f"did:sov:{public_did.did}"],
+                services=[public_did_did],
                 accept=service_accept if protocol_version != "1.0" else None,
                 version=protocol_version or DEFAULT_VERSION,
                 image_url=image_url,
@@ -312,9 +317,10 @@ class OutOfBandManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Created new connection")
 
-            routing_keys, my_endpoint = await self._route_manager.routing_info(
-                self.profile, my_endpoint, mediation_record
+            routing_keys, routing_endpoint = await self._route_manager.routing_info(
+                self.profile, mediation_record
             )
+            my_endpoint = routing_endpoint or my_endpoint
 
             if not conn_rec:
                 our_service = ServiceDecorator(
@@ -330,8 +336,8 @@ class OutOfBandManager(BaseConnectionManager):
             routing_keys = [
                 key
                 if len(key.split(":")) == 3
-                else DIDKey.from_public_key_b58(key, ED25519).did
-                for key in routing_keys
+                else DIDKey.from_public_key_b58(key, ED25519).key_id
+                for key in routing_keys or []
             ]
 
             # Create connection invitation message
@@ -348,13 +354,18 @@ class OutOfBandManager(BaseConnectionManager):
                     _id="#inline",
                     _type="did-communication",
                     recipient_keys=[
-                        DIDKey.from_public_key_b58(connection_key.verkey, ED25519).did
+                        DIDKey.from_public_key_b58(
+                            connection_key.verkey, ED25519
+                        ).key_id
                     ],
                     service_endpoint=my_endpoint,
                     routing_keys=routing_keys,
                 )
             ]
             invi_url = invi_msg.to_url()
+            if goal and goal_code:
+                invi_msg.goal_code = goal_code
+                invi_msg.goal = goal
 
             # Update connection record
             if conn_rec:
@@ -400,8 +411,7 @@ class OutOfBandManager(BaseConnectionManager):
         alias: Optional[str] = None,
         mediation_id: Optional[str] = None,
     ) -> OobRecord:
-        """
-        Receive an out of band invitation message.
+        """Receive an out of band invitation message.
 
         Args:
             invitation: invitation message
@@ -440,7 +450,10 @@ class OutOfBandManager(BaseConnectionManager):
         # Get the DID public did, if any
         public_did = None
         if isinstance(oob_service_item, str):
-            public_did = oob_service_item.split(":")[-1]
+            if bool(IndyDID.PATTERN.match(oob_service_item)):
+                public_did = oob_service_item.split(":")[-1]
+            else:
+                public_did = oob_service_item
 
         conn_rec = None
 
@@ -568,7 +581,10 @@ class OutOfBandManager(BaseConnectionManager):
         if not oob_record.connection_id:
             service = oob_record.invitation.services[0]
             their_service = await self._service_decorator_from_service(service)
-            LOGGER.debug("Found service for oob record %s", their_service)
+            if their_service:
+                LOGGER.debug("Found service for oob record %s", their_service)
+            else:
+                LOGGER.debug("No service decorator obtained from %s", service)
 
         await message_processor.handle_message(
             self.profile, messages, oob_record=oob_record, their_service=their_service
@@ -576,7 +592,7 @@ class OutOfBandManager(BaseConnectionManager):
 
     async def _service_decorator_from_service(
         self, service: Union[Service, str]
-    ) -> ServiceDecorator:
+    ) -> Optional[ServiceDecorator]:
         if isinstance(service, str):
             (
                 endpoint,
@@ -584,13 +600,20 @@ class OutOfBandManager(BaseConnectionManager):
                 routing_keys,
             ) = await self.resolve_invitation(service)
 
+            if not endpoint:
+                return None
+
             return ServiceDecorator(
                 endpoint=endpoint,
                 recipient_keys=recipient_keys,
                 routing_keys=routing_keys,
             )
-        else:
-            # Create ~service decorator from the oob service
+        elif isinstance(service, Service):
+            endpoint = service.service_endpoint
+
+            if not endpoint:
+                return None
+
             recipient_keys = [
                 DIDKey.from_did(did_key).public_key_b58
                 for did_key in service.recipient_keys
@@ -601,10 +624,16 @@ class OutOfBandManager(BaseConnectionManager):
             ]
 
             return ServiceDecorator(
-                endpoint=service.service_endpoint,
+                endpoint=endpoint,
                 recipient_keys=recipient_keys,
                 routing_keys=routing_keys,
             )
+        else:
+            LOGGER.warning(
+                "Unexpected type `%s` passed to `_service_decorator_from_service`",
+                type(service),
+            )
+            return None
 
     async def _wait_for_reuse_response(
         self, oob_id: str, timeout: int = 15
@@ -620,6 +649,7 @@ class OutOfBandManager(BaseConnectionManager):
             timeout: The timeout in seconds to wait for the reuse state [default=15]
 
         Returns:
+            OobRecord: The oob record associated with the provided id.
 
         """
         OOB_REUSE_RESPONSE_STATE = re.compile(
@@ -787,11 +817,11 @@ class OutOfBandManager(BaseConnectionManager):
                     "id": "#inline",
                     "type": "did-communication",
                     "recipientKeys": [
-                        DIDKey.from_public_key_b58(key, ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).key_id
                         for key in recipient_keys
                     ],
                     "routingKeys": [
-                        DIDKey.from_public_key_b58(key, ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).key_id
                         for key in routing_keys
                     ],
                     "serviceEndpoint": endpoint,
@@ -860,14 +890,14 @@ class OutOfBandManager(BaseConnectionManager):
         conn_record: ConnRecord,
         version: str,
     ) -> OobRecord:
-        """
-        Create and Send a Handshake Reuse message under RFC 0434.
+        """Create and Send a Handshake Reuse message under RFC 0434.
 
         Args:
             oob_record: OOB  Record
             conn_record: Connection record associated with the oob record
 
         Returns:
+            OobRecord: The oob record with updated state and reuse_msg_id.
 
         Raises:
             OutOfBandManagerError: If there is an issue creating or
@@ -922,8 +952,7 @@ class OutOfBandManager(BaseConnectionManager):
         receipt: MessageReceipt,
         conn_rec: ConnRecord,
     ) -> None:
-        """
-        Receive and process a HandshakeReuse message under RFC 0434.
+        """Receive and process a HandshakeReuse message under RFC 0434.
 
         Process a `HandshakeReuse` message by looking up
         the connection records using the MessageReceipt sender DID.
@@ -933,6 +962,7 @@ class OutOfBandManager(BaseConnectionManager):
             receipt: The message receipt
 
         Returns:
+            None
 
         Raises:
             OutOfBandManagerError: If the existing connection is not active
@@ -999,8 +1029,7 @@ class OutOfBandManager(BaseConnectionManager):
         receipt: MessageReceipt,
         conn_record: ConnRecord,
     ) -> None:
-        """
-        Receive and process a HandshakeReuseAccept message under RFC 0434.
+        """Receive and process a HandshakeReuseAccept message under RFC 0434.
 
         Process a `HandshakeReuseAccept` message by updating the OobRecord
         state to `accepted`.
@@ -1010,6 +1039,7 @@ class OutOfBandManager(BaseConnectionManager):
             receipt: The message receipt
 
         Returns:
+            None
 
         Raises:
             OutOfBandManagerError: if there is an error in processing the
@@ -1078,8 +1108,7 @@ class OutOfBandManager(BaseConnectionManager):
         receipt: MessageReceipt,
         conn_record: ConnRecord,
     ) -> None:
-        """
-        Receive and process a ProblemReport message from the inviter to invitee.
+        """Receive and process a ProblemReport message from the inviter to invitee.
 
         Process a `ProblemReport` message by updating the OobRecord
         state to `not_accepted`.
@@ -1089,6 +1118,7 @@ class OutOfBandManager(BaseConnectionManager):
             receipt: The message receipt
 
         Returns:
+            None
 
         Raises:
             OutOfBandManagerError: if there is an error in processing the

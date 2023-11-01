@@ -77,8 +77,7 @@ class AnonCredsRevocation:
     """Revocation registry operations manager."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize an AnonCredsRevocation instance.
+        """Initialize an AnonCredsRevocation instance.
 
         Args:
             profile: The active profile instance
@@ -142,8 +141,7 @@ class AnonCredsRevocation:
         max_cred_num: int,
         options: Optional[dict] = None,
     ) -> RevRegDefResult:
-        """
-        Create a new revocation registry and register on network.
+        """Create a new revocation registry and register on network.
 
         Args:
             issuer_id (str): issuer identifier
@@ -958,10 +956,9 @@ class AnonCredsRevocation:
         *,
         retries: int = 5,
     ) -> Tuple[str, str, str]:
-        """
-        Create a credential.
+        """Create a credential.
 
-        Args
+        Args:
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
             credential_values: Values to go in credential
@@ -1043,8 +1040,7 @@ class AnonCredsRevocation:
         additional_crids: Optional[Sequence[int]] = None,
         limit_crids: Optional[Sequence[int]] = None,
     ) -> RevokeResult:
-        """
-        Revoke a set of credentials in a revocation registry.
+        """Revoke a set of credentials in a revocation registry.
 
         Args:
             revoc_reg_id: ID of the revocation registry

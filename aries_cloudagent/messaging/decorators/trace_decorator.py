@@ -1,5 +1,4 @@
-"""
-A message decorator for trace events.
+"""A message decorator for trace events.
 
 A trace decorator identifies a responsibility on the processor
 to record information on message processing events.
@@ -10,8 +9,7 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import UUIDFour
-
+from ..valid import UUID4_EXAMPLE
 
 TRACE_MESSAGE_TARGET = "message"
 TRACE_LOG_TARGET = "log"
@@ -37,8 +35,7 @@ class TraceReport(BaseModel):
         ellapsed_milli: int = None,
         outcome: str = None,
     ):
-        """
-        Initialize a TraceReport instance.
+        """Initialize a TraceReport instance.
 
         Args:
             msg_id: ...
@@ -62,8 +59,7 @@ class TraceReport(BaseModel):
 
     @property
     def msg_id(self):
-        """
-        Accessor for msg_id.
+        """Accessor for msg_id.
 
         Returns:
             The msg_id
@@ -73,8 +69,7 @@ class TraceReport(BaseModel):
 
     @property
     def thread_id(self):
-        """
-        Accessor for thread_id.
+        """Accessor for thread_id.
 
         Returns:
             The thread_id
@@ -84,8 +79,7 @@ class TraceReport(BaseModel):
 
     @property
     def traced_type(self):
-        """
-        Accessor for traced_type.
+        """Accessor for traced_type.
 
         Returns:
             The sender traced_type
@@ -95,8 +89,7 @@ class TraceReport(BaseModel):
 
     @property
     def timestamp(self):
-        """
-        Accessor for timestamp.
+        """Accessor for timestamp.
 
         Returns:
             The sender timestamp
@@ -106,8 +99,7 @@ class TraceReport(BaseModel):
 
     @property
     def str_time(self):
-        """
-        Accessor for str_time.
+        """Accessor for str_time.
 
         Returns:
             Formatted representation of the sender timestamp
@@ -117,8 +109,7 @@ class TraceReport(BaseModel):
 
     @property
     def handler(self):
-        """
-        Accessor for handler.
+        """Accessor for handler.
 
         Returns:
             The sender handler
@@ -128,8 +119,7 @@ class TraceReport(BaseModel):
 
     @property
     def ellapsed_milli(self):
-        """
-        Accessor for ellapsed_milli.
+        """Accessor for ellapsed_milli.
 
         Returns:
             The sender ellapsed_milli
@@ -139,8 +129,7 @@ class TraceReport(BaseModel):
 
     @property
     def outcome(self):
-        """
-        Accessor for outcome.
+        """Accessor for outcome.
 
         Returns:
             The sender outcome
@@ -164,8 +153,7 @@ class TraceDecorator(BaseModel):
         full_thread: bool = True,
         trace_reports: Sequence = None,
     ):
-        """
-        Initialize a TraceDecorator instance.
+        """Initialize a TraceDecorator instance.
 
         Args:
             target: The "target" can refer to a url (as above) or the term
@@ -186,8 +174,7 @@ class TraceDecorator(BaseModel):
 
     @property
     def target(self):
-        """
-        Accessor for trace target.
+        """Accessor for trace target.
 
         Returns:
             The target for tracing messages
@@ -197,8 +184,7 @@ class TraceDecorator(BaseModel):
 
     @property
     def full_thread(self):
-        """
-        Accessor for full_thread flag.
+        """Accessor for full_thread flag.
 
         Returns:
             The full_thread flag
@@ -208,8 +194,7 @@ class TraceDecorator(BaseModel):
 
     @property
     def trace_reports(self):
-        """
-        Set of trace reports for this message.
+        """Set of trace reports for this message.
 
         Returns:
             The trace reports that have been logged on this message/thread
@@ -239,51 +224,55 @@ class TraceReportSchema(BaseModelSchema):
     msg_id = fields.Str(
         required=True,
         allow_none=False,
-        description="Message Id",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Message Id", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.Str(
         required=True,
         allow_none=False,
-        description="Message Id",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Message Id", "example": UUID4_EXAMPLE},
     )
     traced_type = fields.Str(
         required=False,
         allow_none=True,
-        description="Type of traced message",
-        example="TODO",
+        metadata={"description": "Type of traced message", "example": "TODO"},
     )
     timestamp = fields.Str(
         required=True,
         allow_none=False,
-        description="Timestamp of traced event",
-        example="123456789.123456",
+        metadata={
+            "description": "Timestamp of traced event",
+            "example": "123456789.123456",
+        },
     )
     str_time = fields.Str(
         required=True,
         allow_none=False,
-        description="Formatted timestamp of traced event",
-        example="2018-03-27 18:23:45.123Z",
+        metadata={
+            "description": "Formatted timestamp of traced event",
+            "example": "2018-03-27 18:23:45.123Z",
+        },
     )
     handler = fields.Str(
         required=False,
         allow_none=True,
-        description="Description of the message handler",
-        example="TODO",
+        metadata={
+            "description": "Description of the message handler",
+            "example": "TODO",
+        },
     )
     ellapsed_milli = fields.Int(
         required=False,
         allow_none=True,
-        description="Elapsed milliseconds processing time",
-        example=27,
-        strict=True,
+        metadata={
+            "description": "Elapsed milliseconds processing time",
+            "example": 27,
+            "strict": True,
+        },
     )
     outcome = fields.Str(
         required=False,
         allow_none=True,
-        description="Outcome description",
-        example="TODO",
+        metadata={"description": "Outcome description", "example": "TODO"},
     )
 
 
@@ -299,18 +288,23 @@ class TraceDecoratorSchema(BaseModelSchema):
     target = fields.Str(
         required=True,
         allow_none=False,
-        description="Trace report target",
-        example="'http://example.com/tracer', or 'message'",
+        metadata={
+            "description": "Trace report target",
+            "example": "'http://example.com/tracer', or 'message'",
+        },
     )
     full_thread = fields.Boolean(
         required=False,
         allow_none=True,
-        description="Parent thread identifier",
-        example="True",
+        metadata={"description": "Parent thread identifier", "example": "True"},
     )
     trace_reports = fields.List(
         fields.Nested(TraceReportSchema),
         required=False,
         allow_none=True,
-        description=("The set of reports collected so far for this message or thread"),
+        metadata={
+            "description": (
+                "The set of reports collected so far for this message or thread"
+            )
+        },
     )

@@ -2,8 +2,8 @@ from copy import deepcopy
 import json
 
 from aiohttp import web
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 from pyld import jsonld
 import pytest
 
@@ -59,15 +59,15 @@ def did_doc():
 
 @pytest.fixture
 def mock_resolver(did_doc):
-    did_resolver = DIDResolver(async_mock.MagicMock())
-    did_resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+    did_resolver = DIDResolver(mock.MagicMock())
+    did_resolver.resolve = mock.CoroutineMock(return_value=did_doc)
     yield did_resolver
 
 
 @pytest.fixture
 def mock_sign_credential():
     temp = test_module.sign_credential
-    sign_credential = async_mock.CoroutineMock(return_value="fake_signage")
+    sign_credential = mock.CoroutineMock(return_value="fake_signage")
     test_module.sign_credential = sign_credential
     yield test_module.sign_credential
     test_module.sign_credential = temp
@@ -76,7 +76,7 @@ def mock_sign_credential():
 @pytest.fixture
 def mock_verify_credential():
     temp = test_module.verify_credential
-    verify_credential = async_mock.CoroutineMock(return_value="fake_verify")
+    verify_credential = mock.CoroutineMock(return_value="fake_verify")
     test_module.verify_credential = verify_credential
     yield test_module.verify_credential
     test_module.verify_credential = temp
@@ -85,15 +85,15 @@ def mock_verify_credential():
 @pytest.fixture
 def mock_sign_request(mock_sign_credential):
     context = AdminRequestContext.test_context()
-    outbound_message_router = async_mock.CoroutineMock()
+    outbound_message_router = mock.CoroutineMock()
     request_dict = {
         "context": context,
         "outbound_message_router": outbound_message_router,
     }
-    request = async_mock.MagicMock(
+    request = mock.MagicMock(
         match_info={},
         query={},
-        json=async_mock.CoroutineMock(
+        json=mock.CoroutineMock(
             return_value={
                 "verkey": "fake_verkey",
                 "doc": {},
@@ -138,15 +138,15 @@ def request_body():
 def mock_verify_request(mock_verify_credential, mock_resolver, request_body):
     def _mock_verify_request(request_body=request_body):
         context = AdminRequestContext.test_context({DIDResolver: mock_resolver})
-        outbound_message_router = async_mock.CoroutineMock()
+        outbound_message_router = mock.CoroutineMock()
         request_dict = {
             "context": context,
             "outbound_message_router": outbound_message_router,
         }
-        request = async_mock.MagicMock(
+        request = mock.MagicMock(
             match_info={},
             query={},
-            json=async_mock.CoroutineMock(return_value=request_body),
+            json=mock.CoroutineMock(return_value=request_body),
             __getitem__=lambda _, k: request_dict[k],
         )
         return request
@@ -156,7 +156,7 @@ def mock_verify_request(mock_verify_credential, mock_resolver, request_body):
 
 @pytest.fixture
 def mock_response():
-    json_response = async_mock.MagicMock()
+    json_response = mock.MagicMock()
     temp_value = test_module.web.json_response
     test_module.web.json_response = json_response
     yield json_response
@@ -175,7 +175,7 @@ async def test_sign(mock_sign_request, mock_response):
 )
 @pytest.mark.asyncio
 async def test_sign_bad_req_error(mock_sign_request, mock_response, error):
-    test_module.sign_credential = async_mock.CoroutineMock(side_effect=error())
+    test_module.sign_credential = mock.CoroutineMock(side_effect=error())
     await test_module.sign(mock_sign_request)
     assert "error" in mock_response.call_args[0][0]
 
@@ -183,7 +183,7 @@ async def test_sign_bad_req_error(mock_sign_request, mock_response, error):
 @pytest.mark.parametrize("error", [WalletError])
 @pytest.mark.asyncio
 async def test_sign_bad_req_http_error(mock_sign_request, mock_response, error):
-    test_module.sign_credential = async_mock.CoroutineMock(side_effect=error())
+    test_module.sign_credential = mock.CoroutineMock(side_effect=error())
     with pytest.raises(web.HTTPForbidden):
         await test_module.sign(mock_sign_request)
 
@@ -206,7 +206,7 @@ async def test_verify(mock_verify_request, mock_response):
 )
 @pytest.mark.asyncio
 async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
-    test_module.verify_credential = async_mock.CoroutineMock(side_effect=error())
+    test_module.verify_credential = mock.CoroutineMock(side_effect=error())
     await test_module.verify(mock_verify_request())
     assert "error" in mock_response.call_args[0][0]
 
@@ -220,7 +220,7 @@ async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
 )
 @pytest.mark.asyncio
 async def test_verify_bad_req_http_error(mock_verify_request, mock_response, error):
-    test_module.verify_credential = async_mock.CoroutineMock(side_effect=error())
+    test_module.verify_credential = mock.CoroutineMock(side_effect=error())
     with pytest.raises(web.HTTPForbidden):
         await test_module.verify(mock_verify_request())
 
@@ -229,7 +229,7 @@ async def test_verify_bad_req_http_error(mock_verify_request, mock_response, err
 async def test_verify_bad_ver_meth_deref_req_error(
     mock_resolver, mock_verify_request, mock_response
 ):
-    mock_resolver.dereference = async_mock.CoroutineMock(side_effect=ResolverError)
+    mock_resolver.dereference = mock.CoroutineMock(side_effect=ResolverError)
     await test_module.verify(mock_verify_request())
     assert "error" in mock_response.call_args[0][0]
 
@@ -256,20 +256,20 @@ async def test_verify_bad_vmethod_unsupported(
 
 @pytest.mark.asyncio
 async def test_register():
-    mock_app = async_mock.MagicMock()
-    mock_app.add_routes = async_mock.MagicMock()
+    mock_app = mock.MagicMock()
+    mock_app.add_routes = mock.MagicMock()
     await test_module.register(mock_app)
     mock_app.add_routes.assert_called_once()
 
 
 def test_post_process_routes():
-    mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
+    mock_app = mock.MagicMock(_state={"swagger_dict": {}})
     test_module.post_process_routes(mock_app)
     assert "tags" in mock_app._state["swagger_dict"]
 
 
-class TestJSONLDRoutes(AsyncTestCase):
-    async def setUp(self):
+class TestJSONLDRoutes(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = AdminRequestContext.test_context()
         self.context.profile.context.injector.bind_instance(
             DocumentLoader, custom_document_loader
@@ -280,9 +280,9 @@ class TestJSONLDRoutes(AsyncTestCase):
         )
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.CoroutineMock(),
+            "outbound_message_router": mock.CoroutineMock(),
         }
-        self.request = async_mock.MagicMock(
+        self.request = mock.MagicMock(
             app={},
             match_info={},
             query={},
@@ -333,22 +333,22 @@ class TestJSONLDRoutes(AsyncTestCase):
             },
         }
 
-        self.request.json = async_mock.CoroutineMock(return_value=POSTED_REQUEST)
+        self.request.json = mock.CoroutineMock(return_value=POSTED_REQUEST)
 
-        with async_mock.patch.object(test_module.web, "json_response") as mock_response:
+        with mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.verify(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with({"valid": True})  # expected response
 
         # compact, expand take a LONG TIME: do them once above, mock for error cases
-        with async_mock.patch.object(
-            jsonld, "compact", async_mock.MagicMock()
-        ) as mock_compact, async_mock.patch.object(
-            jsonld, "expand", async_mock.MagicMock()
-        ) as mock_expand, async_mock.patch.object(
-            test_module.web, "json_response", async_mock.MagicMock()
+        with mock.patch.object(
+            jsonld, "compact", mock.MagicMock()
+        ) as mock_compact, mock.patch.object(
+            jsonld, "expand", mock.MagicMock()
+        ) as mock_expand, mock.patch.object(
+            test_module.web, "json_response", mock.MagicMock()
         ) as mock_response:
-            mock_expand.return_value = [async_mock.MagicMock()]
+            mock_expand.return_value = [mock.MagicMock()]
             mock_compact.return_value = {
                 "@context": "...",
                 "id": "...",
@@ -376,14 +376,14 @@ class TestJSONLDRoutes(AsyncTestCase):
             result = await test_module.verify(self.request)
             assert "error" in json.loads(result)
 
-        with async_mock.patch.object(
-            jsonld, "compact", async_mock.MagicMock()
-        ) as mock_compact, async_mock.patch.object(
-            jsonld, "expand", async_mock.MagicMock()
-        ) as mock_expand, async_mock.patch.object(
-            test_module.web, "json_response", async_mock.MagicMock()
+        with mock.patch.object(
+            jsonld, "compact", mock.MagicMock()
+        ) as mock_compact, mock.patch.object(
+            jsonld, "expand", mock.MagicMock()
+        ) as mock_expand, mock.patch.object(
+            test_module.web, "json_response", mock.MagicMock()
         ) as mock_response:
-            mock_expand.return_value = [async_mock.MagicMock()]
+            mock_expand.return_value = [mock.MagicMock()]
             mock_compact.return_value = {
                 "@context": "...",
                 "id": "...",
@@ -468,9 +468,9 @@ class TestJSONLDRoutes(AsyncTestCase):
                 },
             },
         }
-        self.request.json = async_mock.CoroutineMock(return_value=POSTED_REQUEST)
+        self.request.json = mock.CoroutineMock(return_value=POSTED_REQUEST)
 
-        with async_mock.patch.object(test_module.web, "json_response") as mock_response:
+        with mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.sign(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once()
@@ -481,9 +481,9 @@ class TestJSONLDRoutes(AsyncTestCase):
         posted_request_x = deepcopy(POSTED_REQUEST)
         posted_request_x["doc"]["options"].pop("verificationMethod")
         posted_request_x["doc"]["options"].pop("creator")
-        self.request.json = async_mock.CoroutineMock(return_value=posted_request_x)
-        with async_mock.patch.object(
-            test_module.web, "json_response", async_mock.MagicMock()
+        self.request.json = mock.CoroutineMock(return_value=posted_request_x)
+        with mock.patch.object(
+            test_module.web, "json_response", mock.MagicMock()
         ) as mock_response:
             mock_response.side_effect = lambda x: json.dumps(x)
             result = await test_module.sign(self.request)
@@ -491,15 +491,15 @@ class TestJSONLDRoutes(AsyncTestCase):
 
         # compact, expand take a LONG TIME: do them once above, mock for error cases
         posted_request = deepcopy(POSTED_REQUEST)
-        self.request.json = async_mock.CoroutineMock(return_value=posted_request)
-        with async_mock.patch.object(
-            jsonld, "compact", async_mock.MagicMock()
-        ) as mock_compact, async_mock.patch.object(
-            jsonld, "expand", async_mock.MagicMock()
-        ) as mock_expand, async_mock.patch.object(
-            test_module.web, "json_response", async_mock.MagicMock()
+        self.request.json = mock.CoroutineMock(return_value=posted_request)
+        with mock.patch.object(
+            jsonld, "compact", mock.MagicMock()
+        ) as mock_compact, mock.patch.object(
+            jsonld, "expand", mock.MagicMock()
+        ) as mock_expand, mock.patch.object(
+            test_module.web, "json_response", mock.MagicMock()
         ) as mock_response:
-            mock_expand.return_value = [async_mock.MagicMock()]
+            mock_expand.return_value = [mock.MagicMock()]
             mock_compact.return_value = {}  # drop all attributes
             mock_response.side_effect = lambda x: json.dumps(x)
             result = await test_module.sign(self.request)
@@ -510,8 +510,8 @@ class TestJSONLDRoutes(AsyncTestCase):
             await test_module.sign(self.request)
 
     async def test_register(self):
-        mock_app = async_mock.MagicMock()
-        mock_app.add_routes = async_mock.MagicMock()
+        mock_app = mock.MagicMock()
+        mock_app.add_routes = mock.MagicMock()
 
         await test_module.register(mock_app)
         mock_app.add_routes.assert_called_once()

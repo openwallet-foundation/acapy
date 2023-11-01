@@ -49,7 +49,7 @@ def execute(argv: Sequence[str] = None):
     settings = get_settings(args)
     common_config(settings)
 
-    # set ledger to read only if explicitely specified
+    # set ledger to read only if explicitly specified
     settings["ledger.read_only"] = settings.get("read_only_ledger", False)
 
     # Create the Conductor instance

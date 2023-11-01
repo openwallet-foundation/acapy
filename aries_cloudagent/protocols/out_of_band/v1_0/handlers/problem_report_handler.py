@@ -9,15 +9,13 @@ from ..messages.problem_report import OOBProblemReport
 
 
 class OOBProblemReportMessageHandler(BaseHandler):
-    """
-    Handler class for OOB Problem Report Message.
+    """Handler class for OOB Problem Report Message.
 
     Updates the ConnRecord Metadata state.
     """
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        OOB Problem Report Message Handler.
+        """OOB Problem Report Message Handler.
 
         Args:
             context: Request context

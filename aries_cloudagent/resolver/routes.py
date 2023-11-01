@@ -1,60 +1,62 @@
-"""
-Resolve did document admin routes.
+"""Resolve did document admin routes.
 
-    "/resolver/resolve/{did}": {
-        "get": {
-            "responses": {
-                "200": {
-                    "schema": {
-                        "$ref": "#/definitions/DIDDoc"
+"/resolver/resolve/{did}": {
+"get": {
+"responses": {
+"200": {
+"schema": {
+"$ref": "#/definitions/DIDDoc"
 
-                    },
-                    "description": null
+},
+"description": null
 
-                }
+}
 
-            },
-            "parameters": [
+},
+"parameters": [
 
-                {
-                    "in": "path",
-                    "name": "did",
-                    "required": true,
-                    "type": "string",
-                    "pattern": "did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)",
-                    "description": "decentralize identifier(DID)",
-                    "example": "did:ted:WgWxqztrNooG92RXvxSTWv"
+{
+"in": "path",
+"name": "did",
+"required": true,
+"type": "string",
+"pattern": "did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)",
+"description": "decentralize identifier(DID)",
+"example": "did:ted:WgWxqztrNooG92RXvxSTWv"
 
-                }
+}
 
-            ],
+],
 
-            "tags": [ "resolver" ],
-            "summary": "Retrieve doc for requested did",
-            "produces": [ "application/json" ]
+"tags": [ "resolver" ],
+"summary": "Retrieve doc for requested did",
+"produces": [ "application/json" ]
 
-        }
+}
 
-    }
+}
 
 """
 
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, response_schema
+from pydid.common import DID_PATTERN
+
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
-from .base import DIDMethodNotSupported, DIDNotFound, ResolverError, ResolutionResult
-from pydid.common import DID_PATTERN
+from .base import DIDMethodNotSupported, DIDNotFound, ResolutionResult, ResolverError
 from .did_resolver import DIDResolver
 
 
 class ResolutionResultSchema(OpenAPISchema):
     """Result schema for did document query."""
 
-    did_document = fields.Dict(description="DID Document", required=True)
-    metadata = fields.Dict(description="Resolution metadata", required=True)
+    did_document = fields.Dict(required=True, metadata={"description": "DID Document"})
+    metadata = fields.Dict(
+        required=True, metadata={"description": "Resolution metadata"}
+    )
 
 
 class W3cDID(validate.Regexp):
@@ -64,7 +66,7 @@ class W3cDID(validate.Regexp):
     PATTERN = DID_PATTERN
 
     def __init__(self):
-        """Initializer."""
+        """Initialize the instance."""
 
         super().__init__(
             W3cDID.PATTERN,
@@ -72,13 +74,14 @@ class W3cDID(validate.Regexp):
         )
 
 
-_W3cDID = {"validate": W3cDID(), "example": W3cDID.EXAMPLE}
-
-
 class DIDMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking DID."""
 
-    did = fields.Str(description="DID", required=True, **_W3cDID)
+    did = fields.Str(
+        required=True,
+        validate=W3cDID(),
+        metadata={"description": "DID", "example": W3cDID.EXAMPLE},
+    )
 
 
 @docs(tags=["resolver"], summary="Retrieve doc for requested did")

@@ -130,7 +130,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self.responder = MockResponder()
 
         self.oob_mock = async_mock.MagicMock(
-            clean_finished_oob_record=async_mock.CoroutineMock(return_value=None)
+            clean_finished_oob_record=async_mock.AsyncMock(return_value=None)
         )
 
         self.route_manager = async_mock.MagicMock(RouteManager)

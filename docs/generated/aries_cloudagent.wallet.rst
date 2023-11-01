@@ -49,6 +49,14 @@ aries\_cloudagent.wallet.crypto module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.wallet.default\_verification\_key\_strategy module
+--------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.default_verification_key_strategy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.wallet.did\_info module
 -----------------------------------------
 
@@ -101,6 +109,14 @@ aries\_cloudagent.wallet.indy module
 ------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.indy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.wallet.jwt module
+-----------------------------------
+
+.. automodule:: aries_cloudagent.wallet.jwt
    :members:
    :undoc-members:
    :show-inheritance:

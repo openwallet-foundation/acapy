@@ -9,7 +9,6 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import PRESENTATION_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
@@ -36,8 +35,7 @@ class PresentationRequest(AgentMessage):
         request_presentations_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize presentation request object.
+        """Initialize presentation request object.
 
         Args:
             request_presentations_attach: proof request attachments
@@ -51,8 +49,7 @@ class PresentationRequest(AgentMessage):
         )
 
     def indy_proof_request(self, index: int = 0):
-        """
-        Retrieve and decode indy proof request from attachment.
+        """Retrieve and decode indy proof request from attachment.
 
         Args:
             index: ordinal in attachment list to decode and return
@@ -72,7 +69,9 @@ class PresentationRequestSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     request_presentations_attach = fields.Nested(
         AttachDecoratorSchema,

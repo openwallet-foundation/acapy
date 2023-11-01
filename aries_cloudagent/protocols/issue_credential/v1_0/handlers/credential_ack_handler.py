@@ -14,8 +14,7 @@ class CredentialAckHandler(BaseHandler):
     """Message handler class for credential acks."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for credential acks.
+        """Message handler logic for credential acks.
 
         Args:
             context: request context

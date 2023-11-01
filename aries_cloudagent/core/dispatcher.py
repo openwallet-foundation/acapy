@@ -1,5 +1,4 @@
-"""
-The Dispatcher.
+"""The Dispatcher.
 
 The dispatcher is responsible for coordinating data flow between handlers, providing
 lifecycle hook callbacks storing state for message threads, etc.
@@ -8,14 +7,14 @@ lifecycle hook callbacks storing state for message threads, etc.
 import asyncio
 import logging
 import os
+from typing import Callable, Coroutine, Optional, Tuple, Union
 import warnings
-
-from typing import Callable, Coroutine, Optional, Union, Tuple
 import weakref
 
 from aiohttp.web import HTTPException
 
 from ..config.logging import get_logger_inst
+from ..connections.base_manager import BaseConnectionManager
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
@@ -25,7 +24,6 @@ from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
 from ..messaging.responder import BaseResponder, SKIP_ACTIVE_CONN_CHECK_MSG_TYPES
 from ..messaging.util import datetime_now
-from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
@@ -33,16 +31,9 @@ from ..transport.outbound.status import OutboundSendStatus
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
 from ..utils.tracing import get_timer, trace_event
-
 from .error import ProtocolMinorVersionNotSupported
 from .protocol_registry import ProtocolRegistry
-from .util import (
-    get_version_from_message_type,
-    validate_get_response_version,
-    # WARNING_DEGRADED_FEATURES,
-    # WARNING_VERSION_MISMATCH,
-    # WARNING_VERSION_NOT_SUPPORTED,
-)
+from .util import get_version_from_message_type, validate_get_response_version
 
 
 class ProblemReportParseError(MessageParseError):
@@ -50,8 +41,7 @@ class ProblemReportParseError(MessageParseError):
 
 
 class Dispatcher:
-    """
-    Dispatcher class.
+    """Dispatcher class.
 
     Class responsible for dispatching messages to message handlers and responding
     to other agents.
@@ -110,8 +100,7 @@ class Dispatcher:
         send_outbound: Coroutine,
         complete: Callable = None,
     ) -> PendingTask:
-        """
-        Add a message to the processing queue for handling.
+        """Add a message to the processing queue for handling.
 
         Args:
             profile: The profile associated with the inbound message
@@ -134,8 +123,7 @@ class Dispatcher:
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
     ):
-        """
-        Configure responder and message context and invoke the message handler.
+        """Configure responder and message context and invoke the message handler.
 
         Args:
             profile: The profile associated with the inbound message
@@ -242,7 +230,7 @@ class Dispatcher:
                     session, inbound_message.connection_id
                 )
         else:
-            connection_mgr = ConnectionManager(profile)
+            connection_mgr = BaseConnectionManager(profile)
             connection = await connection_mgr.find_inbound_connection(
                 inbound_message.receipt
             )
@@ -278,8 +266,7 @@ class Dispatcher:
     async def make_message(
         self, profile: Profile, parsed_msg: dict
     ) -> Tuple[BaseMessage, Optional[str]]:
-        """
-        Deserialize a message dict into the appropriate message instance.
+        """Deserialize a message dict into the appropriate message instance.
 
         Given a dict describing a message, this method
         returns an instance of the related message class.
@@ -340,8 +327,7 @@ class DispatcherResponder(BaseResponder):
         send_outbound: Coroutine,
         **kwargs,
     ):
-        """
-        Initialize an instance of `DispatcherResponder`.
+        """Initialize an instance of `DispatcherResponder`.
 
         Args:
             context: The request context of the incoming message
@@ -360,8 +346,7 @@ class DispatcherResponder(BaseResponder):
     async def create_outbound(
         self, message: Union[AgentMessage, BaseMessage, str, bytes], **kwargs
     ) -> OutboundMessage:
-        """
-        Create an OutboundMessage from a message body.
+        """Create an OutboundMessage from a message body.
 
         Args:
             message: The message payload
@@ -384,8 +369,7 @@ class DispatcherResponder(BaseResponder):
     async def send_outbound(
         self, message: OutboundMessage, **kwargs
     ) -> OutboundSendStatus:
-        """
-        Send outbound message.
+        """Send outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
@@ -414,8 +398,7 @@ class DispatcherResponder(BaseResponder):
         return await self._send(context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
-        """
-        Dispatch a webhook. DEPRECATED: use the event bus instead.
+        """Dispatch a webhook. DEPRECATED: use the event bus instead.
 
         Args:
             topic: the webhook topic identifier

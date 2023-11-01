@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..base import BaseProvider, BaseInjector, BaseSettings, InjectionError
 from ..injector import Injector
@@ -27,7 +27,7 @@ class MockInstance:
         self.opened = True
 
 
-class TestInjector(AsyncTestCase):
+class TestInjector(IsolatedAsyncioTestCase):
     def setUp(self):
         self.test_key = "TEST"
         self.test_value = "VALUE"
@@ -142,6 +142,6 @@ class TestInjector(AsyncTestCase):
 
     def test_falsey_still_returns(self):
         """Test the injector still returns falsey values."""
-        self.test_instance.bind_instance(dict, dict())
+        self.test_instance.bind_instance(dict, {})
         assert self.test_instance.inject_or(dict) is not None
         assert self.test_instance.inject(dict) is not None

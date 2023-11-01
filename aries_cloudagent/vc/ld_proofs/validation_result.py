@@ -15,8 +15,7 @@ class PurposeResult:
         self.controller = controller
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -54,8 +53,7 @@ class ProofResult:
         self.purpose_result = purpose_result
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -94,8 +92,7 @@ class DocumentVerificationResult:
         self.errors = errors
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class

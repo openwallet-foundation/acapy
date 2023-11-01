@@ -7,6 +7,7 @@ SECURITY_CONTEXT_URL = SECURITY_CONTEXT_V2_URL
 DID_V1_CONTEXT_URL = "https://www.w3.org/ns/did/v1"
 CREDENTIALS_CONTEXT_V1_URL = "https://www.w3.org/2018/credentials/v1"
 SECURITY_CONTEXT_BBS_URL = "https://w3id.org/security/bbs/v1"
+SECURITY_CONTEXT_ED25519_2020_URL = "https://w3id.org/security/suites/ed25519-2020/v1"
 
 CREDENTIALS_ISSUER_URL = "https://www.w3.org/2018/credentials#issuer"
 SECURITY_PROOF_URL = "https://w3id.org/security#proof"

@@ -97,6 +97,13 @@ class Settings(BaseSettings, MutableMapping[str, Any]):
         vals.update(other)
         return Settings(vals)
 
+    def to_dict(self) -> dict:
+        """Return a dict of the settings instance."""
+        setting_dict = {}
+        for k in self:
+            setting_dict[k] = self[k]
+        return setting_dict
+
     def update(self, other: Mapping[str, Any]):
         """Update the settings in place."""
         self._values.update(other)

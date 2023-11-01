@@ -6,9 +6,7 @@ from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......wallet.util import b64_to_str
-
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import CRED_20_PREVIEW
 
 
@@ -21,8 +19,7 @@ class V20CredAttrSpec(BaseModel):
         schema_class = "V20CredAttrSpecSchema"
 
     def __init__(self, *, name: str, value: str, mime_type: str = None, **kwargs):
-        """
-        Initialize attribute preview object.
+        """Initialize attribute preview object.
 
         Args:
             name: attribute name
@@ -39,8 +36,7 @@ class V20CredAttrSpec(BaseModel):
 
     @staticmethod
     def list_plain(plain: dict) -> Sequence["V20CredAttrSpec"]:
-        """
-        Return a list of `V20CredAttrSpec` (copies), absent any MIME types.
+        """Return a list of `V20CredAttrSpec` (copies), absent any MIME types.
 
         Args:
             plain: dict mapping names to values
@@ -78,19 +74,24 @@ class V20CredAttrSpecSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     name = fields.Str(
-        description="Attribute name", required=True, example="favourite_drink"
+        required=True,
+        metadata={"description": "Attribute name", "example": "favourite_drink"},
     )
     mime_type = fields.Str(
-        description="MIME type: omit for (null) default",
         required=False,
         data_key="mime-type",
-        example="image/jpeg",
         allow_none=True,
+        metadata={
+            "description": "MIME type: omit for (null) default",
+            "example": "image/jpeg",
+        },
     )
     value = fields.Str(
-        description="Attribute value: base64-encode if MIME type is present",
         required=True,
-        example="martini",
+        metadata={
+            "description": "Attribute value: base64-encode if MIME type is present",
+            "example": "martini",
+        },
     )
 
 
@@ -110,8 +111,7 @@ class V20CredPreview(BaseModel):
         attributes: Sequence[V20CredAttrSpec] = None,
         **kwargs,
     ):
-        """
-        Initialize credential preview object.
+        """Initialize credential preview object.
 
         Args:
             _type: formalism for Marshmallow model creation: ignored
@@ -137,8 +137,7 @@ class V20CredPreview(BaseModel):
         return DIDCommPrefix.qualify_current(V20CredPreview.Meta.message_type)
 
     def attr_dict(self, decode: bool = False):
-        """
-        Return name:value pair per attribute.
+        """Return name:value pair per attribute.
 
         Args:
             decode: whether first to decode attributes with MIME type
@@ -146,15 +145,14 @@ class V20CredPreview(BaseModel):
         """
 
         return {
-            attr.name: b64_to_str(attr.value)
-            if attr.mime_type and decode
-            else attr.value
+            attr.name: (
+                b64_to_str(attr.value) if attr.mime_type and decode else attr.value
+            )
             for attr in self.attributes
         }
 
     def mime_types(self):
-        """
-        Return per-attribute mapping from name to MIME type.
+        """Return per-attribute mapping from name to MIME type.
 
         Return empty dict if no attribute has MIME type.
 
@@ -172,10 +170,9 @@ class V20CredPreviewSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     _type = fields.Str(
-        description="Message type identifier",
         required=False,
-        example=CRED_20_PREVIEW,
         data_key="@type",
+        metadata={"description": "Message type identifier", "example": CRED_20_PREVIEW},
     )
     attributes = fields.Nested(
         V20CredAttrSpecSchema, many=True, required=True, data_key="attributes"

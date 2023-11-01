@@ -1,8 +1,7 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
 from ....storage.base import StorageNotFoundError
-
 from .. import issuer_cred_rev_record as test_module
 from ..issuer_cred_rev_record import IssuerCredRevRecord
 
@@ -11,15 +10,15 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:1234:default"
 REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
 
-class TestIssuerCredRevRecord(AsyncTestCase):
+class TestIssuerCredRevRecord(IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = InMemoryProfile.test_session()
 
     async def test_serde(self):
         rec = IssuerCredRevRecord(
-            record_id=test_module.UUIDFour.EXAMPLE,
+            record_id=test_module.UUID4_EXAMPLE,
             state=IssuerCredRevRecord.STATE_ISSUED,
-            cred_ex_id=test_module.UUIDFour.EXAMPLE,
+            cred_ex_id=test_module.UUID4_EXAMPLE,
             rev_reg_id=REV_REG_ID,
             cred_rev_id="1",
         )
@@ -34,7 +33,7 @@ class TestIssuerCredRevRecord(AsyncTestCase):
         recs = [
             IssuerCredRevRecord(
                 state=IssuerCredRevRecord.STATE_ISSUED,
-                cred_ex_id=test_module.UUIDFour.EXAMPLE,
+                cred_ex_id=test_module.UUID4_EXAMPLE,
                 rev_reg_id=REV_REG_ID,
                 cred_rev_id=str(i + 1),
             )
@@ -49,7 +48,7 @@ class TestIssuerCredRevRecord(AsyncTestCase):
         assert (await IssuerCredRevRecord.query_by_ids(self.session))[0] == recs[0]
         assert (
             await IssuerCredRevRecord.retrieve_by_cred_ex_id(
-                self.session, test_module.UUIDFour.EXAMPLE
+                self.session, test_module.UUID4_EXAMPLE
             )
         ) == recs[0]
         assert (

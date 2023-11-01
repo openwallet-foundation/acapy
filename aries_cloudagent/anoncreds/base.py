@@ -54,8 +54,7 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
         *args,
         **kwargs,
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             message: Message

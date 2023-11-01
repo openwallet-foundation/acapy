@@ -1,7 +1,8 @@
 from tempfile import NamedTemporaryFile
-from weakref import ref, ReferenceType
+from weakref import ref
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...utils.stats import Collector
 
@@ -22,7 +23,7 @@ class X:
         pass
 
 
-class TestProvider(AsyncTestCase):
+class TestProvider(IsolatedAsyncioTestCase):
     async def test_stats_provider_init_x(self):
         """Cover stats provider init error on no provider."""
         with self.assertRaises(ValueError):
@@ -33,7 +34,7 @@ class TestProvider(AsyncTestCase):
 
         timing_log = NamedTemporaryFile().name
         settings = {"timing.enabled": True, "timing.log.file": timing_log}
-        mock_provider = async_mock.MagicMock(BaseProvider, autospec=True)
+        mock_provider = mock.MagicMock(BaseProvider, autospec=True)
         mock_provider.provide.return_value.mock_method = lambda: ()
         stats_provider = StatsProvider(mock_provider, ("mock_method",))
         collector = Collector(log_path=timing_log)

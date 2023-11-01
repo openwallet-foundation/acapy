@@ -2,16 +2,14 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import CRED_20_PROPOSAL, PROTOCOL_PACKAGE
-
 from .cred_format import V20CredFormat, V20CredFormatSchema
 from .inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 
@@ -40,8 +38,7 @@ class V20CredProposal(AgentMessage):
         filters_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential proposal object.
+        """Initialize credential proposal object.
 
         Args:
             comment: optional human-readable comment
@@ -57,8 +54,7 @@ class V20CredProposal(AgentMessage):
         self.filters_attach = list(filters_attach) if filters_attach else []
 
     def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
-        """
-        Return attached filter.
+        """Return attached filter.
 
         Args:
             fmt: format of attachment in list to decode and return
@@ -92,28 +88,32 @@ class V20CredProposalSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     credential_preview = fields.Nested(
         V20CredPreviewSchema,
-        description="Credential preview",
         required=False,
         allow_none=False,
+        metadata={"description": "Credential preview"},
     )
     formats = fields.Nested(
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Attachment formats",
+        metadata={"description": "Attachment formats"},
     )
     filters_attach = fields.Nested(
         AttachDecoratorSchema,
         data_key="filters~attach",
         required=True,
-        description=(
-            "Credential filter per acceptable format on corresponding identifier"
-        ),
         many=True,
+        metadata={
+            "description": (
+                "Credential filter per acceptable format on corresponding identifier"
+            )
+        },
     )
 
     @validates_schema

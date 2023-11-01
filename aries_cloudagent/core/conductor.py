@@ -1,5 +1,4 @@
-"""
-The Conductor.
+"""The Conductor.
 
 The conductor is responsible for coordinating messages that are received
 over the network, communicating with the ledger, passing messages to handlers,
@@ -11,6 +10,7 @@ wallet.
 import hashlib
 import json
 import logging
+from typing import Optional
 
 from packaging import version as package_version
 from qrcode import QRCode
@@ -35,6 +35,7 @@ from ..commands.upgrade import (
 from ..core.profile import Profile
 from ..anoncreds.verifier import AnonCredsVerifier
 
+from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
@@ -85,16 +86,14 @@ DEFAULT_ACAPY_VERSION = "v0.7.5"
 
 
 class Conductor:
-    """
-    Conductor class.
+    """Conductor class.
 
     Class responsible for initializing concrete implementations
-    of our require interfaces and routing inbound and outbound message data.
+    of our required interfaces and routing inbound and outbound message data.
     """
 
     def __init__(self, context_builder: ContextBuilder) -> None:
-        """
-        Initialize an instance of Conductor.
+        """Initialize an instance of Conductor.
 
         Args:
             inbound_transports: Configuration for inbound transports
@@ -144,11 +143,7 @@ class Conductor:
                 MultiIndyLedgerManagerProvider(self.root_profile),
             )
             if not (context.settings.get("ledger.genesis_transactions")):
-                ledger = (
-                    await context.injector.inject(
-                        BaseMultipleLedgerManager
-                    ).get_write_ledger()
-                )[1]
+                ledger = context.injector.inject(BaseLedger)
                 if (
                     self.root_profile.BACKEND_NAME == "askar"
                     and ledger.BACKEND_NAME == "indy-vdr"
@@ -318,6 +313,7 @@ class Conductor:
             self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
+        LoggingConfigurator.print_notices(context.settings)
 
         # record ACA-Py version in Wallet, if needed
         from_version_storage = None
@@ -548,8 +544,7 @@ class Conductor:
         message: InboundMessage,
         can_respond: bool = False,
     ):
-        """
-        Route inbound messages.
+        """Route inbound messages.
 
         Args:
             context: The context associated with the inbound message
@@ -628,8 +623,7 @@ class Conductor:
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
     ) -> OutboundSendStatus:
-        """
-        Route an outbound message.
+        """Route an outbound message.
 
         Args:
             profile: The active profile for the request
@@ -648,8 +642,7 @@ class Conductor:
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
     ) -> OutboundSendStatus:
-        """
-        Route an outbound message.
+        """Route an outbound message.
 
         Args:
             profile: The active profile for the request
@@ -680,10 +673,9 @@ class Conductor:
         self,
         profile: Profile,
         outbound: OutboundMessage,
-        inbound: InboundMessage = None,
+        inbound: Optional[InboundMessage] = None,
     ) -> OutboundSendStatus:
-        """
-        Queue an outbound message for transport.
+        """Queue an outbound message for transport.
 
         Args:
             profile: The active profile
@@ -703,7 +695,7 @@ class Conductor:
                 )
             except ConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
-                return
+                return OutboundSendStatus.UNDELIVERABLE
             except (LedgerConfigError, LedgerTransactionError) as e:
                 LOGGER.error("Shutdown on ledger error %s", str(e))
                 if self.admin_server:
@@ -751,8 +743,7 @@ class Conductor:
         max_attempts: int = None,
         metadata: dict = None,
     ):
-        """
-        Route a webhook through the outbound transport manager.
+        """Route a webhook through the outbound transport manager.
 
         Args:
             topic: The webhook topic

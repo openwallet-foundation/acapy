@@ -1,11 +1,11 @@
 from os import environ
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..didcomm_prefix import DIDCommPrefix
 
 
-class TestDIDCommPrefix(AsyncTestCase):
+class TestDIDCommPrefix(IsolatedAsyncioTestCase):
     def test_didcomm_prefix(self):
         DIDCommPrefix.set({})
         assert environ.get("DIDCOMM_PREFIX") == DIDCommPrefix.OLD.value
@@ -16,6 +16,8 @@ class TestDIDCommPrefix(AsyncTestCase):
             f"{DIDCommPrefix.NEW.value}/hello"
         )
 
+        # No longer possible to have the arg `False` but leaving in test
+        # Still want to be able to receive the OLD format, just not emit it
         DIDCommPrefix.set({"emit_new_didcomm_prefix": False})
         assert environ.get("DIDCOMM_PREFIX") == DIDCommPrefix.OLD.value
         assert DIDCommPrefix.qualify_current("hello") == (

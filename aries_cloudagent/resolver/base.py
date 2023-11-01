@@ -1,14 +1,14 @@
 """Base Class for DID Resolvers."""
 
-import re
-import warnings
-
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Optional, NamedTuple, Pattern, Sequence, Union, Text
+import re
+from typing import NamedTuple, Optional, Pattern, Sequence, Text, Union
+import warnings
 
 from pydid import DID
 
+from ..cache.base import BaseCache
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
 from ..core.profile import Profile
@@ -70,7 +70,9 @@ class ResolutionResult:
 class BaseDIDResolver(ABC):
     """Base Class for DID Resolvers."""
 
-    def __init__(self, type_: ResolverType = None):
+    DEFAULT_TTL = 3600
+
+    def __init__(self, type_: Optional[ResolverType] = None):
         """Initialize BaseDIDResolver.
 
         Args:
@@ -138,7 +140,10 @@ class BaseDIDResolver(ABC):
         did: Union[str, DID],
         service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
-        """Resolve a DID using this resolver."""
+        """Resolve a DID using this resolver.
+
+        Handles caching of results.
+        """
         if isinstance(did, DID):
             did = str(did)
         else:
@@ -147,6 +152,17 @@ class BaseDIDResolver(ABC):
             raise DIDMethodNotSupported(
                 f"{self.__class__.__name__} does not support DID method for: {did}"
             )
+
+        cache_key = f"resolver::{type(self).__name__}::{did}"
+        cache = profile.inject_or(BaseCache)
+        if cache:
+            async with cache.acquire(cache_key) as entry:
+                if entry.result:
+                    return entry.result
+                else:
+                    result = await self._resolve(profile, did, service_accept)
+                    await entry.set_result(result, ttl=self.DEFAULT_TTL)
+                    return result
 
         return await self._resolve(profile, did, service_accept)
 

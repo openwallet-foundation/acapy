@@ -1,4 +1,5 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import asyncpg
 import base64
 import functools
@@ -186,6 +187,7 @@ class DemoAgent:
         self.params = params
         self.proc = None
         self.client_session: ClientSession = ClientSession()
+        self.thread_pool_executor = ThreadPoolExecutor(20)
 
         if self.endorser_role and self.endorser_role == "author":
             seed = None
@@ -509,6 +511,8 @@ class DemoAgent:
         if self.revocation:
             # turn on notifications if revocation is enabled
             result.append("--notify-revocation")
+        # enable extended webhooks
+        result.append("--debug-webhooks")
         # always enable notification webhooks
         result.append("--monitor-revocation-notification")
 
@@ -814,13 +818,13 @@ class DemoAgent:
             close_fds=True,
         )
         loop.run_in_executor(
-            None,
+            self.thread_pool_executor,
             output_reader,
             proc.stdout,
             functools.partial(self.handle_output, source="stdout"),
         )
         loop.run_in_executor(
-            None,
+            self.thread_pool_executor,
             output_reader,
             proc.stderr,
             functools.partial(self.handle_output, source="stderr"),
@@ -845,7 +849,9 @@ class DemoAgent:
 
         # start agent sub-process
         loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(None, self._process, agent_args, my_env, loop)
+        future = loop.run_in_executor(
+            self.thread_pool_executor, self._process, agent_args, my_env, loop
+        )
         self.proc = await asyncio.wait_for(future, 20, loop=loop)
         if wait:
             await asyncio.sleep(1.0)
@@ -872,7 +878,7 @@ class DemoAgent:
         # now shut down the agent
         loop = asyncio.get_event_loop()
         if self.proc:
-            future = loop.run_in_executor(None, self._terminate)
+            future = loop.run_in_executor(self.thread_pool_executor, self._terminate)
             result = await asyncio.wait_for(future, 10, loop=loop)
 
     async def listen_webhooks(self, webhook_port):

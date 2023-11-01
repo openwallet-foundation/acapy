@@ -1,4 +1,5 @@
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import ProfileManager, ProfileSession
@@ -29,16 +30,16 @@ class MockManager(ProfileManager):
         return self.profile
 
 
-class TestWalletConfig(AsyncTestCase):
-    async def setUp(self):
+class TestWalletConfig(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.injector = Injector(enforce_typing=False)
-        self.session = async_mock.MagicMock(ProfileSession)()
-        self.session.commit = async_mock.CoroutineMock()
-        self.profile = async_mock.MagicMock(
+        self.session = mock.MagicMock(ProfileSession)()
+        self.session.commit = mock.CoroutineMock()
+        self.profile = mock.MagicMock(
             backend="indy",
             created=True,
             name="Test Wallet",
-            transaction=async_mock.CoroutineMock(return_value=self.session),
+            transaction=mock.CoroutineMock(return_value=self.session),
         )
 
         def _inject(cls):
@@ -56,32 +57,32 @@ class TestWalletConfig(AsyncTestCase):
                 "debug.enabled": True,
             }
         )
-        mock_wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
-            set_public_did=async_mock.CoroutineMock(),
-            create_local_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            set_public_did=mock.CoroutineMock(),
+            create_local_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with async_mock.patch.object(
-            test_module, "seed_to_did", async_mock.MagicMock()
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
+        with mock.patch.object(
+            test_module, "seed_to_did", mock.MagicMock()
+        ) as mock_seed_to_did, mock.patch.object(
+            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
         ):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
             await test_module.wallet_config(self.context, provision=True)
 
     async def test_wallet_config_existing_open(self):
-        self.profile = async_mock.MagicMock(
+        self.profile = mock.MagicMock(
             backend="indy",
             created=False,
             name="Test Wallet",
-            transaction=async_mock.CoroutineMock(return_value=self.session),
+            transaction=mock.CoroutineMock(return_value=self.session),
         )
         self.context.injector.clear_binding(ProfileManager)
         self.context.injector.bind_instance(ProfileManager, MockManager(self.profile))
@@ -93,23 +94,23 @@ class TestWalletConfig(AsyncTestCase):
                 "debug.enabled": True,
             }
         )
-        mock_wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
-            set_public_did=async_mock.CoroutineMock(),
-            create_local_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            set_public_did=mock.CoroutineMock(),
+            create_local_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
         self.context.injector.bind_instance(ProfileManager, MockManager(self.profile))
 
-        with async_mock.patch.object(
-            test_module, "seed_to_did", async_mock.MagicMock()
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
+        with mock.patch.object(
+            test_module, "seed_to_did", mock.MagicMock()
+        ) as mock_seed_to_did, mock.patch.object(
+            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
         ):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
@@ -124,21 +125,21 @@ class TestWalletConfig(AsyncTestCase):
                 "auto_provision": False,
             }
         )
-        mock_wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
-            set_public_did=async_mock.CoroutineMock(),
-            create_local_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            set_public_did=mock.CoroutineMock(),
+            create_local_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with async_mock.patch.object(
-            MockManager, "open", async_mock.CoroutineMock()
-        ) as mock_mgr_open, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
+        with mock.patch.object(
+            MockManager, "open", mock.CoroutineMock()
+        ) as mock_mgr_open, mock.patch.object(
+            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
         ):
             mock_mgr_open.side_effect = test_module.ProfileNotFoundError()
 
@@ -155,14 +156,14 @@ class TestWalletConfig(AsyncTestCase):
             }
         )
         self.profile.backend = "not-indy"
-        mock_wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
-        with async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
+        with mock.patch.object(
+            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
         ):
             with self.assertRaises(test_module.ConfigError):
                 await test_module.wallet_config(self.context, provision=True)
@@ -173,19 +174,19 @@ class TestWalletConfig(AsyncTestCase):
                 "wallet.seed": "00000000000000000000000000000000",
             }
         )
-        mock_wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "seed_to_did",
-            async_mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
+            mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+        ) as mock_seed_to_did, mock.patch.object(
+            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
         ):
             with self.assertRaises(test_module.ConfigError):
                 await test_module.wallet_config(self.context, provision=True)
@@ -197,19 +198,19 @@ class TestWalletConfig(AsyncTestCase):
                 "wallet.local_did": True,
             }
         )
-        mock_wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(return_value=None),
-            set_public_did=async_mock.CoroutineMock(),
-            create_local_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.CoroutineMock(return_value=None),
+            set_public_did=mock.CoroutineMock(),
+            create_local_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with async_mock.patch.object(
-            test_module, "seed_to_did", async_mock.MagicMock()
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
+        with mock.patch.object(
+            test_module, "seed_to_did", mock.MagicMock()
+        ) as mock_seed_to_did, mock.patch.object(
+            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
         ):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
@@ -221,38 +222,38 @@ class TestWalletConfig(AsyncTestCase):
                 "wallet.seed": "00000000000000000000000000000000",
             }
         )
-        mock_wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(return_value=None),
-            set_public_did=async_mock.CoroutineMock(),
-            create_public_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.CoroutineMock(return_value=None),
+            set_public_did=mock.CoroutineMock(),
+            create_public_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "seed_to_did",
-            async_mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
+            mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+        ) as mock_seed_to_did, mock.patch.object(
+            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
         ):
             await test_module.wallet_config(self.context, provision=True)
 
     async def test_wallet_config_seed_no_public_did(self):
-        mock_wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(return_value=None),
-            set_public_did=async_mock.CoroutineMock(),
-            create_public_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.CoroutineMock(return_value=None),
+            set_public_did=mock.CoroutineMock(),
+            create_public_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with async_mock.patch.object(
-            test_module, "seed_to_did", async_mock.MagicMock()
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
+        with mock.patch.object(
+            test_module, "seed_to_did", mock.MagicMock()
+        ) as mock_seed_to_did, mock.patch.object(
+            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
         ):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
@@ -264,21 +265,21 @@ class TestWalletConfig(AsyncTestCase):
                 "wallet.key_derivation_method": "derivation_method",
             }
         )
-        mock_wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+        mock_wallet = mock.MagicMock(
+            get_public_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
-            set_public_did=async_mock.CoroutineMock(),
-            create_local_did=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            set_public_did=mock.CoroutineMock(),
+            create_local_did=mock.CoroutineMock(
+                return_value=mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
-        with async_mock.patch.object(
-            MockManager, "provision", async_mock.CoroutineMock()
-        ) as mock_mgr_provision, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
+        with mock.patch.object(
+            MockManager, "provision", mock.CoroutineMock()
+        ) as mock_mgr_provision, mock.patch.object(
+            test_module, "add_or_update_version_to_storage", mock.CoroutineMock()
         ):
             mock_mgr_provision.return_value = self.profile
 

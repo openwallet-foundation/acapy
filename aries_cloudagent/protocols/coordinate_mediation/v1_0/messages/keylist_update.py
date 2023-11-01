@@ -6,7 +6,6 @@ from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import KEYLIST_UPDATE, PROTOCOL_PACKAGE
-
 from .inner.keylist_update_rule import KeylistUpdateRule, KeylistUpdateRuleSchema
 
 HANDLER_CLASS = (
@@ -30,8 +29,7 @@ class KeylistUpdate(AgentMessage):
         updates: Sequence[KeylistUpdateRule] = None,
         **kwargs,
     ):
-        """
-        Initialize keylist update object.
+        """Initialize keylist update object.
 
         Args:
             updates: Update rules for keylist update request
@@ -50,5 +48,5 @@ class KeylistUpdateSchema(AgentMessageSchema):
 
     updates = fields.List(
         fields.Nested(KeylistUpdateRuleSchema()),
-        description="List of update rules",
+        metadata={"description": "List of update rules"},
     )

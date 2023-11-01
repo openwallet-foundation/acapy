@@ -1,5 +1,5 @@
-ARG python_version=3.9.16
-FROM python:${python_version}-slim-buster
+ARG python_version=3.9.18
+FROM python:${python_version}-slim-bullseye
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -9,15 +9,13 @@ RUN apt-get update -y && \
 
 WORKDIR /usr/src/app
 
-ADD requirements*.txt ./
+RUN pip install --no-cache-dir poetry
 
-RUN pip3 install --no-cache-dir \
-    -r requirements.txt \
-    -r requirements.askar.txt \
-    -r requirements.bbs.txt \
-    -r requirements.dev.txt \
-    -r requirements.anoncreds.txt
+ADD ./README.md pyproject.toml ./poetry.lock ./
+RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
+
+RUN poetry install --no-directory -E "askar bbs" --with=dev
 
 ADD . .
 
-ENTRYPOINT ["/bin/bash", "-c", "pytest \"$@\"", "--"]
+ENTRYPOINT ["/bin/bash", "-c", "poetry run pytest \"$@\"", "--"]

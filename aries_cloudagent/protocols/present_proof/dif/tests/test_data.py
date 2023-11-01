@@ -1,7 +1,5 @@
 """Data for DIFPresExchHandler."""
 import json
-from pyld import jsonld
-from pyld.jsonld import JsonLdProcessor
 
 from .....storage.vc_holder.vc_record import VCRecord
 
@@ -10,29 +8,29 @@ from ..pres_exch import PresentationDefinition
 
 def create_vcrecord(cred_dict: dict, expanded_types: list):
     given_id = cred_dict.get("id")
-    contexts = [ctx for ctx in cred_dict.get("@context") if type(ctx) is str]
+    contexts = [ctx for ctx in cred_dict.get("@context") if isinstance(ctx, str)]
 
     # issuer
     issuer = cred_dict.get("issuer")
-    if type(issuer) is dict:
+    if isinstance(issuer, dict):
         issuer = issuer.get("id")
 
     # subjects
     subjects = cred_dict.get("credentialSubject")
-    if type(subjects) is dict:
+    if isinstance(subjects, dict):
         subjects = [subjects]
     subject_ids = [subject.get("id") for subject in subjects if subject.get("id")]
 
     # Schemas
     schemas = cred_dict.get("credentialSchema", [])
-    if type(schemas) is dict:
+    if isinstance(schemas, dict):
         schemas = [schemas]
     schema_ids = [schema.get("id") for schema in schemas]
 
     # Proofs (this can be done easier if we use the expanded version)
     proofs = cred_dict.get("proof") or []
     proof_types = None
-    if type(proofs) is dict:
+    if isinstance(proofs, dict):
         proofs = [proofs]
     if proofs:
         proof_types = [proof.get("type") for proof in proofs]

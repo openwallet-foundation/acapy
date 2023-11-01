@@ -55,6 +55,13 @@ class PluginSettings(BaseSettings):
         vals.update(other)
         return PluginSettings(vals)
 
+    def to_dict(self) -> dict:
+        """Return a dict of the settings instance."""
+        setting_dict = {}
+        for k in self:
+            setting_dict[k] = self[k]
+        return setting_dict
+
     def get_value(self, *var_names: str, default: Any = None):
         """Fetch a setting.
 

@@ -15,12 +15,12 @@ from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.ld_proofs import (
     DocumentLoader,
     Ed25519Signature2018,
+    Ed25519Signature2020,
     BbsBlsSignature2020,
     BbsBlsSignatureProof2020,
     WalletKeyPair,
 )
 from ......vc.vc_ld.verify import verify_presentation
-from ......wallet.base import BaseWallet
 from ......wallet.key_type import ED25519, BLS12381G2
 
 from .....problem_report.v1_0.message import ProblemReport
@@ -57,19 +57,20 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
         Ed25519Signature2018: ED25519,
+        Ed25519Signature2020: ED25519,
     }
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
         ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
         ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignatureProof2020] = BLS12381G2
 
-    async def _get_all_suites(self, wallet: BaseWallet):
+    async def _get_all_suites(self):
         """Get all supported suites for verifying presentation."""
         suites = []
         for suite, key_type in self.ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING.items():
             suites.append(
                 suite(
-                    key_pair=WalletKeyPair(wallet=wallet, key_type=key_type),
+                    key_pair=WalletKeyPair(profile=self._profile, key_type=key_type),
                 )
             )
         return suites
@@ -135,8 +136,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_ex_record: V20PresExRecord,
         request_data: dict = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
-        """
-        Create a presentation request bound to a proposal.
+        """Create a presentation request bound to a proposal.
 
         Args:
             pres_ex_record: Presentation exchange record for which
@@ -258,10 +258,16 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                     Ed25519Signature2018.signature_type
                                     not in proof_types
                                 )
+                                and (
+                                    Ed25519Signature2020.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise V20PresFormatHandlerError(
                                     "Only BbsBlsSignature2020 and/or "
-                                    "Ed25519Signature2018 signature types "
+                                    "Ed25519Signature2018 and/or "
+                                    "Ed25519Signature2018 and/or "
+                                    "Ed25519Signature2020 signature types "
                                     "are supported"
                                 )
                             elif (
@@ -274,10 +280,14 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                     Ed25519Signature2018.signature_type
                                     not in proof_types
                                 )
+                                and (
+                                    Ed25519Signature2020.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise V20PresFormatHandlerError(
-                                    "Only BbsBlsSignature2020 and "
-                                    "Ed25519Signature2018 signature types "
+                                    "Only BbsBlsSignature2020, Ed25519Signature2018 and "
+                                    "Ed25519Signature2020 signature types "
                                     "are supported"
                                 )
                             else:
@@ -307,8 +317,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     else:
                         raise V20PresFormatHandlerError(
                             "Currently, only ldp_vp with "
-                            "BbsBlsSignature2020 and Ed25519Signature2018"
-                            " signature types are supported"
+                            "BbsBlsSignature2020, Ed25519Signature2018 and "
+                            "Ed25519Signature2020 signature types are supported"
                         )
                 if one_of_uri_groups:
                     records = []
@@ -450,8 +460,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 return False
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
-        """
-        Verify a presentation.
+        """Verify a presentation.
 
         Args:
             pres_ex_record: presentation exchange record
@@ -461,33 +470,31 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             presentation exchange record, updated
 
         """
-        async with self._profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            dif_proof = pres_ex_record.pres.attachment(DIFPresFormatHandler.format)
-            pres_request = pres_ex_record.pres_request.attachment(
-                DIFPresFormatHandler.format
-            )
-            challenge = None
-            if "options" in pres_request:
-                challenge = pres_request["options"].get("challenge", str(uuid4()))
-            if not challenge:
-                challenge = str(uuid4())
-            if isinstance(dif_proof, Sequence):
-                for proof in dif_proof:
-                    pres_ver_result = await verify_presentation(
-                        presentation=proof,
-                        suites=await self._get_all_suites(wallet=wallet),
-                        document_loader=self._profile.inject(DocumentLoader),
-                        challenge=challenge,
-                    )
-                    if not pres_ver_result.verified:
-                        break
-            else:
+        dif_proof = pres_ex_record.pres.attachment(DIFPresFormatHandler.format)
+        pres_request = pres_ex_record.pres_request.attachment(
+            DIFPresFormatHandler.format
+        )
+        challenge = None
+        if "options" in pres_request:
+            challenge = pres_request["options"].get("challenge", str(uuid4()))
+        if not challenge:
+            challenge = str(uuid4())
+        if isinstance(dif_proof, Sequence):
+            for proof in dif_proof:
                 pres_ver_result = await verify_presentation(
-                    presentation=dif_proof,
-                    suites=await self._get_all_suites(wallet=wallet),
+                    presentation=proof,
+                    suites=await self._get_all_suites(),
                     document_loader=self._profile.inject(DocumentLoader),
                     challenge=challenge,
                 )
-            pres_ex_record.verified = json.dumps(pres_ver_result.verified)
-            return pres_ex_record
+                if not pres_ver_result.verified:
+                    break
+        else:
+            pres_ver_result = await verify_presentation(
+                presentation=dif_proof,
+                suites=await self._get_all_suites(),
+                document_loader=self._profile.inject(DocumentLoader),
+                challenge=challenge,
+            )
+        pres_ex_record.verified = json.dumps(pres_ver_result.verified)
+        return pres_ex_record

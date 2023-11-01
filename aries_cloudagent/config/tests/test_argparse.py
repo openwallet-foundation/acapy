@@ -1,12 +1,13 @@
 from configargparse import ArgumentTypeError
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock
+from unittest import IsolatedAsyncioTestCase
 
 from .. import argparse
 from ..util import BoundedInt, ByteSize
 
 
-class TestArgParse(AsyncTestCase):
+class TestArgParse(IsolatedAsyncioTestCase):
     async def test_groups(self):
         """Test optional argument parsing."""
         parser = argparse.create_argument_parser()
@@ -27,7 +28,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.TransportGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
@@ -60,9 +61,35 @@ class TestArgParse(AsyncTestCase):
         group = argparse.LedgerGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--genesis-transactions-list",
+                "./aries_cloudagent/config/tests/test-ledger-args-no-write.yaml",
+            ]
+        )
+        assert (
+            result.genesis_transactions_list
+            == "./aries_cloudagent/config/tests/test-ledger-args-no-write.yaml"
+        )
+        with self.assertRaises(argparse.ArgsParseError):
+            settings = group.get_settings(result)
+
+        result = parser.parse_args(
+            [
+                "--genesis-transactions-list",
+                "./aries_cloudagent/config/tests/test-ledger-args-no-genesis.yaml",
+            ]
+        )
+        assert (
+            result.genesis_transactions_list
+            == "./aries_cloudagent/config/tests/test-ledger-args-no-genesis.yaml"
+        )
+        with self.assertRaises(argparse.ArgsParseError):
+            settings = group.get_settings(result)
 
         result = parser.parse_args(
             [
@@ -70,12 +97,10 @@ class TestArgParse(AsyncTestCase):
                 "./aries_cloudagent/config/tests/test-ledger-args.yaml",
             ]
         )
-
         assert (
             result.genesis_transactions_list
             == "./aries_cloudagent/config/tests/test-ledger-args.yaml"
         )
-
         settings = group.get_settings(result)
 
         assert len(settings.get("ledger.ledger_config_list")) == 3
@@ -83,7 +108,9 @@ class TestArgParse(AsyncTestCase):
             {
                 "id": "sovrinStaging",
                 "is_production": True,
+                "is_write": True,
                 "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
+                "pool_name": "sovrinStaging",
             }
         ) in settings.get("ledger.ledger_config_list")
         assert (
@@ -91,6 +118,7 @@ class TestArgParse(AsyncTestCase):
                 "id": "sovrinTest",
                 "is_production": False,
                 "genesis_url": "http://localhost:9000/genesis",
+                "pool_name": "sovrinTest",
             }
         ) in settings.get("ledger.ledger_config_list")
 
@@ -101,7 +129,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.UpgradeGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
@@ -128,6 +156,75 @@ class TestArgParse(AsyncTestCase):
             == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
         )
 
+        result = parser.parse_args(
+            [
+                "--named-tag",
+                "test_tag_1",
+                "--named-tag",
+                "test_tag_2",
+                "--force-upgrade",
+            ]
+        )
+
+        assert result.named_tag == ["test_tag_1", "test_tag_2"]
+        assert result.force_upgrade is True
+
+        settings = group.get_settings(result)
+
+        assert settings.get("upgrade.named_tags") == ["test_tag_1", "test_tag_2"]
+        assert settings.get("upgrade.force_upgrade") is True
+
+        result = parser.parse_args(
+            [
+                "--upgrade-config-path",
+                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml",
+                "--from-version",
+                "v0.7.2",
+                "--upgrade-all-subwallets",
+                "--force-upgrade",
+            ]
+        )
+
+        assert (
+            result.upgrade_config_path
+            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+        )
+        assert result.force_upgrade is True
+        assert result.upgrade_all_subwallets is True
+
+        settings = group.get_settings(result)
+
+        assert (
+            settings.get("upgrade.config_path")
+            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+        )
+        assert settings.get("upgrade.force_upgrade") is True
+        assert settings.get("upgrade.upgrade_all_subwallets") is True
+
+        result = parser.parse_args(
+            [
+                "--named-tag",
+                "fix_issue_rev_reg",
+                "--upgrade-subwallet",
+                "test_wallet_id_1",
+                "--upgrade-subwallet",
+                "test_wallet_id_2",
+                "--force-upgrade",
+            ]
+        )
+
+        assert result.named_tag == ["fix_issue_rev_reg"]
+        assert result.force_upgrade is True
+        assert result.upgrade_subwallet == ["test_wallet_id_1", "test_wallet_id_2"]
+
+        settings = group.get_settings(result)
+        assert settings.get("upgrade.named_tags") == ["fix_issue_rev_reg"]
+        assert settings.get("upgrade.force_upgrade") is True
+        assert settings.get("upgrade.upgrade_subwallets") == [
+            "test_wallet_id_1",
+            "test_wallet_id_2",
+        ]
+
     async def test_outbound_is_required(self):
         """Test that either -ot or -oq are required"""
         parser = argparse.create_argument_parser()
@@ -153,7 +250,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.GeneralGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
@@ -208,7 +305,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.TransportGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
@@ -241,7 +338,7 @@ class TestArgParse(AsyncTestCase):
 
         settings = group.get_settings(result)
 
-        assert settings.get("multitenant.enabled") == True
+        assert settings.get("multitenant.enabled") is True
         assert settings.get("multitenant.jwt_secret") == "secret"
         assert settings.get("multitenant.wallet_type") == "askar"
         assert settings.get("multitenant.wallet_name") == "test"
@@ -263,7 +360,7 @@ class TestArgParse(AsyncTestCase):
 
         settings = group.get_settings(result)
 
-        assert settings.get("multitenant.enabled") == True
+        assert settings.get("multitenant.enabled") is True
         assert settings.get("multitenant.jwt_secret") == "secret"
         assert settings.get("multitenant.wallet_type") == "askar"
         assert settings.get("multitenant.wallet_name") == "test"
@@ -287,10 +384,10 @@ class TestArgParse(AsyncTestCase):
 
         settings = group.get_settings(result)
 
-        assert settings.get("endorser.author") == True
-        assert settings.get("endorser.endorser") == False
+        assert settings.get("endorser.author") is True
+        assert settings.get("endorser.endorser") is False
         assert settings.get("endorser.endorser_public_did") == "did:sov:12345"
-        assert settings.get("endorser.auto_endorse") == False
+        assert settings.get("endorser.auto_endorse") is False
 
     async def test_logging(self):
         """Test logging."""
@@ -499,7 +596,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.DiscoverFeaturesGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 

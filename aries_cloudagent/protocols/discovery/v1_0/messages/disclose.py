@@ -2,10 +2,9 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import EXCLUDE, fields, Schema
+from marshmallow import EXCLUDE, Schema, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import DISCLOSE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.disclose_handler.DiscloseHandler"
@@ -22,8 +21,7 @@ class Disclose(AgentMessage):
         schema_class = "DiscloseSchema"
 
     def __init__(self, *, protocols: Sequence[Mapping[str, Mapping]] = None, **kwargs):
-        """
-        Initialize disclose message object.
+        """Initialize disclose message object.
 
         Args:
             protocols: A mapping of protocol names to a dictionary of properties
@@ -38,12 +36,14 @@ class ProtocolDescriptorSchema(Schema):
     pid = fields.Str(required=True)
     roles = fields.List(
         fields.Str(
-            description="Role: requester or responder",
-            example="requester",
+            metadata={
+                "description": "Role: requester or responder",
+                "example": "requester",
+            }
         ),
         required=False,
         allow_none=True,
-        description="List of roles",
+        metadata={"description": "List of roles"},
     )
 
 
@@ -59,5 +59,5 @@ class DiscloseSchema(AgentMessageSchema):
     protocols = fields.List(
         fields.Nested(ProtocolDescriptorSchema()),
         required=True,
-        description="List of protocol descriptors",
+        metadata={"description": "List of protocol descriptors"},
     )

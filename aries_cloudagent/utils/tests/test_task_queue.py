@@ -1,6 +1,7 @@
 import asyncio
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ..task_queue import CompletedTask, PendingTask, TaskQueue, task_exc_info
 
@@ -11,7 +12,7 @@ async def retval(val, *, delay=0):
     return val
 
 
-class TestTaskQueue(AsyncTestCase):
+class TestTaskQueue(IsolatedAsyncioTestCase):
     async def test_run(self):
         queue = TaskQueue()
         task = None
@@ -83,7 +84,7 @@ class TestTaskQueue(AsyncTestCase):
         assert pend.cancelled
         task.cancel()
 
-        with async_mock.patch.object(pend, "task_future", autospec=True) as mock_future:
+        with mock.patch.object(pend, "task_future", autospec=True) as mock_future:
             mock_future.cancelled.return_value = True
             pend.task = "a suffusion of yellow"
             mock_future.set_result.assert_not_called()
@@ -105,10 +106,10 @@ class TestTaskQueue(AsyncTestCase):
         async def noop():
             return
 
-        with async_mock.patch.object(
-            queue, "drain", async_mock.MagicMock()
-        ) as mock_drain, async_mock.patch.object(
-            queue, "wait_for", async_mock.CoroutineMock()
+        with mock.patch.object(
+            queue, "drain", mock.MagicMock()
+        ) as mock_drain, mock.patch.object(
+            queue, "wait_for", mock.CoroutineMock()
         ) as mock_wait_for:
             mock_drain.side_effect = [queue.loop.create_task(noop()), None]
             await queue.complete(cleanup=True)
@@ -137,7 +138,7 @@ class TestTaskQueue(AsyncTestCase):
         queue = TaskQueue(1)
         queue.add_pending(pend)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             queue.pending_tasks[0], "task_future", autospec=True
         ) as mock_future:
             mock_future.cancelled.return_value = False
@@ -206,7 +207,7 @@ class TestTaskQueue(AsyncTestCase):
 
         task = queue.run(retval(1), done)
         await task
-        queue.completed_task(task, done, None, dict())
+        queue.completed_task(task, done, None, {})
         assert completed == [1, 1]
 
     async def test_timed(self):

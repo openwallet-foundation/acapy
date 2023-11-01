@@ -1,25 +1,16 @@
 """Represents an OOB connection reuse problem report message."""
 
 import logging
-
 from enum import Enum
 from typing import Optional, Text
 
-from marshmallow import (
-    EXCLUDE,
-    fields,
-    pre_dump,
-    validates_schema,
-    ValidationError,
-)
+from marshmallow import EXCLUDE, ValidationError, fields, pre_dump, validates_schema
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
-
-from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE, DEFAULT_VERSION
+from ..message_types import DEFAULT_VERSION, PROBLEM_REPORT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".problem_report_handler.OOBProblemReportMessageHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.problem_report_handler.OOBProblemReportMessageHandler"
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -65,8 +56,10 @@ class OOBProblemReportSchema(ProblemReportSchema):
     _type = fields.Str(
         data_key="@type",
         required=False,
-        description="Message type",
-        example="https://didcomm.org/my-family/1.0/my-message-type",
+        metadata={
+            "description": "Message type",
+            "example": "https://didcomm.org/my-family/1.0/my-message-type",
+        },
     )
 
     @pre_dump

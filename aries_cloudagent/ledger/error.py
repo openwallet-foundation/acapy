@@ -38,8 +38,7 @@ class LedgerObjectAlreadyExistsError(LedgerError, Generic[T]):
         *args,
         **kwargs,
     ):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
             message: Human readable message text

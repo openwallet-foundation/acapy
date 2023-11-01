@@ -56,8 +56,22 @@ class AriesAgent(DemoAgent):
         aip: int = 20,
         endorser_role: str = None,
         revocation: bool = False,
+        anoncreds_legacy_revocation: str = None,
         **kwargs,
     ):
+        extra_args = []
+        if not no_auto:
+            extra_args.extend(
+                (
+                    "--auto-accept-invites",
+                    "--auto-accept-requests",
+                    "--auto-store-credential",
+                )
+            )
+        if anoncreds_legacy_revocation:
+            extra_args.append(
+                f"--anoncreds-legacy-revocation={anoncreds_legacy_revocation}"
+            )
         super().__init__(
             ident,
             http_port,
@@ -67,15 +81,7 @@ class AriesAgent(DemoAgent):
             aip=aip,
             endorser_role=endorser_role,
             revocation=revocation,
-            extra_args=(
-                []
-                if no_auto
-                else [
-                    "--auto-accept-invites",
-                    "--auto-accept-requests",
-                    "--auto-store-credential",
-                ]
-            ),
+            extra_args=extra_args,
             **kwargs,
         )
         self.connection_id = None
@@ -695,6 +701,7 @@ class AgentContainer:
         endorser_role: str = None,
         reuse_connections: bool = False,
         taa_accept: bool = False,
+        anoncreds_legacy_revocation: str = None,
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -717,6 +724,7 @@ class AgentContainer:
         self.arg_file = arg_file
         self.endorser_agent = None
         self.endorser_role = endorser_role
+        self.anoncreds_legacy_revocation = anoncreds_legacy_revocation
         if endorser_role:
             # endorsers and authors need public DIDs (assume cred_type is Indy)
             if endorser_role == "author" or endorser_role == "endorser":
@@ -1174,7 +1182,7 @@ class AgentContainer:
 
 def arg_parser(ident: str = None, port: int = 8020):
     """
-    Standard command-line arguements.
+    Standard command-line arguments.
 
     "ident", if specified, refers to one of the standard demo personas - alice, faber, acme or performance.
     """
@@ -1214,6 +1222,12 @@ def arg_parser(ident: str = None, port: int = 8020):
         )
     parser.add_argument(
         "--revocation", action="store_true", help="Enable credential revocation"
+    )
+    parser.add_argument(
+        "--anoncreds-legacy-revocation",
+        type=str,
+        choices=("accept", "reject"),
+        help="Set behaviour for legacy non-revocation proof",
     )
     parser.add_argument(
         "--tails-server-base-url",
@@ -1382,6 +1396,10 @@ async def create_agent_with_args(args, ident: str = None):
     if reuse_connections and aip != 20:
         raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
 
+    anoncreds_legacy_revocation = None
+    if "anoncreds_legacy_revocation" in args and args.anoncreds_legacy_revocation:
+        anoncreds_legacy_revocation = args.anoncreds_legacy_revocation
+
     agent = AgentContainer(
         genesis_txns=genesis,
         genesis_txn_list=multi_ledger_config_path,
@@ -1403,6 +1421,7 @@ async def create_agent_with_args(args, ident: str = None):
         endorser_role=args.endorser_role,
         reuse_connections=reuse_connections,
         taa_accept=args.taa_accept,
+        anoncreds_legacy_revocation=anoncreds_legacy_revocation,
     )
 
     return agent

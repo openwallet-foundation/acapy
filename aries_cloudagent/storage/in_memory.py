@@ -23,8 +23,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
     """Basic in-memory storage class."""
 
     def __init__(self, profile: InMemoryProfile):
-        """
-        Initialize a `InMemoryStorage` instance.
+        """Initialize a `InMemoryStorage` instance.
 
         Args:
             profile: The in-memory profile instance
@@ -33,8 +32,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
         self.profile = profile
 
     async def add_record(self, record: StorageRecord):
-        """
-        Add a new record to the store.
+        """Add a new record to the store.
 
         Args:
             record: `StorageRecord` to be stored
@@ -52,8 +50,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
     async def get_record(
         self, record_type: str, record_id: str, options: Mapping = None
     ) -> StorageRecord:
-        """
-        Fetch a record from the store by type and ID.
+        """Fetch a record from the store by type and ID.
 
         Args:
             record_type: The record type
@@ -73,8 +70,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
         raise StorageNotFoundError("Record not found: {}".format(record_id))
 
     async def update_record(self, record: StorageRecord, value: str, tags: Mapping):
-        """
-        Update an existing stored record's value.
+        """Update an existing stored record's value.
 
         Args:
             record: `StorageRecord` to update
@@ -92,8 +88,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
         self.profile.records[record.id] = oldrec._replace(value=value, tags=tags)
 
     async def delete_record(self, record: StorageRecord):
-        """
-        Delete a record.
+        """Delete a record.
 
         Args:
             record: `StorageRecord` to delete
@@ -140,8 +135,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
         page_size: int = None,
         options: Mapping = None,
     ) -> "InMemoryStorageSearch":
-        """
-        Search stored records.
+        """Search stored records.
 
         Args:
             type_filter: Filter string
@@ -246,8 +240,7 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
         page_size: int = None,
         options: Mapping = None,
     ):
-        """
-        Initialize a `InMemoryStorageSearch` instance.
+        """Initialize a `InMemoryStorageSearch` instance.
 
         Args:
             profile: The in-memory profile to search
@@ -262,10 +255,10 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
         self.page_size = page_size or DEFAULT_PAGE_SIZE
         self.tag_query = tag_query
         self.type_filter = type_filter
+        self._done = False
 
     async def fetch(self, max_count: int = None) -> Sequence[StorageRecord]:
-        """
-        Fetch the next list of results from the store.
+        """Fetch the next list of results from the store.
 
         Args:
             max_count: Max number of records to return. If not provided,
@@ -278,7 +271,7 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
             StorageSearchError: If the search query has not been opened
 
         """
-        if self._cache is None:
+        if self._cache is None and self._done:
             raise StorageSearchError("Search query is complete")
 
         ret = []
@@ -299,9 +292,11 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
 
         if not ret:
             self._cache = None
+            self._done = True
 
         return ret
 
     async def close(self):
         """Dispose of the search query."""
         self._cache = None
+        self._done = True

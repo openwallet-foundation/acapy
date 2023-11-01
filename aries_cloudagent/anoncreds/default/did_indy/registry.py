@@ -28,11 +28,9 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """DIDIndyRegistry."""
 
     def __init__(self):
-        """
-        Initialize an instance.
+        """Initialize an instance.
 
         Args:
-
         TODO: update this docstring - Anoncreds-break.
 
         """

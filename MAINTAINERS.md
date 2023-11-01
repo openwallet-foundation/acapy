@@ -28,7 +28,7 @@ Maintainers are assigned the following scopes in this repository:
 | --------------- | ---------------- | ---------- | ---- | ---------- | ------------------------ | ------------------- |
 | andrewwhitehead | Andrew Whitehead | Admin      |      |            | cywolf@gmail.com         | BC Gov              |
 | dbluhm          | Daniel Bluhm     | Admin      |      |            | daniel@indicio.tech      | Indicio PBC         |
-| dh1128          | Daniel Hardman   | Admin      |      |            | daniel.hardman@gmail.com | Provident           |
+| dhh1128         | Daniel Hardman   | Admin      |      |            | daniel.hardman@gmail.com | Provident           |
 | shaangill025    | Shaanjot Gill    | Maintainer |      |            | gill.shaanjots@gmail.com | BC Gov              |
 | swcurran        | Stephen Curran   | Admin      |      |            | swcurran@cloudcompass.ca | BC Gov              |
 | TelegramSam     | Sam Curren       | Maintainer |      |            | telegramsam@gmail.com    | Indicio PBC         |

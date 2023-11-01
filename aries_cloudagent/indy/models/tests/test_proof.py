@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ..proof import IndyProof, IndyPrimaryProof
+from ..proof import IndyProof
 
 INDY_PROOF = {
     "proof": {

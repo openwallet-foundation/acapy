@@ -135,6 +135,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
         plugin_registry.register_plugin("aries_cloudagent.revocation")
         plugin_registry.register_plugin("aries_cloudagent.resolver")
+        plugin_registry.register_plugin("aries_cloudagent.settings")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
         plugin_registry.register_plugin("aries_cloudagent.anoncreds")
         plugin_registry.register_plugin("aries_cloudagent.anoncreds.default.did_indy")

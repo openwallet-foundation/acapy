@@ -52,7 +52,7 @@ services:
         ./ngrok-wait.sh"
       ]
     volumes:
-      - ./ngrok-wait.sh:/home/indy/ngrok-wait.sh
+      - ./ngrok-wait.sh:/home/aries/ngrok-wait.sh
     networks:
       - app-network
       - elk-network

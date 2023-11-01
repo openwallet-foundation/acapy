@@ -1,6 +1,6 @@
 import pytest
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.base_handler import HandlerException
@@ -22,7 +22,7 @@ TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
 def request_context() -> RequestContext:
     ctx = RequestContext.test_context()
     ctx.connection_ready = True
-    ctx.connection_record = async_mock.MagicMock(connection_id="test123")
+    ctx.connection_record = mock.MagicMock(connection_id="test123")
     yield ctx
 
 
@@ -53,10 +53,10 @@ class TestDiscloseHandler:
 
         handler = DiscloseHandler()
         mock_responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(return_value=discovery_record),
+            mock.CoroutineMock(return_value=discovery_record),
         ) as mock_get_rec_thread_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages

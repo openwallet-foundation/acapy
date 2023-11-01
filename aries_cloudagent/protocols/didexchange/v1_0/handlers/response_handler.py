@@ -1,12 +1,14 @@
 """DID exchange response handler under RFC 23."""
 
+from aries_cloudagent.protocols.didexchange.v1_0.messages.problem_report import (
+    DIDXProblemReport,
+)
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     RequestContext,
 )
 
-from ....problem_report.v1_0.message import ProblemReport
 from ....trustping.v1_0.messages.ping import Ping
 
 from ..manager import DIDXManager, DIDXManagerError
@@ -17,8 +19,7 @@ class DIDXResponseHandler(BaseHandler):
     """Handler class for DID exchange response message under RFC 23."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle DID exchange response under RFC 23.
+        """Handle DID exchange response under RFC 23.
 
         Args:
             context: Request context
@@ -48,7 +49,9 @@ class DIDXResponseHandler(BaseHandler):
                             "Error parsing DIDDoc for problem report"
                         )
                 await responder.send_reply(
-                    ProblemReport(description={"en": e.message, "code": e.error_code}),
+                    DIDXProblemReport(
+                        description={"en": e.message, "code": e.error_code}
+                    ),
                     target_list=targets,
                 )
             return

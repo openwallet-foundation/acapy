@@ -32,8 +32,7 @@ class AnonCredsVerifier:
     """Verifier class."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize an AnonCredsVerifier instance.
+        """Initialize an AnonCredsVerifier instance.
 
         Args:
             profile: an active profile instance
@@ -42,8 +41,7 @@ class AnonCredsVerifier:
         self.profile = profile
 
     def non_revoc_intervals(self, pres_req: dict, pres: dict, cred_defs: dict) -> list:
-        """
-        Remove superfluous non-revocation intervals in presentation request.
+        """Remove superfluous non-revocation intervals in presentation request.
 
         Irrevocable credentials constitute proof of non-revocation, but
         indy rejects proof requests with non-revocation intervals lining up
@@ -110,8 +108,7 @@ class AnonCredsVerifier:
         pres: Mapping,
         rev_reg_defs: Mapping,
     ) -> list:
-        """
-        Check for suspicious, missing, and superfluous timestamps.
+        """Check for suspicious, missing, and superfluous timestamps.
 
         Raises ValueError on timestamp in the future, prior to rev reg creation,
         superfluous or missing.
@@ -278,8 +275,7 @@ class AnonCredsVerifier:
         return msgs
 
     async def pre_verify(self, pres_req: dict, pres: dict) -> list:
-        """
-        Check for essential components and tampering in presentation.
+        """Check for essential components and tampering in presentation.
 
         Visit encoded attribute values against raw, and predicate bounds,
         in presentation, cross-reference against presentation request.
@@ -448,8 +444,7 @@ class AnonCredsVerifier:
         rev_reg_defs,
         rev_lists,
     ) -> Tuple[bool, list]:
-        """
-        Verify a presentation.
+        """Verify a presentation.
 
         Args:
             pres_req: Presentation request data

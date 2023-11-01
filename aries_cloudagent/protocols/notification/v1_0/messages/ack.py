@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import NOTIF_10_ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.ack_handler.V10AckHandler"
@@ -20,8 +19,7 @@ class V10Ack(AgentMessage):
         schema_class = "V10AckSchema"
 
     def __init__(self, status: str = None, **kwargs):
-        """
-        Initialize an explicit ack message instance.
+        """Initialize an explicit ack message instance.
 
         Args:
             status: Status (default OK)
@@ -40,4 +38,6 @@ class V10AckSchema(AgentMessageSchema):
         model_class = V10Ack
         unknown = EXCLUDE
 
-    status = fields.Str(required=True, description="Status", example="OK")
+    status = fields.Str(
+        required=True, metadata={"description": "Status", "example": "OK"}
+    )

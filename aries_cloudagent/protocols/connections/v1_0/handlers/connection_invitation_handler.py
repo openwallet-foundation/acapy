@@ -14,8 +14,7 @@ class ConnectionInvitationHandler(BaseHandler):
     """Handler class for connection invitations."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle connection invitation.
+        """Handle connection invitation.
 
         Args:
             context: Request context
