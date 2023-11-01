@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aries_cloudagent"
-version = "0.10.1"
+version = "0.11.0-rc1"
 description = "Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building decentralized identity applications and services running in non-mobile environments. "
 authors = ["Hyperledger Aries <aries@lists.hyperledger.org>"]
 license = "Apache-2.0"
@@ -45,7 +45,7 @@ qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
 requests="~2.31.0"
 rlp="1.2.0"
 unflatten="~0.1"
-sd_jwt = {git = "https://github.com/openwallet-foundation-labs/sd-jwt-python.git"}
+sd-jwt = "^0.10.3"
 did-peer-2 = "^0.1.2"
 
 # askar
