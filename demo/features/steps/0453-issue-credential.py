@@ -1,4 +1,3 @@
-from aiohttp import ClientError, ClientResponseError
 from behave import given, when, then
 import json
 from time import sleep
@@ -145,7 +144,7 @@ def step_impl(context, issuer, holder, credential_data):
             "/issue-credential-2.0/send-request",
             data,
         )
-    except ClientError as err:
+    except Exception as err:
         # this is not allowed, unprocessable
         assert err
 

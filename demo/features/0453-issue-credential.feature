@@ -38,7 +38,7 @@ Feature: RFC 0453 Aries agent issue credential
        #| --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
   @T003-RFC0453 @GHA
-  Scenario Outline: Issue a credential with the holder beginning with a requset
+  Scenario Outline: Issue a credential with the holder sending a request
     Given we have "2" agents
       | name  | role    | capabilities        |
       | Acme  | issuer  | <Acme_capabilities> |
