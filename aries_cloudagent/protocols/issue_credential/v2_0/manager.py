@@ -412,16 +412,16 @@ class V20CredManager:
         # the record by connection_id.
         connection_id = None if oob_record else connection_record.connection_id
 
-        format_handlers = []
-        format_handlers_without_offer = []
-        for format in cred_request_message.formats:
-            f = V20CredFormat.Format.get(format.format)
-            if f:
-                format_handlers.append(f)
-                if f.handler(self.profile).can_receive_request_without_offer():
-                    format_handlers_without_offer.append(f)
+        handlers = [
+            handler(self.profile)
+            for format in cred_request_message.formats
+            if (handler := V20CredFormat.Format.get(format.format))
+        ]
+        handlers_without_offer = [
+            handler for handler in handlers
+            if handler.can_receive_request_without_offer()
+        ]
 
-        handlers = format_handlers
         async with self._profile.session() as session:
             try:
                 cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
@@ -432,8 +432,8 @@ class V20CredManager:
                 )
             except StorageNotFoundError as ex:
                 # holder sent this request free of any offer
-                if len(format_handlers_without_offer):
-                    handlers = format_handlers_without_offer
+                if handlers_without_offer:
+                    handlers = handlers_without_offer
                     cred_ex_record = V20CredExRecord(
                         connection_id=connection_id,
                         thread_id=cred_request_message._thread_id,
