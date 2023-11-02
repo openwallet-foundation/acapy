@@ -455,9 +455,7 @@ class V20CredManager:
             cred_ex_record.connection_id = connection_record.connection_id
 
         for handler in handlers:
-            await handler.receive_request(
-                cred_ex_record, cred_request_message
-            )
+            await handler.receive_request(cred_ex_record, cred_request_message)
 
         cred_ex_record.cred_request = cred_request_message
         cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED
