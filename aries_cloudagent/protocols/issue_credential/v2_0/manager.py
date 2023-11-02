@@ -413,9 +413,9 @@ class V20CredManager:
         connection_id = None if oob_record else connection_record.connection_id
 
         handlers = [
-            handler(self.profile)
+            f.handler(self.profile)
             for format in cred_request_message.formats
-            if (handler := V20CredFormat.Format.get(format.format))
+            if (f := V20CredFormat.Format.get(format.format))
         ]
         handlers_without_offer = [
             handler
@@ -454,8 +454,8 @@ class V20CredManager:
         if connection_record:
             cred_ex_record.connection_id = connection_record.connection_id
 
-        for cred_format in handlers:
-            await cred_format.handler(self.profile).receive_request(
+        for handler in handlers:
+            await handler.receive_request(
                 cred_ex_record, cred_request_message
             )
 
