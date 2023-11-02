@@ -418,7 +418,8 @@ class V20CredManager:
             if (handler := V20CredFormat.Format.get(format.format))
         ]
         handlers_without_offer = [
-            handler for handler in handlers
+            handler
+            for handler in handlers
             if handler.can_receive_request_without_offer()
         ]
 

@@ -538,7 +538,7 @@ class CredentialManager:
                 )
             except StorageNotFoundError as ex:
                 LOGGER.error(
-                    f"Credential Exchange (thread id = {message._thread_id}) not found." 
+                    f"Credential Exchange (thread id = {message._thread_id}) not found."
                     " Indy issue credential format can't start from credential request.",
                 )
                 raise ex
