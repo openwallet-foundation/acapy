@@ -3,10 +3,9 @@ import json
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from ...anoncreds.holder import IndyHolder
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
-
-from ...indy.holder import IndyHolder
 from ...storage.vc_holder.base import VCHolder
 from ...storage.vc_holder.vc_record import VCRecord
 

@@ -4,14 +4,16 @@ import json
 import logging
 from typing import Optional
 
-from ...out_of_band.v1_0.models.oob_record import OobRecord
+from ....anoncreds.verifier import IndyVerifier
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....indy.verifier import IndyVerifier
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
+
+from ...out_of_band.v1_0.models.oob_record import OobRecord
+
 from ..indy.pres_exch_handler import IndyPresExchHandler
 
 from .messages.presentation_ack import PresentationAck

@@ -7,12 +7,12 @@ import json
 from typing import Mapping, Tuple
 import asyncio
 
+from ......anoncreds.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
+from ......anoncreds.holder import IndyHolder, IndyHolderError
+from ......anoncreds.models.cred import IndyCredentialSchema
+from ......anoncreds.models.cred_request import IndyCredRequestSchema
+from ......anoncreds.models.cred_abstract import IndyCredAbstractSchema
 from ......cache.base import BaseCache
-from ......indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
-from ......indy.holder import IndyHolder, IndyHolderError
-from ......indy.models.cred import IndyCredentialSchema
-from ......indy.models.cred_request import IndyCredRequestSchema
-from ......indy.models.cred_abstract import IndyCredAbstractSchema
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,

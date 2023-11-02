@@ -2,13 +2,13 @@ from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 
-from ......core.oob_processor import OobMessageProcessor
-from ......indy.holder import IndyHolder
-from ......indy.models.pres_preview import (
+from ......anoncreds.holder import IndyHolder
+from ......anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,
 )
+from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......storage.error import StorageNotFoundError

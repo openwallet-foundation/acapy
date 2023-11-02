@@ -1,7 +1,7 @@
 """Presentation request message handler."""
 
+from .....anoncreds.holder import IndyHolderError
 from .....core.oob_processor import OobMessageProcessor
-from .....indy.holder import IndyHolderError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError

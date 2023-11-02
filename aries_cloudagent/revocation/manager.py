@@ -4,23 +4,24 @@ import json
 import logging
 from typing import Mapping, Sequence, Text, Tuple
 
+from ..anoncreds.issuer import IndyIssuer
+from ..core.error import BaseError
+from ..core.profile import Profile
 from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
 )
-from ..core.error import BaseError
-from ..core.profile import Profile
-from ..indy.issuer import IndyIssuer
-from ..storage.error import StorageNotFoundError
-from .indy import IndyRevocation
-from .models.issuer_cred_rev_record import IssuerCredRevRecord
-from .models.issuer_rev_reg_record import IssuerRevRegRecord
-from .util import notify_pending_cleared_event, notify_revocation_published_event
 from ..protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
 from ..protocols.issue_credential.v2_0.models.cred_ex_record import (
     V20CredExRecord,
 )
+from ..storage.error import StorageNotFoundError
+
+from .indy import IndyRevocation
+from .models.issuer_cred_rev_record import IssuerCredRevRecord
+from .models.issuer_rev_reg_record import IssuerRevRegRecord
+from .util import notify_pending_cleared_event, notify_revocation_published_event
 
 
 class RevocationManagerError(BaseError):

@@ -20,10 +20,10 @@ from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ..admin.request_context import AdminRequestContext
+from ..anoncreds.issuer import IndyIssuerError
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
-from ..indy.issuer import IndyIssuerError
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager

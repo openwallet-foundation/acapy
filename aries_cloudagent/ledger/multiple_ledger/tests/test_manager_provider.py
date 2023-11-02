@@ -3,11 +3,11 @@ import pytest
 from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
+from ....anoncreds.sdk.profile import IndySdkProfile
+from ....anoncreds.sdk.wallet_setup import IndyOpenWallet, IndyWalletConfig
 from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
 from ....core.in_memory import InMemoryProfile
-from ....indy.sdk.profile import IndySdkProfile
-from ....indy.sdk.wallet_setup import IndyOpenWallet, IndyWalletConfig
 from ....ledger.base import BaseLedger
 from ....ledger.indy import IndySdkLedgerPool, IndySdkLedger
 

@@ -7,11 +7,11 @@ from typing import Any, Mapping, Type
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from ....anoncreds.issuer import IndyIssuer, IndyIssuerError
+from ....anoncreds.util import indy_client_dir
 from ....core.in_memory import InMemoryProfile, InMemoryProfileSession
 from ....core.profile import Profile, ProfileSession
 from ....config.injection_context import InjectionContext
-from ....indy.issuer import IndyIssuer, IndyIssuerError
-from ....indy.util import indy_client_dir
 from ....ledger.base import BaseLedger
 from ....tails.base import BaseTailsServer
 

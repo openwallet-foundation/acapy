@@ -5,10 +5,10 @@ import time
 
 from typing import Union, Tuple
 
+from ....anoncreds.holder import IndyHolder, IndyHolderError
+from ....anoncreds.models.xform import indy_proof_req2non_revoc_intervals
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.models.xform import indy_proof_req2non_revoc_intervals
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     GET_SCHEMA,
     GET_REVOC_REG_DELTA,

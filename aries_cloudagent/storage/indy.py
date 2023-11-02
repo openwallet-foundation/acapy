@@ -8,6 +8,8 @@ from typing import Mapping, Sequence
 from indy import non_secrets
 from indy.error import IndyError, ErrorCode
 
+from ..anoncreds.sdk.wallet_setup import IndyOpenWallet
+
 from .base import (
     DEFAULT_PAGE_SIZE,
     BaseStorage,
@@ -22,7 +24,6 @@ from .error import (
     StorageSearchError,
 )
 from .record import StorageRecord
-from ..indy.sdk.wallet_setup import IndyOpenWallet
 
 LOGGER = logging.getLogger(__name__)
 

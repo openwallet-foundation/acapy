@@ -8,10 +8,10 @@ from os import path
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from ...anoncreds.issuer import IndyIssuer, IndyIssuerError
+from ...anoncreds.sdk.profile import IndySdkProfile
 from ...config.injection_context import InjectionContext
 from ...cache.in_memory import InMemoryCache
-from ...indy.issuer import IndyIssuer, IndyIssuerError
-from ...indy.sdk.profile import IndySdkProfile
 from ...storage.record import StorageRecord
 from ...wallet.base import BaseWallet
 from ...wallet.did_info import DIDInfo

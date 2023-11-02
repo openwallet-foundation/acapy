@@ -1,12 +1,12 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from ......core.in_memory import InMemoryProfile
-from ......indy.models.pres_preview import (
+from ......anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,
 )
+from ......core.in_memory import InMemoryProfile
 from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 
 from ...messages.presentation_proposal import PresentationProposal

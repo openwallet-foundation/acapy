@@ -11,8 +11,8 @@ import indy.wallet
 from indy.error import ErrorCode
 from aries_cloudagent.tests import mock
 
+from ...anoncreds.sdk.profile import IndySdkProfileManager, IndySdkProfile
 from ...config.injection_context import InjectionContext
-from ...indy.sdk.profile import IndySdkProfileManager, IndySdkProfile
 from ...storage.base import BaseStorage
 from ...storage.error import StorageError, StorageSearchError
 from ...storage.indy import IndySdkStorage
@@ -64,7 +64,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
     @pytest.mark.asyncio
     async def test_record(self):
         with mock.patch(
-            "aries_cloudagent.indy.sdk.wallet_plugin.load_postgres_plugin",
+            "aries_cloudagent.anoncreds.sdk.wallet_plugin.load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
             indy.wallet, "create_wallet", mock.CoroutineMock()
@@ -235,7 +235,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
     @pytest.mark.asyncio
     async def test_storage_search_x(self):
         with mock.patch(
-            "aries_cloudagent.indy.sdk.wallet_plugin.load_postgres_plugin",
+            "aries_cloudagent.anoncreds.sdk.wallet_plugin.load_postgres_plugin",
             mock.MagicMock(),
         ) as mock_load, mock.patch.object(
             indy.wallet, "create_wallet", mock.CoroutineMock()

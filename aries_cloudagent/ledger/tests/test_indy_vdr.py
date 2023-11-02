@@ -5,8 +5,8 @@ import pytest
 from aries_cloudagent.tests import mock
 
 
+from ...anoncreds.issuer import IndyIssuer
 from ...core.in_memory import InMemoryProfile
-from ...indy.issuer import IndyIssuer
 from ...wallet.base import BaseWallet
 from ...wallet.did_info import DIDInfo
 from ...wallet.did_method import SOV, DIDMethod, DIDMethods, HolderDefinedDid

@@ -14,13 +14,13 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
+from ....anoncreds.holder import IndyHolder, IndyHolderError
+from ....anoncreds.models.cred_precis import IndyCredPrecisSchema
+from ....anoncreds.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
+from ....anoncreds.models.proof import IndyPresSpecSchema
+from ....anoncreds.models.proof_request import IndyProofRequestSchema
+from ....anoncreds.util import generate_pr_nonce
 from ....connections.models.conn_record import ConnRecord
-from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.models.cred_precis import IndyCredPrecisSchema
-from ....indy.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
-from ....indy.models.proof import IndyPresSpecSchema
-from ....indy.models.proof_request import IndyProofRequestSchema
-from ....indy.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
@@ -38,6 +38,7 @@ from ....messaging.valid import (
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....wallet.error import WalletNotFoundError
+
 from . import problem_report_for_record, report_problem
 from .manager import PresentationManager, PresentationManagerError
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI

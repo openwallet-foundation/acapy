@@ -2,8 +2,8 @@ import pytest
 from unittest import mock
 
 
+from ....anoncreds.sdk.profile import IndySdkProfileManager, IndySdkProfile
 from ....config.injection_context import InjectionContext
-from ....indy.sdk.profile import IndySdkProfileManager, IndySdkProfile
 from ....ledger.indy import IndySdkLedgerPool
 from ....wallet.indy import IndySdkWallet
 

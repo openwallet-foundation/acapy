@@ -13,19 +13,19 @@ from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
-from ...core.profile import Profile, ProfileSession
-from ...indy.credx.issuer import (
+from ...anoncreds.credx.issuer import (
     CATEGORY_CRED_DEF,
     CATEGORY_REV_REG_DEF_PRIVATE,
 )
-from ...indy.issuer import IndyIssuer, IndyIssuerError
-from ...indy.models.revocation import (
+from ...anoncreds.issuer import IndyIssuer, IndyIssuerError
+from ...anoncreds.models.revocation import (
     IndyRevRegDef,
     IndyRevRegDefSchema,
     IndyRevRegEntry,
     IndyRevRegEntrySchema,
 )
-from ...indy.util import indy_client_dir
+from ...anoncreds.util import indy_client_dir
+from ...core.profile import Profile, ProfileSession
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError, LedgerTransactionError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema

@@ -18,11 +18,11 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
+from ...anoncreds.issuer import IndyIssuer, IndyIssuerError
+from ...anoncreds.models.cred_def import CredentialDefinitionSchema
 from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
-from ...indy.issuer import IndyIssuer, IndyIssuerError
-from ...indy.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...ledger.multiple_ledger.ledger_requests_executor import (

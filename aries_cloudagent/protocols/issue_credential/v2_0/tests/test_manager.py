@@ -4,10 +4,10 @@ import json
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from .....anoncreds.issuer import IndyIssuer
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....core.in_memory import InMemoryProfile
-from .....indy.issuer import IndyIssuer
 from .....messaging.decorators.thread_decorator import ThreadDecorator
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder

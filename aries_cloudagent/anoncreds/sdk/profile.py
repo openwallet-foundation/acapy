@@ -75,12 +75,14 @@ class IndySdkProfile(Profile):
         injector.bind_provider(
             IndyHolder,
             ClassProvider(
-                "aries_cloudagent.indy.sdk.holder.IndySdkHolder", self.opened
+                "aries_cloudagent.anoncreds.sdk.holder.IndySdkHolder", self.opened
             ),
         )
         injector.bind_provider(
             IndyIssuer,
-            ClassProvider("aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", ref(self)),
+            ClassProvider(
+                "aries_cloudagent.anoncreds.sdk.issuer.IndySdkIssuer", ref(self)
+            ),
         )
 
         injector.bind_provider(
@@ -134,7 +136,7 @@ class IndySdkProfile(Profile):
             injector.bind_provider(
                 IndyVerifier,
                 ClassProvider(
-                    "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                    "aries_cloudagent.anoncreds.sdk.verifier.IndySdkVerifier",
                     ref(self),
                 ),
             )

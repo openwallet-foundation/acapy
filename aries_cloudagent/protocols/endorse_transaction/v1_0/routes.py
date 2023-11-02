@@ -15,11 +15,11 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
+from ....anoncreds.issuer import IndyIssuerError
 from ....connections.models.conn_record import ConnRecord
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
 from ....core.util import SHUTDOWN_EVENT_PATTERN, STARTUP_EVENT_PATTERN
-from ....indy.issuer import IndyIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema

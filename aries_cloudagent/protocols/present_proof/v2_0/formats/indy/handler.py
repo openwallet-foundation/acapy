@@ -6,13 +6,13 @@ import logging
 from marshmallow import RAISE
 from typing import Mapping, Tuple
 
-from ......indy.holder import IndyHolder
-from ......indy.models.predicate import Predicate
-from ......indy.models.proof import IndyProofSchema
-from ......indy.models.proof_request import IndyProofRequestSchema
-from ......indy.models.xform import indy_proof_req_preview2indy_requested_creds
-from ......indy.util import generate_pr_nonce
-from ......indy.verifier import IndyVerifier
+from ......anoncreds.holder import IndyHolder
+from ......anoncreds.models.predicate import Predicate
+from ......anoncreds.models.proof import IndyProofSchema
+from ......anoncreds.models.proof_request import IndyProofRequestSchema
+from ......anoncreds.models.xform import indy_proof_req_preview2indy_requested_creds
+from ......anoncreds.util import generate_pr_nonce
+from ......anoncreds.verifier import IndyVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
 

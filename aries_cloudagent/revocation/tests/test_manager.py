@@ -7,13 +7,12 @@ from aries_cloudagent.revocation.models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
 )
 
+from ...anoncreds.issuer import IndyIssuer
 from ...core.in_memory import InMemoryProfile
-from ...indy.issuer import IndyIssuer
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
 from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-
 
 from ..manager import RevocationManager, RevocationManagerError
 

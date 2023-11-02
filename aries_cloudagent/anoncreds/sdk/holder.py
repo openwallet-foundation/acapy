@@ -10,7 +10,6 @@ from typing import Sequence, Tuple, Union
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
-from ...indy.sdk.wallet_setup import IndyOpenWallet
 from ...ledger.base import BaseLedger
 from ...storage.indy import IndySdkStorage
 from ...storage.error import StorageError, StorageNotFoundError
@@ -18,6 +17,7 @@ from ...storage.record import StorageRecord
 from ...wallet.error import WalletNotFoundError
 
 from ..holder import IndyHolder, IndyHolderError
+from ..sdk.wallet_setup import IndyOpenWallet
 
 from .error import IndyErrorHandler
 from .util import create_tails_reader

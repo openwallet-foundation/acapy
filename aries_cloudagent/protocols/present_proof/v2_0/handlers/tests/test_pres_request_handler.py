@@ -1,8 +1,8 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from ......anoncreds.holder import IndyHolder
 from ......core.oob_processor import OobMessageProcessor
-from ......indy.holder import IndyHolder
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder

@@ -6,12 +6,12 @@ import logging
 
 from typing import Mapping, Optional, Tuple
 
+from ....anoncreds.holder import IndyHolder, IndyHolderError
+from ....anoncreds.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     GET_SCHEMA,

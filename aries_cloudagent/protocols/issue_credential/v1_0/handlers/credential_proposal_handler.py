@@ -1,6 +1,6 @@
 """Credential proposal message handler."""
 
-from .....indy.issuer import IndyIssuerError
+from .....anoncreds.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError

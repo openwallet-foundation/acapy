@@ -8,7 +8,7 @@ import indy.anoncreds
 import indy.blob_storage
 from indy.error import AnoncredsRevocationRegistryFullError, IndyError, ErrorCode
 
-from ...indy.sdk.profile import IndySdkProfile
+from ...anoncreds.sdk.profile import IndySdkProfile
 from ...messaging.util import encode
 from ...storage.error import StorageError
 

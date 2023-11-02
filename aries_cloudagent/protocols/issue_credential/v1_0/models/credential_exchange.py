@@ -5,11 +5,11 @@ from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields, validate
 
+from .....anoncreds.models.cred import IndyCredential, IndyCredentialSchema
+from .....anoncreds.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSchema
+from .....anoncreds.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
+from .....anoncreds.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....core.profile import ProfileSession
-from .....indy.models.cred import IndyCredential, IndyCredentialSchema
-from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSchema
-from .....indy.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
-from .....indy.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,

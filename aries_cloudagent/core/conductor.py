@@ -17,6 +17,7 @@ from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
+from ..anoncreds.verifier import IndyVerifier
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.ledger import (
@@ -33,7 +34,6 @@ from ..commands.upgrade import (
     upgrade,
 )
 from ..core.profile import Profile
-from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
@@ -150,7 +150,7 @@ class Conductor:
                     context.injector.bind_provider(
                         IndyVerifier,
                         ClassProvider(
-                            "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                            "aries_cloudagent.anoncreds.credx.verifier.IndyCredxVerifier",
                             self.root_profile,
                         ),
                     )
@@ -161,7 +161,7 @@ class Conductor:
                     context.injector.bind_provider(
                         IndyVerifier,
                         ClassProvider(
-                            "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                            "aries_cloudagent.anoncreds.sdk.verifier.IndySdkVerifier",
                             self.root_profile,
                         ),
                     )

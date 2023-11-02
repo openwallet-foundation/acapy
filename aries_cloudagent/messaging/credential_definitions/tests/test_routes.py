@@ -2,8 +2,8 @@ from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
 
 from ....admin.request_context import AdminRequestContext
+from ....anoncreds.issuer import IndyIssuer
 from ....core.in_memory import InMemoryProfile
-from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,

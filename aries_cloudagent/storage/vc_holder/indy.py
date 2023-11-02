@@ -4,7 +4,7 @@ from dateutil.parser import parse as dateutil_parser
 from dateutil.parser import ParserError
 from typing import Mapping, Sequence
 
-from ...indy.sdk.wallet_setup import IndyOpenWallet
+from ...anoncreds.sdk.wallet_setup import IndyOpenWallet
 
 from ..indy import IndySdkStorage, IndySdkStorageSearch
 

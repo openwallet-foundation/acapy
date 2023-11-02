@@ -14,10 +14,10 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
+from ....anoncreds.holder import IndyHolderError
+from ....anoncreds.issuer import IndyIssuerError
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
-from ....indy.holder import IndyHolderError
-from ....indy.issuer import IndyIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError

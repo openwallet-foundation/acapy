@@ -5,25 +5,24 @@ from time import time
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange import (
-    V10CredentialExchange,
-)
-
-from .....core.in_memory import InMemoryProfile
-from .....indy.holder import IndyHolder, IndyHolderError
-from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
-from .....indy.models.pres_preview import (
+from .....anoncreds.holder import IndyHolder, IndyHolderError
+from .....anoncreds.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,
 )
-from .....indy.verifier import IndyVerifier
+from .....anoncreds.verifier import IndyVerifier
+from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
+from .....protocols.issue_credential.v1_0.models.credential_exchange import (
+    V10CredentialExchange,
+)
 
 from ....didcomm_prefix import DIDCommPrefix
 

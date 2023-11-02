@@ -7,6 +7,8 @@ from marshmallow import ValidationError
 
 from .. import handler as test_module
 
+from .......anoncreds.holder import IndyHolder
+from .......anoncreds.issuer import IndyIssuer
 from .......core.in_memory import InMemoryProfile
 from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
@@ -14,13 +16,11 @@ from .......ledger.multiple_ledger.ledger_requests_executor import (
 )
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
-from .......indy.issuer import IndyIssuer
 from .......cache.in_memory import InMemoryCache
 from .......cache.base import BaseCache
 from .......storage.record import StorageRecord
 from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .......messaging.decorators.attach_decorator import AttachDecorator
-from .......indy.holder import IndyHolder
 from ....models.detail.indy import V20CredExRecordIndy
 from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_format import V20CredFormat
