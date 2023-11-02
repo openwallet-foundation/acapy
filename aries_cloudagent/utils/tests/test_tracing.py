@@ -1,7 +1,7 @@
 import json
 import requests
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
@@ -16,7 +16,7 @@ from ...protocols.trustping.v1_0.messages.ping import Ping
 from .. import tracing as test_module
 
 
-class TestTracing(AsyncTestCase):
+class TestTracing(IsolatedAsyncioTestCase):
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
 
     def test_get_timer(self):

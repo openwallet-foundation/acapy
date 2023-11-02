@@ -3,8 +3,8 @@
 from functools import partial
 from typing import AsyncGenerator
 import pytest
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock
 
 
 from ......connections.models.conn_record import ConnRecord
@@ -26,10 +26,10 @@ TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
 
 
-class TestKeylistUpdateResponseHandler(AsyncTestCase):
+class TestKeylistUpdateResponseHandler(IsolatedAsyncioTestCase):
     """Test handler for keylist-update-response message."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         """Setup test dependencies."""
         self.context = RequestContext.test_context()
         self.updated = [
@@ -60,9 +60,9 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
 
     async def test_handler(self):
         handler, responder = KeylistUpdateResponseHandler(), MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             MediationManager, "store_update_results"
-        ) as mock_store, async_mock.patch.object(
+        ) as mock_store, mock.patch.object(
             handler, "notify_keylist_updated"
         ) as mock_notify:
             await handler.handle(self.context, responder)
@@ -84,7 +84,7 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
         ):
             return await generator.__anext__()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             self.route_manager,
             "connection_from_recipient_key",
             partial(_retrieve_by_invitation_key, _result_generator()),

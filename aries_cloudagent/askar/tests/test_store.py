@@ -1,11 +1,11 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...core.error import ProfileError
 
 from ..store import AskarStoreConfig
 
 
-class TestStoreConfig(AsyncTestCase):
+class TestStoreConfig(IsolatedAsyncioTestCase):
     key_derivation_method = "Raw"
     key = "key"
     storage_type = "postgres"

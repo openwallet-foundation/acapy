@@ -1,6 +1,6 @@
 """Test mediate request message handler."""
 import pytest
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
@@ -19,10 +19,10 @@ TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
 
-class TestMediationRequestHandler(AsyncTestCase):
+class TestMediationRequestHandler(IsolatedAsyncioTestCase):
     """Test mediate request message handler."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         """setup dependencies of messaging"""
         self.context = RequestContext.test_context()
         self.context.profile.context.injector.bind_instance(DIDMethods, DIDMethods())

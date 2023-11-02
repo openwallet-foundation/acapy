@@ -1,10 +1,10 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..wallet_record import WalletRecord
 from ...error import WalletSettingsError
 
 
-class TestWalletRecord(AsyncTestCase):
+class TestWalletRecord(IsolatedAsyncioTestCase):
     async def test_serde(self):
         rec = WalletRecord(
             wallet_id="my-wallet-id",

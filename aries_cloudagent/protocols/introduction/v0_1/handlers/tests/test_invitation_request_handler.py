@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -21,8 +21,8 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-class TestInvitationRequestHandler(AsyncTestCase):
-    async def setUp(self):
+class TestInvitationRequestHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = RequestContext.test_context()
         self.context.connection_ready = True
         self.context.message = InvitationRequest(
@@ -37,7 +37,7 @@ class TestInvitationRequestHandler(AsyncTestCase):
         responder = MockResponder()
         inv_req = InvitationRequest(responder=responder, message="Hello")
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
             await handler.handle(self.context, responder)
@@ -54,18 +54,18 @@ class TestInvitationRequestHandler(AsyncTestCase):
             routing_keys=[TEST_ROUTE_VERKEY],
             image_url=TEST_IMAGE_URL,
         )
-        mock_conn_rec = async_mock.MagicMock(connection_id="dummy")
+        mock_conn_rec = mock.MagicMock(connection_id="dummy")
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+            mock_mgr.return_value.create_invitation = mock.CoroutineMock(
                 return_value=(mock_conn_rec, conn_invitation)
             )
 
             await handler.handle(self.context, responder)
-            assert mock_mgr.return_value.create_invitation.called_once_with()
+            mock_mgr.return_value.create_invitation.assert_called_once_with()
 
             messages = responder.messages
             assert len(messages) == 1

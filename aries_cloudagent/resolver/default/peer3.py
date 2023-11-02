@@ -1,34 +1,31 @@
 """Peer DID Resolver.
 
-Resolution is performed by converting did:peer:2 to did:peer:3 according to 
+Resolution is performed by converting did:peer:2 to did:peer:3 according to
 https://identity.foundation/peer-did-method-spec/#generation-method:~:text=Method%203%3A%20DID%20Shortening%20with%20SHA%2D256%20Hash
-DID Document is just a did:peer:2 document (resolved by peer-did-python) where 
-the did:peer:2 has been replaced with the did:peer:3.
 """
 
-from copy import deepcopy
-from hashlib import sha256
+import logging
 import re
 from typing import Optional, Pattern, Sequence, Text
 
-from peerdid.dids import DID, DIDDocument, MalformedPeerDIDError
-from peerdid.keys import MultibaseFormat, to_multibase
+from did_peer_2 import PATTERN as PEER2_PATTERN, PEER3_PATTERN, peer2to3, resolve_peer3
 
 from ...config.injection_context import InjectionContext
-from ...connections.base_manager import BaseConnectionManager
+from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
 from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
 from ...storage.record import StorageRecord
-from ...utils.multiformats import multibase, multicodec
-from ...wallet.util import bytes_to_b58
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 
-RECORD_TYPE_DID_DOCUMENT = "did_document"  # pydid DIDDocument
+
+LOGGER = logging.getLogger(__name__)
 
 
 class PeerDID3Resolver(BaseDIDResolver):
     """Peer DID Resolver."""
+
+    RECORD_TYPE_3_TO_2 = "peer3_to_peer2"
 
     def __init__(self):
         """Initialize Key Resolver."""
@@ -36,11 +33,16 @@ class PeerDID3Resolver(BaseDIDResolver):
 
     async def setup(self, context: InjectionContext):
         """Perform required setup for Key DID resolution."""
+        event_bus = context.inject(EventBus)
+        event_bus.subscribe(
+            re.compile("acapy::record::connections::deleted"),
+            self.remove_record_for_deleted_conn,
+        )
 
     @property
     def supported_did_regex(self) -> Pattern:
         """Return supported_did_regex of Key DID Resolver."""
-        return re.compile(r"^did:peer:3(.*)")
+        return PEER3_PATTERN
 
     async def _resolve(
         self,
@@ -48,82 +50,55 @@ class PeerDID3Resolver(BaseDIDResolver):
         did: str,
         service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
-        """Resolve a Key DID."""
-        if did.startswith("did:peer:3"):
-            # retrieve did_doc from storage using did:peer:3
-            async with profile.session() as session:
-                storage = session.inject(BaseStorage)
-                record = await storage.find_record(
-                    RECORD_TYPE_DID_DOCUMENT, {"did": did}
+        """Resolve a did:peer:3 DID."""
+        async with profile.session() as session:
+            storage = session.inject(BaseStorage)
+            try:
+                record = await storage.get_record(self.RECORD_TYPE_3_TO_2, did)
+            except StorageNotFoundError:
+                raise DIDNotFound(
+                    f"did:peer:3 does not correspond to a known did:peer:2 {did}"
                 )
-                did_doc = DIDDocument.from_json(record.value)
-        else:
-            raise DIDNotFound(f"did is not a did:peer:3 {did}")
 
-        return did_doc.dict()
+        doc = resolve_peer3(record.value)
+        return doc
 
-    async def create_and_store_document(
-        self, profile: Profile, peer_did_2_doc: DIDDocument
-    ):
-        """Injest did:peer:2 document create did:peer:3 and store document."""
-        if not peer_did_2_doc.id.startswith("did:peer:2"):
-            raise MalformedPeerDIDError("did:peer:2 expected")
+    async def create_and_store(self, profile: Profile, peer2: str):
+        """Injest did:peer:2 create did:peer:3 and store document."""
+        if not PEER2_PATTERN.match(peer2):
+            raise ValueError("did:peer:2 expected")
 
-        dp3_doc = deepcopy(peer_did_2_doc)
-        _convert_to_did_peer_3_document(dp3_doc)
-        try:
-            async with profile.session() as session:
-                storage = session.inject(BaseStorage)
-                record = await storage.find_record(
-                    RECORD_TYPE_DID_DOCUMENT, {"did": dp3_doc.id}
-                )
-        except StorageNotFoundError:
-            record = StorageRecord(
-                RECORD_TYPE_DID_DOCUMENT,
-                dp3_doc.to_json(),
-                {"did": dp3_doc.id},
-            )
-            async with profile.session() as session:
-                storage: BaseStorage = session.inject(BaseStorage)
+        peer3 = peer2to3(peer2)
+        async with profile.session() as session:
+            storage = session.inject(BaseStorage)
+            try:
+                record = await storage.get_record(self.RECORD_TYPE_3_TO_2, peer3)
+            except StorageNotFoundError:
+                record = StorageRecord(self.RECORD_TYPE_3_TO_2, peer2, {}, peer3)
                 await storage.add_record(record)
-            await set_keys_from_did_doc(profile, dp3_doc)
-        else:
-            # If doc already exists for did:peer:3 then it cannot have been modified
-            pass
-        return dp3_doc
+            else:
+                pass
 
+        doc = resolve_peer3(peer2)
+        return doc
 
-async def set_keys_from_did_doc(profile, did_doc):
-    """Add verificationMethod keys for lookup by conductor."""
-    conn_mgr = BaseConnectionManager(profile)
-
-    for vm in did_doc.verification_method or []:
-        if vm.controller == did_doc.id:
-            if vm.public_key_base58:
-                await conn_mgr.add_key_for_did(did_doc.id, vm.public_key_base58)
-            if vm.public_key_multibase:
-                pk = multibase.decode(vm.public_key_multibase)
-                if len(pk) == 32:  # No multicodec prefix
-                    pk = bytes_to_b58(pk)
-                else:
-                    codec, key = multicodec.unwrap(pk)
-                    if codec == multicodec.multicodec("ed25519-pub"):
-                        pk = bytes_to_b58(key)
-                    else:
-                        continue
-                await conn_mgr.add_key_for_did(did_doc.id, pk)
-
-
-def _convert_to_did_peer_3_document(dp2_document: DIDDocument) -> DIDDocument:
-    content = to_multibase(
-        sha256(dp2_document.id.lstrip("did:peer:2").encode()).digest(),
-        MultibaseFormat.BASE58,
-    )
-    dp3 = DID("did:peer:3" + content)
-    dp2 = dp2_document.id
-
-    dp2_doc_str = dp2_document.to_json()
-    dp3_doc_str = dp2_doc_str.replace(dp2, dp3)
-
-    dp3_doc = DIDDocument.from_json(dp3_doc_str)
-    return dp3_doc
+    async def remove_record_for_deleted_conn(self, profile: Profile, event: Event):
+        """Remove record for deleted connection, if found."""
+        their_did = event.payload["their_did"]
+        my_did = event.payload["my_did"]
+        dids = [
+            *(did for did in (their_did, my_did) if PEER3_PATTERN.match(did)),
+            *(peer2to3(did) for did in (their_did, my_did) if PEER2_PATTERN.match(did)),
+        ]
+        if dids:
+            LOGGER.debug(
+                "Removing peer 2 to 3 mapping for deleted connection: %s", dids
+            )
+        async with profile.session() as session:
+            storage = session.inject(BaseStorage)
+            for did in dids:
+                try:
+                    record = StorageRecord(self.RECORD_TYPE_3_TO_2, None, None, did)
+                    await storage.delete_record(record)
+                except StorageNotFoundError:
+                    LOGGER.debug("No peer 2 to 3 mapping found for: %s", did)

@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..base import BaseProvider, BaseInjector, BaseSettings, InjectionError
 from ..injector import Injector
@@ -27,7 +27,7 @@ class MockInstance:
         self.opened = True
 
 
-class TestInjector(AsyncTestCase):
+class TestInjector(IsolatedAsyncioTestCase):
     def setUp(self):
         self.test_key = "TEST"
         self.test_value = "VALUE"

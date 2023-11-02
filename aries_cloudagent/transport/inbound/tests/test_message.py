@@ -1,12 +1,12 @@
 import asyncio
 
-from asynctest import TestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..message import InboundMessage
 from ..receipt import MessageReceipt
 
 
-class TestInboundMessage(TestCase):
+class TestInboundMessage(IsolatedAsyncioTestCase):
     async def test_wait_response(self):
         message = InboundMessage(
             payload="test",

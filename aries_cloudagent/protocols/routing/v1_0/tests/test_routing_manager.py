@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 
 from marshmallow import ValidationError
 
@@ -18,8 +18,8 @@ TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 
-class TestRoutingManager(AsyncTestCase):
-    async def setUp(self):
+class TestRoutingManager(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = RequestContext.test_context()
         self.context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
         self.transaction = await self.context.transaction()  # for coverage
@@ -70,8 +70,8 @@ class TestRoutingManager(AsyncTestCase):
         assert "Must pass non-empty" in str(context.exception)
 
     async def test_get_recipient_duplicate_routes(self):
-        with async_mock.patch.object(
-            RouteRecord, "retrieve_by_recipient_key", async_mock.CoroutineMock()
+        with mock.patch.object(
+            RouteRecord, "retrieve_by_recipient_key", mock.CoroutineMock()
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageDuplicateError()
             with self.assertRaises(RouteNotFoundError) as context:
@@ -79,8 +79,8 @@ class TestRoutingManager(AsyncTestCase):
         assert "More than one route" in str(context.exception)
 
     async def test_get_recipient_no_routes(self):
-        with async_mock.patch.object(
-            RouteRecord, "retrieve_by_recipient_key", async_mock.CoroutineMock()
+        with mock.patch.object(
+            RouteRecord, "retrieve_by_recipient_key", mock.CoroutineMock()
         ) as mock_retrieve:
             mock_retrieve.side_effect = StorageNotFoundError()
             with self.assertRaises(RouteNotFoundError) as context:

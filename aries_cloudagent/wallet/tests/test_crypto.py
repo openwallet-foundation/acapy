@@ -1,7 +1,8 @@
 import pytest
 import json
 
-from unittest import mock, TestCase
+from unittest import mock
+from unittest import TestCase
 
 from ..key_type import BLS12381G1, ED25519
 from ..error import WalletError

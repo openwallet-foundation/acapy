@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -36,7 +37,7 @@ INDY_FILTER = {
 }
 
 
-class TestV20CredExRecord(AsyncTestCase):
+class TestV20CredExRecord(IsolatedAsyncioTestCase):
     async def test_record(self):
         same = [
             V20CredExRecord(
@@ -125,10 +126,10 @@ class TestV20CredExRecord(AsyncTestCase):
         record.state = V20CredExRecord.STATE_PROPOSAL_RECEIVED
         await record.save(session)
 
-        with async_mock.patch.object(
-            record, "save", async_mock.CoroutineMock()
-        ) as mock_save, async_mock.patch.object(
-            test_module.LOGGER, "exception", async_mock.MagicMock()
+        with mock.patch.object(
+            record, "save", mock.CoroutineMock()
+        ) as mock_save, mock.patch.object(
+            test_module.LOGGER, "exception", mock.MagicMock()
         ) as mock_log_exc:
             mock_save.side_effect = test_module.StorageError()
             await record.save_error_state(session, reason="test")

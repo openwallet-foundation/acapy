@@ -1,11 +1,11 @@
 from os import environ
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..didcomm_prefix import DIDCommPrefix
 
 
-class TestDIDCommPrefix(AsyncTestCase):
+class TestDIDCommPrefix(IsolatedAsyncioTestCase):
     def test_didcomm_prefix(self):
         DIDCommPrefix.set({})
         assert environ.get("DIDCOMM_PREFIX") == DIDCommPrefix.OLD.value

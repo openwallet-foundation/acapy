@@ -22,8 +22,9 @@ def holder():
     yield profile.inject(VCHolder)
 
 
-def test_record() -> VCRecord:
-    return VCRecord(
+@pytest.fixture
+def record():
+    yield VCRecord(
         contexts=[
             VC_CONTEXT,
             "https://www.w3.org/2018/credentials/examples/v1",
@@ -70,7 +71,7 @@ class TestInMemoryVCHolder:
         assert holder.__class__.__name__ in str(holder)
 
     @pytest.mark.asyncio
-    async def test_tag_query(self, holder: VCHolder):
+    async def test_tag_query(self, holder: VCHolder, record: VCRecord):
         test_uri_list = [
             "https://www.w3.org/2018/credentials#VerifiableCredential",
             "https://example.org/examples#UniversityDegreeCredential",
@@ -100,7 +101,6 @@ class TestInMemoryVCHolder:
                 },
             ]
         }
-        record = test_record()
         await holder.store_credential(record)
 
         search = holder.search_credentials(pd_uri_list=test_uri_list)
@@ -286,12 +286,13 @@ class TestInMemoryVCHolder:
         assert rows == expected
 
     @pytest.mark.asyncio
-    async def test_tag_query_valid_and_operator(self, holder: VCHolder):
+    async def test_tag_query_valid_and_operator(
+        self, holder: VCHolder, record: VCRecord
+    ):
         test_uri_list = [
             "https://www.w3.org/2018/credentials#VerifiableCredential",
             "https://example.org/examples#UniversityDegreeCredential2",
         ]
-        record = test_record()
         await holder.store_credential(record)
 
         search = holder.search_credentials(pd_uri_list=test_uri_list)
@@ -299,8 +300,7 @@ class TestInMemoryVCHolder:
         assert rows == []
 
     @pytest.mark.asyncio
-    async def test_store_retrieve(self, holder: VCHolder):
-        record = test_record()
+    async def test_store_retrieve(self, holder: VCHolder, record: VCRecord):
         await holder.store_credential(record)
         result = await holder.retrieve_credential_by_id(record.record_id)
         assert result == record
@@ -318,16 +318,14 @@ class TestInMemoryVCHolder:
             await holder.retrieve_credential_by_given_id("missing")
 
     @pytest.mark.asyncio
-    async def test_delete(self, holder: VCHolder):
-        record = test_record()
+    async def test_delete(self, holder: VCHolder, record: VCRecord):
         await holder.store_credential(record)
         await holder.delete_credential(record)
         with pytest.raises(StorageNotFoundError):
             await holder.retrieve_credential_by_id(record.record_id)
 
     @pytest.mark.asyncio
-    async def test_search(self, holder: VCHolder):
-        record = test_record()
+    async def test_search(self, holder: VCHolder, record: VCRecord):
         await holder.store_credential(record)
 
         search = holder.search_credentials()

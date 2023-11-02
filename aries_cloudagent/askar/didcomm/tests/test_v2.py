@@ -1,6 +1,6 @@
 import json
 
-from asynctest import mock as async_mock
+from unittest import mock
 import pytest
 
 from aries_askar import AskarError, Key, KeyAlg, Session
@@ -70,9 +70,9 @@ class TestAskarDidCommV2:
         ):
             _ = test_module.ecdh_es_encrypt({}, MESSAGE)
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_askar.Key.generate",
-            async_mock.MagicMock(side_effect=AskarError(99, "")),
+            mock.MagicMock(side_effect=AskarError(99, "")),
         ):
             with pytest.raises(
                 test_module.DidcommEnvelopeError,
@@ -80,9 +80,9 @@ class TestAskarDidCommV2:
             ):
                 _ = test_module.ecdh_es_encrypt({BOB_KID: bob_pk}, MESSAGE)
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_askar.Key.aead_encrypt",
-            async_mock.MagicMock(side_effect=AskarError(99, "")),
+            mock.MagicMock(side_effect=AskarError(99, "")),
         ):
             with pytest.raises(
                 test_module.DidcommEnvelopeError,
@@ -188,9 +188,9 @@ class TestAskarDidCommV2:
                 {BOB_KID: bob_pk, "alt": alt_pk}, ALICE_KID, alice_sk, MESSAGE
             )
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_askar.Key.generate",
-            async_mock.MagicMock(side_effect=AskarError(99, "")),
+            mock.MagicMock(side_effect=AskarError(99, "")),
         ):
             with pytest.raises(
                 test_module.DidcommEnvelopeError,
@@ -200,9 +200,9 @@ class TestAskarDidCommV2:
                     {BOB_KID: bob_pk}, ALICE_KID, alice_sk, MESSAGE
                 )
 
-        with async_mock.patch(
+        with mock.patch(
             "aries_askar.Key.aead_encrypt",
-            async_mock.MagicMock(side_effect=AskarError(99, "")),
+            mock.MagicMock(side_effect=AskarError(99, "")),
         ):
             with pytest.raises(
                 test_module.DidcommEnvelopeError,

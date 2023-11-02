@@ -1,7 +1,8 @@
 import json
 import pytest
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 import indy.anoncreds
 
@@ -13,25 +14,25 @@ from .. import holder as test_module
 
 
 @pytest.mark.indy
-class TestIndySdkHolder(AsyncTestCase):
+class TestIndySdkHolder(IsolatedAsyncioTestCase):
     def setUp(self):
-        mock_ledger = async_mock.MagicMock(
-            get_credential_definition=async_mock.MagicMock(return_value={"value": {}}),
-            get_revoc_reg_delta=async_mock.CoroutineMock(
+        mock_ledger = mock.MagicMock(
+            get_credential_definition=mock.MagicMock(return_value={"value": {}}),
+            get_revoc_reg_delta=mock.CoroutineMock(
                 return_value=(
                     {"value": {"...": "..."}},
                     1234567890,
                 )
             ),
         )
-        mock_ledger.__aenter__ = async_mock.CoroutineMock(return_value=mock_ledger)
+        mock_ledger.__aenter__ = mock.CoroutineMock(return_value=mock_ledger)
         self.ledger = mock_ledger
-        self.wallet = async_mock.MagicMock()
+        self.wallet = mock.MagicMock()
 
         self.holder = test_module.IndySdkHolder(self.wallet)
         assert "IndySdkHolder" in str(self.holder)
 
-    @async_mock.patch("indy.anoncreds.prover_create_credential_req")
+    @mock.patch("indy.anoncreds.prover_create_credential_req")
     async def test_create_credential_request(self, mock_create_credential_req):
         mock_create_credential_req.return_value = ("{}", "[]")
 
@@ -49,7 +50,7 @@ class TestIndySdkHolder(AsyncTestCase):
 
         assert (json.loads(cred_req_json), json.loads(cred_req_meta_json)) == ({}, [])
 
-    @async_mock.patch("indy.anoncreds.prover_store_credential")
+    @mock.patch("indy.anoncreds.prover_store_credential")
     async def test_store_credential(self, mock_store_cred):
         mock_store_cred.return_value = "cred_id"
 
@@ -68,14 +69,12 @@ class TestIndySdkHolder(AsyncTestCase):
 
         assert cred_id == "cred_id"
 
-    @async_mock.patch("indy.anoncreds.prover_store_credential")
+    @mock.patch("indy.anoncreds.prover_store_credential")
     async def test_store_credential_with_mime_types(self, mock_store_cred):
-        with async_mock.patch.object(
-            test_module, "IndySdkStorage", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module, "IndySdkStorage", mock.MagicMock()
         ) as mock_storage:
-            mock_storage.return_value = async_mock.MagicMock(
-                add_record=async_mock.CoroutineMock()
-            )
+            mock_storage.return_value = mock.MagicMock(add_record=mock.CoroutineMock())
 
             mock_store_cred.return_value = "cred_id"
 
@@ -99,7 +98,7 @@ class TestIndySdkHolder(AsyncTestCase):
 
             assert cred_id == "cred_id"
 
-    @async_mock.patch("indy.non_secrets.get_wallet_record")
+    @mock.patch("indy.non_secrets.get_wallet_record")
     async def test_get_credential_attrs_mime_types(self, mock_nonsec_get_wallet_record):
         cred_id = "credential_id"
         dummy_tags = {"a": "1", "b": "2"}
@@ -124,7 +123,7 @@ class TestIndySdkHolder(AsyncTestCase):
 
         assert mime_types == dummy_tags
 
-    @async_mock.patch("indy.non_secrets.get_wallet_record")
+    @mock.patch("indy.non_secrets.get_wallet_record")
     async def test_get_credential_attr_mime_type(self, mock_nonsec_get_wallet_record):
         cred_id = "credential_id"
         dummy_tags = {"a": "1", "b": "2"}
@@ -149,7 +148,7 @@ class TestIndySdkHolder(AsyncTestCase):
 
         assert a_mime_type == dummy_tags["a"]
 
-    @async_mock.patch("indy.non_secrets.get_wallet_record")
+    @mock.patch("indy.non_secrets.get_wallet_record")
     async def test_get_credential_attr_mime_type_x(self, mock_nonsec_get_wallet_record):
         cred_id = "credential_id"
         dummy_tags = {"a": "1", "b": "2"}
@@ -163,9 +162,9 @@ class TestIndySdkHolder(AsyncTestCase):
 
         assert await self.holder.get_mime_type(cred_id, "a") is None
 
-    @async_mock.patch("indy.anoncreds.prover_search_credentials")
-    @async_mock.patch("indy.anoncreds.prover_fetch_credentials")
-    @async_mock.patch("indy.anoncreds.prover_close_credentials_search")
+    @mock.patch("indy.anoncreds.prover_search_credentials")
+    @mock.patch("indy.anoncreds.prover_fetch_credentials")
+    @mock.patch("indy.anoncreds.prover_close_credentials_search")
     async def test_get_credentials(
         self, mock_close_cred_search, mock_fetch_credentials, mock_search_credentials
     ):
@@ -193,9 +192,9 @@ class TestIndySdkHolder(AsyncTestCase):
         credentials = await self.holder.get_credentials(0, 0, {})  # 0 defaults to all
         assert len(credentials) == SIZE
 
-    @async_mock.patch("indy.anoncreds.prover_search_credentials")
-    @async_mock.patch("indy.anoncreds.prover_fetch_credentials")
-    @async_mock.patch("indy.anoncreds.prover_close_credentials_search")
+    @mock.patch("indy.anoncreds.prover_search_credentials")
+    @mock.patch("indy.anoncreds.prover_fetch_credentials")
+    @mock.patch("indy.anoncreds.prover_close_credentials_search")
     async def test_get_credentials_seek(
         self, mock_close_cred_search, mock_fetch_credentials, mock_search_credentials
     ):
@@ -208,9 +207,9 @@ class TestIndySdkHolder(AsyncTestCase):
             (("search_handle", 3),),
         ]
 
-    @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
-    @async_mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
-    @async_mock.patch("indy.anoncreds.prover_close_credentials_search_for_proof_req")
+    @mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
+    @mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
+    @mock.patch("indy.anoncreds.prover_close_credentials_search_for_proof_req")
     async def test_get_credentials_for_presentation_request_by_reft(
         self,
         mock_prover_close_credentials_search_for_proof_req,
@@ -288,9 +287,9 @@ class TestIndySdkHolder(AsyncTestCase):
             for c in credentials[-test_module.IndyHolder.CHUNK // 2 :]
         )  # revocable last
 
-    @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
-    @async_mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
-    @async_mock.patch("indy.anoncreds.prover_close_credentials_search_for_proof_req")
+    @mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
+    @mock.patch("indy.anoncreds.prover_fetch_credentials_for_proof_req")
+    @mock.patch("indy.anoncreds.prover_close_credentials_search_for_proof_req")
     async def test_get_credentials_for_presentation_request_by_referent_default_refts(
         self,
         mock_prover_close_credentials_search_for_proof_req,
@@ -323,7 +322,7 @@ class TestIndySdkHolder(AsyncTestCase):
             self.wallet.handle, json.dumps(PRES_REQ), json.dumps({})
         )
 
-    @async_mock.patch("indy.anoncreds.prover_get_credential")
+    @mock.patch("indy.anoncreds.prover_get_credential")
     async def test_get_credential(self, mock_get_cred):
         mock_get_cred.return_value = "{}"
         credential_json = await self.holder.get_credential("credential_id")
@@ -331,13 +330,13 @@ class TestIndySdkHolder(AsyncTestCase):
 
         assert json.loads(credential_json) == {}
 
-    @async_mock.patch("indy.anoncreds.prover_get_credential")
+    @mock.patch("indy.anoncreds.prover_get_credential")
     async def test_get_credential_not_found(self, mock_get_cred):
         mock_get_cred.side_effect = IndyError(error_code=ErrorCode.WalletItemNotFound)
         with self.assertRaises(test_module.WalletNotFoundError):
             await self.holder.get_credential("credential_id")
 
-    @async_mock.patch("indy.anoncreds.prover_get_credential")
+    @mock.patch("indy.anoncreds.prover_get_credential")
     async def test_get_credential_x(self, mock_get_cred):
         mock_get_cred.side_effect = IndyError("unexpected failure")
 
@@ -345,8 +344,8 @@ class TestIndySdkHolder(AsyncTestCase):
             await self.holder.get_credential("credential_id")
 
     async def test_credential_revoked(self):
-        with async_mock.patch.object(  # no creds revoked
-            self.holder, "get_credential", async_mock.CoroutineMock()
+        with mock.patch.object(  # no creds revoked
+            self.holder, "get_credential", mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -358,8 +357,8 @@ class TestIndySdkHolder(AsyncTestCase):
             result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
 
-        with async_mock.patch.object(  # cred not revocable
-            self.holder, "get_credential", async_mock.CoroutineMock()
+        with mock.patch.object(  # cred not revocable
+            self.holder, "get_credential", mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -371,7 +370,7 @@ class TestIndySdkHolder(AsyncTestCase):
             result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
 
-        self.ledger.get_revoc_reg_delta = async_mock.CoroutineMock(
+        self.ledger.get_revoc_reg_delta = mock.CoroutineMock(
             return_value=(
                 {
                     "value": {
@@ -382,8 +381,8 @@ class TestIndySdkHolder(AsyncTestCase):
                 1234567890,
             )
         )
-        with async_mock.patch.object(  # cred not revoked
-            self.holder, "get_credential", async_mock.CoroutineMock()
+        with mock.patch.object(  # cred not revoked
+            self.holder, "get_credential", mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -395,8 +394,8 @@ class TestIndySdkHolder(AsyncTestCase):
             result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
 
-        with async_mock.patch.object(  # cred revoked
-            self.holder, "get_credential", async_mock.CoroutineMock()
+        with mock.patch.object(  # cred revoked
+            self.holder, "get_credential", mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
                 {
@@ -408,9 +407,9 @@ class TestIndySdkHolder(AsyncTestCase):
             result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert result
 
-    @async_mock.patch("indy.anoncreds.prover_delete_credential")
-    @async_mock.patch("indy.non_secrets.get_wallet_record")
-    @async_mock.patch("indy.non_secrets.delete_wallet_record")
+    @mock.patch("indy.anoncreds.prover_delete_credential")
+    @mock.patch("indy.non_secrets.get_wallet_record")
+    @mock.patch("indy.non_secrets.delete_wallet_record")
     async def test_delete_credential(
         self,
         mock_nonsec_del_wallet_record,
@@ -432,9 +431,9 @@ class TestIndySdkHolder(AsyncTestCase):
             self.wallet.handle, "credential_id"
         )
 
-    @async_mock.patch("indy.anoncreds.prover_delete_credential")
-    @async_mock.patch("indy.non_secrets.get_wallet_record")
-    @async_mock.patch("indy.non_secrets.delete_wallet_record")
+    @mock.patch("indy.anoncreds.prover_delete_credential")
+    @mock.patch("indy.non_secrets.get_wallet_record")
+    @mock.patch("indy.non_secrets.delete_wallet_record")
     async def test_delete_credential_x(
         self,
         mock_nonsec_del_wallet_record,
@@ -459,7 +458,7 @@ class TestIndySdkHolder(AsyncTestCase):
             await self.holder.delete_credential("credential_id")
         assert mock_prover_del_cred.call_count == 2
 
-    @async_mock.patch("indy.anoncreds.prover_create_proof")
+    @mock.patch("indy.anoncreds.prover_create_proof")
     async def test_create_presentation(self, mock_create_proof):
         mock_create_proof.return_value = "{}"
         PROOF_REQ = {
@@ -577,10 +576,10 @@ class TestIndySdkHolder(AsyncTestCase):
             "timestamp": 1234567890,
         }
 
-        with async_mock.patch.object(
-            test_module, "create_tails_reader", async_mock.CoroutineMock()
-        ) as mock_create_tails_reader, async_mock.patch.object(
-            indy.anoncreds, "create_revocation_state", async_mock.CoroutineMock()
+        with mock.patch.object(
+            test_module, "create_tails_reader", mock.CoroutineMock()
+        ) as mock_create_tails_reader, mock.patch.object(
+            indy.anoncreds, "create_revocation_state", mock.CoroutineMock()
         ) as mock_create_rr_state:
             mock_create_rr_state.return_value = json.dumps(rr_state)
 

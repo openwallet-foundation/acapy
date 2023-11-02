@@ -1,6 +1,6 @@
 import logging
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from ....config.injection_context import InjectionContext
@@ -20,7 +20,7 @@ async def open_wallet():
         handle=1,
         master_secret_id="master-secret",
     )
-    with async_mock.patch.object(opened, "close", async_mock.CoroutineMock()):
+    with mock.patch.object(opened, "close", mock.CoroutineMock()):
         yield opened
 
 
@@ -47,12 +47,12 @@ async def test_init_multi_ledger(open_wallet):
                     "is_write": True,
                     "endorser_did": "9QPa6tHvBHttLg6U4xvviv",
                     "endorser_alias": "endorser_dev",
-                    "genesis_transactions": async_mock.MagicMock(),
+                    "genesis_transactions": mock.MagicMock(),
                 },
                 {
                     "id": "SovrinStagingNet",
                     "is_production": False,
-                    "genesis_transactions": async_mock.MagicMock(),
+                    "genesis_transactions": mock.MagicMock(),
                 },
             ]
         }
@@ -82,18 +82,18 @@ async def test_properties(profile: IndySdkProfile):
     assert profile.wallet.created
     assert profile.wallet.master_secret_id == "master-secret"
 
-    with async_mock.patch.object(profile, "opened", False):
+    with mock.patch.object(profile, "opened", False):
         with pytest.raises(ProfileError):
             await profile.remove()
 
-    with async_mock.patch.object(profile.opened, "close", async_mock.CoroutineMock()):
+    with mock.patch.object(profile.opened, "close", mock.CoroutineMock()):
         await profile.remove()
         assert profile.opened is None
 
 
 def test_settings_genesis_transactions(open_wallet):
     context = InjectionContext(
-        settings={"ledger.genesis_transactions": async_mock.MagicMock()}
+        settings={"ledger.genesis_transactions": mock.MagicMock()}
     )
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
     profile = IndySdkProfile(open_wallet, context)
@@ -103,8 +103,8 @@ def test_settings_ledger_config(open_wallet):
     context = InjectionContext(
         settings={
             "ledger.ledger_config_list": [
-                async_mock.MagicMock(),
-                async_mock.MagicMock(),
+                mock.MagicMock(),
+                mock.MagicMock(),
             ]
         }
     )

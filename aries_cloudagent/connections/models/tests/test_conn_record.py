@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
 from ....protocols.connections.v1_0.messages.connection_invitation import (
@@ -13,7 +13,7 @@ from ..conn_record import ConnRecord
 from ..diddoc.diddoc import DIDDoc
 
 
-class TestConnRecord(AsyncTestCase):
+class TestConnRecord(IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = InMemoryProfile.test_session()
 
