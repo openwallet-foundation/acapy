@@ -56,6 +56,7 @@ autodoc_mock_imports = [
     "yaml",
     "pytz",
     "multiformats",
+    "sd_jwt",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",
@@ -123,6 +124,8 @@ exclude_patterns = [
     "README.md",
     "GettingStartedAriesDev/*",
     "assets/*",
+    "Poetry.md",
+    "aries_cloudagent/*",
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
