@@ -8,6 +8,7 @@ from typing import Callable
 from pydid.did_url import DIDUrl
 from pyld.documentloader import requests
 
+from .document_downloader import StaticCacheJsonLdDownloader
 from ...cache.base import BaseCache
 from ...core.profile import Profile
 from ...resolver.did_resolver import DIDResolver
@@ -33,7 +34,8 @@ class DocumentLoader:
         self.profile = profile
         self.resolver = profile.inject(DIDResolver)
         self.cache = profile.inject_or(BaseCache)
-        self.requests_loader = requests.requests_document_loader()
+        self.online_request_loader = requests.requests_document_loader()
+        self.requests_loader = StaticCacheJsonLdDownloader().load
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self.cache_ttl = cache_ttl
         self._event_loop = asyncio.get_event_loop()
