@@ -1,3 +1,4 @@
+import gc
 import json
 
 import pytest
@@ -501,6 +502,8 @@ async def test_admin_responder_profile_expired_x():
         return test_module.AdminResponder(profile, None)
 
     responder = _smaller_scope()
+    gc.collect()  # help ensure collection of profile
+
     with pytest.raises(RuntimeError):
         await responder.send_outbound(None)
 
