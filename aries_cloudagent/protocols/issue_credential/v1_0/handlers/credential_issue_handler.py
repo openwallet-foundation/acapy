@@ -1,6 +1,6 @@
 """Credential issue message handler."""
 
-from .....anoncreds.holder import IndyHolderError
+from .....anoncreds.holder import AnonCredsHolderError
 from .....core.oob_processor import OobMessageProcessor
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -72,7 +72,7 @@ class CredentialIssueHandler(BaseHandler):
             except (
                 BaseModelError,
                 CredentialManagerError,
-                IndyHolderError,
+                AnonCredsHolderError,
                 StorageError,
             ) as err:
                 # treat failure to store as mangled on receipt hence protocol error

@@ -16,8 +16,8 @@ from aiohttp_apispec import (
 from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
-from ....anoncreds.holder import IndyHolderError
-from ....anoncreds.issuer import IndyIssuerError
+from ....anoncreds.holder import AnonCredsHolderError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....ledger.error import LedgerError
@@ -1027,7 +1027,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageNotFoundError,
         V20CredFormatError,
@@ -1128,7 +1128,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
         V20CredFormatError,
@@ -1233,7 +1233,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         StorageError,
         V20CredManagerError,
@@ -1343,7 +1343,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         StorageError,
         V20CredFormatError,
@@ -1436,7 +1436,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
         V20CredFormatError,
@@ -1524,7 +1524,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         cred_ex_record = await cred_manager.store_credential(cred_ex_record, cred_id)
 
     except (
-        IndyHolderError,
+        AnonCredsHolderError,
         StorageError,
         V20CredManagerError,
     ) as err:  # treat failure to store as mangled on receipt hence protocol error

@@ -23,7 +23,7 @@ from ...askar.profile import AskarProfile
 from ...ledger.base import BaseLedger
 from ...wallet.error import WalletNotFoundError
 
-from ..holder import IndyHolder, IndyHolderError
+from ..holder import AnonCredsHolder, AnonCredsHolderError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ def _normalize_attr_name(name: str) -> str:
     return name.replace(" ", "")
 
 
-class IndyCredxHolder(IndyHolder):
+class IndyCredxHolder(AnonCredsHolder):
     """Indy-credx holder class."""
 
     LINK_SECRET_ID = "default"
@@ -77,18 +77,20 @@ class IndyCredxHolder(IndyHolder):
                         CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
                     )
                 except AskarError as err:
-                    raise IndyHolderError("Error fetching link secret") from err
+                    raise AnonCredsHolderError("Error fetching link secret") from err
                 if record:
                     try:
                         secret = LinkSecret.load(record.raw_value)
                     except CredxError as err:
-                        raise IndyHolderError("Error loading link secret") from err
+                        raise AnonCredsHolderError("Error loading link secret") from err
                     break
                 else:
                     try:
                         secret = LinkSecret.create()
                     except CredxError as err:
-                        raise IndyHolderError("Error creating link secret") from err
+                        raise AnonCredsHolderError(
+                            "Error creating link secret"
+                        ) from err
                     try:
                         await session.handle.insert(
                             CATEGORY_LINK_SECRET,
@@ -97,7 +99,9 @@ class IndyCredxHolder(IndyHolder):
                         )
                     except AskarError as err:
                         if err.code != AskarErrorCode.DUPLICATE:
-                            raise IndyHolderError("Error saving link secret") from err
+                            raise AnonCredsHolderError(
+                                "Error saving link secret"
+                            ) from err
                         # else: lost race to create record, retry
                     else:
                         break
@@ -132,7 +136,7 @@ class IndyCredxHolder(IndyHolder):
                 credential_offer,
             )
         except CredxError as err:
-            raise IndyHolderError("Error creating credential request") from err
+            raise AnonCredsHolderError("Error creating credential request") from err
         cred_req_json, cred_req_metadata_json = (
             cred_req.to_json(),
             cred_req_metadata.to_json(),
@@ -184,16 +188,18 @@ class IndyCredxHolder(IndyHolder):
                 rev_reg_def,
             )
         except CredxError as err:
-            raise IndyHolderError("Error processing received credential") from err
+            raise AnonCredsHolderError("Error processing received credential") from err
 
         schema_id = cred_recvd.schema_id
         schema_id_parts = re.match(r"^(\w+):2:([^:]+):([^:]+)$", schema_id)
         if not schema_id_parts:
-            raise IndyHolderError(f"Error parsing credential schema ID: {schema_id}")
+            raise AnonCredsHolderError(
+                f"Error parsing credential schema ID: {schema_id}"
+            )
         cred_def_id = cred_recvd.cred_def_id
         cdef_id_parts = re.match(r"^(\w+):3:CL:([^:]+):([^:]+)$", cred_def_id)
         if not cdef_id_parts:
-            raise IndyHolderError(
+            raise AnonCredsHolderError(
                 f"Error parsing credential definition ID: {cred_def_id}"
             )
 
@@ -228,13 +234,13 @@ class IndyCredxHolder(IndyHolder):
                 )
                 if mime_types:
                     await txn.handle.insert(
-                        IndyHolder.RECORD_TYPE_MIME_TYPES,
+                        AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
                         credential_id,
                         value_json=mime_types,
                     )
                 await txn.commit()
         except AskarError as err:
-            raise IndyHolderError("Error storing credential") from err
+            raise AnonCredsHolderError("Error storing credential") from err
 
         return credential_id
 
@@ -262,9 +268,9 @@ class IndyCredxHolder(IndyHolder):
                 cred = Credential.load(row.raw_value)
                 result.append(_make_cred_info(row.name, cred))
         except AskarError as err:
-            raise IndyHolderError("Error retrieving credentials") from err
+            raise AnonCredsHolderError("Error retrieving credentials") from err
         except CredxError as err:
-            raise IndyHolderError("Error loading stored credential") from err
+            raise AnonCredsHolderError("Error loading stored credential") from err
 
         return result
 
@@ -313,7 +319,9 @@ class IndyCredxHolder(IndyHolder):
                 # tag_filter[f"attr::{_normalize_attr_name(name)}::marker"] = "1"
                 restr = pred.get("restrictions")
             else:
-                raise IndyHolderError(f"Unknown presentation request referent: {reft}")
+                raise AnonCredsHolderError(
+                    f"Unknown presentation request referent: {reft}"
+                )
 
             tag_filter = {"$exist": [f"attr::{name}::value" for name in names]}
             if restr:
@@ -363,7 +371,7 @@ class IndyCredxHolder(IndyHolder):
             async with self._profile.session() as session:
                 cred = await session.handle.fetch(CATEGORY_CREDENTIAL, credential_id)
         except AskarError as err:
-            raise IndyHolderError("Error retrieving credential") from err
+            raise AnonCredsHolderError("Error retrieving credential") from err
 
         if not cred:
             raise WalletNotFoundError(
@@ -373,7 +381,7 @@ class IndyCredxHolder(IndyHolder):
         try:
             return Credential.load(cred.raw_value)
         except CredxError as err:
-            raise IndyHolderError("Error loading requested credential") from err
+            raise AnonCredsHolderError("Error loading requested credential") from err
 
     async def credential_revoked(
         self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
@@ -409,13 +417,13 @@ class IndyCredxHolder(IndyHolder):
             async with self._profile.session() as session:
                 await session.handle.remove(CATEGORY_CREDENTIAL, credential_id)
                 await session.handle.remove(
-                    IndyHolder.RECORD_TYPE_MIME_TYPES, credential_id
+                    AnonCredsHolder.RECORD_TYPE_MIME_TYPES, credential_id
                 )
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
                 pass
             else:
-                raise IndyHolderError("Error deleting credential") from err
+                raise AnonCredsHolderError("Error deleting credential") from err
 
     async def get_mime_type(
         self, credential_id: str, attr: str = None
@@ -433,11 +441,13 @@ class IndyCredxHolder(IndyHolder):
         try:
             async with self._profile.session() as session:
                 mime_types_record = await session.handle.fetch(
-                    IndyHolder.RECORD_TYPE_MIME_TYPES,
+                    AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
                     credential_id,
                 )
         except AskarError as err:
-            raise IndyHolderError("Error retrieving credential mime types") from err
+            raise AnonCredsHolderError(
+                "Error retrieving credential mime types"
+            ) from err
         values = mime_types_record and mime_types_record.value_json
         if values:
             return values.get(attr) if attr else values
@@ -470,13 +480,13 @@ class IndyCredxHolder(IndyHolder):
             rev_state = None
             if timestamp:
                 if not rev_states or rev_reg_id not in rev_states:
-                    raise IndyHolderError(
+                    raise AnonCredsHolderError(
                         f"No revocation states provided for credential '{cred_id}' "
                         f"with rev_reg_id '{rev_reg_id}'"
                     )
                 rev_state = rev_states[rev_reg_id].get(timestamp)
                 if not rev_state:
-                    raise IndyHolderError(
+                    raise AnonCredsHolderError(
                         f"No revocation states provided for credential '{cred_id}' "
                         f"with rev_reg_id '{rev_reg_id}' at timestamp {timestamp}"
                     )
@@ -525,7 +535,7 @@ class IndyCredxHolder(IndyHolder):
                 credential_definitions.values(),
             )
         except CredxError as err:
-            raise IndyHolderError("Error creating presentation") from err
+            raise AnonCredsHolderError("Error creating presentation") from err
 
         return presentation.to_json()
 
@@ -561,5 +571,5 @@ class IndyCredxHolder(IndyHolder):
                 tails_file_path,
             )
         except CredxError as err:
-            raise IndyHolderError("Error creating revocation state") from err
+            raise AnonCredsHolderError("Error creating revocation state") from err
         return rev_state.to_json()

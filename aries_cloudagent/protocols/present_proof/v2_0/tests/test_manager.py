@@ -6,14 +6,14 @@ from time import time
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from .....anoncreds.holder import IndyHolder
+from .....anoncreds.holder import AnonCredsHolder
 from .....anoncreds.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,
 )
-from .....anoncreds.verifier import IndyVerifier
+from .....anoncreds.verifier import AnonCredsVerifier
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
@@ -437,7 +437,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             ),
         )
 
-        Holder = mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.holder = Holder()
         get_creds = mock.CoroutineMock(
             return_value=(
@@ -474,14 +474,14 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 }
             )
         )
-        injector.bind_instance(IndyHolder, self.holder)
+        injector.bind_instance(AnonCredsHolder, self.holder)
 
-        Verifier = mock.MagicMock(IndyVerifier, autospec=True)
+        Verifier = mock.MagicMock(AnonCredsVerifier, autospec=True)
         self.verifier = Verifier()
         self.verifier.verify_presentation = mock.CoroutineMock(
             return_value=("true", [])
         )
-        injector.bind_instance(IndyVerifier, self.verifier)
+        injector.bind_instance(AnonCredsVerifier, self.verifier)
 
         self.manager = V20PresManager(self.profile)
 
@@ -1008,7 +1008,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.holder = Holder()
         get_creds = mock.CoroutineMock(
             return_value=(
@@ -1034,7 +1034,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
             )
         )
         self.holder.create_presentation = mock.CoroutineMock(return_value="{}")
-        self.profile.context.injector.bind_instance(IndyHolder, self.holder)
+        self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
         with mock.patch.object(
             V20PresExRecord, "save", autospec=True
@@ -1093,7 +1093,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.holder = Holder()
         get_creds = mock.CoroutineMock(
             return_value=(
@@ -1121,11 +1121,11 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         self.holder.create_presentation = mock.CoroutineMock(return_value="{}")
         self.holder.create_revocation_state = mock.CoroutineMock(
-            side_effect=test_indy_util_module.IndyHolderError(
+            side_effect=test_indy_util_module.AnonCredsHolderError(
                 "Problem", {"message": "Nope"}
             )
         )
-        self.profile.context.injector.bind_instance(IndyHolder, self.holder)
+        self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
         more_magic_rr = mock.MagicMock(
             get_or_fetch_local_tails_path=mock.CoroutineMock(
@@ -1147,7 +1147,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 return_value=mock_attach_decorator
             )
             request_data = {}
-            with self.assertRaises(test_indy_util_module.IndyHolderError):
+            with self.assertRaises(test_indy_util_module.AnonCredsHolderError):
                 await self.manager.create_pres(px_rec_in, request_data)
 
     async def test_create_pres_multi_matching_proposal_creds_names(self):
@@ -1166,7 +1166,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = mock.MagicMock(IndyHolder, autospec=True)
+        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.holder = Holder()
         get_creds = mock.CoroutineMock(
             return_value=(
@@ -1215,7 +1215,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 }
             )
         )
-        self.profile.context.injector.bind_instance(IndyHolder, self.holder)
+        self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
         more_magic_rr = mock.MagicMock(
             get_or_fetch_local_tails_path=mock.CoroutineMock(
@@ -2205,7 +2205,7 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
                 return_value=PresentationVerificationResult(verified=False)
             ),
         ), mock.patch.object(
-            IndyVerifier,
+            AnonCredsVerifier,
             "verify_presentation",
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=True)

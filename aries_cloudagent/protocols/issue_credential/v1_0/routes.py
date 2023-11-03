@@ -14,8 +14,8 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
-from ....anoncreds.holder import IndyHolderError
-from ....anoncreds.issuer import IndyIssuerError
+from ....anoncreds.holder import AnonCredsHolderError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....ledger.error import LedgerError
@@ -810,7 +810,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     except (
         BaseModelError,
         CredentialManagerError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
     ) as err:
@@ -985,7 +985,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     except (
         BaseModelError,
         CredentialManagerError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
     ) as err:
@@ -1098,7 +1098,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     except (
         BaseModelError,
         CredentialManagerError,
-        IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         StorageError,
     ) as err:
@@ -1193,7 +1193,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     except (
         BaseModelError,
         CredentialManagerError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
     ) as err:
@@ -1287,7 +1287,7 @@ async def credential_exchange_store(request: web.BaseRequest):
 
     except (
         CredentialManagerError,
-        IndyHolderError,
+        AnonCredsHolderError,
         StorageError,
     ) as err:  # treat failure to store as mangled on receipt hence protocol error
         if cred_ex_record:

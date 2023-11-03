@@ -14,7 +14,7 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
-from ....anoncreds.holder import IndyHolder, IndyHolderError
+from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.cred_precis import IndyCredPrecisSchema
 from ....anoncreds.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
 from ....anoncreds.models.proof import IndyPresSpecSchema
@@ -413,7 +413,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder = profile.inject(IndyHolder)
+    holder = profile.inject(AnonCredsHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_ex_record._presentation_request.ser,
@@ -422,7 +422,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
             count,
             extra_query,
         )
-    except IndyHolderError as err:
+    except AnonCredsHolderError as err:
         if pres_ex_record:
             async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
@@ -864,7 +864,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (
         BaseModelError,
-        IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         StorageError,
         WalletNotFoundError,

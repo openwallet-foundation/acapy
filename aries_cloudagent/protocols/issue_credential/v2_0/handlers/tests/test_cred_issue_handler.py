@@ -102,7 +102,7 @@ class TestCredentialIssueHandler(IsolatedAsyncioTestCase):
                 ),
                 store_credential=mock.CoroutineMock(
                     side_effect=[
-                        test_module.IndyHolderError,
+                        test_module.AnonCredsHolderError,
                         test_module.StorageError(),
                     ]
                 ),

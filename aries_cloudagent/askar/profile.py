@@ -11,9 +11,9 @@ from weakref import ref
 
 from aries_askar import AskarError, Session, Store
 
-from ..anoncreds.holder import IndyHolder
-from ..anoncreds.issuer import IndyIssuer
-from ..anoncreds.verifier import IndyVerifier
+from ..anoncreds.holder import AnonCredsHolder
+from ..anoncreds.issuer import AnonCredsIssuer
+from ..anoncreds.verifier import AnonCredsVerifier
 from ..cache.base import BaseCache
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
@@ -102,14 +102,14 @@ class AskarProfile(Profile):
         )
 
         injector.bind_provider(
-            IndyHolder,
+            AnonCredsHolder,
             ClassProvider(
                 "aries_cloudagent.anoncreds.credx.holder.IndyCredxHolder",
                 ref(self),
             ),
         )
         injector.bind_provider(
-            IndyIssuer,
+            AnonCredsIssuer,
             ClassProvider(
                 "aries_cloudagent.anoncreds.credx.issuer.IndyCredxIssuer", ref(self)
             ),
@@ -164,7 +164,7 @@ class AskarProfile(Profile):
             )
         if self.ledger_pool or self.settings.get("ledger.ledger_config_list"):
             injector.bind_provider(
-                IndyVerifier,
+                AnonCredsVerifier,
                 ClassProvider(
                     "aries_cloudagent.anoncreds.credx.verifier.IndyCredxVerifier",
                     ref(self),

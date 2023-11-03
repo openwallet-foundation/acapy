@@ -4,7 +4,7 @@ import json
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from .....anoncreds.issuer import IndyIssuer
+from .....anoncreds.issuer import AnonCredsIssuer
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....core.in_memory import InMemoryProfile
@@ -972,7 +972,7 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         issuer.create_credential = mock.CoroutineMock(
             return_value=(json.dumps(INDY_CRED), cred_rev_id)
         )
-        self.context.injector.bind_instance(IndyIssuer, issuer)
+        self.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
         with mock.patch.object(
             V20CredExRecord, "save", autospec=True

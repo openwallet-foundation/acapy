@@ -139,7 +139,7 @@ class TestCredentialRequestHandler(IsolatedAsyncioTestCase):
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
             mock_cred_mgr.return_value.issue_credential = mock.CoroutineMock(
-                side_effect=test_module.IndyIssuerError()
+                side_effect=test_module.AnonCredsIssuerError()
             )
 
             request_context.message = CredentialRequest()

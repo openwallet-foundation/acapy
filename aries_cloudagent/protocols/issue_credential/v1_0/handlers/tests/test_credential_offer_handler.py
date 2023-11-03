@@ -105,7 +105,7 @@ class TestCredentialOfferHandler(IsolatedAsyncioTestCase):
                 return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
             )
             mock_cred_mgr.return_value.create_request = mock.CoroutineMock(
-                side_effect=test_module.IndyHolderError()
+                side_effect=test_module.AnonCredsHolderError()
             )
 
             request_context.message = CredentialOffer()

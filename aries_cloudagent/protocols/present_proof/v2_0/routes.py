@@ -15,7 +15,7 @@ from aiohttp_apispec import (
 from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
-from ....anoncreds.holder import IndyHolder, IndyHolderError
+from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.cred_precis import IndyCredPrecisSchema
 from ....anoncreds.models.proof import IndyPresSpecSchema
 from ....anoncreds.models.proof_request import IndyProofRequestSchema
@@ -547,7 +547,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    indy_holder = profile.inject(IndyHolder)
+    indy_holder = profile.inject(AnonCredsHolder)
     indy_credentials = []
     # INDY
     try:
@@ -564,7 +564,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                     extra_query,
                 )
             )
-    except IndyHolderError as err:
+    except AnonCredsHolderError as err:
         if pres_ex_record:
             async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
@@ -1204,7 +1204,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (
         BaseModelError,
-        IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         V20PresFormatHandlerError,
         StorageError,

@@ -1,4 +1,4 @@
-"""Base Indy Issuer class."""
+"""Base AnonCreds Issuer class."""
 
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Sequence, Tuple
@@ -10,16 +10,16 @@ DEFAULT_CRED_DEF_TAG = "default"
 DEFAULT_SIGNATURE_TYPE = "CL"
 
 
-class IndyIssuerError(BaseError):
+class AnonCredsIssuerError(BaseError):
     """Generic issuer error."""
 
 
-class IndyIssuerRevocationRegistryFullError(IndyIssuerError):
+class AnonCredsIssuerRevocationRegistryFullError(AnonCredsIssuerError):
     """Revocation registry is full when issuing a new credential."""
 
 
-class IndyIssuer(ABC, metaclass=ABCMeta):
-    """Base class for Indy Issuer."""
+class AnonCredsIssuer(ABC, metaclass=ABCMeta):
+    """Base class for AnonCreds Issuer."""
 
     def __repr__(self) -> str:
         """Return a human readable representation of this class.

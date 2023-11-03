@@ -6,7 +6,7 @@ import uuid
 
 from asyncio import shield
 
-from ....anoncreds.issuer import IndyIssuerError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -429,7 +429,7 @@ class TransactionManager:
                             ledger_transaction, sign=False, taa_accept=False
                         )
                     )
-                except (IndyIssuerError, LedgerError) as err:
+                except (AnonCredsIssuerError, LedgerError) as err:
                     raise TransactionManagerError(err.roll_up) from err
 
             ledger_response = json.loads(ledger_response_json)
@@ -803,7 +803,7 @@ class TransactionManager:
                 try:
                     schema_seq_no = str(ledger_response["result"]["txn"]["data"]["ref"])
                     schema_response = await shield(ledger.get_schema(schema_seq_no))
-                except (IndyIssuerError, LedgerError) as err:
+                except (AnonCredsIssuerError, LedgerError) as err:
                     raise TransactionManagerError(err.roll_up) from err
 
             schema_id = schema_response["id"]

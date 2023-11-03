@@ -3,7 +3,7 @@ import json
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from ...anoncreds.holder import IndyHolder
+from ...anoncreds.holder import AnonCredsHolder
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...storage.vc_holder.base import VCHolder
@@ -47,7 +47,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     async def test_credentials_get(self):
         self.request.match_info = {"credential_id": "dummy"}
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 get_credential=mock.CoroutineMock(
                     return_value=json.dumps({"hello": "world"})
@@ -65,7 +65,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     async def test_credentials_get_not_found(self):
         self.request.match_info = {"credential_id": "dummy"}
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 get_credential=mock.CoroutineMock(
                     side_effect=test_module.WalletNotFoundError()
@@ -82,7 +82,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             BaseLedger, mock.create_autospec(BaseLedger)
         )
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(credential_revoked=mock.CoroutineMock(return_value=False)),
         )
 
@@ -105,7 +105,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             BaseLedger, mock.create_autospec(BaseLedger)
         )
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 credential_revoked=mock.CoroutineMock(
                     side_effect=test_module.WalletNotFoundError("no such cred")
@@ -123,7 +123,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             BaseLedger, mock.create_autospec(BaseLedger)
         )
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 credential_revoked=mock.CoroutineMock(
                     side_effect=test_module.LedgerError("down for maintenance")
@@ -137,7 +137,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     async def test_attribute_mime_types_get(self):
         self.request.match_info = {"credential_id": "dummy"}
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 get_mime_type=mock.CoroutineMock(
                     side_effect=[None, {"a": "application/jpeg"}]
@@ -158,7 +158,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     async def test_credentials_remove(self):
         self.request.match_info = {"credential_id": "dummy"}
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(delete_credential=mock.CoroutineMock(return_value=None)),
         )
 
@@ -172,7 +172,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     async def test_credentials_remove_not_found(self):
         self.request.match_info = {"credential_id": "dummy"}
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 delete_credential=mock.CoroutineMock(
                     side_effect=test_module.WalletNotFoundError()
@@ -185,7 +185,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     async def test_credentials_list(self):
         self.request.query = {"start": "0", "count": "10"}
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 get_credentials=mock.CoroutineMock(return_value=[{"hello": "world"}])
             ),
@@ -201,10 +201,10 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
     async def test_credentials_list_x_holder(self):
         self.request.query = {"start": "0", "count": "10"}
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 get_credentials=mock.CoroutineMock(
-                    side_effect=test_module.IndyHolderError()
+                    side_effect=test_module.AnonCredsHolderError()
                 )
             ),
         )

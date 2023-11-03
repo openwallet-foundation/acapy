@@ -23,9 +23,9 @@ from indy_credx import (
 from ...askar.profile import AskarProfile
 
 from ..issuer import (
-    IndyIssuer,
-    IndyIssuerError,
-    IndyIssuerRevocationRegistryFullError,
+    AnonCredsIssuer,
+    AnonCredsIssuerError,
+    AnonCredsIssuerRevocationRegistryFullError,
     DEFAULT_CRED_DEF_TAG,
     DEFAULT_SIGNATURE_TYPE,
 )
@@ -43,7 +43,7 @@ CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
 CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
 
 
-class IndyCredxIssuer(IndyIssuer):
+class IndyCredxIssuer(AnonCredsIssuer):
     """Indy-Credx issuer class."""
 
     def __init__(self, profile: AskarProfile):
@@ -88,9 +88,9 @@ class IndyCredxIssuer(IndyIssuer):
             async with self._profile.session() as session:
                 await session.handle.insert(CATEGORY_SCHEMA, schema_id, schema_json)
         except CredxError as err:
-            raise IndyIssuerError("Error creating schema") from err
+            raise AnonCredsIssuerError("Error creating schema") from err
         except AskarError as err:
-            raise IndyIssuerError("Error storing schema") from err
+            raise AnonCredsIssuerError("Error storing schema") from err
         return (schema_id, schema_json)
 
     async def credential_definition_in_wallet(
@@ -109,7 +109,9 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                 ) is not None
         except AskarError as err:
-            raise IndyIssuerError("Error checking for credential definition") from err
+            raise AnonCredsIssuerError(
+                "Error checking for credential definition"
+            ) from err
 
     async def create_and_store_credential_definition(
         self,
@@ -150,7 +152,7 @@ class IndyCredxIssuer(IndyIssuer):
             cred_def_id = cred_def.id
             cred_def_json = cred_def.to_json()
         except CredxError as err:
-            raise IndyIssuerError("Error creating credential definition") from err
+            raise AnonCredsIssuerError("Error creating credential definition") from err
         try:
             async with self._profile.transaction() as txn:
                 await txn.handle.insert(
@@ -170,7 +172,7 @@ class IndyCredxIssuer(IndyIssuer):
                 )
                 await txn.commit()
         except AskarError as err:
-            raise IndyIssuerError("Error storing credential definition") from err
+            raise AnonCredsIssuerError("Error storing credential definition") from err
         return (cred_def_id, cred_def_json)
 
     async def create_credential_offer(self, credential_definition_id: str) -> str:
@@ -192,9 +194,11 @@ class IndyCredxIssuer(IndyIssuer):
                     CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
                 )
         except AskarError as err:
-            raise IndyIssuerError("Error retrieving credential definition") from err
+            raise AnonCredsIssuerError(
+                "Error retrieving credential definition"
+            ) from err
         if not cred_def or not key_proof:
-            raise IndyIssuerError(
+            raise AnonCredsIssuerError(
                 "Credential definition not found for credential offer"
             )
         try:
@@ -209,7 +213,7 @@ class IndyCredxIssuer(IndyIssuer):
                 key_proof.raw_value,
             )
         except CredxError as err:
-            raise IndyIssuerError("Error creating credential offer") from err
+            raise AnonCredsIssuerError("Error creating credential offer") from err
 
         return credential_offer.to_json()
 
@@ -246,9 +250,11 @@ class IndyCredxIssuer(IndyIssuer):
                     CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                 )
         except AskarError as err:
-            raise IndyIssuerError("Error retrieving credential definition") from err
+            raise AnonCredsIssuerError(
+                "Error retrieving credential definition"
+            ) from err
         if not cred_def or not cred_def_private:
-            raise IndyIssuerError(
+            raise AnonCredsIssuerError(
                 "Credential definition not found for credential issuance"
             )
 
@@ -260,7 +266,7 @@ class IndyCredxIssuer(IndyIssuer):
             try:
                 credential_value = credential_values[attribute]
             except KeyError:
-                raise IndyIssuerError(
+                raise AnonCredsIssuerError(
                     "Provided credential values are missing a value "
                     f"for the schema attribute '{attribute}'"
                 )
@@ -281,15 +287,17 @@ class IndyCredxIssuer(IndyIssuer):
                         CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
                     )
                     if not rev_reg:
-                        raise IndyIssuerError("Revocation registry not found")
+                        raise AnonCredsIssuerError("Revocation registry not found")
                     if not rev_reg_info:
-                        raise IndyIssuerError("Revocation registry metadata not found")
+                        raise AnonCredsIssuerError(
+                            "Revocation registry metadata not found"
+                        )
                     if not rev_reg_def:
-                        raise IndyIssuerError(
+                        raise AnonCredsIssuerError(
                             "Revocation registry definition not found"
                         )
                     if not rev_key:
-                        raise IndyIssuerError(
+                        raise AnonCredsIssuerError(
                             "Revocation registry definition private data not found"
                         )
                     # NOTE: we increment the index ahead of time to keep the
@@ -304,11 +312,11 @@ class IndyCredxIssuer(IndyIssuer):
                             rev_reg_def.raw_value
                         )
                     except CredxError as err:
-                        raise IndyIssuerError(
+                        raise AnonCredsIssuerError(
                             "Error loading revocation registry definition"
                         ) from err
                     if rev_reg_index > rev_reg_def.max_cred_num:
-                        raise IndyIssuerRevocationRegistryFullError(
+                        raise AnonCredsIssuerRevocationRegistryFullError(
                             "Revocation registry is full"
                         )
                     rev_info["curr_id"] = rev_reg_index
@@ -317,7 +325,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     await txn.commit()
             except AskarError as err:
-                raise IndyIssuerError(
+                raise AnonCredsIssuerError(
                     "Error updating revocation registry index"
                 ) from err
 
@@ -350,7 +358,7 @@ class IndyCredxIssuer(IndyIssuer):
                 revoc,
             )
         except CredxError as err:
-            raise IndyIssuerError("Error creating credential") from err
+            raise AnonCredsIssuerError("Error creating credential") from err
 
         return credential.to_json(), credential_revocation_id
 
@@ -382,7 +390,9 @@ class IndyCredxIssuer(IndyIssuer):
         while True:
             attempt += 1
             if attempt >= max_attempt:
-                raise IndyIssuerError("Repeated conflict attempting to update registry")
+                raise AnonCredsIssuerError(
+                    "Repeated conflict attempting to update registry"
+                )
             try:
                 async with self._profile.session() as session:
                     cred_def = await session.handle.fetch(
@@ -399,29 +409,35 @@ class IndyCredxIssuer(IndyIssuer):
                         CATEGORY_REV_REG_INFO, revoc_reg_id
                     )
                 if not cred_def:
-                    raise IndyIssuerError("Credential definition not found")
+                    raise AnonCredsIssuerError("Credential definition not found")
                 if not rev_reg_def:
-                    raise IndyIssuerError("Revocation registry definition not found")
+                    raise AnonCredsIssuerError(
+                        "Revocation registry definition not found"
+                    )
                 if not rev_reg_def_private:
-                    raise IndyIssuerError(
+                    raise AnonCredsIssuerError(
                         "Revocation registry definition private key not found"
                     )
                 if not rev_reg:
-                    raise IndyIssuerError("Revocation registry not found")
+                    raise AnonCredsIssuerError("Revocation registry not found")
                 if not rev_reg_info:
-                    raise IndyIssuerError("Revocation registry metadata not found")
+                    raise AnonCredsIssuerError("Revocation registry metadata not found")
             except AskarError as err:
-                raise IndyIssuerError("Error retrieving revocation registry") from err
+                raise AnonCredsIssuerError(
+                    "Error retrieving revocation registry"
+                ) from err
 
             try:
                 cred_def = CredentialDefinition.load(cred_def.raw_value)
             except CredxError as err:
-                raise IndyIssuerError("Error loading credential definition") from err
+                raise AnonCredsIssuerError(
+                    "Error loading credential definition"
+                ) from err
 
             try:
                 rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def.raw_value)
             except CredxError as err:
-                raise IndyIssuerError(
+                raise AnonCredsIssuerError(
                     "Error loading revocation registry definition"
                 ) from err
 
@@ -430,14 +446,14 @@ class IndyCredxIssuer(IndyIssuer):
                     rev_reg_def_private.raw_value
                 )
             except CredxError as err:
-                raise IndyIssuerError(
+                raise AnonCredsIssuerError(
                     "Error loading revocation registry private key"
                 ) from err
 
             try:
                 rev_reg = RevocationRegistry.load(rev_reg.raw_value)
             except CredxError as err:
-                raise IndyIssuerError("Error loading revocation registry") from err
+                raise AnonCredsIssuerError("Error loading revocation registry") from err
 
             rev_crids = set()
             failed_crids = set()
@@ -489,7 +505,9 @@ class IndyCredxIssuer(IndyIssuer):
                     ),
                 )
             except CredxError as err:
-                raise IndyIssuerError("Error updating revocation registry") from err
+                raise AnonCredsIssuerError(
+                    "Error updating revocation registry"
+                ) from err
 
             try:
                 async with self._profile.transaction() as txn:
@@ -520,7 +538,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     await txn.commit()
             except AskarError as err:
-                raise IndyIssuerError("Error saving revocation registry") from err
+                raise AnonCredsIssuerError("Error saving revocation registry") from err
             break
 
         return (
@@ -548,7 +566,7 @@ class IndyCredxIssuer(IndyIssuer):
                 delta.update_with(d2)
                 return delta.to_json()
             except CredxError as err:
-                raise IndyIssuerError(
+                raise AnonCredsIssuerError(
                     "Error merging revocation registry deltas"
                 ) from err
 
@@ -584,9 +602,11 @@ class IndyCredxIssuer(IndyIssuer):
             async with self._profile.session() as session:
                 cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
         except AskarError as err:
-            raise IndyIssuerError("Error retrieving credential definition") from err
+            raise AnonCredsIssuerError(
+                "Error retrieving credential definition"
+            ) from err
         if not cred_def:
-            raise IndyIssuerError(
+            raise AnonCredsIssuerError(
                 "Credential definition not found for revocation registry"
             )
 
@@ -608,7 +628,7 @@ class IndyCredxIssuer(IndyIssuer):
                 ),
             )
         except CredxError as err:
-            raise IndyIssuerError("Error creating revocation registry") from err
+            raise AnonCredsIssuerError("Error creating revocation registry") from err
 
         rev_reg_def_id = rev_reg_def.id
         rev_reg_def_json = rev_reg_def.to_json()
@@ -632,7 +652,7 @@ class IndyCredxIssuer(IndyIssuer):
                 )
                 await txn.commit()
         except AskarError as err:
-            raise IndyIssuerError("Error saving new revocation registry") from err
+            raise AnonCredsIssuerError("Error saving new revocation registry") from err
 
         return (
             rev_reg_def_id,

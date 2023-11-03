@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Optional
 
-from ....anoncreds.verifier import IndyVerifier
+from ....anoncreds.verifier import AnonCredsVerifier
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -422,7 +422,7 @@ class PresentationManager:
             rev_reg_entries,
         ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
 
-        verifier = self._profile.inject(IndyVerifier)
+        verifier = self._profile.inject(AnonCredsVerifier)
         (verified_bool, verified_msgs) = await verifier.verify_presentation(
             dict(
                 indy_proof_request

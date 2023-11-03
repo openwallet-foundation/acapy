@@ -1321,7 +1321,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_conn_rec.retrieve_by_id.return_value.is_ready = True
 
             mock_issue_cred = mock.CoroutineMock(
-                side_effect=test_module.IndyIssuerError()
+                side_effect=test_module.AnonCredsIssuerError()
             )
             mock_cred_mgr.return_value.issue_credential = mock_issue_cred
 

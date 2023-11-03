@@ -1,6 +1,6 @@
 """Presentation request message handler."""
 
-from .....anoncreds.holder import IndyHolderError
+from .....anoncreds.holder import AnonCredsHolderError
 from .....core.oob_processor import OobMessageProcessor
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -116,7 +116,7 @@ class V20PresRequestHandler(BaseHandler):
                 await responder.send_reply(pres_message)
             except (
                 BaseModelError,
-                IndyHolderError,
+                AnonCredsHolderError,
                 LedgerError,
                 StorageError,
                 WalletNotFoundError,

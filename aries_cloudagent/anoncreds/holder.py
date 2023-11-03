@@ -1,4 +1,4 @@
-"""Base Indy Holder class."""
+"""Base AnonCreds Holder class."""
 
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Tuple, Union
@@ -7,12 +7,12 @@ from ..core.error import BaseError
 from ..ledger.base import BaseLedger
 
 
-class IndyHolderError(BaseError):
+class AnonCredsHolderError(BaseError):
     """Base class for holder exceptions."""
 
 
-class IndyHolder(ABC, metaclass=ABCMeta):
-    """Base class for holder."""
+class AnonCredsHolder(ABC, metaclass=ABCMeta):
+    """Base class for AnonCreds Holder."""
 
     RECORD_TYPE_MIME_TYPES = "attribute-mime-types"
     CHUNK = 256

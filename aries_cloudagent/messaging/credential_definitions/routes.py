@@ -18,7 +18,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
-from ...anoncreds.issuer import IndyIssuer, IndyIssuerError
+from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.models.cred_def import CredentialDefinitionSchema
 from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import Event, EventBus
@@ -276,7 +276,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer = context.inject(IndyIssuer)
+    issuer = context.inject(AnonCredsIssuer)
     try:  # even if in wallet, send it and raise if erroneously so
         async with ledger:
             (cred_def_id, cred_def, novel) = await shield(
@@ -291,7 +291,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 )
             )
 
-    except (IndyIssuerError, LedgerError) as e:
+    except (AnonCredsIssuerError, LedgerError) as e:
         raise web.HTTPBadRequest(reason=e.message) from e
 
     issuer_did = cred_def_id.split(":")[0]

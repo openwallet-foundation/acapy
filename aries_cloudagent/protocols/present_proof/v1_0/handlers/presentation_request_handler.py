@@ -1,6 +1,6 @@
 """Presentation request message handler."""
 
-from .....anoncreds.holder import IndyHolder, IndyHolderError
+from .....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from .....anoncreds.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....core.oob_processor import OobMessageProcessor
 from .....ledger.error import LedgerError
@@ -122,7 +122,7 @@ class PresentationRequestHandler(BaseHandler):
                 req_creds = await indy_proof_req_preview2indy_requested_creds(
                     indy_proof_request,
                     presentation_preview,
-                    holder=context.inject(IndyHolder),
+                    holder=context.inject(AnonCredsHolder),
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")
@@ -143,7 +143,7 @@ class PresentationRequestHandler(BaseHandler):
                 await responder.send_reply(presentation_message)
             except (
                 BaseModelError,
-                IndyHolderError,
+                AnonCredsHolderError,
                 LedgerError,
                 StorageError,
                 WalletNotFoundError,

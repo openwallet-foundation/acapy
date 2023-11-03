@@ -1,7 +1,7 @@
 """Credential offer message handler."""
 
 
-from .....anoncreds.holder import IndyHolderError
+from .....anoncreds.holder import AnonCredsHolderError
 from .....core.oob_processor import OobMessageProcessor
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -94,7 +94,7 @@ class CredentialOfferHandler(BaseHandler):
             except (
                 BaseModelError,
                 CredentialManagerError,
-                IndyHolderError,
+                AnonCredsHolderError,
                 LedgerError,
                 StorageError,
             ) as err:

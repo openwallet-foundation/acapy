@@ -2,7 +2,7 @@ from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
 
 from ....admin.request_context import AdminRequestContext
-from ....anoncreds.issuer import IndyIssuer
+from ....anoncreds.issuer import AnonCredsIssuer
 from ....core.in_memory import InMemoryProfile
 from ....ledger.base import BaseLedger
 from ....ledger.multiple_ledger.ledger_requests_executor import (
@@ -34,8 +34,8 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         )
         self.profile_injector.bind_instance(BaseLedger, self.ledger)
 
-        self.issuer = mock.create_autospec(IndyIssuer)
-        self.profile_injector.bind_instance(IndyIssuer, self.issuer)
+        self.issuer = mock.create_autospec(AnonCredsIssuer)
+        self.profile_injector.bind_instance(AnonCredsIssuer, self.issuer)
 
         self.storage = mock.create_autospec(BaseStorage)
         self.storage.find_all_records = mock.CoroutineMock(

@@ -17,7 +17,7 @@ from marshmallow import fields
 from marshmallow.validate import Regexp
 
 from ...admin.request_context import AdminRequestContext
-from ...anoncreds.issuer import IndyIssuer, IndyIssuerError
+from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.models.schema import SchemaSchema
 from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import Event, EventBus
@@ -254,7 +254,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer = context.inject(IndyIssuer)
+    issuer = context.inject(AnonCredsIssuer)
     async with ledger:
         try:
             # if create_transaction_for_endorser, then the returned "schema_def"
@@ -269,7 +269,7 @@ async def schemas_send_schema(request: web.BaseRequest):
                     endorser_did=endorser_did,
                 )
             )
-        except (IndyIssuerError, LedgerError) as err:
+        except (AnonCredsIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     meta_data = {

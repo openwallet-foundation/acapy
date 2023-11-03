@@ -1,4 +1,4 @@
-"""Base Indy Verifier class."""
+"""Base AnonCreds Verifier class."""
 
 import logging
 
@@ -32,8 +32,8 @@ class PresVerifyMsg(str, Enum):
     PRES_VERIFY_ERROR = "VERIFY_ERROR"
 
 
-class IndyVerifier(ABC, metaclass=ABCMeta):
-    """Base class for Indy Verifier."""
+class AnonCredsVerifier(ABC, metaclass=ABCMeta):
+    """Base class for AnonCreds Verifier."""
 
     def __repr__(self) -> str:
         """Return a human readable representation of this class.

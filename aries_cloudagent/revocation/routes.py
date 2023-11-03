@@ -20,7 +20,7 @@ from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ..admin.request_context import AdminRequestContext
-from ..anoncreds.issuer import IndyIssuerError
+from ..anoncreds.issuer import AnonCredsIssuerError
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -544,7 +544,7 @@ async def revoke(request: web.BaseRequest):
         RevocationManagerError,
         RevocationError,
         StorageError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -575,7 +575,7 @@ async def publish_revocations(request: web.BaseRequest):
         rev_reg_resp = await rev_manager.publish_pending_revocations(
             rrid2crid,
         )
-    except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
+    except (RevocationError, StorageError, AnonCredsIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"rrid2crid": rev_reg_resp})
@@ -919,7 +919,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
         RevocationManagerError,
         RevocationError,
         StorageError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up)

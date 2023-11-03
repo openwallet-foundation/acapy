@@ -2,7 +2,7 @@ from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 
-from ......anoncreds.holder import IndyHolder
+from ......anoncreds.holder import AnonCredsHolder
 from ......anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
@@ -237,7 +237,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
@@ -325,7 +325,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
@@ -341,7 +341,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             )
 
             mock_pres_mgr.return_value.create_presentation = mock.CoroutineMock(
-                side_effect=test_module.IndyHolderError()
+                side_effect=test_module.AnonCredsHolderError()
             )
 
             request_context.connection_ready = True
@@ -404,7 +404,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
@@ -479,7 +479,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
@@ -552,7 +552,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
@@ -631,7 +631,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
                 )
             )
         )
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with mock.patch.object(
@@ -763,7 +763,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
             )
         )
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with mock.patch.object(
             test_module, "PresentationManager", autospec=True
@@ -869,7 +869,7 @@ class TestPresentationRequestHandler(IsolatedAsyncioTestCase):
         mock_holder = mock.MagicMock(
             get_credentials_for_presentation_request_by_referent=by_reft
         )
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         mock_oob_processor = mock.MagicMock(
             find_oob_record_for_inbound_message=mock.CoroutineMock(

@@ -7,7 +7,7 @@ from aries_cloudagent.revocation.models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
 )
 
-from ...anoncreds.issuer import IndyIssuer
+from ...anoncreds.issuer import AnonCredsIssuer
 from ...core.in_memory import InMemoryProfile
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
@@ -44,7 +44,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             clear_pending=mock.CoroutineMock(),
             pending_pub=["2"],
         )
-        issuer = mock.MagicMock(IndyIssuer, autospec=True)
+        issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
         issuer.revoke_credentials = mock.CoroutineMock(
             return_value=(
                 json.dumps(
@@ -60,7 +60,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 [],
             )
         )
-        self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+        self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
         with mock.patch.object(
             test_module.IssuerCredRevRecord,
@@ -105,8 +105,8 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         ) as mock_retrieve:
             mock_retrieve.side_effect = test_module.StorageNotFoundError("no such rec")
 
-            issuer = mock.MagicMock(IndyIssuer, autospec=True)
-            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
+            self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
             with self.assertRaises(RevocationManagerError):
                 await self.manager.revoke_credential_by_cred_ex_id(CRED_EX_ID)
@@ -126,8 +126,8 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 return_value=None
             )
 
-            issuer = mock.MagicMock(IndyIssuer, autospec=True)
-            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
+            self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
             with self.assertRaises(RevocationManagerError):
                 await self.manager.revoke_credential(REV_REG_ID, CRED_REV_ID)
@@ -135,8 +135,8 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
     async def test_revoke_credential_pend(self):
         CRED_REV_ID = "1"
         mock_issuer_rev_reg_record = mock.MagicMock(mark_pending=mock.CoroutineMock())
-        issuer = mock.MagicMock(IndyIssuer, autospec=True)
-        self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+        issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
+        self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
         with mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -196,7 +196,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             "retrieve_by_id",
             mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
         ):
-            issuer = mock.MagicMock(IndyIssuer, autospec=True)
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
             issuer.merge_revocation_registry_deltas = mock.CoroutineMock(
                 side_effect=deltas
             )
@@ -204,7 +204,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             issuer.revoke_credentials = mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
-            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations()
             assert result == {REV_REG_ID: ["1", "2"]}
@@ -255,7 +255,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
             ),
         ):
-            issuer = mock.MagicMock(IndyIssuer, autospec=True)
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
             issuer.merge_revocation_registry_deltas = mock.CoroutineMock(
                 side_effect=deltas
             )
@@ -263,7 +263,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             issuer.revoke_credentials = mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
-            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations({REV_REG_ID: None})
             assert result == {REV_REG_ID: ["1", "2"]}
@@ -315,7 +315,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
             ),
         ):
-            issuer = mock.MagicMock(IndyIssuer, autospec=True)
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
             issuer.merge_revocation_registry_deltas = mock.CoroutineMock(
                 side_effect=deltas
             )
@@ -323,7 +323,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             issuer.revoke_credentials = mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
-            self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+            self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
             result = await self.manager.publish_pending_revocations({REV_REG_ID: "2"})
             assert result == {REV_REG_ID: ["2"]}

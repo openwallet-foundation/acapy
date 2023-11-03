@@ -6,9 +6,9 @@ from unittest import IsolatedAsyncioTestCase
 from marshmallow import ValidationError
 
 from .....admin.request_context import AdminRequestContext
-from .....anoncreds.holder import IndyHolder
+from .....anoncreds.holder import AnonCredsHolder
 from .....anoncreds.models.proof_request import IndyProofReqAttrSpecSchema
-from .....anoncreds.verifier import IndyVerifier
+from .....anoncreds.verifier import AnonCredsVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 
@@ -138,10 +138,10 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
         self.request.query = {"extra_query": {}}
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
-                    mock.CoroutineMock(side_effect=test_module.IndyHolderError())
+                    mock.CoroutineMock(side_effect=test_module.AnonCredsHolderError())
                 )
             ),
         )
@@ -171,7 +171,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=mock.CoroutineMock(
                     return_value=returned_credentials
@@ -204,7 +204,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
 
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     mock.CoroutineMock(return_value=returned_credentials)
@@ -668,7 +668,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             mock.MagicMock(
                 verify_presentation=mock.CoroutineMock(),
             ),
@@ -934,7 +934,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             mock.MagicMock(
                 verify_presentation=mock.CoroutineMock(),
             ),
@@ -1281,7 +1281,7 @@ class TestProofRoutes(IsolatedAsyncioTestCase):
             ),
         )
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             mock.MagicMock(
                 verify_presentation=mock.CoroutineMock(),
             ),

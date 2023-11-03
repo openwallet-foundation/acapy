@@ -17,7 +17,7 @@ from ....config.injection_context import InjectionContext
 from ....wallet.indy import IndySdkWallet
 from ....ledger.indy import IndySdkLedgerPool
 
-from ...issuer import IndyIssuerRevocationRegistryFullError
+from ...issuer import AnonCredsIssuerRevocationRegistryFullError
 
 from .. import issuer as test_module
 
@@ -111,7 +111,7 @@ class TestIndySdkIssuer(IsolatedAsyncioTestCase):
         mock_indy_create_offer.side_effect = IndyError(
             error_code=ErrorCode.WalletInvalidHandle
         )
-        with self.assertRaises(test_module.IndyIssuerError):
+        with self.assertRaises(test_module.AnonCredsIssuerError):
             await self.issuer.credential_definition_in_wallet(CRED_DEF_ID)
 
     @mock.patch("indy.anoncreds.issuer_create_credential_offer")
@@ -168,7 +168,7 @@ class TestIndySdkIssuer(IsolatedAsyncioTestCase):
             for cr_id in test_cred_rev_ids
         ]
 
-        with self.assertRaises(test_module.IndyIssuerError):  # missing attribute
+        with self.assertRaises(test_module.AnonCredsIssuerError):  # missing attribute
             cred_json, revoc_id = await self.issuer.create_credential(
                 test_schema,
                 test_offer,
@@ -253,7 +253,7 @@ class TestIndySdkIssuer(IsolatedAsyncioTestCase):
             for cr_id in test_cred_rev_ids
         ]
 
-        with self.assertRaises(test_module.IndyIssuerError):  # missing attribute
+        with self.assertRaises(test_module.AnonCredsIssuerError):  # missing attribute
             cred_json, revoc_id = await self.issuer.create_credential(
                 test_schema,
                 test_offer,
@@ -333,7 +333,7 @@ class TestIndySdkIssuer(IsolatedAsyncioTestCase):
             error_code=ErrorCode.AnoncredsRevocationRegistryFullError
         )
 
-        with self.assertRaises(IndyIssuerRevocationRegistryFullError):
+        with self.assertRaises(AnonCredsIssuerRevocationRegistryFullError):
             await self.issuer.create_credential(
                 test_schema,
                 test_offer,
@@ -365,7 +365,7 @@ class TestIndySdkIssuer(IsolatedAsyncioTestCase):
             error_code=ErrorCode.WalletInvalidHandle
         )
 
-        with self.assertRaises(test_module.IndyIssuerError):
+        with self.assertRaises(test_module.AnonCredsIssuerError):
             await self.issuer.create_credential(
                 test_schema,
                 test_offer,

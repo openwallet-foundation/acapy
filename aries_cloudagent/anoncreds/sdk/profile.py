@@ -18,9 +18,9 @@ from ...storage.vc_holder.base import VCHolder
 from ...utils.multi_ledger import get_write_ledger_config_for_profile
 from ...wallet.base import BaseWallet
 from ...wallet.indy import IndySdkWallet
-from ..holder import IndyHolder
-from ..issuer import IndyIssuer
-from ..verifier import IndyVerifier
+from ..holder import AnonCredsHolder
+from ..issuer import AnonCredsIssuer
+from ..verifier import AnonCredsVerifier
 from .wallet_setup import IndyOpenWallet, IndyWalletConfig
 
 LOGGER = logging.getLogger(__name__)
@@ -73,13 +73,13 @@ class IndySdkProfile(Profile):
         )
 
         injector.bind_provider(
-            IndyHolder,
+            AnonCredsHolder,
             ClassProvider(
                 "aries_cloudagent.anoncreds.sdk.holder.IndySdkHolder", self.opened
             ),
         )
         injector.bind_provider(
-            IndyIssuer,
+            AnonCredsIssuer,
             ClassProvider(
                 "aries_cloudagent.anoncreds.sdk.issuer.IndySdkIssuer", ref(self)
             ),
@@ -134,7 +134,7 @@ class IndySdkProfile(Profile):
             )
         if self.ledger_pool or self.settings.get("ledger.ledger_config_list"):
             injector.bind_provider(
-                IndyVerifier,
+                AnonCredsVerifier,
                 ClassProvider(
                     "aries_cloudagent.anoncreds.sdk.verifier.IndySdkVerifier",
                     ref(self),

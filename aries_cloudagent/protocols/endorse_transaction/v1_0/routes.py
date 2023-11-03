@@ -15,7 +15,7 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
-from ....anoncreds.issuer import IndyIssuerError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....connections.models.conn_record import ConnRecord
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
@@ -349,7 +349,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
             state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
             use_endorser_did=endorser_did,
         )
-    except (IndyIssuerError, LedgerError) as err:
+    except (AnonCredsIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

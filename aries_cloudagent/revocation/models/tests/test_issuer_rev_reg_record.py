@@ -7,7 +7,7 @@ from typing import Any, Mapping, Type
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from ....anoncreds.issuer import IndyIssuer, IndyIssuerError
+from ....anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ....anoncreds.util import indy_client_dir
 from ....core.in_memory import InMemoryProfile, InMemoryProfileSession
 from ....core.profile import Profile, ProfileSession
@@ -274,13 +274,13 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             cred_def_id=CRED_DEF_ID,
             revoc_reg_id=REV_REG_ID,
         )
-        issuer = mock.MagicMock(IndyIssuer)
-        self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
+        self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
         with mock.patch.object(
             issuer, "create_and_store_revocation_registry", mock.CoroutineMock()
         ) as mock_create_store_rr:
-            mock_create_store_rr.side_effect = IndyIssuerError("Not this time")
+            mock_create_store_rr.side_effect = AnonCredsIssuerError("Not this time")
 
             with self.assertRaises(RevocationError):
                 await rec.generate_registry(self.profile)

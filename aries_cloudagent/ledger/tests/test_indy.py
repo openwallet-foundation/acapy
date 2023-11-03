@@ -8,7 +8,7 @@ from os import path
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from ...anoncreds.issuer import IndyIssuer, IndyIssuerError
+from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.sdk.profile import IndySdkProfile
 from ...config.injection_context import InjectionContext
 from ...cache.in_memory import InMemoryCache
@@ -545,7 +545,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_is_ledger_read_only.return_value = False
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         issuer.create_schema.return_value = ("schema_issuer_did:name:1.0", "{}")
         mock_fetch_schema_by_id.return_value = None
@@ -628,7 +628,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
         mock_wallet = mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.create_schema.return_value = ("1", "{}")
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         mock_add_record = mock.CoroutineMock()
@@ -681,7 +681,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_is_ledger_read_only.return_value = False
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.create_schema.return_value = ("1", "{}")
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         ledger._submit = mock.CoroutineMock(
@@ -723,7 +723,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
         mock_wallet = mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.create_schema.return_value = ("1", "{}")
         ledger = IndySdkLedger(
             IndySdkLedgerPool("name", checked=True, read_only=True), self.profile
@@ -763,9 +763,9 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_is_ledger_read_only.return_value = False
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.create_schema = mock.CoroutineMock(
-            side_effect=IndyIssuerError("dummy error")
+            side_effect=AnonCredsIssuerError("dummy error")
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         with mock.patch.object(
@@ -804,7 +804,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
         mock_wallet = mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.create_schema.return_value = ("1", "{}")
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         ledger._submit = mock.CoroutineMock(
@@ -846,7 +846,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
     ):
         mock_wallet = mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         mock_is_ledger_read_only.return_value = False
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         issuer.create_schema.return_value = ("schema_issuer_did:name:1.0", "{}")
@@ -1163,7 +1163,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.side_effect = [None, cred_def]
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.make_credential_definition_id.return_value = cred_def_id
         issuer.create_and_store_credential_definition.return_value = (
             cred_def_id,
@@ -1255,7 +1255,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.side_effect = [None, cred_def]
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.make_credential_definition_id.return_value = cred_def_id
         issuer.create_and_store_credential_definition.return_value = (
             cred_def_id,
@@ -1333,7 +1333,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.return_value = {"mock": "cred-def"}
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.make_credential_definition_id.return_value = cred_def_id
         issuer.create_and_store_credential_definition.return_value = (
             cred_def_id,
@@ -1391,7 +1391,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_get_schema.return_value = {}
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1432,8 +1432,8 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_get_schema.return_value = {"seqNo": 999}
 
-        issuer = mock.MagicMock(IndyIssuer)
-        issuer.credential_definition_in_wallet.side_effect = IndyIssuerError(
+        issuer = mock.MagicMock(AnonCredsIssuer)
+        issuer.credential_definition_in_wallet.side_effect = AnonCredsIssuerError(
             "common IO error"
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
@@ -1481,7 +1481,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.return_value = {}
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         schema_id = "schema_issuer_did:name:1.0"
         tag = "default"
@@ -1527,9 +1527,9 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.return_value = {}
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.credential_definition_in_wallet = mock.CoroutineMock(
-            side_effect=IndyIssuerError("dummy error")
+            side_effect=AnonCredsIssuerError("dummy error")
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         schema_id = "schema_issuer_did:name:1.0"
@@ -1577,10 +1577,10 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.return_value = {}
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.credential_definition_in_wallet = mock.CoroutineMock(return_value=False)
         issuer.create_and_store_credential_definition = mock.CoroutineMock(
-            side_effect=IndyIssuerError("dummy error")
+            side_effect=AnonCredsIssuerError("dummy error")
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         schema_id = "schema_issuer_did:name:1.0"
@@ -1628,7 +1628,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.return_value = {}
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.credential_definition_in_wallet = mock.CoroutineMock(return_value=False)
         issuer.create_and_store_credential_definition = mock.CoroutineMock(
             return_value=("cred-def-id", "cred-def-json")
@@ -1681,7 +1681,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.return_value = cred_def
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.credential_definition_in_wallet = mock.CoroutineMock(return_value=False)
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         schema_id = "schema_issuer_did:name:1.0"
@@ -1738,7 +1738,7 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.return_value = cred_def
 
-        issuer = mock.MagicMock(IndyIssuer)
+        issuer = mock.MagicMock(AnonCredsIssuer)
         issuer.make_credential_definition_id.return_value = cred_def_id
         issuer.create_and_store_credential_definition.return_value = (
             cred_def_id,
@@ -1821,9 +1821,9 @@ class TestIndySdkLedger(IsolatedAsyncioTestCase):
 
         mock_fetch_cred_def.return_value = None
 
-        issuer = mock.MagicMock(IndyIssuer)
-        issuer.create_and_store_credential_definition.side_effect = IndyIssuerError(
-            "invalid structure"
+        issuer = mock.MagicMock(AnonCredsIssuer)
+        issuer.create_and_store_credential_definition.side_effect = (
+            AnonCredsIssuerError("invalid structure")
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         schema_id = "schema_issuer_did:name:1.0"

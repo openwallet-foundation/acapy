@@ -106,7 +106,7 @@ class TestCredentialIssueHandler(IsolatedAsyncioTestCase):
                     return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
                 ),
                 store_credential=mock.CoroutineMock(
-                    side_effect=test_module.IndyHolderError()
+                    side_effect=test_module.AnonCredsHolderError()
                 ),
                 send_credential_ack=mock.CoroutineMock(
                     return_value=(
