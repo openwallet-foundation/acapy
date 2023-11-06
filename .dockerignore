@@ -10,3 +10,9 @@ test-reports
 docker
 env
 .venv
+.devcontainer
+.vscode
+.vscode-sample
+.pytest_cache
+.ruff_cache
+.pytest.ini
