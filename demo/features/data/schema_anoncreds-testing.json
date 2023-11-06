@@ -1,0 +1,9 @@
+{
+    "schema": {
+        "attrNames": ["name", "age"],
+        "issuerId": "",
+        "name": "anoncreds-testing",
+        "version": "0.1"
+    },
+    "options": {}
+}
