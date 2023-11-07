@@ -598,6 +598,53 @@ def step_impl(context, issuer):
 
 
 @when(
+    '"{holder}" requests a json-ld credential with data {credential_data} from "{issuer}"'
+)
+def step_impl(context, issuer, holder, credential_data):
+    issuer_agent = context.active_agents[issuer]
+    holder_agent = context.active_agents[holder]
+    data = {
+        "auto_remove": False,
+        "comment": "I would like this credential please",
+        "connection_id": holder_agent["agent"].agent.connection_id,
+        "filter": {
+            "ld_proof": {
+                "credential": {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                    ],
+                    "type": [
+                        "VerifiableCredential",
+                        "PermanentResident",
+                    ],
+                    "id": "https://credential.example.com/residents/1234567890",
+                    "issuer": issuer_agent["agent"].agent.did,
+                    "issuanceDate": "2020-01-01T12:00:00Z",
+                    "credentialSubject": {
+                        "type": ["PermanentResident"],
+                        "id": holder_agent["agent"].agent.did,
+                        "givenName": "ALICE",
+                        "familyName": "SMITH",
+                        "gender": "Female",
+                        "birthCountry": "Bahamas",
+                        "birthDate": "1958-07-17",
+                    },
+                },
+                "options": {"proofType": SIG_TYPE_BLS},
+            }
+        },
+    }
+
+    resp = agent_container_POST(
+        holder_agent["agent"],
+        "/issue-credential-2.0/send-request",
+        data,
+    )
+    assert resp["state"] == "request-sent"
+
+
+@when(
     '"{issuer}" offers "{holder}" an anoncreds credential with data {credential_data}'
 )
 def step_impl(context, issuer, holder, credential_data):
