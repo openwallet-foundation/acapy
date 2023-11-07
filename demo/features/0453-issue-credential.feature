@@ -50,7 +50,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
        | --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
-  @T003.0-RFC0453 @GHA
+  @T003-RFC0453 @GHA
   Scenario Outline: Holder accepts a deleted credential offer
     Given we have "2" agents
       | name  | role    | capabilities        |

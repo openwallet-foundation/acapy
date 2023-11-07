@@ -501,6 +501,103 @@ def step_impl(context, issuer, holder, credential_data):
 
 
 @when(
+    '"{issuer}" offers and deletes "{holder}" a json-ld credential with data {credential_data}'
+)
+def step_impl(context, issuer, holder, credential_data):
+    # initiate a cred exchange with a json-ld credential
+    agent = context.active_agents[issuer]
+    holder_agent = context.active_agents[holder]
+
+    # holder and issuer have no records...
+    resp = agent_container_GET(
+        agent["agent"],
+        "/issue-credential-2.0/records",
+    )
+    assert len(resp["results"]) == 0
+
+    resp = agent_container_GET(
+        holder_agent["agent"],
+        "/issue-credential-2.0/records",
+    )
+    assert len(resp["results"]) == 0
+
+    offer_request = {
+        "connection_id": agent["agent"].agent.connection_id,
+        "filter": {
+            "ld_proof": {
+                "credential": {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                    ],
+                    "type": [
+                        "VerifiableCredential",
+                        "PermanentResident",
+                    ],
+                    "id": "https://credential.example.com/residents/1234567890",
+                    "issuer": agent["agent"].agent.did,
+                    "issuanceDate": "2020-01-01T12:00:00Z",
+                    "credentialSubject": {
+                        "type": ["PermanentResident"],
+                        # let the holder set this
+                        # "id": holder_agent["agent"].agent.did,
+                        "givenName": "ALICE",
+                        "familyName": "SMITH",
+                        "gender": "Female",
+                        "birthCountry": "Bahamas",
+                        "birthDate": "1958-07-17",
+                    },
+                },
+                "options": {"proofType": SIG_TYPE_BLS},
+            }
+        },
+    }
+
+    resp = agent_container_POST(
+        agent["agent"],
+        "/issue-credential-2.0/send-offer",
+        offer_request,
+    )
+    cred_ex_id = resp["cred_ex_id"]
+
+    # issuer has one record
+    resp = agent_container_GET(
+        agent["agent"],
+        "/issue-credential-2.0/records",
+    )
+    assert len(resp["results"]) == 1
+
+    # delete this immediately, hopefully this is committed before the holder "accepts" it
+    # for json-ld this should turn into a request from the holder
+    resp = agent_container_DELETE(
+        agent["agent"],
+        f"/issue-credential-2.0/records/{cred_ex_id}",
+    )
+
+    # now issuer has no records
+    resp = agent_container_GET(
+        agent["agent"],
+        "/issue-credential-2.0/records",
+    )
+    assert len(resp["results"]) == 0
+
+
+@given('"{issuer}" has the exchange completed')
+@then('"{issuer}" has the exchange completed')
+def step_impl(context, issuer):
+    agent = context.active_agents[issuer]
+
+    # new exchange is initiated by the holder, so issuer has one record
+    async_sleep(5.0)
+    resp = agent_container_GET(
+        agent["agent"],
+        "/issue-credential-2.0/records",
+    )
+    assert len(resp["results"]) == 1
+    assert resp["results"][0]["cred_ex_record"]["state"] == "done"
+
+
+@when(
     '"{issuer}" offers "{holder}" an anoncreds credential with data {credential_data}'
 )
 def step_impl(context, issuer, holder, credential_data):
