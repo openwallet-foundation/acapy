@@ -249,3 +249,19 @@ def agent_container_PUT(
         text=text,
         params=params,
     )
+
+
+def agent_container_DELETE(
+    the_container: AgentContainer,
+    path: str,
+    data: dict = None,
+    text: bool = False,
+    params: dict = None,
+) -> dict:
+    return run_coroutine(
+        the_container.admin_DELETE,
+        path,
+        data=data,
+        text=text,
+        params=params,
+    )

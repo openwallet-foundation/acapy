@@ -1036,6 +1036,34 @@ class DemoAgent:
             self.log(f"Error during PUT {path}: {str(e)}")
             raise
 
+    async def admin_DELETE(
+        self, path, data=None, text=False, params=None, headers=None
+    ) -> ClientResponse:
+        try:
+            EVENT_LOGGER.debug(
+                "Controller DELETE %s request to Agent%s",
+                path,
+                (" with data: \n{}".format(repr_json(data)) if data else ""),
+            )
+            if self.multitenant:
+                if not headers:
+                    headers = {}
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
+            response = await self.admin_request(
+                "DELETE", path, data, text, params, headers=headers
+            )
+            EVENT_LOGGER.debug(
+                "Response from DELETE %s received: \n%s",
+                path,
+                repr_json(response),
+            )
+            return response
+        except ClientError as e:
+            self.log(f"Error during DELETE {path}: {str(e)}")
+            raise
+
     async def admin_GET_FILE(self, path, params=None, headers=None) -> bytes:
         try:
             if self.multitenant:

@@ -847,7 +847,7 @@ class TestCredentialManager(IsolatedAsyncioTestCase):
             mock.CoroutineMock(),
         ) as mock_retrieve:
             mock_retrieve.side_effect = (StorageNotFoundError(),)
-            with self.assertRaises(CredentialManagerError):
+            with self.assertRaises(StorageNotFoundError):
                 cx_rec = await self.manager.receive_request(request, mock_conn, None)
 
                 mock_retrieve.assert_called_once_with(

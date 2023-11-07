@@ -102,6 +102,12 @@ class V20CredFormatHandler(ABC):
     ) -> None:
         """Receive format specific credential request message."""
 
+    def can_receive_request_without_offer(
+        self,
+    ) -> bool:
+        """Can this handler receive credential request without an offer?"""
+        return False
+
     @abstractmethod
     async def issue_credential(
         self, cred_ex_record: V20CredExRecord, retries: int = 5
