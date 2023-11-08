@@ -7,7 +7,7 @@ import re
 import string
 from typing import Dict, Optional
 import urllib.parse as urllib_parse
-import importlib
+from importlib import resources
 
 import requests
 from pyld import jsonld
@@ -28,7 +28,7 @@ def _load_jsonld_file(
         "contentType": "application/ld+json",
         "contextUrl": None,
         "documentUrl": original_url,
-        "document": (importlib.resources.files(resource_path) / filename).read_text(),
+        "document": (resources.files(resource_path) / filename).read_text(),
     }
 
 
@@ -44,7 +44,11 @@ class StaticCacheJsonLdDownloader:
         "https://w3id.org/security/suites/ed25519-2020/v1": "ed25519-2020-context.jsonld",
     }
 
-    def __init__(self, document_downloader=None, document_parser=None):
+    def __init__(
+        self,
+        document_downloader: Optional["JsonLdDocumentDownloader"] = None,
+        document_parser: Optional["JsonLdDocumentParser"] = None,
+    ):
         """Load static document on initialization."""
         self.documents_downloader = document_downloader or JsonLdDocumentDownloader()
         self.document_parser = document_parser or JsonLdDocumentParser()
@@ -54,7 +58,7 @@ class StaticCacheJsonLdDownloader:
             for url, filename in StaticCacheJsonLdDownloader.CONTEXT_FILE_MAPPING.items()
         }
 
-    def load(self, url, options=None):
+    def load(self, url: str, options: Optional[Dict] = None):
         """Load a jsonld document from URL.
 
         Prioritize local static cache before attempting to download from the URL.
@@ -68,7 +72,7 @@ class StaticCacheJsonLdDownloader:
         logger.debug("Context %s not in static cache, resolving from URL.", url)
         return self._live_load(url, options)
 
-    def _live_load(self, url, options=None):
+    def _live_load(self, url: str, options: Optional[Dict] = None):
         doc, link_header = self.documents_downloader.download(url, options)
         return self.document_parser.parse(doc, link_header)
 
@@ -76,7 +80,7 @@ class StaticCacheJsonLdDownloader:
 class JsonLdDocumentDownloader:
     """JsonLd documents downloader."""
 
-    def download(self, url: str, options: Dict, **kwargs):
+    def download(self, url: str, options: Optional[Dict], **kwargs):
         """Retrieves JSON-LD at the given URL.
 
         This was lifted from pyld.documentloader.requests.
