@@ -324,10 +324,13 @@ class PresentationManager:
         # But present proof supports the old-style AIP-1 connectionless exchange that
         # bypasses the oob record. So we can't verify if an oob record is associated with
         # the exchange because it is possible that there is None
+        #
+        # A connectionless proof doesn't have a connection_id, so default to None
+        # even if there is no oob record.
         connection_id = (
             None
             if oob_record
-            else connection_record.connection_id
+            else getattr(connection_record, 'connection_id', None)
             if connection_record
             else None
         )
