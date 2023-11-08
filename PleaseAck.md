@@ -2,7 +2,7 @@
 
 
 - [List of protocols that include `please_ack` decorator](#list-of-protocols-that-include-please_ack-decorator)
-- [Possible options to hande the `please_ack` decorator](#possible-options-to-hande-the-please_ack-decorator)
+- [Possible options to handle the `please_ack` decorator](#possible-options-to-handle-the-please_ack-decorator)
   - [Option 1: common handler](#option-1-common-handler)
     - [Problems](#problems)
       - [The common handler doesn't exist yet](#the-common-handler-doesnt-exist-yet)
@@ -12,6 +12,9 @@
       - [Possibility to send an `ack` when it is not allowed by the protocol](#possibility-to-send-an-ack-when-it-is-not-allowed-by-the-protocol)
   - [Option 2: support for `please_ack` in each protocol separately](#option-2-support-for-please_ack-in-each-protocol-separately)
   - [Option 3: common handler ('RECEIPT') + support in each protocol ('OUTCOME')](#option-3-common-handler-receipt--support-in-each-protocol-outcome)
+    - [Open question in context of the common handler](#open-question-in-context-of-the-common-handler)
+      - [Should we adopt ACK message type in each protocol to handle `RECEIPT`-decorated messages?](#should-we-adopt-ack-message-type-in-each-protocol-to-handle-receipt-decorated-messages)
+      - [How to process the ACKs received in response to the `RECEIPT`-decorated messages?](#how-to-process-the-acks-received-in-response-to-the-receipt-decorated-messages)
 - [Conclusions](#conclusions)
 - [Open questions](#open-questions)
   - [List of protocols](#list-of-protocols)
@@ -140,6 +143,59 @@ The `OUTCOME` is processed by the message-specific handler.
 - it is required to adopt `ack` message type in each protocol in order to be able to send an adopted type of `ack` message in response to `please_ack(on=['RECEIPT'])`
 - implicit dependency between the common handler and the message-specific handler - developers who implement new protocols should keep in mind that message handler must ignore `please_ack(on=['RECEIPT'])` decorator
 
+#### Open question in context of the common handler
+
+##### Should we adopt ACK message type in each protocol to handle `RECEIPT`-decorated messages?
+
+**Some context:**
+
+Current version of ACA-py code is implemented in such a way that the message handler is found by the type of message being processed.
+For example, there are `issue-credential/2.0/ack` and `present-proof/2.0/ack` message types. When the message of specific type is received ACA-py maps the message type to the message handler class. Such solution is quite simple.
+
+
+**Problem description:**
+
+The [please-ack RFC](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) doesn't define what type of ACK messages should be used in responses to `RECEIPT`-decorated messages. Therefore there are several options:
+
+1. Use the original `notification/1.0/ack` ACK message
+
+**Advantages:**
+- The common handler doesn't require any specific code to find the particular ACK message type to send as a response to the `RECEIPT`-decorated message. It just sends the same `notification/1.0/ack` always.
+- It is not necessary to adopt the ACK message type in each protocol.
+
+**Disadvantages:**
+- Some protocols (for example, `credential-issue-v2` and `present-proof-v2`) have already adopted ACK for their purposes. Using both the original and adopted ACK message types in the same protocol may be considered inconsistent.
+- It requires to implement some more complicated code to find the particular message handler and protocol manager classes based on `~thread` decorator specified in the message (as mentioned above, currently ACA-py uses only `~type` for this purpose).
+
+
+2. Adopt the `notification/1.0/ack` type in each protocol
+
+**Advantages:**
+- It is not necessary to change the code that is responsible for search the particular message handler and protocol manager.
+
+**Disadvantages:**
+- It requires to adopt the ACK message type in each protocol.
+- It requires to change the code of ACK message handlers for the protocols that have already adopted ACK messages since the same message can be received in different protcol states (not only when the protocol is waiting the final ACK from the other side to terminate the protocol being executed).
+
+3. Use adopted ACK messages if there is an adopted message type in the protocol, use original ACK message otherwise
+
+**Advantages:**
+- It is not necessary to adopt the ACK message type in each protocol.
+- If the protocol has already adopted the ACK message the adopted type will be used. There is no unexpected inconsistency (using both the original and adopted ACK message types in the same protocol).
+
+**Disadvantages:**
+- It requires to implement some more complicated code to find the particular message handler and protocol manager classes based on `~thread` decorator specified in the message (for cases when the original ACK message is used).
+- It requires to change the code of ACK message handlers for the protocols that have already adopted ACK messages since the same message can be received in different protcol states (not only when the protocol is waiting the final ACK from the other side to terminate the protocol being executed).
+
+
+##### How to process the ACKs received in response to the `RECEIPT`-decorated messages?
+
+There are possible options:
+1. Put message to logs
+2. Call the controller's webhook
+
+
+
 
 ## Conclusions
 
@@ -187,8 +243,32 @@ If the `please_ack` is set an `issuer` moves through the states `REQUEST_RECEIVE
 
 If the `please_ack` is not set an `issuer` moves through the states `REQUEST_RECEIVED` -> `DONE`.
 
-Current ACA-py implementation doesn't support the `please_ack` therefore an `issuer` always moves through `STATE_ISSUED` state. An `issuer` in this state expects an `ack` from a `holder` that will not be sent in case if the `holder's` agent is based on the new version of code.
-It means that agents based on different versions of `ACA-py` (current and new one that support the `please_ack`) will be incompatible.
+**Problem description:**
+
+Current ACA-Py implementation doesn't support the `please_ack`, therefore an `issuer` always moves through `STATE_ISSUED` state. An issuer in this state expects the `ack` from the `holder`.
+
+Let's assume an issuer agent is based on current version of code while a holder agent is based on new version of code (where please_ack is supported).
+
+Then the issuer sends credentials and waits for an ACK (it is always sent in current version of ACA-py). But the holder doesn't send the ACK message because the `OUTCOME` is not attached by the issuer. The issuer can't reach the `DONE` state.
+
+There are several possible options to resolve the issue:
+
+1. Quick and temporary solution. The idea is to send an ACK message always no matter if the issuer supports `please_ack` or not (since the holder agent doesn't know it) just to have backward compatibility with all ACA-Py agents.
+
+**Disadvantages:**
+
+- The issuer may log error in case it supports the please_ack and doesn't attach it to the `V20CredIssue` message (therefore doesn't wait for the ACK message).
+
+2. Quick and not good solution. The idea is to have some config value that will specify if ACA-Py agent behaves in backward-compatible way (as mentioned in option 1) or not (ignore that fact that some agents may not support `please_ack` yet).
+
+3. Good and not quick solution. The idea is to use discover-features protocol to check if the other side supports the `please_ack` or not and behave taking it into account.
+
+**Disadvantages:**
+
+- It requires additional effort to implement a good solution based on it.
+First, currently discovery protocol is not performed automatically (after connection is established between agents) in order to ask the other side what features it supports.
+Second, there is no any specific code to associate set of supported features with the particular agent/connection (to use it to check if the agent has to communicate in backward-compatible way or not).
+In the end, the discover-features-v2 protocol doesn't allow to ask about decorator support in context a particular protocol (it would be fine to ask if the `please_ack` is supported by the `credential-issue-v2 protocol`, for example).
 
 
 ### `0454-present-proof-v2` protocol issue
