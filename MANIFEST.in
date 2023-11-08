@@ -6,7 +6,4 @@ include aries_cloudagent/vc/ld_proofs/resources/status_list_context.jsonld
 include aries_cloudagent/vc/ld_proofs/resources/security-v1-context.jsonld
 include aries_cloudagent/vc/ld_proofs/resources/security-v2-context.jsonld
 include aries_cloudagent/vc/ld_proofs/resources/ed25519-2020-context.jsonld
-include requirements.txt
-include requirements.dev.txt
-include requirements.indy.txt
 include README.md
