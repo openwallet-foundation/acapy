@@ -11,22 +11,14 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields
 
+from ...admin.request_context import AdminRequestContext
 from ...anoncreds.base import AnonCredsResolutionError
 from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.registry import AnonCredsRegistry
-
-from ...wallet.base import BaseWallet
-
-from ...admin.request_context import AdminRequestContext
-
 from ...indy.models.cred_def import CredentialDefinitionSchema
-
 from ...ledger.error import BadLedgerRequestError
-
-
 from ...protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
@@ -37,9 +29,8 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
 from ...protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
 )
-
 from ...storage.error import StorageError
-
+from ...wallet.base import BaseWallet
 from ..models.openapi import OpenAPISchema
 from ..valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
@@ -54,7 +45,6 @@ from .util import (
     CredDefQueryStringSchema,
     notify_cred_def_event,
 )
-
 
 
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):

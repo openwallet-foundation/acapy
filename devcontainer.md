@@ -66,6 +66,8 @@ To open ACA-Py in a devcontainer, we open the *root* of this repository. We can 
 
 *NOTE* follow any prompts to install `Python Extension` or reload window for `Pylance` when first building the container.
 
+*ADDITIONAL NOTE* we advise that after each time you rebuild the container that you also perform: `Developer: Reload Window` as some extensions seem to require this in order to work as expected.
+
 #### devcontainer.json
 
 When the [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.9 image (bash shell) and loading it with all the ACA-Py requirements (and black). Since this is a Docker container, we will also open ports `9060` and `9061`, allowing you to run/debug ACA-Py with those ports available to your `localhost` (more on those later). We also load a few Visual Studio settings (for running Pytests and formatting with Flake and Black).
@@ -80,6 +82,23 @@ black . --check
 ```
 
 The first command should show you that `aries_cloudagent` module is loaded (ACA-Py). The others are examples of code quality checks that ACA-Py does on commits (if you have [`precommit`](https://pre-commit.com) installed) and Pull Requests.
+
+When running `ruff check .` in the terminal, you may see `error: Failed to initialize cache at /.ruff_cache: Permission denied (os error 13)` - that's ok. If there are actual ruff errors, you should see something like:
+
+```
+error: Failed to initialize cache at /.ruff_cache: Permission denied (os error 13)
+admin/base_server.py:7:7: D101 Missing docstring in public class
+Found 1 error.
+```
+
+#### extensions
+
+We have added Black formatter and Ruff extensions. Although we have added launch settings for both `ruff` and `black`, you can also use the extension commands from the command palette.
+
+- `Ruff: Format Document`
+- `Ruff: Fix all auto-fixable problems`
+
+More importantly, these extensions are now added to document save, so files will be formatted and checked. We advise that after each time you rebuild the container that you also perform: `Developer: Reload Window` to ensure the extensions are loaded correctly.
 
 ## Debugging
 
@@ -98,6 +117,8 @@ Pytest is installed and almost ready; however, we must build the test list. In t
 See [Python Testing](https://code.visualstudio.com/docs/python/testing) for more details, and [Test Commands](https://code.visualstudio.com/docs/python/testing#_test-commands) for usage.
 
 *IMPORTANT*: our pytests include coverage, which will prevent the [debugger from working](https://code.visualstudio.com/docs/python/testing#_debug-tests). One way around this would be to have a `.vscode/settings.json` that says not to use coverage (see above). This will allow you to set breakpoints in the pytest and code under test and use commands such as `Test: Debug Tests in Current File` to start debugging.
+
+*WARNING*: the project configuration found in `pyproject.toml` include performing `ruff` checks when we run `pytest`. Including `ruff` does not play nice with the Testing view. In order to have our pytests discoverable AND available in the Testing view, we create a `.pytest.ini` when we build the devcontainer. This file will not be commited to the repo, nor does it impact `./scripts/run_tests` but it will impact if you manually run the pytest commands locally outside of the devcontainer. Just be aware that the file will stay on your file system after you shutdown the devcontainer.
 
 
 ### ACA-Py
