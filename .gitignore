@@ -190,3 +190,6 @@ _build/
 
 # Open API build
 open-api/.build
+
+# devcontainer
+.pytest.ini
