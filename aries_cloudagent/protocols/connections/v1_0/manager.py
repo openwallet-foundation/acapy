@@ -21,7 +21,7 @@ from .message_types import ARIES_PROTOCOL as CONN_PROTO
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
-from .messages.problem_report import ProblemReportReason
+from .messages.problem_report import ConnectionProblemReport, ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 
 
@@ -757,3 +757,24 @@ class ConnectionManager(BaseConnectionManager):
             await responder.send(request, connection_id=connection.connection_id)
 
         return connection
+
+    async def receive_problem_report(
+        self,
+        conn_rec: ConnRecord,
+        report: ConnectionProblemReport,
+    ):
+        """Receive problem report."""
+        if not report.problem_code:
+            raise ConnectionManagerError("Missing problem_code in problem report")
+
+        if report.problem_code in {reason.value for reason in ProblemReportReason}:
+            self._logger.info("Problem report indicates connection is abandoned")
+            async with self.profile.session() as session:
+                await conn_rec.abandon(
+                    session,
+                    reason=report.problem_code,
+                )
+        else:
+            raise ConnectionManagerError(
+                f"Received unrecognized problem report: {report.problem_code}"
+            )
