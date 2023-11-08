@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....core.event_bus import EventBus, MockEventBus
 from .....admin.request_context import AdminRequestContext
@@ -9,7 +9,7 @@ from ..models.menu_form import MenuForm
 from ..models.menu_option import MenuOption
 
 
-class TestActionMenuUtil(AsyncTestCase):
+class TestActionMenuUtil(IsolatedAsyncioTestCase):
     async def test_save_retrieve_delete_connection_menu(self):
         context = AdminRequestContext.test_context()
 

@@ -1,10 +1,10 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..base import InjectionError
 from ..injection_context import InjectionContext, InjectionContextError
 
 
-class TestInjectionContext(AsyncTestCase):
+class TestInjectionContext(IsolatedAsyncioTestCase):
     def setUp(self):
         self.test_key = "TEST"
         self.test_value = "VALUE"

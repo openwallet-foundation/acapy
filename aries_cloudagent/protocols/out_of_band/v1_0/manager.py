@@ -362,10 +362,11 @@ class OutOfBandManager(BaseConnectionManager):
                     routing_keys=routing_keys,
                 )
             ]
-            invi_url = invi_msg.to_url()
             if goal and goal_code:
                 invi_msg.goal_code = goal_code
                 invi_msg.goal = goal
+
+            invi_url = invi_msg.to_url()
 
             # Update connection record
             if conn_rec:

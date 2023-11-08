@@ -1,4 +1,5 @@
-from asynctest import TestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 
 from aries_cloudagent.wallet.key_type import ED25519
 
@@ -9,8 +10,8 @@ from ...error import LinkedDataProofException
 from ..wallet_key_pair import WalletKeyPair
 
 
-class TestWalletKeyPair(TestCase):
-    async def setUp(self):
+class TestWalletKeyPair(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
 
     async def test_sign_x_no_public_key(self):
@@ -27,12 +28,12 @@ class TestWalletKeyPair(TestCase):
             key_type=ED25519,
             public_key_base58=public_key_base58,
         )
-        signed = async_mock.MagicMock()
+        signed = mock.MagicMock()
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             InMemoryWallet,
             "sign_message",
-            async_mock.CoroutineMock(return_value=signed),
+            mock.CoroutineMock(return_value=signed),
         ) as sign_message:
             singed_ret = await key_pair.sign(b"Message")
 
@@ -56,10 +57,10 @@ class TestWalletKeyPair(TestCase):
             public_key_base58=public_key_base58,
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             InMemoryWallet,
             "verify_message",
-            async_mock.CoroutineMock(return_value=True),
+            mock.CoroutineMock(return_value=True),
         ) as verify_message:
             verified = await key_pair.verify(b"Message", b"signature")
 

@@ -1,4 +1,4 @@
-from asynctest import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from ...core.in_memory import InMemoryProfile

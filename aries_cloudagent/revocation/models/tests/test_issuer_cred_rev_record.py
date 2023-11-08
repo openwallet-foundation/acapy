@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
 from ....storage.base import StorageNotFoundError
@@ -10,7 +10,7 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:1234:default"
 REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
 
-class TestIssuerCredRevRecord(AsyncTestCase):
+class TestIssuerCredRevRecord(IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = InMemoryProfile.test_session()
 

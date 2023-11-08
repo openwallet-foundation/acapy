@@ -1,4 +1,4 @@
-from asynctest import TestCase
+from unittest import TestCase
 
 from ..check import get_properties_without_context
 from ...tests.document_loader import custom_document_loader

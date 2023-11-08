@@ -522,13 +522,23 @@ class ConnRecord(BaseRecord):
         """
         await super().delete_record(session)
 
+        storage = session.inject(BaseStorage)
         # Delete metadata
         if self.connection_id:
-            storage = session.inject(BaseStorage)
             await storage.delete_all_records(
                 self.RECORD_TYPE_METADATA,
                 {"connection_id": self.connection_id},
             )
+
+        # Delete attached messages
+        await storage.delete_all_records(
+            self.RECORD_TYPE_REQUEST,
+            {"connection_id": self.connection_id},
+        )
+        await storage.delete_all_records(
+            self.RECORD_TYPE_INVITATION,
+            {"connection_id": self.connection_id},
+        )
 
     async def abandon(self, session: ProfileSession, *, reason: Optional[str] = None):
         """Set state to abandoned."""

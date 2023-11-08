@@ -13,31 +13,43 @@
     "customizations": {
         "vscode": {
             "extensions": [
-				"ms-python.python",
-				"ms-python.vscode-pylance"
-			],
+              "ms-python.python",
+              "ms-python.black-formatter",
+              "charliermarsh.ruff"
+            ],
             "settings": {
                 "python.testing.pytestArgs": [
-                    ".",
+                    "aries_cloudagent",
                     "--no-cov"
                 ],
+                "python.testing.autoTestDiscoverOnSaveEnabled": true,
                 "python.testing.unittestEnabled": false,
                 "python.testing.pytestEnabled": true,
                 "python.testing.pytestPath": "pytest",
-                "editor.defaultFormatter": null,
                 "editor.formatOnSave": false, // enable per language
                 "[python]": {
-                    "editor.formatOnSave": true
+                    "editor.formatOnSave": true,
+                    "editor.codeActionsOnSave": {
+                        "source.fixAll": true,
+                        "source.organizeImports": true
+                      },
+                    "editor.defaultFormatter": "ms-python.black-formatter",
+                    "ruff.organizeImports": false
+                  },
+                "black-formatter.importStrategy": "fromEnvironment",
+                "black-formatter.showNotifications": "always",
+                "ruff.codeAction.fixViolation": {
+                    "enable": true
                 },
-                "python.formatting.provider": "black",
-                "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-                "python.formatting.blackArgs": []
+                "ruff.fixAll": true,
+                "ruff.format.args": ["--config=./pyproject.toml"],
+                "ruff.lint.args": ["--config=./pyproject.toml"]
             }
         }
     },
 
     "features": {
-        "docker-in-docker": "latest",
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
     
     // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
