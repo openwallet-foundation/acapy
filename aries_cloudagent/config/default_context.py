@@ -1,5 +1,6 @@
 """Classes for configuring the default injection context."""
 
+from ..anoncreds.registry import AnonCredsRegistry
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
 from ..core.event_bus import EventBus
@@ -55,6 +56,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Global did resolver
         context.injector.bind_instance(DIDResolver, DIDResolver([]))
+        context.injector.bind_instance(AnonCredsRegistry, AnonCredsRegistry())
         context.injector.bind_instance(DIDMethods, DIDMethods())
         context.injector.bind_instance(KeyTypes, KeyTypes())
         context.injector.bind_instance(

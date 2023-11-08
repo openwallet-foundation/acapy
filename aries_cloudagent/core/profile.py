@@ -297,6 +297,7 @@ class ProfileManagerProvider(BaseProvider):
 
     MANAGER_TYPES = {
         "askar": "aries_cloudagent.askar.profile.AskarProfileManager",
+        "askar-anoncreds": "aries_cloudagent.askar.profile_anoncreds.AskarAnoncredsProfileManager",
         "in_memory": "aries_cloudagent.core.in_memory.InMemoryProfileManager",
         "indy": "aries_cloudagent.indy.sdk.profile.IndySdkProfileManager",
     }

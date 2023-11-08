@@ -17,7 +17,7 @@ from anoncreds import (
 )
 
 
-from ..askar.profile import AskarProfile, AskarProfileSession
+from ..askar.profile_anoncreds import AskarAnoncredsProfile, AskarAnoncredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -89,10 +89,10 @@ class AnonCredsIssuer:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarProfile:
+    def profile(self) -> AskarAnoncredsProfile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarProfile):
-            raise ValueError("AnonCreds interface requires Askar")
+        if not isinstance(self._profile, AskarAnoncredsProfile):
+            raise ValueError("AnonCreds interface requires AskarAnoncreds")
 
         return self._profile
 
@@ -102,7 +102,7 @@ class AnonCredsIssuer:
         await event_bus.notify(self._profile, event)
 
     async def _finish_registration(
-        self, txn: AskarProfileSession, category: str, job_id: str, registered_id: str
+        self, txn: AskarAnoncredsProfileSession, category: str, job_id: str, registered_id: str
     ):
         entry = await txn.handle.fetch(
             category,

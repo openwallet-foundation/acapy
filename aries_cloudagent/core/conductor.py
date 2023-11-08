@@ -34,6 +34,7 @@ from ..commands.upgrade import (
 )
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
+from ..anoncreds.verifier import AnonCredsVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
@@ -151,6 +152,17 @@ class Conductor:
                         IndyVerifier,
                         ClassProvider(
                             "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                elif (
+                    self.root_profile.BACKEND_NAME == "askar-anoncreds"
+                    and ledger.BACKEND_NAME == "indy-vdr"
+                ):
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.anoncreds.credx.verifier.IndyCredxVerifier",
                             self.root_profile,
                         ),
                     )

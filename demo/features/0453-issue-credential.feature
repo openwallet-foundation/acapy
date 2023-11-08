@@ -18,7 +18,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --revocation --cred-type anoncreds --public-did --did-exchange | --did-exchange| anoncreds-testing | Data_AC_NormalizedValues |
        | --revocation --cred-type anoncreds --public-did --multitenant  | --multitenant | anoncreds-testing | Data_AC_NormalizedValues |
 
-  @T004-RFC0453 @GHA-Anoncreds
+  @T004-RFC0453 @GHA-Anoncreds-test1
   Scenario Outline: Using anoncreds, Issue a credential, with the Issuer beginning with an offer
     Given we have "2" agents
       | name  | role    | capabilities        |
@@ -29,8 +29,8 @@ Feature: RFC 0453 Aries agent issue credential
     Then "Bob" has the credential issued
 
     Examples:
-       | Acme_capabilities                   | Bob_capabilities  | Schema_name       | Credential_data          |
-       | --cred-type anoncreds --public-did  |                   | anoncreds-testing | Data_AC_NormalizedValues |
+       | Acme_capabilities                                                | Bob_capabilities              | Schema_name       | Credential_data          |
+       | --cred-type anoncreds --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | anoncreds-testing | Data_AC_NormalizedValues |
 
   @T003-RFC0453 @GHA
   Scenario Outline: Issue a credential with the Issuer beginning with an offer
