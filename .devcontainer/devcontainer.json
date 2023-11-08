@@ -36,7 +36,7 @@
                     "editor.defaultFormatter": "ms-python.black-formatter",
                     "ruff.organizeImports": false
                   },
-                "black-formatter.importStrategy": "fromEnvironment",
+                "black-formatter.importStrategy": "useBundled",
                 "black-formatter.showNotifications": "always",
                 "ruff.codeAction.fixViolation": {
                     "enable": true

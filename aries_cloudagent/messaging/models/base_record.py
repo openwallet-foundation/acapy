@@ -506,8 +506,8 @@ class BaseExchangeRecord(BaseRecord):
 
     def __init__(
         self,
-        id: str = None,
-        state: str = None,
+        id: Optional[str] = None,
+        state: Optional[str] = None,
         *,
         trace: bool = False,
         **kwargs,
