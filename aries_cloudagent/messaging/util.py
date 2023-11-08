@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 I32_BOUND = 2**31
 
 
-def datetime_to_str(dt: Union[str, datetime]) -> str:
+def datetime_to_str(dt: Union[str, datetime, None]) -> Union[str, None]:
     """Convert a datetime object to an indy-standard datetime string.
 
     Args:
