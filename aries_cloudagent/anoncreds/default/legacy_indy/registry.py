@@ -212,7 +212,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         async with ledger:
             try:
-                seq_no = await shield(ledger.send_schema(schema_id, indy_schema))
+                seq_no = await shield(
+                    ledger.send_schema_anoncreds(schema_id, indy_schema)
+                )
             except LedgerObjectAlreadyExistsError as err:
                 indy_schema = err.obj
                 schema = AnonCredsSchema(
@@ -327,7 +329,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         try:
             async with ledger:
                 seq_no = await shield(
-                    ledger.send_credential_definition(
+                    ledger.send_credential_definition_anoncreds(
                         credential_definition.schema_id,
                         cred_def_id,
                         indy_cred_def,
