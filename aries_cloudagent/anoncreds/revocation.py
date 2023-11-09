@@ -24,7 +24,10 @@ from anoncreds import (
     RevocationStatusList,
 )
 
-from ..askar.profile_anoncreds import AskarAnoncredsProfile, AskarAnoncredsProfileSession
+from ..askar.profile_anon import (
+    AskarAnoncredsProfile,
+    AskarAnoncredsProfileSession,
+)
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession

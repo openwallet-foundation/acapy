@@ -19,7 +19,7 @@ from anoncreds.bindings import create_link_secret
 from aries_askar import AskarError, AskarErrorCode
 
 from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
-from ..askar.profile_anoncreds import AskarAnoncredsProfile
+from ..askar.profile_anon import AskarAnoncredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger

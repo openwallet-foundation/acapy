@@ -162,11 +162,15 @@ class AskarAnoncredsProfile(Profile):
                 BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))
             )
 
-    def session(self, context: InjectionContext = None) -> "AskarAnoncredsProfileSession":
+    def session(
+        self, context: InjectionContext = None
+    ) -> "AskarAnoncredsProfileSession":
         """Start a new interactive session with no transaction support requested."""
         return AskarAnoncredsProfileSession(self, False, context=context)
 
-    def transaction(self, context: InjectionContext = None) -> "AskarAnoncredsProfileSession":
+    def transaction(
+        self, context: InjectionContext = None
+    ) -> "AskarAnoncredsProfileSession":
         """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
@@ -269,7 +273,7 @@ class AskarAnoncredsProfileSession(ProfileSession):
             self._check_duration()
 
 
-class AskarAnoncredsProfileManager(ProfileManager):
+class AskarAnonProfileManager(ProfileManager):
     """Manager for Aries-Askar stores."""
 
     async def provision(

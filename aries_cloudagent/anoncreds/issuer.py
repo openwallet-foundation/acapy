@@ -17,7 +17,10 @@ from anoncreds import (
 )
 
 
-from ..askar.profile_anoncreds import AskarAnoncredsProfile, AskarAnoncredsProfileSession
+from ..askar.profile_anon import (
+    AskarAnoncredsProfile,
+    AskarAnoncredsProfileSession,
+)
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -102,7 +105,11 @@ class AnonCredsIssuer:
         await event_bus.notify(self._profile, event)
 
     async def _finish_registration(
-        self, txn: AskarAnoncredsProfileSession, category: str, job_id: str, registered_id: str
+        self,
+        txn: AskarAnoncredsProfileSession,
+        category: str,
+        job_id: str,
+        registered_id: str,
     ):
         entry = await txn.handle.fetch(
             category,
