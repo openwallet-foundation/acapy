@@ -320,6 +320,7 @@ class PresentationManager:
         presentation = message.indy_proof()
 
         thread_id = message._thread_id
+
         # Normally we only set the connection_id to None if an oob record is present
         # But present proof supports the old-style AIP-1 connectionless exchange that
         # bypasses the oob record. So we can't verify if an oob record is associated with
@@ -328,12 +329,11 @@ class PresentationManager:
         # A connectionless proof doesn't have a connection_id, so default to None
         # even if there is no oob record.
         connection_id = (
-            None
-            if oob_record
-            else getattr(connection_record, 'connection_id', None)
-            if connection_record
+            connection_record.connection_id
+            if connection_record.connection_id and not oob_record
             else None
         )
+
 
         async with self._profile.session() as session:
             # Find by thread_id and role. Verify connection id later
