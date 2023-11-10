@@ -1,10 +1,11 @@
 """Utilities related to logging."""
 
+from configparser import ConfigParser
 from contextvars import ContextVar
 from datetime import datetime, timedelta
 from io import TextIOWrapper
 import logging
-from logging.config import fileConfig, dictConfig
+from logging.config import dictConfig, fileConfig
 from logging.handlers import BaseRotatingHandler
 import os
 from random import randint
@@ -23,9 +24,6 @@ from ..version import __version__
 from .banner import Banner
 
 DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
-# DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_YAML = (
-#     "./aries_cloudagent/config/default_per_tenant_logging_config.yml"
-# )
 DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI = (
     "aries_cloudagent.config:default_per_tenant_logging_config.ini"
 )
@@ -99,12 +97,37 @@ class LoggingConfigurator:
         else:
             if multitenant:
                 config_path = DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI
+                if log_file:
+                    parsed = ConfigParser()
+                    config_file_path = (
+                        f"./{(config_path.split(':')[0]).replace('.', '/')}"
+                        f"/{config_path.split(':')[1]}"
+                    )
+                    parsed.read(config_file_path)
+                    parsed.set(
+                        "handler_timed_file_handler",
+                        "args",
+                        str(
+                            (
+                                log_file,
+                                "d",
+                                7,
+                                1,
+                            )
+                        ),
+                    )
+                    with open(config_file_path, "w") as configfile:
+                        parsed.write(configfile)
             else:
                 config_path = DEFAULT_LOGGING_CONFIG_PATH
         if ".yml" in config_path or ".yaml" in config_path:
             is_dict_config = True
             with open(config_path, "r") as stream:
                 log_config = yaml.safe_load(stream)
+            if log_file:
+                log_config["handlers"]["rotating_file"]["filename"] = log_file
+                with open(config_path, "w") as fp:
+                    yaml.dump(log_config, fp)
         else:
             log_config = load_resource(config_path, "utf-8")
         if log_config:
@@ -121,45 +144,18 @@ class LoggingConfigurator:
             handler_pattern = None
             # Create context filter to adapt wallet_id in logger messages
             _cf = ContextFilter()
-            _new_handler = None
-            _to_remove_handler = None
             for _handler in logging.root.handlers:
                 if isinstance(_handler, TimedRotatingFileMultiProcessHandler):
                     file_handler_set = True
                     handler_pattern = _handler.formatter._fmt
-                    # Override the existing handler with new handler with provided
-                    # log file path
-                    if log_file:
-                        _new_handler = TimedRotatingFileMultiProcessHandler(
-                            filename=log_file,
-                            interval=_handler.interval
-                            if (_handler.interval < 14 and _handler.when == "D")
-                            else 7,
-                            when=_handler.when,
-                            backupCount=_handler.backupCount,
-                        )
-                        _to_remove_handler = _handler
-                        # Setup new handler
-                        _new_handler.setFormatter(
-                            jsonlogger.JsonFormatter(handler_pattern)
-                        )
-                        _new_handler.addFilter(_cf)
-                        if log_level:
-                            _new_handler.setLevel(log_level.upper())
-                    else:
-                        # Set Json formatter for rotated file handler which
-                        # cannot be set with config file. By default this will
-                        # be set up.
-                        _handler.setFormatter(jsonlogger.JsonFormatter(handler_pattern))
-                # Setup existing handlers from config file
+                    # Set Json formatter for rotated file handler which
+                    # cannot be set with config file. By default this will
+                    # be set up.
+                    _handler.setFormatter(jsonlogger.JsonFormatter(handler_pattern))
                 # Add context filter to handlers
-                if _handler != _to_remove_handler:
-                    _handler.addFilter(_cf)
-                    if log_level:
-                        _handler.setLevel(log_level.upper())
-            if _new_handler and _to_remove_handler:
-                logging.root.handlers.remove(_to_remove_handler)
-                logging.root.handlers.append(_new_handler)
+                _handler.addFilter(_cf)
+                if log_level:
+                    _handler.setLevel(log_level.upper())
             if not file_handler_set and log_file:
                 file_path = os.path.join(
                     os.path.dirname(os.path.realpath(__file__)).replace(

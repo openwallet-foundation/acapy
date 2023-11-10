@@ -47,8 +47,8 @@ class TestKeylistHandler:
     async def test_handler_no_record(self, context, caplog):
         handler, responder = KeylistHandler(), MockResponder()
         logging.propagate = True
-        with caplog.at_level(logging.INFO):
-            await handler.handle(context, responder)
+        caplog.set_level(logging.INFO)
+        await handler.handle(context, responder)
         assert "not acting as mediator" in caplog.text
         assert "Keylist received: " not in caplog.text
 
@@ -56,6 +56,6 @@ class TestKeylistHandler:
         handler, responder = KeylistHandler(), MockResponder()
         await MediationRecord(connection_id=TEST_CONN_ID).save(session)
         logging.propagate = True
-        with caplog.at_level(logging.INFO):
-            await handler.handle(context, responder)
+        caplog.set_level(logging.INFO)
+        await handler.handle(context, responder)
         assert "Keylist received: " in caplog.text

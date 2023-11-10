@@ -22,7 +22,7 @@ ADD scripts ./scripts
 
 RUN pip3 install --no-cache-dir -e .
 
-RUN mkdir demo log && chown -R aries:aries demo log && chmod -R ug+rw demo log
+RUN mkdir demo logs && chown -R aries:aries demo logs && chmod -R ug+rw demo logs
 
 # Add and install demo code
 ADD demo/requirements.txt ./demo/requirements.txt

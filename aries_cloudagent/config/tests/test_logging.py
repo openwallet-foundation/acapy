@@ -40,7 +40,6 @@ class TestLoggingConfigurator(AsyncTestCase):
             ),
         ):
             test_module.LoggingConfigurator.configure(
-                logging_config_path="aries_cloudagent.config:default_per_tenant_logging_config.ini",
                 log_file="test.log",
                 multitenant=True,
             )
