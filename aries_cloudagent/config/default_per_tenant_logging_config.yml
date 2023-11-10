@@ -11,7 +11,7 @@ handlers:
   rotating_file:
     class: logging.handlers.TimedRotatingFileMultiProcessHandler
     level: DEBUG
-    filename: './log/acapy-agent.log'
+    filename: '/home/aries/log/acapy-agent.log'
     when: 'd'
     interval: 7
     backupCount: 1

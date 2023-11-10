@@ -100,8 +100,10 @@ class LoggingConfigurator:
                 if log_file:
                     parsed = ConfigParser()
                     config_file_path = (
-                        f"./{(config_path.split(':')[0]).replace('.', '/')}"
-                        f"/{config_path.split(':')[1]}"
+                        os.path.join(
+                            os.path.dirname(os.path.realpath(__file__)),
+                            config_path.split(':')[1],
+                        )
                     )
                     parsed.read(config_file_path)
                     parsed.set(
