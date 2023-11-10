@@ -88,11 +88,11 @@ Feature: RFC 0453 Aries agent issue credential
     Then "Bob" has the json-ld credential issued
 
     Examples:
-       | Acme_capabilities                                   | Bob_capabilities          | Schema_name    | Credential_data          |
-       | --public-did --cred-type json-ld                    |                           | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
+       | Acme_capabilities                                                                | Bob_capabilities          | Schema_name    | Credential_data          |
+       | --public-did --cred-type json-ld                                                 |                           | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --did-exchange                                  | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --mediation                                     | --mediation               | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --multitenant --log-file ./logs/acapy-agent.log | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
 
   @T003.1-RFC0453 @GHA
@@ -108,11 +108,11 @@ Feature: RFC 0453 Aries agent issue credential
     Then "Bob" has the json-ld credential issued
 
     Examples:
-       | Acme_capabilities                                   | Bob_capabilities          | Schema_name    | Credential_data          |
-       | --public-did --cred-type json-ld                    |                           | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
+       | Acme_capabilities                                                                | Bob_capabilities          | Schema_name    | Credential_data          |
+       | --public-did --cred-type json-ld                                                 |                           | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --did-exchange                                  | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --mediation                                     | --mediation               | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --multitenant --log-file ./logs/acapy-agent.log | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
 
   @T004-RFC0453 @GHA
@@ -127,10 +127,10 @@ Feature: RFC 0453 Aries agent issue credential
     And "Bob" has the credential issued
 
     Examples:
-       | Acme_capabilities                        | Bob_capabilities  | Schema_name    | Credential_data          |
-       | --revocation --public-did                |                   | driverslicense | Data_DL_NormalizedValues |
-       | --revocation --public-did --did-exchange | --did-exchange    | driverslicense | Data_DL_NormalizedValues |
-       | --revocation --public-did --multitenant  | --multitenant     | driverslicense | Data_DL_NormalizedValues |
+       | Acme_capabilities                                                         | Bob_capabilities  | Schema_name    | Credential_data          |
+       | --revocation --public-did                                                 |                   | driverslicense | Data_DL_NormalizedValues |
+       | --revocation --public-did --did-exchange                                  | --did-exchange    | driverslicense | Data_DL_NormalizedValues |
+       | --revocation --public-did --multitenant --log-file ./logs/acapy-agent.log | --multitenant     | driverslicense | Data_DL_NormalizedValues |
 
   @T004.1-RFC0453
   Scenario Outline: Issue a credential with revocation, with the Issuer beginning with an offer, and then revoking the credential
