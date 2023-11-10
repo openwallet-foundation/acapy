@@ -118,15 +118,15 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         manager = RevocationManager(self.profile)
         CRED_EX_ID = "dummy-cxid"
         CRED_REV_ID = "1"
-        mock_issuer_rev_reg_record = async_mock.MagicMock(
+        mock_issuer_rev_reg_record = mock.MagicMock(
             revoc_reg_id=REV_REG_ID,
             tails_local_path=TAILS_LOCAL,
-            send_entry=async_mock.CoroutineMock(),
-            clear_pending=async_mock.CoroutineMock(),
+            send_entry=mock.CoroutineMock(),
+            clear_pending=mock.CoroutineMock(),
             pending_pub=["2"],
         )
-        issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-        issuer.revoke_credentials = async_mock.CoroutineMock(
+        issuer = mock.MagicMock(IndyIssuer, autospec=True)
+        issuer.revoke_credentials = mock.CoroutineMock(
             return_value=(
                 json.dumps(
                     {
@@ -143,27 +143,27 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.IssuerCredRevRecord,
             "retrieve_by_cred_ex_id",
-            async_mock.CoroutineMock(),
-        ) as mock_retrieve, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_retrieve, mock.patch.object(
             test_module, "IndyRevocation", autospec=True
-        ) as revoc, async_mock.patch.object(
+        ) as revoc, mock.patch.object(
             test_module.IssuerRevRegRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+            mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
         ):
-            mock_retrieve.return_value = async_mock.MagicMock(
+            mock_retrieve.return_value = mock.MagicMock(
                 rev_reg_id="dummy-rr-id", cred_rev_id=CRED_REV_ID
             )
-            mock_rev_reg = async_mock.MagicMock(
-                get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+            mock_rev_reg = mock.MagicMock(
+                get_or_fetch_local_tails_path=mock.CoroutineMock()
             )
-            revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
+            revoc.return_value.get_issuer_rev_reg_record = mock.CoroutineMock(
                 return_value=mock_issuer_rev_reg_record
             )
-            revoc.return_value.get_ledger_registry = async_mock.CoroutineMock(
+            revoc.return_value.get_ledger_registry = mock.CoroutineMock(
                 return_value=mock_rev_reg
             )
 
@@ -184,15 +184,15 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
     async def test_revoke_credential_publish_endorser_x(self):
         CRED_EX_ID = "dummy-cxid"
         CRED_REV_ID = "1"
-        mock_issuer_rev_reg_record = async_mock.MagicMock(
+        mock_issuer_rev_reg_record = mock.MagicMock(
             revoc_reg_id=REV_REG_ID,
             tails_local_path=TAILS_LOCAL,
-            send_entry=async_mock.CoroutineMock(),
-            clear_pending=async_mock.CoroutineMock(),
+            send_entry=mock.CoroutineMock(),
+            clear_pending=mock.CoroutineMock(),
             pending_pub=["2"],
         )
-        issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-        issuer.revoke_credentials = async_mock.CoroutineMock(
+        issuer = mock.MagicMock(IndyIssuer, autospec=True)
+        issuer.revoke_credentials = mock.CoroutineMock(
             return_value=(
                 json.dumps(
                     {
@@ -209,27 +209,27 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         )
         self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.IssuerCredRevRecord,
             "retrieve_by_cred_ex_id",
-            async_mock.CoroutineMock(),
-        ) as mock_retrieve, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_retrieve, mock.patch.object(
             test_module, "IndyRevocation", autospec=True
-        ) as revoc, async_mock.patch.object(
+        ) as revoc, mock.patch.object(
             test_module.IssuerRevRegRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+            mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
         ):
-            mock_retrieve.return_value = async_mock.MagicMock(
+            mock_retrieve.return_value = mock.MagicMock(
                 rev_reg_id="dummy-rr-id", cred_rev_id=CRED_REV_ID
             )
-            mock_rev_reg = async_mock.MagicMock(
-                get_or_fetch_local_tails_path=async_mock.CoroutineMock()
+            mock_rev_reg = mock.MagicMock(
+                get_or_fetch_local_tails_path=mock.CoroutineMock()
             )
-            revoc.return_value.get_issuer_rev_reg_record = async_mock.CoroutineMock(
+            revoc.return_value.get_issuer_rev_reg_record = mock.CoroutineMock(
                 return_value=mock_issuer_rev_reg_record
             )
-            revoc.return_value.get_ledger_registry = async_mock.CoroutineMock(
+            revoc.return_value.get_ledger_registry = mock.CoroutineMock(
                 return_value=mock_rev_reg
             )
             with self.assertRaises(RevocationManagerError):
@@ -326,21 +326,21 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         ]
 
         mock_issuer_rev_reg_records = [
-            async_mock.MagicMock(
+            mock.MagicMock(
                 record_id=0,
                 revoc_reg_id=REV_REG_ID,
                 tails_local_path=TAILS_LOCAL,
                 pending_pub=["1", "2"],
-                send_entry=async_mock.CoroutineMock(),
-                clear_pending=async_mock.CoroutineMock(),
+                send_entry=mock.CoroutineMock(),
+                clear_pending=mock.CoroutineMock(),
             ),
-            async_mock.MagicMock(
+            mock.MagicMock(
                 record_id=1,
                 revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2",
                 tails_local_path=TAILS_LOCAL,
                 pending_pub=["9", "99"],
-                send_entry=async_mock.CoroutineMock(),
-                clear_pending=async_mock.CoroutineMock(),
+                send_entry=mock.CoroutineMock(),
+                clear_pending=mock.CoroutineMock(),
             ),
         ]
         conn_record = ConnRecord(
@@ -360,23 +360,23 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         )
         conn_id = conn_record.connection_id
         assert conn_id is not None
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.IssuerRevRegRecord,
             "query_by_pending",
-            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ), async_mock.patch.object(
+            mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
+        ), mock.patch.object(
             test_module.IssuerRevRegRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(
+            mock.CoroutineMock(
                 side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
             ),
         ):
-            issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            issuer.merge_revocation_registry_deltas = async_mock.CoroutineMock(
+            issuer = mock.MagicMock(IndyIssuer, autospec=True)
+            issuer.merge_revocation_registry_deltas = mock.CoroutineMock(
                 side_effect=deltas
             )
 
-            issuer.revoke_credentials = async_mock.CoroutineMock(
+            issuer.revoke_credentials = mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
@@ -405,40 +405,40 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         ]
 
         mock_issuer_rev_reg_records = [
-            async_mock.MagicMock(
+            mock.MagicMock(
                 record_id=0,
                 revoc_reg_id=REV_REG_ID,
                 tails_local_path=TAILS_LOCAL,
                 pending_pub=["1", "2"],
-                send_entry=async_mock.CoroutineMock(),
-                clear_pending=async_mock.CoroutineMock(),
+                send_entry=mock.CoroutineMock(),
+                clear_pending=mock.CoroutineMock(),
             ),
-            async_mock.MagicMock(
+            mock.MagicMock(
                 record_id=1,
                 revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2",
                 tails_local_path=TAILS_LOCAL,
                 pending_pub=["9", "99"],
-                send_entry=async_mock.CoroutineMock(),
-                clear_pending=async_mock.CoroutineMock(),
+                send_entry=mock.CoroutineMock(),
+                clear_pending=mock.CoroutineMock(),
             ),
         ]
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.IssuerRevRegRecord,
             "query_by_pending",
-            async_mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
-        ), async_mock.patch.object(
+            mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
+        ), mock.patch.object(
             test_module.IssuerRevRegRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(
+            mock.CoroutineMock(
                 side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
             ),
         ):
-            issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-            issuer.merge_revocation_registry_deltas = async_mock.CoroutineMock(
+            issuer = mock.MagicMock(IndyIssuer, autospec=True)
+            issuer.merge_revocation_registry_deltas = mock.CoroutineMock(
                 side_effect=deltas
             )
 
-            issuer.revoke_credentials = async_mock.CoroutineMock(
+            issuer.revoke_credentials = mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
