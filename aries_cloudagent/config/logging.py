@@ -99,11 +99,9 @@ class LoggingConfigurator:
                 config_path = DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI
                 if log_file:
                     parsed = ConfigParser()
-                    config_file_path = (
-                        os.path.join(
-                            os.path.dirname(os.path.realpath(__file__)),
-                            config_path.split(':')[1],
-                        )
+                    config_file_path = os.path.join(
+                        os.path.dirname(os.path.realpath(__file__)),
+                        config_path.split(":")[1],
                     )
                     parsed.read(config_file_path)
                     parsed.set(
