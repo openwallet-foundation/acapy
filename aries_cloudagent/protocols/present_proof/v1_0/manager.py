@@ -330,7 +330,7 @@ class PresentationManager:
         # even if there is no oob record.
         connection_id = (
             connection_record.connection_id
-            if connection_record.connection_id and not oob_record
+            if connection_record and connection_record.connection_id and not oob_record
             else None
         )
 
