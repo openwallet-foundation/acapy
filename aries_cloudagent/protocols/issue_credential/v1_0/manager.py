@@ -536,10 +536,12 @@ class CredentialManager:
                         )
                     )
                 )
-            except StorageNotFoundError:
-                raise CredentialManagerError(
-                    "Indy issue credential format can't start from credential request"
-                ) from None
+            except StorageNotFoundError as ex:
+                LOGGER.error(
+                    f"Credential Exchange (thread id = {message._thread_id}) not found."
+                    " Indy issue credential format can't start from credential request.",
+                )
+                raise ex
             if cred_ex_record.state != V10CredentialExchange.STATE_OFFER_SENT:
                 LOGGER.error(
                     "Skipping credential request; exchange state is %s (id=%s)",

@@ -189,10 +189,11 @@ WORKDIR /home/indy/src
 RUN mkdir -p test-reports && chown -R indy:indy test-reports && chmod -R ug+rw test-reports
 
 ADD ./README.md pyproject.toml ./poetry.lock ./
+COPY ./aries_cloudagent/ ./aries_cloudagent/
 
 USER root
 RUN pip install --no-cache-dir poetry
-RUN poetry install --no-root --no-directory -E "askar bbs indy"
+RUN poetry install --compile -E "askar bbs indy"
 
 ADD --chown=indy:root . .
 USER indy

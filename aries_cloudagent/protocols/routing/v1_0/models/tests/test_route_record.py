@@ -1,10 +1,10 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 from marshmallow.exceptions import ValidationError
 
 from ..route_record import RouteRecordSchema
 
 
-class TestConnRecord(AsyncTestCase):
+class TestConnRecord(IsolatedAsyncioTestCase):
     async def test_route_record_validation_fails_no_connection_wallet(self):
         schema = schema = RouteRecordSchema()
 

@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
@@ -12,7 +12,7 @@ from ..cred_offer import V20CredOffer
 from ..inner.cred_preview import V20CredAttrSpec, V20CredPreview
 
 
-class TestV20CredOffer(AsyncTestCase):
+class TestV20CredOffer(IsolatedAsyncioTestCase):
     """Credential offer tests"""
 
     indy_offer = {
@@ -132,7 +132,7 @@ class TestV20CredOffer(AsyncTestCase):
         V20CredOffer.deserialize(obj)
 
 
-class TestV20CredOfferSchema(AsyncTestCase):
+class TestV20CredOfferSchema(IsolatedAsyncioTestCase):
     """Test credential cred offer schema"""
 
     async def test_make_model(self):

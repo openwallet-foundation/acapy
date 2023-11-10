@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
@@ -23,7 +23,7 @@ TEST_LABEL = "Label"
 TEST_ENDPOINT = "http://localhost"
 
 
-class TestIntroductionService(AsyncTestCase):
+class TestIntroductionService(IsolatedAsyncioTestCase):
     def setUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = RequestContext(self.profile)

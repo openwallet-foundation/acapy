@@ -1,6 +1,6 @@
 import pytest
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 from unittest import mock, TestCase
 
 from ......messaging.models.base import BaseModelError
@@ -97,7 +97,7 @@ class TestCredProblemReport(TestCase):
                 "code": "invalid_code",
             },
         ).serialize()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "LOGGER", autospec=True
         ) as mock_logger:
             V20CredProblemReportSchema().validate_fields(data)

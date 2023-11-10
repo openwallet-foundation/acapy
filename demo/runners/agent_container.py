@@ -245,6 +245,7 @@ class AriesAgent(DemoAgent):
         if prev_state == state:
             return  # ignore
         self.cred_state[cred_ex_id] = state
+        self.cred_state[message["thread_id"]] = state
 
         self.log(f"Credential: state = {state}, cred_ex_id = {cred_ex_id}")
 
@@ -1143,6 +1144,17 @@ class AgentContainer:
         params = any additional parameters to pass with the request
         """
         return await self.agent.admin_PUT(path, data=data, text=text, params=params)
+
+    async def admin_DELETE(self, path, data=None, text=False, params=None) -> dict:
+        """
+        Execute an admin DELETE request in the context of the current wallet.
+
+        path = /path/of/request
+        data = payload to post with the request
+        text = True if the expected response is text, False if json data
+        params = any additional parameters to pass with the request
+        """
+        return await self.agent.admin_DELETE(path, data=data, text=text, params=params)
 
     async def agency_admin_GET(self, path, text=False, params=None) -> dict:
         """

@@ -1,7 +1,7 @@
 """Test MediationManager."""
 import pytest
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 from typing import AsyncIterable, Iterable
 
 from .. import manager as test_module
@@ -250,8 +250,8 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert await manager.get_default_mediator_id() == "updated"
 
     async def test_set_default_mediator_by_id(self, manager: MediationManager):
-        with async_mock.patch.object(
-            test_module.MediationRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        with mock.patch.object(
+            test_module.MediationRecord, "retrieve_by_id", mock.CoroutineMock()
         ) as mock_retrieve:
             await manager.set_default_mediator_by_id("test")
 
@@ -403,23 +403,23 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
             ),
         ]
 
-        with async_mock.patch.object(
-            RouteRecord, "query", async_mock.CoroutineMock()
-        ) as mock_route_rec_query, async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+        with mock.patch.object(
+            RouteRecord, "query", mock.CoroutineMock()
+        ) as mock_route_rec_query, mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_logger_error:
             mock_route_rec_query.side_effect = StorageNotFoundError("no record")
 
             await manager.store_update_results(TEST_CONN_ID, results)
             mock_logger_error.assert_called_once()
 
-        with async_mock.patch.object(
-            RouteRecord, "query", async_mock.CoroutineMock()
-        ) as mock_route_rec_query, async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+        with mock.patch.object(
+            RouteRecord, "query", mock.CoroutineMock()
+        ) as mock_route_rec_query, mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_logger_error:
             mock_route_rec_query.return_value = [
-                async_mock.MagicMock(delete_record=async_mock.CoroutineMock())
+                mock.MagicMock(delete_record=mock.CoroutineMock())
             ] * 2
 
             await manager.store_update_results(TEST_CONN_ID, results)
@@ -467,7 +467,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
                 result=KeylistUpdated.RESULT_CLIENT_ERROR,
             ),
         ]
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "LOGGER", autospec=True
         ) as mock_logger:
             await manager.store_update_results(TEST_CONN_ID, results)

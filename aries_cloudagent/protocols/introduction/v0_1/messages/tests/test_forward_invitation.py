@@ -1,6 +1,7 @@
-from unittest import mock, TestCase
+from unittest import mock
+from unittest import TestCase
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from .....didcomm_prefix import DIDCommPrefix
@@ -68,7 +69,7 @@ class TestForwardInvitation(TestCase, TestConfig):
         assert invitation_dict is mock_invitation_schema_dump.return_value
 
 
-class TestForwardInvitationSchema(AsyncTestCase, TestConfig):
+class TestForwardInvitationSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test forward invitation schema."""
 
     async def test_make_model(self):

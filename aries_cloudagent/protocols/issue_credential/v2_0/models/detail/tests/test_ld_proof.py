@@ -1,9 +1,9 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..ld_proof import V20CredExRecordLDProof
 
 
-class TestV20CredExRecordLDProof(AsyncTestCase):
+class TestV20CredExRecordLDProof(IsolatedAsyncioTestCase):
     async def test_record(self):
         same = [
             V20CredExRecordLDProof(cred_ex_ld_proof_id="dummy-0", cred_ex_id="abc")

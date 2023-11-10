@@ -2,20 +2,21 @@ import contextlib
 
 from io import StringIO
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock
+from unittest import IsolatedAsyncioTestCase
 from tempfile import NamedTemporaryFile
 
 from .. import logging as test_module
 
 
-class TestLoggingConfigurator(AsyncTestCase):
+class TestLoggingConfigurator(IsolatedAsyncioTestCase):
     agent_label_arg_value = "Aries Cloud Agent"
     transport_arg_value = "transport"
     host_arg_value = "host"
     port_arg_value = "port"
 
-    @async_mock.patch.object(test_module, "load_resource", autospec=True)
-    @async_mock.patch.object(test_module, "fileConfig", autospec=True)
+    @mock.patch.object(test_module, "load_resource", autospec=True)
+    @mock.patch.object(test_module, "fileConfig", autospec=True)
     def test_configure_default(self, mock_file_config, mock_load_resource):
         test_module.LoggingConfigurator.configure()
 
@@ -82,24 +83,24 @@ class TestLoggingConfigurator(AsyncTestCase):
             )
 
     def test_configure_default_no_resource(self):
-        with async_mock.patch.object(
-            test_module, "load_resource", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module, "load_resource", mock.MagicMock()
         ) as mock_load:
             mock_load.return_value = None
             test_module.LoggingConfigurator.configure()
 
     def test_configure_default_file(self):
         log_file = NamedTemporaryFile()
-        with async_mock.patch.object(
-            test_module, "load_resource", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module, "load_resource", mock.MagicMock()
         ) as mock_load:
             mock_load.return_value = None
             test_module.LoggingConfigurator.configure(
                 log_level="ERROR", log_file=log_file.name
             )
 
-    @async_mock.patch.object(test_module, "load_resource", autospec=True)
-    @async_mock.patch.object(test_module, "fileConfig", autospec=True)
+    @mock.patch.object(test_module, "load_resource", autospec=True)
+    @mock.patch.object(test_module, "fileConfig", autospec=True)
     def test_configure_path(self, mock_file_config, mock_load_resource):
         path = "a path"
         test_module.LoggingConfigurator.configure(path)
@@ -111,9 +112,9 @@ class TestLoggingConfigurator(AsyncTestCase):
 
     def test_banner_did(self):
         stdout = StringIO()
-        mock_http = async_mock.MagicMock(scheme="http", host="1.2.3.4", port=8081)
-        mock_https = async_mock.MagicMock(schemes=["https", "archie"])
-        mock_admin_server = async_mock.MagicMock(host="1.2.3.4", port=8091)
+        mock_http = mock.MagicMock(scheme="http", host="1.2.3.4", port=8081)
+        mock_https = mock.MagicMock(schemes=["https", "archie"])
+        mock_admin_server = mock.MagicMock(host="1.2.3.4", port=8091)
         with contextlib.redirect_stdout(stdout):
             test_label = "Aries Cloud Agent"
             test_did = "55GkHamhTU1ZbTbV2ab9DE"
@@ -131,19 +132,19 @@ class TestLoggingConfigurator(AsyncTestCase):
         assert test_did in output
 
     def test_load_resource(self):
-        with async_mock.patch("builtins.open", async_mock.MagicMock()) as mock_open:
+        with mock.patch("builtins.open", mock.MagicMock()) as mock_open:
             test_module.load_resource("abc", encoding="utf-8")
             mock_open.side_effect = IOError("insufficient privilege")
             test_module.load_resource("abc", encoding="utf-8")
 
-        with async_mock.patch.object(
-            test_module.pkg_resources, "resource_stream", async_mock.MagicMock()
-        ) as mock_res_stream, async_mock.patch.object(
-            test_module, "TextIOWrapper", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.pkg_resources, "resource_stream", mock.MagicMock()
+        ) as mock_res_stream, mock.patch.object(
+            test_module, "TextIOWrapper", mock.MagicMock()
         ) as mock_text_io_wrapper:
             test_module.load_resource("abc:def", encoding="utf-8")
 
-        with async_mock.patch.object(
-            test_module.pkg_resources, "resource_stream", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.pkg_resources, "resource_stream", mock.MagicMock()
         ) as mock_res_stream:
             test_module.load_resource("abc:def", encoding=None)

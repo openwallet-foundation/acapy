@@ -1,12 +1,13 @@
 from configargparse import ArgumentTypeError
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock
+from unittest import IsolatedAsyncioTestCase
 
 from .. import argparse
 from ..util import BoundedInt, ByteSize
 
 
-class TestArgParse(AsyncTestCase):
+class TestArgParse(IsolatedAsyncioTestCase):
     async def test_groups(self):
         """Test optional argument parsing."""
         parser = argparse.create_argument_parser()
@@ -27,7 +28,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.TransportGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
@@ -60,7 +61,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.LedgerGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
@@ -128,7 +129,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.UpgradeGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
@@ -249,7 +250,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.GeneralGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
@@ -304,7 +305,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.TransportGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 
@@ -562,7 +563,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.DiscoverFeaturesGroup()
         group.add_arguments(parser)
 
-        with async_mock.patch.object(parser, "exit") as exit_parser:
+        with mock.patch.object(parser, "exit") as exit_parser:
             parser.parse_args(["-h"])
             exit_parser.assert_called_once()
 

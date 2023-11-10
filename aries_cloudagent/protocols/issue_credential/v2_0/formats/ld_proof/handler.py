@@ -470,6 +470,12 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         return self.get_format_data(CRED_20_REQUEST, detail.serialize())
 
+    def can_receive_request_without_offer(
+        self,
+    ) -> bool:
+        """Can this handler receive credential request without an offer?"""
+        return True
+
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:

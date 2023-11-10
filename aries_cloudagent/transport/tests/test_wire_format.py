@@ -1,9 +1,9 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..wire_format import JsonWireFormat
 
 
-class TestWireFormat(AsyncTestCase):
+class TestWireFormat(IsolatedAsyncioTestCase):
     async def test_get_recipient_keys(self):
         serializer = JsonWireFormat()
         recipient_keys = serializer.get_recipient_keys("message_body")

@@ -1,9 +1,9 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..endpoint_type import EndpointType
 
 
-class TestEndpointType(AsyncTestCase):
+class TestEndpointType(IsolatedAsyncioTestCase):
     async def test_endpoint_type(self):
         assert EndpointType.ENDPOINT is EndpointType.get("endpoint")
         assert EndpointType.PROFILE is EndpointType.get("PROFILE")

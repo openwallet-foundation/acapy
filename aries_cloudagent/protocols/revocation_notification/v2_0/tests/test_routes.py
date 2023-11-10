@@ -1,5 +1,5 @@
 """Test routes.py"""
-from asynctest import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from .. import routes as test_module
