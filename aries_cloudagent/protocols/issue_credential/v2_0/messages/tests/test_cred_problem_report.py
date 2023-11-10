@@ -1,7 +1,7 @@
 import pytest
 
-from aries_cloudagent.tests import mock
-from unittest import mock, TestCase
+from unittest import mock
+from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
 
@@ -97,9 +97,7 @@ class TestCredProblemReport(TestCase):
                 "code": "invalid_code",
             },
         ).serialize()
-        with mock.patch.object(
-            test_module, "LOGGER", autospec=True
-        ) as mock_logger:
+        with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
             V20CredProblemReportSchema().validate_fields(data)
         assert mock_logger.warning.call_count == 1
 

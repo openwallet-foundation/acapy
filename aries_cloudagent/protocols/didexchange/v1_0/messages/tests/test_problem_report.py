@@ -1,6 +1,6 @@
 import pytest
 
-from asynctest import mock as async_mock
+from unittest import mock
 
 from ......messaging.models.base import BaseModelError
 from .....didcomm_prefix import DIDCommPrefix
@@ -35,7 +35,7 @@ def test_missing_code():
 
 
 def test_unrecognized_code():
-    with async_mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
+    with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
         DIDXProblemReport.deserialize(
             {"description": {"code": "unknown", "en": "test"}}
         )

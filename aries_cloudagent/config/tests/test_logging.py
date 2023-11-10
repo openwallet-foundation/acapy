@@ -28,14 +28,14 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
         )
 
     def test_configure_with_per_tenant_config_file(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "logging",
-            async_mock.MagicMock(
-                basicConfig=async_mock.MagicMock(),
-                FileHandler=async_mock.MagicMock(),
-                root=async_mock.MagicMock(
-                    warning=async_mock.MagicMock(),
+            mock.MagicMock(
+                basicConfig=mock.MagicMock(),
+                FileHandler=mock.MagicMock(),
+                root=mock.MagicMock(
+                    warning=mock.MagicMock(),
                     handlers=[],
                 ),
             ),
@@ -46,14 +46,14 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             )
 
     def test_configure_with_per_tenant_yml_file(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "logging",
-            async_mock.MagicMock(
-                basicConfig=async_mock.MagicMock(),
-                FileHandler=async_mock.MagicMock(),
-                root=async_mock.MagicMock(
-                    warning=async_mock.MagicMock(),
+            mock.MagicMock(
+                basicConfig=mock.MagicMock(),
+                FileHandler=mock.MagicMock(),
+                root=mock.MagicMock(
+                    warning=mock.MagicMock(),
                     handlers=[],
                 ),
             ),
@@ -65,14 +65,14 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             )
 
     def test_configure_with_default_config(self):
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module,
             "logging",
-            async_mock.MagicMock(
-                basicConfig=async_mock.MagicMock(),
-                FileHandler=async_mock.MagicMock(),
-                root=async_mock.MagicMock(
-                    warning=async_mock.MagicMock(),
+            mock.MagicMock(
+                basicConfig=mock.MagicMock(),
+                FileHandler=mock.MagicMock(),
+                root=mock.MagicMock(
+                    warning=mock.MagicMock(),
                     handlers=[],
                 ),
             ),

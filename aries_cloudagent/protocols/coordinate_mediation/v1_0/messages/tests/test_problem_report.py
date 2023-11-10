@@ -1,7 +1,7 @@
 """Test Problem Report Message."""
 import pytest
 
-from asynctest import mock as async_mock
+from unittest import mock
 from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
@@ -48,8 +48,6 @@ class TestCMProblemReportMessage(TestCase):
                 "code": "invalid_code",
             },
         ).serialize()
-        with async_mock.patch.object(
-            test_module, "LOGGER", autospec=True
-        ) as mock_logger:
+        with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
             CMProblemReportSchema().validate_fields(data)
         mock_logger.warning.assert_called_once()

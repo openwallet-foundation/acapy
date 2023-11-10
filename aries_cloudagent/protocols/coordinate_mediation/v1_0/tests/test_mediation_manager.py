@@ -467,9 +467,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
                 result=KeylistUpdated.RESULT_CLIENT_ERROR,
             ),
         ]
-        with mock.patch.object(
-            test_module, "LOGGER", autospec=True
-        ) as mock_logger:
+        with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
             await manager.store_update_results(TEST_CONN_ID, results)
         assert mock_logger.warning.call_count == 3
 

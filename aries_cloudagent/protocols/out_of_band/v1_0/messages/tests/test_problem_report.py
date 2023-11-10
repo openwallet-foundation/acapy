@@ -1,7 +1,7 @@
 """Test Problem Report Message."""
 import pytest
 
-from asynctest import mock as async_mock
+from unittest import mock
 from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
@@ -68,9 +68,7 @@ class TestOOBProblemReportMessage(TestCase):
         )
         data.assign_thread_id(thid="test_thid", pthid="test_pthid")
         data = data.serialize()
-        with async_mock.patch.object(
-            test_module, "LOGGER", autospec=True
-        ) as mock_logger:
+        with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
             OOBProblemReportSchema().validate_fields(data)
         assert mock_logger.warning.call_count == 1
 

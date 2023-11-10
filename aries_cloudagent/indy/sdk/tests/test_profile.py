@@ -122,9 +122,7 @@ def test_read_only(open_wallet):
 def test_finalizer(open_wallet):
     profile = IndySdkProfile(open_wallet)
     assert profile
-    with mock.patch.object(
-        test_module, "LOGGER", autospec=True
-    ) as mock_logger:
+    with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
         profile._finalizer()
         assert mock_logger.debug.call_count == 1
         mock_logger.debug.assert_called_once_with(
