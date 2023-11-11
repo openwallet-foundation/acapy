@@ -12,9 +12,9 @@ Feature: RFC 0160 Aries agent connection functions
       And "Bob" has an active connection
 
       Examples:
-         | Acme_capabilities                                                     | Bob_capabilities          |
-         | --public-did                                                          |                           |
-         | --public-did --did-exchange                                           | --did-exchange            |
-         | --public-did --mediation                                              | --mediation               |
-         | --public-did --multitenant --log-file /home/aries/log/acapy-agent.log | --multitenant             |
-         | --public-did --mediation --multitenant                                | --mediation --multitenant |
+         | Acme_capabilities                      | Bob_capabilities          |
+         | --public-did                           |                           |
+         | --public-did --did-exchange            | --did-exchange            |
+         | --public-did --mediation               | --mediation               |
+         | --public-did --multitenant             | --multitenant             |
+         | --public-did --mediation --multitenant | --mediation --multitenant |
