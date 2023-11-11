@@ -507,10 +507,16 @@ def step_impl(context, holder_name, issuer_name):
     assert len(cred_list["results"]) == 1
     cred_id = cred_list["results"][0]["referent"]
 
-    # check revocation status for the credential
-    revocation_status = agent_container_GET(
-        agent["agent"],
-        f"/credential/revoked/{cred_id}",
-        params={"to": int(time.time())},
-    )
-    assert revocation_status["revoked"] == True
+    revoc_status_bool = False
+    counter = 0
+    while not revoc_status_bool and counter < 3:
+        # check revocation status for the credential
+        revocation_status = agent_container_GET(
+            agent["agent"],
+            f"/credential/revoked/{cred_id}",
+            params={"to": int(time.time())},
+        )
+        revoc_status_bool = revocation_status["revoked"]
+        counter = counter + 1
+        async_sleep(1.0)
+    assert revoc_status_bool is True
