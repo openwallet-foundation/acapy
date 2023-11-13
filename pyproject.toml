@@ -49,9 +49,9 @@ sd-jwt = "^0.10.3"
 did-peer-2 = "^0.1.2"
 
 # askar
-aries-askar= { version = "~0.2.5", optional = true }
-indy-credx= { version = "~1.0.0", optional = true }
-indy-vdr= { version = "~0.3.3", optional = true }
+aries-askar= { version = "~0.3.0", optional = true }
+indy-credx= { version = "~1.1.1", optional = true }
+indy-vdr= { version = "~0.4.0", optional = true }
 
 # bbs
 ursa-bbs-signatures= { version = "~1.0.1", optional = true }
