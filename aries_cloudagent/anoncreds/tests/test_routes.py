@@ -14,3 +14,21 @@ class TestAnoncredsRoutes(AsyncTestCase):
         mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
         test_module.post_process_routes(mock_app)
         assert "tags" in mock_app._state["swagger_dict"]
+
+
+"""
+Include a test for each route:
+
+- schemas_post()
+- schema_get()
+- schemas_get()
+- cred_def_post()
+- cred_def_get()
+- cred_defs_get()
+- etc ...
+
+For example see unit tests for routes under:
+- aries_cloudagent/messaging/schemas
+- aries_cloudagent/messaging/credential_definitions
+- etc ...
+"""
