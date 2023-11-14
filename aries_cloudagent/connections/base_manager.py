@@ -254,7 +254,7 @@ class BaseConnectionManager:
         try:
             doc_dict: dict = await resolver.resolve(self._profile, did, service_accept)
             doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
-            self._logger.warning("Resolved doc ===> ", doc)
+            self._logger.info("Resolved doc ===> ", doc)
         except ResolverError as error:
             raise BaseConnectionManagerError(
                 "Failed to resolve public DID in invitation"
