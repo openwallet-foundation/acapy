@@ -328,11 +328,10 @@ class PresentationManager:
         #
         # A connectionless proof doesn't have a connection_id, so default to None
         # even if there is no oob record.
-        connection_id = (
-            connection_record.connection_id
-            if connection_record and connection_record.connection_id and not oob_record
-            else None
-        )
+        if connection_record and connection_record.connection_id and oob_record:
+            connection_id = connection_record.connection_id
+        else:
+            connection_id = None
 
 
         async with self._profile.session() as session:
