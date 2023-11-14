@@ -145,7 +145,7 @@ class TestRequestHandler:
         with mock.patch.object(
             storage,
             "find_record",
-            mock.CoroutineMock(raises=StorageNotFoundError),
+            mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as mock_storage_find_record:
             handler_inst = handler.ConnectionRequestHandler()
             responder = MockResponder()
