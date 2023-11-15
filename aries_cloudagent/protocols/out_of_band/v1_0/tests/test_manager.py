@@ -1,5 +1,6 @@
 """Test OOB Manager."""
 
+import base64
 import json
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -849,6 +850,50 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             assert "Cannot store metadata without handshake protocols" in str(
                 context.exception
             )
+
+    async def test_create_invitation_goal_code(self):
+        self.profile.context.update_settings({"public_invites": True})
+        with mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                TestConfig.test_did,
+                TestConfig.test_verkey,
+                None,
+                method=SOV,
+                key_type=ED25519,
+            )
+            goal = "To issue a Faber College Graduate credential"
+            goal_code = "issue-vc"
+            my_label = "Invitation to Barry"
+
+            invi_rec = await self.manager.create_invitation(
+                public=False,
+                my_label=my_label,
+                protocol_version="1.1",
+                alias="Test Alias",
+                service_accept=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+                hs_protos=[test_module.HSProto.RFC23],
+                goal=goal,
+                goal_code=goal_code,
+            )
+            assert isinstance(invi_rec, InvitationRecord)
+            assert invi_rec.invitation.handshake_protocols
+            assert invi_rec.invitation.label == my_label
+            assert invi_rec.invitation.goal == goal
+            assert invi_rec.invitation.goal_code == goal_code
+            assert invi_rec.invitation_url
+
+            base64_message = invi_rec.invitation_url.split("=", maxsplit=1)[1]
+            base64_bytes = base64_message.encode("ascii")
+            message_bytes = base64.b64decode(base64_bytes)
+            data = message_bytes.decode("ascii")
+            assert data
+            invite_json = json.loads(data)
+            assert invite_json
+            assert invite_json["label"] == my_label
+            assert invite_json["goal"] == goal
+            assert invite_json["goal_code"] == goal_code
 
     async def test_wait_for_conn_rec_active_retrieve_by_id(self):
         with mock.patch.object(

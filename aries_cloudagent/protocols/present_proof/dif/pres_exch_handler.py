@@ -1092,30 +1092,33 @@ class DIFPresExchHandler:
         nested_result = []
         cred_uid_descriptors = {}
         # recursion logic for nested requirements
-        for requirement in req.nested_req:
-            # recursive call
-            result = await self.apply_requirements(
-                requirement, credentials, records_filter
-            )
-            if result == {}:
-                continue
-            # cred_uid_descriptors maps applicable credentials
-            # to their respective descriptor.
-            # Structure: {cred.given_id: {
-            #           desc_id_1: {}
-            #      },
-            #      ......
-            # }
-            #  This will be used to construct exclude dict.
-            for descriptor_id in result.keys():
-                credential_list = result.get(descriptor_id)
-                for credential in credential_list:
-                    cred_id = credential.given_id or credential.record_id
-                    if cred_id:
-                        cred_uid_descriptors.setdefault(cred_id, {})[descriptor_id] = {}
+        if req.nested_req:
+            for requirement in req.nested_req:
+                # recursive call
+                result = await self.apply_requirements(
+                    requirement, credentials, records_filter
+                )
+                if result == {}:
+                    continue
+                # cred_uid_descriptors maps applicable credentials
+                # to their respective descriptor.
+                # Structure: {cred.given_id: {
+                #           desc_id_1: {}
+                #      },
+                #      ......
+                # }
+                #  This will be used to construct exclude dict.
+                for descriptor_id in result.keys():
+                    credential_list = result.get(descriptor_id)
+                    for credential in credential_list:
+                        cred_id = credential.given_id or credential.record_id
+                        if cred_id:
+                            cred_uid_descriptors.setdefault(cred_id, {})[
+                                descriptor_id
+                            ] = {}
 
-            if len(result.keys()) != 0:
-                nested_result.append(result)
+                if len(result.keys()) != 0:
+                    nested_result.append(result)
 
         exclude = {}
         for uid in cred_uid_descriptors.keys():
