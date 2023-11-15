@@ -4,6 +4,7 @@ from time import sleep
 import time
 
 from bdd_support.agent_backchannel_client import (
+    agent_container_DELETE,
     aries_container_create_schema_cred_def,
     aries_container_issue_credential,
     aries_container_receive_credential,
@@ -98,6 +99,80 @@ def step_impl(context, issuer, credential_data):
 
     # TODO Check the state of the holder after issuers call of send-offer
     # assert expected_agent_state(context.holder_url, "issue-credential", context.cred_thread_id, "offer-received")
+
+
+@given('"{issuer}" offers and deletes a credential with data {credential_data}')
+@when('"{issuer}" offers and deletes a credential with data {credential_data}')
+def step_impl(context, issuer, credential_data):
+    agent = context.active_agents[issuer]
+
+    cred_attrs = read_credential_data(context.schema_name, credential_data)
+    cred_exchange = aries_container_issue_credential(
+        agent["agent"],
+        context.cred_def_id,
+        cred_attrs,
+    )
+
+    context.cred_attrs = cred_attrs
+    context.cred_exchange = cred_exchange
+
+    # delete this immediately, hopefully this is committed before the holder "accepts" it
+    resp = agent_container_DELETE(
+        agent["agent"],
+        f"/issue-credential-2.0/records/{cred_exchange['cred_ex_id']}",
+    )
+
+    # TODO Check the issuers State
+    # assert resp_json["state"] == "offer-sent"
+
+    # TODO Check the state of the holder after issuers call of send-offer
+    # assert expected_agent_state(context.holder_url, "issue-credential", context.cred_thread_id, "abandoned")
+
+
+@then('"{holder}" has the exchange abandoned')
+def step_impl(context, holder):
+    agent = context.active_agents[holder]
+
+    # give time for the exchange to complete (as abandoned)
+    async_sleep(5.0)
+    resp = agent_container_GET(
+        agent["agent"],
+        "/issue-credential-2.0/records",
+    )
+    assert len(resp["results"]) == 1
+    assert resp["results"][0]["cred_ex_record"]["state"] == "abandoned"
+
+
+@when(
+    '"{holder}" requests a credential with data {credential_data} from "{issuer}" it fails'
+)
+def step_impl(context, issuer, holder, credential_data):
+    issuer_agent = context.active_agents[issuer]
+    holder_agent = context.active_agents[holder]
+
+    cred_attrs = read_credential_data(context.schema_name, credential_data)
+
+    cred_preview = {
+        "@type": "https://didcomm.org/issue-credential/2.0/credential-preview",
+        "attributes": cred_attrs,
+    }
+    data = {
+        "connection_id": holder_agent["agent"].agent.connection_id,
+        "comment": f"Offer on cred def id {context.cred_def_id}",
+        "auto_remove": False,
+        "credential_preview": cred_preview,
+        "filter": {"indy": {"cred_def_id": context.cred_def_id}},
+    }
+
+    try:
+        resp = agent_container_POST(
+            holder_agent["agent"],
+            "/issue-credential-2.0/send-request",
+            data,
+        )
+    except Exception as err:
+        # this is not allowed, unprocessable
+        assert err
 
 
 @given('"{holder}" revokes the credential')
@@ -473,6 +548,68 @@ def step_impl(context, issuer, holder, credential_data):
 
     # TODO test for goodness
     pass
+
+
+@given('"{issuer}" has the exchange completed')
+@then('"{issuer}" has the exchange completed')
+def step_impl(context, issuer):
+    agent = context.active_agents[issuer]
+
+    # new exchange is initiated by the holder, so issuer has one record
+    async_sleep(5.0)
+    resp = agent_container_GET(
+        agent["agent"],
+        "/issue-credential-2.0/records",
+    )
+    assert len(resp["results"]) == 1
+    assert resp["results"][0]["cred_ex_record"]["state"] == "done"
+
+
+@when(
+    '"{holder}" requests a json-ld credential with data {credential_data} from "{issuer}"'
+)
+def step_impl(context, issuer, holder, credential_data):
+    issuer_agent = context.active_agents[issuer]
+    holder_agent = context.active_agents[holder]
+    data = {
+        "auto_remove": False,
+        "comment": "I would like this credential please",
+        "connection_id": holder_agent["agent"].agent.connection_id,
+        "filter": {
+            "ld_proof": {
+                "credential": {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                    ],
+                    "type": [
+                        "VerifiableCredential",
+                        "PermanentResident",
+                    ],
+                    "id": "https://credential.example.com/residents/1234567890",
+                    "issuer": issuer_agent["agent"].agent.did,
+                    "issuanceDate": "2020-01-01T12:00:00Z",
+                    "credentialSubject": {
+                        "type": ["PermanentResident"],
+                        "id": holder_agent["agent"].agent.did,
+                        "givenName": "ALICE",
+                        "familyName": "SMITH",
+                        "gender": "Female",
+                        "birthCountry": "Bahamas",
+                        "birthDate": "1958-07-17",
+                    },
+                },
+                "options": {"proofType": SIG_TYPE_BLS},
+            }
+        },
+    }
+
+    resp = agent_container_POST(
+        holder_agent["agent"],
+        "/issue-credential-2.0/send-request",
+        data,
+    )
+    assert resp["state"] == "request-sent"
 
 
 @then('"{holder}" has the json-ld credential issued')

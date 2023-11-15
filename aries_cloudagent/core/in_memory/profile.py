@@ -7,7 +7,7 @@ from weakref import ref
 
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
-from ...storage.base import BaseStorage
+from ...storage.base import BaseStorage, BaseStorageSearch
 from ...storage.vc_holder.base import VCHolder
 from ...utils.classloader import DeferLoad
 from ...wallet.base import BaseWallet
@@ -35,7 +35,6 @@ class InMemoryProfile(Profile):
         profile_class: Any = None
     ):
         """Create a new InMemoryProfile instance."""
-        global STORAGE_CLASS, WALLET_CLASS
         super().__init__(context=context, name=name, created=True)
         self.keys = {}
         self.local_dids = {}
@@ -52,6 +51,8 @@ class InMemoryProfile(Profile):
     def bind_providers(self):
         """Initialize the profile-level instance providers."""
         injector = self._context.injector
+
+        injector.bind_instance(BaseStorageSearch, STORAGE_CLASS(self))
 
         injector.bind_provider(
             VCHolder,
@@ -131,7 +132,9 @@ class InMemoryProfileSession(ProfileSession):
 
     def _init_context(self):
         """Initialize the session context."""
-        self._context.injector.bind_instance(BaseStorage, STORAGE_CLASS(self.profile))
+        self._context.injector.bind_instance(
+            BaseStorage, self.profile.inject(BaseStorageSearch)
+        )
         self._context.injector.bind_instance(BaseWallet, WALLET_CLASS(self.profile))
 
     @property
