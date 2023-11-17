@@ -15,7 +15,6 @@ from .......vc.ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
-from .......vc.ld_proofs.error import LinkedDataProofException
 from .......vc.tests.document_loader import custom_document_loader
 from .......vc.vc_ld.manager import VcLdpManager
 from .......vc.vc_ld.models.credential import VerifiableCredential
@@ -844,9 +843,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             VcLdpManager,
             "verify_credential",
-            mock.CoroutineMock(
-                return_value=DocumentVerificationResult(verified=True)
-            ),
+            mock.CoroutineMock(return_value=DocumentVerificationResult(verified=True)),
         ) as mock_verify_credential:
             await self.handler.store_credential(cred_ex_record, cred_id)
 
@@ -895,9 +892,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         ) as mock_get_suite, mock.patch.object(
             VcLdpManager,
             "verify_credential",
-            mock.CoroutineMock(
-                return_value=DocumentVerificationResult(verified=False)
-            ),
+            mock.CoroutineMock(return_value=DocumentVerificationResult(verified=False)),
         ) as mock_verify_credential, mock.patch.object(
             VcLdpManager,
             "_get_proof_purpose",
