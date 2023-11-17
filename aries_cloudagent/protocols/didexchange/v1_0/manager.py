@@ -494,11 +494,11 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
                 await self.store_did_document(conn_did_doc)
-            if request.did != conn_did_doc.did:
+            if request.did != conn_did_doc["id"]:
                 raise DIDXManagerError(
                     (
                         f"Connection DID {request.did} does not match "
-                        f"DID Doc id {conn_did_doc.did}"
+                        f"DID Doc id {conn_did_doc['id']}"
                     ),
                     error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
                 )
@@ -941,7 +941,7 @@ class DIDXManager(BaseConnectionManager):
         wallet: BaseWallet,
         attached: AttachDecorator,
         invi_key: str = None,
-    ) -> DIDDoc:
+    ) -> dict:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
         if not signed_diddoc_bytes:
@@ -949,7 +949,7 @@ class DIDXManager(BaseConnectionManager):
         if not await attached.data.verify(wallet, invi_key):
             raise DIDXManagerError("DID doc attachment signature failed verification")
 
-        return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
+        return json.loads(signed_diddoc_bytes.decode())
 
     async def get_resolved_did_document(self, qualified_did: str) -> ResolvedDocument:
         """Return resolved DID document."""
