@@ -481,10 +481,17 @@ async def wallet_update(request: web.BaseRequest):
     wallet_dispatch_type = body.get("wallet_dispatch_type")
     label = body.get("label")
     image_url = body.get("image_url")
-    extra_settings = body.get("extra_settings") or {}
+    extra_settings = body.get("extra_settings")
 
     if all(
-        v is None for v in (wallet_webhook_urls, wallet_dispatch_type, label, image_url)
+        v is None
+        for v in (
+            wallet_webhook_urls,
+            wallet_dispatch_type,
+            label,
+            image_url,
+            extra_settings,
+        )
     ):
         raise web.HTTPBadRequest(reason="At least one parameter is required.")
 
@@ -504,7 +511,7 @@ async def wallet_update(request: web.BaseRequest):
         settings["default_label"] = label
     if image_url is not None:
         settings["image_url"] = image_url
-    extra_subwallet_setting = get_extra_settings_dict_per_tenant(extra_settings)
+    extra_subwallet_setting = get_extra_settings_dict_per_tenant(extra_settings or {})
     settings.update(extra_subwallet_setting)
 
     try:
