@@ -1,16 +1,16 @@
 # Aries Cloud Agent Python Changelog
 
-## 0.11.0-rc1
+## 0.11.0rc2
 
-### October 30, 2023
+### November 17, 2023
 
-Release 0.11.0 is a relatively large release of new features, fixes, and internal
-updates. 0.11.0 is planned to be the last major update before we transition
-to using the [AnonCreds Rust](https://github.com/hyperledger/anoncreds-rs)
-in a release that is expected to bring some Admin/Controller API changes. We plan
-to do patches to 0.11.0 while the transition is made to the next breaking release.
-
-*Release 0.11.0-rc0 failed to publish because of a reference to a dependency via its GitHub repository rather than to its published artifact.*
+Release 0.11.0 is a relatively large release of new features, fixes, and
+internal updates. 0.11.0 is planned to be the last major update before we
+transition to using the ledger agnostic [AnonCreds
+Rust](https://github.com/hyperledger/anoncreds-rs) in a release that is expected
+to bring some Admin/Controller API changes. We plan to do patches to the 0.11.x
+branch while the transition is made to the upcoming release to transition to
+using [Anoncreds Rust].
 
 A significant addition to ACA-Py is support for signing and verifying
 [SD-JWT] verifiable credentials. We expect this to be the first of the changes
@@ -49,15 +49,34 @@ the newer value in sending messages. In updating this, we retained the old
 configuration parameters most deployments were using
 (`--emit-new-didcomm-prefix` and `--emit-new-didcomm-mime-type`) but updated the
 code to set the configuration parameters to `true` even if the parameters were
-not set. See [PR \#2517]
+not set. See [PR \#2517].
+
+The JSON-LD verifiable credential handling of JSON-LD contexts has been updated
+to pre-load the base contexts into the repository code so they are not fetched
+at run time. This is a security best practice for JSON-LD, and prevents errors
+in production when, from time to time, the JSON-LD contexts are unavailable
+because of outages of the web servers where they are hosted. See [PR \#2587].
+
+A Problem Report message is now sent when a request for a credential is received
+and there is no associated Credential Exchange Record. This may happen, for
+example, if an issuer decides to delete a Credential Exchange Record that has
+not be answered for a long time, and the holder responds after the delete. See
+[PR \#2577].
+
+The versioning scheme for Release Candidates has been changed to drop the `-` in
+the version string. This means the older style of `0.11.0-rc0` has been changed
+to the newer style of `0.11.0rc2`.
 
 [PR \#2517]: https://github.com/hyperledger/aries-cloudagent-python/pull/2517
+[PR \#2587]: https://github.com/hyperledger/aries-cloudagent-python/pull/2587
+[PR \#2577]: https://github.com/hyperledger/aries-cloudagent-python/pull/2577
 
 #### 0.11.0 Categorized List of Pull Requests
 
 - DIDComm Messaging Improvements/Fixes
   - Change arg_parse to always set --emit-new-didcomm-prefix and --emit-new-didcomm-mime-type to true [\#2517](https://github.com/hyperledger/aries-cloudagent-python/pull/2517) [swcurran](https://github.com/swcurran)
 - DID Handling and Connection Establishment Updates/Fixes
+  - Goal and Goal Code in invitation URL. [\#2591](https://github.com/hyperledger/aries-cloudagent-python/pull/2591) [usingtechnology](https://github.com/usingtechnology)
   - refactor: use did-peer-2 instead of peerdid [\#2561](https://github.com/hyperledger/aries-cloudagent-python/pull/2561) [dbluhm](https://github.com/dbluhm)
   - Fix: Problem Report Before Exchange Established [\#2519](https://github.com/hyperledger/aries-cloudagent-python/pull/2519) [Ennovate-com](https://github.com/Ennovate-com)
   - fix: issue #2434: Change DIDExchange States to Match rfc160 [\#2461](https://github.com/hyperledger/aries-cloudagent-python/pull/2461) [anwalker293](https://github.com/anwalker293)
@@ -69,6 +88,8 @@ not set. See [PR \#2517]
   - fix: routing behind mediator [\#2536](https://github.com/hyperledger/aries-cloudagent-python/pull/2536) [dbluhm](https://github.com/dbluhm)
   - fix: mediation routing keys as did key [\#2516](https://github.com/hyperledger/aries-cloudagent-python/pull/2516) [dbluhm](https://github.com/dbluhm)
   - refactor: drop mediator_terms and recipient_terms [\#2515](https://github.com/hyperledger/aries-cloudagent-python/pull/2515) [dbluhm](https://github.com/dbluhm)
+- Fixes to Upgrades
+  - 🐛 fix wallet_update when only extra_settings requested [\#2612](https://github.com/hyperledger/aries-cloudagent-python/pull/2612) [ff137](https://github.com/ff137)
 - Hyperledger Indy ledger related updates and fixes
   - fix: taa rough timestamp timezone from datetime [\#2554](https://github.com/hyperledger/aries-cloudagent-python/pull/2554) [dbluhm](https://github.com/dbluhm)
   - 🎨 clarify LedgerError message when TAA is required and not accepted [\#2545](https://github.com/hyperledger/aries-cloudagent-python/pull/2545) [ff137](https://github.com/ff137)
@@ -78,13 +99,21 @@ not set. See [PR \#2517]
 - OpenID4VC / SD-JWT Updates
   - chore: point to official sd-jwt lib release [\#2573](https://github.com/hyperledger/aries-cloudagent-python/pull/2573) [dbluhm](https://github.com/dbluhm)
   - Feat/sd jwt implementation [\#2487](https://github.com/hyperledger/aries-cloudagent-python/pull/2487) [cjhowland](https://github.com/cjhowland)
-- JSON-LD Verifiable Credential format updates
+- JSON-LD Verifiable Credential/Presentation updates
+  - Fix Issue #2589 TypeError When There Are No Nested Requirements [\#2590](https://github.com/hyperledger/aries-cloudagent-python/pull/2590) [Ennovate-com](https://github.com/Ennovate-com)
+  - feat: use a local static cache for commonly used contexts [\#2587](https://github.com/hyperledger/aries-cloudagent-python/pull/2587) [chumbert](https://github.com/chumbert)
   - Issue #2488 KeyError raised when Subject ID is not a URI [\#2490](https://github.com/hyperledger/aries-cloudagent-python/pull/2490) [Ennovate-com](https://github.com/Ennovate-com)
 - Credential Exchange (Issue, Present) Updates
+  - Default connection_id to None to account for Connectionless Proofs [\#2605](https://github.com/hyperledger/aries-cloudagent-python/pull/2605) [popkinj](https://github.com/popkinj)
+  - Send Problem report when CredEx not found [\#2577](https://github.com/hyperledger/aries-cloudagent-python/pull/2577) [usingtechnology](https://github.com/usingtechnology)
   - fix: clean up requests and invites [\#2560](https://github.com/hyperledger/aries-cloudagent-python/pull/2560) [dbluhm](https://github.com/dbluhm)
 - Multitenancy Updates and Fixes
   - Feat: Support subwallet upgradation using the Upgrade command [\#2529](https://github.com/hyperledger/aries-cloudagent-python/pull/2529) [shaangill025](https://github.com/shaangill025)
-- Other Fixes, Demo, and Documentation Fixes
+- Other Fixes, Demo, DevContainer and Documentation Fixes
+  - black formatter extension configuration update [\#2603](https://github.com/hyperledger/aries-cloudagent-python/pull/2603) [usingtechnology](https://github.com/usingtechnology)
+  - Update Devcontainer pytest ruff black [\#2602](https://github.com/hyperledger/aries-cloudagent-python/pull/2602) [usingtechnology](https://github.com/usingtechnology)
+  - Issue 2570 devcontainer ruff, black and pytest [\#2595](https://github.com/hyperledger/aries-cloudagent-python/pull/2595) [usingtechnology](https://github.com/usingtechnology)
+  - chore: correct type hints on base record [\#2604](https://github.com/hyperledger/aries-cloudagent-python/pull/2604) [dbluhm](https://github.com/dbluhm)
   - Playground needs optionally external network [\#2564](https://github.com/hyperledger/aries-cloudagent-python/pull/2564) [usingtechnology](https://github.com/usingtechnology)
   - Issue 2555 playground scripts readme [\#2563](https://github.com/hyperledger/aries-cloudagent-python/pull/2563) [usingtechnology](https://github.com/usingtechnology)
   - Update demo/playground scripts [\#2562](https://github.com/hyperledger/aries-cloudagent-python/pull/2562) [usingtechnology](https://github.com/usingtechnology)
@@ -108,11 +137,13 @@ not set. See [PR \#2517]
   - Remove old routing protocol code [\#2466](https://github.com/hyperledger/aries-cloudagent-python/pull/2466) [dbluhm](https://github.com/dbluhm)
 - CI/CD, Testing, and Developer Tools/Productivity Updates
   - fix: drop asynctest  0.11.0 [\#2566](https://github.com/hyperledger/aries-cloudagent-python/pull/2566) [dbluhm](https://github.com/dbluhm)
+  - Dockerfile.indy - Include aries_cloudagent code into build [\#2584](https://github.com/hyperledger/aries-cloudagent-python/pull/2584) [usingtechnology](https://github.com/usingtechnology)
   - fix: version should be set by pyproject.toml [\#2471](https://github.com/hyperledger/aries-cloudagent-python/pull/2471) [dbluhm](https://github.com/dbluhm)
   - chore: add black back in as a dev dep [\#2465](https://github.com/hyperledger/aries-cloudagent-python/pull/2465) [dbluhm](https://github.com/dbluhm)
   - Swap out flake8 in favor of Ruff [\#2438](https://github.com/hyperledger/aries-cloudagent-python/pull/2438) [dbluhm](https://github.com/dbluhm)
   - #2289 Migrate to Poetry [\#2436](https://github.com/hyperledger/aries-cloudagent-python/pull/2436) [Gavinok](https://github.com/Gavinok)
 - Release management pull requests
+  - 0.11.0rc2 [\#2613](https://github.com/hyperledger/aries-cloudagent-python/pull/2613) [swcurran](https://github.com/swcurran)
   - 0.11.0-rc1 [\#2576](https://github.com/hyperledger/aries-cloudagent-python/pull/2576) [swcurran](https://github.com/swcurran)
   - 0.11.0-rc0 [\#2575](https://github.com/hyperledger/aries-cloudagent-python/pull/2575) [swcurran](https://github.com/swcurran)
 
