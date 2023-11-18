@@ -1,13 +1,21 @@
 """Test VcLdpManager."""
-from asynctest import MagicMock, mock as async_mock
 import pytest
+from aries_cloudagent.resolver.default.key import KeyDIDResolver
+from aries_cloudagent.resolver.did_resolver import DIDResolver
+
+from aries_cloudagent.tests import mock
+from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
 
 from ....core.in_memory.profile import InMemoryProfile
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....wallet.base import BaseWallet
+from ....wallet.default_verification_key_strategy import (
+    BaseVerificationKeyStrategy,
+    DefaultVerificationKeyStrategy,
+)
 from ....wallet.did_info import DIDInfo
-from ....wallet.did_method import SOV
+from ....wallet.did_method import DIDMethod, DIDMethods, KEY, SOV
 from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import BLS12381G2, ED25519
 from ...ld_proofs.constants import (
@@ -20,7 +28,6 @@ from ...ld_proofs.purposes.authentication_proof_purpose import (
 )
 from ...ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
 from ...ld_proofs.suites.bbs_bls_signature_2020 import BbsBlsSignature2020
-from ...ld_proofs.suites.bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
 from ...ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ...ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
 from ..manager import VcLdpManager, VcLdpManagerError
@@ -34,6 +41,10 @@ VC = {
         "@context": [
             "https://www.w3.org/2018/credentials/v1",
             "https://www.w3.org/2018/credentials/examples/v1",
+            {
+                "ex": "https://example.org/test#",
+                "test": "ex:test",
+            },
         ],
         "type": ["VerifiableCredential", "UniversityDegreeCredential"],
         "credentialSubject": {"test": "key"},
@@ -48,13 +59,21 @@ VC = {
 
 
 @pytest.fixture
-def wallet():
-    yield MagicMock(BaseWallet, autospec=True)
+def resolver():
+    yield DIDResolver([KeyDIDResolver()])
 
 
 @pytest.fixture
-def profile():
-    profile = InMemoryProfile.test_profile()
+def profile(resolver: DIDResolver):
+    profile = InMemoryProfile.test_profile(
+        {},
+        {
+            DIDMethods: DIDMethods(),
+            BaseVerificationKeyStrategy: DefaultVerificationKeyStrategy(),
+            DIDResolver: resolver,
+        },
+    )
+    profile.context.injector.bind_instance(DocumentLoader, DocumentLoader(profile))
     yield profile
 
 
@@ -93,10 +112,10 @@ async def test_assert_can_issue_with_id_and_proof_type(manager: VcLdpManager):
             context.value
         )
 
-    with async_mock.patch.object(
+    with mock.patch.object(
         manager,
         "_did_info_for_did",
-        async_mock.CoroutineMock(),
+        mock.CoroutineMock(),
     ) as mock_did_info:
         did_info = DIDInfo(
             did=TEST_DID_SOV,
@@ -136,21 +155,18 @@ async def test_assert_can_issue_with_id_and_proof_type(manager: VcLdpManager):
 
 
 @pytest.mark.asyncio
-async def test_get_did_info_for_did_sov(manager: VcLdpManager, wallet: MagicMock):
-    wallet.get_local_did = async_mock.CoroutineMock()
-
-    did_info = await manager._did_info_for_did(TEST_DID_SOV)
-    wallet.get_local_did.assert_called_once_with(TEST_DID_SOV.replace("did:sov:", ""))
-    assert did_info == wallet.get_local_did.return_value
-
-
-@pytest.mark.asyncio
-async def test_get_did_info_for_did_key(manager: VcLdpManager, wallet: MagicMock):
-    wallet.get_local_did.reset_mock()
-
-    did_info = await manager._did_info_for_did(TEST_DID_KEY)
-    wallet.get_local_did.assert_called_once_with(TEST_DID_KEY)
-    assert did_info == wallet.get_local_did.return_value
+@pytest.mark.parametrize("method", [SOV, KEY])
+async def test_get_did_info_for_did_sov(
+    method: DIDMethod, profile: Profile, manager: VcLdpManager
+):
+    async with profile.session() as session:
+        wallet = session.inject(BaseWallet)
+        did = await wallet.create_local_did(
+            method=method,
+            key_type=ED25519,
+        )
+    did_info = await manager._did_info_for_did(did.did)
+    assert did_info == did
 
 
 @pytest.mark.asyncio
@@ -158,14 +174,14 @@ async def test_get_suite_for_credential(manager: VcLdpManager):
     vc = VerifiableCredential.deserialize(VC["credential"])
     options = LDProofVCOptions.deserialize(VC["options"])
 
-    with async_mock.patch.object(
+    with mock.patch.object(
         manager,
-        "_assert_can_issue_with_id_and_proof_type",
-        async_mock.CoroutineMock(),
-    ) as mock_can_issue, async_mock.patch.object(
+        "assert_can_issue_with_id_and_proof_type",
+        mock.CoroutineMock(),
+    ) as mock_can_issue, mock.patch.object(
         manager,
         "_did_info_for_did",
-        async_mock.CoroutineMock(),
+        mock.CoroutineMock(),
     ) as mock_did_info:
         suite = await manager._get_suite_for_credential(vc, options)
 
@@ -183,8 +199,8 @@ async def test_get_suite_for_credential(manager: VcLdpManager):
 
 @pytest.mark.asyncio
 async def test_get_suite(manager: VcLdpManager):
-    proof = async_mock.MagicMock()
-    did_info = async_mock.MagicMock()
+    proof = mock.MagicMock()
+    did_info = mock.MagicMock()
 
     suite = await manager._get_suite(
         proof_type=BbsBlsSignature2020.signature_type,
@@ -279,31 +295,75 @@ async def test_prepare_detail_ed25519_2020(
 
 
 @pytest.mark.asyncio
-async def test_issue():
-    raise NotImplementedError()
+async def test_issue(
+    profile: Profile,
+    manager: VcLdpManager,
+    vc: VerifiableCredential,
+    options: LDProofVCOptions,
+):
+    async with profile.session() as session:
+        wallet = session.inject(BaseWallet)
+        did = await wallet.create_local_did(
+            method=KEY,
+            key_type=ED25519,
+        )
+    vc.issuer = did.did
+    options.proof_type = Ed25519Signature2018.signature_type
+    cred = await manager.issue(vc, options)
+    assert cred
 
 
 @pytest.mark.asyncio
-async def test_issue_ed25519_2020():
+async def test_issue_ed25519_2020(
+    profile: Profile,
+    manager: VcLdpManager,
+    vc: VerifiableCredential,
+    options: LDProofVCOptions,
+):
     """Ensure ed25519 2020 context added to issued cred."""
-    raise NotImplementedError()
+    async with profile.session() as session:
+        wallet = session.inject(BaseWallet)
+        did = await wallet.create_local_did(
+            method=KEY,
+            key_type=ED25519,
+        )
+    vc.issuer = did.did
+    options.proof_type = Ed25519Signature2020.signature_type
+    cred = await manager.issue(vc, options)
+    assert cred
 
 
 @pytest.mark.asyncio
-async def test_issue_bbs():
+async def test_issue_bbs(
+    profile: Profile,
+    manager: VcLdpManager,
+    vc: VerifiableCredential,
+    options: LDProofVCOptions,
+):
     """Ensure BBS context is added to issued cred."""
-    raise NotImplementedError()
+    async with profile.session() as session:
+        wallet = session.inject(BaseWallet)
+        did = await wallet.create_local_did(
+            method=KEY,
+            key_type=BLS12381G2,
+        )
+    vc.issuer = did.did
+    options.proof_type = BbsBlsSignature2020.signature_type
+    cred = await manager.issue(vc, options)
+    assert cred
 
 
 @pytest.mark.asyncio
 async def test_get_all_suites(manager: VcLdpManager):
     suites = await manager._get_all_suites()
-    assert len(suites) == 4
+    # An analgous test used to check for BbsBlsSignatureProof2020
+    # This is not supported by the VcLdpManager which focuses on
+    # Issuance and Verification.
+    assert len(suites) == 3
     types = (
         Ed25519Signature2018,
         Ed25519Signature2020,
         BbsBlsSignature2020,
-        BbsBlsSignatureProof2020,
     )
     for suite in suites:
         assert isinstance(suite, types)
