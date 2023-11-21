@@ -1575,9 +1575,9 @@ class WalletGroup(ArgumentGroup):
             env_var="ACAPY_WALLET_TYPE",
             help=(
                 "Specifies the type of Indy wallet provider to use. "
-                "Supported internal storage types are 'basic' (memory), 'indy', "
-                "'askar' and 'askar-anoncreds'."
-                "The default (if not specified) is 'basic'."
+                "Supported internal storage types are 'basic' (memory), 'askar' "
+                "and 'askar-anoncreds'."
+                "The default (if not specified) is 'basic'. 'indy' is deprecated."
             ),
         )
         parser.add_argument(
@@ -1587,7 +1587,7 @@ class WalletGroup(ArgumentGroup):
             default="default",
             env_var="ACAPY_WALLET_STORAGE_TYPE",
             help=(
-                "Specifies the type of Indy wallet backend to use. "
+                "Specifies the type of wallet backend to use. "
                 "Supported internal storage types are 'basic' (memory), "
                 "'default' (sqlite), and 'postgres_storage'.  The default, "
                 "if not specified, is 'default'."
