@@ -8,7 +8,7 @@
 > An easy to use Aries agent for building SSI services using any language that supports sending/receiving HTTP requests.
 
 Full access to an organized set of all of the ACA-Py documents is available at [https://aca-py.org](https://aca-py.org).
-Check it out! It's much easier to navigate then finding all the documentation here.
+Check it out! It's much easier to navigate than finding all the documentation here.
 
 ## Overview
 
