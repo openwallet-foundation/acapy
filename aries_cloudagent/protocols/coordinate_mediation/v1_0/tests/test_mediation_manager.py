@@ -1,9 +1,8 @@
 """Test MediationManager."""
-import logging
-from typing import AsyncIterable, Iterable
+import pytest
 
 from aries_cloudagent.tests import mock
-import pytest
+from typing import AsyncIterable, Iterable
 
 from .. import manager as test_module
 from .....core.event_bus import EventBus, MockEventBus
@@ -449,9 +448,8 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert route.wallet_id == "test_wallet"
         assert route.connection_id == TEST_CONN_ID
 
-    async def test_store_update_results_errors(self, caplog, manager):
+    async def test_store_update_results_errors(self, manager):
         """test_store_update_results with errors."""
-        caplog.set_level(logging.WARNING)
         results = [
             KeylistUpdated(
                 recipient_key=TEST_VERKEY,
@@ -469,11 +467,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
                 result=KeylistUpdated.RESULT_CLIENT_ERROR,
             ),
         ]
-        await manager.store_update_results(TEST_CONN_ID, results)
-        assert "no_change" in caplog.text
-        assert "client_error" in caplog.text
-        assert "server_error" in caplog.text
-        print(caplog.text)
+        with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
+            await manager.store_update_results(TEST_CONN_ID, results)
+        assert mock_logger.warning.call_count == 3
 
     async def test_get_my_keylist(self, session, manager):
         """test_get_my_keylist."""

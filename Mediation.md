@@ -7,7 +7,7 @@
 * **Mediation Request** - A message from a client to a mediator requesting mediation or forwarding.
 * **Keylist** - The list of public keys used by the mediator to lookup to which connection a forward message should be sent. Each mediated agent is responsible for maintaining the keylist with the mediator.
 * **Keylist Update** - A message from a client to a mediator informing the mediator of changes to the keylist.
-* **Default Mediator** - A mediator to be used with with every newly created DIDComm connection. 
+* **Default Mediator** - A mediator to be used with every newly created DIDComm connection. 
 * **Mediation Connection** - Connection between the mediator and the mediated agent or client. Agents can use as many mediators as the identity owner sees fit. Requests for mediation are handled on a per connection basis.
 * See [Aries RFC 0211: Coordinate Mediation Protocol](https://github.com/hyperledger/aries-rfcs/blob/master/features/0211-route-coordination/README.md) for additional details on message attributes and more.
 
@@ -73,4 +73,4 @@ See [Aries RFC 0211: Coordinate Mediation Protocol](https://github.com/hyperledg
 ## Using a Mediator
 
 After establishing a connection with a mediator also having mediation granted, you can use that mediator id for future did_comm connections.
- When creating, receiving or accepting a invitation intended to be Mediated, you provide `mediation_id` with the desired mediator id. if using a single mediator for all future connections, You can set a default mediation id. If no mediation_id is provided the default mediation id will be used instead.
+ When creating, receiving or accepting an invitation intended to be Mediated, you provide `mediation_id` with the desired mediator id. if using a single mediator for all future connections, You can set a default mediation id. If no mediation_id is provided the default mediation id will be used instead.

@@ -15,7 +15,13 @@ def common_config(settings: Mapping[str, Any]):
     log_config = settings.get("log.config")
     log_level = settings.get("log.level") or os.getenv("LOG_LEVEL")
     log_file = settings.get("log.file")
-    LoggingConfigurator.configure(log_config, log_level, log_file)
+    multitenant_enabled = settings.get("multitenant.enabled") or False
+    LoggingConfigurator.configure(
+        logging_config_path=log_config,
+        log_level=log_level,
+        log_file=log_file,
+        multitenant=multitenant_enabled,
+    )
 
 
 class BoundedInt:

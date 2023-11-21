@@ -31,7 +31,7 @@ When a webhook is dispatched, the record `topic` is appended as a path component
 
 ### Webhooks over WebSocket
 
-ACA-Py's Admin API also supports delivering webhooks over WebSocket. This can be especially useful when working with scripts that interact with the Admin API but don't have a web server listening to recieve webhooks in response to its actions. No additional command line parameters are required to enable WebSocket support.
+ACA-Py's Admin API also supports delivering webhooks over WebSocket. This can be especially useful when working with scripts that interact with the Admin API but don't have a web server listening to receive webhooks in response to its actions. No additional command line parameters are required to enable WebSocket support.
 
 Webhooks received over WebSocket will contain the same data as webhooks posted over http but the structure differs in order to communicate details that would have been received as part of the HTTP request path and headers.
 

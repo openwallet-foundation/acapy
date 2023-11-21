@@ -148,9 +148,9 @@ There are 3 different errors associated with resolution in ACA-Py that could be 
 
 ### Using Resolver Plugins
 
-In this section, the [Github Resolver Plugin found here](https://github.com/dbluhm/acapy-resolver-github) will be used as an an example plugin to work with. This resolver resolves `did:github` DIDs.
+In this section, the [Github Resolver Plugin found here](https://github.com/dbluhm/acapy-resolver-github) will be used as an example plugin to work with. This resolver resolves `did:github` DIDs.
 
-The resolution algorithm is simple: for the github DID `did:github:dbluhm`, the method specific identifier `dbluhm` (a GitHub username) is used to lookup a `index.jsonld` file in the `ghdid` repository in that GitHub users profile. See [GitHub DID Method Specification](http://docs.github-did.com/did-method-spec/) for more details.
+The resolution algorithm is simple: for the github DID `did:github:dbluhm`, the method specific identifier `dbluhm` (a GitHub username) is used to lookup an `index.jsonld` file in the `ghdid` repository in that GitHub users profile. See [GitHub DID Method Specification](http://docs.github-did.com/did-method-spec/) for more details.
 
 To use this plugin, first install it into your project's python environment:
 

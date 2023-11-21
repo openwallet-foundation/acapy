@@ -139,6 +139,9 @@ class DemoAgent:
         arg_file: str = None,
         endorser_role: str = None,
         extra_args=None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
         **params,
     ):
         self.ident = ident
@@ -170,6 +173,9 @@ class DemoAgent:
         self.mediator_request_id = None
         self.aip = aip
         self.arg_file = arg_file
+        self.log_file = log_file
+        self.log_config = log_config
+        self.log_level = log_level
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -464,6 +470,24 @@ class DemoAgent:
             "--public-invites",
             # ("--log-level", "debug"),
         ]
+        if self.log_file:
+            result.extend(
+                [
+                    ("--log-file", self.log_file),
+                ]
+            )
+        if self.log_config:
+            result.extend(
+                [
+                    ("--log-config", self.log_config),
+                ]
+            )
+        if self.log_level:
+            result.extend(
+                [
+                    ("--log-level", self.log_level),
+                ]
+            )
         if self.aip == 20:
             result.append("--emit-new-didcomm-prefix")
         if self.multitenant:
