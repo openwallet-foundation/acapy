@@ -190,13 +190,13 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             limit_record_ids = pres_spec_payload.get("record_ids")
             reveal_doc_frame = pres_spec_payload.get("reveal_doc")
         if not pres_definition:
-            if "options" in proof_request:
-                challenge = proof_request["options"].get("challenge")
-                domain = proof_request["options"].get("domain")
             pres_definition = PresentationDefinition.deserialize(
                 proof_request.get("presentation_definition")
             )
             issuer_id = None
+        if "options" in proof_request:
+            challenge = proof_request["options"].get("challenge")
+            domain = proof_request["options"].get("domain")
         if not challenge:
             challenge = str(uuid4())
 

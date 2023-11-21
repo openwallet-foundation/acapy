@@ -111,7 +111,6 @@ async def _verify_presentation(
     )
 
     credential_results = None
-    verified = True
 
     credentials = JsonLdProcessor.get_values(presentation, "verifiableCredential")
     credential_results = await asyncio.gather(
@@ -129,7 +128,8 @@ async def _verify_presentation(
         ]
     )
 
-    verified = all([result.verified for result in credential_results])
+    credentials_verified = all(result.verified for result in credential_results)
+    verified = credentials_verified and presentation_result.verified
 
     return PresentationVerificationResult(
         verified=verified,
