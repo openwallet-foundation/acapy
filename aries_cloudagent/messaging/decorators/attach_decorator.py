@@ -448,13 +448,19 @@ class AttachDecoratorData(BaseModel):
 
             sign_input = (b64_protected + "." + b64_payload).encode("ascii")
             b_sig = b64_to_bytes(b64_sig, urlsafe=True)
-            verkey = bytes_to_b58(b64_to_bytes(protected["jwk"]["x"], urlsafe=True))
-            encoded_pk = DIDKey.from_did(protected["jwk"]["kid"]).public_key_b58
-            verkey_to_check.append(encoded_pk)
+            jwk = protected["jwk"]
+            verkey = bytes_to_b58(b64_to_bytes(jwk["x"], urlsafe=True))
             if not await wallet.verify_message(sign_input, b_sig, verkey, ED25519):
                 return False
-            if not await wallet.verify_message(sign_input, b_sig, encoded_pk, ED25519):
-                return False
+
+            if "kid" in jwk:
+                encoded_pk = DIDKey.from_did(protected["jwk"]["kid"]).public_key_b58
+                verkey_to_check.append(encoded_pk)
+                if not await wallet.verify_message(
+                    sign_input, b_sig, encoded_pk, ED25519
+                ):
+                    return False
+
         if signer_verkey and signer_verkey not in verkey_to_check:
             return False
         return True
