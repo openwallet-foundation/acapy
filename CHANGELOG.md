@@ -1,3 +1,23 @@
+# 0.10.5
+
+## November 21, 2023
+
+Release 0.10.5 is a high priority patch release to correct an issue with the
+handling of the JSON-LD presentation verifications, where the status of the
+verification of the `presentation.proof` in the Verifiable Presentation was not
+included when determining the verification value (`true` or `false`) of the
+overall presentation. A forthcoming security advisory will cover the details.
+
+Anyone using JSON-LD presentations is recommended to upgrade to this version
+of ACA-Py as soon as possible.
+
+### 0.10.5 Categorized List of Pull Requests
+
+- JSON-LD Credential Exchange (Issue, Present) Updates
+  - fix(backport): report presentation result [\#2622](https://github.com/hyperledger/aries-cloudagent-python/pull/2622) [dbluhm](https://github.com/dbluhm)
+- Release management pull requests
+  - 0.10.5 [\#2623](https://github.com/hyperledger/aries-cloudagent-python/pull/2623) [swcurran](https://github.com/swcurran)
+
 # 0.10.4
 
 ## October 9, 2023
