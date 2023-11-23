@@ -39,7 +39,11 @@ class V20CredFormat(BaseModel):
                 ".formats.indy.handler.IndyCredFormatHandler"
             ),
         )
-        ANONCREDS = FormatSpec(
+        """
+        Once we switch to anoncreds this will replace the above INDY definition.
+        In the meantime there are some hardcoded references in the
+        "...formats.indy.handler.IndyCredFormatHandler" class.
+        INDY = FormatSpec(
             "hlindy/",
             V20CredExRecordIndy,
             DeferLoad(
@@ -47,6 +51,7 @@ class V20CredFormat(BaseModel):
                 ".formats.anoncreds.handler.AnonCredsCredFormatHandler"
             ),
         )
+        """
         LD_PROOF = FormatSpec(
             "aries/",
             V20CredExRecordLDProof,

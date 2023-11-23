@@ -43,7 +43,7 @@ from ....message_types import (
     CRED_20_REQUEST,
 )
 from ...handler import V20CredFormatError
-from ..handler import IndyCredFormatHandler
+from ..handler import AnonCredsCredFormatHandler
 from ..handler import LOGGER as INDY_LOGGER
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
@@ -195,7 +195,7 @@ INDY_CRED = {
 }
 
 
-class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
+class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.profile = self.session.profile
@@ -235,7 +235,7 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
         self.holder = async_mock.MagicMock(AnonCredsHolder, autospec=True)
         self.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
-        self.handler = IndyCredFormatHandler(self.profile)
+        self.handler = AnonCredsCredFormatHandler(self.profile)
         assert self.handler.profile
 
     async def test_validate_fields(self):
@@ -1167,7 +1167,7 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
         ), mock.patch.object(
             test_module, "RevocationRegistry", autospec=True
         ) as mock_rev_reg, mock.patch.object(
-            test_module.IndyCredFormatHandler, "get_detail_record", autospec=True
+            test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
         ) as mock_get_detail_record:
             mock_rev_reg.from_definition = mock.MagicMock(
                 return_value=mock.MagicMock(
@@ -1266,7 +1266,7 @@ class TestV20IndyCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            test_module.IndyCredFormatHandler, "get_detail_record", autospec=True
+            test_module.AnonCredsCredFormatHandler, "get_detail_record", autospec=True
         ) as mock_get_detail_record, mock.patch.object(
             test_module.RevocationRegistry, "from_definition", mock.MagicMock()
         ) as mock_rev_reg:

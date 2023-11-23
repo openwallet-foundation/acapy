@@ -90,8 +90,10 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         """Retrieve credential exchange detail record by cred_ex_id."""
 
         async with self.profile.session() as session:
-            records = await AnonCredsCredFormatHandler.format.detail.query_by_cred_ex_id(
-                session, cred_ex_id
+            records = (
+                await AnonCredsCredFormatHandler.format.detail.query_by_cred_ex_id(
+                    session, cred_ex_id
+                )
             )
 
         if len(records) > 1:
@@ -148,7 +150,9 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
                 attach_id=AnonCredsCredFormatHandler.format.api,
                 format_=self.get_format_identifier(message_type),
             ),
-            AttachDecorator.data_base64(data, ident=AnonCredsCredFormatHandler.format.api),
+            AttachDecorator.data_base64(
+                data, ident=AnonCredsCredFormatHandler.format.api
+            ),
         )
 
     async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
@@ -253,7 +257,9 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
         holder_did = request_data.get("holder_did") if request_data else None
-        cred_offer = cred_ex_record.cred_offer.attachment(AnonCredsCredFormatHandler.format)
+        cred_offer = cred_ex_record.cred_offer.attachment(
+            AnonCredsCredFormatHandler.format
+        )
 
         if "nonce" not in cred_offer:
             raise V20CredFormatError("Missing nonce in credential offer")
@@ -316,7 +322,9 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         """Issue indy credential."""
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
-        cred_offer = cred_ex_record.cred_offer.attachment(AnonCredsCredFormatHandler.format)
+        cred_offer = cred_ex_record.cred_offer.attachment(
+            AnonCredsCredFormatHandler.format
+        )
         cred_request = cred_ex_record.cred_request.attachment(
             AnonCredsCredFormatHandler.format
         )
