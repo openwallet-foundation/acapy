@@ -1,6 +1,7 @@
 from .....vc.ld_proofs.error import LinkedDataProofException
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+from asynctest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
 
@@ -1296,7 +1297,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.web.HTTPForbidden):
                 await test_module.credential_exchange_issue(self.request)
 
-    async def test_credential_exchange_issue_rev_reg_full(self):
+    async def test_credential_exchange_issue_rev_reg_full_indy(self):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
 
@@ -1322,6 +1323,38 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_issue_cred = mock.CoroutineMock(
                 side_effect=test_module.IndyIssuerError()
+            )
+            mock_cred_mgr.return_value.issue_credential = mock_issue_cred
+
+            with self.assertRaises(test_module.web.HTTPBadRequest) as context:
+                await test_module.credential_exchange_issue(self.request)
+
+    async def test_credential_exchange_issue_rev_reg_full_anoncreds(self):
+        self.request.json = mock.CoroutineMock()
+        self.request.match_info = {"cred_ex_id": "dummy"}
+
+        mock_cx_rec = mock.MagicMock(
+            conn_id="dummy",
+            serialize=mock.MagicMock(),
+            save_error_state=mock.CoroutineMock(),
+        )
+        with mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, mock.patch.object(
+            test_module, "V20CredExRecord", autospec=True
+        ) as mock_cx_rec_cls:
+            mock_cx_rec.state = mock_cx_rec_cls.STATE_REQUEST_RECEIVED
+            mock_cx_rec_cls.retrieve_by_id = mock.CoroutineMock(
+                return_value=mock_cx_rec
+            )
+
+            mock_conn_rec.retrieve_by_id = mock.CoroutineMock()
+            mock_conn_rec.retrieve_by_id.return_value.is_ready = True
+
+            mock_issue_cred = async_mock.CoroutineMock(
+                side_effect=test_module.AnonCredsIssuerError()
             )
             mock_cred_mgr.return_value.issue_credential = mock_issue_cred
 
