@@ -14,9 +14,9 @@ Feature: RFC 0453 Aries agent issue credential
 
     Examples:
        | Acme_capabilities                        | Bob_capabilities  | Schema_name    | Credential_data          |
-       | --revocation --cred-type anoncreds --public-did |            | anoncreds-testing | Data_AC_NormalizedValues |
-       | --revocation --cred-type anoncreds --public-did --did-exchange | --did-exchange| anoncreds-testing | Data_AC_NormalizedValues |
-       | --revocation --cred-type anoncreds --public-did --multitenant  | --multitenant | anoncreds-testing | Data_AC_NormalizedValues |
+       | --revocation --wallet-type askar-anoncreds --public-did |            | anoncreds-testing | Data_AC_NormalizedValues |
+       | --revocation --wallet-type askar-anoncreds --public-did --did-exchange | --did-exchange| anoncreds-testing | Data_AC_NormalizedValues |
+       | --revocation --wallet-type askar-anoncreds --public-did --multitenant  | --multitenant | anoncreds-testing | Data_AC_NormalizedValues |
 
   @T004-RFC0453 @GHA
   Scenario Outline: Using anoncreds, create a schema/cred def in preparation for Issuing a credential
@@ -29,7 +29,7 @@ Feature: RFC 0453 Aries agent issue credential
 
     Examples:
        | Acme_capabilities                                                | Bob_capabilities              | Schema_name       | Credential_data          |
-       | --cred-type anoncreds --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | anoncreds-testing | Data_AC_NormalizedValues |
+       | --wallet-type askar-anoncreds --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | anoncreds-testing | Data_AC_NormalizedValues |
 
   @T004-RFC0453 @GHA-Anoncreds-test1
   Scenario Outline: Using anoncreds, Issue a credential, with the Issuer beginning with an offer
@@ -43,7 +43,7 @@ Feature: RFC 0453 Aries agent issue credential
 
     Examples:
        | Acme_capabilities                                                | Bob_capabilities              | Schema_name       | Credential_data          |
-       | --cred-type anoncreds --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | anoncreds-testing | Data_AC_NormalizedValues |
+       | --wallet-type askar-anoncreds --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | anoncreds-testing | Data_AC_NormalizedValues |
 
   @T003-RFC0453 @GHA
   Scenario Outline: Issue a credential with the Issuer beginning with an offer
