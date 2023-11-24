@@ -21,9 +21,9 @@ from runners.support.agent import (  # noqa:E402
     connect_wallet_to_mediator,
     start_endorser_agent,
     connect_wallet_to_endorser,
+    WALLET_TYPE_INDY,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
-    CRED_FORMAT_ANONCREDS,
     DID_METHOD_KEY,
     KEY_TYPE_BLS,
 )
@@ -643,7 +643,7 @@ class AriesAgent(DemoAgent):
         schema_attrs,
         revocation,
         version=None,
-        cred_type=CRED_FORMAT_INDY,
+        wallet_type=WALLET_TYPE_INDY,
     ):
         with log_timer("Publish schema/cred def duration:"):
             log_status("#3/4 Create a new schema/cred def on the ledger")
@@ -665,7 +665,7 @@ class AriesAgent(DemoAgent):
                 schema_attrs,
                 support_revocation=revocation,
                 revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
-                cred_type=cred_type,
+                wallet_type=wallet_type,
             )
             return cred_def_id
 
@@ -900,14 +900,14 @@ class AgentContainer:
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
+        if self.cred_type in [CRED_FORMAT_INDY,]:
             # need to redister schema and cred def on the ledger
             self.cred_def_id = await self.agent.create_schema_and_cred_def(
                 schema_name,
                 schema_attrs,
                 self.revocation,
                 version=version,
-                cred_type=self.cred_type,
+                wallet_type=self.wallet_type,
             )
             return self.cred_def_id
         elif self.cred_type == CRED_FORMAT_JSON_LD:
@@ -924,7 +924,7 @@ class AgentContainer:
     ):
         log_status("#13 Issue credential offer to X")
 
-        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
+        if self.cred_type in [CRED_FORMAT_INDY,]:
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
                 "attributes": cred_attrs,
@@ -984,7 +984,7 @@ class AgentContainer:
     async def request_proof(self, proof_request, explicit_revoc_required: bool = False):
         log_status("#20 Request proof of degree from alice")
 
-        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
+        if self.cred_type in [CRED_FORMAT_INDY,]:
             indy_proof_request = {
                 "name": proof_request["name"]
                 if "name" in proof_request
@@ -1065,7 +1065,7 @@ class AgentContainer:
 
         # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
-        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
+        if self.cred_type in [CRED_FORMAT_INDY,]:
             # return verified status
             return self.agent.last_proof_received["verified"]
 
@@ -1425,13 +1425,11 @@ async def create_agent_with_args(args, ident: str = None):
 
     if "cred_type" in args and args.cred_type not in [
         CRED_FORMAT_INDY,
-        CRED_FORMAT_ANONCREDS,
     ]:
         public_did = None
         aip = 20
     elif "cred_type" in args and args.cred_type in [
         CRED_FORMAT_INDY,
-        CRED_FORMAT_ANONCREDS,
     ]:
         public_did = True
     else:

@@ -66,9 +66,12 @@ elif RUN_MODE == "pwd":
     DEFAULT_EXTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
     DEFAULT_PYTHON_PATH = "."
 
+WALLET_TYPE_INDY = "indy"
+WALLET_TYPE_ASKAR = "askar"
+WALLET_TYPE_ANONCREDS = "askar-anoncreds"
+
 CRED_FORMAT_INDY = "indy"
 CRED_FORMAT_JSON_LD = "json-ld"
-CRED_FORMAT_ANONCREDS = "anoncreds"
 DID_METHOD_SOV = "sov"
 DID_METHOD_KEY = "key"
 KEY_TYPE_ED255 = "ed25519"
@@ -265,9 +268,9 @@ class DemoAgent:
         support_revocation: bool = False,
         revocation_registry_size: int = None,
         tag=None,
-        cred_type=CRED_FORMAT_INDY,
+        wallet_type=WALLET_TYPE_INDY,
     ):
-        if cred_type == CRED_FORMAT_INDY:
+        if wallet_type == WALLET_TYPE_INDY:
             return await self.register_schema_and_creddef_indy(
                 schema_name,
                 version,
@@ -276,7 +279,7 @@ class DemoAgent:
                 revocation_registry_size=revocation_registry_size,
                 tag=tag,
             )
-        elif cred_type == CRED_FORMAT_ANONCREDS:
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
             return await self.register_schema_and_creddef_anoncreds(
                 schema_name,
                 version,
@@ -628,7 +631,7 @@ class DemoAgent:
         role: str = "TRUST_ANCHOR",
         cred_type: str = CRED_FORMAT_INDY,
     ):
-        if cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_ANONCREDS]:
+        if cred_type in [CRED_FORMAT_INDY,]:
             # if registering a did for issuing indy credentials, publish the did on the ledger
             self.log(f"Registering {self.ident} ...")
             if not ledger_url:
