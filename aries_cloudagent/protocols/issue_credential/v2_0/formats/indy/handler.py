@@ -110,7 +110,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return self.anoncreds_handler.get_detail_record(cred_ex_id)
+            return await self.anoncreds_handler.get_detail_record(cred_ex_id)
 
         if len(records) > 1:
             LOGGER.warning(
@@ -197,7 +197,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Create indy credential proposal."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return self.anoncreds_handler.create_proposal(cred_ex_record, proposal_data)
+            return await self.anoncreds_handler.create_proposal(cred_ex_record, proposal_data)
 
         if proposal_data is None:
             proposal_data = {}
@@ -219,7 +219,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return self.anoncreds_handler.create_offer(cred_proposal_message)
+            return await self.anoncreds_handler.create_offer(cred_proposal_message)
 
         issuer = self.profile.inject(IndyIssuer)
         ledger = self.profile.inject(BaseLedger)
@@ -281,7 +281,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Create indy credential request."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return self.anoncreds_handler.create_request(cred_ex_record, request_data)
+            return await self.anoncreds_handler.create_request(cred_ex_record, request_data)
 
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
             raise V20CredFormatError(
@@ -353,7 +353,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Receive indy credential request."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return self.anoncreds_handler.receive_request(
+            return await self.anoncreds_handler.receive_request(
                 cred_ex_record,
                 cred_request_message,
             )
@@ -369,7 +369,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Issue indy credential."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return self.anoncreds_handler.issue_credential(cred_ex_record, retries)
+            return await self.anoncreds_handler.issue_credential(cred_ex_record, retries)
 
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
@@ -489,7 +489,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Store indy credential."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return self.anoncreds_handler.store_credential(cred_ex_record, cred_id)
+            return await self.anoncreds_handler.store_credential(cred_ex_record, cred_id)
 
         cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 
