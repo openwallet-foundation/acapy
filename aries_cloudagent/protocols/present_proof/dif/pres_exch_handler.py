@@ -1486,7 +1486,7 @@ class DIFPresExchHandler:
 
             for attrs in cred_dict.keys():
                 if attrs not in field_paths:
-                    return f'{"at least one of " if isinstance(attrs, list) else ""}{attrs} not in field paths'
+                    return f'No field in constraints for {"at least one of " if isinstance(attrs, list) else ""}{attrs}'
             for nested_attr_key in nested_field_paths:
                 nested_attr_values = nested_field_paths[nested_attr_key]
                 extracted = self.nested_get(cred_dict, nested_attr_key)
@@ -1512,7 +1512,7 @@ class DIFPresExchHandler:
         """If successful, returns None, otherwise returns string with reason for failure"""
         for attrs in extracted_dict.keys():
             if attrs not in nested_attr_values:
-                return f'{"at least one of " if isinstance(attrs, list) else ""}{attrs} not in field paths'
+                return f'No field in constraints for {"at least one of " if isinstance(attrs, list) else ""}{attrs}'
         return None
 
     def get_dict_keys_from_path(self, derived_cred_dict: dict, path: str) -> List:
