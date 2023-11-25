@@ -1450,7 +1450,7 @@ class DIFPresExchHandler:
             if is_limit_disclosure:
                 field = await self.get_updated_field(field, cred_dict)
             if not await self.filter_by_field(field, credential):
-                return f'Credential is not applicable for field "{field}"'
+                return f'Credential is not applicable for field {field.id} with paths {field.paths}'
             field_paths = field_paths + (
                 await self.restrict_field_paths_one_of_filter(
                     field_paths=field.paths, cred_dict=cred_dict
