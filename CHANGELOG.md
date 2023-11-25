@@ -5,14 +5,13 @@
 ### November 24, 2023
 
 Release 0.11.0 is a relatively large release of new features, fixes, and
-internal updates. 0.11.0 is planned to be the last major update before we
-being the transition to using the ledger agnostic [AnonCreds
+internal updates. 0.11.0 is planned to be the last significant update before we
+begin the transition to using the ledger agnostic [AnonCreds
 Rust](https://github.com/hyperledger/anoncreds-rs) in a release that is expected
-to bring some Admin/Controller API changes. We plan to do patches to the 0.11.x
-branch while the transition is made to the upcoming release to transition to
-using [Anoncreds Rust].
+to bring Admin/Controller API changes. We plan to do patches to the 0.11.x
+branch while the transition is made to using [Anoncreds Rust].
 
-A significant addition to ACA-Py is support for signing and verifying
+An important addition to ACA-Py is support for signing and verifying
 [SD-JWT] verifiable credentials. We expect this to be the first of the changes
 to extend ACA-Py to support [OpenID4VC protocols].
 
@@ -40,11 +39,6 @@ objects now included in Python's builtin `unittest` package for unit testing.
 These are necessary and important modernization changes, with the latter two
 triggering many (largely mechanical) changes to the codebase.
 
-**NOTE:** In addition to these PRs in the 0-11.0-rc0 release, we also
-expect to include at least those [ACA-Py PRs labelled "0.11.0"] in the release.
-
-[ACA-Py PRs labelled "0.11.0"]: https://github.com/hyperledger/aries-cloudagent-python/pulls?q=is%3Apr+label%3A0.11.0
-
 ### 0.11.0 Breaking Changes
 
 In addition to the impacts of the change for developers in switching from `pip`
@@ -71,10 +65,6 @@ and there is no associated Credential Exchange Record. This may happen, for
 example, if an issuer decides to delete a Credential Exchange Record that has
 not be answered for a long time, and the holder responds after the delete. See
 [PR \#2577].
-
-The versioning scheme for Release Candidates has been changed to drop the `-` in
-the version string. This means the older style of `0.11.0-rc0` has been changed
-to the newer style of `0.11.0rc2`.
 
 [PR \#2517]: https://github.com/hyperledger/aries-cloudagent-python/pull/2517
 [PR \#2587]: https://github.com/hyperledger/aries-cloudagent-python/pull/2587
