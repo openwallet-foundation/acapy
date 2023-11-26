@@ -3298,7 +3298,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                == None
+                is None
             )
 
     @pytest.mark.asyncio
@@ -3337,7 +3337,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                != None
+                is not None
             )
 
         constraint = {
@@ -3358,7 +3358,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                != None
+                is not None
             )
 
     @pytest.mark.asyncio
@@ -3387,7 +3387,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                == None
+                is None
             )
 
         constraint = {
@@ -3408,7 +3408,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                == None
+                is None
             )
 
         cred_dict["credentialSubject"]["Patient"]["address"] = [
@@ -3439,7 +3439,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                == None
+                is None
             )
 
         cred_dict["credentialSubject"]["Patient"] = [
@@ -3486,7 +3486,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                == None
+                is None
             )
 
         constraint = {
@@ -3507,7 +3507,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                == None
+                is None
             )
 
         constraint = {
@@ -3528,7 +3528,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                == None
+                is None
             )
 
         constraint = {
@@ -3549,7 +3549,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                == None
+                is None
             )
 
     @pytest.mark.asyncio
@@ -3576,7 +3576,7 @@ class TestPresExchHandler:
                 await dif_pres_exch_handler.apply_constraint_received_cred(
                     constraint=constraint, cred_dict=cred_dict
                 )
-                != None
+                is not None
             )
 
     @pytest.mark.asyncio
