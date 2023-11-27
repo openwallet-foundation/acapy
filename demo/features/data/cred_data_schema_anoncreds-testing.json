@@ -1,0 +1,15 @@
+{
+    "Data_AC_NormalizedValues":{
+        "attributes":[
+            {
+               "name":"name",
+               "value":"Bob"
+            },
+            {
+               "name":"age",
+               "value":"42"
+            }
+         ]
+   
+    }
+}
