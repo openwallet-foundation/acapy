@@ -39,8 +39,6 @@ If needed: `alias sphinx-apidoc='docker run -it --rm -v ${PWD}:/docs sphinxdoc/s
 
 `cp -r ../aries_cloudagent .; rm -rf generated; sphinx-apidoc -f -M -o  ./generated ./aries_cloudagent/ $(find ./aries_cloudagent/ -name '*tests*'); sudo chown -R $USER:$USER generated/; rm -rf ./aries_cloudagent`
 
-```
-
 Note that the `find` command that is used to exclude any of the `test` python files from the RTD documentation.
 
 Check the  `git status` in your repo to see if the generator updates, adds or removes any existing RTD modules.
