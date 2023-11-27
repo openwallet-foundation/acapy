@@ -1,7 +1,7 @@
 """Test Problem Report Message."""
-import logging
 import pytest
 
+from unittest import mock
 from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
@@ -13,13 +13,11 @@ from ..problem_report import (
     ValidationError,
 )
 
+from .. import problem_report as test_module
+
 
 class TestOOBProblemReportMessage(TestCase):
     """Test problem report."""
-
-    @pytest.fixture(autouse=True)
-    def inject_fixtures(self, caplog):
-        self._caplog = caplog
 
     def setUp(self):
         self.problem_report = OOBProblemReport(
@@ -70,9 +68,9 @@ class TestOOBProblemReportMessage(TestCase):
         )
         data.assign_thread_id(thid="test_thid", pthid="test_pthid")
         data = data.serialize()
-        self._caplog.set_level(logging.WARNING)
-        OOBProblemReportSchema().validate_fields(data)
-        assert "Unexpected error code received" in self._caplog.text
+        with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
+            OOBProblemReportSchema().validate_fields(data)
+        assert mock_logger.warning.call_count == 1
 
     def test_assign_msg_type_version_to_model_inst(self):
         test_msg = OOBProblemReport()

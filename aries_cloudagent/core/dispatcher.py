@@ -13,7 +13,6 @@ import weakref
 
 from aiohttp.web import HTTPException
 
-from ..config.logging import get_logger_inst
 from ..connections.base_manager import BaseConnectionManager
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
@@ -52,10 +51,7 @@ class Dispatcher:
         self.collector: Collector = None
         self.profile = profile
         self.task_queue: TaskQueue = None
-        self.logger: logging.Logger = get_logger_inst(
-            profile=self.profile,
-            logger_name=__name__,
-        )
+        self.logger: logging.Logger = logging.getLogger(__name__)
 
     async def setup(self):
         """Perform async instance setup."""

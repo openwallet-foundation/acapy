@@ -12,7 +12,7 @@ async def setup(context: InjectionContext):
     """Set up default resolvers."""
     registry = context.inject_or(AnonCredsRegistry)
     if not registry:
-        LOGGER.warning("No AnonCredsRegistry instance found in context")
+        LOGGER.error("No AnonCredsRegistry instance found in context!!!")
         return
 
     indy_registry = ClassProvider(

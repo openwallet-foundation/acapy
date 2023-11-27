@@ -40,6 +40,7 @@ def registry():
     yield LegacyIndyRegistry()
 
 
+@pytest.mark.indy
 class TestLegacyIndyRegistry:
     @pytest.mark.asyncio
     async def test_supported_did_regex(self, registry: LegacyIndyRegistry):

@@ -156,6 +156,17 @@ class Conductor:
                         ),
                     )
                 elif (
+                    self.root_profile.BACKEND_NAME == "askar-anoncreds"
+                    and ledger.BACKEND_NAME == "indy-vdr"
+                ):
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.anoncreds.credx.verifier.IndyCredxVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                elif (
                     self.root_profile.BACKEND_NAME == "indy"
                     and ledger.BACKEND_NAME == "indy"
                 ):

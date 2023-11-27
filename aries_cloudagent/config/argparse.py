@@ -1013,46 +1013,6 @@ class LoggingGroup(ArgumentGroup):
                 "('debug', 'info', 'warning', 'error', 'critical')"
             ),
         )
-        parser.add_argument(
-            "--log-handler-config",
-            dest="log_handler_config",
-            type=str,
-            metavar="<log-handler-config>",
-            default=None,
-            env_var="ACAPY_LOG_HANDLER_CONFIG",
-            help=(
-                "Specifies when, interval, backupCount for the "
-                "TimedRotatingFileHandler. These attributes are "
-                "passed as a ; seperated string. For example, "
-                "when of D (days), interval of 7 and backupCount "
-                "of 1 will be passed as 'D;7;1'. Note: "
-                "backupCount of 0 will mean all backup log files "
-                "will be retained and not deleted at all."
-            ),
-        )
-        parser.add_argument(
-            "--log-fmt-pattern",
-            dest="log_fmt_pattern",
-            type=str,
-            metavar="<log-fmt-pattern>",
-            default=None,
-            env_var="ACAPY_LOG_FMT_PATTERN",
-            help=(
-                "Specifies logging formatter pattern as string. Examples are included "
-                "in 'Logging.md'. For information regarding different attributes "
-                "supported in the pattern, please look at "
-                "https://docs.python.org/3/library/logging.html#logrecord-attributes."
-            ),
-        )
-        parser.add_argument(
-            "--log-json-fmt",
-            action="store_true",
-            env_var="ACAPY_LOG_JSON_FMT",
-            help=(
-                "Specifies whether to use JSON logging formatter or "
-                "text logging formatter."
-            ),
-        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract logging settings."""
@@ -1063,29 +1023,6 @@ class LoggingGroup(ArgumentGroup):
             settings["log.file"] = args.log_file
         if args.log_level:
             settings["log.level"] = args.log_level
-        if args.log_handler_config:
-            try:
-                handler_config_attribs = (args.log_handler_config).split(";")
-                settings["log.handler_when"] = handler_config_attribs[0]
-                settings["log.handler_interval"] = int(handler_config_attribs[1])
-                settings["log.handler_bakcount"] = int(handler_config_attribs[2])
-            except IndexError:
-                raise ArgsParseError(
-                    "With --log-handler-config, the provided argument must be "
-                    "in 'when;interval;backupCount' format. Each of the 3 "
-                    "attributes for TimedRotatingFileHandler must be specified."
-                )
-            except ValueError:
-                raise ArgsParseError(
-                    "With --log-handler-config, 'interval' and 'backupCount' "
-                    "should be a number [int]"
-                )
-        if args.log_fmt_pattern:
-            settings["log.fmt_pattern"] = args.log_fmt_pattern
-        if args.log_json_fmt:
-            settings["log.json_fmt"] = True
-        else:
-            settings["log.json_fmt"] = False
         return settings
 
 
@@ -1638,8 +1575,9 @@ class WalletGroup(ArgumentGroup):
             env_var="ACAPY_WALLET_TYPE",
             help=(
                 "Specifies the type of Indy wallet provider to use. "
-                "Supported internal storage types are 'basic' (memory) and 'indy'. "
-                "The default (if not specified) is 'basic'."
+                "Supported internal storage types are 'basic' (memory), 'askar' "
+                "and 'askar-anoncreds'."
+                "The default (if not specified) is 'basic'. 'indy' is deprecated."
             ),
         )
         parser.add_argument(
@@ -1649,7 +1587,7 @@ class WalletGroup(ArgumentGroup):
             default="default",
             env_var="ACAPY_WALLET_STORAGE_TYPE",
             help=(
-                "Specifies the type of Indy wallet backend to use. "
+                "Specifies the type of wallet backend to use. "
                 "Supported internal storage types are 'basic' (memory), "
                 "'default' (sqlite), and 'postgres_storage'.  The default, "
                 "if not specified, is 'default'."

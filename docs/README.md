@@ -35,15 +35,9 @@ To rebuild the project and settings from scratch (you'll need to move the genera
 
 See the **NOTE** above for the need for the use of docker in these steps.
 
-``` bash
-alias sphinx-apidoc='docker run -it --rm -v ${PWD}:/docs sphinxdoc/sphinx sphinx-apidoc'
-cp -r ../aries_cloudagent .
-rm -rf generated
-# sphinx-apidoc -f -M -o  ./generated ../aries_cloudagent/ $(find ../aries_cloudagent/ -name '*tests*')
-sphinx-apidoc -f -M -o  ./generated ./aries_cloudagent/ $(find ./aries_cloudagent/ -name '*tests*')
-rm -rf ./aries_cloudagent
-unalias sphinx-apidoc
-```
+If needed: `alias sphinx-apidoc='docker run -it --rm -v ${PWD}:/docs sphinxdoc/sphinx sphinx-apidoc'`
+
+`cp -r ../aries_cloudagent .; rm -rf generated; sphinx-apidoc -f -M -o  ./generated ./aries_cloudagent/ $(find ./aries_cloudagent/ -name '*tests*'); sudo chown -R $USER:$USER generated/; rm -rf ./aries_cloudagent`
 
 Note that the `find` command that is used to exclude any of the `test` python files from the RTD documentation.
 

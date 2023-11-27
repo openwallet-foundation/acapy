@@ -1,6 +1,5 @@
 """Test keylist handler."""
 import logging
-
 import pytest
 
 from ......connections.models.conn_record import ConnRecord
@@ -10,6 +9,7 @@ from ......messaging.responder import MockResponder
 from ...messages.keylist import Keylist
 from ...models.mediation_record import MediationRecord
 from ..keylist_handler import KeylistHandler
+
 
 TEST_CONN_ID = "conn-id"
 pytestmark = pytest.mark.asyncio
@@ -45,15 +45,17 @@ class TestKeylistHandler:
             assert "inactive connection" in exc.value
 
     async def test_handler_no_record(self, context, caplog):
-        caplog.set_level(logging.INFO)
         handler, responder = KeylistHandler(), MockResponder()
+        logging.propagate = True
+        caplog.set_level(logging.INFO)
         await handler.handle(context, responder)
         assert "not acting as mediator" in caplog.text
         assert "Keylist received: " not in caplog.text
 
     async def test_handler(self, context, session, caplog):
-        caplog.set_level(logging.INFO)
         handler, responder = KeylistHandler(), MockResponder()
         await MediationRecord(connection_id=TEST_CONN_ID).save(session)
+        logging.propagate = True
+        caplog.set_level(logging.INFO)
         await handler.handle(context, responder)
         assert "Keylist received: " in caplog.text
