@@ -907,7 +907,7 @@ class AgentContainer:
                 schema_attrs,
                 self.revocation,
                 version=version,
-                wallet_type=self.wallet_type,
+                wallet_type=self.agent.wallet_type,
             )
             return self.cred_def_id
         elif self.cred_type == CRED_FORMAT_JSON_LD:

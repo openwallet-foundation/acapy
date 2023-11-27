@@ -270,7 +270,7 @@ class DemoAgent:
         tag=None,
         wallet_type=WALLET_TYPE_INDY,
     ):
-        if wallet_type == WALLET_TYPE_INDY:
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
             return await self.register_schema_and_creddef_indy(
                 schema_name,
                 version,
@@ -289,7 +289,7 @@ class DemoAgent:
                 tag=tag,
             )
         else:
-            return None, None
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
 
     async def register_schema_and_creddef_indy(
         self,
