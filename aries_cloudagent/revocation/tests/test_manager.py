@@ -153,6 +153,10 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             test_module.IssuerRevRegRecord,
             "retrieve_by_id",
             mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
+        ), mock.patch.object(
+            test_module.ConnRecord,
+            "retrieve_by_id",
+            mock.CoroutineMock(return_value=conn_record),
         ):
             mock_retrieve.return_value = mock.MagicMock(
                 rev_reg_id="dummy-rr-id", cred_rev_id=CRED_REV_ID
@@ -381,7 +385,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
             manager = RevocationManager(self.profile)
-            result = await manager.publish_pending_revocations(
+            _, result = await manager.publish_pending_revocations(
                 rrid2crid={REV_REG_ID: "2"}, connection_id=conn_id
             )
             assert result == {REV_REG_ID: ["2"]}
@@ -490,7 +494,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
-            result = await self.manager.publish_pending_revocations()
+            _, result = await self.manager.publish_pending_revocations()
             assert result == {REV_REG_ID: ["1", "2"]}
             mock_issuer_rev_reg_record.clear_pending.assert_called_once()
 
@@ -549,7 +553,9 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
-            result = await self.manager.publish_pending_revocations({REV_REG_ID: None})
+            _, result = await self.manager.publish_pending_revocations(
+                {REV_REG_ID: None}
+            )
             assert result == {REV_REG_ID: ["1", "2"]}
             mock_issuer_rev_reg_records[0].clear_pending.assert_called_once()
             mock_issuer_rev_reg_records[1].clear_pending.assert_not_called()
@@ -609,7 +615,9 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
 
-            result = await self.manager.publish_pending_revocations({REV_REG_ID: "2"})
+            _, result = await self.manager.publish_pending_revocations(
+                {REV_REG_ID: "2"}
+            )
             assert result == {REV_REG_ID: ["2"]}
             mock_issuer_rev_reg_records[0].clear_pending.assert_called_once()
             mock_issuer_rev_reg_records[1].clear_pending.assert_not_called()
