@@ -197,7 +197,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Create indy credential proposal."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_proposal(cred_ex_record, proposal_data)
+            return await self.anoncreds_handler.create_proposal(
+                cred_ex_record,
+                proposal_data,
+            )
 
         if proposal_data is None:
             proposal_data = {}
@@ -281,7 +284,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Create indy credential request."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_request(cred_ex_record, request_data)
+            return await self.anoncreds_handler.create_request(
+                cred_ex_record,
+                request_data,
+            )
 
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
             raise V20CredFormatError(
