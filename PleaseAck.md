@@ -36,12 +36,12 @@ The main idea is to consider different kinds of `please_ack` separately and proc
 According to the [please-ack RFC](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) the Aries agent receiving the `RECEIPT` option in the `please_ack` decorator should answer with an ACK message and continue processing according to the particular protocol.
 
 It seems the code for the `please_ack(RECEIPT)` decorator processing can be implemented as a common handler outside the code of protocols.
-The common handler doesn't depend on the message-specific handler and can be called before it as a first phase of message processing.
+The common handler doesn't depend on the message-specific handler and can be called before it as a first phase of message processing. The `please_ack(RECEIPT)` processing does not affect states of the protocol being processed.
 
 
 ### The `OUTCOME` option processing
 
-Unlike the `RECEIPT` processing of the `OUTCOME` option is protocol-specific. Result itself (in terms of success/failure) and time when it appears depend on the protocol purpose and data being processed.
+Unlike the `RECEIPT`, processing of the `OUTCOME` option is protocol-specific. Result itself (in terms of success/failure) and time when it appears depend on the protocol purpose and data being processed.
 
 That means that the `OUTCOME` handler should be a part of the protocol code.
 
@@ -52,7 +52,13 @@ That means that the `OUTCOME` handler should be a part of the protocol code.
 
 #### Should we adopt ACK message type in each protocol to handle `RECEIPT`-decorated messages?
 
-The [please-ack RFC](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) does not define what type of ACK message should be used in responses to `RECEIPT`-decorated messages. As a result it is not possible to implement the common handler until the RFC defines what ACK message type must be used.
+The [please-ack RFC](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) does not define what type of ACK message should be used in responses to `RECEIPT`-decorated messages.
+It is important thing because:
+
+- The common handler implementation in ACA-Py depends on it.
+- Different Aries agent implementations must behave similar to keep compatibility.
+
+As a result it is not possible to implement the common handler until the RFC defines what ACK message type must be used.
 
 There are several options:
 
@@ -64,14 +70,14 @@ There are several options:
 
   **Disadvantages:**
   - Some protocols (for example, `credential-issue-v2` and `present-proof-v2`) have already adopted ACK for their purposes. Using both the original and adopted ACK message types in the same protocol may be considered inconsistent.
-  - It may require many changes of the other ACA-Py code. The ACK message that sent in response to `please_ack` should be processed by the controller's webhook call, for example. The handler (which is the same for all protocols) of `notification/1.0/ack` message type should be able to find the particular protocol manager class (and the `ExchangeRecord` instance for the protocol being executed) using the `~thread` decorator specified in the message. Currently ACA-py uses only `~type` for this purpose. It seems to be non-trivial task.
+  - It may require many changes of the other ACA-Py code. The ACK message that is sent in response to `please_ack` should be processed by the controller's webhook call, for example. The handler (which is the same for all protocols) of `notification/1.0/ack` message type should be able to find the particular protocol manager class (and the `ExchangeRecord` instance for the protocol being executed) using the `~thread` decorator specified in the message. Currently ACA-py uses only `~type` for this purpose. It seems to be a non-trivial task.
 
 
 2. To adopt the `notification/1.0/ack` type in each protocol
 
   **Disadvantages:**
-  - Code duplication. It requires to adopt the ACK message type in each protocol.
-  - It requires to change the code of ACK message handlers for the protocols that have already adopted ACK messages since the same message can be received in different protocol states (not only when the protocol is waiting for the final ACK from the other side to terminate the protocol being executed).
+  - Code duplication. It requires adopting the ACK message type in each protocol.
+  - It requires changing the code of ACK message handlers for the protocols that have already adopted ACK messages since the same message can be received in different protocol states (not only when the protocol is waiting for the final ACK from the other side to terminate the protocol being executed).
 
 3. To use adopted ACK messages if there is an adopted message type in the protocol, to use original ACK message otherwise
 
@@ -82,20 +88,20 @@ There are several options:
   **Disadvantages:**
   - As it has been already mentioned, it may require many changes of the other ACA-Py code to implement the handler for `notification/1.0/ack` message type.
   - Some additional code is required to find appropriate ACK message type to send as a response.
-  - It requires to change the code of ACK message handlers for the protocols that have already adopted ACK messages since the same message can be received in different protocol states (not only when the protocol is waiting for the final ACK from the other side to terminate the protocol being executed).
+  - It requires changing the code of ACK message handlers for the protocols that have already adopted ACK messages since the same message can be received in different protocol states (not only when the protocol is waiting for the final ACK from the other side to terminate the protocol being executed).
 
 
 #### How to process the ACKs received in response to the `RECEIPT`-decorated messages?
 
 There are possible options:
 
-- To put message to logs.
+- To put a message to logs.
 - To call the controller's webhook.
 
 
 ### Open questions in context of OUTCOME option
 
-#### When is the outcome is known?
+#### When is the outcome known?
 
 It may be not easy to determine what is the "outcome" and when it appears for each protocol.
 
@@ -113,33 +119,33 @@ Some possible options:
 
 - To ignore the `please_ack(OUTCOME)` if the "outcome" is not expected in the current state of the protocol being executed.
 - To consider any message as having some "outcome" and send the ACK in response to it.
-- To "remember" that the ACK is requested (via setting some flag in the protocol state instance) and send the ACK in response to final message of the protocol. It is, probably, the worst option since the `please_ack` decorator requests the ACK message in response to the decorated message (according to the [please-ack RFC](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack)).
+- To "remember" that the ACK is requested (via setting some flag in the protocol state instance) and send the ACK in response to the final message of the protocol. It is, probably, the worst option since the `please_ack` decorator requests the ACK message in response to the decorated message (according to the [please-ack RFC](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack)).
 
 #### Compatibility between different versions of ACA-py agents
 
 Current ACA-Py code doesn't support the `please_ack`. However some protocols send the ACK message once the interaction is done.
 
-For example, the [0453-issue-credential-v2](https://github.com/hyperledger/aries-rfcs/tree/main/features/0453-issue-credential-v2) protocol implemented in such a way that the `holder` sends the ACK message once credentials are received and verified. In this case the ACK is send unconditionally, no matter if the `please_ack` decorates the message or not. The `issuer` always is waiting for the ACK message before transition to the `DONE` state.
+For example, the [0453-issue-credential-v2](https://github.com/hyperledger/aries-rfcs/tree/main/features/0453-issue-credential-v2) protocol is implemented in such a way that the `holder` sends the ACK message once credentials are received and verified. In this case the ACK is sent unconditionally, no matter if the `please_ack` decorates the message or not. The `issuer` always is waiting for the ACK message before transition to the `DONE` state.
 
 According to [0453-issue-credential-v2 protocol documentation](https://github.com/hyperledger/aries-rfcs/tree/main/features/0453-issue-credential-v2) behavior (for both `holder` and `issuer`) depends on the `please_ack` decorator presence.
-The `issuer` must be waiting for the ACK message if the `please_ack (OUTCOME)` decorator is set, otherwise the the `issuer` must transit to the `DONE` state immediately.
+The `issuer` must be waiting for the ACK message if the `please_ack (OUTCOME)` decorator is set, otherwise the `issuer` must transit to the `DONE` state immediately.
 
 What is the problem?
 
 ACA-Py agent acting as the `issuer` is always waiting for the ACK message, no matter if the `please_ack(OUTCOME)` is sent or not.
 
-Let's assume an `issuer` agent is based on current version of code while a `holder` agent is based on new version of code (where `please_ack` is supported).
+Let's assume an `issuer` agent is based on the current version of code while a `holder` agent is based on new a version of code (where `please_ack` is supported).
 
 The `issuer` sends credentials and waits for the ACK. But the `holder`, according to the protocol RFC, doesn't send the ACK message because the `please_ack(OUTCOME)` is not attached by the `issuer`. As a result the `issuer` can't reach the `DONE` state.
 
-The possible option to resolve the issue could be the `0557-discover-features-v2` protocol. The idea is to use `0557-discover-features-v2` protocol to check if the other side supports the `please_ack` decorator or not and behave taking it into account.
+The possible option to resolve the issue could be the `0557-discover-features-v2` protocol. The idea is to use the `0557-discover-features-v2` protocol to check if the other side supports the `please_ack` decorator or not and behave taking it into account.
 
-For example, the `0557-discover-features-v2` protocol may be executed automatically once a connection between agents is established. The first agent may ask second one if the `please_ack` is supported or not.
+For example, the `0557-discover-features-v2` protocol may be executed automatically once a connection between agents is established. The first agent may ask the second one if the `please_ack` is supported or not.
 
 
 ### Open questions in context of both RECEIPT and OUTCOME options
 
-#### Should the ACK be sent in case response is immediately generated and sent?
+#### Should the ACK be sent in case a response is immediately generated and sent?
 
 In many protocols a response is immediately generated and sent. What help is sending another message in parallel?
 
