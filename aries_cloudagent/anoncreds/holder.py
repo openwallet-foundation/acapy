@@ -19,7 +19,7 @@ from anoncreds.bindings import create_link_secret
 from aries_askar import AskarError, AskarErrorCode
 
 from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
-from ..askar.profile import AskarProfile
+from ..askar.profile_anon import AskarAnoncredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
@@ -68,10 +68,10 @@ class AnonCredsHolder:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarProfile:
+    def profile(self) -> AskarAnoncredsProfile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarProfile):
-            raise ValueError("AnonCreds interface requires Askar")
+        if not isinstance(self._profile, AskarAnoncredsProfile):
+            raise ValueError("AnonCreds interface requires AskarAnoncreds")
 
         return self._profile
 

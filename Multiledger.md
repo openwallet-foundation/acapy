@@ -85,7 +85,7 @@ Optional properties:
 - `pool_name`: name of the indy pool to be opened
 - `keepalive`: how many seconds to keep the ledger open
 - `socks_proxy`
-- `is_write`: Whether this ledger is writable. It requires atleast one write ledger specified. Multiple write ledgers can be specified in config.
+- `is_write`: Whether this ledger is writable. It requires at least one write ledger specified. Multiple write ledgers can be specified in config.
 - `endorser_did`: Endorser public DID registered on the ledger, needed for supporting Endorser protocol at multi-ledger level.
 - `endorser_alias`: Endorser alias for this ledger, needed for supporting Endorser protocol at multi-ledger level.
 
@@ -144,7 +144,7 @@ If multiple ledgers are configured then `IndyLedgerRequestsExecutor` service ext
 
 ### Write Requests
 
-On startup, the first configured applicable ledger is assigned as the `write_ledger` [`BaseLedger`], the selection is dependant on the order (top-down) and whether it is `production` or `non_production`. For instance, considering this [example configuration](#example-config-file), ledger `bcovrinTest` will be set as `write_ledger` as it is the topmost `production` ledger. If no `production` ledgers are included in configuration then the topmost `non_production` ledger is selected.
+On startup, the first configured applicable ledger is assigned as the `write_ledger` [`BaseLedger`], the selection is dependent on the order (top-down) and whether it is `production` or `non_production`. For instance, considering this [example configuration](#example-config-file), ledger `bcovrinTest` will be set as `write_ledger` as it is the topmost `production` ledger. If no `production` ledgers are included in configuration then the topmost `non_production` ledger is selected.
 
 ## A Special Warning for TAA Acceptance
 

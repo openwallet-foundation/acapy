@@ -22,8 +22,8 @@ Once ready to do a release, create a local branch that includes the following up
   - Use a command like the following, adjusting the tag parameters as
     appropriate. `docker run -it --rm -v "$(pwd)":/usr/local/src/your-app
     githubchangeloggenerator/github-changelog-generator --user hyperledger
-    --project aries-cloudagent-python --output 0.7.4-rc0.md --since-tag 0.7.3
-    --future-release 0.7.4-rc0 --release-branch main --token <your-token>`
+    --project aries-cloudagent-python --output 0.11.0rc2.md --since-tag 0.10.4
+    --future-release 0.11.1rc2 --release-branch main --token <your-token>`
   - In the generated file, use only the PR list -- we don't include the list of
     closed issues in the Change Log.
 
@@ -107,7 +107,9 @@ Once you have the list of PRs:
    version number should adhere to the [Semantic Versioning
    Specification](https://semver.org/#semantic-versioning-specification-semver)
    based on the changes since the last published release. For Release
-   Candidates, the form of the tag is "0.7.2-rc0".
+   Candidates, the form of the tag is "0.11.0rc2". As of release `0.11.0`
+   we have dropped the previously used `-` in the release candidate version
+   string to better follow the semver rules.
   
 6. An extra search of the repo for the existing tag is recommended to see if
    there are any other instances of the tag in the repo. If any are found to be

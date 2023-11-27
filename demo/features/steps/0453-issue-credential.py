@@ -4,12 +4,12 @@ from time import sleep
 import time
 
 from bdd_support.agent_backchannel_client import (
-    agent_container_DELETE,
     aries_container_create_schema_cred_def,
     aries_container_issue_credential,
     aries_container_receive_credential,
     read_schema_data,
     read_credential_data,
+    agent_container_DELETE,
     agent_container_GET,
     agent_container_POST,
     async_sleep,
@@ -610,6 +610,56 @@ def step_impl(context, issuer, holder, credential_data):
         data,
     )
     assert resp["state"] == "request-sent"
+
+
+@when(
+    '"{issuer}" offers "{holder}" an anoncreds credential with data {credential_data}'
+)
+def step_impl(context, issuer, holder, credential_data):
+    # initiate a cred exchange with an anoncreds credential
+    agent = context.active_agents[issuer]
+    holder_agent = context.active_agents[holder]
+
+    offer_request = {
+        "connection_id": agent["agent"].agent.connection_id,
+        "filter": {
+            "ld_proof": {
+                "credential": {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                    ],
+                    "type": [
+                        "VerifiableCredential",
+                        "PermanentResident",
+                    ],
+                    "id": "https://credential.example.com/residents/1234567890",
+                    "issuer": agent["agent"].agent.did,
+                    "issuanceDate": "2020-01-01T12:00:00Z",
+                    "credentialSubject": {
+                        "type": ["PermanentResident"],
+                        # let the holder set this
+                        # "id": holder_agent["agent"].agent.did,
+                        "givenName": "ALICE",
+                        "familyName": "SMITH",
+                        "gender": "Female",
+                        "birthCountry": "Bahamas",
+                        "birthDate": "1958-07-17",
+                    },
+                },
+                "options": {"proofType": SIG_TYPE_BLS},
+            }
+        },
+    }
+
+    agent_container_POST(
+        agent["agent"],
+        "/issue-credential-2.0/send-offer",
+        offer_request,
+    )
+
+    # TODO test for goodness
+    pass
 
 
 @then('"{holder}" has the json-ld credential issued')

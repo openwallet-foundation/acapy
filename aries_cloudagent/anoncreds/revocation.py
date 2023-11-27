@@ -24,7 +24,10 @@ from anoncreds import (
     RevocationStatusList,
 )
 
-from ..askar.profile import AskarProfile, AskarProfileSession
+from ..askar.profile_anon import (
+    AskarAnoncredsProfile,
+    AskarAnoncredsProfileSession,
+)
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
@@ -86,10 +89,10 @@ class AnonCredsRevocation:
         self._profile = profile
 
     @property
-    def profile(self) -> AskarProfile:
+    def profile(self) -> AskarAnoncredsProfile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarProfile):
-            raise ValueError("AnonCreds interface requires Askar")
+        if not isinstance(self._profile, AskarAnoncredsProfile):
+            raise ValueError("AnonCreds interface requires AskarAnoncreds")
 
         return self._profile
 
@@ -100,7 +103,7 @@ class AnonCredsRevocation:
 
     async def _finish_registration(
         self,
-        txn: AskarProfileSession,
+        txn: AskarAnoncredsProfileSession,
         category: str,
         job_id: str,
         registered_id: str,
@@ -1244,7 +1247,7 @@ class AnonCredsRevocation:
         crid_mask: Optional[Sequence[int]] = None,
     ):
         """Clear pending revocations."""
-        if not isinstance(txn, AskarProfileSession):
+        if not isinstance(txn, AskarAnoncredsProfileSession):
             raise ValueError("Askar wallet required")
 
         entry = await txn.handle.fetch(

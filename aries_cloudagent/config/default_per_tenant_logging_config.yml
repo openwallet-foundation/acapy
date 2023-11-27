@@ -1,0 +1,23 @@
+version: 1
+formatters:
+  default:
+    format: '%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s'
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: default
+    stream: ext://sys.stderr
+  rotating_file:
+    class: logging.handlers.TimedRotatingFileMultiProcessHandler
+    level: DEBUG
+    filename: '/home/aries/log/acapy-agent.log'
+    when: 'd'
+    interval: 7
+    backupCount: 1
+    formatter: default
+root:
+  level: INFO
+  handlers:
+    - console
+    - rotating_file

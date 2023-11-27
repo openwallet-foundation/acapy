@@ -19,7 +19,7 @@ WEB = DIDMethod(
     name="web",
     key_types=[ED25519, BLS12381G2],
     rotation=True,
-    holder_defined_did=HolderDefinedDid.REQUIRED  # did:web is not derived from key material but from a user-provided respository name
+    holder_defined_did=HolderDefinedDid.REQUIRED  # did:web is not derived from key material but from a user-provided repository name
 )
 
 async def setup(context: InjectionContext):

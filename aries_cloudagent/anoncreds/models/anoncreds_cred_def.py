@@ -7,7 +7,10 @@ from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import NUM_STR_WHOLE
+from ...messaging.valid import NUM_STR_WHOLE_VALIDATE, NUM_STR_WHOLE_EXAMPLE
+
+
+NUM_STR_WHOLE = {"validate": NUM_STR_WHOLE_VALIDATE, "example": NUM_STR_WHOLE_EXAMPLE}
 
 
 class CredDefValuePrimary(BaseModel):
