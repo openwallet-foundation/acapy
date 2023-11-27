@@ -4,6 +4,7 @@ from collections import OrderedDict
 from typing import Any, Mapping, Type
 from weakref import ref
 
+
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
 from ...storage.base import BaseStorage, BaseStorageSearch
@@ -26,7 +27,13 @@ class InMemoryProfile(Profile):
     BACKEND_NAME = "in_memory"
     TEST_PROFILE_NAME = "test-profile"
 
-    def __init__(self, *, context: InjectionContext = None, name: str = None):
+    def __init__(
+        self,
+        *,
+        context: InjectionContext = None,
+        name: str = None,
+        profile_class: Any = None
+    ):
         """Create a new InMemoryProfile instance."""
         super().__init__(context=context, name=name, created=True)
         self.keys = {}
@@ -34,6 +41,12 @@ class InMemoryProfile(Profile):
         self.pair_dids = {}
         self.records = OrderedDict()
         self.bind_providers()
+        self.profile_class = profile_class if profile_class else InMemoryProfile
+
+    @property
+    def __class__(self):
+        """Return the given profile class."""
+        return self.profile_class
 
     def bind_providers(self):
         """Initialize the profile-level instance providers."""
@@ -63,12 +76,16 @@ class InMemoryProfile(Profile):
 
     @classmethod
     def test_profile(
-        cls, settings: Mapping[str, Any] = None, bind: Mapping[Type, Any] = None
+        cls,
+        settings: Mapping[str, Any] = None,
+        bind: Mapping[Type, Any] = None,
+        profile_class: Any = None,
     ) -> "InMemoryProfile":
         """Used in tests to create a standard InMemoryProfile."""
         profile = InMemoryProfile(
             context=InjectionContext(enforce_typing=False, settings=settings),
             name=InMemoryProfile.TEST_PROFILE_NAME,
+            profile_class=profile_class,
         )
         if bind:
             for k, v in bind.items():

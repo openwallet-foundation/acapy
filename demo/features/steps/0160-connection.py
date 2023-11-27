@@ -110,6 +110,7 @@ def step_impl(context, agent_name):
 
 
 @given('"{sender}" and "{receiver}" have an existing connection')
+@then('"{sender}" and "{receiver}" have an existing connection')
 def step_impl(context, sender, receiver):
     context.execute_steps(
         '''
