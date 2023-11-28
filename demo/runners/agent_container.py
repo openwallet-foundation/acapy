@@ -900,7 +900,9 @@ class AgentContainer:
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        if self.cred_type in [CRED_FORMAT_INDY,]:
+        if self.cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             # need to redister schema and cred def on the ledger
             self.cred_def_id = await self.agent.create_schema_and_cred_def(
                 schema_name,
@@ -924,7 +926,9 @@ class AgentContainer:
     ):
         log_status("#13 Issue credential offer to X")
 
-        if self.cred_type in [CRED_FORMAT_INDY,]:
+        if self.cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
                 "attributes": cred_attrs,
@@ -984,7 +988,9 @@ class AgentContainer:
     async def request_proof(self, proof_request, explicit_revoc_required: bool = False):
         log_status("#20 Request proof of degree from alice")
 
-        if self.cred_type in [CRED_FORMAT_INDY,]:
+        if self.cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             indy_proof_request = {
                 "name": proof_request["name"]
                 if "name" in proof_request
@@ -1065,7 +1071,9 @@ class AgentContainer:
 
         # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
-        if self.cred_type in [CRED_FORMAT_INDY,]:
+        if self.cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             # return verified status
             return self.agent.last_proof_received["verified"]
 
