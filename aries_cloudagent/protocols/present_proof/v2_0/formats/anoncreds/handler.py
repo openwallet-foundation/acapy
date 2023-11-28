@@ -6,18 +6,17 @@ import logging
 from marshmallow import RAISE
 from typing import Mapping, Tuple
 
-from ......core.profile import Profile
-from ......indy.holder import IndyHolder
+from ......anoncreds.holder import AnonCredsHolder
 from ......indy.models.predicate import Predicate
 from ......indy.models.proof import IndyProofSchema
 from ......indy.models.proof_request import IndyProofRequestSchema
 from ......indy.models.xform import indy_proof_req_preview2indy_requested_creds
-from ......indy.util import generate_pr_nonce
-from ......indy.verifier import IndyVerifier
+from ......anoncreds.util import generate_pr_nonce
+from ......anoncreds.verifier import AnonCredsVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
 
-from ....indy.pres_exch_handler import IndyPresExchHandler
+from ....anoncreds.pres_exch_handler import AnonCredsPresExchHandler
 
 from ...message_types import (
     ATTACHMENT_FORMAT,
@@ -29,26 +28,15 @@ from ...messages.pres import V20Pres
 from ...messages.pres_format import V20PresFormat
 from ...models.pres_exchange import V20PresExRecord
 
-from ..anoncreds.handler import AnonCredsPresExchangeHandler
 from ..handler import V20PresFormatHandler, V20PresFormatHandlerError
 
 LOGGER = logging.getLogger(__name__)
 
 
-class IndyPresExchangeHandler(V20PresFormatHandler):
-    """Indy presentation format handler."""
+class AnonCredsPresExchangeHandler(V20PresFormatHandler):
+    """Anoncreds presentation format handler."""
 
     format = V20PresFormat.Format.INDY
-    anoncreds_handler = None
-
-    def __init__(self, profile: Profile):
-        """Shim initialization to check for new AnonCreds library."""
-        super().__init__(profile)
-
-        # Temporary shim while the new anoncreds library integration is in progress
-        wallet_type = profile.settings.get_value("wallet.type")
-        if wallet_type == "askar-anoncreds":
-            self.anoncreds_handler = AnonCredsPresExchangeHandler(profile)
 
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping):
@@ -91,26 +79,21 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             str: Issue credential attachment format identifier
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_identifier(message_type)
-
-        return ATTACHMENT_FORMAT[message_type][IndyPresExchangeHandler.format.api]
+        return ATTACHMENT_FORMAT[message_type][AnonCredsPresExchangeHandler.format.api]
 
     def get_format_data(
         self, message_type: str, data: dict
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Get presentation format and attach objects for use in pres_ex messages."""
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return self.anoncreds_handler.get_format_data(message_type, data)
-
         return (
             V20PresFormat(
-                attach_id=IndyPresExchangeHandler.format.api,
+                attach_id=AnonCredsPresExchangeHandler.format.api,
                 format_=self.get_format_identifier(message_type),
             ),
-            AttachDecorator.data_base64(data, ident=IndyPresExchangeHandler.format.api),
+            AttachDecorator.data_base64(
+                data,
+                ident=AnonCredsPresExchangeHandler.format.api,
+            ),
         )
 
     async def create_bound_request(
@@ -129,15 +112,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_bound_request(
-                pres_ex_record,
-                request_data,
-            )
-
         indy_proof_request = pres_ex_record.pres_proposal.attachment(
-            IndyPresExchangeHandler.format
+            AnonCredsPresExchangeHandler.format
         )
         if request_data:
             indy_proof_request["name"] = request_data.get("name", "proof-request")
@@ -157,24 +133,18 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         request_data: dict = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.create_pres(
-                pres_ex_record, request_data
-            )
-
         requested_credentials = {}
         if not request_data:
             try:
                 proof_request = pres_ex_record.pres_request
                 indy_proof_request = proof_request.attachment(
-                    IndyPresExchangeHandler.format
+                    AnonCredsPresExchangeHandler.format
                 )
                 requested_credentials = (
                     await indy_proof_req_preview2indy_requested_creds(
                         indy_proof_request,
                         preview=None,
-                        holder=self._profile.inject(IndyHolder),
+                        holder=AnonCredsHolder(self._profile),
                     )
                 )
             except ValueError as err:
@@ -183,14 +153,14 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                     f"No matching Indy credentials found: {err}"
                 )
         else:
-            if IndyPresExchangeHandler.format.api in request_data:
-                indy_spec = request_data.get(IndyPresExchangeHandler.format.api)
+            if AnonCredsPresExchangeHandler.format.api in request_data:
+                indy_spec = request_data.get(AnonCredsPresExchangeHandler.format.api)
                 requested_credentials = {
                     "self_attested_attributes": indy_spec["self_attested_attributes"],
                     "requested_attributes": indy_spec["requested_attributes"],
                     "requested_predicates": indy_spec["requested_predicates"],
                 }
-        indy_handler = IndyPresExchHandler(self._profile)
+        indy_handler = AnonCredsPresExchHandler(self._profile)
         indy_proof = await indy_handler.return_presentation(
             pres_ex_record=pres_ex_record,
             requested_credentials=requested_credentials,
@@ -203,7 +173,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         def _check_proof_vs_proposal():
             """Check for bait and switch in presented values vs. proposal request."""
             proof_req = pres_ex_record.pres_request.attachment(
-                IndyPresExchangeHandler.format
+                AnonCredsPresExchangeHandler.format
             )
 
             # revealed attrs
@@ -333,11 +303,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                         f"restrictions {req_restrictions}"
                     )
 
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.receive_pres(message, pres_ex_record)
-
-        proof = message.attachment(IndyPresExchangeHandler.format)
+        proof = message.attachment(AnonCredsPresExchangeHandler.format)
         _check_proof_vs_proposal()
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
@@ -351,29 +317,29 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             presentation exchange record, updated
 
         """
-        # Temporary shim while the new anoncreds library integration is in progress
-        if self.anoncreds_handler:
-            return await self.anoncreds_handler.verify_pres(pres_ex_record)
-
         pres_request_msg = pres_ex_record.pres_request
-        indy_proof_request = pres_request_msg.attachment(IndyPresExchangeHandler.format)
-        indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
-        indy_handler = IndyPresExchHandler(self._profile)
+        indy_proof_request = pres_request_msg.attachment(
+            AnonCredsPresExchangeHandler.format
+        )
+        indy_proof = pres_ex_record.pres.attachment(AnonCredsPresExchangeHandler.format)
+        verifier = AnonCredsVerifier(self._profile)
+
         (
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_reg_entries,
-        ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
+            rev_lists,
+        ) = await verifier.process_pres_identifiers(indy_proof["identifiers"])
 
-        verifier = self._profile.inject(IndyVerifier)
+        verifier = AnonCredsVerifier(self._profile)
+
         (verified, verified_msgs) = await verifier.verify_presentation(
             indy_proof_request,
             indy_proof,
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_reg_entries,
+            rev_lists,
         )
         pres_ex_record.verified = json.dumps(verified)
         pres_ex_record.verified_msgs = list(set(verified_msgs))
