@@ -16,7 +16,7 @@ repository = "https://github.com/hyperledger/aries-cloudagent-python"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-aiohttp="~3.8.1"
+aiohttp="~3.9.0"
 aiohttp-apispec="~2.2.1"
 aiohttp-cors="~0.7.0"
 apispec="~3.3.0"
@@ -52,6 +52,7 @@ did-peer-2 = "^0.1.2"
 aries-askar= { version = "~0.3.0", optional = true }
 indy-credx= { version = "~1.1.1", optional = true }
 indy-vdr= { version = "~0.4.0", optional = true }
+anoncreds= { version = "~0.1.0", optional = true }
 
 # bbs
 ursa-bbs-signatures= { version = "~1.0.1", optional = true }
@@ -78,12 +79,15 @@ pytest-asyncio= "^0.21.1"
 pytest-cov= "4.1.0"
 pytest-ruff="^0.1.1"
 mock= "~4.0"
+asynctest= "~0.13.0"
+async-case= "~10.1"
 
 [tool.poetry.extras]
 askar = [
       "aries-askar",
       "indy-credx",
-      "indy-vdr"
+      "indy-vdr",
+      "anoncreds"
 ]
 bbs = [
     "ursa-bbs-signatures"
