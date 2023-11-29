@@ -1,6 +1,8 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+from asynctest import mock as async_mock
 
+from ......anoncreds.holder import AnonCredsHolder
 from ......core.oob_processor import OobMessageProcessor
 from ......indy.holder import IndyHolder
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -300,7 +302,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         )
         assert not responder.messages
 
-    async def test_called_auto_present_x(self):
+    async def test_called_auto_present_x_indy(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
@@ -365,6 +367,71 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                 await handler.handle(request_context, responder)
                 mock_log_exc.assert_called_once()
 
+    async def test_called_auto_present_x_anoncreds(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest()
+        request_context.message.attachment = mock.MagicMock(return_value=INDY_PROOF_REQ)
+        request_context.message_receipt = MessageReceipt()
+
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
+            ],
+        )
+        mock_px_rec = mock.MagicMock(
+            pres_proposal=pres_proposal.serialize(),
+            auto_present=True,
+            save_error_state=mock.CoroutineMock(),
+        )
+
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
+            )
+        )
+        mock_holder = mock.MagicMock(
+            get_credentials_for_presentation_request_by_referent=(
+                mock.CoroutineMock(return_value=[{"cred_info": {"referent": "dummy"}}])
+            )
+        )
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
+        with mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls:
+            mock_pres_ex_rec_cls.return_value = mock_px_rec
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
+                return_value=mock_px_rec
+            )
+            mock_pres_mgr.return_value.receive_pres_request = mock.CoroutineMock(
+                return_value=mock_px_rec
+            )
+
+            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+                side_effect=test_module.AnonCredsHolderError()
+            )
+
+            request_context.connection_ready = True
+            handler = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+
+            with mock.patch.object(
+                handler._logger, "exception", mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()
+
     async def test_called_auto_present_indy(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = mock.MagicMock()
@@ -402,6 +469,80 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             )
         )
         request_context.injector.bind_instance(IndyHolder, mock_holder)
+
+        with mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls:
+            mock_pres_ex_rec_cls.return_value = mock_px_rec
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
+                return_value=mock_px_rec
+            )
+            mock_pres_mgr.return_value.receive_pres_request = mock.CoroutineMock(
+                return_value=mock_px_rec
+            )
+
+            mock_pres_mgr.return_value.create_pres = mock.CoroutineMock(
+                return_value=(mock_px_rec, "pres message")
+            )
+
+            request_context.connection_ready = True
+            handler = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+
+            await handler.handle(request_context, responder)
+            mock_pres_mgr.return_value.create_pres.assert_called_once()
+
+        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
+            mock_px_rec
+        )
+        mock_oob_processor.find_oob_record_for_inbound_message.assert_called_once_with(
+            request_context
+        )
+        messages = responder.messages
+        assert len(messages) == 1
+        (result, target) = messages[0]
+        assert result == "pres message"
+        assert target == {}
+
+    async def test_called_auto_present_anoncreds(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest()
+        request_context.message.attachment = mock.MagicMock(return_value=INDY_PROOF_REQ)
+        request_context.message_receipt = MessageReceipt()
+
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
+            ],
+        )
+        mock_px_rec = test_module.V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            auto_present=True,
+        )
+
+        mock_holder = mock.MagicMock(
+            get_credentials_for_presentation_request_by_referent=(
+                mock.CoroutineMock(return_value=[{"cred_info": {"referent": "dummy"}}])
+            )
+        )
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with mock.patch.object(
             test_module, "V20PresManager", autospec=True
@@ -509,7 +650,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         assert result == "pres message"
         assert target == {}
 
-    async def test_called_auto_present_no_preview(self):
+    async def test_called_auto_present_no_preview_indy(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
@@ -577,7 +718,75 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         assert result == "pres message"
         assert target == {}
 
-    async def test_called_auto_present_pred_no_match(self):
+    async def test_called_auto_present_no_preview_anoncreds(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ]
+        )
+        request_context.message.attachment = mock.MagicMock(return_value=INDY_PROOF_REQ)
+        request_context.message_receipt = MessageReceipt()
+        px_rec_instance = test_module.V20PresExRecord(auto_present=True)
+
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+        mock_holder = mock.MagicMock(
+            get_credentials_for_presentation_request_by_referent=(
+                mock.CoroutineMock(
+                    return_value=[
+                        {"cred_info": {"referent": "dummy-0"}},
+                        {"cred_info": {"referent": "dummy-1"}},
+                    ]
+                )
+            )
+        )
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
+
+        with mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls:
+            mock_pres_ex_rec_cls.return_value = px_rec_instance
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+            mock_pres_mgr.return_value.receive_pres_request = mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+
+            mock_pres_mgr.return_value.create_pres = mock.CoroutineMock(
+                return_value=(px_rec_instance, "pres message")
+            )
+            request_context.connection_ready = True
+            handler = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+            await handler.handle(request_context, responder)
+            mock_pres_mgr.return_value.create_pres.assert_called_once()
+
+        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
+            px_rec_instance
+        )
+        mock_oob_processor.find_oob_record_for_inbound_message.assert_called_once_with(
+            request_context
+        )
+        messages = responder.messages
+        assert len(messages) == 1
+        (result, target) = messages[0]
+        assert result == "pres message"
+        assert target == {}
+
+    async def test_called_auto_present_pred_no_match_indy(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
@@ -645,7 +854,75 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             request_context
         )
 
-    async def test_called_auto_present_pred_single_match(self):
+    async def test_called_auto_present_pred_no_match_anoncreds(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest()
+        request_context.message.attachment = mock.MagicMock(return_value=INDY_PROOF_REQ)
+        request_context.message_receipt = MessageReceipt()
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
+            ],
+        )
+        mock_px_rec = mock.MagicMock(
+            pres_proposal=pres_proposal.serialize(),
+            auto_present=True,
+            save_error_state=mock.CoroutineMock(),
+        )
+
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
+        mock_holder = mock.MagicMock(
+            get_credentials_for_presentation_request_by_referent=(
+                mock.CoroutineMock(return_value=[])
+            )
+        )
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
+
+        with mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls:
+            mock_pres_ex_rec_cls.return_value = mock_px_rec
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
+                return_value=mock_px_rec
+            )
+            mock_pres_mgr.return_value.receive_pres_request = mock.CoroutineMock(
+                return_value=mock_px_rec
+            )
+
+            mock_pres_mgr.return_value.create_pres = mock.CoroutineMock(
+                side_effect=test_indy_handler.V20PresFormatHandlerError
+            )
+            request_context.connection_ready = True
+            handler = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+
+            await handler.handle(request_context, responder)
+            mock_px_rec.save_error_state.assert_called_once()
+
+        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
+            mock_px_rec
+        )
+        mock_oob_processor.find_oob_record_for_inbound_message.assert_called_once_with(
+            request_context
+        )
+
+    async def test_called_auto_present_pred_single_match_indy(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
@@ -713,7 +990,75 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         assert result == "pres message"
         assert target == {}
 
-    async def test_called_auto_present_pred_multi_match(self):
+    async def test_called_auto_present_pred_single_match_anoncreds(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ]
+        )
+        request_context.message.attachment = mock.MagicMock(
+            return_value=INDY_PROOF_REQ_PRED
+        )
+        request_context.message_receipt = MessageReceipt()
+        px_rec_instance = test_module.V20PresExRecord(auto_present=True)
+
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
+        mock_holder = mock.MagicMock(
+            get_credentials_for_presentation_request_by_referent=(
+                mock.CoroutineMock(
+                    return_value=[{"cred_info": {"referent": "dummy-0"}}]
+                )
+            )
+        )
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
+
+        with mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls:
+            mock_pres_ex_rec_cls.return_value = px_rec_instance
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+            mock_pres_mgr.return_value.receive_pres_request = mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+
+            mock_pres_mgr.return_value.create_pres = mock.CoroutineMock(
+                return_value=(px_rec_instance, "pres message")
+            )
+            request_context.connection_ready = True
+            handler = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+            await handler.handle(request_context, responder)
+            mock_pres_mgr.return_value.create_pres.assert_called_once()
+
+        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
+            px_rec_instance
+        )
+        mock_oob_processor.find_oob_record_for_inbound_message.assert_called_once_with(
+            request_context
+        )
+        messages = responder.messages
+        assert len(messages) == 1
+        (result, target) = messages[0]
+        assert result == "pres message"
+        assert target == {}
+
+    async def test_called_auto_present_pred_multi_match_indy(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
@@ -784,7 +1129,78 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
         assert result == "pres message"
         assert target == {}
 
-    async def test_called_auto_present_multi_cred_match_reft(self):
+    async def test_called_auto_present_pred_multi_match_anoncreds(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ]
+        )
+        request_context.message.attachment = mock.MagicMock(
+            return_value=INDY_PROOF_REQ_PRED
+        )
+        request_context.message_receipt = MessageReceipt()
+        px_rec_instance = test_module.V20PresExRecord(auto_present=True)
+
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
+        mock_holder = mock.MagicMock(
+            get_credentials_for_presentation_request_by_referent=(
+                mock.CoroutineMock(
+                    return_value=[
+                        {"cred_info": {"referent": "dummy-0"}},
+                        {"cred_info": {"referent": "dummy-1"}},
+                    ]
+                )
+            )
+        )
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
+
+        with mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls:
+            mock_pres_ex_rec_cls.return_value = px_rec_instance
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+            mock_pres_mgr.return_value.receive_pres_request = mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+
+            mock_pres_mgr.return_value.create_pres = mock.CoroutineMock(
+                return_value=(px_rec_instance, "pres message")
+            )
+            request_context.connection_ready = True
+            handler = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+            await handler.handle(request_context, responder)
+            mock_pres_mgr.return_value.create_pres.assert_called_once()
+
+        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
+            px_rec_instance
+        )
+        mock_oob_processor.find_oob_record_for_inbound_message.assert_called_once_with(
+            request_context
+        )
+        messages = responder.messages
+        assert len(messages) == 1
+        (result, target) = messages[0]
+        assert result == "pres message"
+        assert target == {}
+
+    async def test_called_auto_present_multi_cred_match_reft_indy(self):
         request_context = RequestContext.test_context()
         request_context.connection_record = mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
@@ -859,6 +1275,120 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
             )
         )
         request_context.injector.bind_instance(IndyHolder, mock_holder)
+
+        px_rec_instance = test_module.V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            auto_present=True,
+        )
+        with mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr, mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls:
+            mock_pres_ex_rec_cls.return_value = px_rec_instance
+            mock_pres_ex_rec_cls.retrieve_by_tag_filter = mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+            mock_pres_mgr.return_value.receive_pres_request = mock.CoroutineMock(
+                return_value=px_rec_instance
+            )
+
+            mock_pres_mgr.return_value.create_pres = mock.CoroutineMock(
+                return_value=(px_rec_instance, "pres message")
+            )
+            request_context.connection_ready = True
+            handler = test_module.V20PresRequestHandler()
+            responder = MockResponder()
+            await handler.handle(request_context, responder)
+            mock_pres_mgr.return_value.create_pres.assert_called_once()
+
+        mock_pres_mgr.return_value.receive_pres_request.assert_called_once_with(
+            px_rec_instance
+        )
+        mock_oob_processor.find_oob_record_for_inbound_message.assert_called_once_with(
+            request_context
+        )
+        messages = responder.messages
+        assert len(messages) == 1
+        (result, target) = messages[0]
+        assert result == "pres message"
+        assert target == {}
+
+    async def test_called_auto_present_multi_cred_match_reft_anoncreds(self):
+        request_context = RequestContext.test_context()
+        request_context.connection_record = mock.MagicMock()
+        request_context.connection_record.connection_id = "dummy"
+        request_context.message = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ]
+        )
+        request_context.message.attachment = mock.MagicMock(return_value=INDY_PROOF_REQ)
+        request_context.message_receipt = MessageReceipt()
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=V20PresFormat.Format.INDY.aries,
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
+            ],
+        )
+
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
+        mock_holder = mock.MagicMock(
+            get_credentials_for_presentation_request_by_referent=(
+                mock.CoroutineMock(
+                    return_value=[
+                        {
+                            "cred_info": {
+                                "referent": "dummy-0",
+                                "cred_def_id": CD_ID,
+                                "attrs": {
+                                    "ident": "zero",
+                                    "favourite": "potato",
+                                    "icon": "cG90YXRv",
+                                },
+                            }
+                        },
+                        {
+                            "cred_info": {
+                                "referent": "dummy-1",
+                                "cred_def_id": CD_ID,
+                                "attrs": {
+                                    "ident": "one",
+                                    "favourite": "spud",
+                                    "icon": "c3B1ZA==",
+                                },
+                            }
+                        },
+                        {
+                            "cred_info": {
+                                "referent": "dummy-2",
+                                "cred_def_id": CD_ID,
+                                "attrs": {
+                                    "ident": "two",
+                                    "favourite": "patate",
+                                    "icon": "cGF0YXRl",
+                                },
+                            }
+                        },
+                    ]
+                )
+            )
+        )
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         px_rec_instance = test_module.V20PresExRecord(
             pres_proposal=pres_proposal.serialize(),

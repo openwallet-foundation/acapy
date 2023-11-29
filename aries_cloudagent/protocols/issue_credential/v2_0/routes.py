@@ -18,6 +18,8 @@ from marshmallow import ValidationError, fields, validate, validates_schema
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
+from ....anoncreds.holder import AnonCredsHolderError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....indy.holder import IndyHolderError
 from ....indy.issuer import IndyIssuerError
 from ....ledger.error import LedgerError
@@ -1027,6 +1029,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     except (
         BaseModelError,
+        AnonCredsIssuerError,
         IndyIssuerError,
         LedgerError,
         StorageNotFoundError,
@@ -1128,6 +1131,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
     except (
         BaseModelError,
+        AnonCredsIssuerError,
         IndyIssuerError,
         LedgerError,
         StorageError,
@@ -1233,6 +1237,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
     except (
         BaseModelError,
+        AnonCredsHolderError,
         IndyHolderError,
         LedgerError,
         StorageError,
@@ -1343,6 +1348,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
     except (
         BaseModelError,
+        AnonCredsHolderError,
         IndyHolderError,
         LedgerError,
         StorageError,
@@ -1436,6 +1442,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     except (
         BaseModelError,
+        AnonCredsIssuerError,
         IndyIssuerError,
         LedgerError,
         StorageError,
@@ -1524,6 +1531,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         cred_ex_record = await cred_manager.store_credential(cred_ex_record, cred_id)
 
     except (
+        AnonCredsHolderError,
         IndyHolderError,
         StorageError,
         V20CredManagerError,

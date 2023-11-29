@@ -1,6 +1,7 @@
 """Credential issue message handler."""
 
 from .....core.oob_processor import OobMessageProcessor
+from .....anoncreds.holder import AnonCredsHolderError
 from .....indy.holder import IndyHolderError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -70,6 +71,7 @@ class V20CredIssueHandler(BaseHandler):
                 cred_ex_record = await cred_manager.store_credential(cred_ex_record)
             except (
                 BaseModelError,
+                AnonCredsHolderError,
                 IndyHolderError,
                 StorageError,
                 V20CredManagerError,
