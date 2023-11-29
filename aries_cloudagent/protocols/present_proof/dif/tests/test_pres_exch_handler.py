@@ -3294,7 +3294,7 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3330,9 +3330,10 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert not await dif_pres_exch_handler.apply_constraint_received_cred(
-                constraint=constraint, cred_dict=cred_dict
-            )
+            with pytest.raises(DIFPresExchError):
+                await dif_pres_exch_handler.apply_constraint_received_cred(
+                    constraint=constraint, cred_dict=cred_dict
+                )
 
         constraint = {
             "limit_disclosure": "required",
@@ -3348,9 +3349,10 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert not await dif_pres_exch_handler.apply_constraint_received_cred(
-                constraint=constraint, cred_dict=cred_dict
-            )
+            with pytest.raises(DIFPresExchError):
+                await dif_pres_exch_handler.apply_constraint_received_cred(
+                    constraint=constraint, cred_dict=cred_dict
+                )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -3374,7 +3376,7 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3392,7 +3394,7 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3420,7 +3422,7 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3464,7 +3466,7 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3482,7 +3484,7 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3500,7 +3502,7 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3518,7 +3520,7 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3542,9 +3544,10 @@ class TestPresExchHandler:
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert not await dif_pres_exch_handler.apply_constraint_received_cred(
-                constraint=constraint, cred_dict=cred_dict
-            )
+            with pytest.raises(DIFPresExchError):
+                await dif_pres_exch_handler.apply_constraint_received_cred(
+                    constraint=constraint, cred_dict=cred_dict
+                )
 
     @pytest.mark.asyncio
     async def test_get_updated_path(self, profile):

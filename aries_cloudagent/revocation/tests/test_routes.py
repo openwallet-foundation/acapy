@@ -31,6 +31,21 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
         self.test_did = "sample-did"
 
+        self.author_profile = InMemoryProfile.test_profile()
+        self.author_profile.settings.set_value("endorser.author", True)
+        self.author_context = self.author_profile.context
+        setattr(self.author_context, "profile", self.author_profile)
+        self.author_request_dict = {
+            "context": self.author_context,
+            "outbound_message_router": mock.CoroutineMock(),
+        }
+        self.author_request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.author_request_dict[k],
+        )
+
     async def test_validate_cred_rev_rec_qs_and_revoke_req(self):
         for req in (
             test_module.CredRevRecordQueryStringSchema(),
@@ -94,6 +109,124 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
             mock_response.assert_called_once_with({})
 
+    async def test_revoke_endorser_no_conn_id_by_cred_ex_id(self):
+        self.author_request.json = mock.CoroutineMock(
+            return_value={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+            }
+        )
+
+        with mock.patch.object(
+            test_module, "RevocationManager", autospec=True
+        ) as mock_mgr, mock.patch.object(
+            test_module,
+            "get_endorser_connection_id",
+            mock.CoroutineMock(return_value="dummy-conn-id"),
+        ), mock.patch.object(
+            test_module.web, "json_response"
+        ):
+            mock_mgr.return_value.revoke_credential = mock.CoroutineMock(
+                return_value={"result": "..."}
+            )
+
+            await test_module.revoke(self.author_request)
+
+    async def test_revoke_endorser_by_cred_ex_id(self):
+        self.author_request.json = mock.CoroutineMock(
+            return_value={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+                "connection_id": "dummy-conn-id",
+            }
+        )
+
+        with mock.patch.object(
+            test_module, "RevocationManager", autospec=True
+        ) as mock_mgr, mock.patch.object(
+            test_module.web, "json_response"
+        ), mock.patch.object(
+            test_module,
+            "get_endorser_connection_id",
+            mock.CoroutineMock(return_value="test_conn_id"),
+        ):
+            mock_mgr.return_value.revoke_credential = mock.CoroutineMock(
+                return_value={"result": "..."}
+            )
+
+            await test_module.revoke(self.author_request)
+
+    async def test_revoke_endorser_no_conn_id(self):
+        self.author_request.json = mock.CoroutineMock(
+            return_value={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+            }
+        )
+
+        with mock.patch.object(
+            test_module, "RevocationManager", autospec=True
+        ) as mock_mgr, mock.patch.object(
+            test_module,
+            "get_endorser_connection_id",
+            mock.CoroutineMock(return_value="dummy-conn-id"),
+        ), mock.patch.object(
+            test_module.web, "json_response"
+        ):
+            mock_mgr.return_value.revoke_credential = mock.CoroutineMock(
+                return_value={"result": "..."}
+            )
+
+            await test_module.revoke(self.author_request)
+
+    async def test_revoke_endorser(self):
+        self.author_request.json = mock.CoroutineMock(
+            return_value={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+                "connection_id": "dummy-conn-id",
+            }
+        )
+
+        with mock.patch.object(
+            test_module, "RevocationManager", autospec=True
+        ) as mock_mgr, mock.patch.object(
+            test_module.web, "json_response"
+        ), mock.patch.object(
+            test_module,
+            "get_endorser_connection_id",
+            mock.CoroutineMock(return_value="test_conn_id"),
+        ):
+            mock_mgr.return_value.revoke_credential = mock.CoroutineMock(
+                return_value={"result": "..."}
+            )
+
+            await test_module.revoke(self.author_request)
+
+    async def test_revoke_endorser_x(self):
+        self.author_request.json = mock.CoroutineMock(
+            return_value={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+            }
+        )
+
+        with mock.patch.object(
+            test_module, "RevocationManager", autospec=True
+        ) as mock_mgr, mock.patch.object(
+            test_module,
+            "get_endorser_connection_id",
+            mock.CoroutineMock(return_value=None),
+        ):
+            mock_mgr.return_value.revoke_credential = mock.CoroutineMock()
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.revoke(self.author_request)
+
     async def test_revoke_by_cred_ex_id(self):
         self.request.json = mock.CoroutineMock(
             return_value={
@@ -143,7 +276,9 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             test_module.web, "json_response"
         ) as mock_response:
             pub_pending = mock.CoroutineMock()
-            mock_mgr.return_value.publish_pending_revocations = pub_pending
+            mock_mgr.return_value.publish_pending_revocations = mock.CoroutineMock(
+                return_value=({}, pub_pending.return_value)
+            )
 
             await test_module.publish_revocations(self.request)
 
@@ -162,6 +297,46 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.publish_revocations(self.request)
+
+    async def test_publish_revocations_endorser(self):
+        self.author_request.json = mock.CoroutineMock()
+
+        with mock.patch.object(
+            test_module, "RevocationManager", autospec=True
+        ) as mock_mgr, mock.patch.object(
+            test_module,
+            "get_endorser_connection_id",
+            mock.CoroutineMock(return_value="dummy-conn-id"),
+        ), mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            pub_pending = mock.CoroutineMock()
+            mock_mgr.return_value.publish_pending_revocations = mock.CoroutineMock(
+                return_value=({}, pub_pending.return_value)
+            )
+
+            await test_module.publish_revocations(self.author_request)
+
+            mock_response.assert_called_once_with(
+                {"rrid2crid": pub_pending.return_value}
+            )
+
+    async def test_publish_revocations_endorser_x(self):
+        self.author_request.json = mock.CoroutineMock()
+
+        with mock.patch.object(
+            test_module, "RevocationManager", autospec=True
+        ) as mock_mgr, mock.patch.object(
+            test_module,
+            "get_endorser_connection_id",
+            mock.CoroutineMock(return_value=None),
+        ), mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            pub_pending = mock.CoroutineMock()
+            mock_mgr.return_value.publish_pending_revocations = pub_pending
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.publish_revocations(self.author_request)
 
     async def test_clear_pending_revocations(self):
         self.request.json = mock.CoroutineMock()

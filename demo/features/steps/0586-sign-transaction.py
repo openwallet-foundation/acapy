@@ -467,12 +467,45 @@ def step_impl(context, agent_name):
     async_sleep(3.0)
 
 
+@when(
+    '"{agent_name}" revokes the credential without publishing the entry with txn endorsement'
+)
+@then(
+    '"{agent_name}" revokes the credential without publishing the entry with txn endorsement'
+)
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
+
+    # get the required revocation info from the last credential exchange
+    cred_exchange = context.cred_exchange
+
+    cred_exchange = agent_container_GET(
+        agent["agent"], "/issue-credential-2.0/records/" + cred_exchange["cred_ex_id"]
+    )
+    context.cred_exchange = cred_exchange
+    connection_id = agent["agent"].agent.connection_id
+
+    # revoke the credential
+    agent_container_POST(
+        agent["agent"],
+        "/revocation/revoke",
+        data={
+            "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
+            "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
+            "publish": False,
+            "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
+        },
+        params={"conn_id": connection_id, "create_transaction_for_endorser": "true"},
+    )
+
+    # pause for a few seconds
+    async_sleep(3.0)
+
+
 @when('"{agent_name}" authors a revocation registry entry publishing transaction')
 @then('"{agent_name}" authors a revocation registry entry publishing transaction')
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
-
-    connection_id = agent["agent"].agent.connection_id
 
     # create rev_reg entry transaction
     created_rev_reg = agent_container_POST(
@@ -491,6 +524,38 @@ def step_impl(context, agent_name):
     assert "rrid2crid" in created_rev_reg
 
 
+@when(
+    '"{agent_name}" authors a revocation registry entry publishing transaction with txn endorsement'
+)
+@then(
+    '"{agent_name}" authors a revocation registry entry publishing transaction with txn endorsement'
+)
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
+
+    connection_id = agent["agent"].agent.connection_id
+
+    # create rev_reg entry transaction
+    created_rev_reg = agent_container_POST(
+        agent["agent"],
+        f"/revocation/publish-revocations",
+        data={
+            "rrid2crid": {
+                context.cred_exchange["indy"]["rev_reg_id"]: [
+                    context.cred_exchange["indy"]["cred_rev_id"]
+                ]
+            }
+        },
+        params={"conn_id": connection_id, "create_transaction_for_endorser": "true"},
+    )
+
+    # check that transaction request has been sent
+    assert created_rev_reg["txn"]["state"] == "request_sent"
+
+    # pause for a few seconds
+    async_sleep(3.0)
+
+
 @then('"{holder_name}" can verify the credential from "{issuer_name}" was revoked')
 def step_impl(context, holder_name, issuer_name):
     agent = context.active_agents[holder_name]
@@ -507,10 +572,16 @@ def step_impl(context, holder_name, issuer_name):
     assert len(cred_list["results"]) == 1
     cred_id = cred_list["results"][0]["referent"]
 
-    # check revocation status for the credential
-    revocation_status = agent_container_GET(
-        agent["agent"],
-        f"/credential/revoked/{cred_id}",
-        params={"to": int(time.time())},
-    )
-    assert revocation_status["revoked"] == True
+    revoc_status_bool = False
+    counter = 0
+    while not revoc_status_bool and counter < 3:
+        # check revocation status for the credential
+        revocation_status = agent_container_GET(
+            agent["agent"],
+            f"/credential/revoked/{cred_id}",
+            params={"to": int(time.time())},
+        )
+        revoc_status_bool = revocation_status["revoked"]
+        counter = counter + 1
+        async_sleep(1.0)
+    assert revoc_status_bool is True
