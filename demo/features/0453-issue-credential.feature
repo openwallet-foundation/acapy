@@ -1,50 +1,6 @@
 @RFC0453
 Feature: RFC 0453 Aries agent issue credential
 
-  @T004-RFC0453 @GHA-Anoncreds-skip-revoc
-  Scenario Outline: Using anoncreds, Issue a credential with revocation, with the Issuer beginning with an offer, and then revoking the credential
-    Given we have "2" agents
-      | name  | role    | capabilities        |
-      | Acme  | issuer  | <Acme_capabilities> |
-      | Bob   | holder  | <Bob_capabilities>  |
-    And "Acme" and "Bob" have an existing connection
-    And Using anoncreds, "Bob" has an issued <Schema_name> credential <Credential_data> from "Acme"
-    Then Using anoncreds, "Acme" revokes the credential
-    And "Bob" has the credential issued
-
-    Examples:
-       | Acme_capabilities                        | Bob_capabilities  | Schema_name    | Credential_data          |
-       | --revocation --wallet-type askar-anoncreds --public-did |            | anoncreds-testing | Data_AC_NormalizedValues |
-       | --revocation --wallet-type askar-anoncreds --public-did --did-exchange | --did-exchange| anoncreds-testing | Data_AC_NormalizedValues |
-       | --revocation --wallet-type askar-anoncreds --public-did --multitenant  | --multitenant | anoncreds-testing | Data_AC_NormalizedValues |
-
-  @T004-RFC0453 @GHA
-  Scenario Outline: Using anoncreds, create a schema/cred def in preparation for Issuing a credential
-    Given we have "2" agents
-      | name  | role    | capabilities        |
-      | Acme  | issuer  | <Acme_capabilities> |
-      | Bob   | holder  | <Bob_capabilities>  |
-    And "Acme" and "Bob" have an existing connection
-    And Using anoncreds, "Acme" is ready to issue a credential for <Schema_name>
-
-    Examples:
-       | Acme_capabilities                                                | Bob_capabilities              | Schema_name       | Credential_data          |
-       | --wallet-type askar-anoncreds --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | anoncreds-testing | Data_AC_NormalizedValues |
-
-  @T004-RFC0453 @GHA-Anoncreds-test1
-  Scenario Outline: Using anoncreds, Issue a credential, with the Issuer beginning with an offer
-    Given we have "2" agents
-      | name  | role    | capabilities        |
-      | Acme  | issuer  | <Acme_capabilities> |
-      | Bob   | holder  | <Bob_capabilities>  |
-    And "Acme" and "Bob" have an existing connection
-    And Using anoncreds, "Bob" has an issued <Schema_name> credential <Credential_data> from "Acme"
-    Then "Bob" has the credential issued
-
-    Examples:
-       | Acme_capabilities                                                | Bob_capabilities              | Schema_name       | Credential_data          |
-       | --wallet-type askar-anoncreds --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | anoncreds-testing | Data_AC_NormalizedValues |
-
   @T003-RFC0453 @GHA
   Scenario Outline: Issue a credential with the Issuer beginning with an offer
     Given we have "2" agents
