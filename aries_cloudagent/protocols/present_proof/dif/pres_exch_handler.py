@@ -1499,9 +1499,7 @@ class DIFPresExchHandler:
                 extracted = self.nested_get(cred_dict, nested_attr_key)
                 try:
                     if isinstance(extracted, dict):
-                        self.check_attr_in_extracted_dict(
-                            extracted, nested_attr_values
-                        )
+                        self.check_attr_in_extracted_dict(extracted, nested_attr_values)
                     elif isinstance(extracted, list):
                         for extracted_dict in extracted:
                             self.check_attr_in_extracted_dict(
