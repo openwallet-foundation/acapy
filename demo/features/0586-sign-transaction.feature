@@ -157,8 +157,8 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Bob" has written the revocation registry definition to the ledger
       And "Bob" has written the revocation registry entry transaction to the ledger
       And "Acme" has an issued <Schema_name> credential <Credential_data> from "Bob"
-      And "Bob" revokes the credential without publishing the entry
-      And "Bob" authors a revocation registry entry publishing transaction
+      And "Bob" revokes the credential without publishing the entry with txn endorsement
+      And "Bob" authors a revocation registry entry publishing transaction with txn endorsement
       Then "Acme" can verify the credential from "Bob" was revoked
 
       Examples:
@@ -187,8 +187,8 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Bob" has written the revocation registry definition to the ledger
       And "Bob" has written the revocation registry entry transaction to the ledger
       And "Acme" has an issued <Schema_name> credential <Credential_data> from "Bob"
-      And "Bob" revokes the credential without publishing the entry
-      And "Bob" authors a revocation registry entry publishing transaction
+      And "Bob" revokes the credential without publishing the entry with txn endorsement
+      And "Bob" authors a revocation registry entry publishing transaction with txn endorsement
       Then "Acme" can verify the credential from "Bob" was revoked
 
       Examples:

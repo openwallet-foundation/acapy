@@ -2,11 +2,12 @@
 
 import json
 import logging
-from typing import Mapping, Sequence, Text, Tuple
+from typing import Mapping, Optional, Sequence, Text, Tuple
 
 from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
 )
+from ..connections.models.conn_record import ConnRecord
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer
@@ -47,7 +48,9 @@ class RevocationManager:
         notify_version: str = None,
         thread_id: str = None,
         connection_id: str = None,
+        endorser_conn_id: str = None,
         comment: str = None,
+        write_ledger: bool = True,
     ):
         """Revoke a credential by its credential exchange identifier at issue.
 
@@ -79,7 +82,9 @@ class RevocationManager:
             notify_version=notify_version,
             thread_id=thread_id,
             connection_id=connection_id,
+            endorser_conn_id=endorser_conn_id,
             comment=comment,
+            write_ledger=write_ledger,
         )
 
     async def revoke_credential(
@@ -91,8 +96,10 @@ class RevocationManager:
         notify_version: str = None,
         thread_id: str = None,
         connection_id: str = None,
+        endorser_conn_id: str = None,
         comment: str = None,
-    ):
+        write_ledger: bool = True,
+    ) -> Optional[dict]:
         """Revoke a credential.
 
         Optionally, publish the corresponding revocation registry delta to the ledger.
@@ -147,15 +154,38 @@ class RevocationManager:
                 await txn.commit()
             await self.set_cred_revoked_state(rev_reg_id, crids)
             if delta_json:
-                await issuer_rr_upd.send_entry(self._profile)
-            await notify_revocation_published_event(
-                self._profile, rev_reg_id, [cred_rev_id]
-            )
-
+                if write_ledger:
+                    rev_entry_resp = await issuer_rr_upd.send_entry(self._profile)
+                    await notify_revocation_published_event(
+                        self._profile, rev_reg_id, [cred_rev_id]
+                    )
+                    return rev_entry_resp
+                else:
+                    async with self._profile.session() as session:
+                        try:
+                            connection_record = await ConnRecord.retrieve_by_id(
+                                session, endorser_conn_id
+                            )
+                        except StorageNotFoundError:
+                            raise RevocationManagerError(
+                                "No endorser connection record found "
+                                f"for id: {endorser_conn_id}"
+                            )
+                        endorser_info = await connection_record.metadata_get(
+                            session, "endorser_info"
+                        )
+                    endorser_did = endorser_info["endorser_did"]
+                    rev_entry_resp = await issuer_rr_upd.send_entry(
+                        self._profile,
+                        write_ledger=write_ledger,
+                        endorser_did=endorser_did,
+                    )
+                    return rev_entry_resp
         else:
             async with self._profile.transaction() as txn:
                 await issuer_rr_rec.mark_pending(txn, cred_rev_id)
                 await txn.commit()
+            return None
 
     async def update_rev_reg_revoked_state(
         self,
@@ -182,7 +212,9 @@ class RevocationManager:
     async def publish_pending_revocations(
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,
-    ) -> Mapping[Text, Sequence[Text]]:
+        write_ledger: bool = True,
+        connection_id: str = None,
+    ) -> Tuple[Optional[dict], Mapping[Text, Sequence[Text]]]:
         """Publish pending revocations to the ledger.
 
         Args:
@@ -202,12 +234,13 @@ class RevocationManager:
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
                     - no pending revocations from any other revocation registries.
+            connection_id: connection identifier for endorser connection to use
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
         result = {}
         issuer = self._profile.inject(IndyIssuer)
-
+        rev_entry_resp = None
         async with self._profile.session() as session:
             issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)
 
@@ -239,14 +272,36 @@ class RevocationManager:
                     await txn.commit()
                 await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
                 if delta_json:
-                    await issuer_rr_upd.send_entry(self._profile)
+                    if connection_id:
+                        async with self._profile.session() as session:
+                            try:
+                                connection_record = await ConnRecord.retrieve_by_id(
+                                    session, connection_id
+                                )
+                            except StorageNotFoundError:
+                                raise RevocationManagerError(
+                                    "No endorser connection record found "
+                                    f"for id: {connection_id}"
+                                )
+                            endorser_info = await connection_record.metadata_get(
+                                session, "endorser_info"
+                            )
+                        endorser_did = endorser_info["endorser_did"]
+                        rev_entry_resp = await issuer_rr_upd.send_entry(
+                            self._profile,
+                            write_ledger=write_ledger,
+                            endorser_did=endorser_did,
+                        )
+                    else:
+                        rev_entry_resp = await issuer_rr_upd.send_entry(self._profile)
                 published = sorted(crid for crid in crids if crid not in failed_crids)
                 result[issuer_rr_rec.revoc_reg_id] = published
-                await notify_revocation_published_event(
-                    self._profile, issuer_rr_rec.revoc_reg_id, crids
-                )
+                if not connection_id:
+                    await notify_revocation_published_event(
+                        self._profile, issuer_rr_rec.revoc_reg_id, crids
+                    )
 
-        return result
+        return rev_entry_resp, result
 
     async def clear_pending_revocations(
         self, purge: Mapping[Text, Sequence[Text]] = None
