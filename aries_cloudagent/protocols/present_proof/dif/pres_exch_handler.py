@@ -1400,14 +1400,15 @@ class DIFPresExchHandler:
                     f"{desc_map_item_path} path in descriptor_map not applicable"
                 )
             for match_item in match:
-                failReason = await self.apply_constraint_received_cred(
-                    constraint, match_item.value
-                )
-                if failReason:
+                try:
+                    await self.apply_constraint_received_cred(
+                        constraint, match_item.value
+                    )
+                except BaseError as err:
                     raise DIFPresExchError(
                         f"Constraint specified for {desc_map_item_id} does not "
                         f"apply to the enclosed credential in {desc_map_item_path}"
-                        f" Reason: {failReason}"
+                        f" Reason: {err.message}"
                     )
                 if (
                     not len(
@@ -1439,9 +1440,9 @@ class DIFPresExchHandler:
 
     async def apply_constraint_received_cred(
         self, constraint: Constraints, cred_dict: dict
-    ) -> str:
+    ) -> None:
         """Evaluate constraint from the request against received credential."""
-        """If successful, returns None, else returns string with reason for failure"""
+        """If successful, returns None, else raises an error with reason for failure"""
         fields = constraint._fields
         field_paths = []
         credential = self.create_vcrecord(cred_dict)
@@ -1450,7 +1451,7 @@ class DIFPresExchHandler:
             if is_limit_disclosure:
                 field = await self.get_updated_field(field, cred_dict)
             if not await self.filter_by_field(field, credential):
-                return (
+                raise DIFPresExchError(
                     "Credential is not applicable for field "
                     f"{field.id} with paths {field.paths}"
                 )
@@ -1489,38 +1490,37 @@ class DIFPresExchHandler:
 
             for attrs in cred_dict.keys():
                 if attrs not in field_paths:
-                    return (
+                    raise DIFPresExchError(
                         "No field in constraints for "
                         f"{'at least one of ' if isinstance(attrs, list) else ''}{attrs}"
                     )
             for nested_attr_key in nested_field_paths:
                 nested_attr_values = nested_field_paths[nested_attr_key]
                 extracted = self.nested_get(cred_dict, nested_attr_key)
-                if isinstance(extracted, dict):
-                    failReason = self.check_attr_in_extracted_dict(
-                        extracted, nested_attr_values
-                    )
-                    if failReason:
-                        return f"{failReason} under parent path '$.{nested_attr_key}'"
-                elif isinstance(extracted, list):
-                    for extracted_dict in extracted:
-                        failReason = self.check_attr_in_extracted_dict(
-                            extracted_dict, nested_attr_values
+                try:
+                    if isinstance(extracted, dict):
+                        self.check_attr_in_extracted_dict(
+                            extracted, nested_attr_values
                         )
-                        if failReason:
-                            return (
-                                f"{failReason} under parent path '$.{nested_attr_key}'"
+                    elif isinstance(extracted, list):
+                        for extracted_dict in extracted:
+                            self.check_attr_in_extracted_dict(
+                                extracted_dict, nested_attr_values
                             )
+                except BaseError as err:
+                    raise DIFPresExchError(
+                        f"{err.message} under parent path '$.{nested_attr_key}'"
+                    )
         return None
 
     def check_attr_in_extracted_dict(
         self, extracted_dict: dict, nested_attr_values: dict
-    ) -> str:
+    ) -> None:
         """Check if keys of extracted_dict exists in nested_attr_values."""
-        """If successful, returns None, else returns string with reason for failure"""
+        """If successful, returns None, else raises an error with reason for failure"""
         for attrs in extracted_dict.keys():
             if attrs not in nested_attr_values:
-                return (
+                raise DIFPresExchError(
                     "No field in constraints for "
                     f"{'at least one of ' if isinstance(attrs, list) else ''}{attrs}"
                 )
