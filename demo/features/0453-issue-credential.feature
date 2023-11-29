@@ -62,6 +62,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
        | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
        | --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
 
   @T003-RFC0453 @GHA
   Scenario Outline: Holder accepts a deleted credential offer
@@ -77,6 +78,7 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
        | --public-did                           |                           | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
        #| --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
        #| --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
        #| --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
@@ -94,6 +96,7 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
        | --public-did                           |                           | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
        #| --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
        #| --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
        #| --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
@@ -115,6 +118,7 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                                   | Bob_capabilities          | Schema_name    | Credential_data          |
        | --public-did --cred-type json-ld                    |                           | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
        # | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
        # | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
        # | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
@@ -137,6 +141,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
        | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
        | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
 
 
   @T003.1-RFC0453 @GHA
@@ -157,6 +162,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
        | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
        | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
 
 
   @T004-RFC0453 @GHA
