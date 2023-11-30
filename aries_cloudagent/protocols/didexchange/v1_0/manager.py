@@ -245,9 +245,7 @@ class DIDXManager(BaseConnectionManager):
             alias=alias,
             their_public_did=their_public_did,
             connection_protocol=DIDX_PROTO,
-            accept=ConnRecord.ACCEPT_AUTO
-            if auto_accept
-            else ConnRecord.ACCEPT_MANUAL,
+            accept=ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL,
         )
         request = await self.create_request(  # saves and updates conn_rec
             conn_rec=conn_rec,

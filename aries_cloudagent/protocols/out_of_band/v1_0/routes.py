@@ -327,6 +327,7 @@ async def invitation_receive(request: web.BaseRequest):
 
     return web.json_response(result.serialize())
 
+
 @docs(
     tags=["out-of-band"],
     summary="Retreive a specific invitation or list of all invitations",
@@ -363,10 +364,7 @@ async def ret_invitation_list(request: web.BaseRequest):
     return web.json_response({"results": results})
 
 
-@docs(
-    tags=["out-of-band"],
-    summary="Delete a single invitation"
-)
+@docs(tags=["out-of-band"], summary="Delete a single invitation")
 @match_info_schema(InvitationRecordMatchInfoSchema())
 @response_schema(InvitationRecordResponseSchema(), description="")
 async def invitation_remove(request: web.BaseRequest):
@@ -381,9 +379,7 @@ async def invitation_remove(request: web.BaseRequest):
 
     try:
         async with context.profile.session() as session:
-            invi_rec = await InvitationRecord.retrieve_by_id(
-                session, invitation_id
-            )
+            invi_rec = await InvitationRecord.retrieve_by_id(session, invitation_id)
             await invi_rec.delete_record(session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
