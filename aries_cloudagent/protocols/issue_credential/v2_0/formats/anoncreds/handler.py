@@ -28,7 +28,7 @@ from ......messaging.credential_definitions.util import (
 )
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
-from ......revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
+from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage
 from ...message_types import (
     ATTACHMENT_FORMAT,

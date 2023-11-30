@@ -18,8 +18,8 @@ from ..core.event_bus import EventBus
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import UUIDFour
 from ..revocation.error import RevocationError, RevocationNotSupportedError
-from ..revocation.manager import RevocationManager, RevocationManagerError
-from ..revocation.routes import (
+from ..revocation_anoncreds.manager import RevocationManager, RevocationManagerError
+from ..revocation_anoncreds.routes import (
     PublishRevocationsSchema,
     RevRegIdMatchInfoSchema,
     RevocationModuleResponseSchema,
