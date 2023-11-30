@@ -311,6 +311,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 mediation_id=None,
                 use_public_did=True,
                 alias="Tester",
+                auto_accept=True,
             )
 
             assert info_public.did == conn_rec.my_did

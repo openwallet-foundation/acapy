@@ -3,14 +3,20 @@ from aries_cloudagent.tests import mock
 
 from .....admin.request_context import AdminRequestContext
 from .....connections.models.conn_record import ConnRecord
+from .....core.in_memory import InMemoryProfile
+
+from ....didcomm_prefix import DIDCommPrefix
+from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+
+from ..models.invitation import InvitationRecord, InvitationMessage
 
 from .. import routes as test_module
 
 
 class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session_inject = {}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.profile = InMemoryProfile.test_profile()
+        self.context = AdminRequestContext.test_context(profile=self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -63,6 +69,56 @@ class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
                 goal=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
+
+    async def test_ret_invitations_single_item(self):
+        invi = InvitationMessage(
+            comment="Hello",
+            label="A label",
+            handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
+            services=["did:sov:55GkHamhTU1ZbTbV2ab9DE"],
+        )
+        invi_rec_1 = InvitationRecord(
+            state=InvitationRecord.STATE_AWAIT_RESPONSE,
+            invitation=invi.serialize(),
+        )
+        await invi_rec_1.save(await self.profile.session())
+        invi_rec_2 = InvitationRecord(
+            state=InvitationRecord.STATE_AWAIT_RESPONSE,
+            invitation=invi.serialize(),
+        )
+        await invi_rec_2.save(await self.profile.session())
+        self.request.query = {
+            "invitation_id": invi_rec_1.invitation_id,
+        }
+        with mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
+        ) as mock_json_response:
+            result = await test_module.ret_invitation_list(self.request)
+            mock_json_response.assert_called_once()
+
+    async def test_ret_invitations_list(self):
+        invi = InvitationMessage(
+            comment="Hello",
+            label="A label",
+            handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
+            services=["did:sov:55GkHamhTU1ZbTbV2ab9DE"],
+        )
+        invi_rec_1 = InvitationRecord(
+            state=InvitationRecord.STATE_AWAIT_RESPONSE,
+            invitation=invi.serialize(),
+        )
+        await invi_rec_1.save(await self.profile.session())
+        invi_rec_2 = InvitationRecord(
+            state=InvitationRecord.STATE_AWAIT_RESPONSE,
+            invitation=invi.serialize(),
+        )
+        await invi_rec_2.save(await self.profile.session())
+        self.request.query = {}
+        with mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
+        ) as mock_json_response:
+            result = await test_module.ret_invitation_list(self.request)
+            mock_json_response.assert_called_once()
 
     async def test_invitation_create_with_accept(self):
         self.request.query = {
