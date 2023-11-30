@@ -19,3 +19,5 @@ Feature: RFC 0160 Aries agent connection functions
          | --public-did --multitenant             | --multitenant             |
          | --public-did --mediation --multitenant | --mediation --multitenant |
          | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds |
+         | --public-did --wallet-type askar-anoncreds |                               |
+         | --public-did                           | --wallet-type askar-anoncreds |

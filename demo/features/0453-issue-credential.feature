@@ -19,6 +19,8 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
        | --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
        | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --wallet-type askar-anoncreds |                               | driverslicense | Data_DL_NormalizedValues |
+       | --public-did                           | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
 
   @T003-RFC0453 @GHA
   Scenario Outline: Holder accepts a deleted credential offer
