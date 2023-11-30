@@ -241,7 +241,6 @@ class DIDXManager(BaseConnectionManager):
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             invitation_key=None,
             invitation_msg_id=None,
-            accept=None,
             alias=alias,
             their_public_did=their_public_did,
             connection_protocol=DIDX_PROTO,
