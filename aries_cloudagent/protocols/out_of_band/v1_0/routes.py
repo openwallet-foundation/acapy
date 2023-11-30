@@ -4,8 +4,13 @@ import json
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
-
+from aiohttp_apispec import (
+    docs,
+    querystring_schema,
+    request_schema,
+    match_info_schema,
+    response_schema,
+)
 from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
@@ -19,7 +24,7 @@ from ...didexchange.v1_0.manager import DIDXManagerError
 from .manager import OutOfBandManager, OutOfBandManagerError
 from .message_types import SPEC_URI
 from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
-from .models.invitation import InvitationRecordSchema
+from .models.invitation import InvitationRecord, InvitationRecordSchema
 from .models.oob_record import OobRecordSchema
 
 LOGGER = logging.getLogger(__name__)
@@ -175,6 +180,45 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     )
 
 
+class InvitationRecListSchema(OpenAPISchema):
+    """Result schema for invitation record list."""
+
+    results = fields.List(
+        fields.Nested(InvitationRecordSchema()),
+        metadata={"description": "List of transaction records"},
+    )
+
+
+class InvitationRecordResponseSchema(OpenAPISchema):
+    """Response schema for Invitation Record."""
+
+
+class InvitationRecordMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking invitation record."""
+
+    invitation_id = fields.Str(
+        required=True,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Invitation Record identifier",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+
+
+class InvitationRecordQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for invitation records request query string."""
+
+    invitation_id = fields.Str(
+        required=False,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Identifier for invitation record to be retreived",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+
+
 @docs(
     tags=["out-of-band"],
     summary="Create a new connection invitation",
@@ -283,6 +327,71 @@ async def invitation_receive(request: web.BaseRequest):
 
     return web.json_response(result.serialize())
 
+@docs(
+    tags=["out-of-band"],
+    summary="Retreive a specific invitation or list of all invitations",
+)
+@querystring_schema(InvitationRecordMatchInfoSchema())
+@response_schema(InvitationRecListSchema(), 200)
+async def ret_invitation_list(request: web.BaseRequest):
+    """Request handler for searching invitation records.
+
+    Args:
+        request: aiohttp request object
+    Returns:
+        The transaction list response
+    """
+
+    context: AdminRequestContext = request["context"]
+    invitation_id = request.query.get("invitation_id") or None
+    tag_filter = {}
+    post_filter = {}
+
+    try:
+        async with context.profile.session() as session:
+            if not invitation_id:
+                records = await InvitationRecord.query(
+                    session, tag_filter, post_filter_positive=post_filter, alt=True
+                )
+                results = [record.serialize() for record in records]
+            else:
+                record = await InvitationRecord.retrieve_by_id(session, invitation_id)
+                results = [record.serialize()]
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({"results": results})
+
+
+@docs(
+    tags=["out-of-band"],
+    summary="Delete a single invitation"
+)
+@match_info_schema(InvitationRecordMatchInfoSchema())
+@response_schema(InvitationRecordResponseSchema(), description="")
+async def invitation_remove(request: web.BaseRequest):
+    """Request handler for removing a invitation record.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    invitation_id = request.match_info["invitation_id"]
+
+    try:
+        async with context.profile.session() as session:
+            invi_rec = await InvitationRecord.retrieve_by_id(
+                session, invitation_id
+            )
+            await invi_rec.delete_record(session)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({})
+
 
 async def register(app: web.Application):
     """Register routes."""
@@ -290,6 +399,8 @@ async def register(app: web.Application):
         [
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
+            web.get("/out-of-band/invitations", ret_invitation_list),
+            web.delete("/out-of-band/invitations/{invitation_id}", invitation_remove),
         ]
     )
 
