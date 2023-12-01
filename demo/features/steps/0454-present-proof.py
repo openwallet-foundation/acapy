@@ -8,7 +8,6 @@ from bdd_support.agent_backchannel_client import (
     read_presentation_data,
     aries_container_request_proof,
     aries_container_verify_proof,
-    agent_container_GET,
     agent_container_POST,
     async_sleep,
 )
