@@ -5,7 +5,7 @@ import pytest
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 
-from ...base import DIDNotFound
+from ...base import DIDMethodNotSupported
 from ..jwk import JwkDIDResolver
 
 # pylint: disable=W0621
@@ -50,5 +50,5 @@ async def test_resolve(resolver: JwkDIDResolver, profile: Profile, did: str):
 @pytest.mark.asyncio
 async def test_resolve_x_did_not_found(resolver: JwkDIDResolver, profile: Profile):
     """Test resolve method when no did is found."""
-    with pytest.raises(DIDNotFound):
+    with pytest.raises(DIDMethodNotSupported):
         await resolver.resolve(profile, TEST_DID_INVALID)
