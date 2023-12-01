@@ -6,7 +6,6 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 from .....protocols.trustping.v1_0.messages.ping import Ping
-
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_response import ConnectionResponse
 from ..messages.problem_report import ConnectionProblemReport
@@ -46,7 +45,9 @@ class ConnectionResponseHandler(BaseHandler):
                             "Error parsing DIDDoc for problem report"
                         )
                 await responder.send_reply(
-                    ConnectionProblemReport(problem_code=e.error_code, explain=str(e)),
+                    ConnectionProblemReport(
+                        description={"en": e.message, "code": e.error_code}
+                    ),
                     target_list=targets,
                 )
             return

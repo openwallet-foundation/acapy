@@ -3,11 +3,10 @@
 import logging
 from typing import Optional, Sequence, Tuple, cast
 
-
-from ....core.oob_processor import OobMessageProcessor
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
+from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
 from ....messaging.valid import IndyDID
@@ -261,12 +260,12 @@ class ConnectionManager(BaseConnectionManager):
             if not invitation.recipient_keys:
                 raise ConnectionManagerError(
                     "Invitation must contain recipient key(s)",
-                    error_code="missing-recipient-keys",
+                    error_code=ProblemReportReason.MISSING_RECIPIENT_KEYS.value,
                 )
             if not invitation.endpoint:
                 raise ConnectionManagerError(
                     "Invitation must contain an endpoint",
-                    error_code="missing-endpoint",
+                    error_code=ProblemReportReason.MISSING_ENDPOINT.value,
                 )
         accept = (
             ConnRecord.ACCEPT_AUTO
@@ -440,7 +439,8 @@ class ConnectionManager(BaseConnectionManager):
                 raise ConnectionManagerError(
                     "No invitation found for pairwise connection "
                     f"in state {ConnRecord.State.INVITATION.rfc160}: "
-                    "a prior connection request may have updated the connection state"
+                    "a prior connection request may have updated the connection state",
+                    error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
                 )
 
         invitation = None
@@ -489,7 +489,7 @@ class ConnectionManager(BaseConnectionManager):
         conn_did_doc = request.connection.did_doc
         if not conn_did_doc:
             raise ConnectionManagerError(
-                "No DIDDoc provided; cannot connect to public DID"
+                "No DIDDoc provided; cannot connect to public DID",
             )
         if request.connection.did != conn_did_doc.did:
             raise ConnectionManagerError(
@@ -764,17 +764,19 @@ class ConnectionManager(BaseConnectionManager):
         report: ConnectionProblemReport,
     ):
         """Receive problem report."""
-        if not report.problem_code:
-            raise ConnectionManagerError("Missing problem_code in problem report")
+        if not report.description:
+            raise ConnectionManagerError("Missing description in problem report")
 
-        if report.problem_code in {reason.value for reason in ProblemReportReason}:
+        if report.description.get("code") in {
+            reason.value for reason in ProblemReportReason
+        }:
             self._logger.info("Problem report indicates connection is abandoned")
             async with self.profile.session() as session:
                 await conn_rec.abandon(
                     session,
-                    reason=report.problem_code,
+                    reason=report.description.get("en"),
                 )
         else:
             raise ConnectionManagerError(
-                f"Received unrecognized problem report: {report.problem_code}"
+                f"Received unrecognized problem report: {report.description}"
             )

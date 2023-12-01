@@ -1,16 +1,19 @@
 """Represents a connection problem report message."""
 
+import logging
 from enum import Enum
 
-from marshmallow import EXCLUDE, fields, validate
+from marshmallow import EXCLUDE, ValidationError, validates_schema
 
-from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 from ..message_types import PROBLEM_REPORT
 
 HANDLER_CLASS = (
     "aries_cloudagent.protocols.connections.v1_0.handlers."
     "problem_report_handler.ConnectionProblemReportHandler"
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ProblemReportReason(Enum):
@@ -21,9 +24,11 @@ class ProblemReportReason(Enum):
     REQUEST_PROCESSING_ERROR = "request_processing_error"
     RESPONSE_NOT_ACCEPTED = "response_not_accepted"
     RESPONSE_PROCESSING_ERROR = "response_processing_error"
+    MISSING_RECIPIENT_KEYS = "invitation_missing_recipient_keys"
+    MISSING_ENDPOINT = "invitation_missing_endpoint"
 
 
-class ConnectionProblemReport(AgentMessage):
+class ConnectionProblemReport(ProblemReport):
     """Base class representing a connection problem report message."""
 
     class Meta:
@@ -45,7 +50,7 @@ class ConnectionProblemReport(AgentMessage):
         self.problem_code = problem_code
 
 
-class ConnectionProblemReportSchema(AgentMessageSchema):
+class ConnectionProblemReportSchema(ProblemReportSchema):
     """Schema for ConnectionProblemReport base class."""
 
     class Meta:
@@ -54,22 +59,19 @@ class ConnectionProblemReportSchema(AgentMessageSchema):
         model_class = ConnectionProblemReport
         unknown = EXCLUDE
 
-    explain = fields.Str(
-        required=False,
-        metadata={
-            "description": "Localized error explanation",
-            "example": "Invitation not accepted",
-        },
-    )
-    problem_code = fields.Str(
-        data_key="problem-code",
-        required=False,
-        validate=validate.OneOf(
-            choices=[prr.value for prr in ProblemReportReason],
-            error="Value {input} must be one of {choices}.",
-        ),
-        metadata={
-            "description": "Standard error identifier",
-            "example": ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
-        },
-    )
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate schema fields."""
+
+        if not data.get("description", {}).get("code", ""):
+            raise ValidationError("Value for description.code must be present")
+        elif data.get("description", {}).get("code", "") not in [
+            prr.value for prr in ProblemReportReason
+        ]:
+            locales = list(data.get("description").keys())
+            locales.remove("code")
+            LOGGER.warning(
+                "Unexpected error code received.\n"
+                f"Code: {data.get('description').get('code')}, "
+                f"Description: {data.get('description').get(locales[0])}"
+            )
