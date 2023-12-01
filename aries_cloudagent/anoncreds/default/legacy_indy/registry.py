@@ -20,8 +20,8 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ....multitenant.base import BaseMultitenantManager
-from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
-from ....revocation.recover import generate_ledger_rrrecovery_txn
+from ....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
+from ....revocation_anoncreds.recover import generate_ledger_rrrecovery_txn
 from ...base import (
     AnonCredsObjectAlreadyExists,
     AnonCredsObjectNotFound,

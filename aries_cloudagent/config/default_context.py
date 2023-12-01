@@ -88,12 +88,21 @@ class DefaultContextBuilder(ContextBuilder):
 
         context.injector.bind_provider(ProfileManager, ProfileManagerProvider())
 
-        context.injector.bind_provider(
-            BaseTailsServer,
-            ClassProvider(
-                "aries_cloudagent.tails.indy_tails_server.IndyTailsServer",
-            ),
-        )
+        wallet_type = self.settings.get("wallet.type")
+        if wallet_type == "askar-anoncreds":
+            context.injector.bind_provider(
+                BaseTailsServer,
+                ClassProvider(
+                    "aries_cloudagent.tails.anoncreds_tails_server.AnonCredsTailsServer",
+                ),
+            )
+        else:
+            context.injector.bind_provider(
+                BaseTailsServer,
+                ClassProvider(
+                    "aries_cloudagent.tails.indy_tails_server.IndyTailsServer",
+                ),
+            )
 
         # Register default pack format
         context.injector.bind_provider(
@@ -120,6 +129,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry = PluginRegistry(
             blocklist=self.settings.get("blocked_plugins", [])
         )
+        wallet_type = self.settings.get("wallet.type")
         context.injector.bind_instance(PluginRegistry, plugin_registry)
 
         # Register standard protocol plugins
@@ -133,16 +143,23 @@ class DefaultContextBuilder(ContextBuilder):
         )
         plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
         plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
-        plugin_registry.register_plugin("aries_cloudagent.revocation")
         plugin_registry.register_plugin("aries_cloudagent.resolver")
         plugin_registry.register_plugin("aries_cloudagent.settings")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
-        plugin_registry.register_plugin("aries_cloudagent.anoncreds")
-        plugin_registry.register_plugin("aries_cloudagent.anoncreds.default.did_indy")
-        plugin_registry.register_plugin("aries_cloudagent.anoncreds.default.did_web")
-        plugin_registry.register_plugin(
-            "aries_cloudagent.anoncreds.default.legacy_indy"
-        )
+        if wallet_type == "askar-anoncreds":
+            plugin_registry.register_plugin("aries_cloudagent.anoncreds")
+            plugin_registry.register_plugin(
+                "aries_cloudagent.anoncreds.default.did_indy"
+            )
+            plugin_registry.register_plugin(
+                "aries_cloudagent.anoncreds.default.did_web"
+            )
+            plugin_registry.register_plugin(
+                "aries_cloudagent.anoncreds.default.legacy_indy"
+            )
+            plugin_registry.register_plugin("aries_cloudagent.revocation_anoncreds")
+        else:
+            plugin_registry.register_plugin("aries_cloudagent.revocation")
 
         if context.settings.get("multitenant.admin_enabled"):
             plugin_registry.register_plugin("aries_cloudagent.multitenant.admin")
