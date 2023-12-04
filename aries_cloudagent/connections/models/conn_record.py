@@ -542,7 +542,7 @@ class ConnRecord(BaseRecord):
 
     async def abandon(self, session: ProfileSession, *, reason: Optional[str] = None):
         """Set state to abandoned."""
-        reason = reason or "Connectin abandoned"
+        reason = reason or "Connection abandoned"
         self.state = ConnRecord.State.ABANDONED.rfc160
         self.error_msg = reason
         await self.save(session, reason=reason)
