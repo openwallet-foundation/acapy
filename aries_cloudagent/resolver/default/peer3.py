@@ -84,8 +84,10 @@ class PeerDID3Resolver(BaseDIDResolver):
 
     async def remove_record_for_deleted_conn(self, profile: Profile, event: Event):
         """Remove record for deleted connection, if found."""
-        their_did = event.payload["their_did"]
-        my_did = event.payload["my_did"]
+        their_did = event.payload.get("their_did")
+        my_did = event.payload.get("my_did")
+        if not their_did and not my_did:
+            return
         dids = [
             *(did for did in (their_did, my_did) if PEER3_PATTERN.match(did)),
             *(peer2to3(did) for did in (their_did, my_did) if PEER2_PATTERN.match(did)),

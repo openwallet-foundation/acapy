@@ -3,14 +3,15 @@ from aries_cloudagent.tests import mock
 
 from .....admin.request_context import AdminRequestContext
 from .....connections.models.conn_record import ConnRecord
+from .....core.in_memory import InMemoryProfile
 
 from .. import routes as test_module
 
 
 class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session_inject = {}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.profile = InMemoryProfile.test_profile()
+        self.context = AdminRequestContext.test_context(profile=self.profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -63,6 +64,20 @@ class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
                 goal=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
+
+    async def test_invitation_remove(self):
+        self.request.match_info = {"invi_msg_id": "dummy"}
+
+        with mock.patch.object(
+            test_module, "OutOfBandManager", autospec=True
+        ) as mock_oob_mgr, mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
+        ) as mock_json_response:
+            mock_oob_mgr.return_value.delete_conn_and_oob_record_invitation = (
+                mock.CoroutineMock(return_value=None)
+            )
+            await test_module.invitation_remove(self.request)
+            mock_json_response.assert_called_once_with({})
 
     async def test_invitation_create_with_accept(self):
         self.request.query = {

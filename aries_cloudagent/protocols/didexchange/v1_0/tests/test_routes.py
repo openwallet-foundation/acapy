@@ -101,6 +101,7 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
             "my_label": "label baby junior",
             "my_endpoint": "http://endpoint.ca",
             "mediator_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "auto_accept": "true",
         }
 
         with mock.patch.object(
@@ -121,6 +122,7 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
             "their_public_did": "public-did",
             "my_label": "label baby junior",
             "my_endpoint": "http://endpoint.ca",
+            "auto_accept": "true",
         }
 
         with mock.patch.object(
