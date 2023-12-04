@@ -1,6 +1,6 @@
 Feature: ACA-Py Revocation API 
 
-   @GHA
+   @Revoc-api @GHA
    Scenario Outline: Using revocation api, issue and revoke credentials
       Given we have "3" agents
          | name  | role     | capabilities        |
@@ -18,7 +18,7 @@ Feature: ACA-Py Revocation API
          | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
          | Acme   | --revocation --public-did                  |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-   @GHA
+   @Revoc-api @GHA
    Scenario Outline: Using revocation api, issue, revoke credentials and publish
       Given we have "3" agents
          | name  | role     | capabilities        |
@@ -28,7 +28,7 @@ Feature: ACA-Py Revocation API
       And "<issuer>" and "Bob" have an existing connection
       And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
       And "<issuer>" has written the credential definition for <Schema_name> to the ledger
-      And "<issuer>" has written the revocation registry definition to the ledger ignore count
+      And "<issuer>" has written the revocation registry definition to the ledger
       And "<issuer>" has written the revocation registry entry transaction to the ledger
       And "<issuer>" revokes the credential without publishing the entry
       And "<issuer>" authors a revocation registry entry publishing transaction
@@ -40,7 +40,7 @@ Feature: ACA-Py Revocation API
          | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
          | Acme   | --revocation --public-did                  |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-   @GHA-Anoncreds-break
+   @Revoc-api.x @GHA-Anoncreds-break
    Scenario Outline: Without endorser: issue, revoke credentials, manually create revocation registries
       Given we have "3" agents
          | name  | role     | capabilities        |
@@ -69,7 +69,7 @@ Feature: ACA-Py Revocation API
          | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
          | Acme   | --revocation --public-did --did-exchange   |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-   @GHA
+   @Revoc-api @GHA
    Scenario Outline: Using revocation api, rotate revocation 
       Given we have "3" agents
          | name  | role     | capabilities        |
@@ -78,14 +78,14 @@ Feature: ACA-Py Revocation API
          | Bob   | prover   | <Bob_capabilities>  |
       And "<issuer>" and "Bob" have an existing connection
       And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
-      And "<issuer>" lists revocation registries
+      And "<issuer>" lists revocation registries 1
       And "<issuer>" rotates revocation registries
 
       Examples:
          | issuer | Acme_capabilities                          | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
          | Acme   | --revocation --public-did                  |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
-   @GHA
+   @Revoc-api @GHA
    Scenario Outline: Using revocation api, fill registry (need to run with "TAILS_FILE_COUNT": "4" env var)
       Given we have "2" agents
          | name  | role     | capabilities        |
