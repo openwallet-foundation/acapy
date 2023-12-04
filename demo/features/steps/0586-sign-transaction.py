@@ -732,4 +732,3 @@ def step_impl(context, agent_name, schema_name):
         },
     )
     assert created_txn
-
