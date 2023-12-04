@@ -5,6 +5,7 @@ import time
 
 from bdd_support.agent_backchannel_client import (
     aries_container_create_schema_cred_def,
+    aries_container_check_exists_cred_def,
     aries_container_issue_credential,
     aries_container_receive_credential,
     read_schema_data,
@@ -46,8 +47,8 @@ def step_impl(context, issuer, schema_name):
     # confirm the cred def was actually created
     # TODO for anoncreds, this should call the anoncreds/cred-def endpoint
     async_sleep(2.0)
-    cred_def_saved = agent_container_GET(
-        agent["agent"], "/credential-definitions/" + cred_def_id
+    cred_def_saved = aries_container_check_exists_cred_def(
+        agent["agent"], cred_def_id
     )
     assert cred_def_saved
 

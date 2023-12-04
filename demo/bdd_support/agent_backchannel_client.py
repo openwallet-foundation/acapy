@@ -103,6 +103,16 @@ def aries_container_create_schema_cred_def(
     )
 
 
+def aries_container_check_exists_cred_def(
+    the_container: AgentContainer,
+    cred_def_id: str,
+):
+    return run_coroutine(
+        the_container.check_exists_cred_def,
+        cred_def_id,
+    )
+
+
 def aries_container_issue_credential(
     the_container: AgentContainer,
     cred_def_id: str,

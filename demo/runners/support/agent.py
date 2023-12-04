@@ -291,6 +291,30 @@ class DemoAgent:
         else:
             raise Exception("Invalid wallet_type: " + str(wallet_type))
 
+    async def check_exists_cred_def(
+        self,
+        cred_def_id: str,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            cred_def_saved = await self.admin_GET(
+                "/credential-definitions/" + cred_def_id
+            )
+            if cred_def_saved:
+                return True
+            else:
+                return False
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            cred_def_saved = await self.admin_GET(
+                "/anoncreds/credential-definition/" + cred_def_id
+            )
+            if cred_def_saved:
+                return True
+            else:
+                return False
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
     async def register_schema_and_creddef_indy(
         self,
         schema_name,
