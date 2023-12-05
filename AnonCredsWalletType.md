@@ -82,7 +82,6 @@ The Tails file changes are minimal -- nothing about the file itself changed.  Wh
 
 * revocation notifications (not sure if they're included in `anoncreds-rs` updates, haven't tested them ...)
 * revocation support - complete the revocation implementation (support for unhappy path scenarios)
-* endpoints - don't load the schema/cred-def endpoints when wallet type is anoncreds (will require some BDD updates)
 * testing - various scenarios like mediation, multitenancy etc.
 
 - unit tests (in the new anoncreds package) (see https://github.com/hyperledger/aries-cloudagent-python/pull/2596/commits/229ffbba209aff0ea7def5bad6556d93057f3c2a)
