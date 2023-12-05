@@ -919,13 +919,26 @@ class AgentContainer:
         else:
             raise Exception("Invalid credential type:" + self.cred_type)
 
-    async def check_exists_cred_def(
+    async def fetch_schemas(
+        self,
+    ):
+        return await self.agent.fetch_schemas(
+            wallet_type=self.agent.wallet_type,
+        )
+
+    async def fetch_cred_defs(
+        self,
+    ):
+        return await self.agent.fetch_cred_defs(
+            wallet_type=self.agent.wallet_type,
+        )
+
+    async def fetch_cred_def(
         self,
         cred_def_id: str,
     ):
-        return await self.agent.check_exists_cred_def(
-            cred_def_id,
-            wallet_type=self.agent.wallet_type,
+        return await self.agent.fetch_cred_def(
+            cred_def_id, wallet_type=self.agent.wallet_type
         )
 
     async def issue_credential(

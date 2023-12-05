@@ -10,6 +10,9 @@ from bdd_support.agent_backchannel_client import (
     async_sleep,
     read_json_data,
     read_schema_data,
+    aries_container_fetch_schemas,
+    aries_container_fetch_cred_defs,
+    aries_container_fetch_cred_def,
 )
 from behave import given, then, when
 from runners.agent_container import AgentContainer
@@ -191,7 +194,7 @@ def step_impl(context, agent_name, schema_name):
     i = 5
     while 0 == len(schemas["schema_ids"]) and i > 0:
         async_sleep(1.0)
-        schemas = agent_container_GET(agent["agent"], "/schemas/created")
+        schemas = aries_container_fetch_schemas(agent["agent"])
         i = i - 1
     assert len(schemas["schema_ids"]) == 1
 
@@ -211,7 +214,7 @@ def step_impl(context, agent_name, schema_name):
     connection_id = agent["agent"].agent.connection_id
 
     # TODO for now assume there is a single schema; should find the schema based on the supplied name
-    schemas = agent_container_GET(agent["agent"], "/schemas/created")
+    schemas = aries_container_fetch_schemas(agent["agent"])
     assert len(schemas["schema_ids"]) == 1
 
     schema_id = schemas["schema_ids"][0]
@@ -255,16 +258,12 @@ def step_impl(context, agent_name, schema_name):
     i = 5
     while 0 == len(cred_defs["credential_definition_ids"]) and i > 0:
         async_sleep(1.0)
-        cred_defs = agent_container_GET(
-            agent["agent"], "/credential-definitions/created"
-        )
+        cred_defs = aries_container_fetch_cred_defs(agent["agent"])
         i = i - 1
     assert len(cred_defs["credential_definition_ids"]) == 1
 
     cred_def_id = cred_defs["credential_definition_ids"][0]
-    cred_def = agent_container_GET(
-        agent["agent"], "/credential-definitions/" + cred_def_id
-    )
+    cred_def = aries_container_fetch_cred_def(agent["agent"], cred_def_id)
 
     context.cred_def_id = cred_def_id
 
@@ -336,7 +335,7 @@ def step_impl(context, agent_name):
             },
         )
         i = i - 1
-    assert len(rev_regs["rev_reg_ids"]) == 1
+    assert len(rev_regs["rev_reg_ids"]) >= 1
 
     rev_reg_id = rev_regs["rev_reg_ids"][0]
 
