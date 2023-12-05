@@ -62,6 +62,10 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         required=False,
         metadata={"description": "Alias for connection", "example": "Barry"},
     )
+    auto_accept = fields.Boolean(
+        required=False,
+        metadata={"description": "Auto-accept connection (defaults to configuration)"},
+    )
     my_endpoint = fields.Str(
         required=False,
         validate=ENDPOINT_VALIDATE,
@@ -260,6 +264,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     use_public_did = json.loads(request.query.get("use_public_did", "null"))
     goal_code = request.query.get("goal_code") or None
     goal = request.query.get("goal") or None
+    auto_accept = json.loads(request.query.get("auto_accept", "null"))
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
@@ -273,6 +278,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             alias=alias,
             goal_code=goal_code,
             goal=goal,
+            auto_accept=auto_accept,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

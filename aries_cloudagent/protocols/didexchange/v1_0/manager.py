@@ -181,6 +181,7 @@ class DIDXManager(BaseConnectionManager):
         alias: str = None,
         goal_code: str = None,
         goal: str = None,
+        auto_accept: bool = False,
     ) -> ConnRecord:
         """Create and send a request against a public DID only (no explicit invitation).
 
@@ -192,6 +193,7 @@ class DIDXManager(BaseConnectionManager):
             use_public_did: use my public DID for this connection
             goal_code: Optional self-attested code for sharing intent of connection
             goal: Optional self-attested string for sharing intent of connection
+            auto_accept: auto-accept a corresponding connection request
 
         Returns:
             The new `ConnRecord` instance
@@ -223,7 +225,13 @@ class DIDXManager(BaseConnectionManager):
                     )
                 except StorageNotFoundError:
                     pass
-
+        auto_accept = bool(
+            auto_accept
+            or (
+                auto_accept is None
+                and self.profile.settings.get("debug.auto_accept_requests")
+            )
+        )
         conn_rec = ConnRecord(
             my_did=my_public_info.did
             if my_public_info
@@ -233,10 +241,10 @@ class DIDXManager(BaseConnectionManager):
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             invitation_key=None,
             invitation_msg_id=None,
-            accept=None,
             alias=alias,
             their_public_did=their_public_did,
             connection_protocol=DIDX_PROTO,
+            accept=ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL,
         )
         request = await self.create_request(  # saves and updates conn_rec
             conn_rec=conn_rec,

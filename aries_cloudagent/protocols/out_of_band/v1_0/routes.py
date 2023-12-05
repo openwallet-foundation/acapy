@@ -4,8 +4,13 @@ import json
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
-
+from aiohttp_apispec import (
+    docs,
+    querystring_schema,
+    request_schema,
+    match_info_schema,
+    response_schema,
+)
 from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
@@ -175,6 +180,23 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     )
 
 
+class InvitationRecordResponseSchema(OpenAPISchema):
+    """Response schema for Invitation Record."""
+
+
+class InvitationRecordMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking invitation record."""
+
+    invi_msg_id = fields.Str(
+        required=True,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Invitation Message identifier",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+
+
 @docs(
     tags=["out-of-band"],
     summary="Create a new connection invitation",
@@ -284,12 +306,37 @@ async def invitation_receive(request: web.BaseRequest):
     return web.json_response(result.serialize())
 
 
+@docs(tags=["out-of-band"], summary="Delete records associated with invitation")
+@match_info_schema(InvitationRecordMatchInfoSchema())
+@response_schema(InvitationRecordResponseSchema(), description="")
+async def invitation_remove(request: web.BaseRequest):
+    """Request handler for removing a invitation related conn and oob records.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    invi_msg_id = request.match_info["invi_msg_id"]
+    profile = context.profile
+    oob_mgr = OutOfBandManager(profile)
+    try:
+        await oob_mgr.delete_conn_and_oob_record_invitation(invi_msg_id)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({})
+
+
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
         [
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
+            web.delete("/out-of-band/invitations/{invi_msg_id}", invitation_remove),
         ]
     )
 

@@ -63,6 +63,8 @@ class ConnectionRequestHandler(BaseHandler):
                             "Error parsing DIDDoc for problem report"
                         )
                 await responder.send_reply(
-                    ConnectionProblemReport(problem_code=e.error_code, explain=str(e)),
+                    ConnectionProblemReport(
+                        description={"en": e.message, "code": e.error_code}
+                    ),
                     target_list=targets,
                 )

@@ -110,6 +110,7 @@ class OobRecord(BaseExchangeRecord):
                     "connection_id",
                     "role",
                     "our_service",
+                    "invi_msg_id",
                 )
             },
             **{

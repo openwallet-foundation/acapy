@@ -1,15 +1,16 @@
 import pytest
+
 from aries_cloudagent.tests import mock
 
-from ......core.profile import ProfileSession
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ......core.profile import ProfileSession
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......transport.inbound.receipt import MessageReceipt
 from ......storage.base import BaseStorage
 from ......storage.error import StorageNotFoundError
+from ......transport.inbound.receipt import MessageReceipt
 from ...handlers import connection_request_handler as handler
 from ...manager import ConnectionManagerError
 from ...messages.connection_request import ConnectionRequest
@@ -161,7 +162,7 @@ class TestRequestHandler:
     async def test_problem_report(self, mock_conn_mgr, request_context):
         mock_conn_mgr.return_value.receive_request = mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
-            error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
+            error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value
         )
         request_context.message = ConnectionRequest()
         handler_inst = handler.ConnectionRequestHandler()
@@ -172,7 +173,11 @@ class TestRequestHandler:
         result, target = messages[0]
         assert (
             isinstance(result, ConnectionProblemReport)
-            and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": None}
 
@@ -184,7 +189,7 @@ class TestRequestHandler:
     ):
         mock_conn_mgr.return_value.receive_request = mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
-            error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
+            error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value
         )
         mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             return_value=[mock_conn_target]
@@ -202,7 +207,11 @@ class TestRequestHandler:
         result, target = messages[0]
         assert (
             isinstance(result, ConnectionProblemReport)
-            and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": [mock_conn_target]}
 
@@ -214,7 +223,7 @@ class TestRequestHandler:
     ):
         mock_conn_mgr.return_value.receive_request = mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
-            error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
+            error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value
         )
         mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             side_effect=ConnectionManagerError("no targets")
@@ -232,6 +241,10 @@ class TestRequestHandler:
         result, target = messages[0]
         assert (
             isinstance(result, ConnectionProblemReport)
-            and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": None}
