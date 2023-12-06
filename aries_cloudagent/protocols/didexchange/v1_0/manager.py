@@ -658,7 +658,7 @@ class DIDXManager(BaseConnectionManager):
             attach = None
             if conn_rec.invitation_msg_id is None:
                 # Rotation needed
-                attach = AttachDecorator.data_base65_string(did)
+                attach = AttachDecorator.data_base64_string(did)
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
                     await attach.data.sign(conn_rec.invitation_key, wallet)

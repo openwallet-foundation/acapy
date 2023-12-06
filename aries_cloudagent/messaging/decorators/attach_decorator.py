@@ -598,7 +598,7 @@ class AttachDecorator(BaseModel):
             return None
 
     @classmethod
-    def data_base65_string(
+    def data_base64_string(
         cls,
         content: str,
         *,
