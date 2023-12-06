@@ -138,10 +138,6 @@ class DefaultContextBuilder(ContextBuilder):
         # Currently providing admin routes only
         plugin_registry.register_plugin("aries_cloudagent.holder")
         plugin_registry.register_plugin("aries_cloudagent.ledger")
-        plugin_registry.register_plugin(
-            "aries_cloudagent.messaging.credential_definitions"
-        )
-        plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
         plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
         plugin_registry.register_plugin("aries_cloudagent.resolver")
         plugin_registry.register_plugin("aries_cloudagent.settings")
@@ -159,6 +155,10 @@ class DefaultContextBuilder(ContextBuilder):
             )
             plugin_registry.register_plugin("aries_cloudagent.revocation_anoncreds")
         else:
+            plugin_registry.register_plugin(
+                "aries_cloudagent.messaging.credential_definitions"
+            )
+            plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
             plugin_registry.register_plugin("aries_cloudagent.revocation")
 
         if context.settings.get("multitenant.admin_enabled"):

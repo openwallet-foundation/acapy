@@ -103,6 +103,43 @@ def aries_container_create_schema_cred_def(
     )
 
 
+def aries_container_fetch_schemas(
+    the_container: AgentContainer,
+):
+    return run_coroutine(
+        the_container.fetch_schemas,
+    )
+
+
+def aries_container_fetch_cred_defs(
+    the_container: AgentContainer,
+):
+    return run_coroutine(
+        the_container.fetch_cred_defs,
+    )
+
+
+def aries_container_fetch_cred_def(
+    the_container: AgentContainer,
+    cred_def_id: str,
+):
+    return run_coroutine(
+        the_container.fetch_cred_def,
+        cred_def_id,
+    )
+
+
+def aries_container_check_exists_cred_def(
+    the_container: AgentContainer,
+    cred_def_id: str,
+):
+    cred_def = aries_container_fetch_cred_def(the_container, cred_def_id)
+    if cred_def:
+        return True
+    else:
+        return False
+
+
 def aries_container_issue_credential(
     the_container: AgentContainer,
     cred_def_id: str,
