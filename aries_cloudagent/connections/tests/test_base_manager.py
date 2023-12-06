@@ -1727,3 +1727,14 @@ class TestBaseConnectionManager(IsolatedAsyncioTestCase):
                 "localhost:8020",
                 "10.20.30.40:5060",
             )
+
+    async def test_diddoc_connection_targets_diddoc(self):
+        did_doc = self.make_did_doc(
+            self.test_target_did,
+            self.test_target_verkey,
+        )
+        targets = self.manager.diddoc_connection_targets(
+            did_doc,
+            self.test_verkey,
+        )
+        assert isinstance(targets[0], ConnectionTarget)

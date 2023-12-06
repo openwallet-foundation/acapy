@@ -586,7 +586,7 @@ class BaseConnectionManager:
 
     def diddoc_connection_targets(
         self,
-        doc: DIDDoc,
+        doc: Optional[Union[DIDDoc, dict]],
         sender_verkey: str,
         their_label: Optional[str] = None,
     ) -> Sequence[ConnectionTarget]:
@@ -597,6 +597,8 @@ class BaseConnectionManager:
             sender_verkey: The verkey we are using
             their_label: The connection label they are using
         """
+        if isinstance(doc, dict):
+            doc = DIDDoc.deserialize(doc)
         if not doc:
             raise BaseConnectionManagerError("No DIDDoc provided for connection target")
         if not doc.did:
