@@ -146,6 +146,11 @@ class BaseConnectionManager:
             did = value["id"]
             doc = json.dumps(value)
 
+        # Special case: we used to store did:sov dids as unqualified.
+        # For backwards compatibility, we'll strip off the prefix.
+        if did.startswith("did:sov:"):
+            did = did[8:]
+
         self._logger.debug("Storing DID document for %s: %s", did, doc)
 
         try:
@@ -624,7 +629,6 @@ class BaseConnectionManager:
         Args:
             did: The DID to search for
         """
-        # legacy documents for unqualified dids
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})

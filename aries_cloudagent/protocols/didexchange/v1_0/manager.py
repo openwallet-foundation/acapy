@@ -494,7 +494,14 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
                 await self.store_did_document(conn_did_doc)
-            if request.did != conn_did_doc["id"]:
+
+            # Special case: legacy DIDs were unqualified in request, qualified in doc
+            if request.did and not request.did.startswith("did:"):
+                did_to_check = f"did:sov:{request.did}"
+            else:
+                did_to_check = request.did
+
+            if did_to_check != conn_did_doc["id"]:
                 raise DIDXManagerError(
                     (
                         f"Connection DID {request.did} does not match "
@@ -763,16 +770,20 @@ class DIDXManager(BaseConnectionManager):
             )
 
         their_did = response.did
+        # Special case: legacy DIDs were unqualified in response, qualified in doc
+        if their_did and not their_did.startswith("did:"):
+            their_did = f"did:sov:{their_did}"
+
         if response.did_doc_attach:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 conn_did_doc = await self.verify_diddoc(
                     wallet, response.did_doc_attach, conn_rec.invitation_key
                 )
-            if their_did != conn_did_doc.did:
+            if their_did != conn_did_doc["id"]:
                 raise DIDXManagerError(
                     f"Connection DID {their_did} "
-                    f"does not match DID doc id {conn_did_doc.did}"
+                    f"does not match DID doc id {conn_did_doc['id']}"
                 )
             await self.store_did_document(conn_did_doc)
         else:
