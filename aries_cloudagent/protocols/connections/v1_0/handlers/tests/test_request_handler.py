@@ -159,10 +159,24 @@ class TestRequestHandler:
 
     @pytest.mark.asyncio
     @mock.patch.object(handler, "ConnectionManager")
-    async def test_problem_report(self, mock_conn_mgr, request_context):
+    @mock.patch.object(connection_target, "ConnectionTarget")
+    async def test_problem_report(
+        self, mock_conn_target, mock_conn_mgr, request_context
+    ):
         mock_conn_mgr.return_value.receive_request = mock.CoroutineMock()
         mock_conn_mgr.return_value.receive_request.side_effect = ConnectionManagerError(
             error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+        )
+        mock_conn_mgr.return_value.manager_error_to_problem_report = mock.MagicMock(
+            return_value=(
+                ConnectionProblemReport(
+                    description={
+                        "en": "test error",
+                        "code": ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                    }
+                ),
+                [mock_conn_target],
+            )
         )
         request_context.message = ConnectionRequest()
         handler_inst = handler.ConnectionRequestHandler()
@@ -179,7 +193,7 @@ class TestRequestHandler:
                 == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
             )
         )
-        assert target == {"target_list": None}
+        assert target == {"target_list": [mock_conn_target]}
 
     @pytest.mark.asyncio
     @mock.patch.object(handler, "ConnectionManager")
@@ -193,6 +207,17 @@ class TestRequestHandler:
         )
         mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             return_value=[mock_conn_target]
+        )
+        mock_conn_mgr.return_value.manager_error_to_problem_report = mock.MagicMock(
+            return_value=(
+                ConnectionProblemReport(
+                    description={
+                        "en": "test error",
+                        "code": ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                    }
+                ),
+                [mock_conn_target],
+            )
         )
         request_context.message = ConnectionRequest(
             connection=ConnectionDetail(did=TEST_DID, did_doc=did_doc),
@@ -228,6 +253,17 @@ class TestRequestHandler:
         mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             side_effect=ConnectionManagerError("no targets")
         )
+        mock_conn_mgr.return_value.manager_error_to_problem_report = mock.MagicMock(
+            return_value=(
+                ConnectionProblemReport(
+                    description={
+                        "en": "test error",
+                        "code": ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                    }
+                ),
+                None,
+            )
+        )
         request_context.message = ConnectionRequest(
             connection=ConnectionDetail(did=TEST_DID, did_doc=did_doc),
             label=TEST_LABEL,
@@ -237,14 +273,4 @@ class TestRequestHandler:
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         messages = responder.messages
-        assert len(messages) == 1
-        result, target = messages[0]
-        assert (
-            isinstance(result, ConnectionProblemReport)
-            and result.description
-            and (
-                result.description["code"]
-                == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
-            )
-        )
-        assert target == {"target_list": None}
+        assert len(messages) == 0  # messages require a target!

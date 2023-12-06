@@ -1,17 +1,16 @@
 """DID Exchange problem report and reasons."""
 
-from enum import Enum
 import logging
+from enum import Enum
 
 from marshmallow import EXCLUDE, ValidationError, validates_schema
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 from ..message_types import PROBLEM_REPORT
 
-
 HANDLER_CLASS = (
     "aries_cloudagent.protocols.didexchange.v1_0.handlers."
-    "problem_report_handler.ProblemReportHandler"
+    "problem_report_handler.DIDXProblemReportHandler"
 )
 
 LOGGER = logging.getLogger(__name__)

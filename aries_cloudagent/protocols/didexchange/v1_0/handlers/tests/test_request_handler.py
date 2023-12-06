@@ -1,5 +1,6 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ......connections.models import conn_record, connection_target
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
@@ -8,7 +9,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-from ......wallet.did_method import DIDMethods, SOV
+from ......wallet.did_method import SOV, DIDMethods
 from ......wallet.key_type import ED25519
 from ...handlers import request_handler as test_module
 from ...manager import DIDXManagerError
@@ -163,10 +164,22 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
         assert responder.messages
 
     @mock.patch.object(test_module, "DIDXManager")
-    async def test_problem_report(self, mock_didx_mgr):
+    @mock.patch.object(connection_target, "ConnectionTarget")
+    async def test_problem_report(self, mock_conn_target, mock_didx_mgr):
         mock_didx_mgr.return_value.receive_request = mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value
+            )
+        )
+        mock_didx_mgr.return_value.manager_error_to_problem_report = mock.CoroutineMock(
+            return_value=(
+                DIDXProblemReport(
+                    description={
+                        "en": "test error",
+                        "code": ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                    }
+                ),
+                [mock_conn_target],
             )
         )
         self.ctx.message = DIDXRequest()
@@ -184,7 +197,7 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
                 == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
             )
         )
-        assert target == {"target_list": None}
+        assert target == {"target_list": [mock_conn_target]}
 
     @mock.patch.object(test_module, "DIDXManager")
     @mock.patch.object(connection_target, "ConnectionTarget")
@@ -196,6 +209,17 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
         )
         mock_didx_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             return_value=[mock_conn_target]
+        )
+        mock_didx_mgr.return_value.manager_error_to_problem_report = mock.CoroutineMock(
+            return_value=(
+                DIDXProblemReport(
+                    description={
+                        "en": "test error",
+                        "code": ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                    }
+                ),
+                [mock_conn_target],
+            )
         )
         self.ctx.message = DIDXRequest(
             label=TEST_LABEL,
@@ -233,6 +257,17 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
         mock_didx_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
             side_effect=DIDXManagerError("no targets")
         )
+        mock_didx_mgr.return_value.manager_error_to_problem_report = mock.CoroutineMock(
+            return_value=(
+                DIDXProblemReport(
+                    description={
+                        "en": "test error",
+                        "code": ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
+                    }
+                ),
+                None,
+            )
+        )
         self.ctx.message = DIDXRequest(
             label=TEST_LABEL,
             did=TEST_DID,
@@ -242,14 +277,4 @@ class TestDIDXRequestHandler(IsolatedAsyncioTestCase):
         responder = MockResponder()
         await handler_inst.handle(self.ctx, responder)
         messages = responder.messages
-        assert len(messages) == 1
-        result, target = messages[0]
-        assert (
-            isinstance(result, DIDXProblemReport)
-            and result.description
-            and (
-                result.description["code"]
-                == ProblemReportReason.REQUEST_NOT_ACCEPTED.value
-            )
-        )
-        assert target == {"target_list": None}
+        assert len(messages) == 0  # need connection target to add message
