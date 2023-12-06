@@ -1,30 +1,30 @@
 """Manager for performing Linked Data Proof signatures over JSON-LD formatted W3C VCs."""
 
 
-from typing import Optional
-
-from aries_cloudagent.vc.ld_proofs.constants import (
-    SECURITY_CONTEXT_BBS_URL,
-    SECURITY_CONTEXT_ED25519_2020_URL,
-)
+from typing import Dict, Optional, Type
 
 from ...core.profile import Profile
-from ..vc_ld.models.presentation import VerifiablePresentation
 from ...wallet.base import BaseWallet
 from ...wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
 from ...wallet.did_info import DIDInfo
 from ...wallet.error import WalletNotFoundError
-from ...wallet.key_type import BLS12381G2, ED25519
+from ...wallet.key_type import BLS12381G2, ED25519, KeyType
+from ..ld_proofs.constants import (
+    SECURITY_CONTEXT_BBS_URL,
+    SECURITY_CONTEXT_ED25519_2020_URL,
+)
 from ..ld_proofs.crypto.wallet_key_pair import WalletKeyPair
 from ..ld_proofs.document_loader import DocumentLoader
 from ..ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
 from ..ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
 from ..ld_proofs.purposes.proof_purpose import ProofPurpose
 from ..ld_proofs.suites.bbs_bls_signature_2020 import BbsBlsSignature2020
+from ..ld_proofs.suites.bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
 from ..ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ..ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
 from ..ld_proofs.suites.linked_data_proof import LinkedDataProof
 from ..ld_proofs.validation_result import DocumentVerificationResult
+from ..vc_ld.models.presentation import VerifiablePresentation
 from ..vc_ld.validation_result import PresentationVerificationResult
 from .issue import issue as ldp_issue
 from .models.credential import VerifiableCredential
@@ -38,7 +38,7 @@ SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     AuthenticationProofPurpose.term,
 }
 SUPPORTED_ISSUANCE_SUITES = {Ed25519Signature2018, Ed25519Signature2020}
-SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
+SIGNATURE_SUITE_KEY_TYPE_MAPPING: Dict[Type[LinkedDataProof], KeyType] = {
     Ed25519Signature2018: ED25519,
     Ed25519Signature2020: ED25519,
 }
@@ -47,7 +47,13 @@ SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
 # We only want to add bbs suites to supported if the module is installed
 if BbsBlsSignature2020.BBS_SUPPORTED:
     SUPPORTED_ISSUANCE_SUITES.add(BbsBlsSignature2020)
-    SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
+    SUPPORTED_ISSUANCE_SUITES.add(BbsBlsSignatureProof2020)
+    SIGNATURE_SUITE_KEY_TYPE_MAPPING.update(
+        {
+            BbsBlsSignature2020: BLS12381G2,
+            BbsBlsSignatureProof2020: BLS12381G2,
+        }
+    )
 
 
 PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {

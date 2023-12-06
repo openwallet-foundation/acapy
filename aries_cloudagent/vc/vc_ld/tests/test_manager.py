@@ -1,14 +1,13 @@
 """Test VcLdpManager."""
 import pytest
-from aries_cloudagent.resolver.default.key import KeyDIDResolver
-from aries_cloudagent.resolver.did_resolver import DIDResolver
 
 from aries_cloudagent.tests import mock
-from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
 
 from ....core.in_memory.profile import InMemoryProfile
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
+from ....resolver.default.key import KeyDIDResolver
+from ....resolver.did_resolver import DIDResolver
 from ....wallet.base import BaseWallet
 from ....wallet.default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
@@ -23,11 +22,13 @@ from ...ld_proofs.constants import (
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
 from ...ld_proofs.crypto.wallet_key_pair import WalletKeyPair
+from ...ld_proofs.document_loader import DocumentLoader
 from ...ld_proofs.purposes.authentication_proof_purpose import (
     AuthenticationProofPurpose,
 )
 from ...ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
 from ...ld_proofs.suites.bbs_bls_signature_2020 import BbsBlsSignature2020
+from ...ld_proofs.suites.bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
 from ...ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ...ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
 from ..manager import VcLdpManager, VcLdpManagerError
@@ -356,14 +357,12 @@ async def test_issue_bbs(
 @pytest.mark.asyncio
 async def test_get_all_suites(manager: VcLdpManager):
     suites = await manager._get_all_suites()
-    # An analgous test used to check for BbsBlsSignatureProof2020
-    # This is not supported by the VcLdpManager which focuses on
-    # Issuance and Verification.
-    assert len(suites) == 3
+    assert len(suites) == 4
     types = (
         Ed25519Signature2018,
         Ed25519Signature2020,
         BbsBlsSignature2020,
+        BbsBlsSignatureProof2020,
     )
     for suite in suites:
         assert isinstance(suite, types)
