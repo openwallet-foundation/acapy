@@ -31,5 +31,6 @@ class ConnectionInvitationHandler(BaseHandler):
                 ),
             }
         )
+        report.assign_thread_from(context.message)
         # client likely needs to be using direct responses to receive the problem report
         await responder.send_reply(report)

@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Optional
+from typing import Optional, Sequence, Union
 
 import pydid
 from pydid import BaseDIDDocument as ResolvedDocument
@@ -10,6 +10,7 @@ from pydid import DIDCommService
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
+from ....connections.models.connection_target import ConnectionTarget
 from ....connections.models.diddoc import DIDDoc
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
@@ -989,3 +990,36 @@ class DIDXManager(BaseConnectionManager):
 
         first_didcomm_service, *_ = didcomm_services
         return first_didcomm_service.id
+
+    async def manager_error_to_problem_report(
+        self,
+        e: DIDXManagerError,
+        message: Union[DIDXRequest, DIDXResponse],
+        message_receipt,
+    ) -> tuple[DIDXProblemReport, Sequence[ConnectionTarget]]:
+        """Convert DIDXManagerError to problem report."""
+        self._logger.exception("Error receiving RFC 23 connection request")
+        targets = None
+        report = None
+        if e.error_code:
+            report = DIDXProblemReport(
+                description={"en": e.message, "code": e.error_code}
+            )
+            report.assign_thread_from(message)
+            if message.did_doc_attach:
+                try:
+                    # convert diddoc attachment to diddoc...
+                    async with self.profile.session() as session:
+                        wallet = session.inject(BaseWallet)
+                        conn_did_doc = await self.verify_diddoc(
+                            wallet, message.did_doc_attach
+                        )
+                    # get the connection targets...
+                    targets = self.diddoc_connection_targets(
+                        conn_did_doc,
+                        message_receipt.recipient_verkey,
+                    )
+                except DIDXManagerError:
+                    self._logger.exception("Error parsing DIDDoc for problem report")
+
+        return report, targets
