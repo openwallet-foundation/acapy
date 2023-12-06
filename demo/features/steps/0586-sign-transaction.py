@@ -10,6 +10,9 @@ from bdd_support.agent_backchannel_client import (
     async_sleep,
     read_json_data,
     read_schema_data,
+    aries_container_fetch_schemas,
+    aries_container_fetch_cred_defs,
+    aries_container_fetch_cred_def,
 )
 from behave import given, then, when
 from runners.agent_container import AgentContainer
@@ -179,6 +182,7 @@ def step_impl(context, agent_name):
     assert written_txn["state"] == "transaction_acked"
 
 
+@given('"{agent_name}" has written the schema {schema_name} to the ledger')
 @when('"{agent_name}" has written the schema {schema_name} to the ledger')
 @then('"{agent_name}" has written the schema {schema_name} to the ledger')
 def step_impl(context, agent_name, schema_name):
@@ -190,7 +194,7 @@ def step_impl(context, agent_name, schema_name):
     i = 5
     while 0 == len(schemas["schema_ids"]) and i > 0:
         async_sleep(1.0)
-        schemas = agent_container_GET(agent["agent"], "/schemas/created")
+        schemas = aries_container_fetch_schemas(agent["agent"])
         i = i - 1
     assert len(schemas["schema_ids"]) == 1
 
@@ -210,7 +214,7 @@ def step_impl(context, agent_name, schema_name):
     connection_id = agent["agent"].agent.connection_id
 
     # TODO for now assume there is a single schema; should find the schema based on the supplied name
-    schemas = agent_container_GET(agent["agent"], "/schemas/created")
+    schemas = aries_container_fetch_schemas(agent["agent"])
     assert len(schemas["schema_ids"]) == 1
 
     schema_id = schemas["schema_ids"][0]
@@ -236,6 +240,9 @@ def step_impl(context, agent_name, schema_name):
     context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
 
 
+@given(
+    '"{agent_name}" has written the credential definition for {schema_name} to the ledger'
+)
 @when(
     '"{agent_name}" has written the credential definition for {schema_name} to the ledger'
 )
@@ -251,16 +258,12 @@ def step_impl(context, agent_name, schema_name):
     i = 5
     while 0 == len(cred_defs["credential_definition_ids"]) and i > 0:
         async_sleep(1.0)
-        cred_defs = agent_container_GET(
-            agent["agent"], "/credential-definitions/created"
-        )
+        cred_defs = aries_container_fetch_cred_defs(agent["agent"])
         i = i - 1
     assert len(cred_defs["credential_definition_ids"]) == 1
 
     cred_def_id = cred_defs["credential_definition_ids"][0]
-    cred_def = agent_container_GET(
-        agent["agent"], "/credential-definitions/" + cred_def_id
-    )
+    cred_def = aries_container_fetch_cred_def(agent["agent"], cred_def_id)
 
     context.cred_def_id = cred_def_id
 
@@ -314,6 +317,7 @@ def step_impl(context, agent_name, schema_name):
     context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
 
 
+@given('"{agent_name}" has written the revocation registry definition to the ledger')
 @when('"{agent_name}" has written the revocation registry definition to the ledger')
 @then('"{agent_name}" has written the revocation registry definition to the ledger')
 def step_impl(context, agent_name):
@@ -331,7 +335,7 @@ def step_impl(context, agent_name):
             },
         )
         i = i - 1
-    assert len(rev_regs["rev_reg_ids"]) == 1
+    assert len(rev_regs["rev_reg_ids"]) >= 1
 
     rev_reg_id = rev_regs["rev_reg_ids"][0]
 
@@ -364,6 +368,9 @@ def step_impl(context, agent_name):
     )
 
 
+@given(
+    '"{agent_name}" has written the revocation registry entry transaction to the ledger'
+)
 @when(
     '"{agent_name}" has written the revocation registry entry transaction to the ledger'
 )
@@ -382,7 +389,7 @@ def step_impl(context, agent_name):
             f"/revocation/registry/{context.rev_reg_id}",
         )
         state = reg_info["result"]["state"]
-        if state == "active":
+        if state in ["active", "finished"]:
             return
         i = i - 1
 
@@ -438,6 +445,7 @@ def step_impl(context, holder, schema_name, credential_data, issuer):
     )
 
 
+@given('"{agent_name}" revokes the credential without publishing the entry')
 @when('"{agent_name}" revokes the credential without publishing the entry')
 @then('"{agent_name}" revokes the credential without publishing the entry')
 def step_impl(context, agent_name):
@@ -502,6 +510,7 @@ def step_impl(context, agent_name):
     async_sleep(3.0)
 
 
+@given('"{agent_name}" authors a revocation registry entry publishing transaction')
 @when('"{agent_name}" authors a revocation registry entry publishing transaction')
 @then('"{agent_name}" authors a revocation registry entry publishing transaction')
 def step_impl(context, agent_name):
@@ -585,3 +594,140 @@ def step_impl(context, holder_name, issuer_name):
         counter = counter + 1
         async_sleep(1.0)
     assert revoc_status_bool is True
+
+
+@given(
+    'Without endorser, "{agent_name}" authors a schema transaction with {schema_name}'
+)
+def step_impl(context, agent_name, schema_name):
+    agent = context.active_agents[agent_name]
+
+    schema_info = read_schema_data(schema_name)
+    connection_id = agent["agent"].agent.connection_id
+
+    created_txn = agent_container_POST(
+        agent["agent"],
+        "/schemas",
+        data=schema_info["schema"],
+        params={"conn_id": connection_id, "create_transaction_for_endorser": "false"},
+    )
+
+    # assert goodness
+    assert created_txn["schema_id"]
+    context.schema_id = created_txn["schema_id"]
+
+
+@given(
+    'Without endorser, "{agent_name}" authors a credential definition transaction with {schema_name}'
+)
+def step_impl(context, agent_name, schema_name):
+    agent = context.active_agents[agent_name]
+
+    connection_id = agent["agent"].agent.connection_id
+
+    # TODO for now assume there is a single schema; should find the schema based on the supplied name
+    schemas = agent_container_GET(agent["agent"], "/schemas/created")
+    assert len(schemas["schema_ids"]) == 1
+
+    schema_id = schemas["schema_ids"][0]
+    created_txn = agent_container_POST(
+        agent["agent"],
+        "/credential-definitions",
+        data={
+            "schema_id": schema_id,
+            "tag": "test_cred_def_with_endorsement",
+            "support_revocation": True,
+            "revocation_registry_size": 1000,
+        },
+        params={"conn_id": connection_id, "create_transaction_for_endorser": "false"},
+    )
+
+    # assert goodness
+    assert created_txn["credential_definition_id"]
+    context.cred_def_id = created_txn["credential_definition_id"]
+
+
+@given(
+    'Without endorser, "{agent_name}" authors a revocation registry definition transaction for the credential definition matching {schema_name}'
+)
+def step_impl(context, agent_name, schema_name):
+    agent = context.active_agents[agent_name]
+
+    connection_id = agent["agent"].agent.connection_id
+
+    # generate revocation registry transaction
+    rev_reg = agent_container_POST(
+        agent["agent"],
+        "/revocation/create-registry",
+        data={"credential_definition_id": context.cred_def_id, "max_cred_num": 1000},
+        params={},
+    )
+    rev_reg_id = rev_reg["result"]["revoc_reg_id"]
+    assert rev_reg_id is not None
+
+    # update revocation registry
+    agent_container_PATCH(
+        agent["agent"],
+        f"/revocation/registry/{rev_reg_id}",
+        data={
+            "tails_public_uri": f"http://host.docker.internal:6543/revocation/registry/{rev_reg_id}/tails-file"
+        },
+        params={},
+    )
+
+    # create rev_reg def
+    created_txn = agent_container_POST(
+        agent["agent"],
+        f"/revocation/registry/{rev_reg_id}/definition",
+        data={},
+        params={
+            "conn_id": connection_id,
+            "create_transaction_for_endorser": "false",
+        },
+    )
+    assert created_txn
+    context.rev_reg_id = rev_reg_id
+
+
+@given(
+    'Without endorser, "{agent_name}" has written the revocation registry definition to the ledger'
+)
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
+
+    rev_regs = {"rev_reg_ids": []}
+    i = 5
+    while 0 == len(rev_regs["rev_reg_ids"]) and i > 0:
+        async_sleep(1.0)
+        rev_regs = agent_container_GET(
+            agent["agent"],
+            "/revocation/registries/created",
+            params={
+                "cred_def_id": context.cred_def_id,
+            },
+        )
+        i = i - 1
+
+    assert context.rev_reg_id in rev_regs["rev_reg_ids"]
+
+
+@given(
+    'Without endorser, "{agent_name}" authors a revocation registry entry transaction for the credential definition matching {schema_name}'
+)
+def step_impl(context, agent_name, schema_name):
+    agent = context.active_agents[agent_name]
+
+    connection_id = agent["agent"].agent.connection_id
+
+    # generate revocation registry entry transaction
+    # create rev_reg transaction
+    created_txn = agent_container_POST(
+        agent["agent"],
+        f"/revocation/registry/{context.rev_reg_id}/entry",
+        data={},
+        params={
+            "conn_id": connection_id,
+            "create_transaction_for_endorser": "false",
+        },
+    )
+    assert created_txn
