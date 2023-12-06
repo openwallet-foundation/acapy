@@ -8,7 +8,6 @@ from typing import Optional, Sequence, Union
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
-from ....connections.models.diddoc import DIDDoc
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
