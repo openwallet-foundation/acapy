@@ -21,7 +21,6 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
     def __init__(
         self,
         *,
-        signature_type: str,
         proof: dict = None,
         verification_method: str = None,
         date: Union[datetime, None] = None,
@@ -39,7 +38,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             date (datetime, optional): Signing date to use. Defaults to now
 
         """
-        super().__init__(signature_type=signature_type, proof=proof)
+        super().__init__(proof=proof)
         self.verification_method = verification_method
         self.date = date
 

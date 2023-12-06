@@ -22,7 +22,6 @@ class JwsLinkedDataSignature(LinkedDataSignature):
     def __init__(
         self,
         *,
-        signature_type: str,
         algorithm: str,
         required_key_type: str,
         key_pair: KeyPair,
@@ -47,7 +46,6 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         """
 
         super().__init__(
-            signature_type=signature_type,
             verification_method=verification_method,
             proof=proof,
             date=date,

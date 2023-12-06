@@ -34,7 +34,6 @@ class Ed25519Signature2020(LinkedDataSignature):
             date (datetime, optional): Signing date to use.
         """
         super().__init__(
-            signature_type=Ed25519Signature2020.signature_type,
             verification_method=verification_method,
             proof=proof,
             date=date,

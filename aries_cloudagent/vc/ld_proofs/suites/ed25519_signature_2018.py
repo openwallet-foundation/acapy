@@ -32,7 +32,6 @@ class Ed25519Signature2018(JwsLinkedDataSignature):
             date (datetime, optional): Signing date to use.
         """
         super().__init__(
-            signature_type=Ed25519Signature2018.signature_type,
             algorithm="EdDSA",
             required_key_type="Ed25519VerificationKey2018",
             key_pair=key_pair,

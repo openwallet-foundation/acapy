@@ -39,7 +39,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
             date (datetime, optional): Signing date to use. Defaults to now
 
         """
-        super().__init__(signature_type=BbsBlsSignature2020.signature_type, proof=proof)
+        super().__init__(proof=proof)
         self.key_pair = key_pair
         self.verification_method = verification_method
         self.date = date
