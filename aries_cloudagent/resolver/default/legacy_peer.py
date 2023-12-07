@@ -282,7 +282,7 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
         try:
             doc, _ = await conn_mgr.fetch_did_document(did)
             LOGGER.debug("Fetched doc %s", doc)
-            to_cache = RetrieveResult(True, doc=doc.serialize())
+            to_cache = RetrieveResult(True, doc=doc)
         except StorageNotFoundError:
             LOGGER.debug("Failed to fetch doc for did %s", did)
             to_cache = RetrieveResult(False)
