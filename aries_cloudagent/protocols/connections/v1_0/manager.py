@@ -1,10 +1,11 @@
 """Classes to manage connections."""
 
 import logging
-from typing import Optional, Sequence, Tuple, cast
+from typing import Optional, Sequence, Tuple, Union, cast
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
+from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
@@ -780,3 +781,29 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 f"Received unrecognized problem report: {report.description}"
             )
+
+    def manager_error_to_problem_report(
+        self,
+        e: ConnectionManagerError,
+        message: Union[ConnectionRequest, ConnectionResponse],
+        message_receipt,
+    ) -> tuple[ConnectionProblemReport, Sequence[ConnectionTarget]]:
+        """Convert ConnectionManagerError to problem report."""
+        self._logger.exception("Error receiving connection request")
+        targets = None
+        report = None
+        if e.error_code:
+            report = ConnectionProblemReport(
+                description={"en": e.message, "code": e.error_code}
+            )
+            report.assign_thread_from(message)
+            if message.connection and message.connection.did_doc:
+                try:
+                    targets = self.diddoc_connection_targets(
+                        message.connection.did_doc,
+                        message_receipt.recipient_verkey,
+                    )
+                except ConnectionManagerError:
+                    self._logger.exception("Error parsing DIDDoc for problem report")
+
+        return report, targets

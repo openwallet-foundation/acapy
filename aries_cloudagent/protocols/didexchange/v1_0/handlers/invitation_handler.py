@@ -5,9 +5,7 @@ from .....messaging.base_handler import (
     BaseResponder,
     RequestContext,
 )
-
 from ....out_of_band.v1_0.messages.invitation import InvitationMessage
-
 from ..messages.problem_report import DIDXProblemReport, ProblemReportReason
 
 
@@ -34,6 +32,6 @@ class InvitationHandler(BaseHandler):
                 ),
             }
         )
-
+        report.assign_thread_from(context.message)
         # client likely needs to be using direct responses to receive the problem report
         await responder.send_reply(report)
