@@ -1,20 +1,29 @@
 """Presentation verification and validation result classes."""
 
-from typing import List
+from typing import List, Optional
 
+from marshmallow import fields
+
+from ...messaging.models.base import BaseModel, BaseModelSchema
+from ...vc.ld_proofs.validation_result import DocumentVerificationResultSchema
 from ..ld_proofs import DocumentVerificationResult
 
 
-class PresentationVerificationResult:
+class PresentationVerificationResult(BaseModel):
     """Presentation verification result class."""
+
+    class Meta:
+        """PresentationVerificationResult metadata."""
+
+        schema_class = "PresentationVerificationResultSchema"
 
     def __init__(
         self,
         *,
         verified: bool,
-        presentation_result: DocumentVerificationResult = None,
-        credential_results: List[DocumentVerificationResult] = None,
-        errors: List[Exception] = None,
+        presentation_result: Optional[DocumentVerificationResult] = None,
+        credential_results: Optional[List[DocumentVerificationResult]] = None,
+        errors: Optional[List[str]] = None,
     ) -> None:
         """Create new PresentationVerificationResult instance."""
         self.verified = verified
@@ -72,3 +81,17 @@ class PresentationVerificationResult:
                 )
             )
         return False
+
+
+class PresentationVerificationResultSchema(BaseModelSchema):
+    """Presentation verification result schema."""
+
+    class Meta:
+        """PresentationVerificationResultSchema metadata."""
+
+        model_class = PresentationVerificationResult
+
+    verified = fields.Bool(required=True)
+    presentation_result = fields.Nested(DocumentVerificationResultSchema)
+    credential_results = fields.List(fields.Nested(DocumentVerificationResultSchema))
+    errors = fields.List(fields.Str())

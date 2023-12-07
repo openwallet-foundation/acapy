@@ -90,4 +90,4 @@ class ControllerProofPurpose(ProofPurpose):
             return result
 
         except Exception as e:
-            return PurposeResult(valid=False, error=e)
+            return PurposeResult(valid=False, error=str(e))
