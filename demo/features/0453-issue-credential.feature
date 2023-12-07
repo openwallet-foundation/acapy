@@ -100,6 +100,9 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
        | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
        | --public-did --cred-type json-ld --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --did-exchange --wallet-type askar-anoncreds | --did-exchange --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --mediation --wallet-type askar-anoncreds | --mediation --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --multitenant --wallet-type askar-anoncreds | --multitenant --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
 
 
   @T003.1-RFC0453 @GHA
@@ -139,6 +142,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --revocation --public-did                |                   | driverslicense | Data_DL_NormalizedValues |
        | --revocation --public-did --did-exchange | --did-exchange    | driverslicense | Data_DL_NormalizedValues |
        | --revocation --public-did --multitenant  | --multitenant     | driverslicense | Data_DL_NormalizedValues |
+       | --revocation --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
 
   @T004.1-RFC0453
   Scenario Outline: Issue a credential with revocation, with the Issuer beginning with an offer, and then revoking the credential
@@ -154,3 +158,4 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                        | Bob_capabilities  | Schema_name    | Credential_data          |
        | --revocation --public-did --mediation    | --mediation       | driverslicense | Data_DL_NormalizedValues |
+       | --revocation --public-did --mediation --wallet-type askar-anoncreds | --mediation --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
