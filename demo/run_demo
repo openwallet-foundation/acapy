@@ -85,7 +85,7 @@ do
       echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
       exit 1
     fi
-    DOCKER_VOL="${DOCKER_VOL} -v /$(pwd)/../logs:/home/log"
+    DOCKER_VOL="${DOCKER_VOL} -v /$(pwd)/../logs:/home/aries/log"
     continue
   ;;
   --bg)
