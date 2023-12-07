@@ -100,9 +100,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             date = self.date or datetime.now(timezone.utc)
             if not date.tzinfo:
                 date = utc.localize(date)
-            proof["created"] = (
-                date.replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
-            )
+            proof["created"] = date.isoformat()
 
         # Allow purpose to update the proof; the `proof` is in the
         # SECURITY_CONTEXT_URL `@context` -- therefore the `purpose` must
