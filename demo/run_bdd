@@ -236,6 +236,6 @@ DOCKER=${DOCKER:-docker}
 $DOCKER run --name $AGENT --rm ${DOCKER_OPTS} \
   --network=${DOCKER_NET} \
   -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
-  -v "/$(pwd)/../logs:/home/aries/logs" \
+  -v "/$(pwd)/../logs:/home/log" \
   $DOCKER_ENV \
   aries-bdd-image $ARGS
