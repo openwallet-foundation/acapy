@@ -65,11 +65,11 @@ class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
 class V20CredExRecordListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange record list query."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=False,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
-    thread_id = fields.UUID(
+    thread_id = fields.Str(
         required=False,
         metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
@@ -260,7 +260,7 @@ class V20CredFilterLDProofSchema(OpenAPISchema):
 class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
     """Filter, auto-remove, comment, trace."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
@@ -305,7 +305,7 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
 class V20CredExFreeSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential admin message."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
@@ -349,7 +349,7 @@ class V20CredBoundOfferRequestSchema(OpenAPISchema):
 class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential offer admin message."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
