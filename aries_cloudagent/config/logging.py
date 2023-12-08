@@ -79,7 +79,7 @@ def load_resource(path: str, encoding: str = None) -> TextIO:
 
 
 def dictConfig(config, new_file_path=None):
-    """Custom dictConfig, https://github.com/python/cpython/blob/main/Lib/logging/config.py"""
+    """Custom dictConfig, https://github.com/python/cpython/blob/main/Lib/logging/config.py."""
     if new_file_path:
         config["handlers"]["rotating_file"]["filename"] = f"{new_file_path}"
     dictConfigClass(config).configure()
@@ -92,12 +92,7 @@ def fileConfig(
     disable_existing_loggers=True,
     encoding=None,
 ):
-    """
-    Custom fileConfig, which updates file path in handler_timed_file_handler section
-    of ConfigParser object. This removes the need to modify the config file.
-
-    ref: https://github.com/python/cpython/blob/main/Lib/logging/config.py
-    """
+    """Custom fileConfig to update filepath in ConfigParser file handler section."""
     if isinstance(fname, str):
         if not os.path.exists(fname):
             raise FileNotFoundError(f"{fname} doesn't exist")
