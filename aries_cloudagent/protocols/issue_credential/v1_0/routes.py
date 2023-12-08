@@ -60,11 +60,11 @@ class IssueCredentialModuleResponseSchema(OpenAPISchema):
 class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange list query."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=False,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
-    thread_id = fields.UUID(
+    thread_id = fields.Str(
         required=False,
         metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
@@ -165,7 +165,7 @@ class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
 class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
     """Base class for request schema for sending credential proposal admin message."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
@@ -245,7 +245,7 @@ class V10CredentialBoundOfferRequestSchema(OpenAPISchema):
 class V10CredentialFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending free credential offer admin message."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
