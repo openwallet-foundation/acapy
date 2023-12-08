@@ -147,14 +147,16 @@ class InvitationResultSchema(OpenAPISchema):
     """Result schema for a new connection invitation."""
 
     connection_id = fields.Str(
-        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE}
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
-    invitation = fields.Nested(ConnectionInvitationSchema())
+    invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
     invitation_url = fields.Str(
+        required=True,
         metadata={
             "description": "Invitation URL",
             "example": "http://192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ==",
-        }
+        },
     )
 
 

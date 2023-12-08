@@ -68,6 +68,7 @@ class MediationListSchema(OpenAPISchema):
 
     results = fields.List(
         fields.Nested(MediationRecordSchema),
+        required=True,
         metadata={"description": "List of mediation records"},
     )
 
