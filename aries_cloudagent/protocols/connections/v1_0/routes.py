@@ -16,7 +16,7 @@ from marshmallow import fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
 from ....cache.base import BaseCache
-from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
+from ....connections.models.conn_record import ConnRecord, StoredConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
@@ -48,7 +48,8 @@ class ConnectionListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
     results = fields.List(
-        fields.Nested(ConnRecordSchema()),
+        fields.Nested(StoredConnRecordSchema()),
+        required=True,
         metadata={"description": "List of connection records"},
     )
 
@@ -230,7 +231,7 @@ class ConnectionStaticResultSchema(OpenAPISchema):
             "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
         },
     )
-    record = fields.Nested(ConnRecordSchema, required=True)
+    record = fields.Nested(StoredConnRecordSchema(), required=True)
 
 
 class ConnectionsListQueryStringSchema(OpenAPISchema):
@@ -482,7 +483,7 @@ async def connections_list(request: web.BaseRequest):
 
 @docs(tags=["connection"], summary="Fetch a single connection record")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(StoredConnRecordSchema(), 200, description="")
 async def connections_retrieve(request: web.BaseRequest):
     """Request handler for fetching a single connection record.
 
@@ -667,7 +668,7 @@ async def connections_create_invitation(request: web.BaseRequest):
 )
 @querystring_schema(ReceiveInvitationQueryStringSchema())
 @request_schema(ReceiveInvitationRequestSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(StoredConnRecordSchema(), 200, description="")
 async def connections_receive_invitation(request: web.BaseRequest):
     """Request handler for receiving a new connection invitation.
 
@@ -708,7 +709,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
 )
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptInvitationQueryStringSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(StoredConnRecordSchema(), 200, description="")
 async def connections_accept_invitation(request: web.BaseRequest):
     """Request handler for accepting a stored connection invitation.
 
@@ -758,7 +759,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
 )
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptRequestQueryStringSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(StoredConnRecordSchema(), 200, description="")
 async def connections_accept_request(request: web.BaseRequest):
     """Request handler for accepting a stored connection request.
 
