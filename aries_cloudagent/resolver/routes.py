@@ -1,42 +1,4 @@
-"""Resolve did document admin routes.
-
-"/resolver/resolve/{did}": {
-"get": {
-"responses": {
-"200": {
-"schema": {
-"$ref": "#/definitions/DIDDoc"
-
-},
-"description": null
-
-}
-
-},
-"parameters": [
-
-{
-"in": "path",
-"name": "did",
-"required": true,
-"type": "string",
-"pattern": "did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)",
-"description": "decentralize identifier(DID)",
-"example": "did:ted:WgWxqztrNooG92RXvxSTWv"
-
-}
-
-],
-
-"tags": [ "resolver" ],
-"summary": "Retrieve doc for requested did",
-"produces": [ "application/json" ]
-
-}
-
-}
-
-"""
+"""Resolve did document admin routes."""
 
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, response_schema
@@ -131,6 +93,9 @@ def post_process_routes(app: web.Application):
         {
             "name": "resolver",
             "description": "did resolver interface.",
-            "externalDocs": {"description": "Specification"},  # , "url": SPEC_URI},
+            "externalDocs": {
+                "description": "DID Resolution Specification",
+                "url": "https://www.w3.org/TR/did-core/#resolution",
+            },
         }
     )
