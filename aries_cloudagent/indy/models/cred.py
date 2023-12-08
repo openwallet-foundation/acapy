@@ -60,10 +60,19 @@ class DictWithIndyAttrValueSchema(fields.Dict):
         if not isinstance(value, dict):
             raise ValidationError("Value must be a dict.")
 
-        return {
-            k: IndyAttrValueSchema().load(v) if isinstance(v, dict) else v
-            for k, v in value.items()
-        }
+        errors = {}
+        indy_attr_value_schema = IndyAttrValueSchema()
+
+        for k, v in value.items():
+            if isinstance(v, dict):
+                validation_errors = indy_attr_value_schema.validate(v)
+                if validation_errors:
+                    errors[k] = validation_errors
+
+        if errors:
+            raise ValidationError(errors)
+
+        return value
 
 
 class IndyCredential(BaseModel):
