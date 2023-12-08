@@ -1,21 +1,26 @@
 """Utilities related to logging."""
-
-from configparser import ConfigParser
-from contextvars import ContextVar
-from datetime import datetime, timedelta
-from io import TextIOWrapper
+import configparser
+import io
 import logging
-from logging.config import dictConfig, fileConfig
-from logging.handlers import BaseRotatingHandler
 import os
-from random import randint
 import re
 import sys
 import yaml
 import time as mod_time
-from typing import TextIO
-
 import pkg_resources
+
+from contextvars import ContextVar
+from datetime import datetime, timedelta
+from logging.config import (
+    dictConfigClass,
+    _create_formatters,
+    _clearExistingHandlers,
+    _install_handlers,
+    _install_loggers,
+)
+from logging.handlers import BaseRotatingHandler
+from random import randint
+from typing import TextIO
 from portalocker import LOCK_EX, lock, unlock
 from pythonjsonlogger import jsonlogger
 
@@ -67,10 +72,67 @@ def load_resource(path: str, encoding: str = None) -> TextIO:
         else:
             bstream = pkg_resources.resource_stream(components[0], components[1])
             if encoding:
-                return TextIOWrapper(bstream, encoding=encoding)
+                return io.TextIOWrapper(bstream, encoding=encoding)
             return bstream
     except IOError:
         pass
+
+
+def dictConfig(config, new_file_path=None):
+    """Custom dictConfig, https://github.com/python/cpython/blob/main/Lib/logging/config.py"""
+    if new_file_path:
+        config["handlers"]["rotating_file"]["filename"] = f"{new_file_path}"
+    dictConfigClass(config).configure()
+
+
+def fileConfig(
+    fname,
+    new_file_path=None,
+    defaults=None,
+    disable_existing_loggers=True,
+    encoding=None,
+):
+    """
+    Custom fileConfig, which updates file path in handler_timed_file_handler section
+    of ConfigParser object. This removes the need to modify the config file.
+
+    ref: https://github.com/python/cpython/blob/main/Lib/logging/config.py
+    """
+    if isinstance(fname, str):
+        if not os.path.exists(fname):
+            raise FileNotFoundError(f"{fname} doesn't exist")
+        elif not os.path.getsize(fname):
+            raise RuntimeError(f"{fname} is an empty file")
+    if isinstance(fname, configparser.RawConfigParser):
+        cp = fname
+    else:
+        try:
+            cp = configparser.ConfigParser(defaults)
+            if hasattr(fname, "readline"):
+                cp.read_file(fname)
+            else:
+                encoding = io.text_encoding(encoding)
+                cp.read(fname, encoding=encoding)
+        except configparser.ParsingError as e:
+            raise RuntimeError(f"{fname} is invalid: {e}")
+    if new_file_path:
+        cp.set(
+            "handler_timed_file_handler",
+            "args",
+            str(
+                (
+                    f"{new_file_path}",
+                    "d",
+                    7,
+                    1,
+                )
+            ),
+        )
+    formatters = _create_formatters(cp)
+    with logging._lock:
+        _clearExistingHandlers()
+        handlers = _install_handlers(cp, formatters)
+        _install_loggers(cp, handlers, disable_existing_loggers)
 
 
 class LoggingConfigurator:
@@ -97,45 +159,24 @@ class LoggingConfigurator:
         else:
             if multitenant:
                 config_path = DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI
-                if log_file:
-                    parsed = ConfigParser()
-                    config_file_path = os.path.join(
-                        os.path.dirname(os.path.realpath(__file__)),
-                        config_path.split(":")[1],
-                    )
-                    parsed.read(config_file_path)
-                    parsed.set(
-                        "handler_timed_file_handler",
-                        "args",
-                        str(
-                            (
-                                log_file,
-                                "d",
-                                7,
-                                1,
-                            )
-                        ),
-                    )
-                    with open(config_file_path, "w") as configfile:
-                        parsed.write(configfile)
             else:
                 config_path = DEFAULT_LOGGING_CONFIG_PATH
         if ".yml" in config_path or ".yaml" in config_path:
             is_dict_config = True
             with open(config_path, "r") as stream:
                 log_config = yaml.safe_load(stream)
-            if log_file:
-                log_config["handlers"]["rotating_file"]["filename"] = log_file
-                with open(config_path, "w") as fp:
-                    yaml.dump(log_config, fp)
         else:
             log_config = load_resource(config_path, "utf-8")
         if log_config:
             if is_dict_config:
-                dictConfig(log_config)
+                dictConfig(log_config, new_file_path=log_file)
             else:
                 with log_config:
-                    fileConfig(log_config, disable_existing_loggers=False)
+                    fileConfig(
+                        log_config,
+                        new_file_path=log_file,
+                        disable_existing_loggers=False,
+                    )
         else:
             logging.basicConfig(level=logging.WARNING)
             logging.root.warning(f"Logging config file not found: {config_path}")
