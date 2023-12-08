@@ -361,7 +361,6 @@
           "in" : "query",
           "name" : "invitation_msg_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         }, {
@@ -377,7 +376,7 @@
           "in" : "query",
           "name" : "state",
           "schema" : {
-            "enum" : [ "invitation", "init", "completed", "error", "request", "start", "abandoned", "active", "response" ],
+            "enum" : [ "request", "abandoned", "active", "init", "error", "invitation", "start", "response", "completed" ],
             "type" : "string"
           }
         }, {
@@ -548,7 +547,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ConnRecord"
+                  "$ref" : "#/components/schemas/StoredConnRecord"
                 }
               }
             },
@@ -601,7 +600,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ConnRecord"
+                  "$ref" : "#/components/schemas/StoredConnRecord"
                 }
               }
             },
@@ -651,7 +650,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ConnRecord"
+                  "$ref" : "#/components/schemas/StoredConnRecord"
                 }
               }
             },
@@ -686,7 +685,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ConnRecord"
+                  "$ref" : "#/components/schemas/StoredConnRecord"
                 }
               }
             },
@@ -1424,7 +1423,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ConnRecord"
+                  "$ref" : "#/components/schemas/StoredConnRecord"
                 }
               }
             },
@@ -1483,7 +1482,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ConnRecord"
+                  "$ref" : "#/components/schemas/StoredConnRecord"
                 }
               }
             },
@@ -1526,7 +1525,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ConnRecord"
+                  "$ref" : "#/components/schemas/StoredConnRecord"
                 }
               }
             },
@@ -1576,7 +1575,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ConnRecord"
+                  "$ref" : "#/components/schemas/StoredConnRecord"
                 }
               }
             },
@@ -1613,7 +1612,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ConnRecord"
+                  "$ref" : "#/components/schemas/StoredConnRecord"
                 }
               }
             },
@@ -1822,7 +1821,6 @@
           "in" : "query",
           "name" : "connection_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         }, {
@@ -1846,7 +1844,6 @@
           "in" : "query",
           "name" : "thread_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -2296,7 +2293,6 @@
           "in" : "query",
           "name" : "connection_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         }, {
@@ -2320,7 +2316,6 @@
           "in" : "query",
           "name" : "thread_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -3080,7 +3075,6 @@
           "in" : "query",
           "name" : "conn_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         }, {
@@ -3117,7 +3111,6 @@
           "name" : "mediation_id",
           "required" : true,
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         }, {
@@ -3174,7 +3167,6 @@
           "name" : "mediation_id",
           "required" : true,
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -3250,7 +3242,6 @@
           "in" : "query",
           "name" : "conn_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         }, {
@@ -3286,7 +3277,6 @@
           "name" : "mediation_id",
           "required" : true,
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -3312,7 +3302,6 @@
           "name" : "mediation_id",
           "required" : true,
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -3340,7 +3329,6 @@
           "name" : "mediation_id",
           "required" : true,
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -3379,7 +3367,6 @@
           "name" : "mediation_id",
           "required" : true,
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -3445,7 +3432,6 @@
           "name" : "mediation_id",
           "required" : true,
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -3843,7 +3829,6 @@
           "in" : "query",
           "name" : "connection_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         }, {
@@ -3867,7 +3852,6 @@
           "in" : "query",
           "name" : "thread_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -4242,7 +4226,6 @@
           "in" : "query",
           "name" : "connection_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         }, {
@@ -4266,7 +4249,6 @@
           "in" : "query",
           "name" : "thread_id",
           "schema" : {
-            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -6387,6 +6369,7 @@
             "type" : "object"
           }
         },
+        "required" : [ "config" ],
         "type" : "object"
       },
       "AdminMediationDeny" : {
@@ -6681,116 +6664,6 @@
         },
         "type" : "object"
       },
-      "ConnRecord" : {
-        "properties" : {
-          "accept" : {
-            "description" : "Connection acceptance: manual or auto",
-            "enum" : [ "manual", "auto" ],
-            "example" : "auto",
-            "type" : "string"
-          },
-          "alias" : {
-            "description" : "Optional alias to apply to connection for later use",
-            "example" : "Bob, providing quotes",
-            "type" : "string"
-          },
-          "connection_id" : {
-            "description" : "Connection identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "connection_protocol" : {
-            "description" : "Connection protocol used",
-            "enum" : [ "connections/1.0", "didexchange/1.0" ],
-            "example" : "connections/1.0",
-            "type" : "string"
-          },
-          "created_at" : {
-            "description" : "Time of record creation",
-            "example" : "2021-12-31T23:59:59Z",
-            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
-            "type" : "string"
-          },
-          "error_msg" : {
-            "description" : "Error message",
-            "example" : "No DIDDoc provided; cannot connect to public DID",
-            "type" : "string"
-          },
-          "inbound_connection_id" : {
-            "description" : "Inbound routing connection id to use",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "invitation_key" : {
-            "description" : "Public key for connection",
-            "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$",
-            "type" : "string"
-          },
-          "invitation_mode" : {
-            "description" : "Invitation mode",
-            "enum" : [ "once", "multi", "static" ],
-            "example" : "once",
-            "type" : "string"
-          },
-          "invitation_msg_id" : {
-            "description" : "ID of out-of-band invitation message",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "my_did" : {
-            "description" : "Our DID for connection",
-            "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
-            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$",
-            "type" : "string"
-          },
-          "request_id" : {
-            "description" : "Connection request identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "rfc23_state" : {
-            "description" : "State per RFC 23",
-            "example" : "invitation-sent",
-            "readOnly" : true,
-            "type" : "string"
-          },
-          "state" : {
-            "description" : "Current record state",
-            "example" : "active",
-            "type" : "string"
-          },
-          "their_did" : {
-            "description" : "Their DID for connection",
-            "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
-            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$",
-            "type" : "string"
-          },
-          "their_label" : {
-            "description" : "Their label for connection",
-            "example" : "Bob",
-            "type" : "string"
-          },
-          "their_public_did" : {
-            "description" : "Other agent's public DID for connection",
-            "example" : "2cpBmR3FqGKWi5EyUbpRY8",
-            "type" : "string"
-          },
-          "their_role" : {
-            "description" : "Their role in the connection protocol",
-            "enum" : [ "invitee", "requester", "inviter", "responder" ],
-            "example" : "requester",
-            "type" : "string"
-          },
-          "updated_at" : {
-            "description" : "Time of last record update",
-            "example" : "2021-12-31T23:59:59Z",
-            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
       "ConnectionInvitation" : {
         "properties" : {
           "@id" : {
@@ -6855,11 +6728,12 @@
           "results" : {
             "description" : "List of connection records",
             "items" : {
-              "$ref" : "#/components/schemas/ConnRecord"
+              "$ref" : "#/components/schemas/StoredConnRecord"
             },
             "type" : "array"
           }
         },
+        "required" : [ "results" ],
         "type" : "object"
       },
       "ConnectionMetadata" : {
@@ -6950,7 +6824,7 @@
             "type" : "string"
           },
           "record" : {
-            "$ref" : "#/components/schemas/ConnRecord"
+            "$ref" : "#/components/schemas/StoredConnRecord"
           },
           "their_did" : {
             "description" : "Remote DID",
@@ -7468,6 +7342,7 @@
             "type" : "string"
           }
         },
+        "required" : [ "credential_definition_id" ],
         "type" : "object"
       },
       "CredentialDefinitionsCreatedResult" : {
@@ -7627,6 +7502,7 @@
             "type" : "string"
           }
         },
+        "required" : [ "did", "key_type", "method", "posture", "verkey" ],
         "type" : "object"
       },
       "DIDCreate" : {
@@ -8247,6 +8123,7 @@
             "type" : "array"
           }
         },
+        "required" : [ "cred_info" ],
         "type" : "object"
       },
       "IndyCredRequest" : {
@@ -9395,6 +9272,7 @@
             "type" : "string"
           }
         },
+        "required" : [ "connection_id", "invitation", "invitation_url" ],
         "type" : "object"
       },
       "IssueCredentialModuleResponse" : {
@@ -9983,10 +9861,10 @@
           "mediation_id" : {
             "description" : "Mediation record identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           }
         },
+        "required" : [ "mediation_id" ],
         "type" : "object"
       },
       "MediationList" : {
@@ -9999,6 +9877,7 @@
             "type" : "array"
           }
         },
+        "required" : [ "results" ],
         "type" : "object"
       },
       "MediationRecord" : {
@@ -11158,6 +11037,117 @@
         "required" : [ "proof" ],
         "type" : "object"
       },
+      "StoredConnRecord" : {
+        "properties" : {
+          "accept" : {
+            "description" : "Connection acceptance: manual or auto",
+            "enum" : [ "manual", "auto" ],
+            "example" : "auto",
+            "type" : "string"
+          },
+          "alias" : {
+            "description" : "Optional alias to apply to connection for later use",
+            "example" : "Bob, providing quotes",
+            "type" : "string"
+          },
+          "connection_id" : {
+            "description" : "Connection identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "connection_protocol" : {
+            "description" : "Connection protocol used",
+            "enum" : [ "connections/1.0", "didexchange/1.0" ],
+            "example" : "connections/1.0",
+            "type" : "string"
+          },
+          "created_at" : {
+            "description" : "Time of record creation",
+            "example" : "2021-12-31T23:59:59Z",
+            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
+            "type" : "string"
+          },
+          "error_msg" : {
+            "description" : "Error message",
+            "example" : "No DIDDoc provided; cannot connect to public DID",
+            "type" : "string"
+          },
+          "inbound_connection_id" : {
+            "description" : "Inbound routing connection id to use",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "invitation_key" : {
+            "description" : "Public key for connection",
+            "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$",
+            "type" : "string"
+          },
+          "invitation_mode" : {
+            "description" : "Invitation mode",
+            "enum" : [ "once", "multi", "static" ],
+            "example" : "once",
+            "type" : "string"
+          },
+          "invitation_msg_id" : {
+            "description" : "ID of out-of-band invitation message",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "my_did" : {
+            "description" : "Our DID for connection",
+            "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
+            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$",
+            "type" : "string"
+          },
+          "request_id" : {
+            "description" : "Connection request identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "rfc23_state" : {
+            "description" : "State per RFC 23",
+            "example" : "invitation-sent",
+            "readOnly" : true,
+            "type" : "string"
+          },
+          "state" : {
+            "description" : "Current record state",
+            "example" : "active",
+            "type" : "string"
+          },
+          "their_did" : {
+            "description" : "Their DID for connection",
+            "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
+            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$",
+            "type" : "string"
+          },
+          "their_label" : {
+            "description" : "Their label for connection",
+            "example" : "Bob",
+            "type" : "string"
+          },
+          "their_public_did" : {
+            "description" : "Other agent's public DID for connection",
+            "example" : "2cpBmR3FqGKWi5EyUbpRY8",
+            "type" : "string"
+          },
+          "their_role" : {
+            "description" : "Their role in the connection protocol",
+            "enum" : [ "invitee", "requester", "inviter", "responder" ],
+            "example" : "requester",
+            "type" : "string"
+          },
+          "updated_at" : {
+            "description" : "Time of last record update",
+            "example" : "2021-12-31T23:59:59Z",
+            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
+            "type" : "string"
+          }
+        },
+        "required" : [ "connection_id" ],
+        "type" : "object"
+      },
       "SubmissionRequirements" : {
         "properties" : {
           "count" : {
@@ -11802,7 +11792,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "cred_def_id" : {
@@ -11855,7 +11844,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "cred_def_id" : {
@@ -11918,7 +11906,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "cred_def_id" : {
@@ -12199,7 +12186,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "presentation_proposal" : {
@@ -12270,7 +12256,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "proof_request" : {
@@ -12351,7 +12336,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "credential_preview" : {
@@ -12847,7 +12831,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "credential_preview" : {
@@ -12976,7 +12959,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "filter" : {
@@ -13396,7 +13378,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "presentation_proposal" : {
@@ -13478,7 +13459,6 @@
           "connection_id" : {
             "description" : "Connection identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "format" : "uuid",
             "type" : "string"
           },
           "presentation_request" : {
