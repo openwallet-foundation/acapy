@@ -8,7 +8,7 @@ Many Aries edge agents do not directly receive messages from a peer edge agent -
 
 Thus, when a DIDComm message is sent from one edge agent to another, it is routed per the instructions of the receiver and for the needs of the sender. For example, in the following picture, Alice might be told by Bob to send messages to his phone (agent 4) via agents 9 and 3, and Alice might always send out messages via agent 2.
 
-![image](https://github.com/hyperledger/aries-rfcs/raw/master/features/0067-didcomm-diddoc-conventions/domains.jpg)
+![image](https://github.com/hyperledger/aries-rfcs/raw/main/features/0067-didcomm-diddoc-conventions/domains.jpg)
 
 The following looks at how those requirements are met with mediators (for example, agents 9 and 3) and relays (agent 2).
 
