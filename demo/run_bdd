@@ -21,6 +21,10 @@ fi
 
 for i in "$@"
 do
+  # Demo agent with --multitenant requires the ../logs dir to exist and write access to it
+  if [ ! -d "../logs" ]; then
+    mkdir ../logs && chmod -R uga+rws ../logs
+  fi
   if [ ! -z "$SKIP" ]; then
     SKIP=""
     continue
@@ -73,9 +77,6 @@ do
       continue
     ;;
   --timing)
-    if [ ! -d "../logs" ]; then
-      mkdir ../logs && chmod -R uga+rws ../logs
-    fi
     if [ "$(ls -ld ../logs | grep dr..r..rwx)" == "" ]; then
       echo "Error: To use the --timing parameter, the directory '../logs' must exist and all users must be able to write to it."
       echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
