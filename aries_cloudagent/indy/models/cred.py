@@ -2,7 +2,7 @@
 
 from typing import Mapping
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, ValidationError, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
@@ -50,6 +50,29 @@ class IndyAttrValueSchema(BaseModelSchema):
             "example": NUM_STR_ANY_EXAMPLE,
         },
     )
+
+
+class DictWithIndyAttrValueSchema(fields.Dict):
+    """Dict with indy attribute value schema."""
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        """Deserialize dict with indy attribute value."""
+        if not isinstance(value, dict):
+            raise ValidationError("Value must be a dict.")
+
+        errors = {}
+        indy_attr_value_schema = IndyAttrValueSchema()
+
+        for k, v in value.items():
+            if isinstance(v, dict):
+                validation_errors = indy_attr_value_schema.validate(v)
+                if validation_errors:
+                    errors[k] = validation_errors
+
+        if errors:
+            raise ValidationError(errors)
+
+        return value
 
 
 class IndyCredential(BaseModel):
@@ -115,11 +138,7 @@ class IndyCredentialSchema(BaseModelSchema):
             "example": INDY_REV_REG_ID_EXAMPLE,
         },
     )
-    values = fields.Dict(
-        keys=fields.Str(metadata={"description": "Attribute name"}),
-        values=fields.Nested(
-            IndyAttrValueSchema(), metadata={"description": "Attribute value"}
-        ),
+    values = DictWithIndyAttrValueSchema(
         required=True,
         metadata={"description": "Credential attributes"},
     )

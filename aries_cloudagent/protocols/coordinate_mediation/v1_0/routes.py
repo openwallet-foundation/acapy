@@ -32,7 +32,7 @@ from .messages.mediate_grant import MediationGrantSchema
 from .models.mediation_record import MediationRecord, MediationRecordSchema
 from .route_manager import RouteManager
 
-CONNECTION_ID_SCHEMA = fields.UUID(
+CONNECTION_ID_SCHEMA = fields.Str(
     required=False,
     metadata={
         "description": "Connection identifier (optional)",
@@ -41,7 +41,8 @@ CONNECTION_ID_SCHEMA = fields.UUID(
 )
 
 
-MEDIATION_ID_SCHEMA = fields.UUID(
+MEDIATION_ID_SCHEMA = fields.Str(
+    required=True,
     metadata={"description": "Mediation record identifier", "example": UUID4_EXAMPLE},
 )
 
@@ -67,6 +68,7 @@ class MediationListSchema(OpenAPISchema):
 
     results = fields.List(
         fields.Nested(MediationRecordSchema),
+        required=True,
         metadata={"description": "List of mediation records"},
     )
 
