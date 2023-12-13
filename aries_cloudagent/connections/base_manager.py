@@ -19,6 +19,7 @@ from pydid.verification_method import (
     Ed25519VerificationKey2018,
     Ed25519VerificationKey2020,
     JsonWebKey2020,
+    Multikey,
 )
 
 from ..cache.base import BaseCache
@@ -440,6 +441,13 @@ class BaseConnectionManager:
                     f"Key type {type(method).__name__} "
                     f"with kty {method.public_key_jwk.get('kty')} is not supported"
                 )
+        elif isinstance(method, Multikey):
+            codec, key = multicodec.unwrap(multibase.decode(method.material))
+            if codec != multicodec.multicodec("ed25519-pub"):
+                raise BaseConnectionManagerError(
+                    "Expected ed25519 multicodec, got: %s", codec
+                )
+            return bytes_to_b58(key)
         else:
             raise BaseConnectionManagerError(
                 f"Key type {type(method).__name__} is not supported"
