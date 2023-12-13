@@ -291,6 +291,52 @@ class DemoAgent:
         else:
             raise Exception("Invalid wallet_type: " + str(wallet_type))
 
+    async def fetch_schemas(
+        self,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            schemas_saved = await self.admin_GET("/schemas/created")
+            return schemas_saved
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            schemas_saved = await self.admin_GET("/anoncreds/schemas")
+            return schemas_saved
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def fetch_cred_defs(
+        self,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            cred_defs_saved = await self.admin_GET("/credential-definitions/created")
+            return cred_defs_saved
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            cred_defs_saved = await self.admin_GET("/anoncreds/credential-definitions")
+            return {
+                "credential_definition_ids": cred_defs_saved,
+            }
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def fetch_cred_def(
+        self,
+        cred_def_id: str,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            cred_def_saved = await self.admin_GET(
+                "/credential-definitions/" + cred_def_id
+            )
+            return cred_def_saved
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            cred_def_saved = await self.admin_GET(
+                "/anoncreds/credential-definition/" + cred_def_id
+            )
+            return cred_def_saved
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
     async def register_schema_and_creddef_indy(
         self,
         schema_name,

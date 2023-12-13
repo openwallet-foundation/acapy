@@ -80,14 +80,13 @@ The Tails file changes are minimal -- nothing about the file itself changed.  Wh
 
 ## Outstanding work
 
+* revocation notifications (not sure if they're included in `anoncreds-rs` updates, haven't tested them ...)
+* revocation support - complete the revocation implementation (support for unhappy path scenarios)
+* testing - various scenarios like mediation, multitenancy etc.
+
 - unit tests (in the new anoncreds package) (see https://github.com/hyperledger/aries-cloudagent-python/pull/2596/commits/229ffbba209aff0ea7def5bad6556d93057f3c2a)
 - unit tests (review and possibly update unit tests for the credential and presentation integration)
-- revocation support - migrate code from `anoncreds-rs` branch (in progress)
-- revocation notifications (not sure if they're included in `anoncreds-rs` updates, haven'e tested them ...)
-- revocation support - complete the revocation implementation (support for unhappy path scenarios)
 - endorsement (not implemented with new anoncreds code)
-- endpoints - don't load the schema/cred-def endpoints when wallet type is anoncreds (will require some BDD updates)
-- testing - various scenarios like mediation, multitenancy etc.
 - wallet upgrade (askar to askar-anoncreds)
 - update V1.0 versions of the Credential and Presentation endpoints to use anoncreds
 - any other anoncreds issues - https://github.com/hyperledger/aries-cloudagent-python/issues?q=is%3Aopen+is%3Aissue+label%3AAnonCreds

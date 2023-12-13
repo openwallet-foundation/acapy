@@ -57,11 +57,11 @@ class V10PresentProofModuleResponseSchema(OpenAPISchema):
 class V10PresentationExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for presentation exchange list query."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=False,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
-    thread_id = fields.UUID(
+    thread_id = fields.Str(
         required=False,
         metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
@@ -116,7 +116,7 @@ class V10PresentationSendRequestSchema(IndyPresSpecSchema):
 class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
@@ -191,7 +191,7 @@ class V10PresentationSendRequestRequestSchema(
 ):
     """Request schema for sending a proof request on a connection."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )

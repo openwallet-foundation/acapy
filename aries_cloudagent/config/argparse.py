@@ -1684,8 +1684,7 @@ class WalletGroup(ArgumentGroup):
         if args.recreate_wallet:
             settings["wallet.recreate"] = True
         # check required settings for 'indy' wallets
-        # TODO should this also include "askar*" wallet types?
-        if settings["wallet.type"] == "indy":
+        if settings["wallet.type"] in ["indy", "askar", "askar-anoncreds"]:
             # requires name, key
             if not args.wallet_name or not args.wallet_key:
                 raise ArgsParseError(

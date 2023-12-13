@@ -4,46 +4,36 @@ from aries_cloudagent.tests import mock
 from marshmallow import ValidationError
 from pyld import jsonld
 
-from aries_cloudagent.protocols.present_proof.dif.pres_exch import SchemaInputDescriptor
-
+from .. import handler as test_module
 from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
-from .......messaging.responder import MockResponder, BaseResponder
+from .......messaging.responder import BaseResponder, MockResponder
 from .......storage.vc_holder.base import VCHolder
 from .......storage.vc_holder.vc_record import VCRecord
-from .......vc.ld_proofs import (
-    DocumentLoader,
-    Ed25519Signature2018,
-    Ed25519Signature2020,
-    BbsBlsSignature2020,
-    BbsBlsSignatureProof2020,
-)
+from .......vc.ld_proofs import DocumentLoader
 from .......vc.tests.document_loader import custom_document_loader
+from .......vc.vc_ld.manager import VcLdpManager
 from .......vc.vc_ld.validation_result import PresentationVerificationResult
 from .......wallet.base import BaseWallet
-
-from .....dif.pres_exch_handler import DIFPresExchHandler, DIFPresExchError
+from .....dif.pres_exch import SchemaInputDescriptor
+from .....dif.pres_exch_handler import DIFPresExchError, DIFPresExchHandler
 from .....dif.tests.test_data import (
-    TEST_CRED_DICT,
     EXPANDED_CRED_FHIR_TYPE_1,
     EXPANDED_CRED_FHIR_TYPE_2,
+    TEST_CRED_DICT,
 )
-
 from ....message_types import (
     ATTACHMENT_FORMAT,
-    PRES_20_REQUEST,
     PRES_20,
     PRES_20_PROPOSAL,
+    PRES_20_REQUEST,
 )
 from ....messages.pres import V20Pres
+from ....messages.pres_format import V20PresFormat
 from ....messages.pres_proposal import V20PresProposal
 from ....messages.pres_request import V20PresRequest
-from ....messages.pres_format import V20PresFormat
 from ....models.pres_exchange import V20PresExRecord
-
 from ...handler import V20PresFormatHandlerError
-
-from .. import handler as test_module
 from ..handler import DIFPresFormatHandler
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
@@ -392,18 +382,6 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             incorrect_pres = DIF_PRES.copy()
             incorrect_pres.pop("@context")
             self.handler.validate_fields(PRES_20, incorrect_pres)
-
-    async def test_get_all_suites(self):
-        suites = await self.handler._get_all_suites()
-        assert len(suites) == 4
-        types = [
-            Ed25519Signature2018,
-            Ed25519Signature2020,
-            BbsBlsSignature2020,
-            BbsBlsSignatureProof2020,
-        ]
-        for suite in suites:
-            assert type(suite) in types
 
     async def test_create_bound_request_a(self):
         dif_proposal_dict = {
@@ -1162,7 +1140,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            test_module,
+            VcLdpManager,
             "verify_presentation",
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=True)
@@ -1172,7 +1150,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             assert output.verified
 
         with mock.patch.object(
-            test_module,
+            VcLdpManager,
             "verify_presentation",
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=False)
@@ -1219,7 +1197,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            test_module,
+            VcLdpManager,
             "verify_presentation",
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=True)

@@ -9,8 +9,8 @@ from marshmallow import fields, validate
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    INDY_DID_EXAMPLE,
-    INDY_DID_VALIDATE,
+    GENERIC_DID_EXAMPLE,
+    GENERIC_DID_VALIDATE,
     INDY_RAW_PUBLIC_KEY_EXAMPLE,
     INDY_RAW_PUBLIC_KEY_VALIDATE,
     UUID4_EXAMPLE,
@@ -542,7 +542,7 @@ class ConnRecord(BaseRecord):
 
     async def abandon(self, session: ProfileSession, *, reason: Optional[str] = None):
         """Set state to abandoned."""
-        reason = reason or "Connectin abandoned"
+        reason = reason or "Connection abandoned"
         self.state = ConnRecord.State.ABANDONED.rfc160
         self.error_msg = reason
         await self.save(session, reason=reason)
@@ -653,15 +653,18 @@ class ConnRecordSchema(BaseRecordSchema):
     )
     my_did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Our DID for connection", "example": INDY_DID_EXAMPLE},
+        validate=GENERIC_DID_VALIDATE,
+        metadata={
+            "description": "Our DID for connection",
+            "example": GENERIC_DID_EXAMPLE,
+        },
     )
     their_did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
+        validate=GENERIC_DID_VALIDATE,
         metadata={
             "description": "Their DID for connection",
-            "example": INDY_DID_EXAMPLE,
+            "example": GENERIC_DID_EXAMPLE,
         },
     )
     their_label = fields.Str(
@@ -759,4 +762,18 @@ class ConnRecordSchema(BaseRecordSchema):
             "description": "Other agent's public DID for connection",
             "example": "2cpBmR3FqGKWi5EyUbpRY8",
         },
+    )
+
+
+class StoredConnRecordSchema(ConnRecordSchema):
+    """Schema representing stored ConnRecords."""
+
+    class Meta:
+        """ConnRecordSchema metadata."""
+
+        model_class = ConnRecord
+
+    connection_id = fields.Str(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )

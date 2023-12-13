@@ -59,7 +59,11 @@ class SignResponseSchema(OpenAPISchema):
     error = fields.Str(required=False, metadata={"description": "Error text"})
 
 
-@docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
+@docs(
+    tags=["jsonld"],
+    summary="Sign a JSON-LD structure and return it",
+    deprecated=True,
+)
 @request_schema(SignRequestSchema())
 @response_schema(SignResponseSchema(), 200, description="")
 async def sign(request: web.BaseRequest):
@@ -119,7 +123,11 @@ class VerifyResponseSchema(OpenAPISchema):
     error = fields.Str(required=False, metadata={"description": "Error text"})
 
 
-@docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")
+@docs(
+    tags=["jsonld"],
+    summary="Verify a JSON-LD structure.",
+    deprecated=True,
+)
 @request_schema(VerifyRequestSchema())
 @response_schema(VerifyResponseSchema(), 200, description="")
 async def verify(request: web.BaseRequest):

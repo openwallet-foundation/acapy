@@ -100,7 +100,7 @@ class CredDefsQueryStringSchema(OpenAPISchema):
 class SchemaPostOptionSchema(OpenAPISchema):
     """Parameters and validators for schema options."""
 
-    endorser_connection_id = fields.UUID(
+    endorser_connection_id = fields.Str(
         description="Connection identifier (optional) (this is an example)",
         required=False,
         example=UUIDFour.EXAMPLE,

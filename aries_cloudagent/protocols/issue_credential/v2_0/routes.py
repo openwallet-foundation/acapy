@@ -12,14 +12,13 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
-from ....connections.models.conn_record import ConnRecord
-from ....core.profile import Profile
 from ....anoncreds.holder import AnonCredsHolderError
 from ....anoncreds.issuer import AnonCredsIssuerError
+from ....connections.models.conn_record import ConnRecord
+from ....core.profile import Profile
 from ....indy.holder import IndyHolderError
 from ....indy.issuer import IndyIssuerError
 from ....ledger.error import LedgerError
@@ -66,11 +65,11 @@ class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
 class V20CredExRecordListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange record list query."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=False,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
-    thread_id = fields.UUID(
+    thread_id = fields.Str(
         required=False,
         metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
@@ -261,7 +260,7 @@ class V20CredFilterLDProofSchema(OpenAPISchema):
 class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
     """Filter, auto-remove, comment, trace."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
@@ -306,7 +305,7 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
 class V20CredExFreeSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential admin message."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
@@ -350,7 +349,7 @@ class V20CredBoundOfferRequestSchema(OpenAPISchema):
 class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential offer admin message."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
@@ -607,13 +606,15 @@ async def credential_exchange_create(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-
+    profile = context.profile
     body = await request.json()
 
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     filt_spec = body.get("filter")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     trace_msg = body.get("trace")
@@ -694,7 +695,9 @@ async def credential_exchange_send(request: web.BaseRequest):
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     preview_spec = body.get("credential_preview")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     replacement_id = body.get("replacement_id")
     trace_msg = body.get("trace")
 
@@ -802,7 +805,9 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     trace_msg = body.get("trace")
 
     conn_record = None
@@ -925,7 +930,9 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     replacement_id = body.get("replacement_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
@@ -1000,7 +1007,9 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     replacement_id = body.get("replacement_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
@@ -1196,7 +1205,9 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     trace_msg = body.get("trace")
     holder_did = body.get("holder_did")
 

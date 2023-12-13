@@ -947,6 +947,28 @@ class OutOfBandManager(BaseConnectionManager):
             for conn_rec in conn_records:
                 await conn_rec.delete_record(session)
 
+    async def delete_conn_and_oob_record_invitation(self, invi_msg_id: str):
+        """Delete conn_record and oob_record associated with an invi_msg_id."""
+        async with self.profile.session() as session:
+            conn_records = await ConnRecord.query(
+                session,
+                tag_filter={
+                    "invitation_msg_id": invi_msg_id,
+                },
+                post_filter_positive={},
+            )
+            for conn_rec in conn_records:
+                await conn_rec.delete_record(session)
+            oob_records = await OobRecord.query(
+                session,
+                tag_filter={
+                    "invi_msg_id": invi_msg_id,
+                },
+                post_filter_positive={},
+            )
+            for oob_rec in oob_records:
+                await oob_rec.delete_record(session)
+
     async def receive_reuse_message(
         self,
         reuse_msg: HandshakeReuse,

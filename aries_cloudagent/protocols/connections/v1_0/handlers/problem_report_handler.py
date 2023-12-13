@@ -1,4 +1,4 @@
-"""Problem report handler for DID Exchange."""
+"""Problem report handler for Connection Protocol."""
 
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import (
@@ -8,21 +8,23 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 from .....storage.error import StorageNotFoundError
-from ..manager import DIDXManager, DIDXManagerError
-from ..messages.problem_report import DIDXProblemReport
+from ..manager import ConnectionManager, ConnectionManagerError
+from ..messages.problem_report import ConnectionProblemReport
 
 
-class DIDXProblemReportHandler(BaseHandler):
-    """Handler class for DID Exchange problem report messages."""
+class ConnectionProblemReportHandler(BaseHandler):
+    """Handler class for Connection problem report messages."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle problem report message."""
-        self._logger.debug(f"DIDXProblemReportHandler called with context {context}")
-        assert isinstance(context.message, DIDXProblemReport)
+        self._logger.debug(
+            f"ConnectionProblemReportHandler called with context {context}"
+        )
+        assert isinstance(context.message, ConnectionProblemReport)
 
-        self._logger.info("Received problem report: %s", context.message.description)
+        self._logger.info(f"Received problem report: {context.message.problem_code}")
         profile = context.profile
-        mgr = DIDXManager(profile)
+        mgr = ConnectionManager(profile)
         try:
             conn_rec = context.connection_record
             if not conn_rec:
@@ -39,6 +41,6 @@ class DIDXProblemReportHandler(BaseHandler):
                 await mgr.receive_problem_report(conn_rec, context.message)
             else:
                 raise HandlerException("No connection established for problem report")
-        except DIDXManagerError:
+        except ConnectionManagerError:
             # Unrecognized problem report code
-            self._logger.exception("Error receiving DID Exchange problem report")
+            self._logger.exception("Error receiving Connection problem report")
