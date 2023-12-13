@@ -655,13 +655,14 @@ class DIDXManager(BaseConnectionManager):
 
         if use_public_did or emit_did_peer_2:
             # Omit DID Doc attachment if we're using a public DID
-            attach = None
-            if conn_rec.invitation_msg_id is None:
-                # Rotation needed
-                attach = AttachDecorator.data_base64_string(did)
-                async with self.profile.session() as session:
-                    wallet = session.inject(BaseWallet)
+            attach = AttachDecorator.data_base64_string(did)
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                if conn_rec.invitation_key is not None:
                     await attach.data.sign(conn_rec.invitation_key, wallet)
+                else:
+                    self._logger.warning("Invitation key was not set for connection")
+                    attach = None
             response = DIDXResponse(did=did, did_rotate_attach=attach)
         else:
             did_doc = await self.create_did_document(
