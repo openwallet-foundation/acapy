@@ -118,7 +118,7 @@ class BaseConnectionManager:
                     "id": f"#didcomm-{index}",
                     "type": "did-communication",
                     "priority": index,
-                    "recipientKeys": ["#keys-1"],
+                    "recipientKeys": ["#key-1"],
                     "routingKeys": routing_keys,
                     "serviceEndpoint": endpoint,
                 }
