@@ -1365,7 +1365,9 @@ def arg_parser(ident: str = None, port: int = 8020):
     )
     parser.add_argument(
         "--log-file",
-        type=str,
+        nargs="?",
+        const="",
+        default=None,
         metavar="<log-file>",
         help="Output destination for the root logger.",
     )
@@ -1415,8 +1417,10 @@ async def create_agent_with_args(args, ident: str = None):
     if arg_file:
         with open(arg_file) as f:
             arg_file_dict = yaml.safe_load(f)
-
-    log_file = args.log_file or os.getenv("ACAPY_LOG_FILE")
+    if args.log_file or args.log_file == "":
+        log_file = args.log_file
+    else:
+        log_file = os.getenv("ACAPY_LOG_FILE")
     log_config = args.log_config or os.getenv("ACAPY_LOG_CONFIG")
     log_level = args.log_level
     # if we don't have a tails server url then guess it

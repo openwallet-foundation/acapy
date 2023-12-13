@@ -21,9 +21,9 @@ fi
 
 for i in "$@"
 do
-  # Demo agent with --multitenant requires the ../logs dir to exist and write access to it
-  if [ ! -d "../logs" ]; then
-    mkdir ../logs && chmod -R uga+rws ../logs
+  # Demo agent with --multitenant requires the ../log dir to exist and write access to it
+  if [ ! -d "../log" ]; then
+    mkdir ../log && chmod -R uga+rws ../log
   fi
   if [ ! -z "$SKIP" ]; then
     SKIP=""
@@ -77,9 +77,9 @@ do
       continue
     ;;
   --timing)
-    if [ "$(ls -ld ../logs | grep dr..r..rwx)" == "" ]; then
-      echo "Error: To use the --timing parameter, the directory '../logs' must exist and all users must be able to write to it."
-      echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
+    if [ "$(ls -ld ../log | grep dr..r..rwx)" == "" ]; then
+      echo "Error: To use the --timing parameter, the directory '../log' must exist and all users must be able to write to it."
+      echo "For example, to create the directory and then set the permissions use: 'mkdir ../log; chmod uga+rws ../log'"
       exit 1
     fi
     continue
@@ -237,6 +237,6 @@ DOCKER=${DOCKER:-docker}
 $DOCKER run --name $AGENT --rm ${DOCKER_OPTS} \
   --network=${DOCKER_NET} \
   -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
-  -v "/$(pwd)/../logs:/home/aries/log" \
+  -v "/$(pwd)/../log:/home/aries/log" \
   $DOCKER_ENV \
   aries-bdd-image $ARGS

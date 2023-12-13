@@ -149,13 +149,25 @@ class LoggingConfigurator:
         :param log_level: str: (Default value = None)
         """
         is_dict_config = False
+        if log_file:
+            write_to_log_file = True
+        elif log_file == "":
+            log_file = None
+            write_to_log_file = True
+        else:
+            write_to_log_file = False
         if logging_config_path is not None:
             config_path = logging_config_path
         else:
-            if multitenant:
+            if multitenant and write_to_log_file:
                 config_path = DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI
             else:
                 config_path = DEFAULT_LOGGING_CONFIG_PATH
+                if write_to_log_file and not log_file:
+                    raise ValueError(
+                        "log_file (--log-file) must be provided "
+                        "as config does not specify it."
+                    )
         if ".yml" in config_path or ".yaml" in config_path:
             is_dict_config = True
             with open(config_path, "r") as stream:
@@ -169,7 +181,7 @@ class LoggingConfigurator:
                 with log_config:
                     fileConfig(
                         log_config,
-                        new_file_path=log_file,
+                        new_file_path=log_file if multitenant else None,
                         disable_existing_loggers=False,
                     )
         else:

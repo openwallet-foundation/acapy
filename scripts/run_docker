@@ -46,7 +46,7 @@ if [ -n "${ENABLE_PTVSD}" ]; then
   ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
 
-ARGS="${ARGS} -v $(pwd)/../logs:/home/aries/log"
+ARGS="${ARGS} -v $(pwd)/../log:/home/aries/log"
 
 if [ -n "${WEBHOOK_URL}" ]; then
   ARGS="${ARGS} -e WEBHOOK_URL=\"${WEBHOOK_URL}\""
