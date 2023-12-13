@@ -41,7 +41,7 @@ def step_impl(context, n):
         agent_name = row["name"]
         agent_role = row["role"]
         agent_params = row["capabilities"]
-        agent_extra_args = row.get("extra", "").split(" ")
+        agent_extra_args = row.get("extra")
         in_args = [
             "--ident",
             agent_name,
@@ -57,6 +57,8 @@ def step_impl(context, n):
                     extra_args.get("wallet-type"),
                 ]
             )
+        if agent_extra_args:
+            agent_extra_args = agent_extra_args.split(" ")
 
         context.active_agents[agent_name] = {
             "name": agent_name,
