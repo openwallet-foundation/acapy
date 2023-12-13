@@ -18,10 +18,7 @@ from bdd_support.agent_backchannel_client import (
     aries_container_generate_invitation,
     aries_container_receive_invitation,
     aries_container_detect_connection,
-    agent_container_GET,
-    agent_container_POST,
 )
-from runners.agent_container import AgentContainer
 
 
 BDD_EXTRA_AGENT_ARGS = os.getenv("BDD_EXTRA_AGENT_ARGS")
@@ -44,6 +41,7 @@ def step_impl(context, n):
         agent_name = row["name"]
         agent_role = row["role"]
         agent_params = row["capabilities"]
+        agent_extra_args = row.get("extra", "").split(" ")
         in_args = [
             "--ident",
             agent_name,
@@ -52,16 +50,13 @@ def step_impl(context, n):
         ]
         if agent_params and 0 < len(agent_params):
             in_args.extend(agent_params.split(" "))
-        if extra_args:
-            if extra_args.get("wallet-type"):
-                in_args.extend(
-                    [
-                        "--wallet-type",
-                        extra_args.get("wallet-type"),
-                    ]
-                )
-            if extra_args.get("emit-did-peer-2"):
-                in_args.append("--emit-did-peer-2")
+        if extra_args and extra_args.get("wallet-type"):
+            in_args.extend(
+                [
+                    "--wallet-type",
+                    extra_args.get("wallet-type"),
+                ]
+            )
 
         context.active_agents[agent_name] = {
             "name": agent_name,
@@ -70,8 +65,8 @@ def step_impl(context, n):
         }
 
         # startup an agent with the provided params
-        print("Create agent with:", in_args)
-        agent = create_agent_container_with_args(in_args)
+        print("Create agent with:", in_args, agent_extra_args)
+        agent = create_agent_container_with_args(in_args, agent_extra_args or None)
 
         # keep reference to the agent so we can shut it down later
         context.active_agents[agent_name]["agent"] = agent
@@ -98,7 +93,7 @@ def step_impl(context, invitee):
     agent = context.active_agents[invitee]
 
     invite_data = context.inviter_invitation
-    connection = aries_container_receive_invitation(agent["agent"], invite_data)
+    aries_container_receive_invitation(agent["agent"], invite_data)
 
     # get connection and verify status
     # assert expected_agent_state(invitee_url, "connection", context.connection_id_dict[invitee][context.inviter_name], "invited")
