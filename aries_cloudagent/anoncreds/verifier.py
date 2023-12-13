@@ -8,11 +8,11 @@ from typing import List, Mapping, Tuple
 
 from anoncreds import AnoncredsError, Presentation
 
-from .registry import AnonCredsRegistry
-from .models.anoncreds_cred_def import GetCredDefResult
-from ..indy.models.xform import indy_proof_req2non_revoc_intervals
 from ..core.profile import Profile
+from ..indy.models.xform import indy_proof_req2non_revoc_intervals
 from ..messaging.util import canon, encode
+from .models.anoncreds_cred_def import GetCredDefResult
+from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -304,6 +304,7 @@ class AnonCredsVerifier:
                 canon_attr = canon(req_pred["name"])
                 matched = False
                 found = False
+                pred = None
                 for ge_proof in pres["proof"]["proofs"][
                     pres["requested_proof"]["predicates"][uuid]["sub_proof_index"]
                 ]["primary_proof"]["ge_proofs"]:
@@ -314,8 +315,7 @@ class AnonCredsVerifier:
                             matched = True
                             break
                 if not matched:
-                    raise ValueError(f"Predicate value != p_value: {pred['attr_name']}")
-                    break
+                    raise ValueError(f"Predicate not found: {canon_attr}")
                 elif not found:
                     raise ValueError(f"Missing requested predicate '{uuid}'")
             except (KeyError, TypeError):

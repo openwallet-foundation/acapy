@@ -1,9 +1,9 @@
 """Manage in-memory profile interaction."""
-
 from collections import OrderedDict
 from typing import Any, Mapping, Type
 from weakref import ref
 
+from aries_askar import Session
 
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
@@ -11,7 +11,6 @@ from ...storage.base import BaseStorage, BaseStorageSearch
 from ...storage.vc_holder.base import VCHolder
 from ...utils.classloader import DeferLoad
 from ...wallet.base import BaseWallet
-
 from ..profile import Profile, ProfileManager, ProfileSession
 
 STORAGE_CLASS = DeferLoad("aries_cloudagent.storage.in_memory.InMemoryStorage")
@@ -129,6 +128,7 @@ class InMemoryProfileSession(ProfileSession):
         """Create the session or transaction connection, if needed."""
         await super()._setup()
         self._init_context()
+        self._handle: Session = None
 
     def _init_context(self):
         """Initialize the session context."""
@@ -136,6 +136,11 @@ class InMemoryProfileSession(ProfileSession):
             BaseStorage, self.profile.inject(BaseStorageSearch)
         )
         self._context.injector.bind_instance(BaseWallet, WALLET_CLASS(self.profile))
+
+    @property
+    def handle(self) -> Session:
+        """Accessor for the Session instance."""
+        return self._handle
 
     @property
     def storage(self) -> BaseStorage:

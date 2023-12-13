@@ -4,16 +4,16 @@ import asyncio
 import json
 import logging
 import re
-from typing import Dict, Optional, Sequence, Tuple, Union
 import uuid
+from typing import Dict, Optional, Sequence, Tuple, Union
 
 from anoncreds import (
     AnoncredsError,
     Credential,
     CredentialRequest,
     CredentialRevocationState,
-    PresentCredentials,
     Presentation,
+    PresentCredentials,
 )
 from anoncreds.bindings import create_link_secret
 from aries_askar import AskarError, AskarErrorCode
@@ -57,6 +57,7 @@ class AnonCredsHolder:
     """AnonCreds holder class."""
 
     MASTER_SECRET_ID = "default"
+    RECORD_TYPE_MIME_TYPES = "attribute-mime-types"
 
     def __init__(self, profile: Profile):
         """Initialize an AnonCredsHolder instance.
@@ -409,6 +410,7 @@ class AnonCredsHolder:
         rev_reg_id = cred.rev_reg_id
 
         # TODO Use anoncreds registry
+        # check if cred.rev_reg_id is returning None or 'None'
         if rev_reg_id:
             cred_rev_id = cred.rev_reg_index
             (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
