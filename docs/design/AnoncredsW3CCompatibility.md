@@ -31,7 +31,7 @@ This may change if the Rust framework decides to support VCDM (Verifiable Creden
 
 ## Flow Chart
 
-![image](./w3c-diagram.png)
+![image](./anoncreds-w3c-verification-flow.png)
 
 ## Key Questions
 
