@@ -99,7 +99,9 @@ class IndyCredPrecisSchema(OpenAPISchema):
     """Schema for precis that indy credential search returns (and aca-py augments)."""
 
     cred_info = fields.Nested(
-        IndyCredInfoSchema(), metadata={"description": "Credential info"}
+        IndyCredInfoSchema(),
+        metadata={"description": "Credential info"},
+        required=True,
     )
     interval = fields.Nested(
         IndyNonRevocationIntervalSchema(),
@@ -107,6 +109,7 @@ class IndyCredPrecisSchema(OpenAPISchema):
     )
     presentation_referents = fields.List(
         fields.Str(
-            metadata={"description": "presentation referent", "example": "1_age_uuid"}
+            required=True,
+            metadata={"description": "presentation referent", "example": "1_age_uuid"},
         )
     )

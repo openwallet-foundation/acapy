@@ -763,3 +763,17 @@ class ConnRecordSchema(BaseRecordSchema):
             "example": "2cpBmR3FqGKWi5EyUbpRY8",
         },
     )
+
+
+class StoredConnRecordSchema(ConnRecordSchema):
+    """Schema representing stored ConnRecords."""
+
+    class Meta:
+        """ConnRecordSchema metadata."""
+
+        model_class = ConnRecord
+
+    connection_id = fields.Str(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
+    )

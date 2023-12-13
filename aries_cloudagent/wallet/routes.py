@@ -76,10 +76,12 @@ class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     did = fields.Str(
+        required=True,
         validate=GENERIC_DID_VALIDATE,
         metadata={"description": "DID of interest", "example": GENERIC_DID_EXAMPLE},
     )
     verkey = fields.Str(
+        required=True,
         validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Public verification key",
@@ -87,6 +89,7 @@ class DIDSchema(OpenAPISchema):
         },
     )
     posture = fields.Str(
+        required=True,
         validate=DID_POSTURE_VALIDATE,
         metadata={
             "description": (
@@ -97,12 +100,14 @@ class DIDSchema(OpenAPISchema):
         },
     )
     method = fields.Str(
+        required=True,
         metadata={
             "description": "Did method associated with the DID",
             "example": SOV.method_name,
-        }
+        },
     )
     key_type = fields.Str(
+        required=True,
         validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
         metadata={
             "description": "Key type associated with the DID",

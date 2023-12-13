@@ -71,7 +71,9 @@ class AdminModulesSchema(OpenAPISchema):
 class AdminConfigSchema(OpenAPISchema):
     """Schema for the config endpoint."""
 
-    config = fields.Dict(metadata={"description": "Configuration settings"})
+    config = fields.Dict(
+        required=True, metadata={"description": "Configuration settings"}
+    )
 
 
 class AdminStatusSchema(OpenAPISchema):

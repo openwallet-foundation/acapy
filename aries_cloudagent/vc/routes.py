@@ -139,11 +139,11 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "jsonld",
-            "description": "Sign and verify json-ld data",
+            "name": "ldp-vc",
+            "description": "Issue and verify LDP VCs and VPs",
             "externalDocs": {
                 "description": "Specification",
-                "url": "https://tools.ietf.org/html/rfc7515",
+                "url": "https://www.w3.org/TR/vc-data-model/",
             },
         }
     )
