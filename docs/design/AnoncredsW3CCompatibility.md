@@ -46,7 +46,7 @@ This may change if the Rust framework decides to support VCDM (Verifiable Creden
 
 ### What are the functions we are going to wrap?
 
-After thoroughly reviewing this [PR](https://github.com/hyperledger/anoncreds-rs/pull/273) from DSR Coporation, the classes or `AnoncredsObject` that we deemed necessary to be exported are:<br>
+After thoroughly reviewing upcoming changes from [anoncreds-rs PR273](https://github.com/hyperledger/anoncreds-rs/pull/273), the classes or `AnoncredsObject` that we deemed necessary to be exported are:<br>
 
 [W3CCredentialOffer](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R106)<br>
 class methods (`create`, `load`)<br>
