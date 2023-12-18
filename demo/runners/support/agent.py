@@ -519,7 +519,7 @@ class DemoAgent:
             "--public-invites",
             # ("--log-level", "debug"),
         ]
-        if self.log_file:
+        if self.log_file or self.log_file == "":
             result.extend(
                 [
                     ("--log-file", self.log_file),

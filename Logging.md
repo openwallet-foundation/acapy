@@ -8,19 +8,22 @@ Acapy's logging is based on python's [logging lib](https://docs.python.org/3/how
 Log levels `DEBUG`, `INFO` and `WARNING` are available.
 Other log levels fall back to `WARNING`.
 
+## Per Tenant Logging
+
+Supports writing of log messages to a file with `wallet_id` as the tenant identifier for each. To enable this, both multitenant mode [`--multitenant`] and writing to log file option [`--log-file`] are required. If both `--multitenant` and `--log-file` are not passed when starting up ACA-Py, then it will use `default_logging_config.ini` config [backward compatible] and not log at a per tenant level.
+
 ## Command Line Arguments
 
-* `--log-level` - The log level to log on std out.
-* `--log-file` - Path to a file to log to.
+* `--log-level` - The log level to log on std out
+* `--log-file` - Enables writing of logs to file. The provided value becomes path to a file to log to. If no value or empty string is provided then it will try to get the path from the config file
 * `--log-config` - Specifies a custom logging configuration file
-
 
 Example:
 
 ```sh
 ./bin/aca-py start --log-level debug --log-file acapy.log --log-config aries_cloudagent.config:default_per_tenant_logging_config.ini
 
-./bin/aca-py start --log-level debug --log-file acapy.log --log-config ./aries_cloudagent/config/default_per_tenant_logging_config.yml
+./bin/aca-py start --log-level debug --log-file --multitenant --log-config ./aries_cloudagent/config/default_per_tenant_logging_config.yml
 ```
 
 ## Environment Variables
