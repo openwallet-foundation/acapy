@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
@@ -374,7 +374,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
             save=mock.CoroutineMock(),
         )
 
-        utc_now = datetime(2020, 1, 1, 0, 0, 0)
+        utc_now = datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         iat = int(round(utc_now.timestamp()))
 
         expected_token = jwt.encode(
@@ -382,7 +382,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(test_module, "datetime") as mock_datetime:
-            mock_datetime.utcnow.return_value = utc_now
+            mock_datetime.now.return_value = utc_now
             token = await self.manager.create_auth_token(wallet_record)
 
         assert wallet_record.jwt_iat == iat
@@ -398,7 +398,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
             save=mock.CoroutineMock(),
         )
 
-        utc_now = datetime(2020, 1, 1, 0, 0, 0)
+        utc_now = datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         iat = int(round(utc_now.timestamp()))
 
         expected_token = jwt.encode(
@@ -411,7 +411,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(test_module, "datetime") as mock_datetime:
-            mock_datetime.utcnow.return_value = utc_now
+            mock_datetime.now.return_value = utc_now
             token = await self.manager.create_auth_token(wallet_record, "test_key")
 
         assert wallet_record.jwt_iat == iat

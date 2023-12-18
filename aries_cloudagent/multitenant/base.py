@@ -1,7 +1,7 @@
 """Manager for multitenancy."""
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from typing import Iterable, List, Optional, cast, Tuple
 
@@ -297,7 +297,7 @@ class BaseMultitenantManager(ABC):
             str: JWT auth token
 
         """
-        iat = int(round(datetime.utcnow().timestamp()))
+        iat = int(round(datetime.now(tz=timezone.utc).timestamp()))
 
         jwt_payload = {"wallet_id": wallet_record.wallet_id, "iat": iat}
         jwt_secret = self._profile.settings.get("multitenant.jwt_secret")
