@@ -102,7 +102,7 @@ class TestConfig:
         routing_keys=[],
         service_endpoint=test_endpoint,
     )
-    NOW_8601 = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
+    NOW_8601 = datetime.now(tz=timezone.utc).isoformat(" ", "seconds")
     TEST_INVI_MESSAGE_TYPE = "out-of-band/1.1/invitation"
     NOW_EPOCH = str_to_epoch(NOW_8601)
     CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
