@@ -5,6 +5,7 @@ from aiohttp import web
 from asynctest import TestCase as AsyncTestCase
 
 from aries_cloudagent.admin.request_context import AdminRequestContext
+from aries_cloudagent.anoncreds.base import AnonCredsObjectNotFound
 from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
 from aries_cloudagent.anoncreds.revocation import AnonCredsRevocation
 from aries_cloudagent.anoncreds.revocation_setup import DefaultRevocationSetup
@@ -95,14 +96,25 @@ class TestAnoncredsRoutes(AsyncTestCase):
         self.request.match_info = {"schemaId": "schema_id"}
         self.context.inject = mock.Mock(
             return_value=mock.MagicMock(
-                get_schema=mock.CoroutineMock(return_value=MockSchema("schemaId"))
+                get_schema=mock.CoroutineMock(
+                    side_effect=[
+                        MockSchema("schemaId"),
+                        AnonCredsObjectNotFound("test"),
+                    ]
+                )
             )
         )
         result = await test_module.schema_get(self.request)
         assert json.loads(result.body)["schema_id"] == "schemaId"
 
+        # missing schema_id
         self.request.match_info = {}
         with self.assertRaises(KeyError):
+            await test_module.schema_get(self.request)
+
+        # schema not found
+        self.request.match_info = {"schemaId": "schema_id"}
+        with self.assertRaises(web.HTTPNotFound):
             await test_module.schema_get(self.request)
 
     @mock.patch.object(

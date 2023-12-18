@@ -12,7 +12,6 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields
 from marshmallow.validate import Regexp
 
@@ -397,6 +396,8 @@ async def schemas_get_schema(request: web.BaseRequest):
     async with ledger:
         try:
             schema = await ledger.get_schema(schema_id)
+            if not schema:
+                raise web.HTTPNotFound(reason=f"Schema not found: {schema_id}")
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
