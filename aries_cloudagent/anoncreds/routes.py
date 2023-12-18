@@ -1,6 +1,6 @@
 """Anoncreds admin routes."""
-from asyncio import shield
 import logging
+from asyncio import shield
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -21,13 +21,13 @@ from ..revocation.error import RevocationError, RevocationNotSupportedError
 from ..revocation_anoncreds.manager import RevocationManager, RevocationManagerError
 from ..revocation_anoncreds.routes import (
     PublishRevocationsSchema,
-    RevRegIdMatchInfoSchema,
     RevocationModuleResponseSchema,
     RevokeRequestSchema,
+    RevRegIdMatchInfoSchema,
     TxnOrPublishRevocationsResultSchema,
 )
 from ..storage.error import StorageError, StorageNotFoundError
-from .base import AnonCredsRegistrationError
+from .base import AnonCredsObjectNotFound, AnonCredsRegistrationError
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import RevListResultSchema, RevRegDefResultSchema
@@ -186,9 +186,11 @@ async def schema_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     anoncreds_registry = context.inject(AnonCredsRegistry)
     schema_id = request.match_info["schemaId"]
-    result = await anoncreds_registry.get_schema(context.profile, schema_id)
-
-    return web.json_response(result.serialize())
+    try:
+        schema = await anoncreds_registry.get_schema(context.profile, schema_id)
+        return web.json_response(schema.serialize())
+    except AnonCredsObjectNotFound:
+        raise web.HTTPNotFound(reason=f"Schema not found: {schema_id}")
 
 
 class SchemasQueryStringSchema(OpenAPISchema):
