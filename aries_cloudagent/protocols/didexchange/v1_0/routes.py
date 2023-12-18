@@ -14,7 +14,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ....admin.request_context import AdminRequestContext
-from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
+from ....connections.models.conn_record import ConnRecord, StoredConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
@@ -61,6 +61,10 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
     alias = fields.Str(
         required=False,
         metadata={"description": "Alias for connection", "example": "Barry"},
+    )
+    auto_accept = fields.Boolean(
+        required=False,
+        metadata={"description": "Auto-accept connection (defaults to configuration)"},
     )
     my_endpoint = fields.Str(
         required=False,
@@ -193,7 +197,7 @@ class DIDXRejectRequestSchema(OpenAPISchema):
 )
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptInvitationQueryStringSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(StoredConnRecordSchema(), 200, description="")
 async def didx_accept_invitation(request: web.BaseRequest):
     """Request handler for accepting a stored connection invitation.
 
@@ -239,7 +243,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
     summary="Create and send a request against public DID's implicit invitation",
 )
 @querystring_schema(DIDXCreateRequestImplicitQueryStringSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(StoredConnRecordSchema(), 200, description="")
 async def didx_create_request_implicit(request: web.BaseRequest):
     """Request handler for creating and sending a request to an implicit invitation.
 
@@ -260,6 +264,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     use_public_did = json.loads(request.query.get("use_public_did", "null"))
     goal_code = request.query.get("goal_code") or None
     goal = request.query.get("goal") or None
+    auto_accept = json.loads(request.query.get("auto_accept", "null"))
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
@@ -273,6 +278,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             alias=alias,
             goal_code=goal_code,
             goal=goal,
+            auto_accept=auto_accept,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -288,7 +294,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
 )
 @querystring_schema(DIDXReceiveRequestImplicitQueryStringSchema())
 @request_schema(DIDXRequestSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(StoredConnRecordSchema(), 200, description="")
 async def didx_receive_request_implicit(request: web.BaseRequest):
     """Request handler for receiving a request against public DID's implicit invitation.
 
@@ -334,7 +340,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
 )
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptRequestQueryStringSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(StoredConnRecordSchema(), 200, description="")
 async def didx_accept_request(request: web.BaseRequest):
     """Request handler for accepting a stored connection request.
 
@@ -379,7 +385,7 @@ async def didx_accept_request(request: web.BaseRequest):
 )
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @request_schema(DIDXRejectRequestSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(StoredConnRecordSchema(), 200, description="")
 async def didx_reject(request: web.BaseRequest):
     """Abandon or reject a DID Exchange."""
     context: AdminRequestContext = request["context"]

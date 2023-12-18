@@ -1,6 +1,6 @@
 Feature: RFC 0160 Aries agent connection functions
 
-   @T001-RFC0160 @GHA
+   @T001-RFC0160
    Scenario Outline: establish a connection between two agents
       Given we have "2" agents
          | name  | role    | capabilities        |
@@ -11,6 +11,7 @@ Feature: RFC 0160 Aries agent connection functions
       Then "Acme" has an active connection
       And "Bob" has an active connection
 
+      @GHA @WalletType_Askar
       Examples:
          | Acme_capabilities                      | Bob_capabilities          |
          | --public-did                           |                           |
@@ -18,3 +19,13 @@ Feature: RFC 0160 Aries agent connection functions
          | --public-did --mediation               | --mediation               |
          | --public-did --multitenant             | --multitenant             |
          | --public-did --mediation --multitenant | --mediation --multitenant |
+
+      @GHA @WalletType_Askar_AnonCreds
+      Examples:
+         | Acme_capabilities                      | Bob_capabilities          |
+         | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds |
+         | --public-did --wallet-type askar-anoncreds |                               |
+         | --public-did                           | --wallet-type askar-anoncreds |
+         | --public-did --did-exchange --wallet-type askar-anoncreds | --did-exchange --wallet-type askar-anoncreds |
+         | --public-did --mediation --wallet-type askar-anoncreds | --mediation --wallet-type askar-anoncreds |
+         | --public-did --multitenant --wallet-type askar-anoncreds | --multitenant --wallet-type askar-anoncreds |

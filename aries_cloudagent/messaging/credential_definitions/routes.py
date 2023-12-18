@@ -100,6 +100,7 @@ class CredentialDefinitionSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     credential_definition_id = fields.Str(
+        required=True,
         validate=INDY_CRED_DEF_ID_VALIDATE,
         metadata={
             "description": "Credential definition identifier",

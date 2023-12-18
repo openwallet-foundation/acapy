@@ -1844,3 +1844,40 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             mock_connrecord_query.return_value = records
             await self.manager.delete_stale_connection_by_invitation("test123")
             mock_connrecord_delete.assert_called_once()
+
+    async def test_delete_conn_and_oob_record_invitation(self):
+        invitation = InvitationMessage()
+        oob_records = [
+            OobRecord(
+                invitation=invitation,
+                invi_msg_id=invitation._id,
+                role=OobRecord.ROLE_RECEIVER,
+                connection_id=self.test_conn_rec.connection_id,
+                state=OobRecord.STATE_INITIAL,
+            )
+        ]
+        conn_records = [
+            ConnRecord(
+                my_did=self.test_did,
+                their_did="FBmi5JLf5g58kDnNXMy4QM",
+                their_role=ConnRecord.Role.RESPONDER.rfc160,
+                state=ConnRecord.State.INVITATION.rfc160,
+                invitation_key="dummy2",
+                invitation_mode="once",
+                invitation_msg_id="test123",
+            )
+        ]
+        with mock.patch.object(
+            ConnRecord, "query", mock.CoroutineMock()
+        ) as mock_connrecord_query, mock.patch.object(
+            ConnRecord, "delete_record", mock.CoroutineMock()
+        ) as mock_connrecord_delete, mock.patch.object(
+            OobRecord, "query", mock.CoroutineMock()
+        ) as mock_oobrecord_query, mock.patch.object(
+            OobRecord, "delete_record", mock.CoroutineMock()
+        ) as mock_oobrecord_delete:
+            mock_connrecord_query.return_value = conn_records
+            mock_oobrecord_query.return_value = oob_records
+            await self.manager.delete_conn_and_oob_record_invitation("test123")
+            mock_connrecord_delete.assert_called_once()
+            mock_oobrecord_delete.assert_called_once()

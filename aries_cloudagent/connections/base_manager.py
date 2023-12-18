@@ -3,6 +3,7 @@
 For Connection, DIDExchange and OutOfBand Manager.
 """
 
+import json
 import logging
 from typing import List, Optional, Sequence, Text, Tuple, Union
 
@@ -132,35 +133,40 @@ class BaseConnectionManager:
 
         return did_doc
 
-    async def store_did_document(self, did_doc: DIDDoc):
+    async def store_did_document(self, value: Union[DIDDoc, dict]):
         """Store a DID document.
 
         Args:
-            did_doc: The `DIDDoc` instance to persist
+            value: The `DIDDoc` instance to persist
         """
-        assert did_doc.did
+        if isinstance(value, DIDDoc):
+            did = value.did
+            doc = value.to_json()
+        else:
+            did = value["id"]
+            doc = json.dumps(value)
+
+        # Special case: we used to store did:sov dids as unqualified.
+        # For backwards compatibility, we'll strip off the prefix.
+        if did.startswith("did:sov:"):
+            did = did[8:]
+
+        self._logger.debug("Storing DID document for %s: %s", did, doc)
 
         try:
-            stored_doc, record = await self.fetch_did_document(did_doc.did)
+            stored_doc, record = await self.fetch_did_document(did)
         except StorageNotFoundError:
-            record = StorageRecord(
-                self.RECORD_TYPE_DID_DOC,
-                did_doc.to_json(),
-                {"did": did_doc.did},
-            )
+            record = StorageRecord(self.RECORD_TYPE_DID_DOC, doc, {"did": did})
             async with self._profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)
                 await storage.add_record(record)
         else:
             async with self._profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)
-                await storage.update_record(
-                    record, did_doc.to_json(), {"did": did_doc.did}
-                )
-        await self.remove_keys_for_did(did_doc.did)
-        for key in did_doc.pubkey.values():
-            if key.controller == did_doc.did:
-                await self.add_key_for_did(did_doc.did, key.value)
+                await storage.update_record(record, doc, {"did": did})
+
+        await self.remove_keys_for_did(did)
+        await self.record_did(did)
 
     async def add_key_for_did(self, did: str, key: str):
         """Store a verkey for lookup against a DID.
@@ -219,12 +225,12 @@ class BaseConnectionManager:
             doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
         except ResolverError as error:
             raise BaseConnectionManagerError(
-                "Failed to resolve public DID in invitation"
+                "Failed to resolve DID services"
             ) from error
 
         if not doc.service:
             raise BaseConnectionManagerError(
-                "Cannot connect via public DID that has no associated services"
+                "Cannot connect via DID that has no associated services"
             )
 
         didcomm_services = sorted(
@@ -580,7 +586,7 @@ class BaseConnectionManager:
 
     def diddoc_connection_targets(
         self,
-        doc: DIDDoc,
+        doc: Optional[Union[DIDDoc, dict]],
         sender_verkey: str,
         their_label: Optional[str] = None,
     ) -> Sequence[ConnectionTarget]:
@@ -591,6 +597,8 @@ class BaseConnectionManager:
             sender_verkey: The verkey we are using
             their_label: The connection label they are using
         """
+        if isinstance(doc, dict):
+            doc = DIDDoc.deserialize(doc)
         if not doc:
             raise BaseConnectionManagerError("No DIDDoc provided for connection target")
         if not doc.did:
@@ -617,17 +625,16 @@ class BaseConnectionManager:
                 )
         return targets
 
-    async def fetch_did_document(self, did: str) -> Tuple[DIDDoc, StorageRecord]:
+    async def fetch_did_document(self, did: str) -> Tuple[dict, StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
             did: The DID to search for
         """
-        # legacy documents for unqualified dids
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        return DIDDoc.from_json(record.value), record
+        return json.loads(record.value), record
 
     async def find_connection(
         self,

@@ -80,7 +80,7 @@ class TestCredentialIssueHandler(IsolatedAsyncioTestCase):
         )
         assert mock_cred_mgr.return_value.send_cred_ack.call_count == 1
 
-    async def test_called_auto_store_x(self):
+    async def test_called_auto_store_x_indy(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_store_credential"] = True
@@ -103,6 +103,44 @@ class TestCredentialIssueHandler(IsolatedAsyncioTestCase):
                 store_credential=mock.CoroutineMock(
                     side_effect=[
                         test_module.IndyHolderError,
+                        test_module.StorageError(),
+                    ]
+                ),
+                send_cred_ack=mock.CoroutineMock(),
+            )
+
+            request_context.message = V20CredIssue()
+            request_context.connection_ready = True
+            handler_inst = test_module.V20CredIssueHandler()
+            responder = MockResponder()
+
+            await handler_inst.handle(request_context, responder)  # holder error
+            await handler_inst.handle(request_context, responder)  # storage error
+            assert mock_cred_mgr.return_value.send_cred_ack.call_count == 2
+
+    async def test_called_auto_store_x_anoncreds(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+        request_context.settings["debug.auto_store_credential"] = True
+        request_context.connection_record = mock.MagicMock()
+
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
+        with mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr:
+            mock_cred_mgr.return_value = mock.MagicMock(
+                receive_credential=mock.CoroutineMock(
+                    return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
+                ),
+                store_credential=mock.CoroutineMock(
+                    side_effect=[
+                        test_module.AnonCredsHolderError,
                         test_module.StorageError(),
                     ]
                 ),

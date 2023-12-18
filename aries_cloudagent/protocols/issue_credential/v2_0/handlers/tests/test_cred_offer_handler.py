@@ -1,5 +1,6 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+from asynctest import mock as async_mock
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
@@ -84,7 +85,7 @@ class TestV20CredOfferHandler(IsolatedAsyncioTestCase):
         assert result == "cred_request_message"
         assert target == {}
 
-    async def test_called_auto_request_x(self):
+    async def test_called_auto_request_x_indy(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_credential_offer"] = True
@@ -106,6 +107,43 @@ class TestV20CredOfferHandler(IsolatedAsyncioTestCase):
             )
             mock_cred_mgr.return_value.create_request = mock.CoroutineMock(
                 side_effect=test_module.IndyHolderError()
+            )
+
+            request_context.message = V20CredOffer()
+            request_context.connection_ready = True
+            handler = test_module.V20CredOfferHandler()
+            responder = MockResponder()
+
+            with mock.patch.object(
+                responder, "send_reply", mock.CoroutineMock()
+            ) as mock_send_reply, mock.patch.object(
+                handler._logger, "exception", mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()
+
+    async def test_called_auto_request_x_anoncreds(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+        request_context.settings["debug.auto_respond_credential_offer"] = True
+        request_context.connection_record = mock.MagicMock()
+        request_context.connection_record.my_did = "dummy"
+
+        mock_oob_processor = mock.MagicMock(
+            find_oob_record_for_inbound_message=mock.CoroutineMock(
+                return_value=mock.MagicMock()
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
+        with mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr:
+            mock_cred_mgr.return_value.receive_offer = mock.CoroutineMock(
+                return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
+            )
+            mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
+                side_effect=test_module.AnonCredsHolderError()
             )
 
             request_context.message = V20CredOffer()

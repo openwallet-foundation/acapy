@@ -1,11 +1,13 @@
 """Problem report handler for DID Exchange."""
 
+from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
     HandlerException,
     RequestContext,
 )
+from .....storage.error import StorageNotFoundError
 from ..manager import DIDXManager, DIDXManagerError
 from ..messages.problem_report import DIDXProblemReport
 
@@ -22,10 +24,19 @@ class DIDXProblemReportHandler(BaseHandler):
         profile = context.profile
         mgr = DIDXManager(profile)
         try:
-            if context.connection_record:
-                await mgr.receive_problem_report(
-                    context.connection_record, context.message
-                )
+            conn_rec = context.connection_record
+            if not conn_rec:
+                # try to find connection by thread_id/request_id
+                try:
+                    async with profile.session() as session:
+                        conn_rec = await ConnRecord.retrieve_by_request_id(
+                            session, context.message._thread_id
+                        )
+                except StorageNotFoundError:
+                    pass
+
+            if conn_rec:
+                await mgr.receive_problem_report(conn_rec, context.message)
             else:
                 raise HandlerException("No connection established for problem report")
         except DIDXManagerError:

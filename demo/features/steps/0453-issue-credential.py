@@ -4,12 +4,13 @@ from time import sleep
 import time
 
 from bdd_support.agent_backchannel_client import (
-    agent_container_DELETE,
     aries_container_create_schema_cred_def,
+    aries_container_check_exists_cred_def,
     aries_container_issue_credential,
     aries_container_receive_credential,
     read_schema_data,
     read_credential_data,
+    agent_container_DELETE,
     agent_container_GET,
     agent_container_POST,
     async_sleep,
@@ -44,16 +45,16 @@ def step_impl(context, issuer, schema_name):
     )
 
     # confirm the cred def was actually created
+    # TODO for anoncreds, this should call the anoncreds/cred-def endpoint
     async_sleep(2.0)
-    cred_def_saved = agent_container_GET(
-        agent["agent"], "/credential-definitions/" + cred_def_id
-    )
+    cred_def_saved = aries_container_check_exists_cred_def(agent["agent"], cred_def_id)
     assert cred_def_saved
 
     context.schema_name = schema_name
     context.cred_def_id = cred_def_id
 
 
+@given('"{issuer}" offers a credential with data {credential_data}')
 @when('"{issuer}" offers a credential with data {credential_data}')
 def step_impl(context, issuer, credential_data):
     agent = context.active_agents[issuer]
@@ -186,6 +187,11 @@ def step_impl(context, holder):
 
     # pause for a few seconds
     async_sleep(3.0)
+    cred_exchange = agent_container_GET(
+        agent["agent"], "/issue-credential-2.0/records/" + cred_ex_id
+    )
+    context.cred_exchange = cred_exchange
+    print("cred_exchange:", json.dumps(cred_exchange))
 
 
 @given('"{holder}" successfully revoked the credential')
@@ -558,6 +564,56 @@ def step_impl(context, issuer, holder, credential_data):
         data,
     )
     assert resp["state"] == "request-sent"
+
+
+@when(
+    '"{issuer}" offers "{holder}" an anoncreds credential with data {credential_data}'
+)
+def step_impl(context, issuer, holder, credential_data):
+    # initiate a cred exchange with an anoncreds credential
+    agent = context.active_agents[issuer]
+    holder_agent = context.active_agents[holder]
+
+    offer_request = {
+        "connection_id": agent["agent"].agent.connection_id,
+        "filter": {
+            "ld_proof": {
+                "credential": {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                    ],
+                    "type": [
+                        "VerifiableCredential",
+                        "PermanentResident",
+                    ],
+                    "id": "https://credential.example.com/residents/1234567890",
+                    "issuer": agent["agent"].agent.did,
+                    "issuanceDate": "2020-01-01T12:00:00Z",
+                    "credentialSubject": {
+                        "type": ["PermanentResident"],
+                        # let the holder set this
+                        # "id": holder_agent["agent"].agent.did,
+                        "givenName": "ALICE",
+                        "familyName": "SMITH",
+                        "gender": "Female",
+                        "birthCountry": "Bahamas",
+                        "birthDate": "1958-07-17",
+                    },
+                },
+                "options": {"proofType": SIG_TYPE_BLS},
+            }
+        },
+    }
+
+    agent_container_POST(
+        agent["agent"],
+        "/issue-credential-2.0/send-offer",
+        offer_request,
+    )
+
+    # TODO test for goodness
+    pass
 
 
 @then('"{holder}" has the json-ld credential issued')

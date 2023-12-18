@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -10,6 +10,7 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
+from ..config.injection_context import InjectionContext
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -75,10 +76,12 @@ class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     did = fields.Str(
+        required=True,
         validate=GENERIC_DID_VALIDATE,
         metadata={"description": "DID of interest", "example": GENERIC_DID_EXAMPLE},
     )
     verkey = fields.Str(
+        required=True,
         validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Public verification key",
@@ -86,6 +89,7 @@ class DIDSchema(OpenAPISchema):
         },
     )
     posture = fields.Str(
+        required=True,
         validate=DID_POSTURE_VALIDATE,
         metadata={
             "description": (
@@ -96,12 +100,14 @@ class DIDSchema(OpenAPISchema):
         },
     )
     method = fields.Str(
+        required=True,
         metadata={
             "description": "Did method associated with the DID",
             "example": SOV.method_name,
-        }
+        },
     )
     key_type = fields.Str(
+        required=True,
         validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
         metadata={
             "description": "Key type associated with the DID",
@@ -722,9 +728,10 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
 
 async def promote_wallet_public_did(
-    context: AdminRequestContext,
+    context: Union[AdminRequestContext, InjectionContext],
     did: str,
     write_ledger: bool = False,
+    profile: Profile = None,
     connection_id: str = None,
     routing_keys: List[str] = None,
     mediator_endpoint: str = None,
@@ -736,8 +743,22 @@ async def promote_wallet_public_did(
     is_indy_did = bool(IndyDID.PATTERN.match(did))
     # write only Indy DID
     write_ledger = is_indy_did and write_ledger
-
-    ledger = context.profile.inject_or(BaseLedger)
+    is_ctx_admin_request = True
+    if isinstance(context, InjectionContext):
+        is_ctx_admin_request = False
+        if not profile:
+            raise web.HTTPForbidden(
+                reason=(
+                    "InjectionContext is provided but no profile is provided. "
+                    "InjectionContext does not have profile attribute but "
+                    "AdminRequestContext does."
+                )
+            )
+    ledger = (
+        context.profile.inject_or(BaseLedger)
+        if is_ctx_admin_request
+        else profile.inject_or(BaseLedger)
+    )
 
     if is_indy_did:
         if not ledger:
@@ -750,18 +771,29 @@ async def promote_wallet_public_did(
             if not await ledger.get_key_for_did(did):
                 raise LookupError(f"DID {did} is not posted to the ledger")
 
+        is_author_profile = (
+            is_author_role(context.profile)
+            if is_ctx_admin_request
+            else is_author_role(profile)
+        )
         # check if we need to endorse
-        if is_author_role(context.profile):
+        if is_author_profile:
             # authors cannot write to the ledger
             write_ledger = False
 
             # author has not provided a connection id, so determine which to use
             if not connection_id:
-                connection_id = await get_endorser_connection_id(context.profile)
+                connection_id = (
+                    await get_endorser_connection_id(context.profile)
+                    if is_ctx_admin_request
+                    else await get_endorser_connection_id(profile)
+                )
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
         if not write_ledger:
-            async with context.session() as session:
+            async with (
+                context.session() if is_ctx_admin_request else profile.session()
+            ) as session:
                 try:
                     connection_record = await ConnRecord.retrieve_by_id(
                         session, connection_id
@@ -792,7 +824,9 @@ async def promote_wallet_public_did(
 
     did_info: DIDInfo = None
     attrib_def = None
-    async with context.session() as session:
+    async with (
+        context.session() if is_ctx_admin_request else profile.session()
+    ) as session:
         wallet = session.inject_or(BaseWallet)
         did_info = await wallet.get_local_did(did)
         info = await wallet.set_public_did(did_info)
@@ -814,8 +848,16 @@ async def promote_wallet_public_did(
 
     if info:
         # Route the public DID
-        route_manager = context.profile.inject(RouteManager)
-        await route_manager.route_verkey(context.profile, info.verkey)
+        route_manager = (
+            context.profile.inject(RouteManager)
+            if is_ctx_admin_request
+            else profile.inject(RouteManager)
+        )
+        await route_manager.route_verkey(
+            context.profile, info.verkey
+        ) if is_ctx_admin_request else await route_manager.route_verkey(
+            profile, info.verkey
+        )
 
     return info, attrib_def
 
@@ -1157,7 +1199,10 @@ async def on_register_nym_event(profile: Profile, event: Event):
         connection_id = event.payload.get("connection_id")
         try:
             _info, attrib_def = await promote_wallet_public_did(
-                profile.context, did, connection_id
+                context=profile.context,
+                did=did,
+                connection_id=connection_id,
+                profile=profile,
             )
         except Exception as err:
             # log the error, but continue

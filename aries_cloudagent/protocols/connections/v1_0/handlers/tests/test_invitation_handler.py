@@ -3,7 +3,6 @@ import pytest
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-
 from ...handlers.connection_invitation_handler import ConnectionInvitationHandler
 from ...messages.connection_invitation import ConnectionInvitation
 from ...messages.problem_report import ConnectionProblemReport, ProblemReportReason
@@ -28,6 +27,10 @@ class TestInvitationHandler:
         result, target = messages[0]
         assert (
             isinstance(result, ConnectionProblemReport)
-            and result.problem_code == ProblemReportReason.INVITATION_NOT_ACCEPTED
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.INVITATION_NOT_ACCEPTED.value
+            )
         )
         assert not target

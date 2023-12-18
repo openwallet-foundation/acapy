@@ -10,7 +10,6 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
@@ -60,11 +59,11 @@ class IssueCredentialModuleResponseSchema(OpenAPISchema):
 class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange list query."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=False,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
-    thread_id = fields.UUID(
+    thread_id = fields.Str(
         required=False,
         metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
@@ -165,7 +164,7 @@ class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
 class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
     """Base class for request schema for sending credential proposal admin message."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
@@ -245,7 +244,7 @@ class V10CredentialBoundOfferRequestSchema(OpenAPISchema):
 class V10CredentialFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending free credential offer admin message."""
 
-    connection_id = fields.UUID(
+    connection_id = fields.Str(
         required=True,
         metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
@@ -484,14 +483,16 @@ async def credential_exchange_create(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-
+    profile = context.profile
     body = await request.json()
 
     comment = body.get("comment")
     preview_spec = body.get("credential_proposal")
     if not preview_spec:
         raise web.HTTPBadRequest(reason="credential_proposal must be provided")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     trace_msg = body.get("trace")
 
     try:
@@ -570,7 +571,9 @@ async def credential_exchange_send(request: web.BaseRequest):
     preview_spec = body.get("credential_proposal")
     if not preview_spec:
         raise web.HTTPBadRequest(reason="credential_proposal must be provided")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     trace_msg = body.get("trace")
 
     connection_record = None
@@ -663,7 +666,9 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_proposal")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     trace_msg = body.get("trace")
 
     connection_record = None
@@ -788,7 +793,9 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     if not preview_spec:
@@ -862,7 +869,9 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     if not preview_spec:

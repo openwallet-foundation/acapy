@@ -39,6 +39,19 @@ class V20CredFormat(BaseModel):
                 ".formats.indy.handler.IndyCredFormatHandler"
             ),
         )
+        """
+        Once we switch to anoncreds this will replace the above INDY definition.
+        In the meantime there are some hardcoded references in the
+        "...formats.indy.handler.IndyCredFormatHandler" class.
+        INDY = FormatSpec(
+            "hlindy/",
+            V20CredExRecordIndy,
+            DeferLoad(
+                "aries_cloudagent.protocols.issue_credential.v2_0"
+                ".formats.anoncreds.handler.AnonCredsCredFormatHandler"
+            ),
+        )
+        """
         LD_PROOF = FormatSpec(
             "aries/",
             V20CredExRecordLDProof,

@@ -1,6 +1,7 @@
 """Credential request message handler."""
 
 from .....core.oob_processor import OobMessageProcessor
+from .....anoncreds.issuer import AnonCredsIssuerError
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -91,6 +92,7 @@ class V20CredRequestHandler(BaseHandler):
                 await responder.send_reply(cred_issue_message)
             except (
                 BaseModelError,
+                AnonCredsIssuerError,
                 IndyIssuerError,
                 LedgerError,
                 StorageError,

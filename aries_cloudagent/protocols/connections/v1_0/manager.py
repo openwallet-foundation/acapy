@@ -1,13 +1,13 @@
 """Classes to manage connections."""
 
 import logging
-from typing import Optional, Sequence, Tuple, cast
+from typing import Optional, Sequence, Tuple, Union, cast
 
-
-from ....core.oob_processor import OobMessageProcessor
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
+from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
+from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
 from ....messaging.valid import IndyDID
@@ -21,7 +21,7 @@ from .message_types import ARIES_PROTOCOL as CONN_PROTO
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
-from .messages.problem_report import ProblemReportReason
+from .messages.problem_report import ConnectionProblemReport, ProblemReportReason
 from .models.connection_detail import ConnectionDetail
 
 
@@ -261,12 +261,12 @@ class ConnectionManager(BaseConnectionManager):
             if not invitation.recipient_keys:
                 raise ConnectionManagerError(
                     "Invitation must contain recipient key(s)",
-                    error_code="missing-recipient-keys",
+                    error_code=ProblemReportReason.MISSING_RECIPIENT_KEYS.value,
                 )
             if not invitation.endpoint:
                 raise ConnectionManagerError(
                     "Invitation must contain an endpoint",
-                    error_code="missing-endpoint",
+                    error_code=ProblemReportReason.MISSING_ENDPOINT.value,
                 )
         accept = (
             ConnRecord.ACCEPT_AUTO
@@ -440,7 +440,8 @@ class ConnectionManager(BaseConnectionManager):
                 raise ConnectionManagerError(
                     "No invitation found for pairwise connection "
                     f"in state {ConnRecord.State.INVITATION.rfc160}: "
-                    "a prior connection request may have updated the connection state"
+                    "a prior connection request may have updated the connection state",
+                    error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
                 )
 
         invitation = None
@@ -489,7 +490,7 @@ class ConnectionManager(BaseConnectionManager):
         conn_did_doc = request.connection.did_doc
         if not conn_did_doc:
             raise ConnectionManagerError(
-                "No DIDDoc provided; cannot connect to public DID"
+                "No DIDDoc provided; cannot connect to public DID",
             )
         if request.connection.did != conn_did_doc.did:
             raise ConnectionManagerError(
@@ -757,3 +758,52 @@ class ConnectionManager(BaseConnectionManager):
             await responder.send(request, connection_id=connection.connection_id)
 
         return connection
+
+    async def receive_problem_report(
+        self,
+        conn_rec: ConnRecord,
+        report: ConnectionProblemReport,
+    ):
+        """Receive problem report."""
+        if not report.description:
+            raise ConnectionManagerError("Missing description in problem report")
+
+        if report.description.get("code") in {
+            reason.value for reason in ProblemReportReason
+        }:
+            self._logger.info("Problem report indicates connection is abandoned")
+            async with self.profile.session() as session:
+                await conn_rec.abandon(
+                    session,
+                    reason=report.description.get("en"),
+                )
+        else:
+            raise ConnectionManagerError(
+                f"Received unrecognized problem report: {report.description}"
+            )
+
+    def manager_error_to_problem_report(
+        self,
+        e: ConnectionManagerError,
+        message: Union[ConnectionRequest, ConnectionResponse],
+        message_receipt,
+    ) -> tuple[ConnectionProblemReport, Sequence[ConnectionTarget]]:
+        """Convert ConnectionManagerError to problem report."""
+        self._logger.exception("Error receiving connection request")
+        targets = None
+        report = None
+        if e.error_code:
+            report = ConnectionProblemReport(
+                description={"en": e.message, "code": e.error_code}
+            )
+            report.assign_thread_from(message)
+            if message.connection and message.connection.did_doc:
+                try:
+                    targets = self.diddoc_connection_targets(
+                        message.connection.did_doc,
+                        message_receipt.recipient_verkey,
+                    )
+                except ConnectionManagerError:
+                    self._logger.exception("Error parsing DIDDoc for problem report")
+
+        return report, targets

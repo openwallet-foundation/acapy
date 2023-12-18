@@ -68,6 +68,7 @@ class DIDResolver:
                     ),
                     timeout if timeout is not None else self.DEFAULT_TIMEOUT,
                 )
+                LOGGER.debug("Resolved DID %s with %s: %s", did, resolver, document)
                 return resolver, document
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)

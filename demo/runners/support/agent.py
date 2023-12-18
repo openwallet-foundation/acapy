@@ -66,6 +66,10 @@ elif RUN_MODE == "pwd":
     DEFAULT_EXTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
     DEFAULT_PYTHON_PATH = "."
 
+WALLET_TYPE_INDY = "indy"
+WALLET_TYPE_ASKAR = "askar"
+WALLET_TYPE_ANONCREDS = "askar-anoncreds"
+
 CRED_FORMAT_INDY = "indy"
 CRED_FORMAT_JSON_LD = "json-ld"
 DID_METHOD_SOV = "sov"
@@ -264,6 +268,83 @@ class DemoAgent:
         support_revocation: bool = False,
         revocation_registry_size: int = None,
         tag=None,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            return await self.register_schema_and_creddef_indy(
+                schema_name,
+                version,
+                schema_attrs,
+                support_revocation=support_revocation,
+                revocation_registry_size=revocation_registry_size,
+                tag=tag,
+            )
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            return await self.register_schema_and_creddef_anoncreds(
+                schema_name,
+                version,
+                schema_attrs,
+                support_revocation=support_revocation,
+                revocation_registry_size=revocation_registry_size,
+                tag=tag,
+            )
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def fetch_schemas(
+        self,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            schemas_saved = await self.admin_GET("/schemas/created")
+            return schemas_saved
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            schemas_saved = await self.admin_GET("/anoncreds/schemas")
+            return schemas_saved
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def fetch_cred_defs(
+        self,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            cred_defs_saved = await self.admin_GET("/credential-definitions/created")
+            return cred_defs_saved
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            cred_defs_saved = await self.admin_GET("/anoncreds/credential-definitions")
+            return {
+                "credential_definition_ids": cred_defs_saved,
+            }
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def fetch_cred_def(
+        self,
+        cred_def_id: str,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            cred_def_saved = await self.admin_GET(
+                "/credential-definitions/" + cred_def_id
+            )
+            return cred_def_saved
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            cred_def_saved = await self.admin_GET(
+                "/anoncreds/credential-definition/" + cred_def_id
+            )
+            return cred_def_saved
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def register_schema_and_creddef_indy(
+        self,
+        schema_name,
+        version,
+        schema_attrs,
+        support_revocation: bool = False,
+        revocation_registry_size: int = None,
+        tag=None,
     ):
         # Create a schema
         schema_body = {
@@ -321,6 +402,93 @@ class DemoAgent:
             ):
                 credential_definition_response = await self.admin_GET(
                     "/credential-definitions/created"
+                )
+                if 0 == len(
+                    credential_definition_response["credential_definition_ids"]
+                ):
+                    await asyncio.sleep(1.0)
+                    attempts = attempts - 1
+            credential_definition_id = credential_definition_response[
+                "credential_definition_ids"
+            ][0]
+        log_msg("Cred def ID:", credential_definition_id)
+        return schema_id, credential_definition_id
+
+    async def register_schema_and_creddef_anoncreds(
+        self,
+        schema_name,
+        version,
+        schema_attrs,
+        support_revocation: bool = False,
+        revocation_registry_size: int = None,
+        tag=None,
+    ):
+        # Create a schema
+        schema_body = {
+            "schema": {
+                "attrNames": schema_attrs,
+                "issuerId": self.did,
+                "name": schema_name,
+                "version": version,
+            },
+            "options": {},
+        }
+        schema_response = await self.admin_POST("/anoncreds/schema", schema_body)
+        log_json(json.dumps(schema_response), label="Schema:")
+        await asyncio.sleep(2.0)
+        if "schema_id" in schema_response["schema_state"]:
+            # schema is created directly
+            schema_id = schema_response["schema_state"]["schema_id"]
+        else:
+            # need to wait for the endorser process
+            schema_response = {"schema_ids": []}
+            attempts = 3
+            while 0 < attempts and 0 == len(schema_response["schema_ids"]):
+                schema_response = await self.admin_GET("/anoncreds/schemas")
+                if 0 == len(schema_response["schema_ids"]):
+                    await asyncio.sleep(1.0)
+                    attempts = attempts - 1
+            schema_id = schema_response["schema_ids"][0]
+        log_msg("Schema ID:", schema_id)
+
+        # Create a cred def for the schema
+        cred_def_tag = (
+            tag if tag else (self.ident + "." + schema_name).replace(" ", "_")
+        )
+        max_cred_num = revocation_registry_size if revocation_registry_size else 0
+        credential_definition_body = {
+            "credential_definition": {
+                "tag": cred_def_tag,
+                "schemaId": schema_id,
+                "issuerId": self.did,
+            },
+            "options": {
+                "support_revocation": support_revocation,
+                "max_cred_num": max_cred_num,
+            },
+        }
+        credential_definition_response = await self.admin_POST(
+            "/anoncreds/credential-definition", credential_definition_body
+        )
+        log_json(json.dumps(credential_definition_response), label="Cred Def:")
+        await asyncio.sleep(2.0)
+        if (
+            "credential_definition_id"
+            in credential_definition_response["credential_definition_state"]
+        ):
+            # cred def is created directly
+            credential_definition_id = credential_definition_response[
+                "credential_definition_state"
+            ]["credential_definition_id"]
+        else:
+            # need to wait for the endorser process
+            credential_definition_response = {"credential_definition_ids": []}
+            attempts = 3
+            while 0 < attempts and 0 == len(
+                credential_definition_response["credential_definition_ids"]
+            ):
+                credential_definition_response = await self.admin_GET(
+                    "/anoncreds/credential-definitions"
                 )
                 if 0 == len(
                     credential_definition_response["credential_definition_ids"]
@@ -509,7 +677,9 @@ class DemoAgent:
         role: str = "TRUST_ANCHOR",
         cred_type: str = CRED_FORMAT_INDY,
     ):
-        if cred_type == CRED_FORMAT_INDY:
+        if cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             # if registering a did for issuing indy credentials, publish the did on the ledger
             self.log(f"Registering {self.ident} ...")
             if not ledger_url:
