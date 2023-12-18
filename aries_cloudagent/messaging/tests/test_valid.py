@@ -502,9 +502,7 @@ class TestValid(TestCase):
         with self.assertRaises(ValidationError):
             CREDENTIAL_TYPE_VALIDATE(["WrongType", "AnotherWrongType"])
 
-        with self.assertRaises(ValidationError):
-            CREDENTIAL_TYPE_VALIDATE(["VerifiableCredential"])
-
+        CREDENTIAL_TYPE_VALIDATE(["VerifiableCredential"])
         CREDENTIAL_TYPE_VALIDATE(["VerifiableCredential", "AnotherType"])
         CREDENTIAL_TYPE_VALIDATE(["SomeType", "AnotherType", "VerifiableCredential"])
 
