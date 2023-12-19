@@ -42,6 +42,7 @@ class StaticCacheJsonLdDownloader:
         "https://w3id.org/security/v1": "security-v1-context.jsonld",
         "https://w3id.org/security/v2": "security-v2-context.jsonld",
         "https://w3id.org/security/suites/ed25519-2020/v1": "ed25519-2020-context.jsonld",
+        "https://w3id.org/traceability/v1": "traceability-v1-context.jsonld",
     }
 
     def __init__(
