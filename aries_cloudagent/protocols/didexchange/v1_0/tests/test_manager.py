@@ -1,10 +1,10 @@
 import json
-
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
+
 from pydid import DIDDocument
 
-from .. import manager as test_module
+from aries_cloudagent.tests import mock
+
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
@@ -22,7 +22,7 @@ from .....resolver.tests import DOC
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo
-from .....wallet.did_method import DIDMethods, SOV
+from .....wallet.did_method import SOV, DIDMethods
 from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
@@ -34,6 +34,7 @@ from ....discovery.v2_0.manager import V20DiscoveryMgr
 from ....out_of_band.v1_0.manager import OutOfBandManager
 from ....out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ....out_of_band.v1_0.messages.service import Service as OOBService
+from .. import manager as test_module
 from ..manager import DIDXManager, DIDXManagerError
 from ..messages.problem_report import DIDXProblemReport, ProblemReportReason
 
@@ -1902,10 +1903,9 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
             with self.assertRaises(DIDXManagerError):
                 await self.manager.accept_response(mock_response, receipt)
-
     async def test_accept_response_find_by_thread_id_no_did_doc_attached(self):
-        mock_response = mock.MagicMock()
-        mock_response._thread = mock.MagicMock()
+        mock_response = mock.AsyncMock()
+        mock_response._thread = mock.AsyncMock()
         mock_response.did = TestConfig.test_target_did
         mock_response.did_doc_attach = None
 
