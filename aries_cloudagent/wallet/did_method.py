@@ -74,7 +74,7 @@ WEB = DIDMethod(
     name="web",
     key_types=[ED25519, BLS12381G2],
     rotation=True,
-    holder_defined_did=HolderDefinedDid.REQUIRED
+    holder_defined_did=HolderDefinedDid.REQUIRED,
 )
 
 
