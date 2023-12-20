@@ -18,19 +18,19 @@ Feature: RFC 0160 Aries agent connection functions
 
       @GHA @WalletType_Askar
       Examples:
-         | Acme_capabilities                                 | Bob_capabilities                     |
-         | --public-did                                      |                                      |
-         | --public-did --did-exchange                       | --did-exchange                       |
-         | --public-did --mediation                          | --mediation                          |
-         | --public-did --multitenant                        | --multitenant                        |
-         | --public-did --mediation --multitenant --log-file | --mediation --multitenant --log-file |
+         | Acme_capabilities                                 | Acme_extra | Bob_capabilities                     | Bob_extra |
+         | --public-did                                      |            |                                      |           |
+         | --public-did --did-exchange                       |            | --did-exchange                       |           |
+         | --public-did --mediation                          |            | --mediation                          |           |
+         | --public-did --multitenant                        |            | --multitenant                        |           |
+         | --public-did --mediation --multitenant --log-file |            |--mediation --multitenant --log-file  |           |
 
       @GHA @WalletType_Askar_AnonCreds
       Examples:
-         | Acme_capabilities                      | Bob_capabilities          |
-         | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds |
-         | --public-did --wallet-type askar-anoncreds |                               |
-         | --public-did                           | --wallet-type askar-anoncreds |
-         | --public-did --did-exchange --wallet-type askar-anoncreds | --did-exchange --wallet-type askar-anoncreds |
-         | --public-did --mediation --wallet-type askar-anoncreds | --mediation --wallet-type askar-anoncreds |
-         | --public-did --multitenant --wallet-type askar-anoncreds | --multitenant --wallet-type askar-anoncreds |
+         | Acme_capabilities                                         | Acme_extra | Bob_capabilities                              | Bob_extra | 
+         | --public-did --wallet-type askar-anoncreds                |            | --wallet-type askar-anoncreds                 |           |
+         | --public-did --wallet-type askar-anoncreds                |            |                                               |           |
+         | --public-did                                              |            | --wallet-type askar-anoncreds                 |           |
+         | --public-did --did-exchange --wallet-type askar-anoncreds |            | --did-exchange --wallet-type askar-anoncreds  |           |
+         | --public-did --mediation --wallet-type askar-anoncreds    |            | --mediation --wallet-type askar-anoncreds     |           |
+         | --public-did --multitenant --wallet-type askar-anoncreds  |            | --multitenant --wallet-type askar-anoncreds   |           |
