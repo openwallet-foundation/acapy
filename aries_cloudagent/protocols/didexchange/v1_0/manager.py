@@ -634,7 +634,7 @@ class DIDXManager(BaseConnectionManager):
             did = my_info.did
             if not did.startswith("did:"):
                 did = f"did:sov:{did}"
-        elif emit_did_peer_2:
+        elif emit_did_peer_2 or (conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2")):
             my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
             conn_rec.my_did = my_info.did
             did = my_info.did
