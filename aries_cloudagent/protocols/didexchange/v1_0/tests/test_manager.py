@@ -557,9 +557,11 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         self.profile.context.update_settings({"emit_did_peer_2": True})
 
         with mock.patch.object(
-                self.manager, "create_did_peer_2", mock.AsyncMock()
-            ) as mock_create_did_peer_2:
-            request = await self.manager.create_request(mock_conn_rec, use_public_did=True)
+            self.manager, "create_did_peer_2", mock.AsyncMock()
+        ) as mock_create_did_peer_2:
+            request = await self.manager.create_request(
+                mock_conn_rec, use_public_did=True
+            )
             assert request.did_doc_attach is None
             mock_create_did_peer_2.assert_called_once()
 
@@ -1623,7 +1625,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     data=mock.MagicMock(sign=mock.CoroutineMock())
                 )
             )
-
             await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
 
 
@@ -1635,18 +1636,15 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             state=ConnRecord.State.REQUEST.rfc23,
         )
 
-        
-
         self.profile.context.update_settings({"emit_did_peer_2": False})
 
         with mock.patch.object(
-                self.manager, "create_did_peer_2", mock.CoroutineMock()
-            ) as mock_create_did_peer_2, mock.patch.object(
-            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
-            ) as mock_retrieve_req, mock.patch.object(
-            conn_rec, "save", mock.CoroutineMock()
-            ) as mock_save:
-            
+            self.manager, "create_did_peer_2", mock.CoroutineMock()
+        ) as mock_create_did_peer_2, mock.patch.object(
+        test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+        ) as mock_retrieve_req, mock.patch.object(
+        conn_rec, "save", mock.CoroutineMock()
+        ) as mock_save:
             mock_create_did_peer_2.return_value = DIDInfo(
                 TestConfig.test_did_peer_2,
                 TestConfig.test_verkey,
@@ -1654,8 +1652,11 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 method=PEER2,
                 key_type=ED25519,
             )
-            response = await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
+            response = await self.manager.create_response(
+                conn_rec, "http://10.20.30.40:5060/"
+            )
             mock_create_did_peer_2.assert_called_once()
+            assert response.did.startswith("did:peer:2")
 
     async def test_create_response_bad_state(self):
         with self.assertRaises(DIDXManagerError):
