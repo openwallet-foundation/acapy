@@ -565,7 +565,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             assert request.did_doc_attach is None
             mock_create_did_peer_2.assert_called_once()
 
-
     async def test_receive_request_explicit_public_did(self):
         async with self.profile.session() as session:
             mock_request = mock.MagicMock(
@@ -1645,7 +1644,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_retrieve_req, mock.patch.object(
         conn_rec, "save", mock.CoroutineMock()
         ) as mock_save:
-            mock_create_did_peer_2.return_value = DIDInfo(
+             mock_create_did_peer_2.return_value = DIDInfo(
                 TestConfig.test_did_peer_2,
                 TestConfig.test_verkey,
                 None,
