@@ -1643,7 +1643,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ) as mock_retrieve_req, mock.patch.object(
             conn_rec, "save", mock.CoroutineMock()
         ) as mock_save:
-             mock_create_did_peer_2.return_value = DIDInfo(
+            mock_create_did_peer_2.return_value = DIDInfo(
                 TestConfig.test_did_peer_2,
                 TestConfig.test_verkey,
                 None,
