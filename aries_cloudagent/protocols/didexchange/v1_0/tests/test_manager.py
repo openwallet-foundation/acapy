@@ -527,7 +527,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             connection_id="dummy",
             my_did=self.did_info.did,
             their_did=TestConfig.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            their_role=ConnRecord.Role.REQUEST.rfc23,
             state=ConnRecord.State.REQUEST.rfc23,
             retrieve_invitation=mock.CoroutineMock(
                 return_value=mock.MagicMock(
@@ -539,6 +539,28 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         request = await self.manager.create_request(mock_conn_rec, use_public_did=True)
         assert request.did_doc_attach is None
+
+    async def test_emit_did_peer_2(self):
+        mock_conn_rec = mock.MagicMock(
+            connection_id="dummy",
+            retrieve_invitation=mock.CoroutineMock(
+                return_value=mock.MagicMock(
+                    services=[TestConfig.test_target_did],
+                )
+            ),
+            my_did=None,
+            save=mock.CoroutineMock(),
+        )
+
+        self.profile.context.update_settings({"emit_did_peer_2": True})
+
+        with mock.patch.object(
+                self.manager, "create_did_peer_2", mock.AsyncMock()
+            ) as mock_create_did_peer_2:
+            request = await self.manager.create_request(mock_conn_rec, use_public_did=True)
+            assert request.did_doc_attach is None
+            mock_create_did_peer_2.assert_called_once()
+
 
     async def test_receive_request_explicit_public_did(self):
         async with self.profile.session() as session:
