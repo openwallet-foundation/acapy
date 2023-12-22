@@ -4,7 +4,6 @@ import json
 import logging
 from typing import Optional, Sequence, Union
 
-
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
@@ -618,7 +617,9 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        emit_did_peer_2 = self.profile.settings.get("emit_did_peer_2")
+        respond_with_did_peer_2 = self.profile.settings.get("emit_did_peer_2") or (
+            conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2")
+        )
         if conn_rec.my_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -634,9 +635,7 @@ class DIDXManager(BaseConnectionManager):
             did = my_info.did
             if not did.startswith("did:"):
                 did = f"did:sov:{did}"
-        elif emit_did_peer_2 or (
-            conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2")
-        ):
+        elif respond_with_did_peer_2:
             my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
             conn_rec.my_did = my_info.did
             did = my_info.did
@@ -655,7 +654,7 @@ class DIDXManager(BaseConnectionManager):
             self.profile, conn_rec, mediation_records
         )
 
-        if use_public_did or emit_did_peer_2:
+        if use_public_did or respond_with_did_peer_2:
             # Omit DID Doc attachment if we're using a public DID
             attach = AttachDecorator.data_base64_string(did)
             async with self.profile.session() as session:
