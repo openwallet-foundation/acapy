@@ -1626,7 +1626,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             )
             await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
 
-
     async def test_create_response_inkind_peer_did(self):
         # created did:peer:2 when receiving a did:peer:2, even if setting is False
         conn_rec = ConnRecord(
@@ -1640,9 +1639,9 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         with mock.patch.object(
             self.manager, "create_did_peer_2", mock.CoroutineMock()
         ) as mock_create_did_peer_2, mock.patch.object(
-        test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
         ) as mock_retrieve_req, mock.patch.object(
-        conn_rec, "save", mock.CoroutineMock()
+            conn_rec, "save", mock.CoroutineMock()
         ) as mock_save:
              mock_create_did_peer_2.return_value = DIDInfo(
                 TestConfig.test_did_peer_2,
