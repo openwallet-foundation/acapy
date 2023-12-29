@@ -1,7 +1,7 @@
 """In-memory implementation of BaseWallet interface."""
 
 import asyncio
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 from .did_parameters_validation import DIDParametersValidation
 from ..core.in_memory import InMemoryProfile
@@ -38,8 +38,8 @@ class InMemoryWallet(BaseWallet):
     async def create_signing_key(
         self,
         key_type: KeyType,
-        seed: str = None,
-        metadata: dict = None,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> KeyInfo:
         """Create a new public/private signing keypair.
 
@@ -55,8 +55,30 @@ class InMemoryWallet(BaseWallet):
             WalletDuplicateError: If the resulting verkey already exists in the wallet
 
         """
-        seed = validate_seed(seed) or random_seed()
-        verkey, secret = create_keypair(key_type, seed)
+        return await self.create_key(key_type, seed, metadata)
+
+    async def create_key(
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> KeyInfo:
+        """Create a new public/private keypair.
+
+        Args:
+            key_type: Key type to create
+            seed: Seed for key
+            metadata: Optional metadata to store with the keypair
+
+        Returns:
+            A `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateError: If the resulting verkey already exists in the wallet
+            WalletError: If there is another backend error
+        """
+        seed_or_random = validate_seed(seed) or random_seed()
+        verkey, secret = create_keypair(key_type, seed_or_random)
         verkey_enc = bytes_to_b58(verkey)
         if verkey_enc in self.profile.keys:
             raise WalletDuplicateError("Verification key already present in wallet")
@@ -183,9 +205,9 @@ class InMemoryWallet(BaseWallet):
         self,
         method: DIDMethod,
         key_type: KeyType,
-        seed: str = None,
-        did: str = None,
-        metadata: dict = None,
+        seed: Optional[str] = None,
+        did: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> DIDInfo:
         """Create and store a new local DID.
 
@@ -235,6 +257,33 @@ class InMemoryWallet(BaseWallet):
             method=method,
             key_type=key_type,
         )
+
+    async def store_did(self, did_info: DIDInfo) -> DIDInfo:
+        """Store a DID in the wallet.
+
+        This enables components external to the wallet to define how a DID
+        is created and then store it in the wallet for later use.
+
+        Args:
+            did_info: The DID to store
+
+        Returns:
+            The stored `DIDInfo`
+        """
+        if did_info.did in self.profile.local_dids:
+            raise WalletDuplicateError("DID already exists in wallet")
+
+        key = self.profile.keys[did_info.verkey]
+
+        self.profile.local_dids[did_info.did] = {
+            "seed": key.get("seed"),
+            "secret": key.get("secret"),
+            "verkey": did_info.verkey,
+            "metadata": did_info.metadata.copy(),
+            "key_type": did_info.key_type,
+            "method": did_info.method,
+        }
+        return did_info
 
     def _get_did_info(self, did: str) -> DIDInfo:
         """Convert internal DID record to DIDInfo.
