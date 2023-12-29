@@ -103,7 +103,10 @@ class BaseAnonCredsHandler(ABC):
 
     async def supports(self, identifier: str) -> bool:
         """Determine whether this registry supports the given identifier."""
-        return bool(self.supported_identifiers_regex.match(identifier))
+        try:
+            return bool(self.supported_identifiers_regex.match(identifier))
+        except TypeError:
+            return False
 
     @abstractmethod
     async def setup(self, context: InjectionContext):
