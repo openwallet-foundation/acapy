@@ -102,7 +102,7 @@ def sign_pk_from_sk(secret: bytes) -> bytes:
     return secret[seed_len:]
 
 
-def validate_seed(seed: Union[str, bytes]) -> bytes:
+def validate_seed(seed: Union[str, bytes, None]) -> bytes:
     """Convert a seed parameter to standard format and check length.
 
     Args:
