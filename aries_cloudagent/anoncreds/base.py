@@ -13,13 +13,12 @@ from .models.anoncreds_cred_def import (
 from .models.anoncreds_revocation import (
     GetRevListResult,
     GetRevRegDefResult,
-    RevRegDef,
-    RevRegDefResult,
     RevList,
     RevListResult,
+    RevRegDef,
+    RevRegDefResult,
 )
 from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
-
 
 T = TypeVar("T")
 
@@ -103,10 +102,7 @@ class BaseAnonCredsHandler(ABC):
 
     async def supports(self, identifier: str) -> bool:
         """Determine whether this registry supports the given identifier."""
-        try:
-            return bool(self.supported_identifiers_regex.match(identifier))
-        except TypeError:
-            return False
+        return bool(self.supported_identifiers_regex.match(identifier))
 
     @abstractmethod
     async def setup(self, context: InjectionContext):
