@@ -77,6 +77,13 @@ PEER2 = DIDMethod(
     holder_defined_did=HolderDefinedDid.NO,
 )
 
+PEER4 = DIDMethod(
+    name="did:peer:4",
+    key_types=[ED25519, X25519],
+    rotation=False,
+    holder_defined_did=HolderDefinedDid.NO,
+)
+
 
 class DIDMethods:
     """DID Method class specifying DID methods with supported key types."""

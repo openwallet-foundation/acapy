@@ -303,11 +303,21 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
+        emit_did_peer_4 = self.profile.settings.get("emit_did_peer_4")
         emit_did_peer_2 = self.profile.settings.get("emit_did_peer_2")
+        if emit_did_peer_2 and emit_did_peer_4:
+            self._logger.warning(
+                "emit_did_peer_2 and emit_did_peer_4 both set, \
+                 using did:peer:4"
+            )
+
         if conn_rec.my_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
+        elif emit_did_peer_4:
+            my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
         elif emit_did_peer_2:
             my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
             conn_rec.my_did = my_info.did
@@ -321,7 +331,7 @@ class DIDXManager(BaseConnectionManager):
                 )
                 conn_rec.my_did = my_info.did
 
-        if use_public_did or emit_did_peer_2:
+        if use_public_did or emit_did_peer_2 or emit_did_peer_4:
             # Omit DID Doc attachment if we're using a public DID
             did_doc = None
             attach = None
@@ -620,6 +630,10 @@ class DIDXManager(BaseConnectionManager):
         respond_with_did_peer_2 = self.profile.settings.get("emit_did_peer_2") or (
             conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2")
         )
+        respond_with_did_peer_4 = self.profile.settings.get("emit_did_peer_4") or (
+            conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4")
+        )
+
         if conn_rec.my_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -635,6 +649,10 @@ class DIDXManager(BaseConnectionManager):
             did = my_info.did
             if not did.startswith("did:"):
                 did = f"did:sov:{did}"
+        elif respond_with_did_peer_4:
+            my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
+            did = my_info.did
         elif respond_with_did_peer_2:
             my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
             conn_rec.my_did = my_info.did
