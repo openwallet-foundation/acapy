@@ -7,19 +7,19 @@ This design proposes to extend the Aries Cloud Agent Python (ACA-PY) to support 
 
 We aim to wrap the enhancements made on the Rust Framework for Anoncreds first. Then we will work on the integration of AnonCreds with W3C VC Format in ACA-PY, which includes support for issuing, verifying, and managing W3C VC Format AnonCreds credentials.
 
-Ideally the signatures will be delivered in parallel with the Javascript Framework Document.
+Ideally the signatures will be delivered in parallel with the Javascript Framework Document.  The [test-vectors](https://github.com/TimoGlastra/anoncreds-w3c-test-vectors/) repo may be used as a guide for interoperability.
 <br><br>
 
 ## Caveats
 
-For now, we will only target compatibility with [VCDM (Verifiable Credential Data Model) 1.1](https://www.w3.org/TR/vc-data-model/) because the Rust framework we are deriving from is also working with that target. This means we would support the features being implemented in the RUST frameworks, which include:
+As we are relying on the Rust framework, the version of the VC datamodel supported will depend on which is supported by that framework.  This will include [VCDM (Verifiable Credential Data Model) 1.1](https://www.w3.org/TR/vc-data-model/) and may extend to (Verifiable Credential Data Model) 2.0](https://www.w3.org/TR/vc-data-model-2.0/).  Further the features supported will be those provided by the underlying framework, as follows:
 
 - Credentials: Verify validity of non-Creds Data Integrity proof signatures
 - Presentations: Create presentations using non-AnonCreds Data Integrity proof signature
 - Presentations: Verify validity of presentations, including non-AnonCreds Data Integrity proof signatures
 - Presentations: Support different formats (for example, DIF) of Presentation Request
 
-This may change if the Rust framework decides to support VCDM (Verifiable Credential Data Model) 2.0.
+A flag may be provided to request the Verifiable Credentials be produced in 1.1 or 2.0 compatible formats.  The implementation SHOULD be as consistent as possible with a single function signature.
 <br><br>
 
 ## Issues to consider
