@@ -53,6 +53,10 @@ class AnonCredsRegistry:
             for resolver in self.resolvers
             if await resolver.supports(identifier)
         ]
+        if len(resolvers) == 0:
+            raise AnonCredsResolutionError(
+                f"No resolver available for identifier {identifier}"
+            )
         if len(resolvers) > 1:
             raise AnonCredsResolutionError(
                 f"More than one resolver found for identifier {identifier}"
@@ -67,6 +71,11 @@ class AnonCredsRegistry:
             for registrar in self.registrars
             if await registrar.supports(identifier)
         ]
+        if len(registrars) == 0:
+            raise AnonCredsRegistrationError(
+                f"No registrar available for identifier {identifier}"
+            )
+
         if len(registrars) > 1:
             raise AnonCredsRegistrationError(
                 f"More than one registrar found for identifier {identifier}"

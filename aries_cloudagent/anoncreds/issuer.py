@@ -6,8 +6,6 @@ import logging
 from time import time
 from typing import Optional, Sequence
 
-from aries_askar import AskarError
-
 from anoncreds import (
     AnoncredsError,
     Credential,
@@ -15,7 +13,7 @@ from anoncreds import (
     CredentialOffer,
     Schema,
 )
-
+from aries_askar import AskarError
 
 from ..askar.profile_anon import (
     AskarAnoncredsProfile,

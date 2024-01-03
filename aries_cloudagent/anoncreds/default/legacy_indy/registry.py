@@ -636,6 +636,12 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             profile, rev_list, rev_reg_def.type, rev_reg_entry
         )
 
+        seq_no = None
+        try:
+            seq_no = rev_entry_res["result"]["txnMetadata"]["seqNo"]
+        except KeyError:
+            LOGGER.warning("Failed to parse sequence number from ledger response")
+
         return RevListResult(
             job_id=None,
             revocation_list_state=RevListState(
@@ -643,8 +649,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 revocation_list=rev_list,
             ),
             registration_metadata={},
-            revocation_list_metadata={
-                "seqNo": rev_entry_res["result"]["txnMetadata"]["seqNo"],
+            revocation_list_metadata={}
+            if seq_no is None
+            else {
+                "seqNo": seq_no,
             },
         )
 
