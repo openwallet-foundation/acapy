@@ -29,6 +29,7 @@ class DIDXResponse(AgentMessage):
         *,
         did: str = None,
         did_doc_attach: Optional[AttachDecorator] = None,
+        did_rotate_attach: Optional[AttachDecorator] = None,
         **kwargs,
     ):
         """Initialize DID exchange response object under RFC 23.
@@ -40,6 +41,7 @@ class DIDXResponse(AgentMessage):
         super().__init__(**kwargs)
         self.did = did
         self.did_doc_attach = did_doc_attach
+        self.did_rotate_attach = did_rotate_attach
 
 
 class DIDXResponseSchema(AgentMessageSchema):
@@ -60,4 +62,10 @@ class DIDXResponseSchema(AgentMessageSchema):
         required=False,
         data_key="did_doc~attach",
         metadata={"description": "As signed attachment, DID Doc associated with DID"},
+    )
+    did_rotate_attach = fields.Nested(
+        AttachDecoratorSchema,
+        required=False,
+        data_key="did_rotate~attach",
+        metadata={"description": "As signed attachment, DID signed by invitation key"},
     )

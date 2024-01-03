@@ -1,7 +1,9 @@
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
 from ....admin.request_context import AdminRequestContext
+from ....connections.models.conn_record import ConnRecord
 from ....core.in_memory import InMemoryProfile
 from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
@@ -11,10 +13,7 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 from ....storage.base import BaseStorage
-
 from .. import routes as test_module
-from ....connections.models.conn_record import ConnRecord
-
 
 SCHEMA_ID = "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0"
 
@@ -304,6 +303,9 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with({"schema_ids": [SCHEMA_ID]})
 
     async def test_get_schema(self):
+        self.ledger.get_schema = mock.CoroutineMock(
+            side_effect=[{"schema": "def", "signed_txn": "..."}, None]
+        )
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             mock.MagicMock(
@@ -322,6 +324,10 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
                     "schema": {"schema": "def", "signed_txn": "..."},
                 }
             )
+
+        # test schema not found
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.schemas_get_schema(self.request)
 
     async def test_get_schema_multitenant(self):
         self.profile_injector.bind_instance(

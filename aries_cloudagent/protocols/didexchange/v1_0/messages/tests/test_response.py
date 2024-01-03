@@ -59,10 +59,13 @@ class TestDIDXResponse(IsolatedAsyncioTestCase, TestConfig):
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
+        did_rotate_attach = AttachDecorator.data_base64_string(self.test_verkey)
+        await did_rotate_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.response = DIDXResponse(
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
+            did_rotate_attach=did_rotate_attach,
         )
 
     def test_init(self):
@@ -116,13 +119,17 @@ class TestDIDXResponseSchema(IsolatedAsyncioTestCase, TestConfig):
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
+        did_rotate_attach = AttachDecorator.data_base64_string(self.test_verkey)
+        await did_rotate_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.response = DIDXResponse(
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
+            did_rotate_attach=did_rotate_attach,
         )
 
     async def test_make_model(self):
         data = self.response.serialize()
         model_instance = DIDXResponse.deserialize(data)
         assert isinstance(model_instance, DIDXResponse)
+        assert model_instance.did_rotate_attach

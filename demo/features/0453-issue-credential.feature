@@ -18,7 +18,7 @@ Feature: RFC 0453 Aries agent issue credential
        | --public-did                           |                           | driverslicense | Data_DL_NormalizedValues |
        | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
        | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --multitenant             | --multitenant             | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --multitenant             | --multitenant --log-file  | driverslicense | Data_DL_NormalizedValues |
 
     @GHA @WalletType_Askar_AnonCreds
     Examples:
@@ -127,11 +127,11 @@ Feature: RFC 0453 Aries agent issue credential
 
     @GHA @WalletType_Askar
     Examples:
-       | Acme_capabilities                                   | Bob_capabilities          | Schema_name    | Credential_data          |
-       | --public-did --cred-type json-ld                    |                           | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --cred-type json-ld --did-exchange     | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --cred-type json-ld --mediation        | --mediation               | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --cred-type json-ld --multitenant      | --multitenant             | driverslicense | Data_DL_NormalizedValues |
+       | Acme_capabilities                                         | Bob_capabilities          | Schema_name    | Credential_data          |
+       | --public-did --cred-type json-ld                          |                           | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --did-exchange           | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --mediation              | --mediation               | driverslicense | Data_DL_NormalizedValues |
+       | --public-did --cred-type json-ld --multitenant --log-file | --multitenant             | driverslicense | Data_DL_NormalizedValues |
 
     @GHA @WalletType_Askar_AnonCreds
     Examples:

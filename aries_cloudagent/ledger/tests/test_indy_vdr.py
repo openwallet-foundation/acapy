@@ -2,8 +2,10 @@ import json
 
 import indy_vdr
 import pytest
-from aries_cloudagent.tests import mock
 
+from aries_cloudagent.cache.base import BaseCache
+from aries_cloudagent.cache.in_memory import InMemoryCache
+from aries_cloudagent.tests import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...indy.issuer import IndyIssuer
@@ -36,7 +38,12 @@ WEB = DIDMethod(
 def ledger():
     did_methods = DIDMethods()
     did_methods.register(WEB)
-    profile = InMemoryProfile.test_profile(bind={DIDMethods: did_methods})
+    profile = InMemoryProfile.test_profile(
+        bind={
+            DIDMethods: did_methods,
+            BaseCache: InMemoryCache(),
+        }
+    )
     ledger = IndyVdrLedger(IndyVdrLedgerPool("test-ledger"), profile)
 
     async def open():
@@ -148,6 +155,16 @@ class TestIndyVdrLedger:
             )
             assert result.get("signature")
             assert result.get("taaAcceptance")
+
+            # no accept_time
+            await ledger.accept_txn_author_agreement(
+                {
+                    "text": "txt",
+                    "version": "ver",
+                    "digest": ledger.taa_digest("ver", "txt"),
+                },
+                mechanism="manual",
+            )
 
     @pytest.mark.asyncio
     async def test_submit_unsigned(

@@ -738,7 +738,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--log-file",
-        type=str,
+        nargs="?",
+        const="",
+        default=None,
         metavar="<log-file>",
         help=("Output destination for the root logger."),
     )

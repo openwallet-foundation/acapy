@@ -1,20 +1,19 @@
 """Indy-VDR ledger implementation."""
 
 import asyncio
-import json
 import hashlib
+import json
 import logging
 import os
 import os.path
 import tempfile
-
-from datetime import datetime, date, timezone
+from datetime import date, datetime, timezone
 from io import StringIO
 from pathlib import Path
 from time import time
-from typing import List, Tuple, Union, Optional
+from typing import List, Optional, Tuple, Union
 
-from indy_vdr import ledger, open_pool, Pool, Request, VdrError
+from indy_vdr import Pool, Request, VdrError, ledger, open_pool
 
 from ..cache.base import BaseCache
 from ..core.profile import Profile
@@ -23,9 +22,8 @@ from ..storage.base import BaseStorage, StorageRecord
 from ..utils import sentinel
 from ..utils.env import storage_path
 from ..wallet.base import BaseWallet, DIDInfo
-from ..wallet.error import WalletNotFoundError
 from ..wallet.did_posture import DIDPosture
-
+from ..wallet.error import WalletNotFoundError
 from .base import BaseLedger, Role
 from .endpoint_type import EndpointType
 from .error import (
@@ -947,19 +945,21 @@ class IndyVdrLedger(BaseLedger):
         )
         async with self.profile.session() as session:
             storage = session.inject(BaseStorage)
+            cache = self.profile.inject_or(BaseCache)
             await storage.add_record(record)
-        if self.pool.cache:
-            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
-            await self.pool.cache.set(cache_key, acceptance, self.pool.cache_duration)
+        if cache:
+            cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.profile.name
+            await cache.set(cache_key, acceptance, self.pool.cache_duration)
 
     async def get_latest_txn_author_acceptance(self) -> dict:
         """Look up the latest TAA acceptance."""
-        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.pool_name
+        cache_key = TAA_ACCEPTED_RECORD_TYPE + "::" + self.profile.name
         acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
         if not acceptance:
             tag_filter = {"pool_name": self.pool_name}
             async with self.profile.session() as session:
                 storage = session.inject(BaseStorage)
+                cache = self.profile.inject_or(BaseCache)
                 found = await storage.find_all_records(
                     TAA_ACCEPTED_RECORD_TYPE, tag_filter
                 )
@@ -969,10 +969,8 @@ class IndyVdrLedger(BaseLedger):
                 acceptance = records[0]
             else:
                 acceptance = {}
-            if self.pool.cache:
-                await self.pool.cache.set(
-                    cache_key, acceptance, self.pool.cache_duration
-                )
+            if cache:
+                await cache.set(cache_key, acceptance, self.pool.cache_duration)
         return acceptance
 
     async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:
