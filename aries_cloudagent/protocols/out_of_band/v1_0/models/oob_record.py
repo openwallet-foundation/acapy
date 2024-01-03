@@ -303,6 +303,6 @@ class OobRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": "Allow for multiple uses of the oobinvitation",
-            "example": True
+            "example": True,
         },
     )
