@@ -672,7 +672,7 @@ class DIDXManager(BaseConnectionManager):
             self.profile, conn_rec, mediation_records
         )
 
-        if use_public_did or respond_with_did_peer_2:
+        if use_public_did or respond_with_did_peer_2 or respond_with_did_peer_4:
             # Omit DID Doc attachment if we're using a public DID
             attach = AttachDecorator.data_base64_string(did)
             async with self.profile.session() as session:

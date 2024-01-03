@@ -11,6 +11,7 @@ import pydid
 from base58 import b58decode
 from did_peer_2 import KeySpec, generate
 from did_peer_4 import encode
+from did_peer_4.input_doc import KeySpec as KeySpec_DP4
 from did_peer_4.input_doc import input_doc_from_keys_and_services
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
@@ -133,7 +134,10 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             key = await wallet.create_key(ED25519)
-            input_doc = input_doc_from_keys_and_services(keys=[key], services=services)
+            key_spec = KeySpec_DP4(multikey=key.verkey)
+            input_doc = input_doc_from_keys_and_services(
+                keys=[key_spec], services=services
+            )
             did = encode(input_doc)
 
             did_info = DIDInfo(
