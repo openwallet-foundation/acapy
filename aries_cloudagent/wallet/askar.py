@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 from aries_askar import (
     AskarError,
@@ -59,7 +59,10 @@ class AskarWallet(BaseWallet):
         return self._session
 
     async def create_signing_key(
-        self, key_type: KeyType, seed: str = None, metadata: dict = None
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> KeyInfo:
         """Create a new public/private signing keypair.
 
@@ -76,7 +79,28 @@ class AskarWallet(BaseWallet):
             WalletError: If there is another backend error
 
         """
+        return await self.create_key(key_type, seed, metadata)
 
+    async def create_key(
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> KeyInfo:
+        """Create a new public/private keypair.
+
+        Args:
+            key_type: Key type to create
+            seed: Seed for key
+            metadata: Optional metadata to store with the keypair
+
+        Returns:
+            A `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateError: If the resulting verkey already exists in the wallet
+            WalletError: If there is another backend error
+        """
         if metadata is None:
             metadata = {}
         try:
@@ -146,9 +170,9 @@ class AskarWallet(BaseWallet):
         self,
         method: DIDMethod,
         key_type: KeyType,
-        seed: str = None,
-        did: str = None,
-        metadata: dict = None,
+        seed: Optional[str] = None,
+        did: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> DIDInfo:
         """Create and store a new local DID.
 
@@ -229,6 +253,46 @@ class AskarWallet(BaseWallet):
         return DIDInfo(
             did=did, verkey=verkey, metadata=metadata, method=method, key_type=key_type
         )
+
+    async def store_did(self, did_info: DIDInfo) -> DIDInfo:
+        """Store a DID in the wallet.
+
+        This enables components external to the wallet to define how a DID
+        is created and then store it in the wallet for later use.
+
+        Args:
+            did_info: The DID to store
+
+        Returns:
+            The stored `DIDInfo`
+        """
+        try:
+            item = await self._session.handle.fetch(
+                CATEGORY_DID, did_info.did, for_update=True
+            )
+            if item:
+                raise WalletDuplicateError("DID already present in wallet")
+            else:
+                await self._session.handle.insert(
+                    CATEGORY_DID,
+                    did_info.did,
+                    value_json={
+                        "did": did_info.did,
+                        "method": did_info.method.method_name,
+                        "verkey": did_info.verkey,
+                        "verkey_type": did_info.key_type.key_type,
+                        "metadata": did_info.metadata,
+                    },
+                    tags={
+                        "method": did_info.method.method_name,
+                        "verkey": did_info.verkey,
+                        "verkey_type": did_info.key_type.key_type,
+                    },
+                )
+        except AskarError as err:
+            raise WalletError("Error when storing DID") from err
+
+        return did_info
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """Get list of defined local DIDs.
@@ -711,7 +775,7 @@ class AskarWallet(BaseWallet):
         )
 
 
-def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
+def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
     if key_type == ED25519:
         alg = KeyAlg.ED25519

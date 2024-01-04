@@ -13,13 +13,12 @@ from .models.anoncreds_cred_def import (
 from .models.anoncreds_revocation import (
     GetRevListResult,
     GetRevRegDefResult,
-    RevRegDef,
-    RevRegDefResult,
     RevList,
     RevListResult,
+    RevRegDef,
+    RevRegDefResult,
 )
 from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
-
 
 T = TypeVar("T")
 

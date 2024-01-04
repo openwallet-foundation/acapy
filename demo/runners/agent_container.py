@@ -6,6 +6,7 @@ import os
 import random
 import sys
 import time
+from typing import List
 import yaml
 
 from qrcode import QRCode
@@ -60,9 +61,10 @@ class AriesAgent(DemoAgent):
         log_file: str = None,
         log_config: str = None,
         log_level: str = None,
+        extra_args: List[str] = None,
         **kwargs,
     ):
-        extra_args = []
+        extra_args = extra_args or []
         if not no_auto:
             extra_args.extend(
                 (
@@ -711,6 +713,7 @@ class AgentContainer:
         log_file: str = None,
         log_config: str = None,
         log_level: str = None,
+        extra_args: List[str] = None,
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -750,6 +753,7 @@ class AgentContainer:
         self.agent = None
         self.mediator_agent = None
         self.taa_accept = taa_accept
+        self.extra_args = extra_args
 
     async def initialize(
         self,
@@ -786,6 +790,7 @@ class AgentContainer:
                 log_file=self.log_file,
                 log_config=self.log_config,
                 log_level=self.log_level,
+                extra_args=self.extra_args,
             )
         else:
             self.agent = the_agent
@@ -1159,8 +1164,7 @@ class AgentContainer:
         )
 
     async def admin_GET(self, path, text=False, params=None) -> dict:
-        """
-        Execute an admin GET request in the context of the current wallet.
+        """Execute an admin GET request in the context of the current wallet.
 
         path = /path/of/request
         text = True if the expected response is text, False if json data
@@ -1169,8 +1173,7 @@ class AgentContainer:
         return await self.agent.admin_GET(path, text=text, params=params)
 
     async def admin_POST(self, path, data=None, text=False, params=None) -> dict:
-        """
-        Execute an admin POST request in the context of the current wallet.
+        """Execute an admin POST request in the context of the current wallet.
 
         path = /path/of/request
         data = payload to post with the request
@@ -1180,8 +1183,7 @@ class AgentContainer:
         return await self.agent.admin_POST(path, data=data, text=text, params=params)
 
     async def admin_PATCH(self, path, data=None, text=False, params=None) -> dict:
-        """
-        Execute an admin PATCH request in the context of the current wallet.
+        """Execute an admin PATCH request in the context of the current wallet.
 
         path = /path/of/request
         data = payload to post with the request
@@ -1191,8 +1193,7 @@ class AgentContainer:
         return await self.agent.admin_PATCH(path, data=data, text=text, params=params)
 
     async def admin_PUT(self, path, data=None, text=False, params=None) -> dict:
-        """
-        Execute an admin PUT request in the context of the current wallet.
+        """Execute an admin PUT request in the context of the current wallet.
 
         path = /path/of/request
         data = payload to post with the request
@@ -1202,18 +1203,16 @@ class AgentContainer:
         return await self.agent.admin_PUT(path, data=data, text=text, params=params)
 
     async def admin_DELETE(self, path, data=None, text=False, params=None) -> dict:
-        """
-        Execute an admin DELETE request in the context of the current wallet.
+        """Execute an admin DELETE request in the context of the current wallet.
         path = /path/of/request
         data = payload to post with the request
         text = True if the expected response is text, False if json data
-        params = any additional parameters to pass with the request
+        params = any additional parameters to pass with the request.
         """
         return await self.agent.admin_DELETE(path, data=data, text=text, params=params)
 
     async def agency_admin_GET(self, path, text=False, params=None) -> dict:
-        """
-        Execute an agency GET request in the context of the base wallet (multitenant only).
+        """Execute an agency GET request in the context of the base wallet (multitenant only).
 
         path = /path/of/request
         text = True if the expected response is text, False if json data
@@ -1222,8 +1221,7 @@ class AgentContainer:
         return await self.agent.agency_admin_GET(path, text=text, params=params)
 
     async def agency_admin_POST(self, path, data=None, text=False, params=None) -> dict:
-        """
-        Execute an agency POST request in the context of the base wallet (multitenant only).
+        """Execute an agency POST request in the context of the base wallet (multitenant only).
 
         path = /path/of/request
         data = payload to post with the request
@@ -1236,8 +1234,7 @@ class AgentContainer:
 
 
 def arg_parser(ident: str = None, port: int = 8020):
-    """
-    Standard command-line arguments.
+    """Standard command-line arguments.
 
     "ident", if specified, refers to one of the standard demo personas - alice, faber, acme or performance.
     """
@@ -1390,14 +1387,14 @@ def arg_parser(ident: str = None, port: int = 8020):
     return parser
 
 
-async def create_agent_with_args_list(in_args: list):
+async def create_agent_with_args_list(in_args: list, extra_args: list = None):
     parser = arg_parser()
     args = parser.parse_args(in_args)
 
-    return await create_agent_with_args(args)
+    return await create_agent_with_args(args, extra_args=extra_args)
 
 
-async def create_agent_with_args(args, ident: str = None):
+async def create_agent_with_args(args, ident: str = None, extra_args: list = None):
     if ("did_exchange" in args and args.did_exchange) and args.mediation:
         raise Exception(
             "DID-Exchange connection protocol is not (yet) compatible with mediation"
@@ -1507,6 +1504,7 @@ async def create_agent_with_args(args, ident: str = None):
         log_file=log_file,
         log_config=log_config,
         log_level=log_level,
+        extra_args=extra_args,
     )
 
     return agent
@@ -1581,7 +1579,7 @@ async def test_main(
 
         # alice accept invitation
         invite_details = invite["invitation"]
-        connection = await alice_container.input_invitation(invite_details)
+        await alice_container.input_invitation(invite_details)
 
         # wait for faber connection to activate
         await faber_container.detect_connection()
