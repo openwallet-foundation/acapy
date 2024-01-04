@@ -7,19 +7,19 @@ This design proposes to extend the Aries Cloud Agent Python (ACA-PY) to support 
 
 We aim to wrap the enhancements made on the Rust Framework for Anoncreds first. Then we will work on the integration of AnonCreds with W3C VC Format in ACA-PY, which includes support for issuing, verifying, and managing W3C VC Format AnonCreds credentials.
 
-Ideally the signatures will be delivered in parallel with the Javascript Framework Document.  The [test-vectors](https://github.com/TimoGlastra/anoncreds-w3c-test-vectors/) repo may be used as a guide for interoperability.
+Ideally the signatures will be delivered in parallel with the Javascript Framework Document. The [test-vectors](https://github.com/TimoGlastra/anoncreds-w3c-test-vectors/) repo may be used as a guide for interoperability.
 <br><br>
 
 ## Caveats
 
-As we are relying on the Rust framework, the version of the VC datamodel supported will depend on which is supported by that framework.  This will include [VCDM (Verifiable Credential Data Model) 1.1](https://www.w3.org/TR/vc-data-model/) and may extend to (Verifiable Credential Data Model) 2.0](https://www.w3.org/TR/vc-data-model-2.0/).  Further the features supported will be those provided by the underlying framework, as follows:
+As we are relying on the Rust framework, the version of the VC datamodel supported will depend on which is supported by that framework. This will include [VCDM (Verifiable Credential Data Model) 1.1](https://www.w3.org/TR/vc-data-model/) and may extend to [(Verifiable Credential Data Model) 2.0](https://www.w3.org/TR/vc-data-model-2.0/). Further the features supported will be those provided by the underlying framework, as follows:
 
 - Credentials: Verify validity of non-Creds Data Integrity proof signatures
 - Presentations: Create presentations using non-AnonCreds Data Integrity proof signature
 - Presentations: Verify validity of presentations, including non-AnonCreds Data Integrity proof signatures
 - Presentations: Support different formats (for example, DIF) of Presentation Request
 
-A flag may be provided to request the Verifiable Credentials be produced in 1.1 or 2.0 compatible formats.  The implementation SHOULD be as consistent as possible with a single function signature.
+A flag may be provided to request the Verifiable Credentials be produced in 1.1 or 2.0 compatible formats. The implementation SHOULD be as consistent as possible with a single function signature.
 <br><br>
 
 ## Issues to consider
@@ -235,6 +235,62 @@ legacy_cred = W3CCredential.to_legacy()
 ```
 
 We don't need to input any parameters to it as it in turn calls `Credential.from_w3c()` method under the hood
+
+### Format Handler for Issue_credential V2_0 Protocol
+
+Keeping in mind that we are trying to create anoncreds(not another type of VC) in w3c format, what if we add a protocol-level w3c format support by adding a new format `W3C` in `./protocols/issue_credential/v2_0/messages/cred_format.py` -
+
+```
+# /protocols/issue_credential/v2_0/messages/cred_format.py
+
+class Format(Enum):
+    “””Attachment Format”””
+    INDY = FormatSpec(...)
+    LD_PROOF = FormatSpec(...)
+    W3C = FormatSpec(
+	“w3c/”,
+	CredExRecordW3C,
+	DeferLoad(
+	    “aries_cloudagent.protocols.issue_credential.v2_0”
+	    “.formats.w3c.handler.AnonCredsW3CFormatHandler”
+	),
+    )
+```
+
+And create a new CredExRecordW3C in reference to V20CredExRecordLDProof
+
+```
+# /protocols/issue_credential/v2_0/models/detail/w3c.py
+
+class CredExRecordW3C(BaseRecord):
+    """Credential exchange W3C detail record."""
+
+    class Meta:
+        """CredExRecordW3C metadata."""
+
+        schema_class = "CredExRecordW3CSchema"
+
+    RECORD_ID_NAME = "cred_ex_w3c_id"
+    RECORD_TYPE = "w3c_cred_ex_v20"
+    TAG_NAMES = {"~cred_ex_id"} if UNENCRYPTED_TAGS else {"cred_ex_id"}
+    RECORD_TOPIC = "issue_credential_v2_0_w3c"
+
+```
+
+Create w3c format handler with mapping like so:
+
+```
+# /protocols/issue_credential/v2_0/formats/w3c/handler.py
+
+mapping = {
+            CRED_20_PROPOSAL: VCDetailSchema,
+            CRED_20_OFFER: VCDetailSchema,
+            CRED_20_REQUEST: VCDetailSchema,
+            CRED_20_ISSUE: VerifiableCredentialSchema,
+        }
+```
+
+Doing so would allow us to be more independent in defining the schema suited for anoncreds in w3c format and once the proposal protocol can handle the w3c format, probably the rest of the flow can be easily implemented by adding `w3c` flag to the coressponding routes.
 
 ### How a W3C credential is stored in the wallet.
 
