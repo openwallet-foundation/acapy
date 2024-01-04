@@ -4,7 +4,6 @@ import logging
 
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
-
 from ..resolver.did_resolver import DIDResolver
 
 LOGGER = logging.getLogger(__name__)
@@ -74,3 +73,9 @@ async def setup(context: InjectionContext):
     ).provide(context.settings, context.injector)
     await peer_did_3_resolver.setup(context)
     registry.register_resolver(peer_did_3_resolver)
+
+    peer_did_4_resolver = ClassProvider(
+        "aries_cloudagent.resolver.default.peer4.PeerDID4Resolver"
+    ).provide(context.settings, context.injector)
+    await peer_did_4_resolver.setup(context)
+    registry.register_resolver(peer_did_4_resolver)

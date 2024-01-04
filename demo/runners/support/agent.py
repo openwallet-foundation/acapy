@@ -313,9 +313,7 @@ class DemoAgent:
             return cred_defs_saved
         elif wallet_type == WALLET_TYPE_ANONCREDS:
             cred_defs_saved = await self.admin_GET("/anoncreds/credential-definitions")
-            return {
-                "credential_definition_ids": cred_defs_saved,
-            }
+            return cred_defs_saved
         else:
             raise Exception("Invalid wallet_type: " + str(wallet_type))
 
@@ -519,7 +517,7 @@ class DemoAgent:
             "--public-invites",
             # ("--log-level", "debug"),
         ]
-        if self.log_file:
+        if self.log_file or self.log_file == "":
             result.extend(
                 [
                     ("--log-file", self.log_file),

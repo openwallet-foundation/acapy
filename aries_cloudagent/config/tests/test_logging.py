@@ -24,7 +24,9 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             test_module.DEFAULT_LOGGING_CONFIG_PATH, "utf-8"
         )
         mock_file_config.assert_called_once_with(
-            mock_load_resource.return_value, disable_existing_loggers=False
+            mock_load_resource.return_value,
+            disable_existing_loggers=False,
+            new_file_path=None,
         )
 
     def test_configure_with_per_tenant_config_file(self):
@@ -107,7 +109,9 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
 
         mock_load_resource.assert_called_once_with(path, "utf-8")
         mock_file_config.assert_called_once_with(
-            mock_load_resource.return_value, disable_existing_loggers=False
+            mock_load_resource.return_value,
+            disable_existing_loggers=False,
+            new_file_path=None,
         )
 
     def test_banner_did(self):
@@ -140,7 +144,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module.pkg_resources, "resource_stream", mock.MagicMock()
         ) as mock_res_stream, mock.patch.object(
-            test_module, "TextIOWrapper", mock.MagicMock()
+            test_module.io, "TextIOWrapper", mock.MagicMock()
         ) as mock_text_io_wrapper:
             test_module.load_resource("abc:def", encoding="utf-8")
 

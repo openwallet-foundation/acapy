@@ -95,7 +95,7 @@ def epoch_to_str(epoch: int) -> str:
 
 def datetime_now() -> datetime:
     """Timestamp in UTC."""
-    return datetime.utcnow().replace(tzinfo=timezone.utc)
+    return datetime.now(tz=timezone.utc)
 
 
 def time_now() -> str:

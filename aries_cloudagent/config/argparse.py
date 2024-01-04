@@ -992,13 +992,15 @@ class LoggingGroup(ArgumentGroup):
         parser.add_argument(
             "--log-file",
             dest="log_file",
-            type=str,
             metavar="<log-file>",
+            nargs="?",
+            const="",
             default=None,
             env_var="ACAPY_LOG_FILE",
             help=(
-                "Overrides the output destination for the root logger (as defined "
-                "by the log config file) to the named <log-file>."
+                "--log-file enables writing of logs to file, if a value is "
+                "provided then it uses that as log file location, otherwise "
+                "the default location in log config file is used."
             ),
         )
         parser.add_argument(
@@ -1019,7 +1021,7 @@ class LoggingGroup(ArgumentGroup):
         settings = {}
         if args.log_config:
             settings["log.config"] = args.log_config
-        if args.log_file:
+        if args.log_file or args.log_file == "":
             settings["log.file"] = args.log_file
         if args.log_level:
             settings["log.level"] = args.log_level
@@ -1168,6 +1170,12 @@ class ProtocolGroup(ArgumentGroup):
                 "using unencrypted rather than encrypted tags"
             ),
         )
+        parser.add_argument(
+            "--emit-did-peer-2",
+            action="store_true",
+            env_var="ACAPY_EMIT_DID_PEER_2",
+            help=("Emit did:peer:2 DIDs in DID Exchange Protocol"),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
@@ -1234,6 +1242,10 @@ class ProtocolGroup(ArgumentGroup):
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
+
+        if args.emit_did_peer_2:
+            settings["emit_did_peer_2"] = True
+
         return settings
 
 

@@ -1,9 +1,11 @@
 """Legacy Indy Registry."""
-from asyncio import shield
 import json
 import logging
 import re
+from asyncio import shield
 from typing import List, Optional, Pattern, Sequence, Tuple
+
+from base58 import alphabet
 
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
@@ -40,14 +42,14 @@ from ...models.anoncreds_cred_def import (
     GetCredDefResult,
 )
 from ...models.anoncreds_revocation import (
-    GetRevRegDefResult,
     GetRevListResult,
-    RevRegDef,
-    RevRegDefResult,
-    RevRegDefState,
+    GetRevRegDefResult,
     RevList,
     RevListResult,
     RevListState,
+    RevRegDef,
+    RevRegDefResult,
+    RevRegDefState,
     RevRegDefValue,
 )
 from ...models.anoncreds_schema import (
@@ -56,7 +58,6 @@ from ...models.anoncreds_schema import (
     SchemaResult,
     SchemaState,
 )
-from base58 import alphabet
 
 LOGGER = logging.getLogger(__name__)
 
@@ -158,7 +159,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 schema = await ledger.get_schema(schema_id)
                 if schema is None:
                     raise AnonCredsObjectNotFound(
-                        f"Credential definition not found: {schema_id}",
+                        f"Schema not found: {schema_id}",
                         {"ledger_id": ledger_id},
                     )
 
@@ -635,6 +636,12 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             profile, rev_list, rev_reg_def.type, rev_reg_entry
         )
 
+        seq_no = None
+        try:
+            seq_no = rev_entry_res["result"]["txnMetadata"]["seqNo"]
+        except KeyError:
+            LOGGER.warning("Failed to parse sequence number from ledger response")
+
         return RevListResult(
             job_id=None,
             revocation_list_state=RevListState(
@@ -642,8 +649,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 revocation_list=rev_list,
             ),
             registration_metadata={},
-            revocation_list_metadata={
-                "seqNo": rev_entry_res["result"]["txnMetadata"]["seqNo"],
+            revocation_list_metadata={}
+            if seq_no is None
+            else {
+                "seqNo": seq_no,
             },
         )
 

@@ -5,6 +5,7 @@ from aiohttp import web
 from asynctest import TestCase as AsyncTestCase
 
 from aries_cloudagent.admin.request_context import AdminRequestContext
+from aries_cloudagent.anoncreds.base import AnonCredsObjectNotFound
 from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
 from aries_cloudagent.anoncreds.revocation import AnonCredsRevocation
 from aries_cloudagent.anoncreds.revocation_setup import DefaultRevocationSetup
@@ -85,24 +86,34 @@ class TestAnoncredsRoutes(AsyncTestCase):
 
         assert mock_create_and_register_schema.call_count == 1
 
-        # TODO: consider handling missing schema attribute better
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(web.HTTPBadRequest):
             await test_module.schemas_post(self.request)
 
         await test_module.schemas_post(self.request)
 
     async def test_get_schema(self):
-        self.request.match_info = {"schemaId": "schema_id"}
+        self.request.match_info = {"schema_id": "schema_id"}
         self.context.inject = mock.Mock(
             return_value=mock.MagicMock(
-                get_schema=mock.CoroutineMock(return_value=MockSchema("schemaId"))
+                get_schema=mock.CoroutineMock(
+                    side_effect=[
+                        MockSchema("schemaId"),
+                        AnonCredsObjectNotFound("test"),
+                    ]
+                )
             )
         )
         result = await test_module.schema_get(self.request)
         assert json.loads(result.body)["schema_id"] == "schemaId"
 
+        # missing schema_id
         self.request.match_info = {}
         with self.assertRaises(KeyError):
+            await test_module.schema_get(self.request)
+
+        # schema not found
+        self.request.match_info = {"schema_id": "schema_id"}
+        with self.assertRaises(web.HTTPNotFound):
             await test_module.schema_get(self.request)
 
     @mock.patch.object(
@@ -155,8 +166,7 @@ class TestAnoncredsRoutes(AsyncTestCase):
         assert json.loads(result.body)["credential_definition_id"] == "credDefId"
         assert mock_create_cred_def.call_count == 1
 
-        # TODO: consider handling missing cred_def attribute better
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(web.HTTPBadRequest):
             await test_module.cred_def_post(self.request)
 
         await test_module.cred_def_post(self.request)
@@ -190,10 +200,10 @@ class TestAnoncredsRoutes(AsyncTestCase):
     )
     async def test_cred_defs_get(self, mock_get_cred_defs):
         result = await test_module.cred_defs_get(self.request)
-        assert json.loads(result.body).__len__() == 2
+        assert len(json.loads(result.body)["credential_definition_ids"]) == 2
 
         result = await test_module.cred_defs_get(self.request)
-        assert json.loads(result.body).__len__() == 0
+        assert len(json.loads(result.body)["credential_definition_ids"]) == 0
 
         assert mock_get_cred_defs.call_count == 2
 
@@ -217,6 +227,24 @@ class TestAnoncredsRoutes(AsyncTestCase):
                     "tails_public_uri": "http://tails_public_uri",
                     "tails_local_uri": "http://tails_local_uri",
                 },
+            }
+        )
+
+        # Must be in wrapper object
+        with self.assertRaises(web.HTTPBadRequest):
+            await test_module.rev_reg_def_post(self.request)
+
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "revocation_registry_definition": {
+                    "credDefId": "cred_def_id",
+                    "issuerId": "issuer_id",
+                    "maxCredNum": 100,
+                    "options": {
+                        "tails_public_uri": "http://tails_public_uri",
+                        "tails_local_uri": "http://tails_local_uri",
+                    },
+                }
             }
         )
 

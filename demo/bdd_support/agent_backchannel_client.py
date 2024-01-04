@@ -29,8 +29,8 @@ def async_sleep(delay):
 ######################################################################
 # high level aries agent interface
 ######################################################################
-def create_agent_container_with_args(in_args: list):
-    return run_coroutine(create_agent_with_args_list, in_args)
+def create_agent_container_with_args(in_args: list, extra_args: list = None):
+    return run_coroutine(create_agent_with_args_list, in_args, extra_args)
 
 
 def aries_container_initialize(
