@@ -1685,14 +1685,14 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         # created did:peer:4 when receiving a did:peer:4, even if setting is False
         conn_rec = ConnRecord(
             connection_id="dummy",
-            their_did=TestConfig.test_did_peer_2,
+            their_did=TestConfig.test_did_peer_4,
             state=ConnRecord.State.REQUEST.rfc23,
         )
 
         self.profile.context.update_settings({"emit_did_peer_4": False})
 
         with mock.patch.object(
-            self.manager, "create_did_peer_2", mock.CoroutineMock()
+            self.manager, "create_did_peer_4", mock.CoroutineMock()
         ) as mock_create_did_peer_4, mock.patch.object(
             test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
         ) as mock_retrieve_req, mock.patch.object(
