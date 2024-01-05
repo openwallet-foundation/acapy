@@ -10,7 +10,7 @@ from typing import List, Optional, Sequence, Text, Tuple, Union
 import pydid
 from base58 import b58decode
 from did_peer_2 import KeySpec, generate
-from did_peer_4 import encode
+from did_peer_4 import encode, long_to_short
 from did_peer_4.input_doc import KeySpec as KeySpec_DP4
 from did_peer_4.input_doc import input_doc_from_keys_and_services
 from pydid import (
@@ -88,6 +88,26 @@ class BaseConnectionManager:
         return multibase.encode(
             multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
         )
+
+    async def long_did_peer_4_to_short(self, long_dp4: str) -> DIDInfo:
+        """Convert did:peer:4 long format to short format and store in wallet."""
+
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            long_dp4_info = await wallet.get_local_did(long_dp4)
+
+        short_did_peer_4 = long_to_short(long_dp4)
+        did_info = DIDInfo(
+            did=short_did_peer_4,
+            method=PEER4,
+            verkey=long_dp4_info.verkey,
+            metadata={},
+            key_type=ED25519,
+        )
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            await wallet.store_did(did_info)
+        return did_info.did
 
     async def create_did_peer_4(
         self,

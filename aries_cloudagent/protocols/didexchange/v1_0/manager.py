@@ -4,6 +4,8 @@ import json
 import logging
 from typing import Optional, Sequence, Union
 
+from did_peer_4 import LONG_PATTERN, long_to_short
+
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
@@ -841,6 +843,13 @@ class DIDXManager(BaseConnectionManager):
             await self.record_did(response.did)
 
         conn_rec.their_did = their_did
+
+        # The long format I sent has been acknoledged, use short form now.
+        if LONG_PATTERN.match(conn_rec.my_did):
+            conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
+        if LONG_PATTERN.match(conn_rec.their_did):
+            conn_rec.their_did = long_to_short(conn_rec.their_did)
+
         conn_rec.state = ConnRecord.State.RESPONSE.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Accepted connection response")
@@ -925,6 +934,11 @@ class DIDXManager(BaseConnectionManager):
                 "No corresponding connection request found",
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value,
             )
+
+        if LONG_PATTERN.match(conn_rec.my_did):
+            conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
+        if LONG_PATTERN.match(conn_rec.their_did):
+            conn_rec.their_did = long_to_short(conn_rec.their_did)
 
         conn_rec.state = ConnRecord.State.COMPLETED.rfc160
         async with self.profile.session() as session:
