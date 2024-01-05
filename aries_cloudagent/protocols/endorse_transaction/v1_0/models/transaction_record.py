@@ -29,11 +29,11 @@ class TransactionRecord(BaseExchangeRecord):
     STATE_INIT = "init"
     RECORD_TOPIC = "endorse_transaction"
 
-    SIGNATURE_REQUEST = "http://didcomm.org/sign-attachment/%VER/signature-request"
+    SIGNATURE_REQUEST = "https://didcomm.org/sign-attachment/1.0/signature-request"
 
-    SIGNATURE_RESPONSE = "http://didcomm.org/sign-attachment/%VER/signature-response"
+    SIGNATURE_RESPONSE = "https://didcomm.org/sign-attachment/1.0/signature-response"
 
-    SIGNATURE_TYPE = "<requested signature type>"
+    SIGNATURE_TYPE = "default"
 
     SIGNATURE_CONTEXT = "did:sov"
 
