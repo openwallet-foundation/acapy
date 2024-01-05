@@ -16,7 +16,7 @@ from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_method import PEER4, SOV
+from ....wallet.did_method import SOV
 from ....wallet.did_posture import DIDPosture
 from ....wallet.error import WalletError
 from ....wallet.key_type import ED25519
@@ -513,10 +513,6 @@ class DIDXManager(BaseConnectionManager):
                     ),
                     error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
                 )
-        if request.did.startswith(PEER4.method_name):
-            # resolve long form once, store short form in conn record
-            # request.did = long_to_short(request.did)
-            pass
         else:
             if request.did is None:
                 raise DIDXManagerError("No DID in request")
