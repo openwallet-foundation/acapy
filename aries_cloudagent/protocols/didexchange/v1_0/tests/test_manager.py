@@ -1941,6 +1941,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
+                my_did=None,
                 did_doc_attach=mock.MagicMock(
                     data=mock.MagicMock(
                         verify=mock.CoroutineMock(return_value=True),
