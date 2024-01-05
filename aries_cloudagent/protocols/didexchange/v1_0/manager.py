@@ -845,9 +845,9 @@ class DIDXManager(BaseConnectionManager):
         conn_rec.their_did = their_did
 
         # The long format I sent has been acknoledged, use short form now.
-        if LONG_PATTERN.match(conn_rec.my_did):
+        if LONG_PATTERN.match(conn_rec.my_did or ""):
             conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
-        if LONG_PATTERN.match(conn_rec.their_did):
+        if LONG_PATTERN.match(conn_rec.their_did or ""):
             conn_rec.their_did = long_to_short(conn_rec.their_did)
 
         conn_rec.state = ConnRecord.State.RESPONSE.rfc160
@@ -935,9 +935,9 @@ class DIDXManager(BaseConnectionManager):
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value,
             )
 
-        if LONG_PATTERN.match(conn_rec.my_did):
+        if LONG_PATTERN.match(conn_rec.my_did or ""):
             conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
-        if LONG_PATTERN.match(conn_rec.their_did):
+        if LONG_PATTERN.match(conn_rec.their_did or ""):
             conn_rec.their_did = long_to_short(conn_rec.their_did)
 
         conn_rec.state = ConnRecord.State.COMPLETED.rfc160

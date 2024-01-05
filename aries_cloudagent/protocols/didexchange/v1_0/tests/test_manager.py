@@ -1656,6 +1656,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             connection_id="dummy",
             their_did=TestConfig.test_did_peer_2,
             state=ConnRecord.State.REQUEST.rfc23,
+            my_did=None,
         )
 
         self.profile.context.update_settings({"emit_did_peer_2": False})
@@ -1821,6 +1822,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
+                my_did=None,
                 did_doc_attach=mock.MagicMock(
                     data=mock.MagicMock(
                         verify=mock.CoroutineMock(return_value=True),
@@ -1837,6 +1839,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 connection_id="test-conn-id",
             )
             mock_conn_retrieve_by_id.return_value = mock.MagicMock(
+                my_did=None,
                 their_did=TestConfig.test_target_did,
                 save=mock.CoroutineMock(),
             )
@@ -1881,6 +1884,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
+                my_did=None,
                 did_doc_attach=mock.MagicMock(
                     data=mock.MagicMock(
                         verify=mock.CoroutineMock(return_value=True),
@@ -2034,6 +2038,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
+                my_did=None,
                 state=ConnRecord.State.REQUEST.rfc23,
                 save=mock.CoroutineMock(),
                 metadata_get=mock.CoroutineMock(),
@@ -2143,6 +2148,8 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id:
             mock_conn_retrieve_by_req_id.return_value.save = mock.CoroutineMock()
+            mock_conn_retrieve_by_req_id.return_value.my_did = None
+            mock_conn_retrieve_by_req_id.return_value.their_did = None
             conn_rec = await self.manager.accept_complete(mock_complete, receipt)
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
@@ -2156,6 +2163,8 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
         ) as mock_proactive_disclose_features:
             mock_conn_retrieve_by_req_id.return_value.save = mock.CoroutineMock()
+            mock_conn_retrieve_by_req_id.return_value.my_did = None
+            mock_conn_retrieve_by_req_id.return_value.their_did = None
             conn_rec = await self.manager.accept_complete(mock_complete, receipt)
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
             mock_proactive_disclose_features.assert_called_once()
