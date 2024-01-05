@@ -123,18 +123,17 @@ class BaseConnectionManager:
                 {
                     "id": f"#didcomm-{index}",
                     "type": "did-communication",
-                    "serviceEndpoint": {
-                        "uri": endpoint,
-                        "routingKeys": routing_keys,
-                        "accept": ["didcomm/v2"],
-                    },
+                    "recipientKeys": ["#key-0"],
+                    "routingKeys": routing_keys,
+                    "serviceEndpoint": endpoint,
+                    "priority": index,
                 }
             )
 
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             key = await wallet.create_key(ED25519)
-            key_spec = KeySpec_DP4(multikey=key.verkey)
+            key_spec = KeySpec_DP4(multikey=self._key_info_to_multikey(key))
             input_doc = input_doc_from_keys_and_services(
                 keys=[key_spec], services=services
             )

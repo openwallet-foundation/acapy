@@ -16,7 +16,7 @@ from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_method import SOV
+from ....wallet.did_method import PEER4, SOV
 from ....wallet.did_posture import DIDPosture
 from ....wallet.error import WalletError
 from ....wallet.key_type import ED25519
@@ -513,6 +513,10 @@ class DIDXManager(BaseConnectionManager):
                     ),
                     error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
                 )
+        if request.did.startswith(PEER4.method_name):
+            # resolve long form once, store short form in conn record
+            # request.did = long_to_short(request.did)
+            pass
         else:
             if request.did is None:
                 raise DIDXManagerError("No DID in request")
@@ -639,6 +643,14 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
             did = my_info.did
+        elif respond_with_did_peer_4:
+            my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
+            did = my_info.did
+        elif respond_with_did_peer_2:
+            my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
+            did = my_info.did
         elif use_public_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -649,14 +661,7 @@ class DIDXManager(BaseConnectionManager):
             did = my_info.did
             if not did.startswith("did:"):
                 did = f"did:sov:{did}"
-        elif respond_with_did_peer_4:
-            my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
-            conn_rec.my_did = my_info.did
-            did = my_info.did
-        elif respond_with_did_peer_2:
-            my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
-            conn_rec.my_did = my_info.did
-            did = my_info.did
+
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -673,7 +678,7 @@ class DIDXManager(BaseConnectionManager):
         )
 
         if use_public_did or respond_with_did_peer_2 or respond_with_did_peer_4:
-            # Omit DID Doc attachment if we're using a public DID
+            # Omit DID Doc attachment if we're using a public DID or peer did
             attach = AttachDecorator.data_base64_string(did)
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
