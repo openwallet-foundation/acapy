@@ -70,6 +70,12 @@ KEY = DIDMethod(
     key_types=[ED25519, BLS12381G2],
     rotation=False,
 )
+WEB = DIDMethod(
+    name="web",
+    key_types=[ED25519, BLS12381G2],
+    rotation=True,
+    holder_defined_did=HolderDefinedDid.REQUIRED,
+)
 PEER2 = DIDMethod(
     name="did:peer:2",
     key_types=[ED25519, X25519],
@@ -93,6 +99,7 @@ class DIDMethods:
         self._registry: Dict[str, DIDMethod] = {
             SOV.method_name: SOV,
             KEY.method_name: KEY,
+            WEB.method_name: WEB,
             PEER2.method_name: PEER2,
         }
 
