@@ -37,7 +37,7 @@ A flag may be provided to request the Verifiable Credentials be produced in 1.1 
 
 ### What is the roadmap for delivery? What will we build first, then second?
 
-1. Python wrappers around Rust
+1. Adapt to new Python wrapper function signatures
 2. W3C VC conversion (`to_w3c()`) in ACA-PY.
 3. W3C VC issuance in ACA-PY.
 4. W3C VC storage in holder's wallet in ACA-PY.
@@ -51,10 +51,6 @@ After thoroughly reviewing upcoming changes from [anoncreds-rs PR273](https://gi
 [W3CCredentialOffer](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R106)<br>
 class methods (`create`, `load`)<br>
 bindings functions (`create_w3c_credential_offer`)<br>
-
-[W3CCredentialRequest](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R162)<br>
-class methods (`create`, `load`)<br>
-bindings functions (`create_w3c_credential_request`)<br>
 
 [W3CCredential](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R424)<br>
 class methods (`create`, `load`)<br>
