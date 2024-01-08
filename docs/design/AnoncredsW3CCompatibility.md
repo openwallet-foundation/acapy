@@ -26,7 +26,7 @@ A flag may be provided to request the Verifiable Credentials be produced in 1.1 
 
 - If and how the W3C VC Format attachments for the Issue Credential V2.0 and Present Proof V2 Aries DIDComm Protocols should be used when using AnonCreds W3C VC Format credentials.
 - How AnonCreds W3C VC Format verifiable credentials are stored by the holder such that they will be discoverable when needed for creating verifiable presentations.
-- How and when multiple signatures can/should be added to a W3C VC Format credential, enabling both AnonCreds and non-AnonCreds signatures on a single credential and their use in presentations.
+- How and when multiple signatures can/should be added to a W3C VC Format credential, enabling both AnonCreds and non-AnonCreds signatures on a single credential and their use in presentations.  Completing a multi-signature controller is out of scope, however we want to consider and ensure the design is fundamentally compatible with multi-sig credentials. 
   <br><br>
 
 ## Flow Chart
@@ -46,7 +46,7 @@ A flag may be provided to request the Verifiable Credentials be produced in 1.1 
 
 ### What are the functions we are going to wrap?
 
-After thoroughly reviewing upcoming changes from [anoncreds-rs PR273](https://github.com/hyperledger/anoncreds-rs/pull/273), the classes or `AnoncredsObject` that we deemed necessary to be exported are:<br>
+After thoroughly reviewing upcoming changes from [anoncreds-rs PR273](https://github.com/hyperledger/anoncreds-rs/pull/273), the classes or `AnoncredsObject` impacted by changes are as follows:<br>
 
 [W3CCredentialOffer](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R106)<br>
 class methods (`create`, `load`)<br>
