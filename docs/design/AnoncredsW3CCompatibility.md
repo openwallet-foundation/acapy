@@ -48,10 +48,6 @@ A flag may be provided to request the Verifiable Credentials be produced in 1.1 
 
 After thoroughly reviewing upcoming changes from [anoncreds-rs PR273](https://github.com/hyperledger/anoncreds-rs/pull/273), the classes or `AnoncredsObject` impacted by changes are as follows:<br>
 
-[W3CCredentialOffer](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R106)<br>
-class methods (`create`, `load`)<br>
-bindings functions (`create_w3c_credential_offer`)<br>
-
 [W3CCredential](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R424)<br>
 class methods (`create`, `load`)<br>
 instance methods (`proceess`, `to_legacy`, `add_non_anoncreds_integrity_proof`, `set_id`, `set_subject_id`, `add_context`, `add_type`)<br>
@@ -90,38 +86,8 @@ There are two scenarios to consider when we want to add w3c format support to AC
 The issuance, presentation and verification of legacy anoncreds are implemented in this [./aries_cloudagent/anoncreds](https://github.com/hyperledger/aries-cloudagent-python/tree/main/aries_cloudagent/anoncreds) directory. Therefore, we will also start from there.<br>
 
 Let us navigate these implementation examples through the respective processes of the concerning agents - **Issuer** and **Holder** as described in https://github.com/hyperledger/anoncreds-rs/blob/main/README.md.
-
-Looking at the [issuer.py](https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/anoncreds/issuer.py) file and this code block:
-
-```
-async def create_credential_offer(self, credential_definition_id: str) -> str:
-...
-...
-  credential_offer = CredentialOffer.create(
-                  schema_id or cred_def.schema_id,
-                  credential_definition_id,
-                  key_proof.raw_value,
-              )
-...
-```
-
-we can implement the same thing in w3c VC format to send a w3c credential offer like so:
-
-- W3C Credential Offer
-
-**NOTE: In the W3C VCDM, there is no concept of a credential offer, and most implementations of W3C VCs have no step where a credential is offered before it is issued. This is because, unlike AnonCreds, W3C VCs require no cryptographic commitment from the holder. So an alternative approach to credential offers is to simply not provide them in the W3C case. However, we think that it is simpler to expose the step as part of our support, thus giving the option for the future and making the correspondence between W3C and AnonCreds features more regular.**
-
-```
-async def create_w3c_credential_offer(self, credential_definition_id: str) -> str:
-...
-...
-  w3c_credential_offer = W3CCredentialOffer.create(...)
-...
-```
-
-provided `W3CCredentialOffer` is already imported from `anoncreds` module.<br>
-
-In a similar manner, we will proceed through the following processes in comparison with the legacy anoncreds implementations while watching out for signature differences between the two.<br>
+We will proceed through the following processes in comparison with the legacy anoncreds implementations while watching out for signature differences between the two.<br>
+Looking at the [/anoncreds/issuer.py](https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/anoncreds/issuer.py) file:
 
 - W3C Credential Create
 
