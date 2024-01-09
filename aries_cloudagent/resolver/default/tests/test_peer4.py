@@ -36,7 +36,7 @@ async def resolver(profile):
 
 
 @pytest.mark.asyncio
-async def test_resolve_2_then_3(profile: Profile, resolver: PeerDID4Resolver):
+async def test_resolve_4(profile: Profile, resolver: PeerDID4Resolver):
     """Test resolver setup."""
     assert resolver.supported_did_regex
     assert await resolver.supports(profile, TEST_LONG_DP4)
