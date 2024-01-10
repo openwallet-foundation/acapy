@@ -4,6 +4,8 @@ import json
 import logging
 from typing import Optional, Sequence, Union
 
+from did_peer_4 import LONG_PATTERN, long_to_short
+
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
@@ -303,11 +305,21 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
+        emit_did_peer_4 = self.profile.settings.get("emit_did_peer_4")
         emit_did_peer_2 = self.profile.settings.get("emit_did_peer_2")
+        if emit_did_peer_2 and emit_did_peer_4:
+            self._logger.warning(
+                "emit_did_peer_2 and emit_did_peer_4 both set, \
+                 using did:peer:4"
+            )
+
         if conn_rec.my_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
+        elif emit_did_peer_4:
+            my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
         elif emit_did_peer_2:
             my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
             conn_rec.my_did = my_info.did
@@ -321,7 +333,7 @@ class DIDXManager(BaseConnectionManager):
                 )
                 conn_rec.my_did = my_info.did
 
-        if use_public_did or emit_did_peer_2:
+        if use_public_did or emit_did_peer_2 or emit_did_peer_4:
             # Omit DID Doc attachment if we're using a public DID
             did_doc = None
             attach = None
@@ -620,10 +632,22 @@ class DIDXManager(BaseConnectionManager):
         respond_with_did_peer_2 = self.profile.settings.get("emit_did_peer_2") or (
             conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2")
         )
+        respond_with_did_peer_4 = self.profile.settings.get("emit_did_peer_4") or (
+            conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4")
+        )
+
         if conn_rec.my_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
+            did = my_info.did
+        elif respond_with_did_peer_4:
+            my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
+            did = my_info.did
+        elif respond_with_did_peer_2:
+            my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
             did = my_info.did
         elif use_public_did:
             async with self.profile.session() as session:
@@ -635,10 +659,7 @@ class DIDXManager(BaseConnectionManager):
             did = my_info.did
             if not did.startswith("did:"):
                 did = f"did:sov:{did}"
-        elif respond_with_did_peer_2:
-            my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
-            conn_rec.my_did = my_info.did
-            did = my_info.did
+
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -654,8 +675,8 @@ class DIDXManager(BaseConnectionManager):
             self.profile, conn_rec, mediation_records
         )
 
-        if use_public_did or respond_with_did_peer_2:
-            # Omit DID Doc attachment if we're using a public DID
+        if use_public_did or respond_with_did_peer_2 or respond_with_did_peer_4:
+            # Omit DID Doc attachment if we're using a public DID or peer did
             attach = AttachDecorator.data_base64_string(did)
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -822,6 +843,13 @@ class DIDXManager(BaseConnectionManager):
             await self.record_did(response.did)
 
         conn_rec.their_did = their_did
+
+        # The long format I sent has been acknoledged, use short form now.
+        if LONG_PATTERN.match(conn_rec.my_did or ""):
+            conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
+        if LONG_PATTERN.match(conn_rec.their_did or ""):
+            conn_rec.their_did = long_to_short(conn_rec.their_did)
+
         conn_rec.state = ConnRecord.State.RESPONSE.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Accepted connection response")
@@ -906,6 +934,11 @@ class DIDXManager(BaseConnectionManager):
                 "No corresponding connection request found",
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value,
             )
+
+        if LONG_PATTERN.match(conn_rec.my_did or ""):
+            conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
+        if LONG_PATTERN.match(conn_rec.their_did or ""):
+            conn_rec.their_did = long_to_short(conn_rec.their_did)
 
         conn_rec.state = ConnRecord.State.COMPLETED.rfc160
         async with self.profile.session() as session:

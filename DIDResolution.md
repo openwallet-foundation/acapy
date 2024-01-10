@@ -42,9 +42,9 @@ class ExampleMessageHandler:
 
     doc: dict = await resolver.resolve("did:example:123")
     assert doc["id"] == "did:example:123"
-    
+
     verification_method = await resolver.dereference("did:example:123#keys-1")
-    
+
     # ...
 ```
 
@@ -176,9 +176,7 @@ plugin:
 The following is a fully functional Dockerfile encapsulating this setup:
 
 ```dockerfile=
-# TODO replace the following two lines with ACA-Py 0.7.0 when released
-FROM bcgovimages/von-image:py36-1.16-0
-RUN pip3 install git+https://github.com/hyperledger/aries-cloudagent-python@2ff1ddba897d26a7deb761924018145162cc867c
+FROM ghcr.io/hyperledger/aries-cloudagent-python:py3.9-0.11.0
 RUN pip3 install git+https://github.com/dbluhm/acapy-resolver-github
 
 CMD ["aca-py", "start", "-it", "http", "0.0.0.0", "3000", "-ot", "http", "-e", "http://localhost:3000", "--admin", "0.0.0.0", "3001", "--admin-insecure-mode", "--no-ledger", "--plugin", "acapy_resolver_github"]

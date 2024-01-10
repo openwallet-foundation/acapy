@@ -32,7 +32,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | -------- | :-------: |  ------- |
 | Server   | :white_check_mark: |    |
 | Kubernetes | :white_check_mark: | BC Gov has extensive experience running ACA-Py on Red Hat's OpenShift Kubernetes Distribution. |
-| Docker   | :white_check_mark: | BC Gov publishes docker images on [Docker Hub](https://hub.docker.com/r/bcgovimages/aries-cloudagent) |
+| Docker   | :white_check_mark: | Official docker images are published to the GitHub [hyperledger/aries-cloudagent-python] container repository. |
 | Desktop  | :warning:         | Could be run as a local service on the computer |
 | iOS      | :x:        |    |
 | Android  | :x:        |    |
@@ -105,7 +105,7 @@ provides notes about the implementation of specific RFCs.
 
 ### AIP 2.0
 
-All RFCs listed in [AIP 2.0](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20) (including the sub-targets) 
+All RFCs listed in [AIP 2.0](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20) (including the sub-targets)
 are fully supported in ACA-Py **EXCEPT** as noted in the table below.
 
 | RFC | Supported | Notes |

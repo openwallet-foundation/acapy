@@ -111,6 +111,7 @@ class OobRecord(BaseExchangeRecord):
                     "role",
                     "our_service",
                     "invi_msg_id",
+                    "multi_use",
                 )
             },
             **{
@@ -296,4 +297,12 @@ class OobRecordSchema(BaseExchangeSchema):
             OobRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
         ),
         metadata={"description": "OOB Role", "example": OobRecord.ROLE_RECEIVER},
+    )
+
+    multi_use = fields.Boolean(
+        required=False,
+        metadata={
+            "description": "Allow for multiple uses of the oobinvitation",
+            "example": True,
+        },
     )

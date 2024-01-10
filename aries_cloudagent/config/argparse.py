@@ -2,7 +2,6 @@
 
 import abc
 import json
-
 from functools import reduce
 from itertools import chain
 from os import environ
@@ -10,15 +9,12 @@ from typing import Type
 
 import deepmerge
 import yaml
-
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
 from ..utils.tracing import trace_event
-
 from .error import ArgsParseError
-from .util import BoundedInt, ByteSize
-
 from .plugin_settings import PLUGIN_CONFIG_KEY
+from .util import BoundedInt, ByteSize
 
 CAT_PROVISION = "general"
 CAT_START = "start"
@@ -1177,6 +1173,13 @@ class ProtocolGroup(ArgumentGroup):
             help=("Emit did:peer:2 DIDs in DID Exchange Protocol"),
         )
 
+        parser.add_argument(
+            "--emit-did-peer-4",
+            action="store_true",
+            env_var="ACAPY_EMIT_DID_PEER_4",
+            help=("Emit did:peer:4 DIDs in DID Exchange Protocol"),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
         settings = {}
@@ -1245,6 +1248,8 @@ class ProtocolGroup(ArgumentGroup):
 
         if args.emit_did_peer_2:
             settings["emit_did_peer_2"] = True
+        if args.emit_did_peer_4:
+            settings["emit_did_peer_4"] = True
 
         return settings
 
