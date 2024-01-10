@@ -133,6 +133,8 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
             BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
         )
 
+        self.manager = VcLdpManager(self.profile)
+        self.context.injector.bind_instance(VcLdpManager, self.manager)
         self.handler = LDProofCredFormatHandler(self.profile)
 
         self.cred_proposal = V20CredProposal(
@@ -247,7 +249,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
 
     async def test_create_offer(self):
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "assert_can_issue_with_id_and_proof_type",
             mock.CoroutineMock(),
         ) as mock_can_issue, patch.object(
@@ -287,7 +289,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "assert_can_issue_with_id_and_proof_type",
             mock.CoroutineMock(),
         ), patch.object(test_module, "get_properties_without_context", return_value=[]):
@@ -312,7 +314,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "assert_can_issue_with_id_and_proof_type",
             mock.CoroutineMock(),
         ), patch.object(test_module, "get_properties_without_context", return_value=[]):
@@ -334,7 +336,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
     async def test_create_offer_x_wrong_attributes(self):
         missing_properties = ["foo"]
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "assert_can_issue_with_id_and_proof_type",
             mock.CoroutineMock(),
         ), patch.object(
@@ -583,7 +585,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "issue",
             mock.CoroutineMock(
                 return_value=VerifiableCredential.deserialize(LD_PROOF_VC)
@@ -841,7 +843,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         self.holder.store_credential = mock.CoroutineMock()
 
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "verify_credential",
             mock.CoroutineMock(return_value=DocumentVerificationResult(verified=True)),
         ) as mock_verify_credential:
@@ -886,15 +888,15 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         self.holder.store_credential = mock.CoroutineMock()
 
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "_get_suite",
             mock.CoroutineMock(),
         ) as mock_get_suite, mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "verify_credential",
             mock.CoroutineMock(return_value=DocumentVerificationResult(verified=False)),
         ) as mock_verify_credential, mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "_get_proof_purpose",
         ) as mock_get_proof_purpose, self.assertRaises(
             V20CredFormatError
