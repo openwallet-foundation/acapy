@@ -1,7 +1,7 @@
 """Manager for performing Linked Data Proof signatures over JSON-LD formatted W3C VCs."""
 
 
-from typing import Dict, Optional, Type
+from typing import Dict, List, Optional, Type, Union, cast
 
 from ...core.profile import Profile
 from ...wallet.base import BaseWallet
@@ -32,31 +32,37 @@ from .models.linked_data_proof import LDProof
 from .models.options import LDProofVCOptions
 from .verify import verify_credential, verify_presentation
 
-
+SignatureTypes = Union[
+    Type[Ed25519Signature2018],
+    Type[Ed25519Signature2020],
+    Type[BbsBlsSignature2020],
+]
+ProofTypes = Union[
+    Type[Ed25519Signature2018],
+    Type[Ed25519Signature2020],
+    Type[BbsBlsSignature2020],
+    Type[BbsBlsSignatureProof2020],
+]
 SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     CredentialIssuancePurpose.term,
     AuthenticationProofPurpose.term,
 }
-SUPPORTED_ISSUANCE_SUITES = {Ed25519Signature2018, Ed25519Signature2020}
-SIGNATURE_SUITE_KEY_TYPE_MAPPING: Dict[Type[LinkedDataProof], KeyType] = {
+SIGNATURE_SUITE_KEY_TYPE_MAPPING: Dict[SignatureTypes, KeyType] = {
     Ed25519Signature2018: ED25519,
     Ed25519Signature2020: ED25519,
 }
+PROOF_KEY_TYPE_MAPPING = cast(
+    Dict[ProofTypes, KeyType], SIGNATURE_SUITE_KEY_TYPE_MAPPING
+)
 
 
 # We only want to add bbs suites to supported if the module is installed
 if BbsBlsSignature2020.BBS_SUPPORTED:
-    SUPPORTED_ISSUANCE_SUITES.add(BbsBlsSignature2020)
-    SUPPORTED_ISSUANCE_SUITES.add(BbsBlsSignatureProof2020)
-    SIGNATURE_SUITE_KEY_TYPE_MAPPING.update(
-        {
-            BbsBlsSignature2020: BLS12381G2,
-            BbsBlsSignatureProof2020: BLS12381G2,
-        }
-    )
+    SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
+    PROOF_KEY_TYPE_MAPPING[BbsBlsSignatureProof2020] = BLS12381G2
 
 
-PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
+PROOF_TYPE_SIGNATURE_SUITE_MAPPING: Dict[str, SignatureTypes] = {
     suite.signature_type: suite for suite in SIGNATURE_SUITE_KEY_TYPE_MAPPING
 }
 
@@ -311,16 +317,17 @@ class VcLdpManager:
 
         return suite
 
-    async def _get_all_suites(self):
+    async def _get_all_proof_suites(self) -> List[LinkedDataProof]:
         """Get all supported suites for verifying presentation."""
-        suites = []
-        for suite, key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items():
-            suites.append(
-                suite(
+        return [
+            cast(
+                LinkedDataProof,
+                SuiteClass(
                     key_pair=WalletKeyPair(profile=self.profile, key_type=key_type),
-                )
+                ),
             )
-        return suites
+            for SuiteClass, key_type in PROOF_KEY_TYPE_MAPPING.items()
+        ]
 
     async def issue(
         self, credential: VerifiableCredential, options: LDProofVCOptions
@@ -354,7 +361,7 @@ class VcLdpManager:
 
         return await verify_presentation(
             presentation=vp.serialize(),
-            suites=await self._get_all_suites(),
+            suites=await self._get_all_proof_suites(),
             document_loader=self.profile.inject(DocumentLoader),
             challenge=options.challenge,
         )
@@ -365,6 +372,6 @@ class VcLdpManager:
         """Verify a VC with a Linked Data Proof."""
         return await verify_credential(
             credential=vc.serialize(),
-            suites=await self._get_all_suites(),
+            suites=await self._get_all_proof_suites(),
             document_loader=self.profile.inject(DocumentLoader),
         )
