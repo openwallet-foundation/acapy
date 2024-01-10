@@ -158,5 +158,5 @@ class BaseInjector(ABC):
 class BaseProvider(ABC):
     """Base provider class."""
 
-    def provide(self, settings: BaseSettings, injector: BaseInjector):
+    def provide(self, settings: BaseSettings, injector: BaseInjector) -> Any:
         """Provide the object instance given a config and injector."""
