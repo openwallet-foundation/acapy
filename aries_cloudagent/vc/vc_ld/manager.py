@@ -318,14 +318,21 @@ class VcLdpManager:
         return suite
 
     async def _get_all_proof_suites(self) -> List[LinkedDataProof]:
-        """Get all supported suites for verifying presentation."""
+        """Get all supported suites for verifying presentation.
+
+        Returns a list of suites instantiated with a key type, derived from
+        PROOF_KEY_TYPE_MAPPING entries.
+        """
         return [
+            # Satisfy type checks with a cast to LinkedDataProof
             cast(
                 LinkedDataProof,
+                # Instantiate suite with a key type
                 SuiteClass(
                     key_pair=WalletKeyPair(profile=self.profile, key_type=key_type),
                 ),
             )
+            # for each suite class -> key_type pair from PROOF_KEY_TYPE_MAPPING
             for SuiteClass, key_type in PROOF_KEY_TYPE_MAPPING.items()
         ]
 
