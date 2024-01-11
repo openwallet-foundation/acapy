@@ -2,7 +2,7 @@
 
 import hashlib
 
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 from weakref import ReferenceType
 
 from ..utils.classloader import DeferLoad
@@ -44,7 +44,7 @@ class ClassProvider(BaseProvider):
         self,
         instance_cls: Union[str, type],
         *ctor_args,
-        init_method: str = None,
+        init_method: Optional[str] = None,
         **ctor_kwargs
     ):
         """Initialize the class provider."""
@@ -52,8 +52,10 @@ class ClassProvider(BaseProvider):
         self._ctor_kwargs = ctor_kwargs
         self._init_method = init_method
         if isinstance(instance_cls, str):
-            instance_cls = DeferLoad(instance_cls)
-        self._instance_cls = instance_cls
+            cls = DeferLoad(instance_cls)
+        else:
+            cls = instance_cls
+        self._instance_cls: Union[type, DeferLoad] = cls
 
     def provide(self, config: BaseSettings, injector: BaseInjector):
         """Provide the object instance given a config and injector."""
