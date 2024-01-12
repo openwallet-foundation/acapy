@@ -239,20 +239,272 @@ class CredExRecordW3C(BaseRecord):
 
 ```
 
-Create w3c format handler with mapping like so:
+Based on the proposed credential attachment format with the new Data Integrity proof in [aries-rfcs 809](https://github.com/hyperledger/aries-rfcs/pull/809) -
+
+```
+{
+  "@id": "284d3996-ba85-45d9-964b-9fd5805517b6",
+  "@type": "https://didcomm.org/issue-credential/2.0/issue-credential",
+  "comment": "<some comment>",
+  "formats": [
+    {
+      "attach_id": "5b38af88-d36f-4f77-bb7a-2f04ab806eb8",
+      "format": "didcomm/w3c-di-vc@v0.1"
+    }
+  ],
+  "credentials~attach": [
+    {
+      "@id": "5b38af88-d36f-4f77-bb7a-2f04ab806eb8",
+      "mime-type": "application/ld+json",
+      "data": {
+        "base64": "ewogICAgICAgICAgIkBjb250ZXogWwogICAgICAg...(clipped)...RNVmR0SXFXZhWXgySkJBIgAgfQogICAgICAgIH0="
+      }
+    }
+  ]
+}
+```
+
+Assuming `W3CVCDetail` and `W3CVCOptions` are already in place, `W3CVCDetailSchema` can be created like so:
+
+```
+# /protocols/issue_credential/v2_0/formats/w3c/models/cred_detail.py
+
+class W3CVCDetailSchema(BaseModelSchema):
+    """W3C verifiable credential detail schema."""
+
+    class Meta:
+        """Accept parameter overload."""
+
+        unknown = INCLUDE
+        model_class = W3CVCDetail
+
+    credential = fields.Nested(
+        CredentialSchema(),
+        required=True,
+        metadata={
+            "description": "Detail of the JSON-LD Credential to be issued",
+            "example": {
+                "@id": "284d3996-ba85-45d9-964b-9fd5805517b6",
+                "@type": "https://didcomm.org/issue-credential/2.0/issue-credential",
+                "comment": "<some comment>",
+                "formats": [
+                    {
+                        "attach_id": "5b38af88-d36f-4f77-bb7a-2f04ab806eb8",
+                        "format": "didcomm/w3c-di-vc@v0.1"
+                    }
+                ],
+                "credentials~attach": [
+                    {
+                        "@id": "5b38af88-d36f-4f77-bb7a-2f04ab806eb8",
+                        "mime-type": "application/ld+json",
+                        "data": {
+                            "base64": "ewogICAgICAgICAgIkBjb250ZXogWwogICAgICAg...(clipped)...RNVmR0SXFXZhWXgySkJBIgAgfQogICAgICAgIH0="
+                        }
+                    }
+                ]
+            }
+        },
+    )
+```
+
+Then create w3c format handler with mapping like so:
 
 ```
 # /protocols/issue_credential/v2_0/formats/w3c/handler.py
 
 mapping = {
-            CRED_20_PROPOSAL: VCDetailSchema,
-            CRED_20_OFFER: VCDetailSchema,
-            CRED_20_REQUEST: VCDetailSchema,
+            CRED_20_PROPOSAL: W3CVCDetailSchema,
+            CRED_20_OFFER: W3CVCDetailSchema,
+            CRED_20_REQUEST: W3CVCDetailSchema,
             CRED_20_ISSUE: VerifiableCredentialSchema,
         }
 ```
 
 Doing so would allow us to be more independent in defining the schema suited for anoncreds in w3c format and once the proposal protocol can handle the w3c format, probably the rest of the flow can be easily implemented by adding `w3c` flag to the coressponding routes.
+
+### Admin API Attachments
+
+#### Credential Exchange Admin Routes
+
+- /issue-credential-2.0/create-offer
+
+This route indirectly calls `_formats_filters` function to create credential proposal, which is in turn used to create a credential offer in the filter format. The request body for this route might look like this:
+
+```
+{
+    "filter": ["w3c"],
+    "comment: <some_comment>,
+    "auto-issue": true,
+    "auto-remove": true,
+    "replacement_id": <replacement_id>,
+    "credential_preview": {
+        "@type": "issue-credential/2.0/credential-preview",
+        "attributes": {
+            ...
+            ...
+        }
+    }
+}
+```
+
+- /issue-credential-2.0/create
+
+This route indirectly calls `_format_result_with_details` function to generate a cred_ex_record in the specified format, which is then returned. The request body for this route might look like this:
+
+```
+{
+    "filter": ["w3c"],
+    "comment: <some_comment>,
+    "auto-remove": true,
+    "credential_preview": {
+        "@type": "issue-credential/2.0/credential-preview",
+        "attributes": {
+           ...
+           ...
+        }
+    }
+}
+```
+
+- /issue-credential-2.0/send
+
+The request body for this route might look like this:
+
+```
+{
+    "connection_id": <connection_id>,
+    "filter": ["w3c"],
+    "comment: <some_comment>,
+    "auto-remove": true,
+    "replacement_id": <replacement_id>,
+    "credential_preview": {
+        "@type": "issue-credential/2.0/credential-preview",
+        "attributes": {
+           ...
+           ...
+        }
+    }
+}
+```
+
+- /issue-credential-2.0/send-proposal
+
+The request body for this route might look like this:
+
+```
+{
+    "connection_id": <connection_id>,
+    "filter": ["w3c"],
+    "comment: <some_comment>,
+    "auto-remove": true,
+    "trace": <trace_msg>,
+    "credential_preview": {
+        "@type": "issue-credential/2.0/credential-preview",
+        "attributes": {
+           ...
+           ...
+        }
+    }
+}
+```
+
+- /issue-credential-2.0/send-offer
+
+The request body for this route might look like this:
+
+```
+{
+    "connection_id": <connection_id>,
+    "filter": ["w3c"],
+    "comment: <some_comment>,
+    "auto-issue": true,
+    "auto-remove": true,
+    "replacement_id": <replacement_id>,
+    "holder_did": <holder_did>,
+    "credential_preview": {
+        "@type": "issue-credential/2.0/credential-preview",
+        "attributes": {
+           ...
+           ...
+        }
+    }
+}
+```
+
+- /issue-credential-2.0/send-request
+
+The request body for this route might look like this:
+
+```
+{
+    "connection_id": <connection_id>,
+    "filter": ["w3c"],
+    "comment: <some_comment>,
+    "auto-remove": true,
+    "replacement_id": <replacement_id>,
+    "holder_did": <holder_did>,
+    "credential_preview": {
+        "@type": "issue-credential/2.0/credential-preview",
+        "attributes": {
+           ...
+           ...
+        }
+    }
+}
+```
+
+#### Presentation Admin Routes
+
+- /present-proof-2.0/send-proposal
+
+The request body for this route might look like this:
+
+```
+{
+    ...
+    ...
+    "connection_id": <connection_id>,
+    "presentation_proposal": ["w3c"],
+    "comment: <some_comment>,
+    "auto-present": true,
+    "auto-remove": true,
+    "trace": false
+}
+```
+
+- /present-proof-2.0/create-request
+
+The request body for this route might look like this:
+
+```
+{
+    ...
+    ...
+    "connection_id": <connection_id>,
+    "presentation_proposal": ["w3c"],
+    "comment: <some_comment>,
+    "auto-verify": true,
+    "auto-remove": true,
+    "trace": false
+}
+```
+
+- /present-proof-2.0/send-request
+
+The request body for this route might look like this:
+
+```
+{
+    ...
+    ...
+    "connection_id": <connection_id>,
+    "presentation_proposal": ["w3c"],
+    "comment: <some_comment>,
+    "auto-verify": true,
+    "auto-remove": true,
+    "trace": false
+}
+```
 
 ### How a W3C credential is stored in the wallet.
 
