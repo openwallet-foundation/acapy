@@ -1,5 +1,6 @@
 from marshmallow import Schema, fields
 
+
 class IssueCredentialRequest(Schema):
     """Issue credential request.
 
@@ -11,9 +12,7 @@ class IssueCredentialRequest(Schema):
         metadata={
             "example": {
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
-                "credentialSubject": {
-                    "id": "did:key:..."
-                },
+                "credentialSubject": {"id": "did:key:..."},
                 "issuanceDate": "2010-01-01T19:23:24Z",
                 "issuer": "did:key:...",
                 "type": ["VerifiableCredential"],
@@ -37,9 +36,7 @@ class IssueCredentialResponse(Schema):
                 "type": ["VerifiableCredential"],
                 "issuer": "did:key:...",
                 "issuanceDate": "2010-01-01T19:23:24Z",
-                "credentialSubject": {
-                    "id": "did:key:..."
-                },
+                "credentialSubject": {"id": "did:key:..."},
                 "proof": {
                     "type": "Ed25519Signature2018",
                     "proofPurpose": "assertionMethod",
@@ -97,9 +94,7 @@ class ProvePresentationRequest(Schema):
                         "type": ["VerifiableCredential"],
                         "issuer": "did:key:...",
                         "issuanceDate": "2010-01-01T19:23:24Z",
-                        "credentialSubject": {
-                            "id": "did:key:..."
-                        },
+                        "credentialSubject": {"id": "did:key:..."},
                         "proof": {
                             "type": "Ed25519Signature2018",
                             "proofPurpose": "assertionMethod",
@@ -131,9 +126,7 @@ class ProvePresentationResponse(Schema):
                 "verifiableCredential": [
                     {
                         "@context": ["https://www.w3.org/2018/credentials/v1"],
-                        "credentialSubject": {
-                            "id": "did:key:..."
-                        },
+                        "credentialSubject": {"id": "did:key:..."},
                         "issuanceDate": "2010-01-01T19:23:24Z",
                         "issuer": "did:key:...",
                         "type": ["VerifiableCredential"],
