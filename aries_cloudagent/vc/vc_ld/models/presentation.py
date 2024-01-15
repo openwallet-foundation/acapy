@@ -10,7 +10,7 @@ from ....messaging.valid import (
     StrOrDictField,
     Uri,
     UriOrDictField,
-    )
+)
 from ...ld_proofs.constants import (
     CREDENTIALS_CONTEXT_V1_URL,
     VERIFIABLE_PRESENTATION_TYPE,
@@ -273,6 +273,7 @@ class PresentationSchema(BaseModelSchema):
         data.update(original.extra)
 
         return data
+
 
 class VerifiablePresentationSchema(PresentationSchema):
     """Single Verifiable Presentation Schema."""

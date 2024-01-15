@@ -7,6 +7,7 @@ from ..admin.request_context import AdminRequestContext
 from ..config.base import InjectionError
 from ..resolver.base import ResolverError
 from ..wallet.error import WalletError
+
 # from ..protocols.issue_credential.v2_0.manager import V20CredManager, V20CredManagerError
 # from ..protocols.issue_credential.v2_0.formats.ld_proof.handler import LDProofCredFormatHandler
 from ..vc.vc_ld.manager import VcLdpManager, VcLdpManagerError
@@ -26,6 +27,7 @@ from .examples import (
 
 """CREDENTIALS"""
 
+
 @docs(tags=["vc-api"], summary="Issue a credential")
 @request_schema(IssueCredentialRequest)
 @response_schema(IssueCredentialResponse, 201)
@@ -33,10 +35,12 @@ async def issue_credential(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     credential = VerifiableCredential.deserialize(body["credential"])
-    
-    options = {} if 'options' not in body else body['options']
+
+    options = {} if "options" not in body else body["options"]
     # Default to Ed25519Signature2018 if no proof type was provided
-    options['proofType'] = "Ed25519Signature2018" if 'proofType' not in options else options['proofType']
+    options["proofType"] = (
+        "Ed25519Signature2018" if "proofType" not in options else options["proofType"]
+    )
     options = LDProofVCOptions.deserialize(options)
     try:
         manager = VcLdpManager(context.profile)
@@ -47,13 +51,14 @@ async def issue_credential(request: web.BaseRequest):
         raise web.HTTPForbidden(reason="No wallet available")
     return web.json_response({"verifiableCredential": vc.serialize()}, status=201)
 
+
 # @docs(tags=["vc-api"], summary="Store a credential")
 # async def store_credential(request: web.BaseRequest):
 #     context: AdminRequestContext = request["context"]
 #     body = await request.json()
 #     vc = VerifiableCredential.deserialize(body["verifiableCredential"])
 #     options = LDProofVCOptions.deserialize(body["options"])
-    
+
 #     try:
 #         manager = V20CredManager(context.profile)
 #         await store_credential(manager, context.profile, vc)
@@ -81,8 +86,8 @@ async def verify_credential(request: web.BaseRequest):
         raise web.HTTPForbidden(reason="No wallet available")
 
 
-
 """PRESENTATIONS"""
+
 
 @docs(tags=["vc-api"], summary="Prove a presentation")
 @request_schema(ProvePresentationRequest)
@@ -91,10 +96,12 @@ async def prove_presentation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     presentation = VerifiablePresentation.deserialize(body["presentation"])
-    
-    options = {} if 'options' not in body else body['options']
+
+    options = {} if "options" not in body else body["options"]
     # Default to Ed25519Signature2018 if no proof type was provided
-    options['proofType'] = "Ed25519Signature2018" if 'proofType' not in options else options['proofType']
+    options["proofType"] = (
+        "Ed25519Signature2018" if "proofType" not in options else options["proofType"]
+    )
     options = LDProofVCOptions.deserialize(options)
 
     try:
@@ -114,19 +121,18 @@ async def verify_presentation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     vp = VerifiablePresentation.deserialize(body.get("verifiablePresentation"))
-    
-    options = {} if 'options' not in body else body['options']
+
+    options = {} if "options" not in body else body["options"]
     options = LDProofVCOptions.deserialize(options)
     try:
         manager = VcLdpManager(context.profile)
-        
+
         result = await manager.verify_presentation(vp, options)
         return web.json_response(result.serialize())
     except (VcLdpManagerError, ResolverError, ValueError) as error:
         raise web.HTTPBadRequest(reason=str(error))
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
-
 
 
 async def register(app: web.Application):

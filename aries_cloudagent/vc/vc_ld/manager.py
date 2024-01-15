@@ -269,15 +269,17 @@ class VcLdpManager:
         return credential
 
     async def _get_signature_suite(
-        self, document: Union[VerifiableCredential, VerifiablePresentation], options: LDProofVCOptions
+        self,
+        document: Union[VerifiableCredential, VerifiablePresentation],
+        options: LDProofVCOptions,
     ) -> LinkedDataProof:
         document_type = document.type[0]
-        
-        if document_type == 'VerifiableCredential':
+
+        if document_type == "VerifiableCredential":
             issuer_id = document.issuer_id
-        if document_type == 'VerifiablePresentation':
+        if document_type == "VerifiablePresentation":
             issuer_id = document.holder_id
-            
+
         proof_type = options.proof_type
 
         if not issuer_id:
@@ -379,8 +381,8 @@ class VcLdpManager:
         self, vp: VerifiablePresentation, options: LDProofVCOptions
     ) -> PresentationVerificationResult:
         """Verify a VP with a Linked Data Proof."""
-        
-        if vp.proof.proof_purpose == 'assertionMethod':
+
+        if vp.proof.proof_purpose == "assertionMethod":
             purpose = AssertionProofPurpose()
             return await verify_presentation(
                 presentation=vp.serialize(),
