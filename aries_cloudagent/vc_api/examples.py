@@ -7,6 +7,7 @@ class IssueCredentialRequest(Schema):
     Based on https://w3c-ccg.github.io/vc-api/#issue-credential
 
     """
+
     credential = fields.Dict(
         metadata={
             "example": {
@@ -29,6 +30,7 @@ class IssueCredentialResponse(Schema):
     Based on https://w3c-ccg.github.io/vc-api/#issue-credential
 
     """
+
     verifiableCredential = fields.Dict(
         metadata={
             "example": {
@@ -60,6 +62,7 @@ class VerifyCredentialResponse(Schema):
     Based on https://w3c-ccg.github.io/vc-api/#verify-credential
 
     """
+
     verified = fields.Bool(metadata={"example": True})
     document = fields.Dict(metadata={"example": {}})
     # results = fields.List(
@@ -82,6 +85,7 @@ class ProvePresentationRequest(Schema):
     Based on https://w3c-ccg.github.io/vc-api/#prove-presentation
 
     """
+
     presentation = fields.Dict(
         metadata={
             "example": {
@@ -118,6 +122,7 @@ class ProvePresentationResponse(Schema):
     Based on https://w3c-ccg.github.io/vc-api/#prove-presentation
 
     """
+
     verifiablePresentation = fields.Dict(
         metadata={
             "example": {
@@ -163,6 +168,7 @@ class VerifyPresentationResponse(Schema):
     Based on https://w3c-ccg.github.io/vc-api/#verify-presentation
 
     """
+
     verified = fields.Bool(metadata={"example": True})
     presentation_result = fields.Dict(
         metadata={
