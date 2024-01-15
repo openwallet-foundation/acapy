@@ -1,5 +1,7 @@
 from marshmallow import Schema, fields
 
+SUBJECT_DID = 'did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i'
+ISSUER_DID = 'did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i'
 
 class IssueCredentialRequest(Schema):
     """Issue credential request.
@@ -13,10 +15,10 @@ class IssueCredentialRequest(Schema):
             "example": {
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
                 "credentialSubject": {
-                    "id": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+                    "id": SUBJECT_DID
                 },
                 "issuanceDate": "2010-01-01T19:23:24Z",
-                "issuer": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                "issuer": ISSUER_DID,
                 "type": ["VerifiableCredential"],
             }
         }
@@ -36,17 +38,18 @@ class IssueCredentialResponse(Schema):
             "example": {
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
                 "type": ["VerifiableCredential"],
-                "issuer": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                "issuer": ISSUER_DID,
                 "issuanceDate": "2010-01-01T19:23:24Z",
                 "credentialSubject": {
-                    "id": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+                    "id": SUBJECT_DID
                 },
                 "proof": {
                     "type": "Ed25519Signature2018",
                     "proofPurpose": "assertionMethod",
-                    "verificationMethod": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i#z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                    "verificationMethod": f'{ISSUER_DID}#{ISSUER_DID.split(":")[-1]}',
                     "created": "2024-01-14T20:04:36+00:00",
-                    "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..Bzqa-eV0PfmTzWV0Gh0EMZwdpZ8w08TFKcVy0XD5HKvcPvkovL6bfERVgYEAnE72HQoVE3H7o3LxCGlJ4wQ5Dg",
+                    "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..\
+                        Bzqa-eV0PfmTzWV0Gh0EMZwdpZ8w08TFKcVy0XD5HKvcPvkovL6bfERVgYEAnE72HQoVE3H7o3LxCGlJ4wQ5Dg",
                 },
             }
         }
@@ -91,22 +94,23 @@ class ProvePresentationRequest(Schema):
             "example": {
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
                 "type": ["VerifiablePresentation"],
-                "holder": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                "holder": ISSUER_DID,
                 "verifiableCredential": [
                     {
                         "@context": ["https://www.w3.org/2018/credentials/v1"],
                         "type": ["VerifiableCredential"],
-                        "issuer": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                        "issuer": ISSUER_DID,
                         "issuanceDate": "2010-01-01T19:23:24Z",
                         "credentialSubject": {
-                            "id": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+                            "id": SUBJECT_DID
                         },
                         "proof": {
                             "type": "Ed25519Signature2018",
                             "proofPurpose": "assertionMethod",
-                            "verificationMethod": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i#z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                            "verificationMethod": f'{ISSUER_DID}#{ISSUER_DID.split(":")[-1]}',
                             "created": "2024-01-14T20:04:36+00:00",
-                            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..Bzqa-eV0PfmTzWV0Gh0EMZwdpZ8w08TFKcVy0XD5HKvcPvkovL6bfERVgYEAnE72HQoVE3H7o3LxCGlJ4wQ5Dg",
+                            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..\
+                                Bzqa-eV0PfmTzWV0Gh0EMZwdpZ8w08TFKcVy0XD5HKvcPvkovL6bfERVgYEAnE72HQoVE3H7o3LxCGlJ4wQ5Dg",
                         },
                     }
                 ],
@@ -128,31 +132,33 @@ class ProvePresentationResponse(Schema):
             "example": {
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
                 "type": ["VerifiablePresentation"],
-                "holder": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                "holder": ISSUER_DID,
                 "verifiableCredential": [
                     {
                         "@context": ["https://www.w3.org/2018/credentials/v1"],
                         "credentialSubject": {
-                            "id": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+                            "id": SUBJECT_DID
                         },
                         "issuanceDate": "2010-01-01T19:23:24Z",
-                        "issuer": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                        "issuer": ISSUER_DID,
                         "type": ["VerifiableCredential"],
                         "proof": {
                             "type": "Ed25519Signature2018",
                             "proofPurpose": "assertionMethod",
-                            "verificationMethod": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i#z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                            "verificationMethod": f'{ISSUER_DID}#{ISSUER_DID.split(":")[-1]}',
                             "created": "2024-01-14T18:33:31+00:00",
-                            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..6pZj4jcXbE4hCzdRYULsJO37A-19Od3ynLpZJsDB6tjDgYqrKhuOcbulE2yVCOwS8YSlpjO46F-c8a5NcVsXDQ",
+                            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..\
+                                6pZj4jcXbE4hCzdRYULsJO37A-19Od3ynLpZJsDB6tjDgYqrKhuOcbulE2yVCOwS8YSlpjO46F-c8a5NcVsXDQ",
                         },
                     }
                 ],
                 "proof": {
                     "type": "Ed25519Signature2018",
                     "proofPurpose": "assertionMethod",
-                    "verificationMethod": "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i#z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i",
+                    "verificationMethod": f'{ISSUER_DID}#{ISSUER_DID.split(":")[-1]}',
                     "created": "2024-01-14T22:03:36+00:00",
-                    "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..k55LG1o_-vcURKx8sSlAc7h_jtot3Zp18lukljF9B0esj1UL18hBBcunUoZxT9hT6zrFOGDPoQqpTHXj2a6QAw",
+                    "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..\
+                        k55LG1o_-vcURKx8sSlAc7h_jtot3Zp18lukljF9B0esj1UL18hBBcunUoZxT9hT6zrFOGDPoQqpTHXj2a6QAw",
                 },
             }
         }
