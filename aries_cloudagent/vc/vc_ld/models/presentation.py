@@ -1,21 +1,11 @@
 """Verifiable Presentation model."""
 
-from typing import List, Optional, Sequence, Union
+from typing import List, Optional, Union
 
 from marshmallow import INCLUDE, ValidationError, fields, post_dump
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
-    UUID4_EXAMPLE, 
-    UUID4_VALIDATE, 
-    CREDENTIAL_CONTEXT_EXAMPLE,
     CREDENTIAL_CONTEXT_VALIDATE,
-    CREDENTIAL_SUBJECT_EXAMPLE,
-    CREDENTIAL_SUBJECT_VALIDATE,
-    CREDENTIAL_TYPE_EXAMPLE,
-    CREDENTIAL_TYPE_VALIDATE,
-    RFC3339_DATETIME_EXAMPLE,
-    RFC3339_DATETIME_VALIDATE,
-    DictOrDictListField,
     DIDKey,
     StrOrDictField,
     Uri,
@@ -24,12 +14,8 @@ from ....messaging.valid import (
 from ...ld_proofs.constants import (
     CREDENTIALS_CONTEXT_V1_URL,
     VERIFIABLE_PRESENTATION_TYPE,
-    VERIFIABLE_CREDENTIAL_TYPE,
 )
 from .linked_data_proof import LDProof, LinkedDataProofSchema
-from .credential import (
-    VerifiableCredential
-)
 
 
 class VerifiablePresentation(BaseModel):

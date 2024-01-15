@@ -3,48 +3,16 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 
-from marshmallow import ValidationError, fields, validates_schema
-
-from uuid import uuid4
-
 from ..admin.request_context import AdminRequestContext
 from ..config.base import InjectionError
 from ..resolver.base import ResolverError
 from ..wallet.error import WalletError
-from ..messaging.models.openapi import OpenAPISchema
-from ..protocols.issue_credential.v2_0.manager import V20CredManager, V20CredManagerError
-from ..protocols.issue_credential.v2_0.formats.ld_proof.handler import LDProofCredFormatHandler
+# from ..protocols.issue_credential.v2_0.manager import V20CredManager, V20CredManagerError
+# from ..protocols.issue_credential.v2_0.formats.ld_proof.handler import LDProofCredFormatHandler
 from ..vc.vc_ld.manager import VcLdpManager, VcLdpManagerError
-from ..vc.ld_proofs import (
-    CredentialIssuancePurpose,
-    ProofPurpose,
-    AssertionProofPurpose,
-    AuthenticationProofPurpose,
-)
-from ..vc.vc_ld.validation_result import (
-    PresentationVerificationResultSchema,
-)
-from ..vc.vc_ld.models.credential import (
-    CredentialSchema,
-    VerifiableCredential,
-    VerifiableCredentialSchema,
-)
-from ..vc.vc_ld.models.presentation import (
-    PresentationSchema,
-    VerifiablePresentation,
-    VerifiablePresentationSchema,
-)
-from ..vc.vc_ld.models.options import (
-    LDProofVCOptions,
-    LDProofVCOptionsSchema,
-    CredentialStatusOptionsSchema,
-)
-from ..vc.vc_ld.models.linked_data_proof import (
-    LDProof,
-    LinkedDataProofSchema,
-)
-from .service import store_credential
-from .tests import vcplayground_test_suite
+from ..vc.vc_ld.models.credential import VerifiableCredential
+from ..vc.vc_ld.models.presentation import VerifiablePresentation
+from ..vc.vc_ld.models.options import LDProofVCOptions
 from .examples import (
     IssueCredentialRequest,
     IssueCredentialResponse,
@@ -65,7 +33,10 @@ async def issue_credential(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     credential = VerifiableCredential.deserialize(body["credential"])
-    options = {"proofType": "Ed25519Signature2018"}
+    
+    options = {} if 'options' not in body else body['options']
+    # Default to Ed25519Signature2018 if no proof type was provided
+    options['proofType'] = "Ed25519Signature2018" if 'proofType' not in options else options['proofType']
     options = LDProofVCOptions.deserialize(options)
     try:
         manager = VcLdpManager(context.profile)
@@ -120,7 +91,10 @@ async def prove_presentation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     presentation = VerifiablePresentation.deserialize(body["presentation"])
-    options = {"proofType": "Ed25519Signature2018"}
+    
+    options = {} if 'options' not in body else body['options']
+    # Default to Ed25519Signature2018 if no proof type was provided
+    options['proofType'] = "Ed25519Signature2018" if 'proofType' not in options else options['proofType']
     options = LDProofVCOptions.deserialize(options)
 
     try:
@@ -140,13 +114,12 @@ async def verify_presentation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     vp = VerifiablePresentation.deserialize(body.get("verifiablePresentation"))
-    options = {"challenge": str(uuid4())}
+    
+    options = {} if 'options' not in body else body['options']
     options = LDProofVCOptions.deserialize(options)
     try:
         manager = VcLdpManager(context.profile)
-
-        # # TODO: improve the purpose selection
-        # purpose = AssertionProofPurpose()
+        
         result = await manager.verify_presentation(vp, options)
         return web.json_response(result.serialize())
     except (VcLdpManagerError, ResolverError, ValueError) as error:
