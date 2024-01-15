@@ -25,6 +25,14 @@ aries\_cloudagent.vc.vc\_ld.issue module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.vc.vc\_ld.manager module
+------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.vc_ld.manager
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.vc.vc\_ld.prove module
 ----------------------------------------
 
