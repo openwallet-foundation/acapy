@@ -1,14 +1,19 @@
 """Anoncreds cred def OpenAPI validators."""
 from typing import Optional
-from typing_extensions import Literal
 
 from anoncreds import CredentialDefinition
 from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
+from typing_extensions import Literal
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import NUM_STR_WHOLE_VALIDATE, NUM_STR_WHOLE_EXAMPLE
-
+from ...messaging.valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_OR_KEY_DID_EXAMPLE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
+)
 
 NUM_STR_WHOLE = {"validate": NUM_STR_WHOLE_VALIDATE, "example": NUM_STR_WHOLE_EXAMPLE}
 
@@ -239,12 +244,18 @@ class CredDefSchema(BaseModelSchema):
     issuer_id = fields.Str(
         description="Issuer Identifier of the credential definition or schema",
         data_key="issuerId",
+        example=INDY_OR_KEY_DID_EXAMPLE,
     )
-    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
+    schema_id = fields.Str(
+        data_key="schemaId",
+        description="Schema identifier",
+        example=INDY_SCHEMA_ID_EXAMPLE,
+    )
     type = fields.Str(validate=OneOf(["CL"]))
     tag = fields.Str(
         description="""The tag value passed in by the Issuer to
-         an AnonCred's Credential Definition create and store implementation."""
+         an AnonCred's Credential Definition create and store implementation.""",
+        example="default",
     )
     value = fields.Nested(CredDefValueSchema())
 
@@ -303,7 +314,9 @@ class CredDefStateSchema(BaseModelSchema):
         )
     )
     credential_definition_id = fields.Str(
-        description="credential definition id", allow_none=True
+        description="credential definition id",
+        allow_none=True,
+        example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     credential_definition = fields.Nested(
         CredDefSchema(), description="credential definition"
@@ -403,7 +416,10 @@ class GetCredDefResultSchema(BaseModelSchema):
         model_class = GetCredDefResult
         unknown = EXCLUDE
 
-    credential_definition_id = fields.Str(description="credential definition id")
+    credential_definition_id = fields.Str(
+        description="credential definition id",
+        example=INDY_CRED_DEF_ID_EXAMPLE,
+    )
     credential_definition = fields.Nested(
         CredDefSchema(), description="credential definition"
     )

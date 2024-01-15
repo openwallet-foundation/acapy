@@ -7,16 +7,24 @@ import json
 import logging
 from typing import List, Optional, Sequence, Text, Tuple, Union
 
+import pydid
+from base58 import b58decode
+from did_peer_2 import KeySpec, generate
+from did_peer_4 import encode, long_to_short
+from did_peer_4.input_doc import KeySpec as KeySpec_DP4
+from did_peer_4.input_doc import input_doc_from_keys_and_services
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
+)
+from pydid import (
     DIDCommService,
     VerificationMethod,
 )
-import pydid
 from pydid.verification_method import (
     Ed25519VerificationKey2018,
     Ed25519VerificationKey2020,
     JsonWebKey2020,
+    Multikey,
 )
 
 from ..cache.base import BaseCache
@@ -44,8 +52,8 @@ from ..transport.inbound.receipt import MessageReceipt
 from ..utils.multiformats import multibase, multicodec
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import create_keypair, seed_to_did
-from ..wallet.did_info import DIDInfo
-from ..wallet.did_method import SOV
+from ..wallet.did_info import DIDInfo, KeyInfo
+from ..wallet.did_method import PEER2, PEER4, SOV
 from ..wallet.error import WalletNotFoundError
 from ..wallet.key_type import ED25519
 from ..wallet.util import b64_to_bytes, bytes_to_b58
@@ -73,6 +81,146 @@ class BaseConnectionManager:
         self._profile = profile
         self._route_manager = profile.inject(RouteManager)
         self._logger = logging.getLogger(__name__)
+
+    @staticmethod
+    def _key_info_to_multikey(key_info: KeyInfo) -> str:
+        """Convert a KeyInfo to a multikey."""
+        return multibase.encode(
+            multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
+        )
+
+    async def long_did_peer_4_to_short(self, long_dp4: str) -> DIDInfo:
+        """Convert did:peer:4 long format to short format and store in wallet."""
+
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            long_dp4_info = await wallet.get_local_did(long_dp4)
+
+        short_did_peer_4 = long_to_short(long_dp4)
+        did_info = DIDInfo(
+            did=short_did_peer_4,
+            method=PEER4,
+            verkey=long_dp4_info.verkey,
+            metadata={},
+            key_type=ED25519,
+        )
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            await wallet.store_did(did_info)
+        return did_info.did
+
+    async def create_did_peer_4(
+        self,
+        svc_endpoints: Optional[Sequence[str]] = None,
+        mediation_records: Optional[List[MediationRecord]] = None,
+    ) -> DIDInfo:
+        """Create a did:peer:4 DID for a connection.
+
+        Args:
+            svc_endpoints: Custom endpoints for the DID Document
+            mediation_record: The record for mediation that contains routing_keys and
+                service endpoint
+
+        Returns:
+            The new `DIDInfo` instance
+        """
+        routing_keys: List[str] = []
+        if mediation_records:
+            for mediation_record in mediation_records:
+                (
+                    mediator_routing_keys,
+                    endpoint,
+                ) = await self._route_manager.routing_info(
+                    self._profile, mediation_record
+                )
+                routing_keys = [*routing_keys, *(mediator_routing_keys or [])]
+                if endpoint:
+                    svc_endpoints = [endpoint]
+
+        services = []
+        for index, endpoint in enumerate(svc_endpoints or []):
+            services.append(
+                {
+                    "id": f"#didcomm-{index}",
+                    "type": "did-communication",
+                    "recipientKeys": ["#key-0"],
+                    "routingKeys": routing_keys,
+                    "serviceEndpoint": endpoint,
+                    "priority": index,
+                }
+            )
+
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            key = await wallet.create_key(ED25519)
+            key_spec = KeySpec_DP4(multikey=self._key_info_to_multikey(key))
+            input_doc = input_doc_from_keys_and_services(
+                keys=[key_spec], services=services
+            )
+            did = encode(input_doc)
+
+            did_info = DIDInfo(
+                did=did, method=PEER4, verkey=key.verkey, metadata={}, key_type=ED25519
+            )
+            await wallet.store_did(did_info)
+
+        return did_info
+
+    async def create_did_peer_2(
+        self,
+        svc_endpoints: Optional[Sequence[str]] = None,
+        mediation_records: Optional[List[MediationRecord]] = None,
+    ) -> DIDInfo:
+        """Create a did:peer:2 DID for a connection.
+
+        Args:
+            svc_endpoints: Custom endpoints for the DID Document
+            mediation_record: The record for mediation that contains routing_keys and
+                service endpoint
+
+        Returns:
+            The new `DIDInfo` instance
+        """
+        routing_keys: List[str] = []
+        if mediation_records:
+            for mediation_record in mediation_records:
+                (
+                    mediator_routing_keys,
+                    endpoint,
+                ) = await self._route_manager.routing_info(
+                    self._profile, mediation_record
+                )
+                routing_keys = [*routing_keys, *(mediator_routing_keys or [])]
+                if endpoint:
+                    svc_endpoints = [endpoint]
+
+        services = []
+        for index, endpoint in enumerate(svc_endpoints or []):
+            services.append(
+                {
+                    "id": f"#didcomm-{index}",
+                    "type": "did-communication",
+                    "priority": index,
+                    "recipientKeys": ["#key-1"],
+                    "routingKeys": routing_keys,
+                    "serviceEndpoint": endpoint,
+                }
+            )
+
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            key = await wallet.create_key(ED25519)
+
+            did = generate(
+                [KeySpec.verification(self._key_info_to_multikey(key))], services
+            )
+
+            did_info = DIDInfo(
+                did=did, method=PEER2, verkey=key.verkey, metadata={}, key_type=ED25519
+            )
+            await wallet.store_did(did_info)
+
+        return did_info
 
     async def create_did_document(
         self,
@@ -375,6 +523,13 @@ class BaseConnectionManager:
                     f"Key type {type(method).__name__} "
                     f"with kty {method.public_key_jwk.get('kty')} is not supported"
                 )
+        elif isinstance(method, Multikey):
+            codec, key = multicodec.unwrap(multibase.decode(method.material))
+            if codec != multicodec.multicodec("ed25519-pub"):
+                raise BaseConnectionManagerError(
+                    "Expected ed25519 multicodec, got: %s", codec
+                )
+            return bytes_to_b58(key)
         else:
             raise BaseConnectionManagerError(
                 f"Key type {type(method).__name__} is not supported"

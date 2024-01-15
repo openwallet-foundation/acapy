@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Dict, List, Mapping, Optional
 
 from .error import BaseError
-from .key_type import BLS12381G2, ED25519, KeyType
+from .key_type import BLS12381G2, ED25519, X25519, KeyType
 
 
 class HolderDefinedDid(Enum):
@@ -70,6 +70,25 @@ KEY = DIDMethod(
     key_types=[ED25519, BLS12381G2],
     rotation=False,
 )
+WEB = DIDMethod(
+    name="web",
+    key_types=[ED25519, BLS12381G2],
+    rotation=True,
+    holder_defined_did=HolderDefinedDid.REQUIRED,
+)
+PEER2 = DIDMethod(
+    name="did:peer:2",
+    key_types=[ED25519, X25519],
+    rotation=False,
+    holder_defined_did=HolderDefinedDid.NO,
+)
+
+PEER4 = DIDMethod(
+    name="did:peer:4",
+    key_types=[ED25519, X25519],
+    rotation=False,
+    holder_defined_did=HolderDefinedDid.NO,
+)
 
 
 class DIDMethods:
@@ -80,6 +99,8 @@ class DIDMethods:
         self._registry: Dict[str, DIDMethod] = {
             SOV.method_name: SOV,
             KEY.method_name: KEY,
+            WEB.method_name: WEB,
+            PEER2.method_name: PEER2,
         }
 
     def registered(self, method: str) -> bool:

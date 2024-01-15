@@ -4,6 +4,7 @@ import logging
 
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Type
+from weakref import ref
 
 from .event_bus import EventBus, Event
 from ..config.base import InjectionError
@@ -27,14 +28,19 @@ class Profile(ABC):
     def __init__(
         self,
         *,
-        context: InjectionContext = None,
-        name: str = None,
+        context: Optional[InjectionContext] = None,
+        name: Optional[str] = None,
         created: bool = False,
     ):
         """Initialize a base profile."""
-        self._context = context or InjectionContext()
+        context = context or InjectionContext()
+        scope = "profile"
+        if name:
+            scope += ":" + name
+        self._context = context.start_scope(scope)
         self._created = created
         self._name = name or Profile.DEFAULT_NAME
+        self._context.injector.bind_instance(Profile, ref(self))
 
     @property
     def backend(self) -> str:

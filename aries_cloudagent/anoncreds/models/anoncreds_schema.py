@@ -2,10 +2,14 @@
 
 from typing import Any, Dict, List, Optional
 
+from anoncreds import Schema
 from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 
-from anoncreds import Schema
+from aries_cloudagent.messaging.valid import (
+    INDY_OR_KEY_DID_EXAMPLE,
+    INDY_SCHEMA_ID_EXAMPLE,
+)
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 
@@ -60,6 +64,7 @@ class AnonCredsSchemaSchema(BaseModelSchema):
     issuer_id = fields.Str(
         description="Issuer Identifier of the credential definition or schema",
         data_key="issuerId",
+        example=INDY_OR_KEY_DID_EXAMPLE,
     )
     attr_names = fields.List(
         fields.Str(
@@ -69,10 +74,8 @@ class AnonCredsSchemaSchema(BaseModelSchema):
         description="Schema attribute names",
         data_key="attrNames",
     )
-    name = fields.Str(
-        description="Schema name",
-    )
-    version = fields.Str(description="Schema version")
+    name = fields.Str(description="Schema name", example="Example schema")
+    version = fields.Str(description="Schema version", example="1.0")
 
 
 class GetSchemaResult(BaseModel):
@@ -127,7 +130,9 @@ class GetSchemaResultSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     schema_value = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
-    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
+    schema_id = fields.Str(
+        description="Schema identifier", example=INDY_SCHEMA_ID_EXAMPLE
+    )
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()
 
@@ -179,7 +184,10 @@ class SchemaStateSchema(BaseModelSchema):
             ]
         )
     )
-    schema_id = fields.Str(description="Schema identifier")
+    schema_id = fields.Str(
+        description="Schema identifier",
+        example=INDY_SCHEMA_ID_EXAMPLE,
+    )
     schema_value = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
 
 

@@ -236,3 +236,16 @@ MOCK_CRED = {
     "rev_reg": None,
     "witness": None,
 }
+
+MOCK_REV_REG_DEF = {
+    "issuerId": "did:web:example.org",
+    "revocDefType": "CL_ACCUM",
+    "credDefId": "Gs6cQcvrtWoZKsbBhD3dQJ:3:CL:140384:mctc",
+    "tag": "MyCustomCredentialDefinition",
+    "value": {
+        "publicKeys": {"accumKey": {"z": "1 0BB...386"}},
+        "maxCredNum": 666,
+        "tailsLocation": "https://my.revocations.tails/tailsfile.txt",
+        "tailsHash": "91zvq2cFmBZmHCcLqFyzv7bfehHH5rMhdAG5wTjqy2PE",
+    },
+}

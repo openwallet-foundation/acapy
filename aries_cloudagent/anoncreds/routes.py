@@ -12,11 +12,19 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
+from aries_cloudagent.ledger.error import LedgerError
+
 from ..admin.request_context import AdminRequestContext
 from ..askar.profile import AskarProfile
 from ..core.event_bus import EventBus
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import UUIDFour
+from ..messaging.valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_OR_KEY_DID_EXAMPLE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    UUIDFour,
+)
 from ..revocation.error import RevocationError, RevocationNotSupportedError
 from ..revocation_anoncreds.manager import RevocationManager, RevocationManagerError
 from ..revocation_anoncreds.routes import (
@@ -27,7 +35,11 @@ from ..revocation_anoncreds.routes import (
     TxnOrPublishRevocationsResultSchema,
 )
 from ..storage.error import StorageError, StorageNotFoundError
-from .base import AnonCredsObjectNotFound, AnonCredsRegistrationError
+from .base import (
+    AnonCredsObjectNotFound,
+    AnonCredsRegistrationError,
+    AnonCredsResolutionError,
+)
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import RevListResultSchema, RevRegDefResultSchema
@@ -48,33 +60,43 @@ SPEC_URI = "https://hyperledger.github.io/anoncreds-spec"
 class SchemaIdMatchInfo(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""
 
-    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
+    schema_id = fields.Str(
+        description="Schema identifier",
+        example=INDY_SCHEMA_ID_EXAMPLE,
+    )
 
 
 class CredIdMatchInfo(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
     cred_def_id = fields.Str(
-        description="Credential identifier", required=True, example=UUIDFour.EXAMPLE
+        description="Credential identifier",
+        required=True,
+        example=INDY_CRED_DEF_ID_EXAMPLE,
     )
 
 
 class InnerCredDefSchema(OpenAPISchema):
     """Parameters and validators for credential definition."""
 
-    tag = fields.Str(description="Credential definition tag")
-    schemaId = fields.Str(data_key="schemaId", description="Schema identifier")
-    issuerId = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
+    tag = fields.Str(description="Credential definition tag", example="default")
+    schema_id = fields.Str(
+        description="Schema identifier",
+        data_key="schemaId",
+        example=INDY_SCHEMA_ID_EXAMPLE,
+    )
+    issuer_id = fields.Str(
+        data_key="issuerId",
+        example=INDY_OR_KEY_DID_EXAMPLE,
     )
 
 
 class CredDefPostOptionsSchema(OpenAPISchema):
     """Parameters and validators for credential definition options."""
 
-    endorser_connection_id = fields.Str(required=False)
+    endorser_connection_id = fields.Str(required=False, example=UUIDFour.EXAMPLE)
     support_revocation = fields.Bool(required=False)
-    revocation_registry_size = fields.Int(required=False)
+    revocation_registry_size = fields.Int(required=False, example=666)
 
 
 class CredDefPostRequestSchema(OpenAPISchema):
@@ -89,12 +111,14 @@ class CredDefsQueryStringSchema(OpenAPISchema):
 
     issuer_id = fields.Str(
         description="Issuer Identifier of the credential definition",
+        example=INDY_OR_KEY_DID_EXAMPLE,
     )
-    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
-    schema_name = fields.Str(
-        description="Schema name",
+    schema_id = fields.Str(
+        description="Schema identifier",
+        example=INDY_SCHEMA_ID_EXAMPLE,
     )
-    schema_version = fields.Str(description="Schema version")
+    schema_name = fields.Str(description="Schema name", example="Example schema")
+    schema_version = fields.Str(description="Schema version", example="1.0")
 
 
 class SchemaPostOptionSchema(OpenAPISchema):
@@ -114,7 +138,7 @@ class SchemaPostRequestSchema(OpenAPISchema):
     options = fields.Nested(SchemaPostOptionSchema())
 
 
-@docs(tags=["anoncreds"], summary="")
+@docs(tags=["anoncreds"], summary="Create a schema on the connected ledger")
 @request_schema(SchemaPostRequestSchema())
 @response_schema(SchemaResultSchema(), 200, description="")
 async def schemas_post(request: web.BaseRequest):
@@ -155,8 +179,11 @@ async def schemas_post(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
 
     body = await request.json()
-    options = body.get("option")
+    options = body.get("options")
     schema_data = body.get("schema")
+
+    if schema_data is None:
+        raise web.HTTPBadRequest(reason="schema object is required")
 
     issuer_id = schema_data.get("issuerId")
     attr_names = schema_data.get("attrNames")
@@ -164,13 +191,16 @@ async def schemas_post(request: web.BaseRequest):
     version = schema_data.get("version")
 
     issuer = AnonCredsIssuer(context.profile)
-    result = await issuer.create_and_register_schema(
-        issuer_id, name, version, attr_names, options=options
-    )
-    return web.json_response(result.serialize())
+    try:
+        result = await issuer.create_and_register_schema(
+            issuer_id, name, version, attr_names, options=options
+        )
+        return web.json_response(result.serialize())
+    except (AnonCredsIssuerError, AnonCredsRegistrationError) as e:
+        raise web.HTTPBadRequest(reason=e.roll_up) from e
 
 
-@docs(tags=["anoncreds"], summary="")
+@docs(tags=["anoncreds"], summary="Retrieve an individual schemas details")
 @match_info_schema(SchemaIdMatchInfo())
 @response_schema(GetSchemaResultSchema(), 200, description="")
 async def schema_get(request: web.BaseRequest):
@@ -185,24 +215,24 @@ async def schema_get(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     anoncreds_registry = context.inject(AnonCredsRegistry)
-    schema_id = request.match_info["schemaId"]
+    schema_id = request.match_info["schema_id"]
     try:
         schema = await anoncreds_registry.get_schema(context.profile, schema_id)
         return web.json_response(schema.serialize())
     except AnonCredsObjectNotFound:
         raise web.HTTPNotFound(reason=f"Schema not found: {schema_id}")
+    except AnonCredsResolutionError as e:
+        raise web.HTTPBadRequest(reason=e.roll_up)
 
 
 class SchemasQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in schemas list query."""
 
-    schema_name = fields.Str(
-        description="Schema name",
-        example="example-schema",
-    )
-    schema_version = fields.Str(description="Schema version")
+    schema_name = fields.Str(description="Schema name", example="example-schema")
+    schema_version = fields.Str(description="Schema version", example="1.0")
     schema_issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
+        description="Issuer identifier of the schema",
+        example=INDY_OR_KEY_DID_EXAMPLE,
     )
 
 
@@ -210,14 +240,11 @@ class GetSchemasResponseSchema(OpenAPISchema):
     """Parameters and validators for schema list all response."""
 
     schema_ids = fields.List(
-        fields.Str(
-            data_key="schemaIds",
-            description="Schema identifier",
-        )
+        fields.Str(description="Schema identifier", example=INDY_SCHEMA_ID_EXAMPLE)
     )
 
 
-@docs(tags=["anoncreds"], summary="")
+@docs(tags=["anoncreds"], summary="Retrieve all schema ids")
 @querystring_schema(SchemasQueryStringSchema())
 @response_schema(GetSchemasResponseSchema(), 200, description="")
 async def schemas_get(request: web.BaseRequest):
@@ -243,7 +270,9 @@ async def schemas_get(request: web.BaseRequest):
     return web.json_response({"schema_ids": schema_ids})
 
 
-@docs(tags=["anoncreds"], summary="")
+@docs(
+    tags=["anoncreds"], summary="Create a credential definition on the connected ledger"
+)
 @request_schema(CredDefPostRequestSchema())
 @response_schema(CredDefResultSchema(), 200, description="")
 async def cred_def_post(request: web.BaseRequest):
@@ -260,22 +289,36 @@ async def cred_def_post(request: web.BaseRequest):
     body = await request.json()
     options = body.get("options")
     cred_def = body.get("credential_definition")
+
+    if cred_def is None:
+        raise web.HTTPBadRequest(reason="cred_def object is required")
+
     issuer_id = cred_def.get("issuerId")
     schema_id = cred_def.get("schemaId")
     tag = cred_def.get("tag")
 
     issuer = AnonCredsIssuer(context.profile)
-    result = await issuer.create_and_register_credential_definition(
-        issuer_id,
-        schema_id,
-        tag,
-        options=options,
-    )
+    try:
+        result = await issuer.create_and_register_credential_definition(
+            issuer_id,
+            schema_id,
+            tag,
+            options=options,
+        )
+        return web.json_response(result.serialize())
+    except (
+        AnonCredsObjectNotFound,
+        AnonCredsResolutionError,
+        ValueError,
+    ) as e:
+        raise web.HTTPBadRequest(reason=e.roll_up)
+    except AnonCredsIssuerError as e:
+        raise web.HTTPServerError(reason=e.roll_up)
 
-    return web.json_response(result.serialize())
 
-
-@docs(tags=["anoncreds"], summary="")
+@docs(
+    tags=["anoncreds"], summary="Retrieve an individual credential definition details"
+)
 @match_info_schema(CredIdMatchInfo())
 @response_schema(GetCredDefResultSchema(), 200, description="")
 async def cred_def_get(request: web.BaseRequest):
@@ -291,10 +334,15 @@ async def cred_def_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     anon_creds_registry = context.inject(AnonCredsRegistry)
     credential_id = request.match_info["cred_def_id"]
-    result = await anon_creds_registry.get_credential_definition(
-        context.profile, credential_id
-    )
-    return web.json_response(result.serialize())
+    try:
+        result = await anon_creds_registry.get_credential_definition(
+            context.profile, credential_id
+        )
+        return web.json_response(result.serialize())
+    except AnonCredsObjectNotFound:
+        raise web.HTTPBadRequest(
+            reason=f"Credential definition {credential_id} not found"
+        )
 
 
 class GetCredDefsResponseSchema(OpenAPISchema):
@@ -303,11 +351,12 @@ class GetCredDefsResponseSchema(OpenAPISchema):
     credential_definition_ids = fields.List(
         fields.Str(
             description="credential definition identifiers",
+            example="GvLGiRogTJubmj5B36qhYz:3:CL:8:faber.agent.degree_schema",
         )
     )
 
 
-@docs(tags=["anoncreds"], summary="")
+@docs(tags=["anoncreds"], summary="Retrieve all credential definition ids")
 @querystring_schema(CredDefsQueryStringSchema())
 @response_schema(GetCredDefsResponseSchema(), 200, description="")
 async def cred_defs_get(request: web.BaseRequest):
@@ -329,40 +378,69 @@ async def cred_defs_get(request: web.BaseRequest):
         schema_name=request.query.get("schema_name"),
         schema_version=request.query.get("schema_version"),
     )
-    return web.json_response(cred_def_ids)
+    return web.json_response({"credential_definition_ids": cred_def_ids})
 
 
-class RevRegCreateRequestSchema(OpenAPISchema):
+class InnerRevRegDefSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     issuer_id = fields.Str(
         description="Issuer Identifier of the credential definition or schema",
         data_key="issuerId",
+        example=INDY_OR_KEY_DID_EXAMPLE,
     )
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         data_key="credDefId",
+        example=INDY_SCHEMA_ID_EXAMPLE,
     )
-    tag = fields.Str(description="tag for revocation registry")
-    max_cred_num = fields.Int(data_key="maxCredNum")
-    registry_type = fields.Str(
-        description="Revocation registry type",
-        data_key="type",
+    tag = fields.Str(description="tag for revocation registry", example="default")
+    max_cred_num = fields.Int(
+        description="Maximum number of credential revocations per registry",
+        data_key="maxCredNum",
+        example=666,
+    )
+
+
+class RevRegDefOptionsSchema(OpenAPISchema):
+    """Parameters and validators for rev reg def options."""
+
+    endorser_connection_id = fields.Str(
+        description="Connection identifier (optional) (this is an example)",
         required=False,
+        example=UUIDFour.EXAMPLE,
     )
 
 
-@docs(tags=["anoncreds"], summary="")
+class RevRegCreateRequestSchema(OpenAPISchema):
+    """Wrapper for revocation registry creation request."""
+
+    revocation_registry_definition = fields.Nested(InnerRevRegDefSchema())
+    options = fields.Nested(RevRegDefOptionsSchema())
+
+
+@docs(
+    tags=["anoncreds"],
+    summary="Create and publish a registration revocation on the connected ledger",
+)
 @request_schema(RevRegCreateRequestSchema())
 @response_schema(RevRegDefResultSchema(), 200, description="")
 async def rev_reg_def_post(request: web.BaseRequest):
     """Request handler for creating revocation registry definition."""
     context: AdminRequestContext = request["context"]
     body = await request.json()
-    issuer_id = body.get("issuerId")
-    cred_def_id = body.get("credDefId")
-    max_cred_num = body.get("maxCredNum")
+
+    revocation_registry_definition = body.get("revocation_registry_definition")
     options = body.get("options")
+
+    if revocation_registry_definition is None:
+        raise web.HTTPBadRequest(
+            reason="revocation_registry_definition object is required"
+        )
+
+    issuer_id = revocation_registry_definition.get("issuerId")
+    cred_def_id = revocation_registry_definition.get("credDefId")
+    max_cred_num = revocation_registry_definition.get("maxCredNum")
 
     issuer = AnonCredsIssuer(context.profile)
     revocation = AnonCredsRevocation(context.profile)
@@ -384,12 +462,9 @@ async def rev_reg_def_post(request: web.BaseRequest):
                 options=options,
             )
         )
-    except RevocationNotSupportedError as e:
-        raise web.HTTPBadRequest(reason=e.message) from e
-    except AnonCredsRevocationError as e:
-        raise web.HTTPBadRequest(reason=e.message) from e
-
-    return web.json_response(result.serialize())
+        return web.json_response(result.serialize())
+    except (RevocationNotSupportedError, AnonCredsRevocationError) as e:
+        raise web.HTTPBadRequest(reason=e.roll_up) from e
 
 
 class RevListCreateRequestSchema(OpenAPISchema):
@@ -397,18 +472,21 @@ class RevListCreateRequestSchema(OpenAPISchema):
 
     rev_reg_def_id = fields.Str(
         description="Revocation registry definition identifier",
-        data_key="revRegDefId",
+        example=INDY_REV_REG_ID_EXAMPLE,
     )
 
 
-@docs(tags=["anoncreds"], summary="")
+@docs(
+    tags=["anoncreds"],
+    summary="Create and publish a revocation status list on the connected ledger",
+)
 @request_schema(RevListCreateRequestSchema())
 @response_schema(RevListResultSchema(), 200, description="")
 async def rev_list_post(request: web.BaseRequest):
     """Request handler for creating registering a revocation list."""
     context: AdminRequestContext = request["context"]
     body = await request.json()
-    rev_reg_def_id = body.get("revRegDefId")
+    rev_reg_def_id = body.get("rev_reg_def_id")
     options = body.get("options")
 
     revocation = AnonCredsRevocation(context.profile)
@@ -420,13 +498,11 @@ async def rev_list_post(request: web.BaseRequest):
             )
         )
         LOGGER.debug("published revocation list for: %s", rev_reg_def_id)
-
+        return web.json_response(result.serialize())
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
-    except AnonCredsRevocationError as err:
+    except (AnonCredsRevocationError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response(result.serialize())
 
 
 @docs(
@@ -454,21 +530,19 @@ async def upload_tails_file(request: web.BaseRequest):
             raise web.HTTPNotFound(reason="No rev reg def found")
 
         await revocation.upload_tails_file(rev_reg_def)
-
+        return web.json_response({})
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
-
-    return web.json_response({})
 
 
 @docs(
     tags=["anoncreds"],
-    summary="Upload local tails file to server",
+    summary="Update the active registry",
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def set_active_registry(request: web.BaseRequest):
-    """Request handler to upload local tails file for revocation registry.
+    """Request handler to set the active registry.
 
     Args:
         request: aiohttp request object
@@ -479,10 +553,9 @@ async def set_active_registry(request: web.BaseRequest):
     try:
         revocation = AnonCredsRevocation(context.profile)
         await revocation.set_active_registry(rev_reg_id)
+        return web.json_response({})
     except AnonCredsRevocationError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
-
-    return web.json_response({})
 
 
 @docs(
@@ -526,6 +599,7 @@ async def revoke(request: web.BaseRequest):
         else:
             # no cred_ex_id so we can safely splat the body
             await rev_manager.revoke_credential(**body)
+        return web.json_response({})
     except (
         RevocationManagerError,
         AnonCredsRevocationError,
@@ -534,8 +608,6 @@ async def revoke(request: web.BaseRequest):
         AnonCredsRegistrationError,
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({})
 
 
 @docs(tags=["revocation"], summary="Publish pending revocations to ledger")
@@ -561,6 +633,7 @@ async def publish_revocations(request: web.BaseRequest):
         rev_reg_resp = await rev_manager.publish_pending_revocations(
             rrid2crid,
         )
+        return web.json_response({"rrid2crid": rev_reg_resp})
     except (
         RevocationError,
         StorageError,
@@ -569,8 +642,6 @@ async def publish_revocations(request: web.BaseRequest):
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"rrid2crid": rev_reg_resp})
-
 
 async def register(app: web.Application):
     """Register routes."""
@@ -578,7 +649,7 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/anoncreds/schema", schemas_post),
-            web.get("/anoncreds/schema/{schemaId}", schema_get, allow_head=False),
+            web.get("/anoncreds/schema/{schema_id}", schema_get, allow_head=False),
             web.get("/anoncreds/schemas", schemas_get, allow_head=False),
             web.post("/anoncreds/credential-definition", cred_def_post),
             web.get(

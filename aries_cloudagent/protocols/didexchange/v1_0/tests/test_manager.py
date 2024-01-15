@@ -1,10 +1,10 @@
 import json
-
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
+
 from pydid import DIDDocument
 
-from .. import manager as test_module
+from aries_cloudagent.tests import mock
+
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
@@ -22,7 +22,7 @@ from .....resolver.tests import DOC
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo
-from .....wallet.did_method import DIDMethods, SOV
+from .....wallet.did_method import PEER2, SOV, DIDMethods
 from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
@@ -34,6 +34,7 @@ from ....discovery.v2_0.manager import V20DiscoveryMgr
 from ....out_of_band.v1_0.manager import OutOfBandManager
 from ....out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ....out_of_band.v1_0.messages.service import Service as OOBService
+from .. import manager as test_module
 from ..manager import DIDXManager, DIDXManagerError
 from ..messages.problem_report import DIDXProblemReport, ProblemReportReason
 
@@ -46,6 +47,9 @@ class TestConfig:
 
     test_target_did = "GbuDUYXaUZRfHD2jeDuQuP"
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
+
+    test_did_peer_2 = "did:peer:2.Vz6MkeobNdKHDnMXhob5GPWmpEyNx3r9j6gqiKYJQ9J2wEPvx.SeyJpZCI6IiNkaWRjb21tLTAiLCJ0IjoiZGlkLWNvbW11bmljYXRpb24iLCJwcmlvcml0eSI6MCwicmVjaXBpZW50S2V5cyI6WyIja2V5LTEiXSwiciI6W10sInMiOiJodHRwOi8vaG9zdC5kb2NrZXIuaW50ZXJuYWw6OTA3MCJ9"
+    test_did_peer_4 = "did:peer:4zQmd8CpeFPci817KDsbSAKWcXAE2mjvCQSasRewvbSF54Bd:z2M1k7h4psgp4CmJcnQn2Ljp7Pz7ktsd7oBhMU3dWY5s4fhFNj17qcRTQ427C7QHNT6cQ7T3XfRh35Q2GhaNFZmWHVFq4vL7F8nm36PA9Y96DvdrUiRUaiCuXnBFrn1o7mxFZAx14JL4t8vUWpuDPwQuddVo1T8myRiVH7wdxuoYbsva5x6idEpCQydJdFjiHGCpNc2UtjzPQ8awSXkctGCnBmgkhrj5gto3D4i3EREXYq4Z8r2cWGBr2UzbSmnxW2BuYddFo9Yfm6mKjtJyLpF74ytqrF5xtf84MnGFg1hMBmh1xVx1JwjZ2BeMJs7mNS8DTZhKC7KH38EgqDtUZzfjhpjmmUfkXg2KFEA3EGbbVm1DPqQXayPYKAsYPS9AyKkcQ3fzWafLPP93UfNhtUPL8JW5pMcSV3P8v6j3vPXqnnGknNyBprD6YGUVtgLiAqDBDUF3LSxFQJCVYYtghMTv8WuSw9h1a1SRFrDQLGHE4UrkgoRvwaGWr64aM87T1eVGkP5Dt4L1AbboeK2ceLArPScrdYGTpi3BpTkLwZCdjdiFSfTy9okL1YNRARqUf2wm8DvkVGUU7u5nQA3ZMaXWJAewk6k1YUxKd7LvofGUK4YEDtoxN5vb6r1Q2godrGqaPkjfL3RoYPpDYymf9XhcgG8Kx3DZaA6cyTs24t45KxYAfeCw4wqUpCH9HbpD78TbEUr9PPAsJgXBvBj2VVsxnr7FKbK4KykGcg1W8M1JPz21Z4Y72LWgGQCmixovrkHktcTX1uNHjAvKBqVD5C7XmVfHgXCHj7djCh3vzLNuVLtEED8J1hhqsB1oCBGiuh3xXr7fZ9wUjJCQ1HYHqxLJKdYKtoCiPmgKM7etVftXkmTFETZmpM19aRyih3bao76LdpQtbw636r7a3qt8v4WfxsXJetSL8c7t24SqQBcAY89FBsbEnFNrQCMK3JEseKHVaU388ctvRD45uQfe5GndFxthj4iSDomk4uRFd1uRbywoP1tRuabHTDX42UxPjz"
 
     def make_did_doc(self, did, verkey):
         doc = DIDDoc(did=did)
@@ -526,7 +530,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             connection_id="dummy",
             my_did=self.did_info.did,
             their_did=TestConfig.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            their_role=ConnRecord.Role.REQUESTER.rfc23,
             state=ConnRecord.State.REQUEST.rfc23,
             retrieve_invitation=mock.CoroutineMock(
                 return_value=mock.MagicMock(
@@ -538,6 +542,52 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         request = await self.manager.create_request(mock_conn_rec, use_public_did=True)
         assert request.did_doc_attach is None
+
+    async def test_create_request_emit_did_peer_2(self):
+        mock_conn_rec = mock.MagicMock(
+            connection_id="dummy",
+            retrieve_invitation=mock.CoroutineMock(
+                return_value=mock.MagicMock(
+                    services=[TestConfig.test_target_did],
+                )
+            ),
+            my_did=None,
+            save=mock.CoroutineMock(),
+        )
+
+        self.profile.context.update_settings({"emit_did_peer_2": True})
+
+        with mock.patch.object(
+            self.manager, "create_did_peer_2", mock.AsyncMock()
+        ) as mock_create_did_peer_2:
+            request = await self.manager.create_request(
+                mock_conn_rec, use_public_did=True
+            )
+            assert request.did_doc_attach is None
+            mock_create_did_peer_2.assert_called_once()
+
+    async def test_create_request_emit_did_peer_4(self):
+        mock_conn_rec = mock.MagicMock(
+            connection_id="dummy",
+            retrieve_invitation=mock.CoroutineMock(
+                return_value=mock.MagicMock(
+                    services=[TestConfig.test_target_did],
+                )
+            ),
+            my_did=None,
+            save=mock.CoroutineMock(),
+        )
+
+        self.profile.context.update_settings({"emit_did_peer_4": True})
+
+        with mock.patch.object(
+            self.manager, "create_did_peer_4", mock.AsyncMock()
+        ) as mock_create_did_peer_4:
+            request = await self.manager.create_request(
+                mock_conn_rec, use_public_did=True
+            )
+            assert request.did_doc_attach is None
+            mock_create_did_peer_4.assert_called_once()
 
     async def test_receive_request_explicit_public_did(self):
         async with self.profile.session() as session:
@@ -1598,8 +1648,68 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     data=mock.MagicMock(sign=mock.CoroutineMock())
                 )
             )
-
             await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
+
+    async def test_create_response_inkind_peer_did_2(self):
+        # created did:peer:2 when receiving a did:peer:2, even if setting is False
+        conn_rec = ConnRecord(
+            connection_id="dummy",
+            their_did=TestConfig.test_did_peer_2,
+            state=ConnRecord.State.REQUEST.rfc23,
+            my_did=None,
+        )
+
+        self.profile.context.update_settings({"emit_did_peer_2": False})
+
+        with mock.patch.object(
+            self.manager, "create_did_peer_2", mock.CoroutineMock()
+        ) as mock_create_did_peer_2, mock.patch.object(
+            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+        ) as mock_retrieve_req, mock.patch.object(
+            conn_rec, "save", mock.CoroutineMock()
+        ) as mock_save:
+            mock_create_did_peer_2.return_value = DIDInfo(
+                TestConfig.test_did_peer_2,
+                TestConfig.test_verkey,
+                None,
+                method=PEER2,
+                key_type=ED25519,
+            )
+            response = await self.manager.create_response(
+                conn_rec, "http://10.20.30.40:5060/"
+            )
+            mock_create_did_peer_2.assert_called_once()
+            assert response.did.startswith("did:peer:2")
+
+    async def test_create_response_inkind_peer_did_4(self):
+        # created did:peer:4 when receiving a did:peer:4, even if setting is False
+        conn_rec = ConnRecord(
+            connection_id="dummy",
+            their_did=TestConfig.test_did_peer_4,
+            state=ConnRecord.State.REQUEST.rfc23,
+        )
+
+        self.profile.context.update_settings({"emit_did_peer_4": False})
+
+        with mock.patch.object(
+            self.manager, "create_did_peer_4", mock.CoroutineMock()
+        ) as mock_create_did_peer_4, mock.patch.object(
+            test_module.ConnRecord, "retrieve_request", mock.CoroutineMock()
+        ) as mock_retrieve_req, mock.patch.object(
+            conn_rec, "save", mock.CoroutineMock()
+        ) as mock_save:
+            mock_create_did_peer_4.return_value = DIDInfo(
+                TestConfig.test_did_peer_4,
+                TestConfig.test_verkey,
+                None,
+                method=PEER2,
+                key_type=ED25519,
+            )
+            response = await self.manager.create_response(
+                conn_rec, "http://10.20.30.40:5060/"
+            )
+            mock_create_did_peer_4.assert_called_once()
+            assert response.did.startswith("did:peer:4")
 
     async def test_create_response_bad_state(self):
         with self.assertRaises(DIDXManagerError):
@@ -1712,6 +1822,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
+                my_did=None,
                 did_doc_attach=mock.MagicMock(
                     data=mock.MagicMock(
                         verify=mock.CoroutineMock(return_value=True),
@@ -1728,6 +1839,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 connection_id="test-conn-id",
             )
             mock_conn_retrieve_by_id.return_value = mock.MagicMock(
+                my_did=None,
                 their_did=TestConfig.test_target_did,
                 save=mock.CoroutineMock(),
             )
@@ -1772,6 +1884,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
+                my_did=None,
                 did_doc_attach=mock.MagicMock(
                     data=mock.MagicMock(
                         verify=mock.CoroutineMock(return_value=True),
@@ -1828,6 +1941,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             mock_conn_retrieve_by_req_id.side_effect = StorageNotFoundError()
             mock_conn_retrieve_by_did.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
+                my_did=None,
                 did_doc_attach=mock.MagicMock(
                     data=mock.MagicMock(
                         verify=mock.CoroutineMock(return_value=True),
@@ -1904,8 +2018,8 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 await self.manager.accept_response(mock_response, receipt)
 
     async def test_accept_response_find_by_thread_id_no_did_doc_attached(self):
-        mock_response = mock.MagicMock()
-        mock_response._thread = mock.MagicMock()
+        mock_response = mock.AsyncMock()
+        mock_response._thread = mock.AsyncMock()
         mock_response.did = TestConfig.test_target_did
         mock_response.did_doc_attach = None
 
@@ -1925,6 +2039,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         ):
             mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
+                my_did=None,
                 state=ConnRecord.State.REQUEST.rfc23,
                 save=mock.CoroutineMock(),
                 metadata_get=mock.CoroutineMock(),
@@ -2034,6 +2149,8 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
         ) as mock_conn_retrieve_by_req_id:
             mock_conn_retrieve_by_req_id.return_value.save = mock.CoroutineMock()
+            mock_conn_retrieve_by_req_id.return_value.my_did = None
+            mock_conn_retrieve_by_req_id.return_value.their_did = None
             conn_rec = await self.manager.accept_complete(mock_complete, receipt)
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
@@ -2047,6 +2164,8 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             V20DiscoveryMgr, "proactive_disclose_features", mock.CoroutineMock()
         ) as mock_proactive_disclose_features:
             mock_conn_retrieve_by_req_id.return_value.save = mock.CoroutineMock()
+            mock_conn_retrieve_by_req_id.return_value.my_did = None
+            mock_conn_retrieve_by_req_id.return_value.their_did = None
             conn_rec = await self.manager.accept_complete(mock_complete, receipt)
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
             mock_proactive_disclose_features.assert_called_once()
