@@ -153,8 +153,6 @@ class VerifiablePresentation(BaseModel):
     def verifiable_credential(self, verifiable_credential: List[dict]):
         """Setter for verifiable credential."""
 
-        uri_validator = Uri()
-
         self._verifiable_credential = verifiable_credential
 
     @property

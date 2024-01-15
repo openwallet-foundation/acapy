@@ -8,8 +8,6 @@ from ..config.base import InjectionError
 from ..resolver.base import ResolverError
 from ..wallet.error import WalletError
 
-# from ..protocols.issue_credential.v2_0.manager import V20CredManager, V20CredManagerError
-# from ..protocols.issue_credential.v2_0.formats.ld_proof.handler import LDProofCredFormatHandler
 from ..vc.vc_ld.manager import VcLdpManager, VcLdpManagerError
 from ..vc.vc_ld.models.credential import VerifiableCredential
 from ..vc.vc_ld.models.presentation import VerifiablePresentation
@@ -49,36 +47,13 @@ async def issue_credential(request: web.BaseRequest):
     )
     options = LDProofVCOptions.deserialize(options)
     try:
-        manager = VcLdpManager(context.profile)
+        manager = context.inject(VcLdpManager)
         vc = await manager.issue(credential, options)
     except VcLdpManagerError as err:
         return web.json_response({"message": str(err)}, status=400)
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
     return web.json_response({"verifiableCredential": vc.serialize()}, status=201)
-
-
-# @docs(tags=["vc-api"], summary="Store a credential")
-# async def store_credential(request: web.BaseRequest):
-# """Request handler for storing a jsonld doc.
-
-# Args:
-#     request: aiohttp request object
-
-# """
-#     context: AdminRequestContext = request["context"]
-#     body = await request.json()
-#     vc = VerifiableCredential.deserialize(body["verifiableCredential"])
-#     options = LDProofVCOptions.deserialize(body["options"])
-
-#     try:
-#         manager = V20CredManager(context.profile)
-#         await store_credential(manager, context.profile, vc)
-#     except V20CredManagerError as err:
-#         return web.json_response({"error": str(err)}, status=400)
-#     except (WalletError, InjectionError):
-#         raise web.HTTPForbidden(reason="Bad credential")
-#     return web.json_response({"message": "Credential stored"}, status=200)
 
 
 @docs(tags=["vc-api"], summary="Verify a credential")
@@ -95,7 +70,7 @@ async def verify_credential(request: web.BaseRequest):
     body = await request.json()
     vc = VerifiableCredential.deserialize(body.get("verifiableCredential"))
     try:
-        manager = VcLdpManager(context.profile)
+        manager = context.inject(VcLdpManager)
         result = await manager.verify_credential(vc)
         return web.json_response(result.serialize())
     except (VcLdpManagerError, ResolverError, ValueError) as error:
@@ -129,7 +104,7 @@ async def prove_presentation(request: web.BaseRequest):
     options = LDProofVCOptions.deserialize(options)
 
     try:
-        manager = VcLdpManager(context.profile)
+        manager = context.inject(VcLdpManager)
         vp = await manager.prove(presentation, options)
     except VcLdpManagerError as err:
         return web.json_response({"error": str(err)}, status=400)
@@ -155,7 +130,7 @@ async def verify_presentation(request: web.BaseRequest):
     options = {} if "options" not in body else body["options"]
     options = LDProofVCOptions.deserialize(options)
     try:
-        manager = VcLdpManager(context.profile)
+        manager = context.inject(VcLdpManager)
 
         result = await manager.verify_presentation(vp, options)
         return web.json_response(result.serialize())
@@ -171,7 +146,6 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/credentials/issue", issue_credential),
-            # web.post("/credentials/store", store_credential),
             web.post("/credentials/verify", verify_credential),
             web.post("/presentations/prove", prove_presentation),
             web.post("/presentations/verify", verify_presentation),
