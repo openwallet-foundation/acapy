@@ -1,7 +1,7 @@
 """Manager for performing Linked Data Proof signatures over JSON-LD formatted W3C VCs."""
 
 
-from typing import Dict, Optional, Type
+from typing import Dict, Optional, Type, Union
 
 from ...core.profile import Profile
 from ...wallet.base import BaseWallet
@@ -27,6 +27,7 @@ from ..ld_proofs.validation_result import DocumentVerificationResult
 from ..vc_ld.models.presentation import VerifiablePresentation
 from ..vc_ld.validation_result import PresentationVerificationResult
 from .issue import issue as ldp_issue
+from .prove import sign_presentation
 from .models.credential import VerifiableCredential
 from .models.linked_data_proof import LDProof
 from .models.options import LDProofVCOptions
@@ -266,10 +267,16 @@ class VcLdpManager:
 
         return credential
 
-    async def _get_suite_for_credential(
-        self, credential: VerifiableCredential, options: LDProofVCOptions
+    async def _get_suite_for_document(
+        self, document: Union[VerifiableCredential, VerifiablePresentation], options: LDProofVCOptions
     ) -> LinkedDataProof:
-        issuer_id = credential.issuer_id
+        document_type = document.type[0]
+        
+        if document_type == 'VerifiableCredential':
+            issuer_id = document.issuer_id
+        if document_type == 'VerifiablePresentation':
+            issuer_id = document.holder_id
+            
         proof_type = options.proof_type
 
         if not issuer_id:
@@ -344,6 +351,29 @@ class VcLdpManager:
             purpose=proof_purpose,
         )
         return VerifiableCredential.deserialize(vc)
+
+    async def prove(
+        self, presentation: VerifiablePresentation, options: LDProofVCOptions
+    ) -> VerifiablePresentation:
+        """Sign a VP with a Linked Data Proof."""
+        presentation = await self.prepare_presentation(presentation, options)
+
+        # Get signature suite, proof purpose and document loader
+        suite = await self._get_suite_for_document(presentation, options)
+        proof_purpose = self._get_proof_purpose(
+            proof_purpose=options.proof_purpose,
+            challenge=options.challenge,
+            domain=options.domain,
+        )
+        document_loader = self.profile.inject(DocumentLoader)
+
+        vp = await sign_presentation(
+            presentation=presentation.serialize(),
+            suite=suite,
+            document_loader=document_loader,
+            purpose=proof_purpose,
+        )
+        return VerifiablePresentation.deserialize(vp)
 
     async def verify_presentation(
         self, vp: VerifiablePresentation, options: LDProofVCOptions
