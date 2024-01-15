@@ -64,7 +64,7 @@ class AriesAgent(DemoAgent):
         extra_args: List[str] = [],
         **kwargs,
     ):
-        # extra_args = extra_args or []
+        extra_args = extra_args or []
         if not no_auto:
             extra_args.extend(
                 (

@@ -130,8 +130,8 @@ done
 
 if [ "$AGENT" = "faber" ]; then
   AGENT_MODULE="faber"
-  AGENT_PORT=8010
-  AGENT_PORT_RANGE=8010-8019
+  AGENT_PORT=8020
+  AGENT_PORT_RANGE=8020-8029
 elif [ "$AGENT" = "alice" ]; then
   AGENT_MODULE="alice"
   AGENT_PORT=8030
@@ -147,6 +147,12 @@ elif [ "$AGENT" = "performance" ]; then
 else
   echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'."
   exit 1
+fi
+# allow override for agent ports
+if [ ! -z "$AGENT_PORT_OVERRIDE" ]; then
+  AGENT_PORT=$AGENT_PORT_OVERRIDE
+  AGENT_PORT_END=$(expr $AGENT_PORT_OVERRIDE + 9)
+  AGENT_PORT_RANGE="$AGENT_PORT-$AGENT_PORT_END"
 fi
 
 echo "Preparing agent image..."
