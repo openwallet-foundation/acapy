@@ -349,6 +349,13 @@ class CredentialSchema(BaseModelSchema):
         metadata={"example": CREDENTIAL_SUBJECT_EXAMPLE},
     )
 
+    credential_status = DictOrDictListField(
+        required=False,
+        data_key="credentialStatus",
+        # validate=CREDENTIAL_STATUS_VALIDATE,
+        # metadata={"example": CREDENTIAL_STATUS_EXAMPLE},
+    )
+
     proof = fields.Nested(
         LinkedDataProofSchema(),
         required=False,

@@ -1,4 +1,4 @@
-"""VC-API requests and responses examples"""
+"""VC-API requests and responses examples."""
 
 from marshmallow import Schema, fields
 
