@@ -17,7 +17,6 @@ from ..ld_proofs.crypto.wallet_key_pair import WalletKeyPair
 from ..ld_proofs.document_loader import DocumentLoader
 from ..ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
 from ..ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
-from ..ld_proofs.purposes.assertion_proof_purpose import AssertionProofPurpose
 from ..ld_proofs.purposes.proof_purpose import ProofPurpose
 from ..ld_proofs.suites.bbs_bls_signature_2020 import BbsBlsSignature2020
 from ..ld_proofs.suites.bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
@@ -268,7 +267,7 @@ class VcLdpManager:
 
         return credential
 
-    async def _get_signature_suite(
+    async def _get_suite_for_credential(
         self,
         document: Union[VerifiableCredential, VerifiablePresentation],
         options: LDProofVCOptions,
@@ -339,7 +338,7 @@ class VcLdpManager:
         credential = await self.prepare_credential(credential, options)
 
         # Get signature suite, proof purpose and document loader
-        suite = await self._get_signature_suite(credential, options)
+        suite = await self._get_suite_for_credential(credential, options)
         proof_purpose = self._get_proof_purpose(
             proof_purpose=options.proof_purpose,
             challenge=options.challenge,
@@ -361,7 +360,7 @@ class VcLdpManager:
         """Sign a VP with a Linked Data Proof."""
 
         # Get signature suite, proof purpose and document loader
-        suite = await self._get_signature_suite(presentation, options)
+        suite = await self._get_suite_for_credential(presentation, options)
         proof_purpose = self._get_proof_purpose(
             proof_purpose=options.proof_purpose,
             challenge=options.challenge,
@@ -382,16 +381,7 @@ class VcLdpManager:
     ) -> PresentationVerificationResult:
         """Verify a VP with a Linked Data Proof."""
 
-        if vp.proof.proof_purpose == "assertionMethod":
-            purpose = AssertionProofPurpose()
-            return await verify_presentation(
-                presentation=vp.serialize(),
-                suites=await self._get_all_suites(),
-                document_loader=self.profile.inject(DocumentLoader),
-                purpose=purpose,
-            )
-
-        elif not options.challenge:
+        if not options.challenge:
             raise VcLdpManagerError("Challenge is required for verifying a VP")
 
         return await verify_presentation(
@@ -399,7 +389,6 @@ class VcLdpManager:
             suites=await self._get_all_suites(),
             document_loader=self.profile.inject(DocumentLoader),
             challenge=options.challenge,
-            purpose=purpose,
         )
 
     async def verify_credential(

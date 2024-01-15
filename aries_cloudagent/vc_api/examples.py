@@ -1,4 +1,12 @@
+"""VC-API requests and responses examples"""
+
 from marshmallow import Schema, fields
+
+EXAMPLE_DID = "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i"
+EXAMPLE_CRED_PROOF = "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..\
+SCPQDsbwaEo7aZ28hrpWOPa8vu3CHqM0do6UkVNVM8hM0__1rryDnzeU-V7_lvjxrhqs998rhnojE4UuOLZTDw"
+EXAMPLE_PRES_PROOF = "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..\
+eqWrb_JcMPM1m1tBotnI01WPaV5_cQLUJslkT2oPD00MBb5xUZqIIzxCWdkYHhBo4IVDYCL3RkG5WDWdQ8AyBw"
 
 
 class IssueCredentialRequest(Schema):
@@ -12,9 +20,9 @@ class IssueCredentialRequest(Schema):
         metadata={
             "example": {
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
-                "credentialSubject": {"id": "did:key:..."},
+                "credentialSubject": {"id": EXAMPLE_DID},
                 "issuanceDate": "2010-01-01T19:23:24Z",
-                "issuer": "did:key:...",
+                "issuer": EXAMPLE_DID,
                 "type": ["VerifiableCredential"],
             }
         }
@@ -34,15 +42,15 @@ class IssueCredentialResponse(Schema):
             "example": {
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
                 "type": ["VerifiableCredential"],
-                "issuer": "did:key:...",
+                "issuer": EXAMPLE_DID,
                 "issuanceDate": "2010-01-01T19:23:24Z",
-                "credentialSubject": {"id": "did:key:..."},
+                "credentialSubject": {"id": EXAMPLE_DID},
                 "proof": {
                     "type": "Ed25519Signature2018",
                     "proofPurpose": "assertionMethod",
-                    "verificationMethod": "did:key:...#...",
+                    "verificationMethod": f"{EXAMPLE_DID}#{EXAMPLE_DID.split(':')[-1]}",
                     "created": "2024-01-14T20:04:36+00:00",
-                    "jws": "ey...",
+                    "jws": EXAMPLE_CRED_PROOF,
                 },
             }
         }
@@ -87,20 +95,20 @@ class ProvePresentationRequest(Schema):
             "example": {
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
                 "type": ["VerifiablePresentation"],
-                "holder": "did:key:...",
+                "holder": EXAMPLE_DID,
                 "verifiableCredential": [
                     {
                         "@context": ["https://www.w3.org/2018/credentials/v1"],
                         "type": ["VerifiableCredential"],
-                        "issuer": "did:key:...",
+                        "issuer": EXAMPLE_DID,
                         "issuanceDate": "2010-01-01T19:23:24Z",
-                        "credentialSubject": {"id": "did:key:..."},
+                        "credentialSubject": {"id": EXAMPLE_DID},
                         "proof": {
                             "type": "Ed25519Signature2018",
                             "proofPurpose": "assertionMethod",
-                            "verificationMethod": "did:key:...#...",
+                            "verificationMethod": f"{EXAMPLE_DID}#{EXAMPLE_DID.split(':')[-1]}",
                             "created": "2024-01-14T20:04:36+00:00",
-                            "jws": "ey...",
+                            "jws": EXAMPLE_CRED_PROOF,
                         },
                     }
                 ],
@@ -122,29 +130,29 @@ class ProvePresentationResponse(Schema):
             "example": {
                 "@context": ["https://www.w3.org/2018/credentials/v1"],
                 "type": ["VerifiablePresentation"],
-                "holder": "did:key:...",
+                "holder": EXAMPLE_DID,
                 "verifiableCredential": [
                     {
                         "@context": ["https://www.w3.org/2018/credentials/v1"],
-                        "credentialSubject": {"id": "did:key:..."},
+                        "credentialSubject": {"id": EXAMPLE_DID},
                         "issuanceDate": "2010-01-01T19:23:24Z",
-                        "issuer": "did:key:...",
+                        "issuer": EXAMPLE_DID,
                         "type": ["VerifiableCredential"],
                         "proof": {
                             "type": "Ed25519Signature2018",
                             "proofPurpose": "assertionMethod",
-                            "verificationMethod": "did:key:...#...",
+                            "verificationMethod": f"{EXAMPLE_DID}#{EXAMPLE_DID.split(':')[-1]}",
                             "created": "2024-01-14T18:33:31+00:00",
-                            "jws": "ey...",
+                            "jws": EXAMPLE_CRED_PROOF,
                         },
                     }
                 ],
                 "proof": {
                     "type": "Ed25519Signature2018",
                     "proofPurpose": "assertionMethod",
-                    "verificationMethod": "did:key:...#...",
+                    "verificationMethod": f"{EXAMPLE_DID}#{EXAMPLE_DID.split(':')[-1]}",
                     "created": "2024-01-14T22:03:36+00:00",
-                    "jws": "ey...",
+                    "jws": EXAMPLE_PRES_PROOF,
                 },
             }
         }
