@@ -225,7 +225,7 @@ class PresentationSchema(BaseModelSchema):
     )
 
     holder = StrOrDictField(
-        required=True,
+        required=False,
         metadata={
             "description": (
                 "The JSON-LD Verifiable Credential Holder. Either string of object with"
@@ -237,7 +237,7 @@ class PresentationSchema(BaseModelSchema):
 
     verifiable_credential = fields.List(
         fields.Dict(required=True),
-        required=True,
+        required=False,
         data_key="verifiableCredential",
         # validate=VERIFIABLE_CREDENTIAL_VALIDATE,
         metadata={},

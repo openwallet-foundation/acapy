@@ -2,6 +2,11 @@ from marshmallow import Schema, fields
 
 
 class IssueCredentialRequest(Schema):
+    """Issue credential request.
+
+    Based on https://w3c-ccg.github.io/vc-api/#issue-credential
+
+    """
     credential = fields.Dict(
         metadata={
             "example": {
@@ -19,6 +24,11 @@ class IssueCredentialRequest(Schema):
 
 
 class IssueCredentialResponse(Schema):
+    """Issue credential response.
+
+    Based on https://w3c-ccg.github.io/vc-api/#issue-credential
+
+    """
     verifiableCredential = fields.Dict(
         metadata={
             "example": {
@@ -45,6 +55,11 @@ VerifyCredentialRequest = IssueCredentialResponse()
 
 
 class VerifyCredentialResponse(Schema):
+    """Verify credential response.
+
+    Based on https://w3c-ccg.github.io/vc-api/#verify-credential
+
+    """
     verified = fields.Bool(metadata={"example": True})
     document = fields.Dict(metadata={"example": {}})
     # results = fields.List(
@@ -62,6 +77,11 @@ class VerifyCredentialResponse(Schema):
 
 
 class ProvePresentationRequest(Schema):
+    """Prove presentation request.
+
+    Based on https://w3c-ccg.github.io/vc-api/#prove-presentation
+
+    """
     presentation = fields.Dict(
         metadata={
             "example": {
@@ -93,6 +113,11 @@ class ProvePresentationRequest(Schema):
 
 
 class ProvePresentationResponse(Schema):
+    """Prove presentation response.
+
+    Based on https://w3c-ccg.github.io/vc-api/#prove-presentation
+
+    """
     verifiablePresentation = fields.Dict(
         metadata={
             "example": {
@@ -133,6 +158,11 @@ VerifyPresentationRequest = ProvePresentationResponse()
 
 
 class VerifyPresentationResponse(Schema):
+    """Verify presentation response.
+
+    Based on https://w3c-ccg.github.io/vc-api/#verify-presentation
+
+    """
     verified = fields.Bool(metadata={"example": True})
     presentation_result = fields.Dict(
         metadata={
