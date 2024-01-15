@@ -60,12 +60,12 @@ async def issue_credential(request: web.BaseRequest):
 
 # @docs(tags=["vc-api"], summary="Store a credential")
 # async def store_credential(request: web.BaseRequest):
-    # """Request handler for storing a jsonld doc.
+# """Request handler for storing a jsonld doc.
 
-    # Args:
-    #     request: aiohttp request object
+# Args:
+#     request: aiohttp request object
 
-    # """
+# """
 #     context: AdminRequestContext = request["context"]
 #     body = await request.json()
 #     vc = VerifiableCredential.deserialize(body["verifiableCredential"])
