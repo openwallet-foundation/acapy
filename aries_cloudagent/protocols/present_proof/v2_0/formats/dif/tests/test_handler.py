@@ -369,6 +369,9 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
         self.context.injector.bind_instance(BaseResponder, MockResponder())
 
+        self.manager = VcLdpManager(self.profile)
+        self.context.injector.bind_instance(VcLdpManager, self.manager)
+
         self.handler = DIFPresFormatHandler(self.profile)
         assert self.handler.profile
 
@@ -1140,7 +1143,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "verify_presentation",
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=True)
@@ -1150,7 +1153,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             assert output.verified
 
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "verify_presentation",
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=False)
@@ -1197,7 +1200,7 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            VcLdpManager,
+            self.manager,
             "verify_presentation",
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=True)
