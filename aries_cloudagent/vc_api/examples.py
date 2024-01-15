@@ -3,6 +3,7 @@
 from marshmallow import Schema, fields
 
 EXAMPLE_DID = "did:key:z6MkukGVb3mRvTu1msArDKY9UwxeZFGjmwnCKtdQttr4Fk6i"
+EXAMPLE_VERIFICATION_METHOD = f"{EXAMPLE_DID}#{EXAMPLE_DID.split(':')[-1]}"
 EXAMPLE_CRED_PROOF = "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..\
 SCPQDsbwaEo7aZ28hrpWOPa8vu3CHqM0do6UkVNVM8hM0__1rryDnzeU-V7_lvjxrhqs998rhnojE4UuOLZTDw"
 EXAMPLE_PRES_PROOF = "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..\
@@ -48,7 +49,7 @@ class IssueCredentialResponse(Schema):
                 "proof": {
                     "type": "Ed25519Signature2018",
                     "proofPurpose": "assertionMethod",
-                    "verificationMethod": f"{EXAMPLE_DID}#{EXAMPLE_DID.split(':')[-1]}",
+                    "verificationMethod": EXAMPLE_VERIFICATION_METHOD,
                     "created": "2024-01-14T20:04:36+00:00",
                     "jws": EXAMPLE_CRED_PROOF,
                 },
@@ -106,7 +107,7 @@ class ProvePresentationRequest(Schema):
                         "proof": {
                             "type": "Ed25519Signature2018",
                             "proofPurpose": "assertionMethod",
-                            "verificationMethod": f"{EXAMPLE_DID}#{EXAMPLE_DID.split(':')[-1]}",
+                            "verificationMethod": EXAMPLE_VERIFICATION_METHOD,
                             "created": "2024-01-14T20:04:36+00:00",
                             "jws": EXAMPLE_CRED_PROOF,
                         },
@@ -141,7 +142,7 @@ class ProvePresentationResponse(Schema):
                         "proof": {
                             "type": "Ed25519Signature2018",
                             "proofPurpose": "assertionMethod",
-                            "verificationMethod": f"{EXAMPLE_DID}#{EXAMPLE_DID.split(':')[-1]}",
+                            "verificationMethod": EXAMPLE_VERIFICATION_METHOD,
                             "created": "2024-01-14T18:33:31+00:00",
                             "jws": EXAMPLE_CRED_PROOF,
                         },
@@ -150,7 +151,7 @@ class ProvePresentationResponse(Schema):
                 "proof": {
                     "type": "Ed25519Signature2018",
                     "proofPurpose": "assertionMethod",
-                    "verificationMethod": f"{EXAMPLE_DID}#{EXAMPLE_DID.split(':')[-1]}",
+                    "verificationMethod": EXAMPLE_VERIFICATION_METHOD,
                     "created": "2024-01-14T22:03:36+00:00",
                     "jws": EXAMPLE_PRES_PROOF,
                 },
