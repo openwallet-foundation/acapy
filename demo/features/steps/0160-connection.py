@@ -29,7 +29,7 @@ BDD_EXTRA_AGENT_ARGS = os.getenv("BDD_EXTRA_AGENT_ARGS")
 def step_impl(context, n):
     """Startup 'n' agents based on the options provided in the context table parameters."""
 
-    start_port = 8020
+    start_port = 8030
 
     extra_args = None
     if BDD_EXTRA_AGENT_ARGS:

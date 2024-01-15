@@ -130,8 +130,8 @@ done
 
 if [ "$AGENT" = "faber" ]; then
   AGENT_MODULE="faber"
-  AGENT_PORT=8020
-  AGENT_PORT_RANGE=8020-8029
+  AGENT_PORT=8010
+  AGENT_PORT_RANGE=8010-8019
 elif [ "$AGENT" = "alice" ]; then
   AGENT_MODULE="alice"
   AGENT_PORT=8030
@@ -239,6 +239,9 @@ if ! [ -z "$TAILS_FILE_COUNT" ]; then
 fi
 if ! [ -z "$ACAPY_ARG_FILE" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e ACAPY_ARG_FILE=${ACAPY_ARG_FILE}"
+fi
+if ! [ -z "$DEMO_EXTRA_AGENT_ARGS" ]; then
+  DOCKER_ENV="${DOCKER_ENV} -e DEMO_EXTRA_AGENT_ARGS=${DEMO_EXTRA_AGENT_ARGS}"
 fi
 
 if ! [ -z "${ENABLE_PYDEVD_PYCHARM}" ]; then

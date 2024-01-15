@@ -123,8 +123,8 @@ EOF
 done
 
 AGENT_MODULE="agent_container"
-AGENT_PORT=8020
-AGENT_PORT_RANGE=8020-8079
+AGENT_PORT=8030
+AGENT_PORT_RANGE=8030-8089
 
 echo "Preparing agent image..."
 docker build -q -t acapy-base -f ../docker/Dockerfile .. || exit 1
