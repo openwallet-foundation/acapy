@@ -32,6 +32,12 @@ from .examples import (
 @request_schema(IssueCredentialRequest)
 @response_schema(IssueCredentialResponse, 201)
 async def issue_credential(request: web.BaseRequest):
+    """Request handler for signing a jsonld doc.
+
+    Args:
+        request: aiohttp request object
+
+    """
     context: AdminRequestContext = request["context"]
     body = await request.json()
     credential = VerifiableCredential.deserialize(body["credential"])
@@ -54,6 +60,12 @@ async def issue_credential(request: web.BaseRequest):
 
 # @docs(tags=["vc-api"], summary="Store a credential")
 # async def store_credential(request: web.BaseRequest):
+    # """Request handler for storing a jsonld doc.
+
+    # Args:
+    #     request: aiohttp request object
+
+    # """
 #     context: AdminRequestContext = request["context"]
 #     body = await request.json()
 #     vc = VerifiableCredential.deserialize(body["verifiableCredential"])
@@ -73,6 +85,12 @@ async def issue_credential(request: web.BaseRequest):
 @request_schema(VerifyCredentialRequest)
 @response_schema(VerifyCredentialResponse, 200)
 async def verify_credential(request: web.BaseRequest):
+    """Request handler for verifying a jsonld doc.
+
+    Args:
+        request: aiohttp request object
+
+    """
     context: AdminRequestContext = request["context"]
     body = await request.json()
     vc = VerifiableCredential.deserialize(body.get("verifiableCredential"))
@@ -93,6 +111,12 @@ async def verify_credential(request: web.BaseRequest):
 @request_schema(ProvePresentationRequest)
 @response_schema(ProvePresentationResponse, 201)
 async def prove_presentation(request: web.BaseRequest):
+    """Request handler for signing a jsonld doc.
+
+    Args:
+        request: aiohttp request object
+
+    """
     context: AdminRequestContext = request["context"]
     body = await request.json()
     presentation = VerifiablePresentation.deserialize(body["presentation"])
@@ -118,6 +142,12 @@ async def prove_presentation(request: web.BaseRequest):
 @request_schema(VerifyPresentationRequest)
 @response_schema(VerifyPresentationResponse, 201)
 async def verify_presentation(request: web.BaseRequest):
+    """Request handler for verifying a jsonld doc.
+
+    Args:
+        request: aiohttp request object
+
+    """
     context: AdminRequestContext = request["context"]
     body = await request.json()
     vp = VerifiablePresentation.deserialize(body.get("verifiablePresentation"))
