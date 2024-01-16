@@ -13,10 +13,7 @@ async def store_credential(
     context: AdminRequestContext,
     cred_id: str = None,
 ):
-    """
-    Store a verifiable credential.
-
-    """
+    """Store a verifiable credential."""
     # Saving expanded type as a cred_tag
     expanded = jsonld.expand(
         credential.serialize(), options={"documentLoader": document_loader}
