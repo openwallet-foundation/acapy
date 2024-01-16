@@ -1,16 +1,19 @@
 """Automated setup process for AnonCreds credential definitions with revocation."""
 
 from abc import ABC, abstractmethod
+
+from aries_cloudagent.protocols.endorse_transaction.v1_0.util import is_author_role
+
 from ..anoncreds.revocation import AnonCredsRevocation
-from ..core.profile import Profile
 from ..core.event_bus import EventBus
+from ..core.profile import Profile
 from .events import (
     CRED_DEF_FINISHED_PATTERN,
-    REV_REG_DEF_FINISHED_PATTERN,
     REV_LIST_FINISHED_PATTERN,
+    REV_REG_DEF_FINISHED_PATTERN,
     CredDefFinishedEvent,
-    RevRegDefFinishedEvent,
     RevListFinishedEvent,
+    RevRegDefFinishedEvent,
 )
 
 
@@ -60,7 +63,11 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     async def on_cred_def(self, profile: Profile, event: CredDefFinishedEvent):
         """Handle cred def finished."""
         payload = event.payload
-        if payload.support_revocation:
+        auto_create_revocation = is_author_role(profile) and profile.settings.get(
+            "endorser.auto_create_rev_reg", False
+        )
+
+        if payload.support_revocation or auto_create_revocation:
             revoc = AnonCredsRevocation(profile)
             for registry_count in range(self.INITIAL_REGISTRY_COUNT):
                 await revoc.create_and_register_revocation_registry_definition(
@@ -69,17 +76,26 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     registry_type=self.REGISTRY_TYPE,
                     max_cred_num=payload.max_cred_num,
                     tag=str(registry_count),
+                    options=payload.options,
                 )
 
     async def on_rev_reg_def(self, profile: Profile, event: RevRegDefFinishedEvent):
         """Handle rev reg def finished."""
-        revoc = AnonCredsRevocation(profile)
-        await revoc.upload_tails_file(event.payload.rev_reg_def)
-        await revoc.create_and_register_revocation_list(event.payload.rev_reg_def_id)
+        payload = event.payload
+        auto_create_revocation = is_author_role(profile) and profile.settings.get(
+            "endorser.auto_create_rev_reg", False
+        )
 
-        if event.payload.rev_reg_def.tag == str(0):
-            # Mark the first registry as active
-            await revoc.set_active_registry(event.payload.rev_reg_def_id)
+        if payload.options.get("support_revocation", False) or auto_create_revocation:
+            revoc = AnonCredsRevocation(profile)
+            await revoc.upload_tails_file(payload.rev_reg_def)
+            await revoc.create_and_register_revocation_list(
+                payload.rev_reg_def_id, payload.options
+            )
+
+            if payload.rev_reg_def.tag == str(0):
+                # Mark the first registry as active
+                await revoc.set_active_registry(payload.rev_reg_def_id)
 
     async def on_rev_list(self, profile: Profile, event: RevListFinishedEvent):
         """Handle rev list finished."""

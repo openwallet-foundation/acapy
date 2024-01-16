@@ -6,6 +6,7 @@ from unittest import IsolatedAsyncioTestCase
 from .....admin.request_context import AdminRequestContext
 from .....anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 from .....anoncreds.issuer import AnonCredsIssuer
+from .....anoncreds.revocation import AnonCredsRevocation
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
@@ -15,6 +16,7 @@ from .....tests import mock
 from .....wallet.base import BaseWallet
 from .....wallet.did_method import SOV, DIDMethods
 from .....wallet.key_type import ED25519
+from ....issue_credential.v1_0.tests import REV_REG_ID
 from ..manager import TransactionManager, TransactionManagerError
 from ..models.transaction_record import TransactionRecord
 from ..transaction_jobs import TransactionJob
@@ -836,3 +838,113 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
 
             with self.assertRaises(TransactionManagerError):
                 await self.manager.set_transaction_their_job(mock_job, mock_receipt)
+
+    @mock.patch.object(AnonCredsIssuer, "finish_schema")
+    @mock.patch.object(AnonCredsIssuer, "finish_cred_def")
+    @mock.patch.object(AnonCredsRevocation, "finish_revocation_registry_definition")
+    @mock.patch.object(AnonCredsRevocation, "finish_revocation_list")
+    async def test_endorsed_txn_post_processing_anoncreds(
+        self,
+        mock_finish_revocation_list,
+        mock_finish_revocation_registry_definition,
+        mock_finish_cred_def,
+        mock_finish_schema,
+    ):
+        self.profile.settings.set_value("wallet.type", "askar-anoncreds")
+        transaction = TransactionRecord(
+            connection_id="123",
+            thread_id="456",
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "schema_id": SCHEMA_ID,
+                }
+            },
+        )
+
+        ledger_response = {
+            "result": {
+                "txn": {"type": "101", "metadata": {"from": TEST_DID}},
+                "txnMetadata": {"txnId": SCHEMA_ID},
+            },
+        }
+
+        await self.manager.endorsed_txn_post_processing(transaction, ledger_response)
+        mock_finish_schema.assert_called_once()
+
+        transaction = TransactionRecord(
+            connection_id="123",
+            thread_id="456",
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "cred_def_id": CRED_DEF_ID,
+                    "issuer_did": "TUku9MDGa7QALbAJX4oAww",
+                    "options": {},
+                }
+            },
+        )
+
+        ledger_response = {
+            "result": {
+                "txn": {
+                    "type": "102",
+                    "metadata": {"from": TEST_DID},
+                    "data": {"ref": 1},
+                },
+                "txnMetadata": {"txnId": CRED_DEF_ID},
+            },
+        }
+
+        await self.manager.endorsed_txn_post_processing(transaction, ledger_response)
+        mock_finish_cred_def.assert_called_once()
+
+        transaction = TransactionRecord(
+            connection_id="123",
+            thread_id="456",
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "rev_reg_id": REV_REG_ID,
+                    "options": {},
+                }
+            },
+        )
+
+        ledger_response = {
+            "result": {
+                "txn": {
+                    "type": "113",
+                    "metadata": {"from": TEST_DID},
+                },
+                "txnMetadata": {"txnId": REV_REG_ID},
+            },
+        }
+
+        await self.manager.endorsed_txn_post_processing(transaction, ledger_response)
+        mock_finish_revocation_registry_definition.assert_called_once()
+
+        transaction = TransactionRecord(
+            connection_id="123",
+            thread_id="456",
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "rev_reg_id": REV_REG_ID,
+                }
+            },
+        )
+
+        ledger_response = {
+            "result": {
+                "txn": {
+                    "type": "114",
+                    "metadata": {"from": TEST_DID},
+                    "data": {"revocRegDefId": REV_REG_ID},
+                },
+                "txnMetadata": {"txnId": REV_REG_ID},
+            },
+        }
+
+        await self.manager.endorsed_txn_post_processing(transaction, ledger_response)
+        mock_finish_revocation_list.assert_called_once()

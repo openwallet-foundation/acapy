@@ -15,6 +15,11 @@ from bdd_support.agent_backchannel_client import (
 )
 from behave import given, then, when
 
+
+def is_anoncreds(agent):
+    return agent["agent"].wallet_type == "askar-anoncreds"
+
+
 # This step is defined in another feature file
 # Given "Acme" and "Bob" have an existing connection
 
@@ -98,8 +103,10 @@ def step_impl(context, agent_name, schema_name):
 
     schema_info = read_schema_data(schema_name)
     connection_id = agent["agent"].agent.connection_id
+    if "txn_ids" not in context:
+        context.txn_ids = {}
 
-    if agent["agent"].wallet_type != "askar-anoncreds":
+    if not is_anoncreds(agent):
         created_txn = agent_container_POST(
             agent["agent"],
             "/schemas",
@@ -109,6 +116,13 @@ def step_impl(context, agent_name, schema_name):
                 "create_transaction_for_endorser": "true",
             },
         )
+        # assert goodness
+        if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
+            assert created_txn["txn"]["state"] == "request_sent"
+        else:
+            assert created_txn["txn"]["state"] == "transaction_created"
+
+        context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
     else:
         schema_info["schema"]["issuerId"] = context.public_dids["AUTHOR"]
         schema_info["options"]["create_transaction_for_endorser"] = True
@@ -119,15 +133,16 @@ def step_impl(context, agent_name, schema_name):
             data=schema_info,
         )
 
-    # assert goodness
-    if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
-        assert created_txn["txn"]["state"] == "request_sent"
-    else:
-        assert created_txn["txn"]["state"] == "transaction_created"
+        if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
+            assert (
+                created_txn["registration_metadata"]["txn"]["state"] == "request_sent"
+            )
+            assert created_txn["schema_state"]["state"] == "wait"
+            assert created_txn["job_id"] is not None
 
-    if "txn_ids" not in context:
-        context.txn_ids = {}
-    context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
+        context.txn_ids["AUTHOR"] = created_txn["registration_metadata"]["txn"][
+            "transaction_id"
+        ]
 
 
 @when('"{agent_name}" requests endorsement for the transaction')
@@ -208,7 +223,7 @@ def step_impl(context, agent_name, schema_name):
     assert len(schemas["schema_ids"]) == 1
 
     schema_id = schemas["schema_ids"][0]
-    if agent["agent"].wallet_type != "askar-anoncreds":
+    if not is_anoncreds(agent):
         agent_container_GET(agent["agent"], "/schemas/" + schema_id)
     else:
         agent_container_GET(agent["agent"], "/anoncreds/schema/" + schema_id)
@@ -230,17 +245,41 @@ def step_impl(context, agent_name, schema_name):
     assert len(schemas["schema_ids"]) == 1
 
     schema_id = schemas["schema_ids"][0]
-    created_txn = agent_container_POST(
-        agent["agent"],
-        "/credential-definitions",
-        data={
-            "schema_id": schema_id,
-            "tag": "test_cred_def_with_endorsement",
-            "support_revocation": True,
-            "revocation_registry_size": 1000,
-        },
-        params={"conn_id": connection_id, "create_transaction_for_endorser": "true"},
-    )
+
+    if not is_anoncreds(agent):
+        created_txn = agent_container_POST(
+            agent["agent"],
+            "/credential-definitions",
+            data={
+                "schema_id": schema_id,
+                "tag": "test_cred_def_with_endorsement",
+                "support_revocation": True,
+                "revocation_registry_size": 1000,
+            },
+            params={
+                "conn_id": connection_id,
+                "create_transaction_for_endorser": "true",
+            },
+        )
+    else:
+        anoncreds_cred_def_result = agent_container_POST(
+            agent["agent"],
+            "/anoncreds/credential-definition",
+            data={
+                "credential_definition": {
+                    "issuerId": schema_id.split(":")[0],
+                    "schemaId": schema_id,
+                    "tag": "test_cred_def_with_endorsement",
+                },
+                "options": {
+                    "endorser_connection_id": connection_id,
+                    "create_transaction_for_endorser": True,
+                    "support_revocation": True,
+                    "revocation_registry_size": 1000,
+                },
+            },
+        )
+        created_txn = anoncreds_cred_def_result["registration_metadata"]
 
     # assert goodness
     if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
@@ -293,36 +332,61 @@ def step_impl(context, agent_name, schema_name):
 
     connection_id = agent["agent"].agent.connection_id
 
-    # generate revocation registry transaction
-    rev_reg = agent_container_POST(
-        agent["agent"],
-        "/revocation/create-registry",
-        data={"credential_definition_id": context.cred_def_id, "max_cred_num": 1000},
-        params={},
-    )
-    rev_reg_id = rev_reg["result"]["revoc_reg_id"]
-    assert rev_reg_id is not None
+    if not is_anoncreds(agent):
+        # generate revocation registry transaction
+        rev_reg = agent_container_POST(
+            agent["agent"],
+            "/revocation/create-registry",
+            data={
+                "credential_definition_id": context.cred_def_id,
+                "max_cred_num": 1000,
+            },
+            params={},
+        )
+        rev_reg_id = rev_reg["result"]["revoc_reg_id"]
+        assert rev_reg_id is not None
 
-    # update revocation registry
-    agent_container_PATCH(
-        agent["agent"],
-        f"/revocation/registry/{rev_reg_id}",
-        data={
-            "tails_public_uri": f"http://host.docker.internal:6543/revocation/registry/{rev_reg_id}/tails-file"
-        },
-        params={},
-    )
+        # update revocation registry
+        agent_container_PATCH(
+            agent["agent"],
+            f"/revocation/registry/{rev_reg_id}",
+            data={
+                "tails_public_uri": f"http://host.docker.internal:6543/revocation/registry/{rev_reg_id}/tails-file"
+            },
+            params={},
+        )
 
-    # create rev_reg transaction
-    created_txn = agent_container_POST(
-        agent["agent"],
-        f"/revocation/registry/{rev_reg_id}/definition",
-        data={},
-        params={
-            "conn_id": connection_id,
-            "create_transaction_for_endorser": "true",
-        },
-    )
+        # create rev_reg transaction
+        created_txn = agent_container_POST(
+            agent["agent"],
+            f"/revocation/registry/{rev_reg_id}/definition",
+            data={},
+            params={
+                "conn_id": connection_id,
+                "create_transaction_for_endorser": "true",
+            },
+        )
+    else:
+        # generate revocation registry transaction
+        anoncreds_rev_reg_result = agent_container_POST(
+            agent["agent"],
+            "/anoncreds/revocation-registry-definition",
+            data={
+                "revocation_registry_definition": {
+                    "credDefId": context.cred_def_id,
+                    "issuerId": context.cred_def_id.split(":")[0],
+                    "maxCredNum": 666,
+                    "tag": "default",
+                },
+                "options": {
+                    "endorser_connection_id": connection_id,
+                    "create_transaction_for_endorser": True,
+                },
+            },
+            params={},
+        )
+        created_txn = anoncreds_rev_reg_result["registration_metadata"]
+
     assert created_txn["txn"]["state"] == "transaction_created"
     if "txn_ids" not in context:
         context.txn_ids = {}
@@ -346,10 +410,14 @@ def step_impl(context, agent_name):
                 "cred_def_id": context.cred_def_id,
             },
         )
+        # anoncreds returns a job_id here immediately
+        # check id is a rev_reg_def_id or reset list
+        if [x for x in rev_regs["rev_reg_ids"] if str(x).count(":") > 0].__len__() == 0:
+            rev_regs = {"rev_reg_ids": []}
         i = i - 1
     assert len(rev_regs["rev_reg_ids"]) >= 1
 
-    rev_reg_id = rev_regs["rev_reg_ids"][0]
+    rev_reg_id = [x for x in rev_regs["rev_reg_ids"] if str(x).count(":") > 0][0]
 
     context.rev_reg_id = rev_reg_id
 
@@ -363,21 +431,38 @@ def step_impl(context, agent_name):
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
-    # activate rev_reg
-    agent_container_PATCH(
-        agent["agent"],
-        f"/revocation/registry/{context.rev_reg_id}/set-state",
-        data={},
-        params={"state": "active"},
-    )
+    if not is_anoncreds(agent):
+        # activate rev_reg
+        agent_container_PATCH(
+            agent["agent"],
+            f"/revocation/registry/{context.rev_reg_id}/set-state",
+            data={},
+            params={"state": "active"},
+        )
 
-    # upload rev_reg
-    agent_container_PUT(
-        agent["agent"],
-        f"/revocation/registry/{context.rev_reg_id}/tails-file",
-        data={},
-        params={},
-    )
+        # upload rev_reg
+        agent_container_PUT(
+            agent["agent"],
+            f"/revocation/registry/{context.rev_reg_id}/tails-file",
+            data={},
+            params={},
+        )
+    else:
+        # activate rev_reg
+        agent_container_PUT(
+            agent["agent"],
+            f"/anoncreds/registry/{context.rev_reg_id}/active",
+            data={},
+            params={},
+        )
+
+        # upload rev_reg
+        agent_container_PUT(
+            agent["agent"],
+            f"/anoncreds/registry/{context.rev_reg_id}/tails-file",
+            data={},
+            params={},
+        )
 
 
 @given(
@@ -394,16 +479,20 @@ def step_impl(context, agent_name):
 
     # a registry is promoted to active when its initial entry is sent
     i = 5
+
+    async_sleep(2.0)
+
     while i > 0:
         async_sleep(1.0)
-        reg_info = agent_container_GET(
-            agent["agent"],
-            f"/revocation/registry/{context.rev_reg_id}",
-        )
-        state = reg_info["result"]["state"]
-        if state in ["active", "finished"]:
-            return
-        i = i - 1
+        if context.rev_reg_id is not None:
+            reg_info = agent_container_GET(
+                agent["agent"],
+                f"/revocation/registry/{context.rev_reg_id}",
+            )
+            state = reg_info["result"]["state"]
+            if state in ["active", "finished"]:
+                return
+            i = i - 1
 
     assert False
 
@@ -421,15 +510,31 @@ def step_impl(context, agent_name, schema_name):
 
     # generate revocation registry entry transaction
     # create rev_reg transaction
-    created_txn = agent_container_POST(
-        agent["agent"],
-        f"/revocation/registry/{context.rev_reg_id}/entry",
-        data={},
-        params={
-            "conn_id": connection_id,
-            "create_transaction_for_endorser": "true",
-        },
-    )
+    if not is_anoncreds(agent):
+        created_txn = agent_container_POST(
+            agent["agent"],
+            f"/revocation/registry/{context.rev_reg_id}/entry",
+            data={},
+            params={
+                "conn_id": connection_id,
+                "create_transaction_for_endorser": "true",
+            },
+        )
+    else:
+        anoncreds_result = agent_container_POST(
+            agent["agent"],
+            "/anoncreds/revocation-list",
+            data={
+                "rev_reg_def_id": context.rev_reg_id,
+                "options": {
+                    "create_transaction_for_endorser": "true",
+                    "endorser_connection_id": connection_id,
+                },
+            },
+            params={},
+        )
+        created_txn = anoncreds_result["registration_metadata"]
+
     assert created_txn["txn"]["state"] == "transaction_created"
     if "txn_ids" not in context:
         context.txn_ids = {}

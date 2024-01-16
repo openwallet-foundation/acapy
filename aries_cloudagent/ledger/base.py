@@ -380,6 +380,16 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Create the ledger request for publishing a schema."""
 
     @abstractmethod
+    async def _create_revoc_reg_def_request(
+        self,
+        public_info: DIDInfo,
+        revoc_reg_def: dict,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ):
+        """Create the ledger request for publishing a revocation registry definition."""
+
+    @abstractmethod
     async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:
         """Look up a revocation registry definition by ID."""
 
@@ -734,9 +744,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             cred_def_req, True, sign_did=public_info, write_ledger=write_ledger
         )
 
-        # TODO Clean up
-        # if not write_ledger:
-        #     return (credential_definition_id, {"signed_txn": resp}, novel)
+        if not write_ledger:
+            return (cred_def_id, {"signed_txn": resp})
 
         seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
         return seq_no

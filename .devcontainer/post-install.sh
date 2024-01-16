@@ -25,6 +25,7 @@ cat > .pytest.ini <<EOF
 testpaths = "aries_cloudagent"
 addopts = --quiet
 markers = [
+    "anoncreds: Tests specifically relating to AnonCreds support",
     "askar: Tests specifically relating to Aries-Askar support",
     "indy: Tests specifically relating to Hyperledger Indy SDK support",
     "indy_credx: Tests specifically relating to Indy-Credx support",

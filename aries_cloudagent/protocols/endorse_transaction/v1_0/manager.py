@@ -6,6 +6,7 @@ import uuid
 from asyncio import shield
 
 from ....anoncreds.issuer import AnonCredsIssuer
+from ....anoncreds.revocation import AnonCredsRevocation
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -797,6 +798,8 @@ class TransactionManager:
             "connection_id": transaction.connection_id,
         }
 
+        is_anoncreds = self._profile.settings.get("wallet.type") == "askar-anoncreds"
+
         # write the wallet non-secrets record
         if ledger_response["result"]["txn"]["type"] == "101":
             # schema transaction
@@ -806,7 +809,7 @@ class TransactionManager:
             meta_data["context"]["public_did"] = public_did
 
             # Notify schema ledger write event
-            if self._profile.settings.get("wallet.type") == "askar-anoncreds":
+            if is_anoncreds:
                 await AnonCredsIssuer(self._profile).finish_schema(
                     meta_data["context"]["job_id"],
                     meta_data["context"]["schema_id"],
@@ -831,23 +834,44 @@ class TransactionManager:
             meta_data["context"]["issuer_did"] = issuer_did
 
             # Notify event
-            await notify_cred_def_event(self._profile, cred_def_id, meta_data)
+            if is_anoncreds:
+                await AnonCredsIssuer(self._profile).finish_cred_def(
+                    meta_data["context"]["job_id"],
+                    meta_data["context"]["cred_def_id"],
+                    meta_data["context"]["options"],
+                )
+            else:
+                await notify_cred_def_event(self._profile, cred_def_id, meta_data)
 
         elif ledger_response["result"]["txn"]["type"] == "113":
             # revocation registry transaction
             rev_reg_id = ledger_response["result"]["txnMetadata"]["txnId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
-            await notify_revocation_reg_endorsed_event(
-                self._profile, rev_reg_id, meta_data
-            )
+            if is_anoncreds:
+                await AnonCredsRevocation(
+                    self._profile
+                ).finish_revocation_registry_definition(
+                    meta_data["context"]["job_id"],
+                    meta_data["context"]["rev_reg_id"],
+                    meta_data["context"]["options"],
+                )
+            else:
+                await notify_revocation_reg_endorsed_event(
+                    self._profile, rev_reg_id, meta_data
+                )
 
         elif ledger_response["result"]["txn"]["type"] == "114":
             # revocation entry transaction
             rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
-            await notify_revocation_entry_endorsed_event(
-                self._profile, rev_reg_id, meta_data
-            )
+            if is_anoncreds:
+                await AnonCredsRevocation(self._profile).finish_revocation_list(
+                    meta_data["context"]["job_id"], rev_reg_id
+                )
+            else:
+                await notify_revocation_entry_endorsed_event(
+                    self._profile, rev_reg_id, meta_data
+                )
 
         elif ledger_response["result"]["txn"]["type"] == "1":
             # write DID to ledger
