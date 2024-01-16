@@ -98,6 +98,8 @@ def step_impl(context, agent_name, schema_name):
 
     schema_info = read_schema_data(schema_name)
     connection_id = agent["agent"].agent.connection_id
+    if "txn_ids" not in context:
+        context.txn_ids = {}
 
     if agent["agent"].wallet_type != "askar-anoncreds":
         created_txn = agent_container_POST(
@@ -109,6 +111,13 @@ def step_impl(context, agent_name, schema_name):
                 "create_transaction_for_endorser": "true",
             },
         )
+        # assert goodness
+        if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
+            assert created_txn["txn"]["state"] == "request_sent"
+        else:
+            assert created_txn["txn"]["state"] == "transaction_created"
+
+        context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
     else:
         schema_info["schema"]["issuerId"] = context.public_dids["AUTHOR"]
         schema_info["options"]["create_transaction_for_endorser"] = True
@@ -119,15 +128,16 @@ def step_impl(context, agent_name, schema_name):
             data=schema_info,
         )
 
-    # assert goodness
-    if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
-        assert created_txn["txn"]["state"] == "request_sent"
-    else:
-        assert created_txn["txn"]["state"] == "transaction_created"
+        if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
+            assert (
+                created_txn["registration_metadata"]["txn"]["state"] == "request_sent"
+            )
+            assert created_txn["schema_state"]["state"] == "transaction_requested"
+            assert created_txn["job_id"] is not None
 
-    if "txn_ids" not in context:
-        context.txn_ids = {}
-    context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
+        context.txn_ids["AUTHOR"] = created_txn["registration_metadata"]["txn"][
+            "transaction_id"
+        ]
 
 
 @when('"{agent_name}" requests endorsement for the transaction')

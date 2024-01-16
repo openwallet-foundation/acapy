@@ -19,24 +19,29 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Then "Bob" can write the transaction to the ledger
       And "Bob" has written the schema <Schema_name> to the ledger
 
+      @GHA
       Examples:
          | Acme_capabilities         | Bob_capabilities          | Schema_name    |
          | --did-exchange            | --did-exchange            | driverslicense |
          | --mediation               | --mediation               | driverslicense |
          | --multitenant             | --multitenant             | driverslicense |
          | --mediation --multitenant | --mediation --multitenant | driverslicense |
+
+      @Mulitledger
+      Examples:
+         | Acme_capabilities         | Bob_capabilities          | Schema_name    |
          | --multitenant --multi-ledger | --multitenant --multi-ledger | driverslicense |
          | --multitenant --multi-ledger --revocation | --multitenant --multi-ledger --revocation | driverslicense |
 
-      @WalletType_Askar_AnonCreds
+      @WalletType_Askar_AnonCreds @GHA
       Examples:
          | Acme_capabilities         | Bob_capabilities          | Schema_name    |
          | --wallet-type askar-anoncreds | --wallet-type askar-anoncreds   | anoncreds-testing |
-         | --wallet-type askar-anoncreds |                                 | driverslicense    |
+         | --wallet-type askar-anoncreds |                                 | anoncreds-testing |
          |                               | --wallet-type askar-anoncreds   | anoncreds-testing |
 
 
-   @T001.1-RFC0586 @GHA
+   @T001.1-RFC0586 
    Scenario Outline: endorse a transaction and write to the ledger
       Given we have "2" agents
          | name  | role     | capabilities        |

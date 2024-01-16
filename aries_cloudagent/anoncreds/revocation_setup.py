@@ -1,16 +1,17 @@
 """Automated setup process for AnonCreds credential definitions with revocation."""
 
 from abc import ABC, abstractmethod
+
 from ..anoncreds.revocation import AnonCredsRevocation
-from ..core.profile import Profile
 from ..core.event_bus import EventBus
+from ..core.profile import Profile
 from .events import (
     CRED_DEF_FINISHED_PATTERN,
-    REV_REG_DEF_FINISHED_PATTERN,
     REV_LIST_FINISHED_PATTERN,
+    REV_REG_DEF_FINISHED_PATTERN,
     CredDefFinishedEvent,
-    RevRegDefFinishedEvent,
     RevListFinishedEvent,
+    RevRegDefFinishedEvent,
 )
 
 
@@ -69,13 +70,16 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
                     registry_type=self.REGISTRY_TYPE,
                     max_cred_num=payload.max_cred_num,
                     tag=str(registry_count),
+                    options=payload.options,
                 )
 
     async def on_rev_reg_def(self, profile: Profile, event: RevRegDefFinishedEvent):
         """Handle rev reg def finished."""
         revoc = AnonCredsRevocation(profile)
         await revoc.upload_tails_file(event.payload.rev_reg_def)
-        await revoc.create_and_register_revocation_list(event.payload.rev_reg_def_id)
+        await revoc.create_and_register_revocation_list(
+            event.payload.rev_reg_def_id, event.payload.options
+        )
 
         if event.payload.rev_reg_def.tag == str(0):
             # Mark the first registry as active

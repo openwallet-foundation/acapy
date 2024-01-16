@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Optional, Pattern, Sequence
+from typing import Pattern, Sequence
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
@@ -55,7 +55,7 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self,
         profile: Profile,
         schema: AnonCredsSchema,
-        options: Optional[dict],
+        options: dict = {},
     ) -> SchemaResult:
         """Register a schema on the registry."""
         raise NotImplementedError()
@@ -71,7 +71,7 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         profile: Profile,
         schema: GetSchemaResult,
         credential_definition: CredDef,
-        options: Optional[dict] = None,
+        options: dict = {},
     ) -> CredDefResult:
         """Register a credential definition on the registry."""
         raise NotImplementedError()
@@ -86,7 +86,7 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self,
         profile: Profile,
         revocation_registry_definition: RevRegDef,
-        options: Optional[dict] = None,
+        options: dict = {},
     ) -> RevRegDefResult:
         """Register a revocation registry definition on the registry."""
         raise NotImplementedError()
@@ -102,7 +102,7 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         profile: Profile,
         rev_reg_def: RevRegDef,
         rev_list: RevList,
-        options: Optional[dict] = None,
+        options: dict = {},
     ) -> RevListResult:
         """Register a revocation list on the registry."""
         raise NotImplementedError()
@@ -114,7 +114,7 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         prev_list: RevList,
         curr_list: RevList,
         revoked: Sequence[int],
-        options: Optional[dict] = None,
+        options: dict = {},
     ) -> RevListResult:
         """Update a revocation list on the registry."""
         raise NotImplementedError()

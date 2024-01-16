@@ -545,7 +545,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
                     return_value=GetSchemaResult(
                         schema_id="schema-id",
                         schema=AnonCredsSchema(
-                            issuer_id="issuer-id",
+                            issuer_id="did:sov:3avoBCqDMFHFaKUHug9s8W",
                             name="schema-name",
                             version="1.0",
                             attr_names=["attr1", "attr2"],
@@ -587,8 +587,8 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
                 commit=mock.CoroutineMock(return_value=None),
             )
         )
-        # Creating fails
-        with self.assertRaises(test_module.AnonCredsIssuerError):
+        # Creating fails with bad issuer_id
+        with self.assertRaises(test_module.AnoncredsError):
             await self.issuer.create_and_register_credential_definition(
                 issuer_id="issuer-id",
                 schema_id="CsQY9MGeD3CQP4EyuVFo5m:2:MYCO Biomarker:0.0.3",
