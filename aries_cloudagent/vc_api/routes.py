@@ -14,6 +14,7 @@ from ..vc.ld_proofs.purposes.assertion_proof_purpose import AssertionProofPurpos
 from ..vc.vc_ld.verify import verify_credential, verify_presentation
 from ..vc.vc_ld.issue import issue as issue_credential
 from ..vc.vc_ld.prove import sign_presentation
+from ..vc.vc_ld.store import store_credential
 from ..vc.vc_ld.manager import VcLdpManager, VcLdpManagerError
 from ..vc.vc_ld.models.credential import VerifiableCredential
 from ..vc.vc_ld.models.presentation import VerifiablePresentation
@@ -66,6 +67,36 @@ async def issue_credential_route(request: web.BaseRequest):
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
     return web.json_response({"verifiableCredential": vc}, status=201)
+
+
+@docs(tags=["vc-api"], summary="Store a credential")
+@request_schema(VerifyCredentialRequest)
+@response_schema(VerifyCredentialResponse, 200)
+async def store_credential_route(request: web.BaseRequest):
+    """Request handler for storing a jsonld VC.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    vc = VerifiableCredential.deserialize(body["verifiableCredential"])
+
+    try:
+        manager = context.inject(VcLdpManager)
+        await manager.verify_credential(vc)
+        await store_credential(
+            credential=vc,
+            document_loader=manager.profile.inject(DocumentLoader),
+            context=context,
+            cred_id=None,
+        )
+    except VcLdpManagerError as err:
+        return web.json_response({"error": str(err)}, status=400)
+    except (WalletError, InjectionError):
+        raise web.HTTPForbidden(reason="Bad credential")
+    return web.json_response({"message": "Credential stored"}, status=200)
 
 
 @docs(tags=["vc-api"], summary="Verify a credential")
@@ -171,6 +202,7 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post("/credentials/issue", issue_credential_route),
+            web.post("/credentials/store", store_credential_route),
             web.post("/credentials/verify", verify_credential_route),
             web.post("/presentations/prove", prove_presentation_route),
             web.post("/presentations/verify", verify_presentation_route),
