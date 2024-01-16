@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 from pytz import utc
-from typing import List, Union
+from typing import List, Optional, Union
 
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 
@@ -24,8 +24,8 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         self,
         *,
         key_pair: KeyPair,
-        proof: dict = None,
-        verification_method: str = None,
+        proof: Optional[dict] = None,
+        verification_method: Optional[str] = None,
         date: Union[datetime, None] = None,
     ):
         """Create new BbsBlsSignature2020 instance.
