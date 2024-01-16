@@ -3,11 +3,12 @@
 import json
 import logging
 import uuid
-
 from asyncio import shield
 
+from ....anoncreds.events import SchemaRegistrationFinishedEvent
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
+from ....core.event_bus import EventBus
 from ....core.profile import Profile
 from ....indy.issuer import IndyIssuerError
 from ....ledger.base import BaseLedger
@@ -15,17 +16,16 @@ from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import notify_cred_def_event
 from ....messaging.schemas.util import notify_schema_event
 from ....revocation.util import (
-    notify_revocation_reg_endorsed_event,
     notify_revocation_entry_endorsed_event,
+    notify_revocation_reg_endorsed_event,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import (
-    notify_endorse_did_event,
     notify_endorse_did_attrib_event,
+    notify_endorse_did_event,
 )
-
 from .messages.cancel_transaction import CancelTransaction
 from .messages.endorsed_transaction_response import EndorsedTransactionResponse
 from .messages.refused_transaction_response import RefusedTransactionResponse
@@ -415,22 +415,32 @@ class TransactionManager:
         if (not endorser) and (
             txn_goal_code != TransactionRecord.WRITE_DID_TRANSACTION
         ):
-            ledger = self._profile.inject(BaseLedger)
-            if not ledger:
-                reason = "No ledger available"
-                if not self._profile.context.settings.get_value("wallet.type"):
-                    reason += ": missing wallet-type?"
-                raise TransactionManagerError(reason)
+            if (
+                self._profile.context.settings.get_value("wallet.type")
+                == "askar-anoncreds"
+            ):
+                from aries_cloudagent.anoncreds.default.legacy_indy.registry import (
+                    LegacyIndyRegistry,
+                )
 
-            async with ledger:
-                try:
-                    ledger_response_json = await shield(
-                        ledger.txn_submit(
-                            ledger_transaction, sign=False, taa_accept=False
+                legacy_indy_registry = LegacyIndyRegistry()
+                ledger_response_json = await legacy_indy_registry.txn_submit(
+                    self._profile, ledger_transaction, sign=False, taa_accept=False
+                )
+            else:
+                ledger = self._profile.inject(BaseLedger)
+                if not ledger:
+                    raise TransactionManagerError("No ledger available")
+
+                async with ledger:
+                    try:
+                        ledger_response_json = await shield(
+                            ledger.txn_submit(
+                                ledger_transaction, sign=False, taa_accept=False
+                            )
                         )
-                    )
-                except (IndyIssuerError, LedgerError) as err:
-                    raise TransactionManagerError(err.roll_up) from err
+                    except (IndyIssuerError, LedgerError) as err:
+                        raise TransactionManagerError(err.roll_up) from err
 
             ledger_response = json.loads(ledger_response_json)
 
@@ -797,7 +807,14 @@ class TransactionManager:
             meta_data["context"]["public_did"] = public_did
 
             # Notify schema ledger write event
-            await notify_schema_event(self._profile, schema_id, meta_data)
+            if self._profile.settings.get("wallet.type") == "askar-anoncreds":
+                event_bus = self.profile.inject(EventBus)
+                await event_bus.notify(
+                    self._profile,
+                    SchemaRegistrationFinishedEvent.with_payload(meta_data),
+                )
+            else:
+                await notify_schema_event(self._profile, schema_id, meta_data)
 
         elif ledger_response["result"]["txn"]["type"] == "102":
             # cred def transaction

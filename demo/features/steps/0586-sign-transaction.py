@@ -1,5 +1,4 @@
 import time
-from time import sleep
 
 from bdd_support.agent_backchannel_client import (
     agent_container_GET,
@@ -7,15 +6,14 @@ from bdd_support.agent_backchannel_client import (
     agent_container_POST,
     agent_container_PUT,
     agent_container_register_did,
+    aries_container_fetch_cred_def,
+    aries_container_fetch_cred_defs,
+    aries_container_fetch_schemas,
     async_sleep,
     read_json_data,
     read_schema_data,
-    aries_container_fetch_schemas,
-    aries_container_fetch_cred_defs,
-    aries_container_fetch_cred_def,
 )
 from behave import given, then, when
-from runners.agent_container import AgentContainer
 
 # This step is defined in another feature file
 # Given "Acme" and "Bob" have an existing connection
@@ -50,7 +48,7 @@ def step_impl(context, agent_name, did_role):
         # assume everything works!
         async_sleep(3.0)
 
-    if not "public_dids" in context:
+    if "public_dids" not in context:
         context.public_dids = {}
     context.public_dids[did_role] = created_did["result"]["did"]
 
@@ -101,12 +99,25 @@ def step_impl(context, agent_name, schema_name):
     schema_info = read_schema_data(schema_name)
     connection_id = agent["agent"].agent.connection_id
 
-    created_txn = agent_container_POST(
-        agent["agent"],
-        "/schemas",
-        data=schema_info["schema"],
-        params={"conn_id": connection_id, "create_transaction_for_endorser": "true"},
-    )
+    if agent["agent"].wallet_type != "askar-anoncreds":
+        created_txn = agent_container_POST(
+            agent["agent"],
+            "/schemas",
+            data=schema_info["schema"],
+            params={
+                "conn_id": connection_id,
+                "create_transaction_for_endorser": "true",
+            },
+        )
+    else:
+        schema_info["schema"]["issuerId"] = context.public_dids["AUTHOR"]
+        schema_info["options"]["create_transaction_for_endorser"] = True
+        schema_info["options"]["endorser_connection_id"] = connection_id
+        created_txn = agent_container_POST(
+            agent["agent"],
+            "/anoncreds/schema",
+            data=schema_info,
+        )
 
     # assert goodness
     if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
@@ -114,7 +125,7 @@ def step_impl(context, agent_name, schema_name):
     else:
         assert created_txn["txn"]["state"] == "transaction_created"
 
-    if not "txn_ids" in context:
+    if "txn_ids" not in context:
         context.txn_ids = {}
     context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
 
@@ -188,8 +199,6 @@ def step_impl(context, agent_name):
 def step_impl(context, agent_name, schema_name):
     agent = context.active_agents[agent_name]
 
-    schema_info = read_schema_data(schema_name)
-
     schemas = {"schema_ids": []}
     i = 5
     while 0 == len(schemas["schema_ids"]) and i > 0:
@@ -199,7 +208,10 @@ def step_impl(context, agent_name, schema_name):
     assert len(schemas["schema_ids"]) == 1
 
     schema_id = schemas["schema_ids"][0]
-    schema = agent_container_GET(agent["agent"], "/schemas/" + schema_id)
+    if agent["agent"].wallet_type != "askar-anoncreds":
+        agent_container_GET(agent["agent"], "/schemas/" + schema_id)
+    else:
+        agent_container_GET(agent["agent"], "/anoncreds/schema/" + schema_id)
 
     context.schema_name = schema_name
 
@@ -235,7 +247,7 @@ def step_impl(context, agent_name, schema_name):
         assert created_txn["txn"]["state"] == "request_sent"
     else:
         assert created_txn["txn"]["state"] == "transaction_created"
-    if not "txn_ids" in context:
+    if "txn_ids" not in context:
         context.txn_ids = {}
     context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
 
@@ -312,7 +324,7 @@ def step_impl(context, agent_name, schema_name):
         },
     )
     assert created_txn["txn"]["state"] == "transaction_created"
-    if not "txn_ids" in context:
+    if "txn_ids" not in context:
         context.txn_ids = {}
     context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
 
@@ -419,7 +431,7 @@ def step_impl(context, agent_name, schema_name):
         },
     )
     assert created_txn["txn"]["state"] == "transaction_created"
-    if not "txn_ids" in context:
+    if "txn_ids" not in context:
         context.txn_ids = {}
     context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
 
@@ -519,7 +531,7 @@ def step_impl(context, agent_name):
     # create rev_reg entry transaction
     created_rev_reg = agent_container_POST(
         agent["agent"],
-        f"/revocation/publish-revocations",
+        "/revocation/publish-revocations",
         data={
             "rrid2crid": {
                 context.cred_exchange["indy"]["rev_reg_id"]: [
@@ -547,7 +559,7 @@ def step_impl(context, agent_name):
     # create rev_reg entry transaction
     created_rev_reg = agent_container_POST(
         agent["agent"],
-        f"/revocation/publish-revocations",
+        "/revocation/publish-revocations",
         data={
             "rrid2crid": {
                 context.cred_exchange["indy"]["rev_reg_id"]: [

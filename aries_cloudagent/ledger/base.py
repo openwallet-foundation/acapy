@@ -3,8 +3,7 @@
 import json
 import logging
 import re
-
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
 from enum import Enum
 from hashlib import sha256
 from typing import List, Sequence, Tuple, Union
@@ -13,15 +12,13 @@ from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..messaging.valid import IndyDID
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
-
+from .endpoint_type import EndpointType
 from .error import (
     BadLedgerRequestError,
     LedgerError,
-    LedgerTransactionError,
     LedgerObjectAlreadyExistsError,
+    LedgerTransactionError,
 )
-
-from .endpoint_type import EndpointType
 
 LOGGER = logging.getLogger(__name__)
 
@@ -594,6 +591,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             attribute_names: A list of schema attributes
 
         """
+        from aries_cloudagent.anoncreds.default.legacy_indy.registry import (
+            LegacyIndyRegistry,
+        )
 
         public_info = await self.get_wallet_public_did()
         if not public_info:
@@ -631,16 +631,17 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         )
 
         try:
-            resp = await self.txn_submit(
+            legacy_indy_registry = LegacyIndyRegistry()
+            resp = await legacy_indy_registry.txn_submit(
+                self.profile,
                 schema_req,
                 sign=True,
                 sign_did=public_info,
                 write_ledger=write_ledger,
             )
 
-            # TODO Clean this up
-            # if not write_ledger:
-            #     return schema_id, {"signed_txn": resp}
+            if not write_ledger:
+                return schema_id, {"signed_txn": resp}
 
             try:
                 # parse sequence number out of response

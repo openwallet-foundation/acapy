@@ -13,11 +13,11 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
-from aries_cloudagent.ledger.error import LedgerError
-
 from ..admin.request_context import AdminRequestContext
 from ..askar.profile import AskarProfile
-from ..core.event_bus import EventBus
+from ..core.event_bus import Event, EventBus
+from ..core.profile import Profile
+from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
@@ -41,6 +41,7 @@ from .base import (
     AnonCredsRegistrationError,
     AnonCredsResolutionError,
 )
+from .events import SCHEMA_REGISTRATION_FINISHED_PATTERN
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import RevListResultSchema, RevRegDefResultSchema
@@ -126,9 +127,22 @@ class SchemaPostOptionSchema(OpenAPISchema):
     """Parameters and validators for schema options."""
 
     endorser_connection_id = fields.Str(
-        description="Connection identifier (optional) (this is an example)",
+        description="""
+            Connection identifier (optional) (this is an example)
+            You can set this is you know the endorsers connection id you want to use.
+            If not specified then the agent will attempt to find an endorser connection.
+        """,
         required=False,
         example=UUIDFour.EXAMPLE,
+    )
+
+    create_transaction_for_endorser = fields.Bool(
+        description="""
+            Create transaction for endorser (optional, default false). 
+            Use this for agents who don't specify an author role but want to 
+            create a transaction for an endorser to sign.""",
+        required=False,
+        example=False,
     )
 
 
@@ -180,7 +194,7 @@ async def schemas_post(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
 
     body = await request.json()
-    options = body.get("options")
+    options = body.get("options", {})
     schema_data = body.get("schema")
 
     if schema_data is None:
@@ -194,7 +208,11 @@ async def schemas_post(request: web.BaseRequest):
     issuer = AnonCredsIssuer(context.profile)
     try:
         result = await issuer.create_and_register_schema(
-            issuer_id, name, version, attr_names, options=options
+            issuer_id,
+            name,
+            version,
+            attr_names,
+            options,
         )
         return web.json_response(result.serialize())
     except (AnonCredsIssuerError, AnonCredsRegistrationError) as e:
@@ -644,6 +662,22 @@ async def publish_revocations(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
 
+def register_events(event_bus: EventBus):
+    """Register events."""
+    # TODO Make this pluggable?
+    setup_manager = DefaultRevocationSetup()
+    setup_manager.register_events(event_bus)
+    event_bus.subscribe(SCHEMA_REGISTRATION_FINISHED_PATTERN, on_schema_event)
+
+
+async def on_schema_event(profile: Profile, event: Event):
+    """Schema post processing."""
+    await AnonCredsIssuer(profile).finish_schema(
+        event.payload.meta_data["context"]["job_id"],
+        event.payload.meta_data["context"]["schema_id"],
+    )
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -671,13 +705,6 @@ async def register(app: web.Application):
             web.post("/anoncreds/publish-revocations", publish_revocations),
         ]
     )
-
-
-def register_events(event_bus: EventBus):
-    """Register events."""
-    # TODO Make this pluggable?
-    setup_manager = DefaultRevocationSetup()
-    setup_manager.register_events(event_bus)
 
 
 def post_process_routes(app: web.Application):
