@@ -23,6 +23,9 @@ from runners.support.utils import (  # noqa:E402
     prompt_loop,
 )
 
+
+DEMO_EXTRA_AGENT_ARGS = os.getenv("DEMO_EXTRA_AGENT_ARGS")
+
 logging.basicConfig(level=logging.WARNING)
 LOGGER = logging.getLogger(__name__)
 
@@ -110,7 +113,15 @@ async def input_invitation(agent_container):
 
 
 async def main(args):
-    alice_agent = await create_agent_with_args(args, ident="alice")
+    extra_args = None
+    if DEMO_EXTRA_AGENT_ARGS:
+        extra_args = json.loads(DEMO_EXTRA_AGENT_ARGS)
+        print("Got extra args:", extra_args)
+    alice_agent = await create_agent_with_args(
+        args,
+        ident="alice",
+        extra_args=extra_args,
+    )
 
     try:
         log_status(
@@ -139,6 +150,7 @@ async def main(args):
             log_file=alice_agent.log_file,
             log_config=alice_agent.log_config,
             log_level=alice_agent.log_level,
+            extra_args=extra_args,
         )
 
         await alice_agent.initialize(the_agent=agent)

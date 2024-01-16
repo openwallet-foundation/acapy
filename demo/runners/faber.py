@@ -33,6 +33,8 @@ CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
+DEMO_EXTRA_AGENT_ARGS = os.getenv("DEMO_EXTRA_AGENT_ARGS")
+
 logging.basicConfig(level=logging.WARNING)
 LOGGER = logging.getLogger(__name__)
 
@@ -381,7 +383,15 @@ class FaberAgent(AriesAgent):
 
 
 async def main(args):
-    faber_agent = await create_agent_with_args(args, ident="faber")
+    extra_args = None
+    if DEMO_EXTRA_AGENT_ARGS:
+        extra_args = json.loads(DEMO_EXTRA_AGENT_ARGS)
+        print("Got extra args:", extra_args)
+    faber_agent = await create_agent_with_args(
+        args,
+        ident="faber",
+        extra_args=extra_args,
+    )
 
     try:
         log_status(
@@ -412,6 +422,7 @@ async def main(args):
             log_file=faber_agent.log_file,
             log_config=faber_agent.log_config,
             log_level=faber_agent.log_level,
+            extra_args=extra_args,
         )
 
         faber_schema_name = "degree schema"

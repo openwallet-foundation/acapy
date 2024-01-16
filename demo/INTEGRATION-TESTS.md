@@ -75,6 +75,17 @@ or:
 BDD_EXTRA_AGENT_ARGS="{\"wallet-type\":\"askar\"}" ./run_bdd -t @taa_required
 ```
 
+The agents run on a pre-defined set of ports, however occasionally your local system may already be using one of these ports.  (For example MacOS recently decided to use 8021 for the ftp proxy service.)
+
+To overriide the default port settings:
+
+```bash
+AGENT_PORT_OVERRIDE=8030 ./run_bdd -t <some tags>
+```
+
+(Note that since the test run multiple agents you require up to 60 available ports.)
+
+
 ## Aca-py Integration Tests vs Aries Agent Test Harness (AATH)
 
 Aca-py Behave tests are based on the interoperability tests that are implemented in the [Aries Agent Test Harness (AATH)](https://github.com/hyperledger/aries-agent-test-harness).  Both use [Behave (Gherkin)](https://behave.readthedocs.io/en/stable/) to execute tests against a running aca-py agent (or in the case of AATH, against any compatible Aries agent), however the aca-py integration tests focus on aca-py specific features.
