@@ -25,6 +25,14 @@ aries\_cloudagent.askar.profile module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.askar.profile\_anon module
+--------------------------------------------
+
+.. automodule:: aries_cloudagent.askar.profile_anon
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.askar.store module
 ------------------------------------
 
