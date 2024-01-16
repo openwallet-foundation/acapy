@@ -1,19 +1,19 @@
-import json
-
 from copy import deepcopy
+import json
 from time import time
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
+from aries_cloudagent.tests import mock
+
+from .. import manager as test_module
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
-from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
-    IndyPresPreview,
     IndyPresPredSpec,
+    IndyPresPreview,
 )
+from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
@@ -24,23 +24,24 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
-
+from .....vc.ld_proofs import DocumentLoader
+from .....vc.tests.document_loader import custom_document_loader
+from .....vc.vc_ld.manager import VcLdpManager
+from .....vc.vc_ld.validation_result import PresentationVerificationResult
 from ...indy import pres_exch_handler as test_indy_util_module
-
-from .. import manager as test_module
-from ..formats.handler import V20PresFormatHandlerError
 from ..formats.dif.handler import DIFPresFormatHandler
 from ..formats.dif.tests.test_handler import (
-    DIF_PRES_REQUEST_B as DIF_PRES_REQ,
     DIF_PRES,
+    DIF_PRES_REQUEST_B as DIF_PRES_REQ,
 )
+from ..formats.handler import V20PresFormatHandlerError
 from ..formats.indy import handler as test_indy_handler
 from ..manager import V20PresManager, V20PresManagerError
 from ..message_types import (
     ATTACHMENT_FORMAT,
+    PRES_20,
     PRES_20_PROPOSAL,
     PRES_20_REQUEST,
-    PRES_20,
 )
 from ..messages.pres import V20Pres
 from ..messages.pres_format import V20PresFormat
@@ -48,10 +49,6 @@ from ..messages.pres_problem_report import V20PresProblemReport
 from ..messages.pres_proposal import V20PresProposal
 from ..messages.pres_request import V20PresRequest
 from ..models.pres_exchange import V20PresExRecord
-
-from .....vc.vc_ld.validation_result import PresentationVerificationResult
-from .....vc.tests.document_loader import custom_document_loader
-from .....vc.ld_proofs import DocumentLoader
 
 CONN_ID = "connection_id"
 ISSUER_DID = "NcYxiDXkpYi6ov5FcYDi1e"
@@ -484,6 +481,8 @@ class TestV20PresManager(IsolatedAsyncioTestCase):
         injector.bind_instance(IndyVerifier, self.verifier)
 
         self.manager = V20PresManager(self.profile)
+        self.vc_manager = VcLdpManager(self.profile)
+        injector.bind_instance(VcLdpManager, self.vc_manager)
 
     async def test_record_eq(self):
         same = [

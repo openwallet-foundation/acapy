@@ -17,6 +17,14 @@ aries\_cloudagent.resolver.default.indy module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.resolver.default.jwk module
+---------------------------------------------
+
+.. automodule:: aries_cloudagent.resolver.default.jwk
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.resolver.default.key module
 ---------------------------------------------
 
@@ -33,6 +41,14 @@ aries\_cloudagent.resolver.default.legacy\_peer module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.resolver.default.peer1 module
+-----------------------------------------------
+
+.. automodule:: aries_cloudagent.resolver.default.peer1
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.resolver.default.peer2 module
 -----------------------------------------------
 
@@ -45,6 +61,14 @@ aries\_cloudagent.resolver.default.peer3 module
 -----------------------------------------------
 
 .. automodule:: aries_cloudagent.resolver.default.peer3
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.resolver.default.peer4 module
+-----------------------------------------------
+
+.. automodule:: aries_cloudagent.resolver.default.peer4
    :members:
    :undoc-members:
    :show-inheritance:

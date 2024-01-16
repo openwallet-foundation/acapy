@@ -13,6 +13,7 @@ Subpackages
    :maxdepth: 4
 
    aries_cloudagent.admin
+   aries_cloudagent.anoncreds
    aries_cloudagent.askar
    aries_cloudagent.cache
    aries_cloudagent.commands
@@ -28,6 +29,7 @@ Subpackages
    aries_cloudagent.protocols
    aries_cloudagent.resolver
    aries_cloudagent.revocation
+   aries_cloudagent.revocation_anoncreds
    aries_cloudagent.settings
    aries_cloudagent.storage
    aries_cloudagent.tails

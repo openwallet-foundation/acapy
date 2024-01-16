@@ -52,7 +52,7 @@ async def ldp_issue(request: web.BaseRequest):
     options = LDProofVCOptions.deserialize(body["options"])
 
     try:
-        manager = VcLdpManager(context.profile)
+        manager = context.inject(VcLdpManager)
         vc = await manager.issue(credential, options)
     except VcLdpManagerError as err:
         return web.json_response({"error": str(err)}, status=400)
@@ -104,7 +104,7 @@ async def ldp_verify(request: web.BaseRequest):
     vp = body.get("vp")
     vc = body.get("vc")
     try:
-        manager = VcLdpManager(context.profile)
+        manager = context.inject(VcLdpManager)
         if vp:
             vp = VerifiableCredential.deserialize(vp)
             options = LDProofVCOptions.deserialize(body["options"])
