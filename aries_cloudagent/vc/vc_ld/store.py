@@ -1,3 +1,4 @@
+"""Verifiable Credential storage methods."""
 from ...admin.request_context import AdminRequestContext
 from ...storage.vc_holder.base import VCHolder
 from ...storage.vc_holder.vc_record import VCRecord
