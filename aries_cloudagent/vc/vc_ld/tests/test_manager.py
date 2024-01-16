@@ -356,7 +356,7 @@ async def test_issue_bbs(
 
 @pytest.mark.asyncio
 async def test_get_all_suites(manager: VcLdpManager):
-    suites = await manager._get_all_suites()
+    suites = await manager._get_all_proof_suites()
     assert len(suites) == 4
     types = (
         Ed25519Signature2018,
