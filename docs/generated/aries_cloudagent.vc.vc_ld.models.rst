@@ -24,3 +24,19 @@ aries\_cloudagent.vc.vc\_ld.models.linked\_data\_proof module
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.vc.vc\_ld.models.options module
+-------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.vc_ld.models.options
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.vc.vc\_ld.models.presentation module
+------------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.vc_ld.models.presentation
+   :members:
+   :undoc-members:
+   :show-inheritance:
