@@ -399,7 +399,7 @@ This works exactly as the *vanilla* multi-tenancy, except that all connections a
 
 ## Other Environment Settings
 
-The agents run on a pre-defined set of ports, however occasionally your local system may already be using one of these ports.  (For example MaxOS recently decided to use 8021 for the ftp proxy service.)
+The agents run on a pre-defined set of ports, however occasionally your local system may already be using one of these ports.  (For example MacOS recently decided to use 8021 for the ftp proxy service.)
 
 To overriide the default port settings:
 
