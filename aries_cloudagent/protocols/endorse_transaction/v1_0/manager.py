@@ -203,8 +203,6 @@ class TransactionManager:
 
         return transaction
 
-    # todo - implementing changes for writing final transaction to the ledger
-    # (For Sign Transaction Protocol)
     async def create_endorse_response(
         self,
         transaction: TransactionRecord,
@@ -327,18 +325,11 @@ class TransactionManager:
             transaction.endorser_write_txn
             and txn_goal_code == TransactionRecord.ENDORSE_TRANSACTION
         ):
-            # running as the endorser, we've been asked to write the transaction
-            ledger_response = await self.complete_transaction(transaction, True)
-            endorsed_transaction_response = EndorsedTransactionResponse(
-                transaction_id=transaction.thread_id,
-                thread_id=transaction._id,
-                signature_response=signature_response,
-                state=TransactionRecord.STATE_TRANSACTION_ACKED,
-                endorser_did=endorser_did,
-                ledger_response=ledger_response,
+            # no longer supported - if the author asks the endorser to write
+            # the transaction, raise an error
+            raise TransactionManagerError(
+                f"Operation not supported, endorser cannot write the ledger transaction"
             )
-
-            return transaction, endorsed_transaction_response
 
         endorsed_transaction_response = EndorsedTransactionResponse(
             transaction_id=transaction.thread_id,
@@ -411,10 +402,17 @@ class TransactionManager:
 
         ledger_transaction = transaction.messages_attach[0]["data"]["json"]
 
-        # check if we (author) have requested the endorser to write the transaction
-        if (endorser and transaction.endorser_write_txn) or (
-            (not endorser) and (not transaction.endorser_write_txn)
-        ):
+        # check our goal code!
+        txn_goal_code = (
+            transaction.signature_request[0]["signer_goal_code"]
+            if transaction.signature_request
+            and "signer_goal_code" in transaction.signature_request[0]
+            else TransactionRecord.ENDORSE_TRANSACTION
+        )
+
+        # if we are the author, we need to write the endorsed ledger transaction ...
+        # ... EXCEPT for DID transactions, which the endorser will write
+        if (not endorser) and (txn_goal_code != TransactionRecord.WRITE_DID_TRANSACTION):
             ledger = self._profile.inject(BaseLedger)
             if not ledger:
                 reason = "No ledger available"
@@ -444,8 +442,8 @@ class TransactionManager:
 
         # this scenario is where the endorser is writing the transaction
         # (called from self.create_endorse_response())
-        if endorser and transaction.endorser_write_txn:
-            return ledger_response
+        #if endorser and transaction.endorser_write_txn:
+        #    return ledger_response
 
         connection_id = transaction.connection_id
         async with self._profile.session() as session:
