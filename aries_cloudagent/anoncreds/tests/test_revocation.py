@@ -7,6 +7,7 @@ from anoncreds import (
     Credential,
     CredentialDefinition,
     RevocationRegistryDefinition,
+    RevocationRegistryDefinitionPrivate,
     RevocationStatusList,
     Schema,
 )
@@ -15,6 +16,7 @@ from asynctest import TestCase
 from requests import RequestException, Session
 
 from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
+from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDef
 from aries_cloudagent.anoncreds.models.anoncreds_revocation import (
     RevList,
     RevListResult,
@@ -31,6 +33,7 @@ from aries_cloudagent.anoncreds.models.anoncreds_schema import (
 from aries_cloudagent.anoncreds.tests.mock_objects import (
     MOCK_REV_REG_DEF,
 )
+from aries_cloudagent.anoncreds.tests.test_issuer import MockCredDefEntry
 from aries_cloudagent.askar.profile_anon import (
     AskarAnoncredsProfile,
 )
@@ -480,30 +483,44 @@ class TestAnonCredsRevocation(TestCase):
 
     @mock.patch.object(InMemoryProfileSession, "handle")
     async def test_create_and_register_revocation_list_errors(self, mock_handle):
+        class MockEntry:
+            value_json = {
+                "credDefId": "CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
+            }
+
         mock_handle.fetch = mock.CoroutineMock(
             side_effect=[
+                # failed to get cred def
                 AskarError(code=AskarErrorCode.UNEXPECTED, message="test"),
-                None,
+                MockEntry(),
+                # failed to get rev reg def
+                MockEntry(),
+                AskarError(code=AskarErrorCode.UNEXPECTED, message="test"),
+                # failed to get cred def
+                MockEntry(),
+                MockEntry(),
+                AskarError(code=AskarErrorCode.UNEXPECTED, message="test"),
             ]
         )
         # askar error
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.create_and_register_revocation_list(
-                rev_reg_def_id="test-rev-reg-def-id",
-            )
-        # fetch returns None
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.create_and_register_revocation_list(
-                rev_reg_def_id="test-rev-reg-def-id",
-            )
-
-        assert mock_handle.fetch.call_count == 2
+        for _ in range(3):
+            with self.assertRaises(test_module.AnonCredsRevocationError):
+                await self.revocation.create_and_register_revocation_list(
+                    rev_reg_def_id="test-rev-reg-def-id",
+                )
 
     @mock.patch.object(InMemoryProfileSession, "handle")
     @mock.patch.object(RevRegDef, "deserialize")
+    @mock.patch.object(CredDef, "deserialize")
+    @mock.patch.object(RevocationRegistryDefinitionPrivate, "load")
     @mock.patch.object(RevocationStatusList, "create")
     async def test_create_and_register_revocation_list(
-        self, mock_list_create, mock_deserialize, mock_handle
+        self,
+        mock_list_create,
+        mock_load_rev_list,
+        mock_deserialize_cred_def,
+        mock_deserialize_rev_reg,
+        mock_handle,
     ):
         mock_list_create.return_value = RevocationStatusList.load(
             {
@@ -515,22 +532,26 @@ class TestAnonCredsRevocation(TestCase):
             }
         )
         mock_handle.fetch = mock.CoroutineMock(
-            return_value=MockEntry(
-                value_json={
-                    "credDefId": "CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-                    "issuerId": "CsQY9MGeD3CQP4EyuVFo5m",
-                    "revocDefType": "CL_ACCUM",
-                    "tag": "string",
-                    "value": {
-                        "maxCredNum": 0,
-                        "publicKeys": {
-                            "accumKey": {"z": "1 0BB...386"},
+            side_effect=[
+                MockEntry(
+                    value_json={
+                        "credDefId": "CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
+                        "issuerId": "CsQY9MGeD3CQP4EyuVFo5m",
+                        "revocDefType": "CL_ACCUM",
+                        "tag": "string",
+                        "value": {
+                            "maxCredNum": 0,
+                            "publicKeys": {
+                                "accumKey": {"z": "1 0BB...386"},
+                            },
+                            "tailsHash": "string",
+                            "tailsLocation": "string",
                         },
-                        "tailsHash": "string",
-                        "tailsLocation": "string",
-                    },
-                }
-            )
+                    }
+                ),
+                MockRevListEntry(),
+                MockCredDefEntry(),
+            ]
         )
         mock_handle.insert = mock.CoroutineMock(return_value=None)
 
@@ -556,7 +577,9 @@ class TestAnonCredsRevocation(TestCase):
         assert mock_handle.fetch.called
         assert mock_handle.insert.called
         assert mock_list_create.called
-        assert mock_deserialize.called
+        assert mock_deserialize_cred_def.called
+        assert mock_deserialize_rev_reg.called
+        assert mock_load_rev_list.called
 
     @mock.patch.object(InMemoryProfileSession, "handle")
     async def test_finish_revocation_list(self, mock_handle):
@@ -1188,8 +1211,12 @@ class TestAnonCredsRevocation(TestCase):
     @mock.patch.object(RevList, "to_native")
     @mock.patch.object(RevList, "from_native", return_value=None)
     @mock.patch.object(RevRegDef, "to_native")
+    @mock.patch.object(CredDef, "deserialize")
+    @mock.patch.object(RevocationRegistryDefinitionPrivate, "load")
     async def test_revoke_pending_credentials(
         self,
+        mock_load_rev_reg,
+        mock_deserialize_cred_def,
         mock_rev_reg_to_native,
         mock_rev_list_from_native,
         mock_rev_list_to_native,
@@ -1201,16 +1228,15 @@ class TestAnonCredsRevocation(TestCase):
                 AskarError(code=AskarErrorCode.UNEXPECTED, message="test"),
                 # missing rev reg def
                 None,
-                MockEntry(
-                    value_json=json.dumps(
-                        {
-                            "pending": [1],
-                            "rev_list": rev_list.serialize(),
-                        }
-                    )
-                ),
+                MockEntry(value_json=json.dumps({})),
+                MockEntry(value_json=json.dumps({})),
                 # missing rev list
-                MockEntry(value_json=json.dumps(MOCK_REV_REG_DEF)),
+                MockEntry(value_json=json.dumps({})),
+                None,
+                MockEntry(value_json=json.dumps({})),
+                # missing rev private
+                MockEntry(value_json=json.dumps({})),
+                MockEntry(value_json=json.dumps({})),
                 None,
             ]
         )
@@ -1225,6 +1251,11 @@ class TestAnonCredsRevocation(TestCase):
             await self.revocation.revoke_pending_credentials(
                 revoc_reg_id="test-rev-reg-id",
             )
+        # rev red def private not found
+        with self.assertRaises(test_module.AnonCredsRevocationError):
+            await self.revocation.revoke_pending_credentials(
+                revoc_reg_id="test-rev-reg-id",
+            )
         # rev list not found
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await self.revocation.revoke_pending_credentials(
@@ -1235,7 +1266,7 @@ class TestAnonCredsRevocation(TestCase):
         mock_handle.fetch = mock.CoroutineMock(
             side_effect=[
                 # rev_reg_def_entry
-                MockEntry(value_json=json.dumps(MOCK_REV_REG_DEF)),
+                MockEntry(value_json=MOCK_REV_REG_DEF),
                 # rev_list_entry
                 MockEntry(
                     value_json={
@@ -1244,6 +1275,10 @@ class TestAnonCredsRevocation(TestCase):
                         "rev_list": rev_list.serialize(),
                     }
                 ),
+                # private rev reg def
+                MockEntry(),
+                # cred def
+                MockEntry(),
                 # updated rev list entry
                 MockEntry(
                     value_json={
@@ -1261,11 +1296,13 @@ class TestAnonCredsRevocation(TestCase):
             revoc_reg_id="test-rev-reg-id",
         )
 
-        assert mock_handle.fetch.call_count == 3
+        assert mock_handle.fetch.call_count == 5
         assert mock_handle.replace.called
         assert mock_rev_list_from_native.called
         assert mock_rev_list_to_native.called
         assert mock_rev_reg_to_native.called
+        assert mock_load_rev_reg.called
+        assert mock_deserialize_cred_def.called
         assert isinstance(result, test_module.RevokeResult)
 
     @mock.patch.object(InMemoryProfileSession, "handle")
