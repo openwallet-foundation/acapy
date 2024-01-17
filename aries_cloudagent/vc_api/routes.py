@@ -44,7 +44,6 @@ async def issue_credential_route(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context: AdminRequestContext = request["context"]
     body = await request.json()
     credential = VerifiableCredential.deserialize(body["credential"])
 
@@ -55,6 +54,7 @@ async def issue_credential_route(request: web.BaseRequest):
     )
     options = LDProofVCOptions.deserialize(options)
     try:
+        context: AdminRequestContext = request["context"]
         manager = context.inject(VcLdpManager)
         vc = await issue_credential(
             credential=credential.serialize(),
@@ -79,11 +79,11 @@ async def store_credential_route(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context: AdminRequestContext = request["context"]
     body = await request.json()
     vc = VerifiableCredential.deserialize(body["verifiableCredential"])
 
     try:
+        context: AdminRequestContext = request["context"]
         manager = context.inject(VcLdpManager)
         await manager.verify_credential(vc)
         await store_credential(
@@ -109,10 +109,10 @@ async def verify_credential_route(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context: AdminRequestContext = request["context"]
     body = await request.json()
     vc = VerifiableCredential.deserialize(body.get("verifiableCredential"))
     try:
+        context: AdminRequestContext = request["context"]
         manager = context.inject(VcLdpManager)
         result = await verify_credential(
             credential=vc.serialize(),
@@ -139,7 +139,6 @@ async def prove_presentation_route(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context: AdminRequestContext = request["context"]
     body = await request.json()
     presentation = VerifiablePresentation.deserialize(body["presentation"])
 
@@ -151,6 +150,7 @@ async def prove_presentation_route(request: web.BaseRequest):
     options = LDProofVCOptions.deserialize(options)
 
     try:
+        context: AdminRequestContext = request["context"]
         manager = context.inject(VcLdpManager)
         vp = await sign_presentation(
             presentation=presentation.serialize(),
@@ -175,13 +175,13 @@ async def verify_presentation_route(request: web.BaseRequest):
         request: aiohttp request object
 
     """
-    context: AdminRequestContext = request["context"]
     body = await request.json()
     vp = VerifiablePresentation.deserialize(body.get("verifiablePresentation"))
 
     options = {} if "options" not in body else body["options"]
     options = LDProofVCOptions.deserialize(options)
     try:
+        context: AdminRequestContext = request["context"]
         manager = context.inject(VcLdpManager)
         result = await verify_presentation(
             presentation=vp.serialize(),
