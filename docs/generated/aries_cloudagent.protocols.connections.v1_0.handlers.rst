@@ -32,3 +32,11 @@ aries\_cloudagent.protocols.connections.v1\_0.handlers.connection\_response\_han
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.protocols.connections.v1\_0.handlers.problem\_report\_handler module
+--------------------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.connections.v1_0.handlers.problem_report_handler
+   :members:
+   :undoc-members:
+   :show-inheritance:

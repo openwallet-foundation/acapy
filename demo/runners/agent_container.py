@@ -61,7 +61,7 @@ class AriesAgent(DemoAgent):
         log_file: str = None,
         log_config: str = None,
         log_level: str = None,
-        extra_args: List[str] = None,
+        extra_args: List[str] = [],
         **kwargs,
     ):
         extra_args = extra_args or []

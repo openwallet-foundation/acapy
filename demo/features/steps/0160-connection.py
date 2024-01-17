@@ -22,6 +22,7 @@ from bdd_support.agent_backchannel_client import (
 
 
 BDD_EXTRA_AGENT_ARGS = os.getenv("BDD_EXTRA_AGENT_ARGS")
+AGENT_PORT = os.getenv("AGENT_PORT", "8020")
 
 
 @given("{n} agents")
@@ -29,7 +30,7 @@ BDD_EXTRA_AGENT_ARGS = os.getenv("BDD_EXTRA_AGENT_ARGS")
 def step_impl(context, n):
     """Startup 'n' agents based on the options provided in the context table parameters."""
 
-    start_port = 8020
+    start_port = int(AGENT_PORT)
 
     extra_args = None
     if BDD_EXTRA_AGENT_ARGS:

@@ -2,7 +2,7 @@
 
 
 from abc import ABC
-from typing import ClassVar, List, Union
+from typing import ClassVar, List, Optional, Union
 
 from pyld import jsonld
 from typing_extensions import TypedDict
@@ -30,8 +30,8 @@ class LinkedDataProof(ABC):
     def __init__(
         self,
         *,
-        proof: dict = None,
-        supported_derive_proof_types: Union[List[str], None] = None,
+        proof: Optional[dict] = None,
+        supported_derive_proof_types: Optional[List[str]] = None,
     ):
         """Initialize new LinkedDataProof instance."""
         self.proof = proof
@@ -90,7 +90,7 @@ class LinkedDataProof(ABC):
         document: dict,
         reveal_document: dict,
         document_loader: DocumentLoaderMethod,
-        nonce: bytes = None,
+        nonce: Optional[bytes] = None,
     ) -> DeriveProofResult:
         """Derive proof for document, returning derived document and proof.
 

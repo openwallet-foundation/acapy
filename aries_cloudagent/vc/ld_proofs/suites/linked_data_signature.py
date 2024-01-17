@@ -4,7 +4,7 @@ from abc import abstractmethod, ABCMeta
 from datetime import datetime, timezone
 from hashlib import sha256
 from pytz import utc
-from typing import Union
+from typing import Optional, Union
 
 from ..constants import SECURITY_CONTEXT_URL
 from ..document_loader import DocumentLoaderMethod
@@ -21,8 +21,8 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
     def __init__(
         self,
         *,
-        proof: dict = None,
-        verification_method: str = None,
+        proof: Optional[dict] = None,
+        verification_method: Optional[str] = None,
         date: Union[datetime, None] = None,
     ):
         """Create new LinkedDataSignature instance.
