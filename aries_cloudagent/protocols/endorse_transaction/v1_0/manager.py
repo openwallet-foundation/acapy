@@ -328,7 +328,7 @@ class TransactionManager:
             # no longer supported - if the author asks the endorser to write
             # the transaction, raise an error
             raise TransactionManagerError(
-                f"Operation not supported, endorser cannot write the ledger transaction"
+                "Operation not supported, endorser cannot write the ledger transaction"
             )
 
         endorsed_transaction_response = EndorsedTransactionResponse(
@@ -412,7 +412,9 @@ class TransactionManager:
 
         # if we are the author, we need to write the endorsed ledger transaction ...
         # ... EXCEPT for DID transactions, which the endorser will write
-        if (not endorser) and (txn_goal_code != TransactionRecord.WRITE_DID_TRANSACTION):
+        if (not endorser) and (
+            txn_goal_code != TransactionRecord.WRITE_DID_TRANSACTION
+        ):
             ledger = self._profile.inject(BaseLedger)
             if not ledger:
                 reason = "No ledger available"
@@ -442,7 +444,7 @@ class TransactionManager:
 
         # this scenario is where the endorser is writing the transaction
         # (called from self.create_endorse_response())
-        #if endorser and transaction.endorser_write_txn:
+        # if endorser and transaction.endorser_write_txn:
         #    return ledger_response
 
         connection_id = transaction.connection_id
