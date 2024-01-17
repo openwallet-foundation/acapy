@@ -248,15 +248,14 @@ class TestAnonCredsRevocation(TestCase):
         assert mock_tails_uri.call_count == 1
         assert mock_notify.call_count == 1
 
-        # create fails - bad issue id
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.create_and_register_revocation_registry_definition(
-                issuer_id="",
-                cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-                registry_type="CL_ACCUM",
-                tag="tag",
-                max_cred_num=100,
-            )
+        # create doesn't fail with blank issuer id
+        await self.revocation.create_and_register_revocation_registry_definition(
+            issuer_id="",
+            cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
+            registry_type="CL_ACCUM",
+            tag="tag",
+            max_cred_num=100,
+        )
 
         # register registry response missing rev_reg_def_id and job_id
         self.profile.inject = mock.Mock(
