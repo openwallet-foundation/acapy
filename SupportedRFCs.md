@@ -22,7 +22,7 @@ ACA-Py and other Aries Frameworks and Agents.
 | AIP Version | Supported | Notes |
 |  - | :-------: | -------- |
 | AIP 1.0     | :white_check_mark:  | Fully supported. |
-| AIP 2.0     | :warning:        |  Largely supported with exceptions highlighted [below](#aip-20). |
+| AIP 2.0     | :white_check_mark:  | Fully supported, with a couple of very minor exceptions noted [below](#aip-20). |
 
 A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can be found [later in this document](#supported-rfcs).
 
@@ -126,12 +126,8 @@ are fully supported in ACA-Py **EXCEPT** as noted in the table below.
 
 | RFC | Supported | Notes |
  --- | :--: | -- |
-| [0023-did-exchange](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0023-did-exchange)   | :white_check_mark:   |   Still supports unqualified DIDs, but did:peer DIDs are supported as well. |
-| [0211-route-coordination](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0211-route-coordination)   | :warning:  | Only pre-AIP 2.0 version. Must be updated to use `did:key` for full AIP 2.0 support  |
+| [0587-encryption-envelope-v2](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0587-encryption-envelope-v2) | :construction: | Support for the DIDComm V2 envelope format is a work in progress |
 | [0317-please-ack](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) |  :x: | An investigation was done into supporting `please-ack` and a number of complications were found. As a result, we expect that `please-ack` will be dropped from AIP 2.0. It has not been implemented by any Aries frameworks or deployments. |
-| [0360-use-did-key](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0360-use-did-key)     | :warning:  |  Creating and resolving `did:key` DIDs is supported, but not all protocols are updated yet to use `did:key`. This is a breaking change for AIP 1.0 -> AIP 2.0.                |
-| [0587-encryption-envelope-v2](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0587-encryption-envelope-v2) | :construction: | Support for the DIDComm V2 envelope format is a work in progress, including the PRs ([AIP-2 base64url consistency](https://github.com/hyperledger/aries-cloudagent-python/pull/1188) and [Small AIP-2 updates](https://github.com/hyperledger/aries-cloudagent-python/pull/1056)) |
-| [0627-static-peer-dids](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0627-static-peer-dids)          | :white_check_mark:  | Peer DIDs `2/3` and `4` are supported in ACA-Py. |
 
 ### Other Supported RFCs
 
