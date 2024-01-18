@@ -593,10 +593,6 @@ class AnonCredsIssuer:
                     credential_offer,
                     credential_request,
                     raw_values,
-                    None,
-                    None,
-                    None,
-                    None,
                 ),
             )
         except AnoncredsError as err:

@@ -79,6 +79,7 @@ class MockCredDefEntry:
 
     credential_definition_state = MockCredDefState()
     raw_value = "raw-value"
+    value_json = {}
 
     def to_json(self):
         return json.dumps({"cred_def": "cred_def"})
