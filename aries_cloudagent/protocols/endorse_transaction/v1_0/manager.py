@@ -114,7 +114,7 @@ class TransactionManager:
         signature: str = None,
         signed_request: dict = None,
         expires_time: str = None,
-        endorser_write_txn: bool = None,
+        endorser_write_txn: bool = False,
         author_goal_code: str = None,
         signer_goal_code: str = None,
     ):
@@ -372,14 +372,10 @@ class TransactionManager:
             await transaction.save(session, reason="Received an endorsed response")
 
         # this scenario is where the author has asked the endorser to write the ledger
+        # we are not supporting endorser ledger writes ...
         if transaction.endorser_write_txn:
-            connection_id = transaction.connection_id
-            async with self._profile.session() as session:
-                connection_record = await ConnRecord.retrieve_by_id(
-                    session, connection_id
-                )
-            await self.endorsed_txn_post_processing(
-                transaction, response.ledger_response, connection_record
+            raise TransactionManagerError(
+                "Endorser ledger writes are no longer supported"
             )
 
         return transaction
@@ -443,9 +439,11 @@ class TransactionManager:
             await transaction.save(session, reason="Completed transaction")
 
         # this scenario is where the endorser is writing the transaction
-        # (called from self.create_endorse_response())
-        # if endorser and transaction.endorser_write_txn:
-        #    return ledger_response
+        # shouldn't get to this point, but check and raise an error just in case
+        if endorser and transaction.endorser_write_txn:
+            raise TransactionManagerError(
+                "Operation not supported, endorser cannot write the ledger transaction"
+            )
 
         connection_id = transaction.connection_id
         async with self._profile.session() as session:

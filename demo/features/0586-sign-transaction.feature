@@ -194,3 +194,4 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |
          | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation       | driverslicense | Data_DL_NormalizedValues |
+         | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation --multitenant | driverslicense | Data_DL_NormalizedValues |

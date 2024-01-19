@@ -244,8 +244,9 @@ class TransactionRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": (
-                "If True, Endorser will write the transaction after endorsing it"
+                "Request Endorser to write the ledger transaction, "
+                "this parameter is deprecated and no longer supported."
             ),
-            "example": True,
+            "example": False,
         },
     )
