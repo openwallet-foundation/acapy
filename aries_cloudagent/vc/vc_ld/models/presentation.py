@@ -6,6 +6,8 @@ from marshmallow import INCLUDE, ValidationError, fields, post_dump
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
     CREDENTIAL_CONTEXT_VALIDATE,
+    PRESENTATION_TYPE_EXAMPLE,
+    PRESENTATION_TYPE_VALIDATE,
     DIDKey,
     StrOrDictField,
     Uri,
@@ -217,10 +219,10 @@ class PresentationSchema(BaseModelSchema):
     type = fields.List(
         fields.Str(required=True),
         required=True,
-        # validate=PRESENTATION_TYPE_VALIDATE,
+        validate=PRESENTATION_TYPE_VALIDATE,
         metadata={
             "description": "The JSON-LD type of the presentation",
-            "example": [VERIFIABLE_PRESENTATION_TYPE],
+            "example": PRESENTATION_TYPE_EXAMPLE,
         },
     )
 
@@ -235,11 +237,11 @@ class PresentationSchema(BaseModelSchema):
         },
     )
 
+    # TODO how to validate VCs in list
     verifiable_credential = fields.List(
         fields.Dict(required=True),
         required=False,
         data_key="verifiableCredential",
-        # validate=VERIFIABLE_CREDENTIAL_VALIDATE,
         metadata={},
     )
 

@@ -2,6 +2,8 @@
 
 
 from typing import Dict, List, Optional, Type, Union, cast
+from pyld import jsonld
+from pyld.jsonld import JsonLdProcessor
 
 from ...core.profile import Profile
 from ...wallet.base import BaseWallet
@@ -9,6 +11,8 @@ from ...wallet.default_verification_key_strategy import BaseVerificationKeyStrat
 from ...wallet.did_info import DIDInfo
 from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import BLS12381G2, ED25519, KeyType
+from ...storage.vc_holder.base import VCHolder
+from ...storage.vc_holder.vc_record import VCRecord
 from ..ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
@@ -273,16 +277,14 @@ class VcLdpManager:
 
         return credential
 
-    async def _get_suite_for_credential(
+    async def _get_suite_for_document(
         self,
         document: Union[VerifiableCredential, VerifiablePresentation],
         options: LDProofVCOptions,
     ) -> LinkedDataProof:
-        document_type = document.type[0]
-
-        if document_type == "VerifiableCredential":
+        if isinstance(document, VerifiableCredential):
             issuer_id = document.issuer_id
-        if document_type == "VerifiablePresentation":
+        elif isinstance(document, VerifiablePresentation):
             issuer_id = document.holder_id
 
         proof_type = options.proof_type
@@ -352,7 +354,7 @@ class VcLdpManager:
         credential = await self.prepare_credential(credential, options)
 
         # Get signature suite, proof purpose and document loader
-        suite = await self._get_suite_for_credential(credential, options)
+        suite = await self._get_suite_for_document(credential, options)
         proof_purpose = self._get_proof_purpose(
             proof_purpose=options.proof_purpose,
             challenge=options.challenge,
@@ -368,13 +370,55 @@ class VcLdpManager:
         )
         return VerifiableCredential.deserialize(vc)
 
+    async def store_credential(
+        self, vc: VerifiableCredential, options: LDProofVCOptions, cred_id: str = None
+    ) -> VerifiableCredential:
+        """Store a verifiable credential."""
+
+        # Saving expanded type as a cred_tag
+        document_loader = self.profile.inject(DocumentLoader)
+        expanded = jsonld.expand(
+            vc.serialize(), options={"documentLoader": document_loader}
+        )
+        types = JsonLdProcessor.get_values(
+            expanded[0],
+            "@type",
+        )
+        vc_record = VCRecord(
+            contexts=vc.context_urls,
+            expanded_types=types,
+            issuer_id=vc.issuer_id,
+            subject_ids=vc.credential_subject_ids,
+            schema_ids=[],  # Schemas not supported yet
+            proof_types=[vc.proof.type],
+            cred_value=vc.serialize(),
+            given_id=vc.id,
+            record_id=cred_id,
+            cred_tags=None,  # Tags should be derived from credential values
+        )
+
+        async with self.profile.session() as session:
+            vc_holder = session.inject(VCHolder)
+
+            await vc_holder.store_credential(vc_record)
+
+    async def verify_credential(
+        self, vc: VerifiableCredential
+    ) -> DocumentVerificationResult:
+        """Verify a VC with a Linked Data Proof."""
+        return await verify_credential(
+            credential=vc.serialize(),
+            suites=await self._get_all_proof_suites(),
+            document_loader=self.profile.inject(DocumentLoader),
+        )
+
     async def prove(
         self, presentation: VerifiablePresentation, options: LDProofVCOptions
     ) -> VerifiablePresentation:
         """Sign a VP with a Linked Data Proof."""
 
         # Get signature suite, proof purpose and document loader
-        suite = await self._get_suite_for_credential(presentation, options)
+        suite = await self._get_suite_for_document(presentation, options)
         proof_purpose = self._get_proof_purpose(
             proof_purpose=options.proof_purpose,
             challenge=options.challenge,
@@ -403,14 +447,4 @@ class VcLdpManager:
             suites=await self._get_all_proof_suites(),
             document_loader=self.profile.inject(DocumentLoader),
             challenge=options.challenge,
-        )
-
-    async def verify_credential(
-        self, vc: VerifiableCredential
-    ) -> DocumentVerificationResult:
-        """Verify a VC with a Linked Data Proof."""
-        return await verify_credential(
-            credential=vc.serialize(),
-            suites=await self._get_all_proof_suites(),
-            document_loader=self.profile.inject(DocumentLoader),
         )

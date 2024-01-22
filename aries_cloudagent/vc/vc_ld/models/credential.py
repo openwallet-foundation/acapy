@@ -13,6 +13,8 @@ from ....messaging.valid import (
     CREDENTIAL_CONTEXT_VALIDATE,
     CREDENTIAL_SUBJECT_EXAMPLE,
     CREDENTIAL_SUBJECT_VALIDATE,
+    CREDENTIAL_STATUS_EXAMPLE,
+    CREDENTIAL_STATUS_VALIDATE,
     CREDENTIAL_TYPE_EXAMPLE,
     CREDENTIAL_TYPE_VALIDATE,
     RFC3339_DATETIME_EXAMPLE,
@@ -352,8 +354,8 @@ class CredentialSchema(BaseModelSchema):
     credential_status = DictOrDictListField(
         required=False,
         data_key="credentialStatus",
-        # validate=CREDENTIAL_STATUS_VALIDATE,
-        # metadata={"example": CREDENTIAL_STATUS_EXAMPLE},
+        validate=CREDENTIAL_STATUS_VALIDATE,
+        metadata={"example": CREDENTIAL_STATUS_EXAMPLE},
     )
 
     proof = fields.Nested(

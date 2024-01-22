@@ -171,7 +171,7 @@ async def test_get_did_info_for_did_sov(
 
 
 @pytest.mark.asyncio
-async def test_get_suite_for_credential(manager: VcLdpManager):
+async def test_get_suite_for_document(manager: VcLdpManager):
     vc = VerifiableCredential.deserialize(VC["credential"])
     options = LDProofVCOptions.deserialize(VC["options"])
 
@@ -184,7 +184,7 @@ async def test_get_suite_for_credential(manager: VcLdpManager):
         "_did_info_for_did",
         mock.CoroutineMock(),
     ) as mock_did_info:
-        suite = await manager._get_suite_for_credential(vc, options)
+        suite = await manager._get_suite_for_document(vc, options)
 
         assert suite.signature_type == options.proof_type
         assert isinstance(suite, Ed25519Signature2018)
