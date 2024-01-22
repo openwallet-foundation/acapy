@@ -1700,13 +1700,13 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.replace_public_did"] = True
         if args.recreate_wallet:
             settings["wallet.recreate"] = True
-        # check required settings for 'indy' wallets
+        # check required settings for persistent wallets
         if settings["wallet.type"] in ["indy", "askar", "askar-anoncreds"]:
             # requires name, key
             if not args.wallet_name or not args.wallet_key:
                 raise ArgsParseError(
                     "Parameters --wallet-name and --wallet-key must be provided "
-                    "for indy wallets"
+                    "for persistent wallets"
                 )
             # postgres storage requires additional configuration
             if (

@@ -26,6 +26,7 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Multi-ledger](#multi-ledger)
   - [Multi-tenancy](#multi-tenancy)
   - [Multi-tenancy *with Mediation*!!!](#multi-tenancy-with-mediation)
+  - [Other Environment Settings](#other-environment-settings)
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
 - [OpenAPI (Swagger) Demo](#openapi-swagger-demo)
 - [Performance Demo](#performance-demo)
@@ -395,6 +396,24 @@ Run the demo (Alice or Faber) specifying *both* options:
 ```
 
 This works exactly as the *vanilla* multi-tenancy, except that all connections are mediated.
+
+## Other Environment Settings
+
+The agents run on a pre-defined set of ports, however occasionally your local system may already be using one of these ports.  (For example MacOS recently decided to use 8021 for the ftp proxy service.)
+
+To overriide the default port settings:
+
+```bash
+AGENT_PORT_OVERRIDE=8010 ./run_demo faber
+```
+
+(The agent requires up to 10 available ports.)
+
+To pass extra arguements to the agent (for example):
+
+```bash
+DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --did-exchange --reuse-connections
+```
 
 ## Learning about the Alice/Faber code
 

@@ -9,6 +9,14 @@ aries\_cloudagent.tails package
 Submodules
 ----------
 
+aries\_cloudagent.tails.anoncreds\_tails\_server module
+-------------------------------------------------------
+
+.. automodule:: aries_cloudagent.tails.anoncreds_tails_server
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.tails.base module
 -----------------------------------
 

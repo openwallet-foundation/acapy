@@ -125,6 +125,12 @@ done
 AGENT_MODULE="agent_container"
 AGENT_PORT=8020
 AGENT_PORT_RANGE=8020-8079
+# allow override for agent ports
+if [ ! -z "$AGENT_PORT_OVERRIDE" ]; then
+  AGENT_PORT=$AGENT_PORT_OVERRIDE
+  AGENT_PORT_END=$(expr $AGENT_PORT_OVERRIDE + 59)
+  AGENT_PORT_RANGE="$AGENT_PORT-$AGENT_PORT_END"
+fi
 
 echo "Preparing agent image..."
 docker build -q -t acapy-base -f ../docker/Dockerfile .. || exit 1

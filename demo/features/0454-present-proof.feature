@@ -26,6 +26,29 @@ Feature: RFC 0454 Aries agent present proof
          | Faber  | --public-did                           | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
 
+   @T001-RFC0454-DID-PEER
+   Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
+      Given we have "2" agents
+         | name  | role     | capabilities        | extra        |
+         | Faber | verifier | <Acme_capabilities> | <Acme_extra> |
+         | Bob   | prover   | <Bob_capabilities>  | <Bob_extra>  |
+      And "<issuer>" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" and "Bob" have an existing connection
+      When "Faber" sends a request for proof presentation <Proof_request> to "Bob"
+      Then "Faber" has the proof verified
+
+      @WalletType_Askar
+      Examples:
+         | issuer | Acme_capabilities                      | Acme_extra        | Bob_capabilities   | Bob_extra         | Schema_name       | Credential_data   | Proof_request     |
+         | Faber  | --public-did --did-exchange            | --emit-did-peer-2 | --did-exchange     | --emit-did-peer-2 | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+      @WalletType_Askar_AnonCreds
+      Examples:
+         | issuer | Acme_capabilities                          | Acme_extra        | Bob_capabilities              | Bob_extra         | Schema_name       | Credential_data   | Proof_request     |
+         | Faber  | --public-did --wallet-type askar-anoncreds | --emit-did-peer-2 | --wallet-type askar-anoncreds | --emit-did-peer-2 | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+
    @T001.1-RFC0454
    Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
       Given we have "3" agents
