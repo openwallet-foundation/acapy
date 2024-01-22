@@ -181,6 +181,7 @@ class BaseMultitenantManager(ABC):
             )
 
             await wallet_record.save(session)
+
         try:
             # provision wallet
             profile = await self.get_wallet_profile(
@@ -202,7 +203,8 @@ class BaseMultitenantManager(ABC):
                     profile, public_did_info.verkey
                 )
         except Exception:
-            await wallet_record.delete_record(session)
+            async with self._profile.session() as session:
+                await wallet_record.delete_record(session)
             raise
 
         return wallet_record
