@@ -68,6 +68,7 @@ There are no breaking changes in 0.12.0rc0.
   - Improve Per Tenant Logging: Fix issues around default log file path [\#2659](https://github.com/hyperledger/aries-cloudagent-python/pull/2659) [shaangill025](https://github.com/shaangill025)
 
 - Other Fixes, Demo, DevContainer and Documentation Fixes
+  - Update devcontainer documentation [\#2729](https://github.com/hyperledger/aries-cloudagent-python/pull/2729) [jamshale](https://github.com/jamshale)
   - Update the SupportedRFCs Document to be up to date [\#2722](https://github.com/hyperledger/aries-cloudagent-python/pull/2722) [swcurran](https://github.com/swcurran)
   - Fix incorrect Sphinx search library version reference [\#2716](https://github.com/hyperledger/aries-cloudagent-python/pull/2716) [swcurran](https://github.com/swcurran)
   - Update RTD requirements after security vulnerability recorded [\#2712](https://github.com/hyperledger/aries-cloudagent-python/pull/2712) [swcurran](https://github.com/swcurran)
