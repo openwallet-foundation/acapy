@@ -93,7 +93,7 @@ async def issue_credential(request):
     options = {} if "options" not in body else body["options"]
     # Default to Ed25519Signature2020 if no proof type is provided
     options["proofType"] = (
-        options.pop("type") if "type" in options else "Ed25519Signature2018"
+        options.pop("type") if "type" in options else "Ed25519Signature2020"
     )
     try:
         credential = VerifiableCredential.deserialize(credential)
@@ -183,7 +183,7 @@ async def prove_presentation(request):
     options = {} if "options" not in body else body["options"]
     # Default to Ed25519Signature2020 if no proof type is provided
     options["proofType"] = (
-        options.pop("type") if "type" in options else "Ed25519Signature2018"
+        options.pop("type") if "type" in options else "Ed25519Signature2020"
     )
 
     try:
