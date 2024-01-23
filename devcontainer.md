@@ -15,34 +15,6 @@ There are limitations running this devcontainer, such as all networking is withi
 ### Files
 The `.devcontainer` folder contains the `devcontainer.json` file which defines this container. We are using a `Dockerfile` and `post-install.sh` to build and configure the container run image. The `Dockerfile` is simple but in place for simplifying image enhancements (ex. adding `poetry` to the image). The `post-install.sh` will install some additional development libraries (including for BDD support).
 
-### Poetry
-The Python libraries / dependencies are installed using [`poetry`](https://python-poetry.org). For the devcontainer, we *DO NOT* use virtual environments. This means you will not see or need venv prompts in the terminals and you will not need to run tasks through poetry (ie. `poetry run black .`). If you need to add new dependencies, you will need to add the dependency via poetry *AND* you should rebuild your devcontainer.
-
-### Running docker-in-docker demos
-The following is an example of running the demos in this container using a local [von-network](https://github.com/bcgov/von-network/tree/main). You will have to connect to the local von-network using `host.docker.internal` not `localhost`.
-
-Assumes von-network is running outside of VS Code and this container at the default port (9000).
-
-```sh
-# open a terminal in VS Code...
-cd demo
-LEDGER_URL=http://host.docker.internal:9000 ./run_demo faber
-# open a second terminal in VS Code...
-cd demo
-LEDGER_URL=http://host.docker.internal:9000 ./run_demo alice
-# follow the script...
-```
-
-
-## Further Reading and Links
-
-* Development Containers (devcontainers): [https://containers.dev](https://containers.dev)
-* Visual Studio Code: [https://code.visualstudio.com](https://code.visualstudio.com)
-* Dev Containers Extension: [marketplace.visualstudio.com](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-* Docker: [https://www.docker.com](https://www.docker.com)
-* Docker Compose: [https://docs.docker.com/compose/](https://docs.docker.com/compose/)
-
-
 ## Devcontainer
 
 > What are Development Containers?
@@ -70,7 +42,10 @@ To open ACA-Py in a devcontainer, we open the *root* of this repository. We can 
 
 #### devcontainer.json
 
-When the [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.9 image (bash shell) and loading it with all the ACA-Py requirements (and black). Since this is a Docker container, we will also open ports `9060` and `9061`, allowing you to run/debug ACA-Py with those ports available to your `localhost` (more on those later). We also load a few Visual Studio settings (for running Pytests and formatting with Flake and Black).
+When the [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.9 image (bash shell) and loading it with all the ACA-Py requirements (and black). We also load a few Visual Studio settings (for running Pytests and formatting with Flake and Black).
+
+### Poetry
+The Python libraries / dependencies are installed using [`poetry`](https://python-poetry.org). For the devcontainer, we *DO NOT* use virtual environments. This means you will not see or need venv prompts in the terminals and you will not need to run tasks through poetry (ie. `poetry run black .`). If you need to add new dependencies, you will need to add the dependency via poetry *AND* you should rebuild your devcontainer.
 
 In VS Code, open a Terminal, you should be able to run the following commands:
 
@@ -79,6 +54,7 @@ python -m aries_cloudagent -v
 cd aries_cloudagent
 ruff check .
 black . --check
+poetry --version
 ```
 
 The first command should show you that `aries_cloudagent` module is loaded (ACA-Py). The others are examples of code quality checks that ACA-Py does on commits (if you have [`precommit`](https://pre-commit.com) installed) and Pull Requests.
@@ -100,7 +76,49 @@ We have added Black formatter and Ruff extensions. Although we have added launch
 
 More importantly, these extensions are now added to document save, so files will be formatted and checked. We advise that after each time you rebuild the container that you also perform: `Developer: Reload Window` to ensure the extensions are loaded correctly.
 
-## Debugging
+### Running docker-in-docker demos
+
+Start by running a von-network inside your dev container. Or connect to a hosted ledger. You will need to adjust the ledger configurations if you do this. 
+
+```sh
+git clone https://github.com/bcgov/von-network
+cd von-network
+./manage build
+./manage start
+cd ..
+```
+
+If you want to have revocation then start up a tails server in your dev container. Or connect to a hosted tails server. Once again you will need to adjust the configurations.
+
+```sh
+git clone https://github.com/bcgov/indy-tails-server.git
+cd indy-tails-server/docker
+./manage build
+./manage start
+cd ../..
+```
+
+```sh
+# open a terminal in VS Code...
+cd demo
+./run_demo faber
+# open a second terminal in VS Code...
+cd demo
+./run_demo alice
+# follow the script...
+```
+
+
+## Further Reading and Links
+
+* Development Containers (devcontainers): [https://containers.dev](https://containers.dev)
+* Visual Studio Code: [https://code.visualstudio.com](https://code.visualstudio.com)
+* Dev Containers Extension: [marketplace.visualstudio.com](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+* Docker: [https://www.docker.com](https://www.docker.com)
+* Docker Compose: [https://docs.docker.com/compose/](https://docs.docker.com/compose/)
+
+
+## ACA-Py Debugging
 
 To better illustrate debugging pytests and ACA-Py runtime code, let's add some run/debug configurations to VS Code. If you have your own `launch.json` and `settings.json`, please cut and paste what you want/need.
 
@@ -108,7 +126,48 @@ To better illustrate debugging pytests and ACA-Py runtime code, let's add some r
 cp -R .vscode-sample .vscode
 ```
 
-This will add a `launch.json`, `settings.json` and an ACA-Py configuration file: `multitenant.yml`. 
+This will add a `launch.json`, `settings.json` and multiple ACA-Py configuration files for developing with different scenarios.
+
+    Faber: Simple agent to simulate an issuer
+    Alice: Simple agent to simulate a holder
+    Endorser: Simulates the endorser agent in an endorsement required environment
+    Author: Simulates an author agent in a endorsement required environment
+    Multitenant Admin: Includes settings for a multitenant/wallet scenario
+
+Having multiple agents is to demonstrate launching multiple agents in a debug session. Any of the config files and the launch file can be changed and customized to meet your needs. They are all setup to run on different ports so they don't interfere with each other. Running the debug session from inside the dev container allows you to contact other services such as a local ledger or tails server using localhost, while still being able to access the swagger admin api through your browser.
+
+For all the agents if you want to use another ledger (von-network) other than localhost you will need to change the `genesis-url` config.
+For all the agents if you don't want to support revocation you need to remove or comment out the `tails-server-base-url` config. If you want to use a non localhost server then you will need to change the url.
+
+
+
+##### Faber:
+ - admin api url = http://localhost:9041
+ - study the demo to understand the steps to have the agent in the correct state. Make your public dids and schemas, cred-defs, etc.
+
+##### Alice:
+ - admin api url = http://localhost:9011
+ - study the demo to get a connection with faber
+
+##### Endorser
+ - admin api url = http://localhost:9031
+ - This config is useful if you want to develop in an environment that requires endorsement. You can run the demo with `./run_demo faber --endorser-role author` to see all the steps to become and endorser.
+
+##### Author
+ - admin api url = http://localhost:9021
+ - This config is useful if you want to develop in an environment that requires endorsement. You can run the demo with `./run_demo faber --endorser-role author` to see all the steps to become and author. You need to uncomment the configurations for automating the connection to endorser.
+
+ ##### Multitenant-Admin
+ - admin api url = http://localhost:9051
+ - This is for a multitenant environment where you can create multiple tenants with subwallets with one agent. See [Multitenancy](./Multitenancy.md)
+
+ ### Try running Faber and Alice at the same time. Add break points and recreate the demo!
+
+To run your ACA-Py code in debug mode, go to the `Run and Debug` view, select the agent(s) you want to start and click `Start Debugging (F5)`.
+
+This will start your source code as a running ACA-Py instance, all configuration is in the `*.yml` files. This is just a sample of a configuration. Note that we are not using a database and are joining to a local VON Network (by default, it would be `http://localhost:9000`). You could change this or another ledger such as `http://test.bcovrin.vonx.io`. These are purposefully, very simple configurations.
+
+For example, open `aries_cloudagent/admin/server.py` and set a breakpoint in `async def status_handler(self, request: web.BaseRequest):`, then call [`GET /status`](http://localhost:9061/api/doc#/server/get_status) in the Admin Console and hit your breakpoint.
 
 ### Pytest
 
@@ -116,38 +175,9 @@ Pytest is installed and almost ready; however, we must build the test list. In t
 
 See [Python Testing](https://code.visualstudio.com/docs/python/testing) for more details, and [Test Commands](https://code.visualstudio.com/docs/python/testing#_test-commands) for usage.
 
-*IMPORTANT*: our pytests include coverage, which will prevent the [debugger from working](https://code.visualstudio.com/docs/python/testing#_debug-tests). One way around this would be to have a `.vscode/settings.json` that says not to use coverage (see above). This will allow you to set breakpoints in the pytest and code under test and use commands such as `Test: Debug Tests in Current File` to start debugging.
+*WARNING*: our pytests include coverage, which will prevent the [debugger from working](https://code.visualstudio.com/docs/python/testing#_debug-tests). One way around this would be to have a `.vscode/settings.json` that says not to use coverage (see above). This will allow you to set breakpoints in the pytest and code under test and use commands such as `Test: Debug Tests in Current File` to start debugging.
 
 *WARNING*: the project configuration found in `pyproject.toml` include performing `ruff` checks when we run `pytest`. Including `ruff` does not play nice with the Testing view. In order to have our pytests discoverable AND available in the Testing view, we create a `.pytest.ini` when we build the devcontainer. This file will not be commited to the repo, nor does it impact `./scripts/run_tests` but it will impact if you manually run the pytest commands locally outside of the devcontainer. Just be aware that the file will stay on your file system after you shutdown the devcontainer.
-
-
-### ACA-Py
-
-Above, we added some run/debug configurations, one of which is to run our ACA-Py source code so we can debug it.
-
-In `launch.json` you will see:
-
-```
-        {
-            "name": "Run/Debug ACA-Py",
-            "type": "python",
-            "request": "launch",
-            "module": "aries_cloudagent",
-            "justMyCode": true,
-            "args": [
-                "start",
-                "--arg-file=${workspaceRoot}/.vscode/multitenant.yml"
-            ]
-        },
-```
-
-To run your ACA-Py code in debug mode, go to the `Run and Debug` view, select "Run/Debug ACA-Py" and click `Start Debugging (F5)`.
-
-This will start your source code as a running ACA-Py instance, all configuration is in the `multitenant.yml` file. This is just a sample of a configuration, and we chose multi-tenancy so we can easily create multiple wallets/agents and have them interact.  Note that we are not using a database and are joining the ` http://test.bcovrin.vonx.io` ledger. Feel free to change to a local VON Network (by default, it would be `http://host.docker.internal:9000`) or another ledger. This is purposefully a very simple configuration.
-
-Remember those ports we exposed in `devcontainer`? You can open a browser to `http://localhost:9061/api/doc` and see your Admin Console Swagger. Set some breakpoints and hit some endpoints, and start debugging your source code.
-
-For example, open `aries_cloudagent/admin/server.py` and set a breakpoint in `async def status_handler(self, request: web.BaseRequest):`, then call [`GET /status`](http://localhost:9061/api/doc#/server/get_status) in the Admin Console and hit your breakpoint.
 
 ## Next Steps
 
