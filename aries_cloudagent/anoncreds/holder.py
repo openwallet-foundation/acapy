@@ -128,7 +128,7 @@ class AnonCredsHolder:
         Args:
             credential_offer: The credential offer to create request for
             credential_definition: The credential definition to create an offer for
-            holder_did: the DID of the agent making the request
+            holder_did: the DID of the agent making the request (may not be a real DID)
 
         Returns:
             A tuple of the credential request and credential request metadata
