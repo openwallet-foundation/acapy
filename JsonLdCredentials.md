@@ -16,6 +16,7 @@ By design Hyperledger Aries is credential format agnostic. This means you can us
 - [Issuing Credentials](#issuing-credentials)
 - [Retrieving Issued Credentials](#retrieving-issued-credentials)
 - [Present Proof](#present-proof)
+- [VC-API Endpoints](#vc-api)
 
 ## General Concept
 
@@ -210,3 +211,19 @@ Call the `/credentials/w3c` endpoint to retrieve all JSON-LD credentials in your
 ## Present Proof
 
 > ⚠️ TODO: https://github.com/hyperledger/aries-cloudagent-python/pull/1125
+
+
+## VC-API
+
+In order to support these functionalities outside of the respective DIDComm protocols, a set of endpoints conforming to the [vc-api](https://w3c-ccg.github.io/vc-api) specification are available. These endpoints should be used by a controller when building an identity platform.
+
+These endpoints include:
+- `GET /vc/credentials` -> returns a list of all stored json-ld credentials
+- `GET /vc/credentials/{id}` -> returns a json-ld credential based on it's ID
+- `POST /vc/credentials/issue` -> signs a credential
+- `POST /vc/credentials/verify` -> verifies a credential
+- `POST /vc/credentials/store` -> stores an issued credential
+- `POST /vc/presentations/prove` -> proves a presentation
+- `POST /vc/presentations/verify` -> verifies a presentation
+
+To learn more about using these endpoints, please refer to the available [postman collection](./demo/AriesPostmanDemo.md#experimenting-with-the-vc-api-endpoints).
