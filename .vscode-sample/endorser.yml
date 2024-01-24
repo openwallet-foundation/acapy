@@ -1,0 +1,36 @@
+# Endorser agent configuration
+
+auto-provision: true
+label: endorser
+
+inbound-transport:
+   - [http, 0.0.0.0, 9030]
+
+outbound-transport: http
+
+wallet-type: askar
+wallet-storage-type: default
+wallet-name: endorser-wallet
+wallet-key: endorser-wallet-key
+
+admin-insecure-mode: true
+
+admin: [0.0.0.0, 9031]
+
+endpoint: http://localhost:9030
+
+genesis-url: http://localhost:9000/genesis
+
+# Connections
+debug-connections: true
+auto-accept-invites: true
+auto-accept-requests: true
+auto-ping-connection: true
+
+log-level: info
+
+tails-server-base-url: http://localhost:6543 
+
+# endorser
+endorser-protocol-role: endorser
+auto-endorse-transactions: true
