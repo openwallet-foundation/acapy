@@ -1,0 +1,37 @@
+# Multitenant admin agent configuration
+
+auto-provision: true
+label: multitenant-admin
+
+inbound-transport:
+   - [http, 0.0.0.0, 9050]
+
+outbound-transport: http
+
+wallet-type: askar-anoncreds
+wallet-storage-type: default
+wallet-name: multitenant-admin-wallet
+wallet-key: multitenant-admin-wallet-key
+
+admin-insecure-mode: true
+
+admin: [0.0.0.0, 9051]
+
+endpoint: http://localhost:9050
+
+genesis-url: https://localhost:9000/genesis
+
+# Connections
+debug-connections: true
+auto-accept-invites: true
+auto-accept-requests: true
+auto-ping-connection: true
+
+# Multi-tenancy
+multitenant: true
+jwt-secret: insecure-jwt-secret
+multitenant-admin: true
+
+log-level: info
+
+tails-server-base-url: https://localhost:6543

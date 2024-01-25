@@ -1,0 +1,42 @@
+# Author agent configuration
+
+auto-provision: true
+label: author
+
+inbound-transport:
+   - [http, 0.0.0.0, 9020]
+
+outbound-transport: http
+
+wallet-type: askar
+wallet-storage-type: default
+wallet-name: author-wallet
+wallet-key: author-wallet-key
+
+admin-insecure-mode: true
+
+admin: [0.0.0.0, 9021]
+
+endpoint: http://localhost:9020
+
+genesis-url: http://localhost:9000/genesis
+
+# Connections
+debug-connections: true
+auto-accept-invites: true
+auto-accept-requests: true
+auto-ping-connection: true
+
+log-level: info
+
+tails-server-base-url: https://localhost:6543
+
+# endorser info configuration
+endorser-alias: endorser
+endorser-protocol-role: author
+auto-request-endorsement: true
+auto-write-transactions: true
+# endorser-public-did: FsTs4Xb4PHwb6BxyFPFfYd
+auto-promote-author-did: true
+auto-create-revocation-transactions: true
+# endorser-invitation: http://localhost:9060?oob=eyJAdHlwZSI6ICJodHRwczovL2RpZGNvbW0ub3JnL291dC1vZi1iYW5kLzEuMS9pbnZpdGF0aW9uIiwgIkBpZCI6ICIwOWU3MDRmOC04YzUxLTQzNTktOTg2YS0xZmI5YTIzYmQxODciLCAibGFiZWwiOiAiZW5kb3JzZXIiLCAiaGFuZHNoYWtlX3Byb3RvY29scyI6IFsiaHR0cHM6Ly9kaWRjb21tLm9yZy9kaWRleGNoYW5nZS8xLjAiXSwgInNlcnZpY2VzIjogW3siaWQiOiAiI2lubGluZSIsICJ0eXBlIjogImRpZC1jb21tdW5pY2F0aW9uIiwgInJlY2lwaWVudEtleXMiOiBbImRpZDprZXk6ejZNa3ZNUFlNYUdGTVFTRFhQc2o4OUNobTY0aVIyYmE0U1hZY3ZON2JCeUNkNWJoI3o2TWt2TVBZTWFHRk1RU0RYUHNqODlDaG02NGlSMmJhNFNYWWN2TjdiQnlDZDViaCJdLCAic2VydmljZUVuZHBvaW50IjogImh0dHA6Ly9sb2NhbGhvc3Q6OTA2MCJ9XX0=

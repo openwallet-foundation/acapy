@@ -140,9 +140,15 @@ ACA-Py can issue W3C Verifiable Credentials using Linked Data Proofs. See the [d
 
 [Docker](https://www.docker.com) must be installed to run software locally and to run the test suite.
 
+### Running In A Dev Container
+
+The dev container environment is a great way to deploy agents quickly with code changes and an interactive debug session. Detailed information can be found in the [Docs On Devcontainers](devcontainer.md). It is specific for vscode, so if you prefer another code editor or IDE you will need to figure it out on your own, but it is highly recommended to give this a try.
+
+One thing to be aware of is, unlike the demo, none of the steps are automated. You will need to create public dids, connections and all the other steps yourself. Using the demo and studying the flow and then copying them with your dev container debug session is a great way to learn how everything works.
+
 ### Running Locally
 
-For local development, we recommend using the provided Docker scripts to run the ACA-Py software.
+Another way to develop locally is by using the provided Docker scripts to run the ACA-Py software.
 
 ```bash
 ./scripts/run_docker start <args>
