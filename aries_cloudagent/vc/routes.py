@@ -3,9 +3,11 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow.exceptions import ValidationError
+import uuid
 from ..admin.request_context import AdminRequestContext
-from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.error import StorageError, StorageNotFoundError, StorageDuplicateError
 from ..wallet.error import WalletError
+from ..wallet.base import BaseWallet
 from ..config.base import InjectionError
 from ..resolver.base import ResolverError
 from ..storage.vc_holder.base import VCHolder
@@ -55,13 +57,8 @@ async def fetch_credential_route(request: web.BaseRequest):
     holder = context.inject(VCHolder)
     try:
         credential_id = request.match_info["credential_id"].strip('"')
-        search = holder.search_credentials(given_id=credential_id)
-        record = [record.serialize()["cred_value"] for record in await search.fetch()]
-        if len(record) < 1:
-            return web.json_response({"message": "No credential found"}, status=404)
-        if len(record) > 1:
-            return web.json_response(record, status=200)
-        return web.json_response(record[0], status=200)
+        record = await holder.retrieve_credential_by_id(record_id=credential_id)
+        return web.json_response(record.serialize()["cred_value"], status=200)
     except (StorageError, StorageNotFoundError) as err:
         return web.json_response({"message": err.roll_up}, status=400)
 
@@ -80,15 +77,30 @@ async def issue_credential_route(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     manager = context.inject(VcLdpManager)
     try:
-        credential = VerifiableCredential.deserialize(body["credential"])
+        credential = body["credential"]
         options = {} if "options" not in body else body["options"]
-        # Our request uses the "type" key to represent the proof type (suite) to use
-        # We must pass this value as "proofType" to the LDProofVCOptions instance
-        # Default to Ed25519Signature2020 if no proof type is provided
-        options["proofType"] = (
-            options.pop("type") if "type" in options else "Ed25519Signature2020"
-        )
+
+        # We derive the proofType from the issuer DID if not provided in options
+        if not options.get("type", None) and not options.get("proofType", None):
+            issuer = credential["issuer"]
+            did = issuer if isinstance(issuer, str) else issuer["id"]
+            async with context.session() as session:
+                wallet: BaseWallet | None = session.inject_or(BaseWallet)
+                info = await wallet.get_local_did(did)
+                key_type = info.key_type.key_type
+
+            if key_type == "ed25519":
+                options["proofType"] = "Ed25519Signature2020"
+            elif key_type == "bls12381g2":
+                options["proofType"] = "BbsBlsSignature2020"
+        else:
+            options["proofType"] = (
+                options.pop("type") if "type" in options else options["proofType"]
+            )
+
+        credential = VerifiableCredential.deserialize(credential)
         options = LDProofVCOptions.deserialize(options)
+
         vc = await manager.issue(credential, options)
         response = {"verifiableCredential": vc.serialize()}
         return web.json_response(response, status=201)
@@ -138,13 +150,25 @@ async def store_credential_route(request: web.BaseRequest):
     manager = context.inject(VcLdpManager)
 
     try:
-        vc = VerifiableCredential.deserialize(body["verifiableCredential"])
+        vc = body["verifiableCredential"]
+        cred_id = vc["id"] if "id" in vc else f"urn:uuid:{str(uuid.uuid4())}"
         options = {} if "options" not in body else body["options"]
+
+        vc = VerifiableCredential.deserialize(vc)
         options = LDProofVCOptions.deserialize(options)
+
         await manager.verify_credential(vc)
-        await manager.store_credential(vc, options)
-        return web.json_response({"message": "Credential stored"}, status=200)
-    except (ValidationError, VcLdpManagerError, WalletError, InjectionError) as err:
+        await manager.store_credential(vc, options, cred_id)
+
+        return web.json_response({"credentialId": cred_id}, status=200)
+
+    except (
+        ValidationError,
+        VcLdpManagerError,
+        WalletError,
+        InjectionError,
+        StorageDuplicateError,
+    ) as err:
         return web.json_response({"message": str(err)}, status=400)
 
 
@@ -162,17 +186,30 @@ async def prove_presentation_route(request: web.BaseRequest):
     manager = context.inject(VcLdpManager)
     body = await request.json()
     try:
-        presentation = VerifiablePresentation.deserialize(body["presentation"])
+        presentation = body["presentation"]
         options = {} if "options" not in body else body["options"]
-        # Our request uses the "type" key to represent the proof type (suite) to use
-        # We must pass this value as "proofType" to the LDProofVCOptions instance
-        # Default to Ed25519Signature2020 if no proof type is provided
-        options["proofType"] = (
-            options.pop("type") if "type" in options else "Ed25519Signature2020"
-        )
+
+        # We derive the proofType from the holder DID if not provided in options
+        if not options.get("type", None):
+            holder = presentation["holder"]
+            did = holder if isinstance(holder, str) else holder["id"]
+            async with context.session() as session:
+                wallet: BaseWallet | None = session.inject_or(BaseWallet)
+                info = await wallet.get_local_did(did)
+                key_type = info.key_type.key_type
+
+            if key_type == "ed25519":
+                options["proofType"] = "Ed25519Signature2020"
+            elif key_type == "bls12381g2":
+                options["proofType"] = "BbsBlsSignature2020"
+        else:
+            options["proofType"] = options.pop("type")
+
+        presentation = VerifiablePresentation.deserialize(presentation)
         options = LDProofVCOptions.deserialize(options)
         vp = await manager.prove(presentation, options)
         return web.json_response({"verifiablePresentation": vp.serialize()}, status=201)
+
     except (ValidationError, VcLdpManagerError, WalletError, InjectionError) as err:
         return web.json_response({"message": str(err)}, status=400)
 

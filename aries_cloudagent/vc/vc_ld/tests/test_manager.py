@@ -9,6 +9,7 @@ from ....did.did_key import DIDKey
 from ....resolver.default.key import KeyDIDResolver
 from ....resolver.did_resolver import DIDResolver
 from ....wallet.base import BaseWallet
+from ....storage.vc_holder.base import VCHolder
 from ....wallet.default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
     DefaultVerificationKeyStrategy,
@@ -37,6 +38,7 @@ from ..models.options import LDProofVCOptions
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+TEST_UUID = "urn:uuid:dc86e95c-dc85-4f91-b563-82657d095c44"
 VC = {
     "credential": {
         "@context": [
@@ -366,3 +368,26 @@ async def test_get_all_suites(manager: VcLdpManager):
     )
     for suite in suites:
         assert isinstance(suite, types)
+
+
+@pytest.mark.asyncio
+async def test_store(
+    profile: Profile,
+    manager: VcLdpManager,
+    vc: VerifiableCredential,
+    options: LDProofVCOptions,
+):
+    async with profile.session() as session:
+        wallet = session.inject(BaseWallet)
+        did = await wallet.create_local_did(
+            method=KEY,
+            key_type=ED25519,
+        )
+    vc.issuer = did.did
+    options.proof_type = Ed25519Signature2018.signature_type
+    cred = await manager.issue(vc, options)
+    await manager.store_credential(cred, options, TEST_UUID)
+    async with profile.session() as session:
+        holder = session.inject(VCHolder)
+        record = await holder.retrieve_credential_by_id(record_id=TEST_UUID)
+    assert record

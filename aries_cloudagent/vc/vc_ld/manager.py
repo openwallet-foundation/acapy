@@ -277,6 +277,27 @@ class VcLdpManager:
 
         return credential
 
+    async def prepare_presentation(
+        self,
+        presentation: VerifiablePresentation,
+        options: LDProofVCOptions,
+    ) -> VerifiableCredential:
+        """Prepare a presentation for issuance."""
+        # Add BBS context if not present yet
+        if (
+            options.proof_type == BbsBlsSignature2020.signature_type
+            and SECURITY_CONTEXT_BBS_URL not in presentation.context_urls
+        ):
+            presentation.add_context(SECURITY_CONTEXT_BBS_URL)
+        # Add ED25519-2020 context if not present yet
+        elif (
+            options.proof_type == Ed25519Signature2020.signature_type
+            and SECURITY_CONTEXT_ED25519_2020_URL not in presentation.context_urls
+        ):
+            presentation.add_context(SECURITY_CONTEXT_ED25519_2020_URL)
+
+        return presentation
+
     async def _get_suite_for_document(
         self,
         document: Union[VerifiableCredential, VerifiablePresentation],
@@ -416,6 +437,7 @@ class VcLdpManager:
         self, presentation: VerifiablePresentation, options: LDProofVCOptions
     ) -> VerifiablePresentation:
         """Sign a VP with a Linked Data Proof."""
+        presentation = await self.prepare_presentation(presentation, options)
 
         # Get signature suite, proof purpose and document loader
         suite = await self._get_suite_for_document(presentation, options)

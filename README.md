@@ -37,6 +37,10 @@ ACA-Py supports a Transaction Endorsement protocol, for agents that don't have w
 
 ACA-Py supports deployments in scaled environments such as in Kubernetes environments where ACA-Py and its storage components can be horizontally scaled as needed to handle the load.
 
+### VC-API Endpoints
+
+A set of endpoints conforming to the vc-api specification are included to manage w3c credentials and presentations. They are documented [here](JsonLdCredentials.md#vc-api) and a postman demo is available [here](./demo/AriesPostmanDemo.md#vc-api).
+
 ## Example Uses
 
 The business logic you use with ACA-Py is limited only by your imagination. Possible applications include:

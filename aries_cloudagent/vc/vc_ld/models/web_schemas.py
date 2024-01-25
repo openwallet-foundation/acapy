@@ -28,11 +28,12 @@ class IssuanceOptionsSchema(Schema):
     created = fields.Str(required=False, metadata={"example": RFC3339_DATETIME_EXAMPLE})
     domain = fields.Str(required=False, metadata={"example": "website.example"})
     challenge = fields.Str(required=False, metadata={"example": UUID4_EXAMPLE})
-    credential_status = fields.Dict(
-        data_key="credentialStatus",
-        required=False,
-        metadata={"example": {"type": "StatusList2021"}},
-    )
+    # TODO, implement status list publication through a plugin
+    # credential_status = fields.Dict(
+    #     data_key="credentialStatus",
+    #     required=False,
+    #     metadata={"example": {"type": "StatusList2021"}},
+    # )
 
 
 class ListCredentialsResponse(OpenAPISchema):
