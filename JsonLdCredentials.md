@@ -212,6 +212,10 @@ Call the `/credentials/w3c` endpoint to retrieve all JSON-LD credentials in your
 
 > ⚠️ TODO: https://github.com/hyperledger/aries-cloudagent-python/pull/1125
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> e09dc55461195736f0fb68978f09b9f0c09cc07b
 ## VC-API
 
 In order to support these functionalities outside of the respective DIDComm protocols, a set of endpoints conforming to the [vc-api](https://w3c-ccg.github.io/vc-api) specification are available. These endpoints should be used by a controller when building an identity platform.
@@ -225,4 +229,8 @@ These endpoints include:
 - `POST /vc/presentations/prove` -> proves a presentation
 - `POST /vc/presentations/verify` -> verifies a presentation
 
+<<<<<<< HEAD
 To learn more about using these endpoints, please refer to the available postman collection.
+=======
+To learn more about using these endpoints, please refer to the available [postman collection](./demo/AriesPostmanDemo.md#experimenting-with-the-vc-api-endpoints).
+>>>>>>> e09dc55461195736f0fb68978f09b9f0c09cc07b
