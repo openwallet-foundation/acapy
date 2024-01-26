@@ -1,4 +1,5 @@
 """DIDComm prefix management."""
+
 import re
 
 from enum import Enum

@@ -572,9 +572,9 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
     @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_attr_groups(self, mock_verify):
         INDY_PROOF_X = deepcopy(INDY_PROOF_PRED_NAMES)
-        INDY_PROOF_X["requested_proof"]["revealed_attr_groups"][
-            "x_uuid"
-        ] = INDY_PROOF_X["requested_proof"]["revealed_attr_groups"].pop("18_uuid")
+        INDY_PROOF_X["requested_proof"]["revealed_attr_groups"]["x_uuid"] = (
+            INDY_PROOF_X["requested_proof"]["revealed_attr_groups"].pop("18_uuid")
+        )
         with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:

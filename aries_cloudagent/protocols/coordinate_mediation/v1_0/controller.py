@@ -1,4 +1,5 @@
 """Protocol controller for coordinate mediation."""
+
 from typing import Sequence
 
 

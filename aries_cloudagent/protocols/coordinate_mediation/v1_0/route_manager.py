@@ -3,7 +3,6 @@
 Set up routing for newly formed connections.
 """
 
-
 from abc import ABC, abstractmethod
 import logging
 from typing import List, NamedTuple, Optional

@@ -1,4 +1,5 @@
 """Anoncreds cred def OpenAPI validators."""
+
 from typing import Optional
 
 from anoncreds import CredentialDefinition

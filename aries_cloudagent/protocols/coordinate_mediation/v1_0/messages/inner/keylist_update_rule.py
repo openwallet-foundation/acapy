@@ -3,7 +3,6 @@
 Represents single item of keylist-update.updates.
 """
 
-
 from marshmallow import fields
 from marshmallow.validate import OneOf
 

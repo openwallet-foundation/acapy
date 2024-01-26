@@ -35,9 +35,11 @@ class PresentationProblemReportHandler(BaseHandler):
         try:
             await presentation_manager.receive_problem_report(
                 context.message,
-                context.connection_record.connection_id
-                if context.connection_record is not None
-                else None,
+                (
+                    context.connection_record.connection_id
+                    if context.connection_record is not None
+                    else None
+                ),
             )
         except (StorageError, StorageNotFoundError):
             self._logger.exception(

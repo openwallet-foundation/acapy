@@ -1,4 +1,5 @@
 """Test Reuse Message Handler."""
+
 import pytest
 
 from aries_cloudagent.tests import mock

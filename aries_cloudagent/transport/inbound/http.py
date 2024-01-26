@@ -110,11 +110,13 @@ class HttpTransport(BaseInboundTransport):
                             body=response,
                             status=200,
                             headers={
-                                "Content-Type": DIDCOMM_V1_MIME_TYPE
-                                if session.profile.settings.get(
-                                    "emit_new_didcomm_mime_type"
+                                "Content-Type": (
+                                    DIDCOMM_V1_MIME_TYPE
+                                    if session.profile.settings.get(
+                                        "emit_new_didcomm_mime_type"
+                                    )
+                                    else DIDCOMM_V0_MIME_TYPE
                                 )
-                                else DIDCOMM_V0_MIME_TYPE
                             },
                         )
                     else:

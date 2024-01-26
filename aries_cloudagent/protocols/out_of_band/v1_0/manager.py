@@ -254,9 +254,11 @@ class OutOfBandManager(BaseConnectionManager):
                     invitation_mode=invitation_mode,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                     state=ConnRecord.State.INVITATION.rfc23,
-                    accept=ConnRecord.ACCEPT_AUTO
-                    if auto_accept
-                    else ConnRecord.ACCEPT_MANUAL,
+                    accept=(
+                        ConnRecord.ACCEPT_AUTO
+                        if auto_accept
+                        else ConnRecord.ACCEPT_MANUAL
+                    ),
                     alias=alias,
                     connection_protocol=connection_protocol,
                 )
@@ -305,9 +307,11 @@ class OutOfBandManager(BaseConnectionManager):
                     invitation_key=connection_key.verkey,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                     state=ConnRecord.State.INVITATION.rfc23,
-                    accept=ConnRecord.ACCEPT_AUTO
-                    if auto_accept
-                    else ConnRecord.ACCEPT_MANUAL,
+                    accept=(
+                        ConnRecord.ACCEPT_AUTO
+                        if auto_accept
+                        else ConnRecord.ACCEPT_MANUAL
+                    ),
                     invitation_mode=invitation_mode,
                     alias=alias,
                     connection_protocol=connection_protocol,
@@ -334,9 +338,11 @@ class OutOfBandManager(BaseConnectionManager):
                 )
 
             routing_keys = [
-                key
-                if len(key.split(":")) == 3
-                else DIDKey.from_public_key_b58(key, ED25519).key_id
+                (
+                    key
+                    if len(key.split(":")) == 3
+                    else DIDKey.from_public_key_b58(key, ED25519).key_id
+                )
                 for key in routing_keys or []
             ]
 
