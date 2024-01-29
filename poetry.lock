@@ -153,15 +153,15 @@ files = [
 
 [[package]]
 name = "anoncreds"
-version = "0.2.0.dev8"
+version = "0.2.0.dev9"
 description = ""
 optional = true
 python-versions = ">=3.6.3"
 files = [
-    {file = "anoncreds-0.2.0.dev8-py3-none-macosx_10_9_universal2.whl", hash = "sha256:7745f2f043c3ccee645e6ffae7b20e5feb69908f683b184ea5c74a6506145561"},
-    {file = "anoncreds-0.2.0.dev8-py3-none-manylinux2014_aarch64.whl", hash = "sha256:a9ed53984cedfb848b5c250392d1785f8556e311696e223e82dfc108b1a5179e"},
-    {file = "anoncreds-0.2.0.dev8-py3-none-manylinux2014_x86_64.whl", hash = "sha256:ba7ad2b060f4f44a533fa1333b32ee1ca794759bedb88e50bcc787ea4aa5fc9c"},
-    {file = "anoncreds-0.2.0.dev8-py3-none-win_amd64.whl", hash = "sha256:1209e709a10e447908169d1b71e201e8357139a94005888385ee9bd1b74b1aaa"},
+    {file = "anoncreds-0.2.0.dev9-py3-none-macosx_10_9_universal2.whl", hash = "sha256:e76bd6ec5ea5686e82260ac68cb9893396d41c511212d27e0dec0c6b43ce53d7"},
+    {file = "anoncreds-0.2.0.dev9-py3-none-manylinux2014_aarch64.whl", hash = "sha256:62b74c57a55971288f98a3728165cd87ccdc0909d71a63d2d37de7440a17bde2"},
+    {file = "anoncreds-0.2.0.dev9-py3-none-manylinux2014_x86_64.whl", hash = "sha256:5bd536cd336b67c56ffd76bf70bcd47ee6da1eba2e58a8c18b316eb3eebf7e0b"},
+    {file = "anoncreds-0.2.0.dev9-py3-none-win_amd64.whl", hash = "sha256:8f2a94216b5a2f26e88f4fb23af5453a12460104f65b1fe0736aab4bf35e24f6"},
 ]
 
 [[package]]
@@ -2893,4 +2893,4 @@ indy = ["python3-indy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "89c521256de4ccf6f260fb168512dfb1d3419b5c23976840d3d77c49e9a330f6"
+content-hash = "b7164f58047e2be966147fc3e2d5184d23ebe36a8aa13b8bf2626e1782b4b5ce"
