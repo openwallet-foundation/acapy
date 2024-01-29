@@ -97,6 +97,13 @@
     },
     "name" : "ldp-vc"
   }, {
+    "description" : "Manage credentials and presentations",
+    "externalDocs" : {
+      "description" : "Specification",
+      "url" : "https://w3c-ccg.github.io/vc-api"
+    },
+    "name" : "vc-api"
+  }, {
     "description" : "Interaction with ledger",
     "externalDocs" : {
       "description" : "Overview",

@@ -394,13 +394,17 @@ class AnonCredsRevocation:
 
         if not rev_reg_def_entry or not rev_reg_def_private_entry:
             raise AnonCredsRevocationError(
-                "Missing required revocation registry data: "
-                "revocation registry definition"
-                if not rev_reg_def_entry
-                else "",
-                "revocation registry private definition"
-                if not rev_reg_def_private_entry
-                else "",
+                (
+                    "Missing required revocation registry data: "
+                    "revocation registry definition"
+                    if not rev_reg_def_entry
+                    else ""
+                ),
+                (
+                    "revocation registry private definition"
+                    if not rev_reg_def_private_entry
+                    else ""
+                ),
             )
 
         try:
@@ -1114,14 +1118,18 @@ class AnonCredsRevocation:
                 or not rev_reg_def_private_entry
             ):
                 raise AnonCredsRevocationError(
-                    "Missing required revocation registry data: "
-                    "revocation registry definition"
-                    if not rev_reg_def_entry
-                    else "",
+                    (
+                        "Missing required revocation registry data: "
+                        "revocation registry definition"
+                        if not rev_reg_def_entry
+                        else ""
+                    ),
                     "revocation list" if not rev_list_entry else "",
-                    "revocation registry private definition"
-                    if not rev_reg_def_private_entry
-                    else "",
+                    (
+                        "revocation registry private definition"
+                        if not rev_reg_def_private_entry
+                        else ""
+                    ),
                 )
 
             try:

@@ -1,4 +1,5 @@
 """Utilities for specifying which verification method is in use for a given DID."""
+
 from abc import ABC, abstractmethod
 from typing import Optional, List
 

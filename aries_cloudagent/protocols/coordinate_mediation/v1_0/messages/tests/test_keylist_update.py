@@ -1,4 +1,5 @@
 """Test keylist update message."""
+
 from unittest import TestCase
 
 from ...message_types import KEYLIST_UPDATE

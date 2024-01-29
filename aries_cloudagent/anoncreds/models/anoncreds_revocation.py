@@ -1,4 +1,5 @@
 """Anoncreds cred def OpenAPI validators."""
+
 from typing import Any, Dict, List, Optional
 
 from anoncreds import RevocationRegistryDefinition, RevocationStatusList

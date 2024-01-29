@@ -61,9 +61,11 @@ class ConnectionInvitation(AgentMessage):
         self.routing_keys = list(routing_keys) if routing_keys else None
         self.routing_keys = (
             [
-                DIDKey.from_did(key).public_key_b58
-                if key.startswith("did:key:")
-                else key
+                (
+                    DIDKey.from_did(key).public_key_b58
+                    if key.startswith("did:key:")
+                    else key
+                )
                 for key in self.routing_keys
             ]
             if self.routing_keys
@@ -174,9 +176,11 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         routing_keys = data.get("routingKeys")
         if routing_keys:
             data["routingKeys"] = [
-                DIDKey.from_did(key).public_key_b58
-                if key.startswith("did:key:")
-                else key
+                (
+                    DIDKey.from_did(key).public_key_b58
+                    if key.startswith("did:key:")
+                    else key
+                )
                 for key in routing_keys
             ]
         return data

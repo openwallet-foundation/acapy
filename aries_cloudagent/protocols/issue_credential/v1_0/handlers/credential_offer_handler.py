@@ -1,6 +1,5 @@
 """Credential offer message handler."""
 
-
 from .....wallet.util import default_did_from_verkey
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError

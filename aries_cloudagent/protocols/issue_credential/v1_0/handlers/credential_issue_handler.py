@@ -51,9 +51,11 @@ class CredentialIssueHandler(BaseHandler):
         credential_manager = CredentialManager(profile)
         cred_ex_record = await credential_manager.receive_credential(
             context.message,
-            context.connection_record.connection_id
-            if context.connection_record
-            else None,
+            (
+                context.connection_record.connection_id
+                if context.connection_record
+                else None
+            ),
         )  # mgr only finds, saves record: on exception, saving state null is hopeless
 
         r_time = trace_event(

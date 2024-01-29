@@ -331,9 +331,7 @@ class V20PresManager:
         connection_id = (
             None
             if oob_record
-            else connection_record.connection_id
-            if connection_record
-            else None
+            else connection_record.connection_id if connection_record else None
         )
 
         async with self._profile.session() as session:

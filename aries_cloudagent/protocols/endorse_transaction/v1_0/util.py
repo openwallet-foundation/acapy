@@ -1,6 +1,5 @@
 """Endorser utilities."""
 
-
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 

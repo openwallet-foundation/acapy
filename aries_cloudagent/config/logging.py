@@ -1,4 +1,5 @@
 """Utilities related to logging."""
+
 import configparser
 import io
 import logging
