@@ -1,4 +1,5 @@
 """AnonCreds Registry."""
+
 import logging
 from typing import List, Optional, Sequence
 

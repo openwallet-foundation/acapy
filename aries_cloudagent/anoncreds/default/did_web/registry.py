@@ -1,4 +1,5 @@
 """DID Web Registry."""
+
 import re
 from typing import Optional, Pattern, Sequence
 

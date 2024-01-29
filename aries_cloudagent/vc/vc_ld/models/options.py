@@ -1,6 +1,5 @@
 """Options for specifying how the linked data proof is created."""
 
-
 from typing import Optional
 
 from marshmallow import INCLUDE, Schema, fields

@@ -420,14 +420,14 @@ class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
 
         for uuid, attr_spec in indy_proof_req_revo["requested_attributes"].items():
             assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            copy_indy_proof_req["requested_attributes"][uuid][
-                "non_revoked"
-            ] = attr_spec["non_revoked"]
+            copy_indy_proof_req["requested_attributes"][uuid]["non_revoked"] = (
+                attr_spec["non_revoked"]
+            )
         for uuid, pred_spec in indy_proof_req_revo["requested_predicates"].items():
             assert set(pred_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            copy_indy_proof_req["requested_predicates"][uuid][
-                "non_revoked"
-            ] = pred_spec["non_revoked"]
+            copy_indy_proof_req["requested_predicates"][uuid]["non_revoked"] = (
+                pred_spec["non_revoked"]
+            )
 
         assert copy_indy_proof_req == indy_proof_req_revo
 
@@ -471,14 +471,14 @@ class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
 
         for uuid, attr_spec in indy_proof_req_revo["requested_attributes"].items():
             assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            copy_indy_proof_req["requested_attributes"][uuid][
-                "non_revoked"
-            ] = attr_spec["non_revoked"]
+            copy_indy_proof_req["requested_attributes"][uuid]["non_revoked"] = (
+                attr_spec["non_revoked"]
+            )
         for uuid, pred_spec in indy_proof_req_revo["requested_predicates"].items():
             assert set(pred_spec.get("non_revoked", {}).keys()) == {"from", "to"}
-            copy_indy_proof_req["requested_predicates"][uuid][
-                "non_revoked"
-            ] = pred_spec["non_revoked"]
+            copy_indy_proof_req["requested_predicates"][uuid]["non_revoked"] = (
+                pred_spec["non_revoked"]
+            )
 
         assert copy_indy_proof_req == indy_proof_req_revo
 
