@@ -3,7 +3,6 @@
 An attach decorator embeds content or specifies appended content.
 """
 
-
 import copy
 import json
 import uuid

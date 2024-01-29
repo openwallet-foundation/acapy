@@ -1,4 +1,5 @@
 """Routes for revocation notification."""
+
 import logging
 import re
 

@@ -1,6 +1,5 @@
 """Module to contain logic to generate the banner for ACA-py."""
 
-
 from contextlib import contextmanager
 from enum import Enum, auto
 import sys

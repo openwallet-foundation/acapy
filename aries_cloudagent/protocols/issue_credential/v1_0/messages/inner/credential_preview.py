@@ -1,6 +1,5 @@
 """A credential preview inner object."""
 
-
 from typing import Sequence
 
 from marshmallow import EXCLUDE, fields

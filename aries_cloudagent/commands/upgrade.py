@@ -106,9 +106,9 @@ class VersionUpgradeConfig:
                 except KeyError:
                     pass
                 if "explicit_upgrade" in provided_config:
-                    tagged_config_dict[config_id][
-                        "explicit_upgrade"
-                    ] = provided_config.get("explicit_upgrade")
+                    tagged_config_dict[config_id]["explicit_upgrade"] = (
+                        provided_config.get("explicit_upgrade")
+                    )
                 try:
                     config_key_set.remove("explicit_upgrade")
                 except KeyError:

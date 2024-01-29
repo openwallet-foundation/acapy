@@ -1,4 +1,5 @@
 """Validates State Proof."""
+
 import json
 
 from collections import (

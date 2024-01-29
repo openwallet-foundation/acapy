@@ -1,4 +1,5 @@
 """DID Indy Registry."""
+
 import logging
 import re
 from typing import Optional, Pattern, Sequence

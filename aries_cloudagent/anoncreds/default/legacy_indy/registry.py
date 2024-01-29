@@ -1,4 +1,5 @@
 """Legacy Indy Registry."""
+
 import json
 import logging
 import re
@@ -649,11 +650,13 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 revocation_list=rev_list,
             ),
             registration_metadata={},
-            revocation_list_metadata={}
-            if seq_no is None
-            else {
-                "seqNo": seq_no,
-            },
+            revocation_list_metadata=(
+                {}
+                if seq_no is None
+                else {
+                    "seqNo": seq_no,
+                }
+            ),
         )
 
     async def update_revocation_list(
