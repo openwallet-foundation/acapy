@@ -269,7 +269,9 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
         )
 
         assert unsigned_presentation == PRESENTATION_UNSIGNED
-        unsigned_presentation["@context"].append("https://w3c.github.io/vc-di-bbs/contexts/v1")
+        unsigned_presentation["@context"].append(
+            "https://w3c.github.io/vc-di-bbs/contexts/v1"
+        )
         _ = await sign_presentation(
             presentation=unsigned_presentation,
             suite=suite,
