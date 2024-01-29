@@ -1,5 +1,5 @@
 """Controller proof purpose class."""
-
+import requests
 from typing import TYPE_CHECKING
 
 from pyld.jsonld import JsonLdProcessor
@@ -54,22 +54,52 @@ class ControllerProofPurpose(ProofPurpose):
                 raise LinkedDataProofException('"controller" must be a string or dict')
 
             # Get the controller
-            result.controller = jsonld.frame(
-                controller_id,
-                frame={
-                    "@context": SECURITY_CONTEXT_URL,
-                    "id": controller_id,
-                    self.term: {"@embed": "@never", "id": verification_id},
-                },
-                options={
-                    "documentLoader": document_loader,
-                    "expandContext": SECURITY_CONTEXT_URL,
-                    # if we don't set base explicitly it will remove the base in returned
-                    # document (e.g. use key:z... instead of did:key:z...)
-                    # same as compactToRelative in jsonld.js
-                    "base": None,
-                },
-            )
+            # If the controller is a did:web: url, we resolve the document first
+            # then remove the traceability context if present before framing it
+            # this is to avoid framing errors that could arise from this context
+            if controller_id[:8] == "did:web:":
+                did = controller_id[8:]
+                did_endpoint = (
+                    f'https://{did.replace(":", "/")}/did.json'
+                    if ":" in did
+                    else f'https://{did}/.well-known/did.json'
+                )
+                r = requests.get(did_endpoint)
+                did_document = r.json()
+                did_document['@context'] = [i for i in did_document['@context'] if i != 'https://w3id.org/traceability/v1']
+                result.controller = jsonld.frame(
+                    did_document,
+                    frame={
+                        "@context": SECURITY_CONTEXT_URL,
+                        "id": controller_id,
+                        self.term: {"@embed": "@never", "id": verification_id},
+                    },
+                    options={
+                        "documentLoader": document_loader,
+                        "expandContext": SECURITY_CONTEXT_URL,
+                        # if we don't set base explicitly it will remove the base in returned
+                        # document (e.g. use key:z... instead of did:key:z...)
+                        # same as compactToRelative in jsonld.js
+                        "base": None,
+                    },
+                )
+            else:
+                result.controller = jsonld.frame(
+                    controller_id,
+                    frame={
+                        "@context": SECURITY_CONTEXT_URL,
+                        "id": controller_id,
+                        self.term: {"@embed": "@never", "id": verification_id},
+                    },
+                    options={
+                        "documentLoader": document_loader,
+                        "expandContext": SECURITY_CONTEXT_URL,
+                        # if we don't set base explicitly it will remove the base in returned
+                        # document (e.g. use key:z... instead of did:key:z...)
+                        # same as compactToRelative in jsonld.js
+                        "base": None,
+                    },
+                )
 
             # Retrieve al verification methods on controller associated with term
             verification_methods = JsonLdProcessor.get_values(

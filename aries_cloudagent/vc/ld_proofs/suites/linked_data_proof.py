@@ -1,6 +1,6 @@
 """Abstract base class for linked data proofs."""
 
-from aiohttp import ClientSession
+import requests
 from abc import ABC
 from typing import ClassVar, List, Optional, Union
 
@@ -142,7 +142,7 @@ class LinkedDataProof(ABC):
         if not verification_method:
             raise LinkedDataProofException('No "verificationMethod" found in proof')
 
-        # if the verification method is a did:web: url, we resolve the document first
+        # If the verification method is a did:web: url, we resolve the document first
         # then remove the traceability context if present before framing it
         # this is to avoid framing errors that could arise from this context
         if verification_method[:8] == "did:web:":
@@ -152,10 +152,9 @@ class LinkedDataProof(ABC):
                 if ":" in did
                 else f'https://{did}/.well-known/did.json'
             )
-            async with ClientSession() as session:
-                async with session.get(did_endpoint) as resp:
-                    did_document = await resp.json()
-            # framed = next((sub for sub in did_document['verificationMethod'] if sub['id'] == verification_method), None)
+            r = requests.get(did_endpoint)
+            did_document = r.json()
+            did_document['@context'] = [i for i in did_document['@context'] if i != 'https://w3id.org/traceability/v1']
             framed = jsonld.frame(
                 did_document,
                 frame={
@@ -164,12 +163,7 @@ class LinkedDataProof(ABC):
                     "id": verification_method,
                 },
                 options={
-                    # "documentLoader": document_loader,
                     "expandContext": SECURITY_CONTEXT_URL,
-                    # if we don't set base explicitly it will remove the base in returned
-                    # document (e.g. use key:z... instead of did:key:z...)
-                    # same as compactToRelative in jsonld.js
-                    # "base": None,
                 },
             )
         else:
