@@ -7,7 +7,6 @@ from typing import ClassVar, List, Optional, Union
 from pyld import jsonld
 from typing_extensions import TypedDict
 
-
 from ..check import get_properties_without_context
 from ..constants import SECURITY_CONTEXT_URL
 from ..document_loader import DocumentLoaderMethod
@@ -130,7 +129,7 @@ class LinkedDataProof(ABC):
             },
         )
 
-    async def _get_verification_method(
+    def _get_verification_method(
         self, *, proof: dict, document_loader: DocumentLoaderMethod
     ) -> dict:
         """Get verification method for proof."""
