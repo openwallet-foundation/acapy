@@ -150,11 +150,15 @@ class LinkedDataProof(ABC):
             did_endpoint = (
                 f'https://{did.replace(":", "/")}/did.json'
                 if ":" in did
-                else f'https://{did}/.well-known/did.json'
+                else f"https://{did}/.well-known/did.json"
             )
             r = requests.get(did_endpoint)
             did_document = r.json()
-            did_document['@context'] = [i for i in did_document['@context'] if i != 'https://w3id.org/traceability/v1']
+            did_document["@context"] = [
+                i
+                for i in did_document["@context"]
+                if i != "https://w3id.org/traceability/v1"
+            ]
             framed = jsonld.frame(
                 did_document,
                 frame={
