@@ -162,9 +162,9 @@ async def sd_jwt_sign(
                     match.context.value.remove(match.value)
                     match.context.value.append(SDObj(match.value))
                 else:
-                    match.context.value[
-                        SDObj(str(match.path))
-                    ] = match.context.value.pop(str(match.path))
+                    match.context.value[SDObj(str(match.path))] = (
+                        match.context.value.pop(str(match.path))
+                    )
 
     return await SDJWTIssuerACAPy(
         user_claims=payload,

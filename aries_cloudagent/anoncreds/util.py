@@ -23,11 +23,11 @@ def indy_client_dir(subpath: str = None, create: bool = False) -> str:
     home = Path.home()
     target_dir = join(
         home,
-        "Documents"
-        if isdir(join(home, "Documents"))
-        else getenv("EXTERNAL_STORAGE", "")
-        if system() == "Linux"
-        else "",
+        (
+            "Documents"
+            if isdir(join(home, "Documents"))
+            else getenv("EXTERNAL_STORAGE", "") if system() == "Linux" else ""
+        ),
         ".indy_client",
         subpath if subpath else "",
         "",  # set trailing separator

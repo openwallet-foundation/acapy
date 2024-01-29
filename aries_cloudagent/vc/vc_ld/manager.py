@@ -1,6 +1,5 @@
 """Manager for performing Linked Data Proof signatures over JSON-LD formatted W3C VCs."""
 
-
 from typing import Dict, List, Optional, Type, Union, cast
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor

@@ -1,4 +1,5 @@
 """Verify Leaf Inclusion."""
+
 from .hasher import TreeHasher
 
 

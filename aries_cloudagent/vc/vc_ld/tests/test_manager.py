@@ -1,4 +1,5 @@
 """Test VcLdpManager."""
+
 import pytest
 
 from aries_cloudagent.tests import mock

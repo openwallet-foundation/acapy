@@ -227,9 +227,9 @@ class DIDXManager(BaseConnectionManager):
             )
         )
         conn_rec = ConnRecord(
-            my_did=my_public_info.did
-            if my_public_info
-            else None,  # create-request will fill in on local DID creation
+            my_did=(
+                my_public_info.did if my_public_info else None
+            ),  # create-request will fill in on local DID creation
             their_did=their_public_did,
             their_label=None,
             their_role=ConnRecord.Role.RESPONDER.rfc23,

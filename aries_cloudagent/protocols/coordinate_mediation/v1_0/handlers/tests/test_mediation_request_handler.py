@@ -1,4 +1,5 @@
 """Test mediate request message handler."""
+
 import pytest
 from unittest import IsolatedAsyncioTestCase
 

@@ -1,4 +1,5 @@
 """present-proof-v2 format handler - supports DIF and INDY."""
+
 from abc import ABC, abstractclassmethod, abstractmethod
 import logging
 
