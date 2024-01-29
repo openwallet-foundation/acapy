@@ -7,7 +7,7 @@ VALID_INPUT_DOC = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://w3id.org/citizenship/v1",
-        "https://w3id.org/security/bbs/v1",
+        "https://w3c.github.io/vc-di-bbs/contexts/v1",
     ],
     "id": "https://issuer.oidp.uscis.gov/credentials/83627465",
     "type": ["PermanentResidentCard", "VerifiableCredential"],
@@ -72,7 +72,7 @@ INVALID_INPUT_DOC = {
 VALID_VACCINATION_DOC = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
-        "https://w3id.org/security/bbs/v1",
+        "https://w3c.github.io/vc-di-bbs/contexts/v1",
         "https://w3id.org/vaccination/v1",
     ],
     "type": ["VerifiableCredential", "VaccinationCertificate"],
@@ -109,7 +109,7 @@ VALID_VACCINATION_DOC = {
 INVALID_VACCINATION_DOC = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
-        "https://w3id.org/security/bbs/v1",
+        "https://w3c.github.io/vc-di-bbs/contexts/v1",
         "https://w3id.org/vaccination/v1",
     ],
     "type": ["VerifiableCredential", "VaccinationCertificate"],

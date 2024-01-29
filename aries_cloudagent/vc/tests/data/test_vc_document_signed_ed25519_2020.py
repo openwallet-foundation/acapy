@@ -2,7 +2,7 @@ TEST_VC_DOCUMENT_SIGNED_ED25519_2020 = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://w3id.org/citizenship/v1",
-        "https://w3id.org/security/bbs/v1",
+        "https://w3c.github.io/vc-di-bbs/contexts/v1",
         "https://w3id.org/security/suites/ed25519-2020/v1",
     ],
     "id": "https://issuer.oidp.uscis.gov/credentials/83627465",

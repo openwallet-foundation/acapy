@@ -6,7 +6,7 @@ TEST_LD_DOCUMENT_BAD_SIGNED_BBS = {
             "homepage": "schema:url",
             "image": "schema:image",
         },
-        "https://w3id.org/security/bbs/v1",
+        "https://w3c.github.io/vc-di-bbs/contexts/v1",
     ],
     "name": "John Doe",
     "homepage": "https://domain.com/profile",
