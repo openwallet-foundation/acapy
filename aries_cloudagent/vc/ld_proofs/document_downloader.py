@@ -2,6 +2,7 @@
 
 Allows keeping some context in local filesystem.
 """
+
 import logging
 import re
 import string

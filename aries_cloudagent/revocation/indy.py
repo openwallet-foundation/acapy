@@ -1,4 +1,5 @@
 """Indy revocation registry management."""
+
 import logging
 from typing import Optional, Sequence, Tuple
 from uuid import uuid4

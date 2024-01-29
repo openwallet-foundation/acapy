@@ -1,4 +1,5 @@
 """Test mediate grant message."""
+
 from unittest import TestCase
 
 from ...message_types import MEDIATE_GRANT

@@ -1,4 +1,5 @@
 """DIF Proof Proposal Schema."""
+
 from marshmallow import fields
 
 from ....messaging.models.openapi import OpenAPISchema

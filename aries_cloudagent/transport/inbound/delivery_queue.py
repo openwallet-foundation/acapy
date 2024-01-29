@@ -4,6 +4,7 @@ The delivery queue holds and manages messages that have not yet
 been delivered to their intended destination.
 
 """
+
 import time
 
 from ..outbound.message import OutboundMessage

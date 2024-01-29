@@ -1,4 +1,5 @@
 """Test mediate deny message handler."""
+
 import pytest
 from unittest import IsolatedAsyncioTestCase
 

@@ -1,4 +1,5 @@
 """Schema for configuring multiple ledgers."""
+
 import uuid
 
 from marshmallow import EXCLUDE, fields, pre_load

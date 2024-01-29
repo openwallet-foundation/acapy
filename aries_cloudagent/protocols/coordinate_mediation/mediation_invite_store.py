@@ -4,6 +4,7 @@ Handle storage and retrieval of mediation invites provided through arguments.
 Enables having the mediation invite config be the same
 for `provision` and `starting` commands.
 """
+
 import json
 from typing import NamedTuple, Optional
 

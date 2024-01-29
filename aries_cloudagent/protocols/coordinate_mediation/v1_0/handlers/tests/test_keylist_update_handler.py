@@ -1,4 +1,5 @@
 """Test handler for keylist-update message."""
+
 import pytest
 from unittest import IsolatedAsyncioTestCase
 

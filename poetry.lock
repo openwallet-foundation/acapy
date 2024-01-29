@@ -1932,13 +1932,13 @@ files = [
 
 [[package]]
 name = "pydid"
-version = "0.4.2"
+version = "0.4.3"
 description = "Python library for validating, constructing, and representing DIDs and DID Documents"
 optional = false
 python-versions = ">=3.8.0,<4.0.0"
 files = [
-    {file = "pydid-0.4.2-py3-none-any.whl", hash = "sha256:45994eb14be745da421f31c55f5c436976d5b4ec5fb704e4a9346c59837fa2f2"},
-    {file = "pydid-0.4.2.tar.gz", hash = "sha256:2d2a4a9291f6ac99962aa7152a27b47a9582d13032da4bbb88e9232d513f855f"},
+    {file = "pydid-0.4.3-py3-none-any.whl", hash = "sha256:39a586b4f26c41277b93db2aaf0a2db298f48ccc413bdfc71b7dd010045f31f4"},
+    {file = "pydid-0.4.3.tar.gz", hash = "sha256:1a48a6940bae8279083ebb7c5ab5fe0249e9ba3ea638de9cf8c127487b96b2ef"},
 ]
 
 [package.dependencies]
@@ -2893,4 +2893,4 @@ indy = ["python3-indy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "285e53bb5476a7fd6355bbe59061735227bd7ba0ccdc4ec45004aeb406b23473"
+content-hash = "89c521256de4ccf6f260fb168512dfb1d3419b5c23976840d3d77c49e9a330f6"

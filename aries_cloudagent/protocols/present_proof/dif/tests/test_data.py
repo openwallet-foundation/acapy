@@ -1,4 +1,5 @@
 """Data for DIFPresExchHandler."""
+
 import json
 
 from .....storage.vc_holder.vc_record import VCRecord
