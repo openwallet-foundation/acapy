@@ -1,4 +1,5 @@
 """Test mediation record."""
+
 import json
 
 import pytest

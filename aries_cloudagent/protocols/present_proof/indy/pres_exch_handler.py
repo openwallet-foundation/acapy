@@ -1,4 +1,5 @@
 """Utilities for dif presentation exchange attachment."""
+
 import json
 import logging
 import time
@@ -116,10 +117,11 @@ class IndyPresExchHandler:
                 if credential.get("rev_reg_id"):
                     revocation_registry_id = credential["rev_reg_id"]
                     if revocation_registry_id not in revocation_registries:
-                        revocation_registries[
-                            revocation_registry_id
-                        ] = RevocationRegistry.from_definition(
-                            await ledger.get_revoc_reg_def(revocation_registry_id), True
+                        revocation_registries[revocation_registry_id] = (
+                            RevocationRegistry.from_definition(
+                                await ledger.get_revoc_reg_def(revocation_registry_id),
+                                True,
+                            )
                         )
         # Get delta with non-revocation interval defined in "non_revoked"
         # of the presentation request or attributes
@@ -198,13 +200,13 @@ class IndyPresExchHandler:
             if "timestamp" not in precis:
                 continue
             if referent in requested_credentials["requested_attributes"]:
-                requested_credentials["requested_attributes"][referent][
-                    "timestamp"
-                ] = precis["timestamp"]
+                requested_credentials["requested_attributes"][referent]["timestamp"] = (
+                    precis["timestamp"]
+                )
             if referent in requested_credentials["requested_predicates"]:
-                requested_credentials["requested_predicates"][referent][
-                    "timestamp"
-                ] = precis["timestamp"]
+                requested_credentials["requested_predicates"][referent]["timestamp"] = (
+                    precis["timestamp"]
+                )
         indy_proof_json = await holder.create_presentation(
             proof_request,
             requested_credentials,
@@ -250,17 +252,17 @@ class IndyPresExchHandler:
                     )
 
                 if identifier["cred_def_id"] not in cred_defs:
-                    cred_defs[
-                        identifier["cred_def_id"]
-                    ] = await ledger.get_credential_definition(
-                        identifier["cred_def_id"]
+                    cred_defs[identifier["cred_def_id"]] = (
+                        await ledger.get_credential_definition(
+                            identifier["cred_def_id"]
+                        )
                     )
 
                 if identifier.get("rev_reg_id"):
                     if identifier["rev_reg_id"] not in rev_reg_defs:
-                        rev_reg_defs[
-                            identifier["rev_reg_id"]
-                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+                        rev_reg_defs[identifier["rev_reg_id"]] = (
+                            await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+                        )
 
                     if identifier.get("timestamp"):
                         rev_reg_entries.setdefault(identifier["rev_reg_id"], {})

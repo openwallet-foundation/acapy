@@ -1019,12 +1019,14 @@ class AgentContainer:
             CRED_FORMAT_INDY,
         ]:
             indy_proof_request = {
-                "name": proof_request["name"]
-                if "name" in proof_request
-                else "Proof of stuff",
-                "version": proof_request["version"]
-                if "version" in proof_request
-                else "1.0",
+                "name": (
+                    proof_request["name"]
+                    if "name" in proof_request
+                    else "Proof of stuff"
+                ),
+                "version": (
+                    proof_request["version"] if "version" in proof_request else "1.0"
+                ),
                 "requested_attributes": proof_request["requested_attributes"],
                 "requested_predicates": proof_request["requested_predicates"],
             }

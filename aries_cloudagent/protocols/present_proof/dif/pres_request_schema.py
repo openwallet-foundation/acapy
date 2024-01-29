@@ -1,4 +1,5 @@
 """DIF Proof Request Schema."""
+
 from typing import Optional, Union
 
 from marshmallow import INCLUDE, fields

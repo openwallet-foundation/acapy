@@ -47,9 +47,11 @@ class V20CredAckHandler(BaseHandler):
         cred_manager = V20CredManager(context.profile)
         await cred_manager.receive_credential_ack(
             context.message,
-            context.connection_record.connection_id
-            if context.connection_record
-            else None,
+            (
+                context.connection_record.connection_id
+                if context.connection_record
+                else None
+            ),
         )
 
         trace_event(

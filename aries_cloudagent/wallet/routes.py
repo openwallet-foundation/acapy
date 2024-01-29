@@ -852,10 +852,10 @@ async def promote_wallet_public_did(
             if is_ctx_admin_request
             else profile.inject(RouteManager)
         )
-        await route_manager.route_verkey(
-            context.profile, info.verkey
-        ) if is_ctx_admin_request else await route_manager.route_verkey(
-            profile, info.verkey
+        (
+            await route_manager.route_verkey(context.profile, info.verkey)
+            if is_ctx_admin_request
+            else await route_manager.route_verkey(profile, info.verkey)
         )
 
     return info, attrib_def

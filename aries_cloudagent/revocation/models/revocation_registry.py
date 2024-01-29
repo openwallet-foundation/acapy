@@ -1,4 +1,5 @@
 """Classes for managing a revocation registry."""
+
 import http
 import logging
 import os

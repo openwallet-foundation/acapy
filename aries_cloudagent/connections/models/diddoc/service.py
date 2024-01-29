@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 from typing import List, Sequence, Union
 
 from .util import canon_did, canon_ref
@@ -65,9 +64,7 @@ class Service:
         self._recip_keys = (
             [recip_keys]
             if isinstance(recip_keys, PublicKey)
-            else list(recip_keys)
-            if recip_keys
-            else None
+            else list(recip_keys) if recip_keys else None
         )
         self._routing_keys = routing_keys or []
         self._endpoint = endpoint

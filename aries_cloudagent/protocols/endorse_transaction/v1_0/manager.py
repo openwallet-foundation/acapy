@@ -140,12 +140,16 @@ class TransactionManager:
             "context": TransactionRecord.SIGNATURE_CONTEXT,
             "method": TransactionRecord.ADD_SIGNATURE,
             "signature_type": TransactionRecord.SIGNATURE_TYPE,
-            "signer_goal_code": signer_goal_code
-            if signer_goal_code
-            else TransactionRecord.ENDORSE_TRANSACTION,
-            "author_goal_code": author_goal_code
-            if author_goal_code
-            else TransactionRecord.WRITE_TRANSACTION,
+            "signer_goal_code": (
+                signer_goal_code
+                if signer_goal_code
+                else TransactionRecord.ENDORSE_TRANSACTION
+            ),
+            "author_goal_code": (
+                author_goal_code
+                if author_goal_code
+                else TransactionRecord.WRITE_TRANSACTION
+            ),
         }
         transaction.signature_request.clear()
         transaction.signature_request.append(signature_request)
