@@ -132,8 +132,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
                 proof=proof, document=document, document_loader=document_loader
             )
 
-            # Fetch verification method
-            verification_method = self._get_verification_method(
+            verification_method = await self._get_verification_method(
                 proof=proof, document_loader=document_loader
             )
 

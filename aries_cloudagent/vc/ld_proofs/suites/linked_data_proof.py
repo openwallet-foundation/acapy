@@ -1,11 +1,12 @@
 """Abstract base class for linked data proofs."""
 
-
+from aiohttp import ClientSession
 from abc import ABC
 from typing import ClassVar, List, Optional, Union
 
 from pyld import jsonld
 from typing_extensions import TypedDict
+
 
 from ..check import get_properties_without_context
 from ..constants import SECURITY_CONTEXT_URL
@@ -129,7 +130,7 @@ class LinkedDataProof(ABC):
             },
         )
 
-    def _get_verification_method(
+    async def _get_verification_method(
         self, *, proof: dict, document_loader: DocumentLoaderMethod
     ) -> dict:
         """Get verification method for proof."""
@@ -138,27 +139,57 @@ class LinkedDataProof(ABC):
 
         if isinstance(verification_method, dict):
             verification_method: str = verification_method.get("id")
-
         if not verification_method:
             raise LinkedDataProofException('No "verificationMethod" found in proof')
 
-        # TODO: This should optionally use the context of the document?
-        framed = jsonld.frame(
-            verification_method,
-            frame={
-                "@context": SECURITY_CONTEXT_URL,
-                "@embed": "@always",
-                "id": verification_method,
-            },
-            options={
-                "documentLoader": document_loader,
-                "expandContext": SECURITY_CONTEXT_URL,
-                # if we don't set base explicitly it will remove the base in returned
-                # document (e.g. use key:z... instead of did:key:z...)
-                # same as compactToRelative in jsonld.js
-                "base": None,
-            },
-        )
+        # if the verification method is a did:web: url, we resolve the document first
+        # then remove the traceability context if present before framing it
+        # this is to avoid framing errors that could arise from this context
+        if verification_method[:8] == "did:web:":
+            did = verification_method[8:].split("#")[0]
+            did_endpoint = (
+                f'https://{did.replace(":", "/")}/did.json'
+                if ":" in did
+                else f'https://{did}/.well-known/did.json'
+            )
+            async with ClientSession() as session:
+                async with session.get(did_endpoint) as resp:
+                    did_document = await resp.json()
+            # framed = next((sub for sub in did_document['verificationMethod'] if sub['id'] == verification_method), None)
+            framed = jsonld.frame(
+                did_document,
+                frame={
+                    "@context": SECURITY_CONTEXT_URL,
+                    "@embed": "@always",
+                    "id": verification_method,
+                },
+                options={
+                    # "documentLoader": document_loader,
+                    "expandContext": SECURITY_CONTEXT_URL,
+                    # if we don't set base explicitly it will remove the base in returned
+                    # document (e.g. use key:z... instead of did:key:z...)
+                    # same as compactToRelative in jsonld.js
+                    # "base": None,
+                },
+            )
+        else:
+            # TODO: This should optionally use the context of the document?
+            framed = jsonld.frame(
+                verification_method,
+                frame={
+                    "@context": SECURITY_CONTEXT_URL,
+                    "@embed": "@always",
+                    "id": verification_method,
+                },
+                options={
+                    "documentLoader": document_loader,
+                    "expandContext": SECURITY_CONTEXT_URL,
+                    # if we don't set base explicitly it will remove the base in returned
+                    # document (e.g. use key:z... instead of did:key:z...)
+                    # same as compactToRelative in jsonld.js
+                    "base": None,
+                },
+            )
 
         if not framed:
             raise LinkedDataProofException(

@@ -173,14 +173,14 @@ class JwsLinkedDataSignature(LinkedDataSignature):
                 f"Invalid key type. The key type must be {self.required_key_type}"
             )
 
-    def _get_verification_method(
+    async def _get_verification_method(
         self, *, proof: dict, document_loader: DocumentLoaderMethod
     ):
         """Get verification method.
 
         Overwrites base get verification method to assert key type.
         """
-        verification_method = super()._get_verification_method(
+        verification_method = await super()._get_verification_method(
             proof=proof, document_loader=document_loader
         )
         self._assert_verification_method(verification_method)
