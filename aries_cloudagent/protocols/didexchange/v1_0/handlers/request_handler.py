@@ -1,6 +1,5 @@
 """Connection request handler under RFC 23 (DID exchange)."""
 
-
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ....coordinate_mediation.v1_0.manager import MediationManager

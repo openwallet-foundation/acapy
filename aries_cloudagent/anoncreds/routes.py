@@ -1,4 +1,5 @@
 """Anoncreds admin routes."""
+
 import logging
 from asyncio import shield
 

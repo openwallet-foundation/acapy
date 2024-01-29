@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 import json
 import logging
 
@@ -130,9 +129,11 @@ class DIDDoc:
         routing_keys = service.get("routingKeys")
         if routing_keys:
             routing_keys = [
-                DIDKey.from_did(key).public_key_b58
-                if key.startswith("did:key:")
-                else key
+                (
+                    DIDKey.from_did(key).public_key_b58
+                    if key.startswith("did:key:")
+                    else key
+                )
                 for key in routing_keys
             ]
             service["routingKeys"] = routing_keys

@@ -132,8 +132,7 @@ class BaseModel(ABC):
     def deserialize(
         cls: Type[ModelType],
         obj,
-    ) -> ModelType:
-        ...
+    ) -> ModelType: ...
 
     @overload
     @classmethod
@@ -142,8 +141,7 @@ class BaseModel(ABC):
         obj,
         *,
         unknown: Optional[str] = None,
-    ) -> ModelType:
-        ...
+    ) -> ModelType: ...
 
     @overload
     @classmethod
@@ -153,8 +151,7 @@ class BaseModel(ABC):
         *,
         none2none: Literal[False],
         unknown: Optional[str] = None,
-    ) -> ModelType:
-        ...
+    ) -> ModelType: ...
 
     @overload
     @classmethod
@@ -164,8 +161,7 @@ class BaseModel(ABC):
         *,
         none2none: Literal[True],
         unknown: Optional[str] = None,
-    ) -> Optional[ModelType]:
-        ...
+    ) -> Optional[ModelType]: ...
 
     @classmethod
     def deserialize(
@@ -209,16 +205,14 @@ class BaseModel(ABC):
         *,
         as_string: Literal[True],
         unknown: Optional[str] = None,
-    ) -> str:
-        ...
+    ) -> str: ...
 
     @overload
     def serialize(
         self,
         *,
         unknown: Optional[str] = None,
-    ) -> dict:
-        ...
+    ) -> dict: ...
 
     def serialize(
         self,

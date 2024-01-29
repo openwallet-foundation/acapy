@@ -1,4 +1,5 @@
 """Schemas for dif presentation exchange attachment."""
+
 from typing import Mapping, Optional, Sequence
 
 from marshmallow import (
