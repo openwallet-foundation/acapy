@@ -13,6 +13,8 @@ from ....messaging.valid import (
     CREDENTIAL_CONTEXT_VALIDATE,
     CREDENTIAL_SUBJECT_EXAMPLE,
     CREDENTIAL_SUBJECT_VALIDATE,
+    CREDENTIAL_STATUS_EXAMPLE,
+    CREDENTIAL_STATUS_VALIDATE,
     CREDENTIAL_TYPE_EXAMPLE,
     CREDENTIAL_TYPE_VALIDATE,
     RFC3339_DATETIME_EXAMPLE,
@@ -47,6 +49,7 @@ class VerifiableCredential(BaseModel):
         issuance_date: Optional[str] = None,
         expiration_date: Optional[str] = None,
         credential_subject: Optional[Union[dict, List[dict]]] = None,
+        credential_status: Optional[Union[dict, List[dict]]] = None,
         proof: Optional[Union[dict, LDProof]] = None,
         **kwargs,
     ) -> None:
@@ -56,6 +59,7 @@ class VerifiableCredential(BaseModel):
         self._type = type or [VERIFIABLE_CREDENTIAL_TYPE]
         self._issuer = issuer
         self._credential_subject = credential_subject
+        self._credential_status = credential_status
 
         # TODO: proper date parsing
         self._issuance_date = issuance_date
@@ -233,6 +237,11 @@ class VerifiableCredential(BaseModel):
         self._credential_subject = credential_subject
 
     @property
+    def credential_status(self):
+        """Getter for credential status."""
+        return self._credential_status
+
+    @property
     def proof(self):
         """Getter for proof."""
         return self._proof
@@ -253,6 +262,7 @@ class VerifiableCredential(BaseModel):
                 and self.issuance_date == o.issuance_date
                 and self.expiration_date == o.expiration_date
                 and self.credential_subject == o.credential_subject
+                and self.credential_status == o.credential_status
                 and self.proof == o.proof
                 and self.extra == o.extra
             )
@@ -339,6 +349,13 @@ class CredentialSchema(BaseModelSchema):
         data_key="credentialSubject",
         validate=CREDENTIAL_SUBJECT_VALIDATE,
         metadata={"example": CREDENTIAL_SUBJECT_EXAMPLE},
+    )
+
+    credential_status = DictOrDictListField(
+        required=False,
+        data_key="credentialStatus",
+        validate=CREDENTIAL_STATUS_VALIDATE,
+        metadata={"example": CREDENTIAL_STATUS_EXAMPLE},
     )
 
     proof = fields.Nested(
