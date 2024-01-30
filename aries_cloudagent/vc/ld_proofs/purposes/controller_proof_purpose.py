@@ -82,7 +82,8 @@ class ControllerProofPurpose(ProofPurpose):
                     options={
                         "documentLoader": document_loader,
                         "expandContext": SECURITY_CONTEXT_URL,
-                        # if we don't set base explicitly it will remove the base in returned
+                        # if we don't set base explicitly it 
+                        # will remove the base in returned
                         # document (e.g. use key:z... instead of did:key:z...)
                         # same as compactToRelative in jsonld.js
                         "base": None,
@@ -99,7 +100,8 @@ class ControllerProofPurpose(ProofPurpose):
                     options={
                         "documentLoader": document_loader,
                         "expandContext": SECURITY_CONTEXT_URL,
-                        # if we don't set base explicitly it will remove the base in returned
+                        # if we don't set base explicitly it 
+                        # will remove the base in returned
                         # document (e.g. use key:z... instead of did:key:z...)
                         # same as compactToRelative in jsonld.js
                         "base": None,
