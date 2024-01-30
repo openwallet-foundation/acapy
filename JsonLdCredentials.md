@@ -45,7 +45,7 @@ It is required that every property key in the document can be mapped to an IRI. 
 
 > "\<x> attributes dropped. Provide definitions in context to correct. [\<missing-properties>]"
 
-For credentials the `https://www.w3.org/2018/credentials/v1` context MUST always be the first context. In addition, when issuing BBS+ credentials the `https://w3id.org/security/bbs/v1` URL MUST be present in the context. For convenience this URL will be automatically added to the `@context` of the credential if not present.
+For credentials the `https://www.w3.org/2018/credentials/v1` context MUST always be the first context. In addition, when issuing BBS+ credentials the `https://w3c.github.io/vc-di-bbs/contexts/v1` URL MUST be present in the context. For convenience this URL will be automatically added to the `@context` of the credential if not present.
 
 ```json
 {
@@ -168,7 +168,7 @@ Call the `/credentials/w3c` endpoint to retrieve all JSON-LD credentials in your
       "contexts": [
         "https://www.w3.org/2018/credentials/examples/v1",
         "https://www.w3.org/2018/credentials/v1",
-        "https://w3id.org/security/bbs/v1"
+        "https://w3c.github.io/vc-di-bbs/contexts/v1"
       ],
       "types": ["UniversityDegreeCredential", "VerifiableCredential"],
       "schema_ids": [],
@@ -179,7 +179,7 @@ Call the `/credentials/w3c` endpoint to retrieve all JSON-LD credentials in your
         "@context": [
           "https://www.w3.org/2018/credentials/v1",
           "https://www.w3.org/2018/credentials/examples/v1",
-          "https://w3id.org/security/bbs/v1"
+          "https://w3c.github.io/vc-di-bbs/contexts/v1"
         ],
         "type": ["VerifiableCredential", "UniversityDegreeCredential"],
         "issuer": "did:key:zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj",

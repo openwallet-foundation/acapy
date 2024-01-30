@@ -85,7 +85,7 @@ class DIFPresSpecSchema(OpenAPISchema):
             "example": {
                 "@context": [
                     "https://www.w3.org/2018/credentials/v1",
-                    "https://w3id.org/security/bbs/v1",
+                    "https://w3c.github.io/vc-di-bbs/contexts/v1",
                 ],
                 "type": ["VerifiableCredential", "LabReport"],
                 "@explicit": True,
