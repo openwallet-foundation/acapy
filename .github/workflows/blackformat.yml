@@ -15,4 +15,6 @@ jobs:
         with:
           python-version: "3.9"
       - name: Black Code Formatter Check
-        uses: psf/black@stable
+        # The version of black should be adjusted at the same time dev
+        # dependencies are updated.
+        uses: psf/black@24.1.1
