@@ -63,7 +63,10 @@ python3-indy= { version = "^1.11.1", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pre-commit="~3.3.3"
+# Sync with version in .pre-commit-config.yaml
 ruff = "0.1.2"
+# Sync with version in .github/workflows/blackformat.yml
+# Sync with version in .pre-commit-config.yaml
 black="24.1.1"
 
 sphinx="1.8.4"
