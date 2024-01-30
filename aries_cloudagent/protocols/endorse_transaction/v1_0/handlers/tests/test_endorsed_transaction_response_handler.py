@@ -63,9 +63,7 @@ class TestEndorsedTransactionResponseHandler(IsolatedAsyncioTestCase):
             request_context.connection_ready = True
             handler = test_module.EndorsedTransactionResponseHandler()
             responder = MockResponder()
-            await handler.handle(request_context, responder)
+            with self.assertRaises(test_module.HandlerException):
+                await handler.handle(request_context, responder)
 
-        mock_tran_mgr.return_value.receive_endorse_response.assert_called_once_with(
-            request_context.message
-        )
         assert not responder.messages

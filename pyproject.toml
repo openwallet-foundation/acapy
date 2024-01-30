@@ -16,7 +16,7 @@ repository = "https://github.com/hyperledger/aries-cloudagent-python"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-aiohttp="~3.9.0"
+aiohttp="~3.9.2"
 aiohttp-apispec="~2.2.1"
 aiohttp-cors="~0.7.0"
 apispec="~3.3.0"
@@ -63,8 +63,11 @@ python3-indy= { version = "^1.11.1", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pre-commit="~3.3.3"
+# Sync with version in .pre-commit-config.yaml
 ruff = "0.1.2"
-black="23.7.0"
+# Sync with version in .github/workflows/blackformat.yml
+# Sync with version in .pre-commit-config.yaml
+black="24.1.1"
 
 sphinx="1.8.4"
 sphinx-rtd-theme=">=0.4.3"
