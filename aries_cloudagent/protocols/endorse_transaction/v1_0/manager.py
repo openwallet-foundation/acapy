@@ -5,10 +5,9 @@ import logging
 import uuid
 from asyncio import shield
 
-from ....anoncreds.events import SchemaRegistrationFinishedEvent
+from ....anoncreds.issuer import AnonCredsIssuer
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
-from ....core.event_bus import EventBus
 from ....core.profile import Profile
 from ....indy.issuer import IndyIssuerError
 from ....ledger.base import BaseLedger
@@ -428,7 +427,7 @@ class TransactionManager:
                     self._profile, ledger_transaction, sign=False, taa_accept=False
                 )
             else:
-                ledger = self._profile.inject(BaseLedger)
+                ledger = self.profile.inject(BaseLedger)
                 if not ledger:
                     raise TransactionManagerError("No ledger available")
 
@@ -808,10 +807,9 @@ class TransactionManager:
 
             # Notify schema ledger write event
             if self._profile.settings.get("wallet.type") == "askar-anoncreds":
-                event_bus = self.profile.inject(EventBus)
-                await event_bus.notify(
-                    self._profile,
-                    SchemaRegistrationFinishedEvent.with_payload(meta_data),
+                await AnonCredsIssuer(self._profile).finish_schema(
+                    meta_data["context"]["job_id"],
+                    meta_data["context"]["schema_id"],
                 )
             else:
                 await notify_schema_event(self._profile, schema_id, meta_data)

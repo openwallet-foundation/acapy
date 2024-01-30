@@ -15,8 +15,7 @@ from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
 from ..askar.profile import AskarProfile
-from ..core.event_bus import Event, EventBus
-from ..core.profile import Profile
+from ..core.event_bus import EventBus
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
@@ -41,7 +40,6 @@ from .base import (
     AnonCredsRegistrationError,
     AnonCredsResolutionError,
 )
-from .events import SCHEMA_REGISTRATION_FINISHED_PATTERN
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import RevListResultSchema, RevRegDefResultSchema
@@ -667,15 +665,6 @@ def register_events(event_bus: EventBus):
     # TODO Make this pluggable?
     setup_manager = DefaultRevocationSetup()
     setup_manager.register_events(event_bus)
-    event_bus.subscribe(SCHEMA_REGISTRATION_FINISHED_PATTERN, on_schema_event)
-
-
-async def on_schema_event(profile: Profile, event: Event):
-    """Schema post processing."""
-    await AnonCredsIssuer(profile).finish_schema(
-        event.payload.meta_data["context"]["job_id"],
-        event.payload.meta_data["context"]["schema_id"],
-    )
 
 
 async def register(app: web.Application):

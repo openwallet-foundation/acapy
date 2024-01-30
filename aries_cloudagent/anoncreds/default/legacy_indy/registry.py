@@ -298,7 +298,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         return SchemaResult(
             job_id=job_id,
             schema_state=SchemaState(
-                state=SchemaState.STATE_TRANSACTION_REQUESTED,
+                state=SchemaState.STATE_WAIT,
                 schema_id=schema_id,
                 schema=schema,
             ),

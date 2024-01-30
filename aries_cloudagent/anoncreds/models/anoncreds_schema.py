@@ -143,7 +143,6 @@ class SchemaState(BaseModel):
     STATE_FAILED = "failed"
     STATE_ACTION = "action"
     STATE_WAIT = "wait"
-    STATE_TRANSACTION_REQUESTED = "transaction_requested"
 
     class Meta:
         """SchemaState metadata."""
