@@ -14,8 +14,8 @@ from anoncreds import (
     CredentialRevocationState,
     Presentation,
     PresentCredentials,
+    create_link_secret,
 )
-from anoncreds.bindings import create_link_secret
 from aries_askar import AskarError, AskarErrorCode
 
 from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
