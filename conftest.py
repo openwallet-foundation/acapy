@@ -62,9 +62,9 @@ def stub_indy() -> Stub:
 def stub_anoncreds() -> Stub:
     # detect anoncreds library
     try:
-        from anoncreds import library_version
+        from anoncreds import generate_nonce
 
-        library_version()
+        _ = generate_nonce()
         return Stub(None)
     except ImportError:
         print("Skipping Anoncreds-specific tests: anoncreds module not installed.")
