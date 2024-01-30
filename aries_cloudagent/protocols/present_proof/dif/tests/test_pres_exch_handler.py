@@ -529,7 +529,7 @@ class TestPresExchHandler:
         reveal_doc_frame = {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
-                "https://w3c.github.io/vc-di-bbs/contexts/v1",
+                "https://w3id.org/security/bbs/v1",
             ],
             "type": ["VerifiableCredential", "LabReport"],
             "@explicit": True,
@@ -619,7 +619,7 @@ class TestPresExchHandler:
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
                 "https://www.w3.org/2018/credentials/examples/v1",
-                "https://w3c.github.io/vc-di-bbs/contexts/v1",
+                "https://w3id.org/security/bbs/v1",
             ],
             "id": "https://example.gov/credentials/3732",
             "issuer": "did:example:489398593",
@@ -677,7 +677,7 @@ class TestPresExchHandler:
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
                 "https://www.w3.org/2018/credentials/examples/v1",
-                "https://w3c.github.io/vc-di-bbs/contexts/v1",
+                "https://w3id.org/security/bbs/v1",
             ],
             "issuer": {},
             "issuanceDate": {},
@@ -1809,7 +1809,7 @@ class TestPresExchHandler:
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
                 "https://w3id.org/citizenship/v1",
-                "https://w3c.github.io/vc-di-bbs/contexts/v1",
+                "https://w3id.org/security/bbs/v1",
             ],
             "id": "https://issuer.oidp.uscis.gov/credentials/83627465",
             "type": ["VerifiableCredential", "PermanentResidentCard"],
@@ -1918,7 +1918,7 @@ class TestPresExchHandler:
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
                 "https://w3id.org/citizenship/v1",
-                "https://w3c.github.io/vc-di-bbs/contexts/v1",
+                "https://w3id.org/security/bbs/v1",
             ],
             "@graph": [
                 {
@@ -1953,7 +1953,7 @@ class TestPresExchHandler:
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
                 "https://w3id.org/citizenship/v1",
-                "https://w3c.github.io/vc-di-bbs/contexts/v1",
+                "https://w3id.org/security/bbs/v1",
             ],
             "@graph": [
                 {
@@ -3595,7 +3595,7 @@ class TestPresExchHandler:
         cred_dict = {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
-                "https://w3c.github.io/vc-di-bbs/contexts/v1",
+                "https://w3id.org/security/bbs/v1",
             ],
             "id": "urn:bnid:_:c14n4",
             "type": ["MedicalPass", "VerifiableCredential"],

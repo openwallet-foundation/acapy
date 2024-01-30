@@ -7745,7 +7745,7 @@
           "reveal_doc" : {
             "description" : "reveal doc [JSON-LD frame] dict used to derive the credential when selective disclosure is required",
             "example" : {
-              "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://w3c.github.io/vc-di-bbs/contexts/v1" ],
+              "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/bbs/v1" ],
               "@explicit" : true,
               "@requireAll" : true,
               "credentialSubject" : {
