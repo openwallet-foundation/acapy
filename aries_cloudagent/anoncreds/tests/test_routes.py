@@ -6,7 +6,6 @@ from asynctest import TestCase as AsyncTestCase
 
 from aries_cloudagent.admin.request_context import AdminRequestContext
 from aries_cloudagent.anoncreds.base import AnonCredsObjectNotFound
-from aries_cloudagent.anoncreds.events import SchemaRegistrationFinishedEvent
 from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
 from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     AnonCredsSchema,
@@ -19,7 +18,6 @@ from aries_cloudagent.askar.profile_anon import AskarAnoncredsProfile
 from aries_cloudagent.core.event_bus import MockEventBus
 from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfile,
-    InMemoryProfileSession,
 )
 from aries_cloudagent.revocation_anoncreds.manager import RevocationManager
 from aries_cloudagent.tests import mock
@@ -385,7 +383,6 @@ class TestAnoncredsRoutes(AsyncTestCase):
         mock_event_bus.subscribe = mock.MagicMock()
         test_module.register_events(mock_event_bus)
         assert mock_revocation_setup_listeners.call_count == 1
-        assert mock_event_bus.subscribe.call_count == 1
 
     async def test_register(self):
         mock_app = mock.MagicMock()
@@ -398,22 +395,3 @@ class TestAnoncredsRoutes(AsyncTestCase):
         mock_app = mock.MagicMock(_state={"swagger_dict": {}})
         test_module.post_process_routes(mock_app)
         assert "tags" in mock_app._state["swagger_dict"]
-
-    @mock.patch.object(
-        InMemoryProfileSession,
-        "handle",
-    )
-    @mock.patch.object(AnonCredsIssuer, "finish_schema")
-    async def test_on_schema_event_valid_payload(self, mock_finish, mock_handle):
-        mock_handle.insert = mock.CoroutineMock(return_value=None)
-        test_event = SchemaRegistrationFinishedEvent.with_payload(
-            {
-                "context": {
-                    "job_id": "test_job_id",
-                    "schema_id": "test_schema_id",
-                }
-            }
-        )
-
-        await test_module.on_schema_event(self.profile, test_event)
-        assert mock_finish.call_count == 1
