@@ -35,7 +35,16 @@ class HSProto(Enum):
     RFC23 = HSProtoSpec(
         23,
         DIDX_PROTO,
-        {"didexchange", "didx", "didex", "rfc23", "23", "new"},
+        {
+            "https://didcomm.org/didexchange/1.0",
+            "didexchange/1.0",
+            "didexchange",
+            "didx",
+            "didex",
+            "rfc23",
+            "23",
+            "new",
+        },
     )
 
     @classmethod
