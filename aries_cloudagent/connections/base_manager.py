@@ -11,8 +11,6 @@ import pydid
 from base58 import b58decode
 from did_peer_2 import KeySpec, generate
 from did_peer_4 import encode, long_to_short
-from did_peer_4.input_doc import KeySpec as KeySpec_DP4
-from did_peer_4.input_doc import input_doc_from_keys_and_services
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
 )
@@ -160,10 +158,21 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             key = await wallet.create_key(ED25519)
-            key_spec = KeySpec_DP4(multikey=self._key_info_to_multikey(key))
-            input_doc = input_doc_from_keys_and_services(
-                keys=[key_spec], services=services
-            )
+            input_doc = {
+                "@context": [
+                    "https://www.w3.org/ns/did/v1",
+                    "https://w3id.org/security/suites/ed25519-2020/v1",
+                ],
+                "verificationMethod": [
+                    {
+                        "id": "#key-0",
+                        "type": "Ed25519VerificationKey2020",
+                        "publicKeyMultibase": self._key_info_to_multikey(key),
+                    }
+                ],
+                "authentication": ["#key-0"],
+                "service": services,
+            }
             did = encode(input_doc)
 
             did_metadata = metadata if metadata else {}
