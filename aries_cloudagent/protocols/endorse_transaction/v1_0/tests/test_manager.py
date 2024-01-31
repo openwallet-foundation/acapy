@@ -1,16 +1,17 @@
 import asyncio
 import json
 import uuid
-
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
 
 from .....admin.request_context import AdminRequestContext
+from .....anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
+from .....anoncreds.issuer import AnonCredsIssuer
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
 from .....wallet.base import BaseWallet
 from .....wallet.did_method import SOV, DIDMethods
 from .....wallet.key_type import ED25519
@@ -496,6 +497,66 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
             save_record.assert_called_once()
 
         assert transaction_record.state == TransactionRecord.STATE_TRANSACTION_ACKED
+
+    @mock.patch.object(
+        LegacyIndyRegistry,
+        "txn_submit",
+        return_value=json.dumps(
+            {
+                "result": {
+                    "txn": {"type": "101", "metadata": {"from": TEST_DID}},
+                    "txnMetadata": {"txnId": SCHEMA_ID},
+                },
+            }
+        ),
+    )
+    @mock.patch.object(AnonCredsIssuer, "finish_schema")
+    async def test_complete_transaction_anoncreds(
+        self, mock_finish_schema, mock_txn_submit
+    ):
+        self.profile.settings.set_value("wallet.type", "askar-anoncreds")
+
+        transaction_record = await self.manager.create_record(
+            messages_attach=self.test_messages_attach,
+            connection_id=self.test_connection_id,
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "schema_id": "FB5yHWKaZk59hiKqjJKEHs:2:author-schema:3.3",
+                }
+            },
+        )
+        future = asyncio.Future()
+        future.set_result(
+            mock.MagicMock(return_value=mock.MagicMock(add_record=mock.CoroutineMock()))
+        )
+        self.ledger.get_indy_storage = future
+
+        with mock.patch.object(
+            TransactionRecord, "save", autospec=True
+        ) as save_record, mock.patch.object(
+            ConnRecord, "retrieve_by_id"
+        ) as mock_conn_rec_retrieve:
+            mock_conn_rec_retrieve.return_value = mock.MagicMock(
+                metadata_get=mock.CoroutineMock(
+                    return_value={
+                        "transaction_their_job": (
+                            TransactionJob.TRANSACTION_ENDORSER.name
+                        ),
+                        "transaction_my_job": (TransactionJob.TRANSACTION_AUTHOR.name),
+                    }
+                )
+            )
+
+            (
+                transaction_record,
+                transaction_acknowledgement_message,
+            ) = await self.manager.complete_transaction(transaction_record, False)
+            save_record.assert_called_once()
+
+        assert transaction_record.state == TransactionRecord.STATE_TRANSACTION_ACKED
+        assert mock_txn_submit.called
+        assert mock_finish_schema.called
 
     async def test_create_refuse_response_bad_state(self):
         transaction_record = await self.manager.create_record(

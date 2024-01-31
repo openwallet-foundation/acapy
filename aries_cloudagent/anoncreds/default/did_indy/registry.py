@@ -6,6 +6,7 @@ from typing import Optional, Pattern, Sequence
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
+from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 from ...models.anoncreds_cred_def import (
     CredDef,
     CredDefResult,
@@ -14,13 +15,12 @@ from ...models.anoncreds_cred_def import (
 from ...models.anoncreds_revocation import (
     GetRevListResult,
     GetRevRegDefResult,
-    RevRegDef,
-    RevRegDefResult,
     RevList,
     RevListResult,
+    RevRegDef,
+    RevRegDefResult,
 )
 from ...models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
-from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 
 LOGGER = logging.getLogger(__name__)
 

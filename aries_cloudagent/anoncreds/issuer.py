@@ -130,20 +130,20 @@ class AnonCredsIssuer:
         await txn.handle.remove(category, job_id)
         return entry
 
-    async def _store_schema(
+    async def store_schema(
         self,
         result: SchemaResult,
     ):
         """Store schema after reaching finished state."""
-        ident = result.schema_state.schema_id or result.job_id
-        if not ident:
+        identifier = result.job_id or result.schema_state.schema_id
+        if not identifier:
             raise ValueError("Schema id or job id must be set")
 
         try:
             async with self.profile.session() as session:
                 await session.handle.insert(
                     CATEGORY_SCHEMA,
-                    ident,
+                    identifier,
                     result.schema_state.schema.to_json(),
                     {
                         "name": result.schema_state.schema.name,
@@ -203,15 +203,14 @@ class AnonCredsIssuer:
                 options,
             )
 
-            await self._store_schema(schema_result)
-
+            await self.store_schema(schema_result)
             return schema_result
 
         except AnonCredsSchemaAlreadyExists as err:
             # If we find that we've previously written a schema that looks like
             # this one before but that schema is not in our wallet, add it to
             # the wallet so we can return from our get schema calls
-            await self._store_schema(
+            await self.store_schema(
                 SchemaResult(
                     job_id=None,
                     schema_state=SchemaState(
