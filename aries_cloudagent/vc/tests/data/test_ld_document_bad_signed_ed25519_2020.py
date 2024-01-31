@@ -1,5 +1,5 @@
 TEST_LD_DOCUMENT_BAD_SIGNED_ED25519_2020 = {
-    "@context": ["http://schema.org/", "https://w3c.github.io/vc-di-bbs/contexts/v1"],
+    "@context": ["http://schema.org/", "https://w3id.org/security/bbs/v1"],
     "@type": "Person",
     "firstName": "Jane",
     "lastName": "Does",

@@ -87,6 +87,6 @@ class BbsBlsSignature2020Base(LinkedDataProof, metaclass=ABCMeta):
                 "sec": "https://w3id.org/security#",
                 "proof": {"@id": "sec:proof", "@type": "@id", "@container": "@graph"},
             },
-            "https://w3c.github.io/vc-di-bbs/contexts/v1",
+            "https://w3id.org/security/bbs/v1",
         ],
     )

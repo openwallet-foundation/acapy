@@ -130,7 +130,7 @@ To see the issued credential, call the `/credentials/w3c` endpoint on Alice's ad
   "results": [
     {
       "contexts": [
-        "https://w3c.github.io/vc-di-bbs/contexts/v1",
+        "https://w3id.org/security/bbs/v1",
         "https://www.w3.org/2018/credentials/examples/v1",
         "https://www.w3.org/2018/credentials/v1"
       ],
@@ -148,7 +148,7 @@ To see the issued credential, call the `/credentials/w3c` endpoint on Alice's ad
         "@context": [
           "https://www.w3.org/2018/credentials/v1",
           "https://www.w3.org/2018/credentials/examples/v1",
-          "https://w3c.github.io/vc-di-bbs/contexts/v1"
+          "https://w3id.org/security/bbs/v1"
         ],
         "type": [
           "VerifiableCredential",

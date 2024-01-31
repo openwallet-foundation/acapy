@@ -1,5 +1,5 @@
 TEST_LD_DOCUMENT_PARTIAL_PROOF_BBS = {
-    "@context": ["http://schema.org/", "https://w3c.github.io/vc-di-bbs/contexts/v1"],
+    "@context": ["http://schema.org/", "https://w3id.org/security/bbs/v1"],
     "id": "urn:bnid:_:c14n0",
     "type": "Person",
     "firstName": "Jane",
