@@ -1,6 +1,7 @@
 import http
 import json
 import os
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
 from anoncreds import (
@@ -12,7 +13,6 @@ from anoncreds import (
     Schema,
 )
 from aries_askar import AskarError, AskarErrorCode
-from asynctest import TestCase
 from requests import RequestException, Session
 
 from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
@@ -120,8 +120,8 @@ class MockRevListEntry:
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsRevocation(TestCase):
-    def setUp(self) -> None:
+class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
         self.profile = InMemoryProfile.test_profile(
             settings={
                 "wallet-type": "askar-anoncreds",

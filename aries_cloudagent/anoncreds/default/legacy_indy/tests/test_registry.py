@@ -2,9 +2,9 @@
 
 import json
 import re
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from asynctest import TestCase
 from base58 import alphabet
 
 from aries_cloudagent.anoncreds.base import (
@@ -64,8 +64,8 @@ mock_schema = AnonCredsSchema(
 
 
 @pytest.mark.anoncreds
-class TestLegacyIndyRegistry(TestCase):
-    def setUp(self):
+class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile(
             settings={"wallet-type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,

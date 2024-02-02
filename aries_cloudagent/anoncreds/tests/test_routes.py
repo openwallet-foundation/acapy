@@ -1,8 +1,8 @@
 import json
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
 from aiohttp import web
-from asynctest import TestCase as AsyncTestCase
 
 from aries_cloudagent.admin.request_context import AdminRequestContext
 from aries_cloudagent.anoncreds.base import AnonCredsObjectNotFound
@@ -50,8 +50,8 @@ class MockRovocationRegistryDefinition:
 
 
 @pytest.mark.anoncreds
-class TestAnoncredsRoutes(AsyncTestCase):
-    async def setUp(self) -> None:
+class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
         self.session_inject = {}
         self.profile = InMemoryProfile.test_profile(
             settings={"wallet-type": "askar-anoncreds"},
