@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from unittest import IsolatedAsyncioTestCase
 
 import anoncreds
 import pytest
@@ -16,7 +17,6 @@ from anoncreds import (
     Schema,
 )
 from aries_askar import AskarError, AskarErrorCode
-from asynctest import TestCase
 
 from aries_cloudagent.anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from aries_cloudagent.anoncreds.tests.mock_objects import (
@@ -107,8 +107,8 @@ class MockMimeTypeRecord:
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsHolder(TestCase):
-    def setUp(self) -> None:
+class TestAnonCredsHolder(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile(
             settings={"wallet-type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,

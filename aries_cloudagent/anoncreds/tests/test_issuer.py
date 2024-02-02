@@ -1,5 +1,6 @@
 import json
 from typing import Optional
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
 from anoncreds import (
@@ -8,7 +9,6 @@ from anoncreds import (
     CredentialOffer,
 )
 from aries_askar import AskarError, AskarErrorCode
-from asynctest import TestCase
 
 from aries_cloudagent.anoncreds.base import (
     AnonCredsObjectAlreadyExists,
@@ -126,8 +126,8 @@ def get_mock_schema_result(
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsIssuer(TestCase):
-    def setUp(self) -> None:
+class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
         self.profile = InMemoryProfile.test_profile(
             settings={"wallet-type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,

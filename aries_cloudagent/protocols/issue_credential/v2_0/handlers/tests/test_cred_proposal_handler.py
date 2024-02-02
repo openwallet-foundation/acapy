@@ -1,6 +1,5 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
-from asynctest import mock as async_mock
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -108,7 +107,7 @@ class TestV20CredProposalHandler(IsolatedAsyncioTestCase):
                 return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
             )
             mock_cred_mgr.return_value.receive_proposal.return_value.auto_offer = True
-            mock_cred_mgr.return_value.create_offer = async_mock.CoroutineMock(
+            mock_cred_mgr.return_value.create_offer = mock.AsyncMock(
                 side_effect=test_module.AnonCredsIssuerError()
             )
 

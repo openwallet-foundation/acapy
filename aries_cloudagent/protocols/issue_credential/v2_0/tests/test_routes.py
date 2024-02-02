@@ -1,7 +1,6 @@
 from .....vc.ld_proofs.error import LinkedDataProofException
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
-from asynctest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
 
@@ -1353,7 +1352,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             mock_conn_rec.retrieve_by_id = mock.CoroutineMock()
             mock_conn_rec.retrieve_by_id.return_value.is_ready = True
 
-            mock_issue_cred = async_mock.CoroutineMock(
+            mock_issue_cred = mock.AsyncMock(
                 side_effect=test_module.AnonCredsIssuerError()
             )
             mock_cred_mgr.return_value.issue_credential = mock_issue_cred

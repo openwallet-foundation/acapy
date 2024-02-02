@@ -1,6 +1,5 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
-from asynctest import mock as async_mock
 
 from ......anoncreds.holder import AnonCredsHolder
 from ......core.oob_processor import OobMessageProcessor
@@ -418,7 +417,7 @@ class TestPresRequestHandler(IsolatedAsyncioTestCase):
                 return_value=mock_px_rec
             )
 
-            mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
+            mock_pres_mgr.return_value.create_pres = mock.AsyncMock(
                 side_effect=test_module.AnonCredsHolderError()
             )
 
