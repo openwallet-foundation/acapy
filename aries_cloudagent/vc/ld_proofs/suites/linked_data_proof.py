@@ -142,6 +142,7 @@ class LinkedDataProof(ABC):
         if not verification_method:
             raise LinkedDataProofException('No "verificationMethod" found in proof')
 
+        input_to_frame = verification_method
         # If the verification_method is a web did we first resolve the document
         if verification_method.startswith("did:web:"):
             did_document = WebDIDResolver()._resolve_with_request(
@@ -153,13 +154,14 @@ class LinkedDataProof(ABC):
             did_document["@context"] = [
                 i for i in did_document["@context"] if i != TRACEABILITY_CONTEXT_V1_URL
             ]
+            input_to_frame = did_document
 
         # If we have the did_document accessible locally, 
         # we use it as the input to frame
         # Otherwise we use the verification_method
         # TODO: This should optionally use the context of the document?
         framed = jsonld.frame(
-            did_document if "did_document" in locals() else verification_method,
+            input_to_frame,
             frame={
                 "@context": SECURITY_CONTEXT_URL,
                 "@embed": "@always",

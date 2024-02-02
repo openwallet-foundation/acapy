@@ -55,6 +55,7 @@ class ControllerProofPurpose(ProofPurpose):
             else:
                 raise LinkedDataProofException('"controller" must be a string or dict')
 
+            input_to_frame = controller_id
             # Get the controller
             # If the controller is a web did we first resolve the document
             if controller_id.startswith("did:web:"):
@@ -67,12 +68,13 @@ class ControllerProofPurpose(ProofPurpose):
                     for i in did_document["@context"]
                     if i != TRACEABILITY_CONTEXT_V1_URL
                 ]
+                input_to_frame = did_document
 
             # If we have the did_document accessible locally, 
             # we use it as the input to frame
             # Otherwise we use the controller_id
             result.controller = jsonld.frame(
-                did_document if "did_document" in locals() else controller_id,
+                input_to_frame,
                 frame={
                     "@context": SECURITY_CONTEXT_URL,
                     "id": controller_id,
