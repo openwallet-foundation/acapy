@@ -443,8 +443,10 @@ class GetCredDefsResponseSchema(OpenAPISchema):
 
     credential_definition_ids = fields.List(
         fields.Str(
-            description="credential definition identifiers",
-            example="GvLGiRogTJubmj5B36qhYz:3:CL:8:faber.agent.degree_schema",
+            metadata={
+                "description": "credential definition identifiers",
+                "example": "GvLGiRogTJubmj5B36qhYz:3:CL:8:faber.agent.degree_schema",
+            }
         )
     )
 
@@ -478,20 +480,28 @@ class InnerRevRegDefSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
+        metadata={
+            "description": "Issuer Identifier of the credential definition or schema",
+            "example": INDY_OR_KEY_DID_EXAMPLE,
+        },
         data_key="issuerId",
-        example=INDY_OR_KEY_DID_EXAMPLE,
     )
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
         data_key="credDefId",
-        example=INDY_SCHEMA_ID_EXAMPLE,
     )
-    tag = fields.Str(description="tag for revocation registry", example="default")
+    tag = fields.Str(
+        metadata={"description": "tag for revocation registry", "example": "default"}
+    )
     max_cred_num = fields.Int(
-        description="Maximum number of credential revocations per registry",
+        metadata={
+            "description": "Maximum number of credential revocations per registry",
+            "example": 777,
+        },
         data_key="maxCredNum",
-        example=666,
     )
 
 
