@@ -21,7 +21,6 @@ from logging.config import (
 )
 from logging.handlers import BaseRotatingHandler
 from random import randint
-from typing import TextIO
 from portalocker import LOCK_EX, lock, unlock
 from pythonjsonlogger import jsonlogger
 
