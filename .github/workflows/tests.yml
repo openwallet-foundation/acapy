@@ -27,4 +27,9 @@ jobs:
           pip install poetry
           poetry install -E "askar bbs"
       - name: Tests
-        run: poetry run pytest
+        run: |
+          poetry run pytest 2>&1 | tee pytest.log
+          if grep -Eq "RuntimeWarning: coroutine .* was never awaited" pytest.log; then
+            echo "Failure: Detected unawaited coroutine warning in pytest output."
+            exit 1
+          fi
