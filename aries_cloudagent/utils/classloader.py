@@ -2,7 +2,6 @@
 
 import inspect
 from importlib import resources
-from pathlib import Path
 import sys
 
 from importlib import import_module
