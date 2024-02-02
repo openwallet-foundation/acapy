@@ -16,7 +16,10 @@ from ...messaging.valid import (
     NUM_STR_WHOLE_VALIDATE,
 )
 
-NUM_STR_WHOLE = {"validate": NUM_STR_WHOLE_VALIDATE, "example": NUM_STR_WHOLE_EXAMPLE}
+NUM_STR_WHOLE = {
+    "validate": NUM_STR_WHOLE_VALIDATE,
+    "metadata": {"example": NUM_STR_WHOLE_EXAMPLE},
+}
 
 
 class CredDefValuePrimary(BaseModel):
@@ -126,17 +129,27 @@ class CredDefValueRevocationSchema(BaseModelSchema):
         model_class = CredDefValueRevocation
         unknown = EXCLUDE
 
-    g = fields.Str(example="1 1F14F&ECB578F 2 095E45DDF417D")
-    g_dash = fields.Str(example="1 1D64716fCDC00C 1 0C781960FA66E3D3 2 095E45DDF417D")
-    h = fields.Str(example="1 16675DAE54BFAE8 2 095E45DD417D")
-    h0 = fields.Str(example="1 21E5EF9476EAF18 2 095E45DDF417D")
-    h1 = fields.Str(example="1 236D1D99236090 2 095E45DDF417D")
-    h2 = fields.Str(example="1 1C3AE8D1F1E277 2 095E45DDF417D")
-    htilde = fields.Str(example="1 1D8549E8C0F8 2 095E45DDF417D")
-    h_cap = fields.Str(example="1 1B2A32CF3167 1 2490FEBF6EE55 1 0000000000000000")
-    u = fields.Str(example="1 0C430AAB2B4710 1 1CB3A0932EE7E 1 0000000000000000")
-    pk = fields.Str(example="1 142CD5E5A7DC 1 153885BD903312 2 095E45DDF417D")
-    y = fields.Str(example="1 153558BD903312 2 095E45DDF417D 1 0000000000000000")
+    g = fields.Str(metadata={"example": "1 1F14F&ECB578F 2 095E45DDF417D"})
+    g_dash = fields.Str(
+        metadata={"example": "1 1D64716fCDC00C 1 0C781960FA66E3D3 2 095E45DDF417D"}
+    )
+    h = fields.Str(metadata={"example": "1 16675DAE54BFAE8 2 095E45DD417D"})
+    h0 = fields.Str(metadata={"example": "1 21E5EF9476EAF18 2 095E45DDF417D"})
+    h1 = fields.Str(metadata={"example": "1 236D1D99236090 2 095E45DDF417D"})
+    h2 = fields.Str(metadata={"example": "1 1C3AE8D1F1E277 2 095E45DDF417D"})
+    htilde = fields.Str(metadata={"example": "1 1D8549E8C0F8 2 095E45DDF417D"})
+    h_cap = fields.Str(
+        metadata={"example": "1 1B2A32CF3167 1 2490FEBF6EE55 1 0000000000000000"}
+    )
+    u = fields.Str(
+        metadata={"example": "1 0C430AAB2B4710 1 1CB3A0932EE7E 1 0000000000000000"}
+    )
+    pk = fields.Str(
+        metadata={"example": "1 142CD5E5A7DC 1 153885BD903312 2 095E45DDF417D"}
+    )
+    y = fields.Str(
+        metadata={"example": "1 153558BD903312 2 095E45DDF417D 1 0000000000000000"}
+    )
 
 
 class CredDefValue(BaseModel):
@@ -178,11 +191,11 @@ class CredDefValueSchema(BaseModelSchema):
 
     primary = fields.Nested(
         CredDefValuePrimarySchema(),
-        description="Primary value for credential definition",
+        metadata={"description": "Primary value for credential definition"},
     )
     revocation = fields.Nested(
         CredDefValueRevocationSchema(),
-        description="Revocation value for credential definition",
+        metadata={"description": "Revocation value for credential definition"},
         required=False,
     )
 
@@ -243,20 +256,26 @@ class CredDefSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
+        metadata={
+            "description": "Issuer Identifier of the credential definition or schema",
+            "example": INDY_OR_KEY_DID_EXAMPLE,
+        },
         data_key="issuerId",
-        example=INDY_OR_KEY_DID_EXAMPLE,
     )
     schema_id = fields.Str(
         data_key="schemaId",
-        description="Schema identifier",
-        example=INDY_SCHEMA_ID_EXAMPLE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
     type = fields.Str(validate=OneOf(["CL"]))
     tag = fields.Str(
-        description="""The tag value passed in by the Issuer to
+        metadata={
+            "description": """The tag value passed in by the Issuer to
          an AnonCred's Credential Definition create and store implementation.""",
-        example="default",
+            "example": "default",
+        }
     )
     value = fields.Nested(CredDefValueSchema())
 
@@ -315,12 +334,14 @@ class CredDefStateSchema(BaseModelSchema):
         )
     )
     credential_definition_id = fields.Str(
-        description="credential definition id",
+        metadata={
+            "description": "credential definition id",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
         allow_none=True,
-        example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     credential_definition = fields.Nested(
-        CredDefSchema(), description="credential definition"
+        CredDefSchema(), metadata={"description": "credential definition"}
     )
 
 
@@ -418,11 +439,13 @@ class GetCredDefResultSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     credential_definition_id = fields.Str(
-        description="credential definition id",
-        example=INDY_CRED_DEF_ID_EXAMPLE,
+        metadata={
+            "description": "credential definition id",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     credential_definition = fields.Nested(
-        CredDefSchema(), description="credential definition"
+        CredDefSchema(), metadata={"description": "credential definition"}
     )
     resolution_metadata = fields.Dict()
     credential_definitions_metadata = fields.Dict()

@@ -61,20 +61,26 @@ class AnonCredsSchemaSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
+        metadata={
+            "description": "Issuer Identifier of the credential definition or schema",
+            "example": INDY_OR_KEY_DID_EXAMPLE,
+        },
         data_key="issuerId",
-        example=INDY_OR_KEY_DID_EXAMPLE,
     )
     attr_names = fields.List(
         fields.Str(
-            description="Attribute name",
-            example="score",
+            metadata={
+                "description": "Attribute name",
+                "example": "score",
+            }
         ),
-        description="Schema attribute names",
+        metadata={"description": "Schema attribute names"},
         data_key="attrNames",
     )
-    name = fields.Str(description="Schema name", example="Example schema")
-    version = fields.Str(description="Schema version", example="1.0")
+    name = fields.Str(
+        metadata={"description": "Schema name", "example": "Example schema"}
+    )
+    version = fields.Str(metadata={"description": "Schema version", "example": "1.0"})
 
 
 class GetSchemaResult(BaseModel):
@@ -130,7 +136,7 @@ class GetSchemaResultSchema(BaseModelSchema):
 
     schema_value = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
     schema_id = fields.Str(
-        description="Schema identifier", example=INDY_SCHEMA_ID_EXAMPLE
+        metadata={"description": "Schema identifier", "example": INDY_SCHEMA_ID_EXAMPLE}
     )
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()
@@ -184,8 +190,10 @@ class SchemaStateSchema(BaseModelSchema):
         )
     )
     schema_id = fields.Str(
-        description="Schema identifier",
-        example=INDY_SCHEMA_ID_EXAMPLE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        }
     )
     schema_value = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
 

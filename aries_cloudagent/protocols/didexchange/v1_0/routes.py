@@ -185,9 +185,11 @@ class DIDXRejectRequestSchema(OpenAPISchema):
     """Parameters and validators for reject-request request  string."""
 
     reason = fields.Str(
-        description="Reason for rejecting the DID Exchange",
+        metadata={
+            "description": "Reason for rejecting the DID Exchange",
+            "example": "Request rejected",
+        },
         required=False,
-        example="Request rejected",
     )
 
 
