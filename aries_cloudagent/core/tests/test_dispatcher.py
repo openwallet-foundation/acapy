@@ -590,8 +590,9 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         with self.assertRaises(RuntimeError):
             await responder.send_outbound(None)
 
-        with self.assertRaises(RuntimeError):
-            await responder.send_webhook("test", {})
+        with pytest.deprecated_call():
+            with self.assertRaises(RuntimeError):
+                await responder.send_webhook("test", {})
 
     # async def test_dispatch_version_with_degraded_features(self):
     #     profile = make_profile()
