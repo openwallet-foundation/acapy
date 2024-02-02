@@ -507,5 +507,6 @@ async def test_admin_responder_profile_expired_x():
     with pytest.raises(RuntimeError):
         await responder.send_outbound(None)
 
-    with pytest.raises(RuntimeError):
-        await responder.send_webhook("test", {})
+    with pytest.deprecated_call():
+        with pytest.raises(RuntimeError):
+            await responder.send_webhook("test", {})
