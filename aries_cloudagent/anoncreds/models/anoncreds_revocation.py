@@ -62,15 +62,18 @@ class RevRegDefValueSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     public_keys = fields.Dict(
-        data_key="publicKeys", example=INDY_RAW_PUBLIC_KEY_EXAMPLE
+        data_key="publicKeys", metadata={"example": INDY_RAW_PUBLIC_KEY_EXAMPLE}
     )
-    max_cred_num = fields.Int(data_key="maxCredNum", example=666)
+    max_cred_num = fields.Int(data_key="maxCredNum", metadata={"example": 777})
     tails_location = fields.Str(
         data_key="tailsLocation",
-        example="https://tails-server.com/hash/7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P",
+        metadata={
+            "example": "https://tails-server.com/hash/7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P"
+        },
     )
     tails_hash = fields.Str(
-        data_key="tailsHash", example="7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P"
+        data_key="tailsHash",
+        metadata={"example": "7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P"},
     )
 
 
