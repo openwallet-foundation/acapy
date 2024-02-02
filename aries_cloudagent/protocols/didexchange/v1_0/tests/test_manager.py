@@ -148,7 +148,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         self.test_mediator_endpoint = "http://mediator.example.com"
 
     async def test_verify_diddoc(self):
-        assert False
         async with self.profile.session() as session:
             did_doc = self.make_did_doc(
                 TestConfig.test_target_did,
@@ -2037,7 +2036,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 await self.manager.accept_response(mock_response, receipt)
 
     async def test_accept_response_find_by_thread_id_no_did_doc_attached(self):
-        mock_response = mock.MagicMock()
+        mock_response = mock.AsyncMock()
         mock_response._thread = mock.MagicMock()
         mock_response.did = TestConfig.test_target_did
         mock_response.did_doc_attach = None
