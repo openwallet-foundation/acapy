@@ -576,7 +576,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             mock_create_did_peer_2.assert_called_once()
 
     async def test_create_request_emit_did_peer_4(self):
-        mock_conn_rec = mock.MagicMock(
+        mock_conn_rec = mock.AsyncMock(
             connection_id="dummy",
             retrieve_invitation=mock.CoroutineMock(
                 return_value=mock.MagicMock(
