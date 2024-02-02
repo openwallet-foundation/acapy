@@ -68,7 +68,8 @@ class ControllerProofPurpose(ProofPurpose):
                     if i != TRACEABILITY_CONTEXT_V1_URL
                 ]
 
-            # If we have the did_document accessible locally, we use it as the input to frame
+            # If we have the did_document accessible locally, 
+            # we use it as the input to frame
             # Otherwise we use the controller_id
             result.controller = jsonld.frame(
                 did_document if "did_document" in locals() else controller_id,

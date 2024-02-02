@@ -154,7 +154,8 @@ class LinkedDataProof(ABC):
                 i for i in did_document["@context"] if i != TRACEABILITY_CONTEXT_V1_URL
             ]
 
-        # If we have the did_document accessible locally, we use it as the input to frame
+        # If we have the did_document accessible locally, 
+        # we use it as the input to frame
         # Otherwise we use the verification_method
         # TODO: This should optionally use the context of the document?
         framed = jsonld.frame(
