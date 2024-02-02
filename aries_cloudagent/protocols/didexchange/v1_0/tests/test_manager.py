@@ -148,6 +148,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         self.test_mediator_endpoint = "http://mediator.example.com"
 
     async def test_verify_diddoc(self):
+        assert False
         async with self.profile.session() as session:
             did_doc = self.make_did_doc(
                 TestConfig.test_target_did,
