@@ -597,7 +597,9 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         self.profile.context.update_settings({"emit_did_peer_4": True})
 
         with mock.patch.object(
-            self.manager, "create_did_peer_4", mock.AsyncMock(return_value=mock_did_info)
+            self.manager,
+            "create_did_peer_4",
+            mock.AsyncMock(return_value=mock_did_info),
         ) as mock_create_did_peer_4:
             request = await self.manager.create_request(
                 mock_conn_rec, use_public_did=True
