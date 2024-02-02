@@ -70,7 +70,7 @@ class ControllerProofPurpose(ProofPurpose):
                 ]
                 input_to_frame = did_document
 
-            # If we have the did_document accessible locally, 
+            # If we have the did_document accessible locally,
             # we use it as the input to frame
             # Otherwise we use the controller_id
             result.controller = jsonld.frame(
