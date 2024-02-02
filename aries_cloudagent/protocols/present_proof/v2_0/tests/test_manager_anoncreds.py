@@ -6,7 +6,6 @@ from time import time
 
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
-from asynctest import mock as async_mock
 
 from .....core.in_memory import InMemoryProfile
 from .....anoncreds.holder import AnonCredsHolder
@@ -440,7 +439,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             ),
         )
 
-        Holder = async_mock.MagicMock(AnonCredsHolder, autospec=True)
+        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.holder = Holder()
         get_creds = mock.CoroutineMock(
             return_value=(
@@ -479,7 +478,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         )
         injector.bind_instance(AnonCredsHolder, self.holder)
 
-        Verifier = async_mock.MagicMock(AnonCredsVerifier, autospec=True)
+        Verifier = mock.MagicMock(AnonCredsVerifier, autospec=True)
         self.verifier = Verifier()
         self.verifier.verify_presentation = mock.CoroutineMock(
             return_value=("true", [])
@@ -1016,7 +1015,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = async_mock.MagicMock(AnonCredsHolder, autospec=True)
+        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.holder = Holder()
         get_creds = mock.CoroutineMock(
             return_value=(
@@ -1041,7 +1040,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
+        self.holder.create_presentation = mock.AsyncMock(return_value="{}")
         self.profile.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
         with mock.patch.object(
@@ -1102,7 +1101,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = async_mock.MagicMock(AnonCredsHolder, autospec=True)
+        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.holder = Holder()
         get_creds = mock.CoroutineMock(
             return_value=(
@@ -1128,8 +1127,8 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
                 }
             )
         )
-        self.holder.create_presentation = async_mock.CoroutineMock(return_value="{}")
-        self.holder.create_revocation_state = async_mock.CoroutineMock(
+        self.holder.create_presentation = mock.AsyncMock(return_value="{}")
+        self.holder.create_revocation_state = mock.AsyncMock(
             side_effect=test_indy_util_module.AnonCredsHolderError(
                 "Problem", {"message": "Nope"}
             )
@@ -1176,7 +1175,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
 
-        Holder = async_mock.MagicMock(AnonCredsHolder, autospec=True)
+        Holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.holder = Holder()
         get_creds = mock.CoroutineMock(
             return_value=(
@@ -2216,7 +2215,7 @@ class TestV20PresManagerAnonCreds(IsolatedAsyncioTestCase):
             mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=False)
             ),
-        ), async_mock.patch.object(
+        ), mock.patch.object(
             AnonCredsVerifier,
             "verify_presentation",
             mock.CoroutineMock(
