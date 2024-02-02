@@ -2022,6 +2022,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         mock_response._thread = mock.MagicMock()
         mock_response.did = TestConfig.test_target_did
         mock_response.did_doc_attach = None
+        mock_response.did_rotate_attach.data.verify = mock.AsyncMock(return_value=True)
 
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
