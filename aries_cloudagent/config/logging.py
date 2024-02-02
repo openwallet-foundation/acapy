@@ -58,7 +58,7 @@ class ContextFilter(logging.Filter):
             return True
 
 
-def load_resource(path: str, encoding: str = None) -> TextIO:
+def load_resource(path: str, encoding: str = None):
     """Open a resource file located in a python package or the local filesystem.
 
     Args:
