@@ -5,6 +5,7 @@ import urllib.parse
 from typing import Optional, Pattern, Sequence, Text
 
 import aiohttp
+import requests
 
 from pydid import DID, DIDDocument
 
@@ -81,3 +82,24 @@ class WebDIDResolver(BaseDIDResolver):
                 raise ResolverError(
                     "Could not find doc for {}: {}".format(did, await response.text())
                 )
+
+    def _resolve_with_request(
+        self,
+        did: str,
+    ) -> dict:
+        """Resolve did:web DIDs."""
+
+        url = self.__transform_to_url(did)
+        response = requests.get(url)
+        if response.status_code == 200:
+            try:
+                # Validate DIDDoc with pyDID
+                did_doc = DIDDocument.from_json(response.text)
+                return did_doc.serialize()
+            except Exception as err:
+                raise ResolverError("Response was incorrectly formatted") from err
+        if response.status == 404:
+            raise DIDNotFound(f"No document found for {did}")
+        raise ResolverError(
+            "Could not find doc for {}: {}".format(did, response.json())
+        )

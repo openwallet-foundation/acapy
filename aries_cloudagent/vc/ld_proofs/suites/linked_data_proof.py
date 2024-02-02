@@ -1,14 +1,15 @@
 """Abstract base class for linked data proofs."""
 
-import requests
 from abc import ABC
 from typing import ClassVar, List, Optional, Union
 
 from pyld import jsonld
 from typing_extensions import TypedDict
 
+from ....resolver.default.web import WebDIDResolver
+
 from ..check import get_properties_without_context
-from ..constants import SECURITY_CONTEXT_URL
+from ..constants import SECURITY_CONTEXT_URL, TRACEABILITY_CONTEXT_V1_URL
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..purposes import _ProofPurpose as ProofPurpose
@@ -141,52 +142,37 @@ class LinkedDataProof(ABC):
         if not verification_method:
             raise LinkedDataProofException('No "verificationMethod" found in proof')
 
-        # If the verification method is a did:web: url, we resolve the document first
-        # then remove the traceability context if present before framing it
-        # this is to avoid framing errors that could arise from this context
-        if verification_method[:8] == "did:web:":
-            did = verification_method[8:].split("#")[0]
-            did_endpoint = (
-                f'https://{did.replace(":", "/")}/did.json'
-                if ":" in did
-                else f"https://{did}/.well-known/did.json"
+        # If the verification_method is a web did we first resolve the document
+        if verification_method.startswith("did:web:"):
+            did_document = WebDIDResolver()._resolve_with_request(
+                verification_method.split("#")[0]
             )
-            r = requests.get(did_endpoint)
-            did_document = r.json()
+            # We remove the traceability context if present
+            # to avoid a bug with the pyld library
+            # https://github.com/digitalbazaar/pyld/issues/188
             did_document["@context"] = [
-                i
-                for i in did_document["@context"]
-                if i != "https://w3id.org/traceability/v1"
+                i for i in did_document["@context"] if i != TRACEABILITY_CONTEXT_V1_URL
             ]
-            framed = jsonld.frame(
-                did_document,
-                frame={
-                    "@context": SECURITY_CONTEXT_URL,
-                    "@embed": "@always",
-                    "id": verification_method,
-                },
-                options={
-                    "expandContext": SECURITY_CONTEXT_URL,
-                },
-            )
-        else:
-            # TODO: This should optionally use the context of the document?
-            framed = jsonld.frame(
-                verification_method,
-                frame={
-                    "@context": SECURITY_CONTEXT_URL,
-                    "@embed": "@always",
-                    "id": verification_method,
-                },
-                options={
-                    "documentLoader": document_loader,
-                    "expandContext": SECURITY_CONTEXT_URL,
-                    # if we don't set base explicitly it will remove the base in returned
-                    # document (e.g. use key:z... instead of did:key:z...)
-                    # same as compactToRelative in jsonld.js
-                    "base": None,
-                },
-            )
+
+        # If we have the did_document accessible locally, we use it as the input to frame
+        # Otherwise we use the verification_method
+        # TODO: This should optionally use the context of the document?
+        framed = jsonld.frame(
+            did_document if "did_document" in locals() else verification_method,
+            frame={
+                "@context": SECURITY_CONTEXT_URL,
+                "@embed": "@always",
+                "id": verification_method,
+            },
+            options={
+                "documentLoader": document_loader,
+                "expandContext": SECURITY_CONTEXT_URL,
+                # if we don't set base explicitly it will remove the base in returned
+                # document (e.g. use key:z... instead of did:key:z...)
+                # same as compactToRelative in jsonld.js
+                "base": None,
+            },
+        )
 
         if not framed:
             raise LinkedDataProofException(

@@ -19,3 +19,5 @@ VERIFIABLE_PRESENTATION_TYPE = "VerifiablePresentation"
 EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE = (
     "https://www.w3.org/2018/credentials#VerifiableCredential"
 )
+
+TRACEABILITY_CONTEXT_V1_URL = "https://w3id.org/traceability/v1"

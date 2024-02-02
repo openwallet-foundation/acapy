@@ -1,12 +1,13 @@
 """Controller proof purpose class."""
 
-import requests
 from typing import TYPE_CHECKING
 
 from pyld.jsonld import JsonLdProcessor
 from pyld import jsonld
 
-from ..constants import SECURITY_CONTEXT_URL
+from ....resolver.default.web import WebDIDResolver
+
+from ..constants import SECURITY_CONTEXT_URL, TRACEABILITY_CONTEXT_V1_URL
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
@@ -55,58 +56,37 @@ class ControllerProofPurpose(ProofPurpose):
                 raise LinkedDataProofException('"controller" must be a string or dict')
 
             # Get the controller
-            # If the controller is a did:web: url, we resolve the document first
-            # then remove the traceability context if present before framing it
-            # this is to avoid framing errors that could arise from this context
-            if controller_id[:8] == "did:web:":
-                did = controller_id[8:]
-                did_endpoint = (
-                    f'https://{did.replace(":", "/")}/did.json'
-                    if ":" in did
-                    else f"https://{did}/.well-known/did.json"
-                )
-                r = requests.get(did_endpoint)
-                did_document = r.json()
+            # If the controller is a web did we first resolve the document
+            if controller_id.startswith("did:web:"):
+                did_document = WebDIDResolver()._resolve_with_request(controller_id)
+                # We remove the traceability context if present
+                # to avoid a bug with the pyld library
+                # https://github.com/digitalbazaar/pyld/issues/188
                 did_document["@context"] = [
                     i
                     for i in did_document["@context"]
-                    if i != "https://w3id.org/traceability/v1"
+                    if i != TRACEABILITY_CONTEXT_V1_URL
                 ]
-                result.controller = jsonld.frame(
-                    did_document,
-                    frame={
-                        "@context": SECURITY_CONTEXT_URL,
-                        "id": controller_id,
-                        self.term: {"@embed": "@never", "id": verification_id},
-                    },
-                    options={
-                        "documentLoader": document_loader,
-                        "expandContext": SECURITY_CONTEXT_URL,
-                        # if we don't set base explicitly it 
-                        # will remove the base in returned
-                        # document (e.g. use key:z... instead of did:key:z...)
-                        # same as compactToRelative in jsonld.js
-                        "base": None,
-                    },
-                )
-            else:
-                result.controller = jsonld.frame(
-                    controller_id,
-                    frame={
-                        "@context": SECURITY_CONTEXT_URL,
-                        "id": controller_id,
-                        self.term: {"@embed": "@never", "id": verification_id},
-                    },
-                    options={
-                        "documentLoader": document_loader,
-                        "expandContext": SECURITY_CONTEXT_URL,
-                        # if we don't set base explicitly it 
-                        # will remove the base in returned
-                        # document (e.g. use key:z... instead of did:key:z...)
-                        # same as compactToRelative in jsonld.js
-                        "base": None,
-                    },
-                )
+
+            # If we have the did_document accessible locally, we use it as the input to frame
+            # Otherwise we use the controller_id
+            result.controller = jsonld.frame(
+                did_document if "did_document" in locals() else controller_id,
+                frame={
+                    "@context": SECURITY_CONTEXT_URL,
+                    "id": controller_id,
+                    self.term: {"@embed": "@never", "id": verification_id},
+                },
+                options={
+                    "documentLoader": document_loader,
+                    "expandContext": SECURITY_CONTEXT_URL,
+                    # if we don't set base explicitly it
+                    # will remove the base in returned
+                    # document (e.g. use key:z... instead of did:key:z...)
+                    # same as compactToRelative in jsonld.js
+                    "base": None,
+                },
+            )
 
             # Retrieve al verification methods on controller associated with term
             verification_methods = JsonLdProcessor.get_values(
