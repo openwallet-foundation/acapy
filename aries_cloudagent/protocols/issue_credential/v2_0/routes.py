@@ -54,6 +54,8 @@ from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
 from .models.detail.indy import V20CredExRecordIndySchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
+from .models.detail.w3c import CredExRecordVCDISchema
+from .formats.vc_di.models.cred_detail import VCDIDetailSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -108,6 +110,7 @@ class V20CredExRecordDetailSchema(OpenAPISchema):
 
     indy = fields.Nested(V20CredExRecordIndySchema, required=False)
     ld_proof = fields.Nested(V20CredExRecordLDProofSchema, required=False)
+    vc_di = fields.Nested(CredExRecordVCDISchema, required=False)
 
 
 class V20CredExRecordListResultSchema(OpenAPISchema):
@@ -181,6 +184,11 @@ class V20CredFilterSchema(OpenAPISchema):
         LDProofVCDetailSchema,
         required=False,
         metadata={"description": "Credential filter for linked data proof"},
+    )
+    vc_di = fields.Nested(
+        VCDIDetailSchema,
+        required=False,
+        metadata={"description":"Credential filter for vcdi"}
     )
 
     @validates_schema
@@ -256,6 +264,14 @@ class V20CredFilterLDProofSchema(OpenAPISchema):
         metadata={"description": "Credential filter for linked data proof"},
     )
 
+class V20CredFilterVCDISchema(OpenAPISchema):
+    """Credential filtration criteria."""
+
+    vc_di = fields.Nested(
+        VCDIDetailSchema,
+        required=True,
+        metadata={"description": "Credential filter for vcdi"},
+    )
 
 class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
     """Filter, auto-remove, comment, trace."""
@@ -338,11 +354,11 @@ class V20CredBoundOfferRequestSchema(OpenAPISchema):
         """Validate schema fields: need both filter and counter_preview or neither."""
         if (
             "filter_" in data
-            and ("indy" in data["filter_"] or "ld_proof" in data["filter_"])
+            and ("indy" in data["filter_"] or "ld_proof" in data["filter_"] or "vc_di" in data["filter_"])
         ) ^ ("counter_preview" in data):
             raise ValidationError(
                 f"V20CredBoundOfferRequestSchema\n{data}\nrequires "
-                "both indy/ld_proof filter and counter_preview or neither"
+                "both indy/ld_proof/vc_di filter and counter_preview or neither"
             )
 
 
