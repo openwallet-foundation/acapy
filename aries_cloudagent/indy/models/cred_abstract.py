@@ -1,6 +1,7 @@
 """Cred abstract artifacts to attach to RFC 453 messages."""
 
-from typing import Sequence
+from typing import Sequence, Union
+from ...vc.vc_ld.models.credential import CredentialSchema, VerifiableCredential
 
 from marshmallow import EXCLUDE, fields
 
@@ -152,3 +153,160 @@ class IndyCredAbstractSchema(BaseModelSchema):
         required=True,
         metadata={"description": "Key correctness proof"},
     )
+
+
+class AnoncredsLinkSecret(BaseModel):
+    """Anoncreds Link Secret Model."""
+
+    class Meta:
+        """AnoncredsLinkSecret metadata."""
+
+        schema_class = "AnoncredsLinkSecretSchema"
+
+    def __init__(
+        self,
+        nonce: str = None,
+        cred_def_id: str = None,
+        key_correctness_proof: str = None,
+        **kwargs,
+    ):
+        """Initialize values for AnoncredsLinkSecret."""
+        super().__init__(**kwargs)
+        self.nonce = nonce
+        self.cred_def_id = cred_def_id
+        self.key_correctness_proof = key_correctness_proof
+
+
+class AnoncredsLinkSecretSchema(BaseModelSchema):
+    """Anoncreds Link Secret Schema."""
+
+    nonce = fields.Str(
+        required=True,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Nonce in credential abstract",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
+    )
+
+    cred_def_id = fields.Str(
+        required=True,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
+    )
+
+    key_correctness_proof = fields.Nested(
+        IndyKeyCorrectnessProofSchema(),
+        required=True,
+        metadata={"description": "Key correctness proof"},
+    )
+
+
+class DidcommSignedAttachment(BaseModel):
+    """Didcomm Signed Attachment Model."""
+
+    class Meta:
+        """DidcommSignedAttachment metadata."""
+
+        schema_class = "DidcommSignedAttachmentSchema"
+
+    def __init__(
+        self,
+        algs_supported: Sequence[str] = None,
+        did_methods_supported: Sequence[str] = None,
+        nonce: str = None,
+        **kwargs,
+    ):
+        """Initialize values for DidcommSignedAttachment."""
+        super().__init__(**kwargs)
+        self.algs_supported = algs_supported
+        self.did_methods_supported = did_methods_supported
+        self.nonce = nonce
+
+
+class DidcommSignedAttachmentSchema(BaseModelSchema):
+    """Didcomm Signed Attachment Schema."""
+
+    algs_supported = fields.List(fields.Str(), required=True)
+
+    did_methods_supported = fields.List(fields.Str(), required=True)
+
+    nonce = fields.Str(
+        required=True,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Nonce in credential abstract",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
+    )
+
+
+class BindingMethodSchema(BaseModelSchema):
+    """VCDI Binding Method Schema."""
+
+    anoncreds_link_secret = fields.Nested(AnoncredsLinkSecretSchema, required=False)
+    didcomm_signed_attachment = fields.Nested(
+        DidcommSignedAttachmentSchema, required=True
+    )
+
+
+class VCDICredAbstract(BaseModel):
+    """VCDI Credential Abstract."""
+
+    class Meta:
+        """VCDI credential abstract metadata."""
+
+        schema_class = "VCDICredAbstractSchema"
+
+    def __init__(
+        self,
+        data_model_versions_supported: str = None,
+        binding_required: str = None,
+        binding_methods: str = None,
+        credential: Union[dict, VerifiableCredential] = None,
+        **kwargs,
+    ):
+        """Initialize vcdi cred abstract object.
+
+        Args:
+            data_model_versions_supported: supported versions for data model
+            binding_required: boolean value
+            binding_methods: required if binding_required is true
+            credential: credential object
+        """
+        super().__init__(**kwargs)
+        self.data_model_versions_supported = data_model_versions_supported
+        self.binding_required = binding_required
+        self.binding_methods = binding_methods
+        self.credential = credential
+
+
+class VCDICredAbstractSchema(BaseModelSchema):
+    """VCDI Credential Abstract Schema."""
+
+    class Meta:
+        """VCDICredAbstractSchema metadata."""
+
+        model_class = VCDICredAbstract
+        unknown = EXCLUDE
+
+        data_model_versions_supported = fields.List(
+            required=True, validate="", metadata={"description": "", "example": ""}
+        )
+
+        binding_required = fields.Bool(
+            required=False, metadata={"description": "", "example": ""}
+        )
+
+        binding_method = fields.Nested(
+            BindingMethodSchema(),
+            required=binding_required,
+            metadata={"description": "", "example": ""},
+        )
+
+        credential = fields.Nested(
+            CredentialSchema(), required=True, metadata={"description": "", "example": ""}
+        )
