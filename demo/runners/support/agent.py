@@ -71,6 +71,7 @@ WALLET_TYPE_ANONCREDS = "askar-anoncreds"
 
 CRED_FORMAT_INDY = "indy"
 CRED_FORMAT_JSON_LD = "json-ld"
+CRED_FORMAT_VC_DI = "vc_di"
 DID_METHOD_SOV = "sov"
 DID_METHOD_KEY = "key"
 KEY_TYPE_ED255 = "ed25519"
@@ -674,9 +675,7 @@ class DemoAgent:
         role: str = "TRUST_ANCHOR",
         cred_type: str = CRED_FORMAT_INDY,
     ):
-        if cred_type in [
-            CRED_FORMAT_INDY,
-        ]:
+        if cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             # if registering a did for issuing indy credentials, publish the did on the ledger
             self.log(f"Registering {self.ident} ...")
             if not ledger_url:
