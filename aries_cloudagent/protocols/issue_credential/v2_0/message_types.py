@@ -41,7 +41,7 @@ ATTACHMENT_FORMAT = {
     CRED_20_PROPOSAL: {
         V20CredFormat.Format.INDY.api: "hlindy/cred-filter@v2.0",
         V20CredFormat.Format.LD_PROOF.api: "aries/ld-proof-vc-detail@v1.0",
-        V20CredFormat.Format.VC_DI.api: "didcomm/w3c-di-vc-offer@v0.1",
+        V20CredFormat.Format.VC_DI.api: "hlindy/cred-filter@v2.0",
     },
     CRED_20_OFFER: {
         V20CredFormat.Format.INDY.api: "hlindy/cred-abstract@v2.0",

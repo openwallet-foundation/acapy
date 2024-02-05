@@ -6,11 +6,7 @@ from typing import Mapping, Tuple
 from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import (
     V20CredExRecordVCDI,
 )
-from aries_cloudagent.vc.vc_ld.manager import VcLdpManager, VcLdpManagerError
-from aries_cloudagent.vc.vc_ld.models.credential import (
-    VerifiableCredential,
-    VerifiableCredentialSchema,
-)
+from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredentialSchema
 
 from marshmallow import RAISE
 
@@ -21,23 +17,19 @@ from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import (
     AnonCredsIssuer,
 )
-from ......indy.models.cred_abstract import (
-    VCDICredAbstract,
-    VCDICredAbstractSchema,
-)
-from ......indy.models.cred_request import (
-    BindingProof,
-    VCDICredRequest,
-    VCDICredRequestSchema,
-)
+from ......indy.models.cred import IndyCredentialSchema
+from ......indy.models.cred_abstract import IndyCredAbstractSchema, VCDICredAbstractSchema
+from ......indy.models.cred_request import IndyCredRequestSchema, VCDICredRequestSchema
 from ......cache.base import BaseCache
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
 )
-from ......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ......messaging.credential_definitions.vcdi.util import VCDICredDefQueryStringSchema
+from ......messaging.credential_definitions.util import (
+    CRED_DEF_SENT_RECORD_TYPE,
+    CredDefQueryStringSchema,
+)
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
@@ -55,6 +47,7 @@ from ...messages.cred_offer import V20CredOffer
 from ...messages.cred_proposal import V20CredProposal
 from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
+from ...models.detail.indy import V20CredExRecordIndy
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 
 LOGGER = logging.getLogger(__name__)
@@ -85,7 +78,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
         """
         mapping = {
-            CRED_20_PROPOSAL: VCDICredDefQueryStringSchema,
+            CRED_20_PROPOSAL: CredDefQueryStringSchema,
             CRED_20_OFFER: VCDICredAbstractSchema,
             CRED_20_REQUEST: VCDICredRequestSchema,
             CRED_20_ISSUE: VerifiableCredentialSchema,
@@ -179,7 +172,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
-        """Create vc_di credential proposal."""
+        """Create indy credential proposal."""
         if proposal_data is None:
             proposal_data = {}
 
@@ -251,15 +244,15 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
     ) -> None:
-        """Receive vcdi credential offer."""
+        """Receive indy credential offer."""
 
     async def create_request(
         self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
     ) -> CredFormatAttachment:
-        """Create vcdi credential request."""
+        """Create indy credential request."""
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
             raise V20CredFormatError(
-                "vcdi issue credential format cannot start from credential request"
+                "Indy issue credential format cannot start from credential request"
             )
 
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
@@ -267,18 +260,11 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         holder_did = request_data.get("holder_did") if request_data else None
         cred_offer = cred_ex_record.cred_offer.attachment(VCDICredFormatHandler.format)
 
-        if (
-            "anoncreds_link_secret" in cred_offer["binding_method"]
-            and "nonce" not in cred_offer["binding_method"]["anoncreds_link_secret"]
-        ):
-            raise V20CredFormatError(
-                "Missing nonce in credential offer with anoncreds link secret binding method"
-            )
+        if "nonce" not in cred_offer:
+            raise V20CredFormatError("Missing nonce in credential offer")
 
-        nonce = cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"]
-        cred_def_id = cred_offer["binding_method"]["anoncreds_link_secret"][
-            "cred_def_id"
-        ]
+        nonce = cred_offer["nonce"]
+        cred_def_id = cred_offer["cred_def_id"]
 
         async def _create():
             anoncreds_registry = self.profile.inject(AnonCredsRegistry)
@@ -323,48 +309,43 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
-        """Receive vcdi credential request."""
+        """Receive indy credential request."""
         if not cred_ex_record.cred_offer:
             raise V20CredFormatError(
-                "vcdi issue credential format cannot start from credential request"
+                "Indy issue credential format cannot start from credential request"
             )
 
     async def issue_credential(
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
-        """Issue vcdi credential."""
+        """Issue indy credential."""
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
-        attached_credential = cred_ex_record.cred_offer.attachment(
+        cred_offer = cred_ex_record.cred_offer.attachment(VCDICredFormatHandler.format)
+        cred_request = cred_ex_record.cred_request.attachment(
             VCDICredFormatHandler.format
         )
-        detail_credential = VCDICredAbstract.deserialize(attached_credential)
-        binding_proof = cred_ex_record.cred_request.attachment(
-            VCDICredFormatHandler.format
-        )
-        detail_proof = VCDICredRequest.deserialize(binding_proof)
-        manager = self.profile.inject(VcLdpManager)
-        # TODO - implement a separate create_credential for vcdi
-        assert detail_credential.credential and isinstance(
-            detail_credential.credential, VerifiableCredential
-        )
-        assert detail_proof.binding_proof and isinstance(
-            detail_proof.binding_proof, BindingProof
-        )
-        try:
-            vc = await manager.issue(
-                detail_credential.credential, detail_proof.binding_proof
+        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(decode=False)
+
+        issuer = AnonCredsIssuer(self.profile)
+        cred_def_id = cred_offer["cred_def_id"]
+        if await issuer.cred_def_supports_revocation(cred_def_id):
+            revocation = AnonCredsRevocation(self.profile)
+            cred_json, cred_rev_id, rev_reg_def_id = await revocation.create_credential(
+                cred_offer, cred_request, cred_values
             )
-        except VcLdpManagerError as err:
-            raise V20CredFormatError("Failed to issue credential") from err
+        else:
+            # TODO - implement a separate create_credential for vcdi
+            cred_json = await issuer.create_credential(
+                cred_offer, cred_request, cred_values
+            )
+            cred_rev_id = None
+            rev_reg_def_id = None
 
-        result = self.get_format_data(CRED_20_ISSUE, vc.serialize())
-
-        cred_rev_id = None
-        rev_reg_def_id = None
+        result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
 
         async with self._profile.transaction() as txn:
-            detail_record = V20CredExRecordVCDI(
+            detail_record = V20CredExRecordIndy(
                 cred_ex_id=cred_ex_record.cred_ex_id,
                 rev_reg_id=rev_reg_def_id,
                 cred_rev_id=cred_rev_id,
@@ -393,7 +374,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def receive_credential(
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
     ) -> None:
-        """Receive vcdi credential.
+        """Receive indy credential.
 
         Validation is done in the store credential step.
         """
@@ -401,7 +382,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def store_credential(
         self, cred_ex_record: V20CredExRecord, cred_id: str = None
     ) -> None:
-        """Store vcdi credential."""
+        """Store indy credential."""
         cred = cred_ex_record.cred_issue.attachment(VCDICredFormatHandler.format)
 
         rev_reg_def = None
