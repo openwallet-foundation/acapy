@@ -189,16 +189,20 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
                     )
 
         credx_module = importlib.import_module("indy_credx")
-        rev_reg_delta = credx_module.RevocationRegistryDelta.load(
-            json.dumps(
-                {
-                    "ver": "1.0",
-                    "value": {
-                        "accum": "1 0792BD1C8C1A529173FDF54A5B30AC90C2472956622E9F04971D36A9BF77C2C5 1 13B18B6B68AD62605C74FD61088814338EDEEB41C2195F96EC0E83B2B3D0258F 1 102ED0DDE96F6367199CE1C0B138F172BC913B65E37250581606974034F4CA20 1 1C53786D2C15190B57167CDDD2A046CAD63970B5DE43F4D492D4F46B8EEE6FF1 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000"
-                    },
-                }
-            )
+        rev_reg_delta_json = json.dumps(
+            {
+                "ver": "1.0",
+                "value": {
+                    "accum": "1 0792BD1C8C1A529173FDF54A5B30AC90C2472956622E9F04971D36A9BF77C2C5 1 13B18B6B68AD62605C74FD61088814338EDEEB41C2195F96EC0E83B2B3D0258F 1 102ED0DDE96F6367199CE1C0B138F172BC913B65E37250581606974034F4CA20 1 1C53786D2C15190B57167CDDD2A046CAD63970B5DE43F4D492D4F46B8EEE6FF1 2 095E45DDF417D05FB10933FFC63D474548B7FFFF7888802F07FFFFFF7D07A8A8 1 0000000000000000000000000000000000000000000000000000000000000000"
+                },
+            }
         )
+        rev_reg_delta = credx_module.RevocationRegistryDelta.load(rev_reg_delta_json)
+
+        if hasattr(rev_reg_delta.to_json, "return_value"):
+            # if indy_credx is not installed, then we're dealing with a mocked method
+            # therefore, set the return_value to avoid MagicMock being passed to json.loads
+            rev_reg_delta.to_json.return_value = rev_reg_delta_json
 
         TEST_GENESIS_TXN = "test_genesis_txn"
         rec = IssuerRevRegRecord(
