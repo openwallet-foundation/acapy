@@ -358,7 +358,7 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
 
 
 class TestAskarStorageSearchSession(IsolatedAsyncioTestCase):
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(scope="module")
     async def test_askar_storage_search_session(self):
         profile = "profileId"
 
