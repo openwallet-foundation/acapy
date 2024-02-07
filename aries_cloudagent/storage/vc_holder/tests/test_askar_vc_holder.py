@@ -32,6 +32,7 @@ async def holder():
     await profile.close()
 
 
+@pytest.mark.askar
 class TestAskarVCHolder(in_memory.TestInMemoryVCHolder):
     # run same test suite with different holder fixture
 
