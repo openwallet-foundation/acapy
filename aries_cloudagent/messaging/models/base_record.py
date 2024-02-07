@@ -430,7 +430,7 @@ class BaseRecord(BaseModel):
         if not payload:
             payload = self.serialize()
 
-        await session.profile.notify(topic, payload)
+        await session.emit_event(topic, payload)
 
     @classmethod
     def log_state(

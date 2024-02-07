@@ -169,6 +169,7 @@ class ProfileSession(ABC):
         self._entered = 0
         self._context = (context or profile.context).start_scope("session", settings)
         self._profile = profile
+        self._events = []
 
     async def _setup(self):
         """Create the underlying session or transaction."""
@@ -239,6 +240,12 @@ class ProfileSession(ABC):
         if not self._active:
             raise ProfileSessionInactiveError()
         await self._teardown(commit=True)
+
+        # emit any pending events
+        for event in self._events:
+            await self.emit_event(event["topic"], event["payload"], force_emit=True)
+        self._events = []
+
         self._active = False
 
     async def rollback(self):
@@ -249,7 +256,34 @@ class ProfileSession(ABC):
         if not self._active:
             raise ProfileSessionInactiveError()
         await self._teardown(commit=False)
+
+        # clear any pending events
+        self._events = []
+
         self._active = False
+
+    async def emit_event(self, topic: str, payload: Any, force_emit: bool = False):
+        """Emit an event.
+
+        If we are in an active transaction, just queue the event, otherwise emit it.
+
+        Args:
+            session: The profile session to use
+            payload: The event payload
+        """
+
+        # TODO check transaction, either queue or emit event
+        if force_emit or (not self.is_transaction):
+            # just emit directly
+            await self.profile.notify(topic, payload)
+        else:
+            # add to queue
+            self._events.append(
+                {
+                    "topic": topic,
+                    "payload": payload,
+                }
+            )
 
     def inject(
         self,

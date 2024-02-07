@@ -12,18 +12,26 @@ Feature: RFC 0453 Aries agent issue credential
     When "Acme" offers a credential with data <Credential_data>
     Then "Bob" has the credential issued
 
-    @GHA @WalletType_Askar
+    @GHA @WalletType_Askar @BasicTest
+    Examples:
+       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
+       | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
+
+    @GHA @WalletType_Askar @AltTests
     Examples:
        | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
        | --public-did                           |                           | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
        | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
        | --public-did --multitenant             | --multitenant --log-file  | driverslicense | Data_DL_NormalizedValues |
 
-    @GHA @WalletType_Askar_AnonCreds
+    @GHA @WalletType_Askar_AnonCreds @BasicTest
     Examples:
        | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
        | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
+
+    @GHA @WalletType_Askar_AnonCreds @AltTests
+    Examples:
+       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
        | --public-did --wallet-type askar-anoncreds |                               | driverslicense | Data_DL_NormalizedValues |
        | --public-did                           | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
 
