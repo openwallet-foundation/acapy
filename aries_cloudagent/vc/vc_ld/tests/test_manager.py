@@ -338,6 +338,7 @@ async def test_issue_ed25519_2020(
 
 
 @pytest.mark.asyncio(scope="module")
+@pytest.mark.ursa_bbs_signatures
 async def test_issue_bbs(
     profile: Profile,
     manager: VcLdpManager,
