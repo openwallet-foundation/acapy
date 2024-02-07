@@ -40,3 +40,11 @@ aries\_cloudagent.vc.vc\_ld.models.presentation module
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.vc.vc\_ld.models.web\_schemas module
+------------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.vc_ld.models.web_schemas
+   :members:
+   :undoc-members:
+   :show-inheritance:
