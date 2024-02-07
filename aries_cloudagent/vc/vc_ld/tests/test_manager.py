@@ -298,7 +298,7 @@ async def test_prepare_detail_ed25519_2020(
     assert SECURITY_CONTEXT_ED25519_2020_URL in vc.context_urls
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="module")
 async def test_issue(
     profile: Profile,
     manager: VcLdpManager,
@@ -317,7 +317,7 @@ async def test_issue(
     assert cred
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="module")
 async def test_issue_ed25519_2020(
     profile: Profile,
     manager: VcLdpManager,
@@ -337,7 +337,7 @@ async def test_issue_ed25519_2020(
     assert cred
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="module")
 async def test_issue_bbs(
     profile: Profile,
     manager: VcLdpManager,
@@ -371,7 +371,7 @@ async def test_get_all_suites(manager: VcLdpManager):
         assert isinstance(suite, types)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="module")
 async def test_store(
     profile: Profile,
     manager: VcLdpManager,
