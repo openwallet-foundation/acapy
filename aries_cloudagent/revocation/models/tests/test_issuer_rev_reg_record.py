@@ -198,7 +198,11 @@ class TestIssuerRevRegRecord(IsolatedAsyncioTestCase):
             }
         )
         rev_reg_delta = credx_module.RevocationRegistryDelta.load(rev_reg_delta_json)
-        rev_reg_delta.to_json.return_value = rev_reg_delta_json
+
+        if hasattr(rev_reg_delta.to_json, "return_value"):
+            # if indy_credx is not installed, then we're dealing with a mocked method
+            # therefore, set the return_value to avoid MagicMock being passed to json.loads
+            rev_reg_delta.to_json.return_value = rev_reg_delta_json
 
         TEST_GENESIS_TXN = "test_genesis_txn"
         rec = IssuerRevRegRecord(
