@@ -456,7 +456,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     failed_crids.add(rev_id)
                 elif rev_id > rev_info["curr_id"]:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s not yet issued",
                         revoc_reg_id,
@@ -464,7 +464,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     failed_crids.add(rev_id)
                 elif rev_id in used_ids:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s already revoked",
                         revoc_reg_id,
@@ -500,7 +500,7 @@ class IndyCredxIssuer(IndyIssuer):
                         CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                     )
                     if not rev_reg_upd or not rev_reg_info:
-                        LOGGER.warn(
+                        LOGGER.warning(
                             "Revocation registry missing, skipping update: {}",
                             revoc_reg_id,
                         )
