@@ -100,7 +100,7 @@ async def generate_ledger_rrrecovery_txn(
     set_revoked = set(set_revoked)
     mismatch = prev_revoked - set_revoked
     if mismatch:
-        LOGGER.warn(
+        LOGGER.warning(
             "Credential index(es) revoked on the ledger, but not in wallet: %s",
             mismatch,
         )
