@@ -26,7 +26,7 @@ Once an upgrade is identified as needed, the process is:
 - Collect (if any) the actions to be taken to get from the version recorded in
 secure storage to the current [version.py]
 - Execute the actions from oldest to newest.
-    - If the same action is collected more than once (e.g., "Resave the
+  - If the same action is collected more than once (e.g., "Resave the
 Connection Records" is defined for two different versions), perform the action
 only once.
 - Store the current ACA-Py version (from [version.py]) in the secure storage
@@ -60,35 +60,40 @@ connections), you may want to do a test upgrade offline first, to see if there
 is likely to be a service disruption during the upgrade. Plan accordingly!
 
 ## Tagged upgrades
-Upgrades are defined in the [Upgrade Definition YML file], in addition to specifying upgrade actions by version they can also be specified by named tags. Unlike version based upgrades where all applicable version based actions will be performed based upon sorted order of versions, with named tags only actions corresponding to provided tags will be performed. Note: `--force-upgrade` is required when running name tags based upgrade [i.e. provding `--named-tag`]
 
-Tags are specfied in YML file as below:
-```
+Upgrades are defined in the [Upgrade Definition YML file], in addition to specifying upgrade actions by version they can also be specified by named tags. Unlike version based upgrades where all applicable version based actions will be performed based upon sorted order of versions, with named tags only actions corresponding to provided tags will be performed. Note: `--force-upgrade` is required when running name tags based upgrade (i.e. providing `--named-tag`).
+
+Tags are specified in YML file as below:
+
+```yaml
 fix_issue_rev_reg:
   fix_issue_rev_reg_records: true
 ```
 
-Example
-```
+Example:
+
+```bash
  ./scripts/run_docker upgrade --force-upgrade --named-tag fix_issue_rev_reg
 
-In case, running multiple tags [say test1 & test2]:
+# In case, running multiple tags [say test1 & test2]:
  ./scripts/run_docker upgrade --force-upgrade --named-tag test1 --named-tag test2
 ```
 
 ## Subwallet upgrades
+
 With multitenant enabled, there is a subwallet associated with each tenant profile, so there is a need to upgrade those sub wallets in addition to the base wallet associated with root profile.
 
 There are 2 options to perform such upgrades:
-  - `--upgrade-all-subwallets`
-    
-    This will apply the upgrade steps to all sub wallets [tenant profiles] and the base wallet [root profiles].
-    
-  - `--upgrade-subwallet`
 
-    This will apply the upgrade steps to specified sub wallets [identified by wallet id] and the base wallet.
+- `--upgrade-all-subwallets`
 
-    Note: multiple specification allowed
+This will apply the upgrade steps to all sub wallets (tenant profiles) and the base wallet (root profiles).
+
+- `--upgrade-subwallet`
+
+This will apply the upgrade steps to specified sub wallets (identified by wallet id) and the base wallet.
+
+Note: multiple specifications allowed
 
 ## Exceptions
 

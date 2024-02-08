@@ -16,7 +16,7 @@ By design Hyperledger Aries is credential format agnostic. This means you can us
 - [Issuing Credentials](#issuing-credentials)
 - [Retrieving Issued Credentials](#retrieving-issued-credentials)
 - [Present Proof](#present-proof)
-- [VC-API Endpoints](#vc-api)
+- [VC-API](#vc-api)
 
 ## General Concept
 
@@ -43,7 +43,7 @@ Contrary to Indy credentials, JSON-LD credentials do not need a schema or creden
 
 It is required that every property key in the document can be mapped to an IRI. This means the property key must either be an IRI by default, or have the shorthand property mapped in the `@context` of the document. If you have properties that are not mapped to IRIs, the Issue Credential API will throw the following error:
 
-> "\<x> attributes dropped. Provide definitions in context to correct. [\<missing-properties>]"
+> `<x> attributes dropped. Provide definitions in context to correct. [<missing-properties>]`
 
 For credentials the `https://www.w3.org/2018/credentials/v1` context MUST always be the first context. In addition, when issuing BBS+ credentials the `https://w3id.org/security/bbs/v1` URL MUST be present in the context. For convenience this URL will be automatically added to the `@context` of the credential if not present.
 
@@ -64,7 +64,7 @@ Writing JSON-LD contexts can be a daunting task and is out of scope of this guid
 - [Citizenship Vocabulary](https://w3c-ccg.github.io/citizenship-vocab/)
 - [Traceability Vocabulary](https://w3c-ccg.github.io/traceability-vocab/)
 
-Verifiable credentials are not around that long, so there aren't that many vocabularies ready to use. If you can't use one of the existing vocabularies it is still beneficial to lean on already defined lower level contexts. http://schema.org has a large registry of definitions that can be used to build new contexts. The example vocabularies linked above all make use of types from http://schema.org
+Verifiable credentials are not around that long, so there aren't that many vocabularies ready to use. If you can't use one of the existing vocabularies it is still beneficial to lean on already defined lower level contexts. [http://schema.org](http://schema.org) has a large registry of definitions that can be used to build new contexts. The example vocabularies linked above all make use of types from [http://schema.org](http://schema.org).
 
 For the remainder of this guide, we will be using the example `UniversityDegreeCredential` type and `https://www.w3.org/2018/credentials/examples/v1` context from the Verifiable Credential Data Model. You should not use this for production use cases.
 
@@ -210,13 +210,14 @@ Call the `/credentials/w3c` endpoint to retrieve all JSON-LD credentials in your
 
 ## Present Proof
 
-> ⚠️ TODO: https://github.com/hyperledger/aries-cloudagent-python/pull/1125
+> ⚠️ TODO: [https://github.com/hyperledger/aries-cloudagent-python/pull/1125](https://github.com/hyperledger/aries-cloudagent-python/pull/1125)
 
 ## VC-API
 
-In order to support these functionalities outside of the respective DIDComm protocols, a set of endpoints conforming to the [vc-api](https://w3c-ccg.github.io/vc-api) specification are available. These endpoints should be used by a controller when building an identity platform.
+In order to support these functions outside of the respective DIDComm protocols, a set of endpoints conforming to the [vc-api](https://w3c-ccg.github.io/vc-api) specification are available. These endpoints should be used by a controller when building an identity platform.
 
 These endpoints include:
+
 - `GET /vc/credentials` -> returns a list of all stored json-ld credentials
 - `GET /vc/credentials/{id}` -> returns a json-ld credential based on it's ID
 - `POST /vc/credentials/issue` -> signs a credential
@@ -225,4 +226,4 @@ These endpoints include:
 - `POST /vc/presentations/prove` -> proves a presentation
 - `POST /vc/presentations/verify` -> verifies a presentation
 
-To learn more about using these endpoints, please refer to the available [postman collection](./demo/AriesPostmanDemo.md#experimenting-with-the-vc-api-endpoints).
+To learn more about using these endpoints, please refer to the available [postman collection](../demo/AriesPostmanDemo.md#experimenting-with-the-vc-api-endpoints).

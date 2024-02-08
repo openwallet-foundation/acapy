@@ -28,15 +28,15 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 
 ## Platform Support
 
-| Platform | Supported | Notes             |
-| -------- | :-------: |  ------- |
-| Server   | :white_check_mark: |    |
-| Kubernetes | :white_check_mark: | BC Gov has extensive experience running ACA-Py on Red Hat's OpenShift Kubernetes Distribution. |
-| Docker   | :white_check_mark: | Official docker images are published to the GitHub [hyperledger/aries-cloudagent-python] container repository. |
-| Desktop  | :warning:         | Could be run as a local service on the computer |
-| iOS      | :x:        |    |
-| Android  | :x:        |    |
-| Browser  | :x:        |    |
+| Platform   |     Supported      | Notes                                                                                                                      |
+| ---------- | :----------------: | -------------------------------------------------------------------------------------------------------------------------- |
+| Server     | :white_check_mark: |                                                                                                                            |
+| Kubernetes | :white_check_mark: | BC Gov has extensive experience running ACA-Py on Red Hat's OpenShift Kubernetes Distribution.                             |
+| Docker     | :white_check_mark: | Official docker images are published to the GitHub  container repository at `ghcr.io/hyperledger/aries-cloudagent-python`. |
+| Desktop    |     :warning:      | Could be run as a local service on the computer                                                                            |
+| iOS        |        :x:         |                                                                                                                            |
+| Android    |        :x:         |                                                                                                                            |
+| Browser    |        :x:         |                                                                                                                            |
 
 ## Agent Types
 

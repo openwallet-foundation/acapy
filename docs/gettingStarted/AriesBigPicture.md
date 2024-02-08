@@ -8,7 +8,7 @@ The agents in the picture shares many attributes:
 
 - They have some sort of storage for keys and other data related to their role as an agent
 - They interact with other agents using secure. peer-to-peer messaging protocols
-- They have some associated mechanism to provide "business rules" to control the behaviour of the agent
+- They have some associated mechanism to provide "business rules" to control the behavior of the agent
   - That is often a person for phone, tablet, laptop, etc. based agents
   - That is often backend enterprise systems for enterprise agents
   - Business rules for cloud agents are often about the routing of messages to and from edge agents
@@ -26,4 +26,3 @@ Note the many caveats in this section - "most common", "commonly", etc. There ar
 We also recommend **not** digging into all the layers described here. Just as you don't have to know how TCP/IP works to write a web app, you don't need to know how indy-node or indy-sdk work to be able to build your first Aries-based application. Later in this guide we'll covering the starting point you do need to know.
 
 > Back to the [Aries Developer - Getting Started Guide](./README.md).
->

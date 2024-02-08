@@ -7,7 +7,7 @@ More background information including problem statement, design (algorithm) and 
 ## Table of Contents <!-- omit in toc -->
 
 - [Usage](#usage)
-  - [Example config file:](#example-config-file)
+  - [Example config file](#example-config-file)
   - [Config properties](#config-properties)
 - [Multi-ledger Admin API](#multi-ledger-admin-api)
 - [Ledger Selection](#ledger-selection)
@@ -25,7 +25,7 @@ Multi-ledger is disabled by default. You can enable support for multiple ledgers
 
 If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-file, --genesis-transactions` should not be specified.
 
-### Example config file:
+### Example config file
 
 ```yaml
 - id: localVON
@@ -56,7 +56,7 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
 Note: `is_write` property means that the ledger is write configurable. With reference to the above config example, both `bcovrinTest` and (the no longer available -- in the above its pointing to BCovrin Test as well) `greenlightDev` ledgers are write configurable. By default, on startup `bcovrinTest` will be the write ledger as it is the topmost write configurable production ledger, [more details](#write-requests) regarding the selection rule. Using `PUT /ledger/{ledger_id}/set-write-ledger` endpoint, either `greenlightDev` and `bcovrinTest` can be set as the write ledger.
 
 > Note 2: The `greenlightDev` ledger is no longer available, so both ledger entries in the example above and below
-intentionally point to the same ledger.
+intentionally point to the same ledger URL.
 
 ```yaml
 - id: localVON
@@ -74,6 +74,7 @@ intentionally point to the same ledger.
 Note: For instance with regards to example config above, `localVON` will be the write ledger, as there are no production ledgers which are configurable it will choose the topmost write configurable non production ledger.
 
 ### Config properties
+
 For each ledger, the required properties are as following:
 
 - `id`\*: The id (or name) of the ledger, can also be used as the pool name if none provided
@@ -86,6 +87,7 @@ For connecting to ledger, one of the following needs to be specified:
 - `genesis_url`: The url from which to download the genesis transactions to use for connecting to an Indy ledger.
 
 Optional properties:
+
 - `pool_name`: name of the indy pool to be opened
 - `keepalive`: how many seconds to keep the ledger open
 - `socks_proxy`
@@ -94,7 +96,6 @@ Optional properties:
 - `endorser_alias`: Endorser alias for this ledger, needed for supporting Endorser protocol at multi-ledger level.
 
 Note: Both `endorser_did` and `endorser_alias` are part of the endorser info. Whenever a write ledger is selected using `PUT /ledger/{ledger_id}/set-write-ledger`, the endorser info associated with that ledger in the config updates the `endorser.endorser_public_did` and `endorser.endorser_alias` profile setting respectively.
-
 
 ## Multi-ledger Admin API
 
@@ -114,6 +115,7 @@ Set active `write_ledger's` `ledger_id`
 ### Read Requests
 
 The following process is executed for these functions in ACA-Py:
+
 1. `get_schema`
 2. `get_credential_definition`
 3. `get_revoc_reg_def`
@@ -129,9 +131,9 @@ If multiple ledgers are configured then `IndyLedgerRequestsExecutor` service ext
 #### For checking ledger in parallel
 
 - `lookup_did_in_configured_ledgers` function
-  - If the calling function (above) is in [1-4], then check the `DID` in `cache` for a corresponding applicable `ledger_id`. If found, return the ledger info, else continue.
+  - If the calling function (above) is in items 1-4, then check the `DID` in `cache` for a corresponding applicable `ledger_id`. If found, return the ledger info, else continue.
   - Otherwise, launch parallel `_get_ledger_by_did` tasks for each of the configured ledgers.
-  - As these tasks get finished, construct `applicable_prod_ledgers` and `applicable_non_prod_ledgers` dictionaries, each with `self_certified` and `non_self_certified` inner dict which are sorted by the original order or index. 
+  - As these tasks get finished, construct `applicable_prod_ledgers` and `applicable_non_prod_ledgers` dictionaries, each with `self_certified` and `non_self_certified` inner dict which are sorted by the original order or index.
   - Order/preference for selection: `self_certified` > `production` > `non_production`
     - Checks `production` ledger where the `DID` is `self_certified`
     - Checks `non_production` ledger where the `DID` is `self_certified`
@@ -148,7 +150,7 @@ If multiple ledgers are configured then `IndyLedgerRequestsExecutor` service ext
 
 ### Write Requests
 
-On startup, the first configured applicable ledger is assigned as the `write_ledger` [`BaseLedger`], the selection is dependent on the order (top-down) and whether it is `production` or `non_production`. For instance, considering this [example configuration](#example-config-file), ledger `bcovrinTest` will be set as `write_ledger` as it is the topmost `production` ledger. If no `production` ledgers are included in configuration then the topmost `non_production` ledger is selected.
+On startup, the first configured applicable ledger is assigned as the `write_ledger` (`BaseLedger`), the selection is dependent on the order (top-down) and whether it is `production` or `non_production`. For instance, considering this [example configuration](#example-config-file), ledger `bcovrinTest` will be set as `write_ledger` as it is the topmost `production` ledger. If no `production` ledgers are included in configuration then the topmost `non_production` ledger is selected.
 
 ## A Special Warning for TAA Acceptance
 
@@ -177,9 +179,10 @@ There should be no impact/change in functionality to any ACA-Py protocols.
 
 Added `build_and_return_get_nym_request` and `submit_get_nym_request` helper functions to `IndySdkLedger` and `IndyVdrLedger`.
 
-Best practice/feedback emerging from `Askar session deadlock` issue and `endorser refactoring` PR was also addressed here by not leaving sessions open unnecessarily and changing `context.session` to `context.profile.session`, etc. 
+Best practice/feedback emerging from `Askar session deadlock` issue and `endorser refactoring` PR was also addressed here by not leaving sessions open unnecessarily and changing `context.session` to `context.profile.session`, etc.
 
 These changes are made here:
+
 - `./aries_cloudagent/ledger/routes.py`
 - `./aries_cloudagent/messaging/credential_definitions/routes.py`
 - `./aries_cloudagent/messaging/schemas/routes.py`

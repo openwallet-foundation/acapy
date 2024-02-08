@@ -15,8 +15,8 @@ revocations be published?
 
 Here is a  summary of all of the AnonCreds revocation activities performed
 by issuers. After this, we'll provide a (much shorter) list of what an ACA-Py
-issuer controller has to do. For those interested, there is a more [complete
-overview of AnonCreds revocation], including all of the roles, and some details
+issuer controller has to do. For those interested, there is a more
+[complete overview of AnonCreds revocation], including all of the roles, and some details
 of the cryptography behind the approach:
 
 - Issuers indicate that a credential will support revocation when creating the

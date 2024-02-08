@@ -11,9 +11,9 @@ This allows ACA-Py to be used for a wider range of use cases. One use case could
   - [Usage](#usage)
 - [Multi-tenant Admin API](#multi-tenant-admin-api)
 - [Managed vs Unmanaged Mode](#managed-vs-unmanaged-mode)
-  - [Managed](#managed)
-  - [Unmanaged](#unmanaged)
-  - [Usage](#usage-1)
+  - [Managed Mode](#managed-mode)
+  - [Unmanaged Mode](#unmanaged-mode)
+  - [Mode Usage](#mode-usage)
 - [Message Routing](#message-routing)
   - [Relaying](#relaying)
   - [Mediation](#mediation)
@@ -76,11 +76,11 @@ See the SwaggerUI for the exact API definition for multi-tenancy.
 
 Multi-tenancy in ACA-Py is designed with two key management modes in mind.
 
-### Managed
+### Managed Mode
 
 In **`managed`** mode, ACA-Py will manage the key for the wallet. This is the easiest configuration as it allows ACA-Py to fully control the wallet. When a message is received from another agent it can immediately unlock the wallet and process the message. The wallet key is stored encrypted in the base wallet.
 
-### Unmanaged
+### Unmanaged Mode
 
 In **`unmanaged`** mode, ACA-Py won't manage the key for the wallet. The key is not stored in the base wallet, which means the key to unlock the wallet needs to be provided whenever the wallet is used. When a message from another agent is received, ACA-Py cannot immediately unlock the wallet and process the message. See [Authentication](#authentication) for more info.
 
@@ -88,7 +88,7 @@ It is important to note unmanaged mode doesn't provide a lot of security over ma
 
 > :warning: Although support for unmanaged mode is mostly in place, the receiving of messages from other agents in unmanaged mode is not supported yet. This means unmanaged mode can not be used yet.
 
-### Usage
+### Mode Usage
 
 The mode used can be specified when creating a wallet using the `key_management_mode` parameter.
 
@@ -309,7 +309,7 @@ After registering a tenant which effectively creates a subwallet, you may need t
 
 ### Update a tenant
 
-The following properties can be updated: `image_url`, `label`, `wallet_dispatch_type`, and `wallet_webhook_urls` for tenants of a multitenancy wallet.  To update these properties you will `PUT` a request json containing the properties you wish to update along with the updated values to the `/multitenancy/wallet/${TENANT_WALLET_ID}` admin endpoint.  If the Admin API endoint is protected, you will also include the Admin API Key in the request header.
+The following properties can be updated: `image_url`, `label`, `wallet_dispatch_type`, and `wallet_webhook_urls` for tenants of a multitenancy wallet.  To update these properties you will `PUT` a request json containing the properties you wish to update along with the updated values to the `/multitenancy/wallet/${TENANT_WALLET_ID}` admin endpoint.  If the Admin API endpoint is protected, you will also include the Admin API Key in the request header.
 
 Example
 
@@ -352,7 +352,7 @@ echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${TEN
 }
 ```
 
-> An Admin API Key is all that is ALLOWED to be included in a request header during an update.  Inluding the Bearer token header will result in a 404: Unauthorized error
+> An Admin API Key is all that is ALLOWED to be included in a request header during an update.  Including the Bearer token header will result in a 404: Unauthorized error
 
 ### Remove a tenant
 
@@ -379,7 +379,7 @@ curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
 
 ### Per tenant settings
 
-To allow configurability of ACA-Py startup parameters/environment variables at a tenant/subwallet level. [PR#2233](https://github.com/hyperledger/aries-cloudagent-python/pull/2233) will provide the ability to update the following subset of settings when creating or updating the subwallet:
+To allow the configuring of ACA-Py startup parameters/environment variables at a tenant/subwallet level. [PR#2233](https://github.com/hyperledger/aries-cloudagent-python/pull/2233) will provide the ability to update the following subset of settings when creating or updating the subwallet:
 
 | Labels |   | Setting  |
 |---|---|---|
@@ -391,7 +391,7 @@ To allow configurability of ACA-Py startup parameters/environment variables at a
 | ACAPY_AUTO_PING_CONNECTION  |  auto-ping-connection | auto_ping_connection  |
 | ACAPY_MONITOR_PING  |  monitor-ping | debug.monitor_ping  |
 | ACAPY_AUTO_RESPOND_MESSAGES  |  auto-respond-messages | debug.auto_respond_messages  |
-| ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER  |  auto-respond-credential-offer | debug.auto_resopnd_credential_offer  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER  |  auto-respond-credential-offer | debug.auto_respond_credential_offer  |
 | ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST  |  auto-respond-credential-request | debug.auto_respond_credential_request  |
 | ACAPY_AUTO_VERIFY_PRESENTATION  |  auto-verify-presentation | debug.auto_verify_presentation  |
 | ACAPY_NOTIFY_REVOCATION  |  notify-revocation | revocation.notify  |
@@ -405,7 +405,8 @@ To allow configurability of ACA-Py startup parameters/environment variables at a
   Added `extra_settings` dict field to request schema. `extra_settings` can be configured in the request body as below:
 
   **`Example Request`**
-  ```
+
+  ```json
   {
       "wallet_name": " ... ",
       "default_label": " ... ",
@@ -434,7 +435,8 @@ To allow configurability of ACA-Py startup parameters/environment variables at a
   Added `extra_settings` dict field to request schema.
 
   **`Example Request`**
-  ```
+
+```json
   {
     "wallet_webhook_urls": [ ... ],
     "wallet_dispatch_type": "default",
@@ -446,11 +448,11 @@ To allow configurability of ACA-Py startup parameters/environment variables at a
         "ACAPY_PUBLIC_INVITES": false
     },
   }
-  ```
+```
 
-  ```sh
+```sh
   echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${WALLET_ID}" \
    -H "Content-Type: application/json" \
    -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
    -d @-
-  ```
+```

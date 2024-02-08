@@ -10,7 +10,7 @@ Other log levels fall back to `WARNING`.
 
 ## Per Tenant Logging
 
-Supports writing of log messages to a file with `wallet_id` as the tenant identifier for each. To enable this, both multitenant mode [`--multitenant`] and writing to log file option [`--log-file`] are required. If both `--multitenant` and `--log-file` are not passed when starting up ACA-Py, then it will use `default_logging_config.ini` config [backward compatible] and not log at a per tenant level.
+Supports writing of log messages to a file with `wallet_id` as the tenant identifier for each. To enable this, both multitenant mode (`--multitenant`) and writing to log file option (`--log-file`) are required. If both `--multitenant` and `--log-file` are not passed when starting up ACA-Py, then it will use `default_logging_config.ini` config (backward compatible) and not log at a per tenant level.
 
 ## Command Line Arguments
 
@@ -60,7 +60,7 @@ Find an example in [default_logging_config.ini](https://github.com/hyperledger/a
 
 You can find more detail description in the [logging documentation](https://docs.python.org/3/howto/logging.html#configuring-logging).
 
-For per tenant logging, find an example in [default_per_tenant_logging_config.ini](https://github.com/hyperledger/aries-cloudagent-python/tree/main/aries_cloudagent/config/default_per_tenant_logging_config.ini), which sets up  `TimedRotatingFileMultiProcessHandler` and `StreamHandler` handlers. Custom `TimedRotatingFileMultiProcessHandler` handler supports the ability to cleanup logs by time and maintain backup logs and a custom JSON formatter for logs. The arguments for it such as `file name`, `when`, `interval` and `backupCount` can be passed as `args=('acapy.log', 'd', 7, 1,)` [also shown below]. Note: `backupCount` of 0 will mean all backup log files will be retained and not deleted at all. More details about these attributes can be found [here](https://docs.python.org/3/library/logging.handlers.html#timedrotatingfilehandler)
+For per tenant logging, find an example in [default_per_tenant_logging_config.ini](https://github.com/hyperledger/aries-cloudagent-python/tree/main/aries_cloudagent/config/default_per_tenant_logging_config.ini), which sets up  `TimedRotatingFileMultiProcessHandler` and `StreamHandler` handlers. Custom `TimedRotatingFileMultiProcessHandler` handler supports the ability to cleanup logs by time and maintain backup logs and a custom JSON formatter for logs. The arguments for it such as `file name`, `when`, `interval` and `backupCount` can be passed as `args=('acapy.log', 'd', 7, 1,)` (also shown below). Note: `backupCount` of 0 will mean all backup log files will be retained and not deleted at all. More details about these attributes can be found [here](https://docs.python.org/3/library/logging.handlers.html#timedrotatingfilehandler)
 
 ```ini
 [loggers]
@@ -92,7 +92,7 @@ args=('acapy.log', 'd', 7, 1,)
 format=%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s
 ```
 
-For `DictConfig` [`dict` logging config file], find an example in [default_per_tenant_logging_config.yml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/aries_cloudagent/config/default_per_tenant_logging_config.yml) with same attributes as `default_per_tenant_logging_config.ini` file.
+For `DictConfig` (`dict` logging config file), find an example in [default_per_tenant_logging_config.yml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/aries_cloudagent/config/default_per_tenant_logging_config.yml) with same attributes as `default_per_tenant_logging_config.ini` file.
 
 ```yaml
 version: 1

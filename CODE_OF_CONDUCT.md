@@ -151,13 +151,15 @@ and any kind of face-to-face meetings or discussions.
 ## Incident Procedure
 
 To report incidents or to appeal reports of incidents, send email to Mike Dolan
-(mdolan@linuxfoundation.org) or Angela Brown (angela@linuxfoundation.org). Please include any
-available relevant information, including links to any publicly accessible material relating to the
-matter. Every effort will be taken to ensure a safe and collegial environment in which to
-collaborate on matters relating to the Project. In order to protect the community, the Project
-reserves the right to take appropriate action, potentially including the removal of an individual
-from any and all participation in the project. The Project will work towards an equitable resolution
-in the event of a misunderstanding.
+([mdolan@linuxfoundation.org](mailto:mdolan@linuxfoundation.org)) or Angela
+Brown ([angela@linuxfoundation.org](mailto:angela@linuxfoundation.org)). Please
+include any available relevant information, including links to any publicly
+accessible material relating to the matter. Every effort will be taken to ensure
+a safe and collegial environment in which to collaborate on matters relating to
+the Project. In order to protect the community, the Project reserves the right
+to take appropriate action, potentially including the removal of an individual
+from any and all participation in the project. The Project will work towards an
+equitable resolution in the event of a misunderstanding.
 
 ## Credits
 

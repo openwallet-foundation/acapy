@@ -145,7 +145,7 @@ Once you have the list of PRs:
    "Packages").
 
    Additional information about the container image publication process can be
-   found in the document [Container Images and Github Actions](../deploying/ContainerImagesAndGithubActions.md).
+   found in the document [Container Images and Github Actions](docs/deploying/ContainerImagesAndGithubActions.md).
 
 [publish.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish.yml
 [publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml

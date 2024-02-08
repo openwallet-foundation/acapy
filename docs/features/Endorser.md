@@ -32,7 +32,7 @@ Web hooks will be triggered to notify each ACA-Py agent of any transaction reque
 
 The following start-up parameters are supported by ACA-Py:
 
-```
+```bash
 Endorsement:
   --endorser-protocol-role <endorser-role>
                         Specify the role ('author' or 'endorser') which this agent will participate. Authors will request transaction endorsement from an Endorser. Endorsers will endorse transactions from

@@ -181,7 +181,7 @@ See [Python Testing](https://code.visualstudio.com/docs/python/testing) for more
 
 *WARNING*: our pytests include coverage, which will prevent the [debugger from working](https://code.visualstudio.com/docs/python/testing#_debug-tests). One way around this would be to have a `.vscode/settings.json` that says not to use coverage (see above). This will allow you to set breakpoints in the pytest and code under test and use commands such as `Test: Debug Tests in Current File` to start debugging.
 
-*WARNING*: the project configuration found in `pyproject.toml` include performing `ruff` checks when we run `pytest`. Including `ruff` does not play nice with the Testing view. In order to have our pytests discoverable AND available in the Testing view, we create a `.pytest.ini` when we build the devcontainer. This file will not be commited to the repo, nor does it impact `./scripts/run_tests` but it will impact if you manually run the pytest commands locally outside of the devcontainer. Just be aware that the file will stay on your file system after you shutdown the devcontainer.
+*WARNING*: the project configuration found in `pyproject.toml` include performing `ruff` checks when we run `pytest`. Including `ruff` does not play nice with the Testing view. In order to have our pytests discoverable AND available in the Testing view, we create a `.pytest.ini` when we build the devcontainer. This file will not be committed to the repo, nor does it impact `./scripts/run_tests` but it will impact if you manually run the pytest commands locally outside of the devcontainer. Just be aware that the file will stay on your file system after you shutdown the devcontainer.
 
 ## Next Steps
 

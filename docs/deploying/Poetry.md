@@ -25,24 +25,28 @@ poetry shell
 ```
 
 Alternatively you can source the environment settings in the current shell
-```
+
+```bash
 source $(poetry env info --path)/bin/activate
 ```
 
 for powershell users this would be
-```
+
+```powershell
 (& ((poetry env info --path) + "\Scripts\activate.ps1")
 ```
 
 ### Deactivating the Virtual Environment
 
 When using `poetry shell`
+
 ```bash
 exit
 ```
 
 When using the `activate` script
-```
+
+```bash
 deactivate
 ```
 
@@ -120,6 +124,7 @@ poetry install -E extras-name
 ```
 
 for example
+
 ```bash
 poetry install -E "askar bbs indy"
 ```

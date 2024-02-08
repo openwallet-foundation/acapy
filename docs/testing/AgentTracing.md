@@ -85,7 +85,7 @@ When `Exchange Tracing` is `ON`, all exchanges will include tracing.
 
 ## Logging Trace Events to an ELK Stack
 
-You can use the `ELK` stack in the [ELK Stack sub-directory](./elk-stack) as a target for trace events, just start the ELK stack using the docker-compose file and then in two separate bash shells, startup the demo as follows:
+You can use the `ELK` stack in the [ELK Stack sub-directory](https://github.com/hyperledger/aries-cloudagent-python/blob/main/demo/elk-stack) as a target for trace events, just start the ELK stack using the docker-compose file and then in two separate bash shells, startup the demo as follows:
 
 ```bash
 DOCKER_NET=elknet TRACE_TARGET_URL=logstash:9700 ./run_demo faber --trace-http

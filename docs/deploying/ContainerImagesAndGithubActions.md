@@ -13,7 +13,6 @@ are now built and published directly from the Aries Cloud Agent - Python project
 repository and made available through the [Github Packages Container
 Registry](https://ghcr.io).
 
-
 ## Image
 
 This project builds and publishes the `ghcr.io/hyperledger/aries-cloudagent-python` image.
@@ -26,13 +25,13 @@ end, there are multiple variants of ACA-Py built to suit the needs of a variety
 of environments and workflows. There are currently two main variants:
 
 - "Standard" - The default configuration of ACA-Py, including:
-    - Aries Askar for secure storage
-    - Indy VDR for Indy ledger communication
-    - Indy Shared Libraries for AnonCreds
+  - Aries Askar for secure storage
+  - Indy VDR for Indy ledger communication
+  - Indy Shared Libraries for AnonCreds
 - "Indy" - The legacy configuration of ACA-Py, including:
-    - Indy SDK Wallet for secure storage
-    - Indy SDK Ledger for Indy ledger communication
-    - Indy SDK for AnonCreds
+  - Indy SDK Wallet for secure storage
+  - Indy SDK Ledger for Indy ledger communication
+  - Indy SDK for AnonCreds
 
 These two image variants are largely distinguished by providers for Indy Network
 and AnonCreds support. The Standard variant is recommended for new projects.
@@ -58,30 +57,30 @@ There are several key differences that should be noted between the two image
 variants and between the BC Gov ACA-Py images.
 
 - Standard Image
-    - Based on slim variant of Debian
-    - Does **NOT** include `libindy`
-    - Default user is `aries`
-    - Uses container's system python environment rather than `pyenv`
-    - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
-    - Built from repo contents
+  - Based on slim variant of Debian
+  - Does **NOT** include `libindy`
+  - Default user is `aries`
+  - Uses container's system python environment rather than `pyenv`
+  - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
+  - Built from repo contents
 - Indy Image
-    - Based on slim variant of Debian
-    - Built from multi-stage build step (`indy-base` in the Dockerfile) which includes Indy dependencies; this could be replaced with an explicit `indy-python` image from the Indy SDK repo
-    - Includes `libindy` but does **NOT** include the Indy CLI
-    - Default user is `indy`
-    - Uses container's system python environment rather than `pyenv`
-    - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
-    - Built from repo contents
-    - Includes Indy postgres storage plugin
+  - Based on slim variant of Debian
+  - Built from multi-stage build step (`indy-base` in the Dockerfile) which includes Indy dependencies; this could be replaced with an explicit `indy-python` image from the Indy SDK repo
+  - Includes `libindy` but does **NOT** include the Indy CLI
+  - Default user is `indy`
+  - Uses container's system python environment rather than `pyenv`
+  - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
+  - Built from repo contents
+  - Includes Indy postgres storage plugin
 - `bcgovimages/aries-cloudagent`
-    - (Usually) based on Ubuntu
-    - Based on `von-image`
-    - Default user is `indy`
-    - Includes `libindy` and Indy CLI
-    - Uses `pyenv`
-    - Askar and Indy Shared libraries built from source
-    - Built from ACA-Py python package uploaded to PyPI
-    - Includes Indy postgres storage plugin
+  - (Usually) based on Ubuntu
+  - Based on `von-image`
+  - Default user is `indy`
+  - Includes `libindy` and Indy CLI
+  - Uses `pyenv`
+  - Askar and Indy Shared libraries built from source
+  - Built from ACA-Py python package uploaded to PyPI
+  - Includes Indy postgres storage plugin
 
 ## Github Actions
 
