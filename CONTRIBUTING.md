@@ -1,4 +1,4 @@
-## How to contribute
+# How to contribute
 
 You are encouraged to contribute to the repository by **forking and submitting a pull request**.
 
@@ -21,12 +21,12 @@ A configuration for [pre-commit](https://pre-commit.com/) is included in this re
 
 On each commit, pre-commit hooks will run that verify the committed code complies with ruff and is formatted with black. To install the ruff and black checks:
 
-```
-$ pre-commit install
+```bash
+pre-commit install
 ```
 
 To install the commit message linter:
 
-```
-$ pre-commit install --hook-type commit-msg
+```bash
+pre-commit install --hook-type commit-msg
 ```
