@@ -34,7 +34,7 @@ from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
 from ..tails.base import BaseTailsServer
-from .events import RevRegDefFinishedEvent
+from .events import RevListFinishedEvent, RevRegDefFinishedEvent
 from .issuer import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,
@@ -43,6 +43,7 @@ from .issuer import (
 )
 from .models.anoncreds_revocation import (
     RevList,
+    RevListResult,
     RevRegDef,
     RevRegDefResult,
     RevRegDefState,
@@ -144,7 +145,7 @@ class AnonCredsRevocation:
         registry_type: str,
         tag: str,
         max_cred_num: int,
-        options: Optional[dict] = None,
+        options: dict = {},
     ) -> RevRegDefResult:
         """Create a new revocation registry and register on network.
 
@@ -200,51 +201,68 @@ class AnonCredsRevocation:
 
         public_tails_uri = self.generate_public_tails_uri(rev_reg_def)
         rev_reg_def.value.tails_location = public_tails_uri
+
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         result = await anoncreds_registry.register_revocation_registry_definition(
             self.profile, rev_reg_def, options
         )
 
-        ident = result.rev_reg_def_id or result.job_id
-        if not ident:
+        await self.store_revocation_registry_definition(
+            result, rev_reg_def_private, options
+        )
+        return result
+
+    async def store_revocation_registry_definition(
+        self,
+        result: RevRegDefResult,
+        rev_reg_def_private: RevocationRegistryDefinitionPrivate,
+        options: dict = {},
+    ):
+        """Store a revocation registry definition."""
+        identifier = result.job_id or result.rev_reg_def_id
+        if not identifier:
             raise AnonCredsRevocationError(
                 "Revocation registry definition id or job id not found"
             )
 
         # TODO Handle `failed` state
 
+        rev_reg_def = (
+            result.revocation_registry_definition_state.revocation_registry_definition
+        )
+
         try:
             async with self.profile.transaction() as txn:
                 await txn.handle.insert(
                     CATEGORY_REV_REG_DEF,
-                    ident,
+                    identifier,
                     rev_reg_def.to_json(),
                     tags={
-                        "cred_def_id": cred_def_id,
+                        "cred_def_id": rev_reg_def.cred_def_id,
                         "state": result.revocation_registry_definition_state.state,
                         "active": json.dumps(False),
                     },
                 )
                 await txn.handle.insert(
                     CATEGORY_REV_REG_DEF_PRIVATE,
-                    ident,
+                    identifier,
                     rev_reg_def_private.to_json_buffer(),
                 )
                 await txn.commit()
 
             if result.revocation_registry_definition_state.state == STATE_FINISHED:
                 await self.notify(
-                    RevRegDefFinishedEvent.with_payload(ident, rev_reg_def)
+                    RevRegDefFinishedEvent.with_payload(
+                        identifier, rev_reg_def, options
+                    )
                 )
         except AskarError as err:
             raise AnonCredsRevocationError(
                 "Error saving new revocation registry"
             ) from err
 
-        return result
-
     async def finish_revocation_registry_definition(
-        self, job_id: str, rev_reg_def_id: str
+        self, job_id: str, rev_reg_def_id: str, options: dict = {}
     ):
         """Mark a rev reg def as finished."""
         async with self.profile.transaction() as txn:
@@ -261,7 +279,7 @@ class AnonCredsRevocation:
             await txn.commit()
 
         await self.notify(
-            RevRegDefFinishedEvent.with_payload(rev_reg_def_id, rev_reg_def)
+            RevRegDefFinishedEvent.with_payload(rev_reg_def_id, rev_reg_def, options)
         )
 
     async def get_created_revocation_registry_definitions(
@@ -376,7 +394,7 @@ class AnonCredsRevocation:
             await txn.commit()
 
     async def create_and_register_revocation_list(
-        self, rev_reg_def_id: str, options: Optional[dict] = None
+        self, rev_reg_def_id: str, options: dict = {}
     ):
         """Create and register a revocation list."""
         try:
@@ -439,13 +457,25 @@ class AnonCredsRevocation:
         )
 
         # TODO Handle `failed` state
+        await self.store_revocation_registry_list(result)
+
+        return result
+
+    async def store_revocation_registry_list(self, result: RevListResult):
+        """Store a revocation registry list."""
+
+        identifier = result.job_id or result.rev_reg_def_id
+        if not identifier:
+            raise AnonCredsRevocationError(
+                "Revocation registry definition id or job id not found"
+            )
 
         rev_list = result.revocation_list_state.revocation_list
         try:
             async with self.profile.session() as session:
                 await session.handle.insert(
                     CATEGORY_REV_LIST,
-                    rev_reg_def_id,
+                    identifier,
                     value_json={
                         "rev_list": rev_list.serialize(),
                         "pending": None,
@@ -457,35 +487,30 @@ class AnonCredsRevocation:
                         "pending": json.dumps(False),
                     },
                 )
+
+            if result.revocation_list_state.state == STATE_FINISHED:
+                await self.notify(
+                    RevListFinishedEvent.with_payload(rev_list.rev_reg_def_id)
+                )
+
         except AskarError as err:
             raise AnonCredsRevocationError(
                 "Error saving new revocation registry"
             ) from err
 
-        return result
-
-    async def finish_revocation_list(self, rev_reg_def_id: str):
+    async def finish_revocation_list(self, job_id: str, rev_reg_def_id: str):
         """Mark a revocation list as finished."""
         async with self.profile.transaction() as txn:
-            entry = await txn.handle.fetch(
+            await self._finish_registration(
+                txn,
                 CATEGORY_REV_LIST,
+                job_id,
                 rev_reg_def_id,
-                for_update=True,
-            )
-            if not entry:
-                raise AnonCredsRevocationError(
-                    f"revocation list with id {rev_reg_def_id} could not be found"
-                )
-
-            tags = entry.tags
-            tags["state"] = STATE_FINISHED
-            await txn.handle.replace(
-                CATEGORY_REV_LIST,
-                rev_reg_def_id,
-                value=entry.value,
-                tags=tags,
+                state=STATE_FINISHED,
             )
             await txn.commit()
+
+        await self.notify(RevListFinishedEvent.with_payload(rev_reg_def_id))
 
     async def update_revocation_list(
         self,
@@ -493,7 +518,7 @@ class AnonCredsRevocation:
         prev: RevList,
         curr: RevList,
         revoked: Sequence[int],
-        options: Optional[dict] = None,
+        options: dict = {},
     ):
         """Publish and update to a revocation list."""
         try:

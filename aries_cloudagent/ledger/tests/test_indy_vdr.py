@@ -7,6 +7,7 @@ from aries_cloudagent.cache.base import BaseCache
 from aries_cloudagent.cache.in_memory import InMemoryCache
 from aries_cloudagent.tests import mock
 
+from ...anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 from ...core.in_memory import InMemoryProfile
 from ...indy.issuer import IndyIssuer
 from ...wallet.base import BaseWallet
@@ -1001,6 +1002,80 @@ class TestIndyVdrLedger:
             assert result == {"result": {"status": "ok"}}
 
     @pytest.mark.asyncio
+    async def test_send_revoc_reg_def_anoncreds_write_to_ledger(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        ledger.profile.settings.set_value("wallet.type", "askar-anoncreds")
+        wallet: BaseWallet = (await ledger.profile.session()).wallet
+        await wallet.create_public_did(SOV, ED25519)
+        async with ledger:
+            reg_id = (
+                "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
+            )
+            reg_def = {
+                "ver": "1.0",
+                "id": reg_id,
+                "revocDefType": "CL_ACCUM",
+                "tag": "tag1",
+                "credDefId": "55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag",
+                "value": {
+                    "issuanceType": "ISSUANCE_ON_DEMAND",
+                    "maxCredNum": 5,
+                    "publicKeys": {"accumKey": {"z": "1 ..."}},
+                    "tailsHash": "",
+                    "tailsLocation": "",
+                },
+            }
+
+            with mock.patch.object(
+                LegacyIndyRegistry,
+                "txn_submit",
+                return_value=json.dumps({"result": {"txnMetadata": {"seqNo": 1234}}}),
+            ):
+                ledger.pool_handle.submit_request.return_value = {"status": "ok"}
+                result = await ledger.send_revoc_reg_def(reg_def, issuer_did=None)
+                assert result == 1234
+
+    @pytest.mark.asyncio
+    async def test_send_revoc_reg_def_anoncreds_do_not_write_to_ledger(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        ledger.profile.settings.set_value("wallet.type", "askar-anoncreds")
+        wallet: BaseWallet = (await ledger.profile.session()).wallet
+        await wallet.create_public_did(SOV, ED25519)
+        async with ledger:
+            reg_id = (
+                "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
+            )
+            reg_def = {
+                "ver": "1.0",
+                "id": reg_id,
+                "revocDefType": "CL_ACCUM",
+                "tag": "tag1",
+                "credDefId": "55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag",
+                "value": {
+                    "issuanceType": "ISSUANCE_ON_DEMAND",
+                    "maxCredNum": 5,
+                    "publicKeys": {"accumKey": {"z": "1 ..."}},
+                    "tailsHash": "",
+                    "tailsLocation": "",
+                },
+            }
+
+            with mock.patch.object(
+                LegacyIndyRegistry,
+                "txn_submit",
+                return_value=json.dumps({"result": {"txnMetadata": {"seqNo": 1234}}}),
+            ):
+                ledger.pool_handle.submit_request.return_value = {"status": "ok"}
+                result = await ledger.send_revoc_reg_def(
+                    reg_def, issuer_did=None, write_ledger=False
+                )
+                assert isinstance(result, tuple)
+
+    @pytest.mark.asyncio
     async def test_send_revoc_reg_entry(
         self,
         ledger: IndyVdrLedger,
@@ -1018,6 +1093,60 @@ class TestIndyVdrLedger:
             ledger.pool_handle.submit_request.return_value = {"status": "ok"}
             result = await ledger.send_revoc_reg_entry(reg_id, "CL_ACCUM", reg_entry)
             assert result == {"result": {"status": "ok"}}
+
+    @pytest.mark.asyncio
+    async def test_send_revoc_reg_entry_anoncreds_write_to_ledger(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        ledger.profile.settings.set_value("wallet.type", "askar-anoncreds")
+        wallet: BaseWallet = (await ledger.profile.session()).wallet
+        await wallet.create_public_did(SOV, ED25519)
+        async with ledger:
+            reg_id = (
+                "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
+            )
+            reg_entry = {
+                "ver": "1.0",
+                "value": {},
+            }
+            with mock.patch.object(
+                LegacyIndyRegistry,
+                "txn_submit",
+                return_value=json.dumps({"result": {"txnMetadata": {"seqNo": 1234}}}),
+            ):
+                ledger.pool_handle.submit_request.return_value = {"status": "ok"}
+                result = await ledger.send_revoc_reg_entry(
+                    reg_id, "CL_ACCUM", reg_entry, write_ledger=False
+                )
+                assert isinstance(result, tuple)
+
+    @pytest.mark.asyncio
+    async def test_send_revoc_reg_entry_anoncreds_do_not_write_to_ledger(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        ledger.profile.settings.set_value("wallet.type", "askar-anoncreds")
+        wallet: BaseWallet = (await ledger.profile.session()).wallet
+        await wallet.create_public_did(SOV, ED25519)
+        async with ledger:
+            reg_id = (
+                "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
+            )
+            reg_entry = {
+                "ver": "1.0",
+                "value": {},
+            }
+            with mock.patch.object(
+                LegacyIndyRegistry,
+                "txn_submit",
+                return_value=json.dumps({"result": {"txnMetadata": {"seqNo": 1234}}}),
+            ):
+                ledger.pool_handle.submit_request.return_value = {"status": "ok"}
+                result = await ledger.send_revoc_reg_entry(
+                    reg_id, "CL_ACCUM", reg_entry
+                )
+                assert result == 1234
 
     @pytest.mark.asyncio
     async def test_credential_definition_id2schema_id(self, ledger: IndyVdrLedger):
