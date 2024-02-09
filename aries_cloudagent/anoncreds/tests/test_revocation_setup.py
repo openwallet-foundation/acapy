@@ -160,9 +160,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
                     issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
                     type="CL_ACCUM",
                 ),
-                options={
-                    "support_revocation": True,
-                },
+                options={},
             )
         )
 
@@ -221,9 +219,11 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
         "create_and_register_revocation_list",
         return_value=None,
     )
-    async def test_on_rev_reg_def_no_support_revoc_or_author_and_auto_create(
+    async def test_on_rev_reg_def_author_and_do_not_auto_create_rev_reg(
         self, mock_register, mock_upload
     ):
+        self.profile.settings["endorser.author"] = True
+        self.profile.settings["endorser.auto_create_rev_reg"] = False
         event = RevRegDefFinishedEvent(
             RevRegDefFinishedPayload(
                 rev_reg_def_id="rev_reg_def_id",

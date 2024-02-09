@@ -499,7 +499,7 @@ class AnonCredsRevocation:
             ) from err
 
     async def finish_revocation_list(
-        self, job_id: str, rev_reg_def_id: str, options: dict = {}
+        self, job_id: str, rev_reg_def_id: str
     ):
         """Mark a revocation list as finished."""
         async with self.profile.transaction() as txn:
@@ -512,7 +512,7 @@ class AnonCredsRevocation:
             )
             await txn.commit()
 
-        await self.notify(RevListFinishedEvent.with_payload(rev_reg_def_id, options))
+        await self.notify(RevListFinishedEvent.with_payload(rev_reg_def_id))
 
     async def update_revocation_list(
         self,

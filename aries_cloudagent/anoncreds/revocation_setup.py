@@ -82,11 +82,14 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
     async def on_rev_reg_def(self, profile: Profile, event: RevRegDefFinishedEvent):
         """Handle rev reg def finished."""
         payload = event.payload
-        auto_create_revocation = is_author_role(profile) and profile.settings.get(
-            "endorser.auto_create_rev_reg", False
-        )
 
-        if payload.options.get("support_revocation", False) or auto_create_revocation:
+        auto_create_revocation = True
+        if is_author_role(profile):
+            auto_create_revocation = profile.settings.get(
+                "endorser.auto_create_rev_reg", False
+            )
+
+        if auto_create_revocation:
             revoc = AnonCredsRevocation(profile)
             await revoc.upload_tails_file(payload.rev_reg_def)
             await revoc.create_and_register_revocation_list(
