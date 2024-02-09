@@ -498,9 +498,7 @@ class AnonCredsRevocation:
                 "Error saving new revocation registry"
             ) from err
 
-    async def finish_revocation_list(
-        self, job_id: str, rev_reg_def_id: str
-    ):
+    async def finish_revocation_list(self, job_id: str, rev_reg_def_id: str):
         """Mark a revocation list as finished."""
         async with self.profile.transaction() as txn:
             await self._finish_registration(
