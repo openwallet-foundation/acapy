@@ -1,9 +1,16 @@
 """AnonCreds Registry."""
+
 import logging
 from typing import List, Optional, Sequence
 
-
 from ..core.profile import Profile
+from .base import (
+    AnonCredsRegistrationError,
+    AnonCredsResolutionError,
+    BaseAnonCredsHandler,
+    BaseAnonCredsRegistrar,
+    BaseAnonCredsResolver,
+)
 from .models.anoncreds_cred_def import (
     CredDef,
     CredDefResult,
@@ -12,19 +19,12 @@ from .models.anoncreds_cred_def import (
 from .models.anoncreds_revocation import (
     GetRevListResult,
     GetRevRegDefResult,
-    RevRegDef,
-    RevRegDefResult,
     RevList,
     RevListResult,
+    RevRegDef,
+    RevRegDefResult,
 )
 from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
-from .base import (
-    AnonCredsRegistrationError,
-    AnonCredsResolutionError,
-    BaseAnonCredsHandler,
-    BaseAnonCredsRegistrar,
-    BaseAnonCredsResolver,
-)
 
 LOGGER = logging.getLogger(__name__)
 

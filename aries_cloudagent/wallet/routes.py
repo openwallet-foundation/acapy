@@ -717,7 +717,6 @@ async def wallet_set_public_did(request: web.BaseRequest):
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -853,10 +852,10 @@ async def promote_wallet_public_did(
             if is_ctx_admin_request
             else profile.inject(RouteManager)
         )
-        await route_manager.route_verkey(
-            context.profile, info.verkey
-        ) if is_ctx_admin_request else await route_manager.route_verkey(
-            profile, info.verkey
+        (
+            await route_manager.route_verkey(context.profile, info.verkey)
+            if is_ctx_admin_request
+            else await route_manager.route_verkey(profile, info.verkey)
         )
 
     return info, attrib_def
@@ -975,7 +974,6 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -1233,7 +1231,6 @@ async def on_register_nym_event(profile: Profile, event: Event):
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 # log the error, but continue

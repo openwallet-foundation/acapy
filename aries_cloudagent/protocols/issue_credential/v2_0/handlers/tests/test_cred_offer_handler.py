@@ -1,6 +1,5 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
-from asynctest import mock as async_mock
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
@@ -142,7 +141,7 @@ class TestV20CredOfferHandler(IsolatedAsyncioTestCase):
             mock_cred_mgr.return_value.receive_offer = mock.CoroutineMock(
                 return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
             )
-            mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
+            mock_cred_mgr.return_value.create_request = mock.AsyncMock(
                 side_effect=test_module.AnonCredsHolderError()
             )
 

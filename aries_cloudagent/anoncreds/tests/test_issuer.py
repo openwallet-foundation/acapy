@@ -1,5 +1,6 @@
 import json
 from typing import Optional
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
 from anoncreds import (
@@ -8,7 +9,6 @@ from anoncreds import (
     CredentialOffer,
 )
 from aries_askar import AskarError, AskarErrorCode
-from asynctest import TestCase
 
 from aries_cloudagent.anoncreds.base import (
     AnonCredsObjectAlreadyExists,
@@ -126,8 +126,8 @@ def get_mock_schema_result(
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsIssuer(TestCase):
-    def setUp(self) -> None:
+class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
         self.profile = InMemoryProfile.test_profile(
             settings={"wallet-type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,
@@ -297,7 +297,7 @@ class TestAnonCredsIssuer(TestCase):
             mock_session_handle.insert.assert_called_once()
 
     @mock.patch.object(InMemoryProfileSession, "handle")
-    async def test_create_and_register_already_exists_but_not_in_wallet(
+    async def test_create_and_register_schema_already_exists_but_not_in_wallet(
         self, mock_session_handle
     ):
         mock_session_handle.fetch_all = mock.CoroutineMock(return_value=[])
@@ -362,6 +362,42 @@ class TestAnonCredsIssuer(TestCase):
             version="1.0",
             attr_names=["attr1", "attr2"],
         )
+
+    @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(test_module.AnonCredsIssuer, "store_schema")
+    async def test_create_and_register_schema_with_endorsed_transaction_response_does_not_store_schema(
+        self, mock_store_schema, mock_session_handle
+    ):
+        mock_session_handle.fetch_all = mock.CoroutineMock(return_value=[])
+        mock_session_handle.insert = mock.CoroutineMock(return_value=None)
+        self.profile.inject = mock.Mock(
+            return_value=mock.MagicMock(
+                register_schema=mock.CoroutineMock(
+                    return_value=SchemaResult(
+                        job_id="job-id",
+                        schema_state=SchemaState(
+                            state="finished",
+                            schema_id="schema-id",
+                            schema=AnonCredsSchema(
+                                issuer_id="issuer-id",
+                                name="schema-name",
+                                version="1.0",
+                                attr_names=["attr1", "attr2"],
+                            ),
+                        ),
+                    )
+                )
+            )
+        )
+        result = await self.issuer.create_and_register_schema(
+            issuer_id="did:sov:3avoBCqDMFHFaKUHug9s8W",
+            name="example name",
+            version="1.0",
+            attr_names=["attr1", "attr2"],
+        )
+
+        assert isinstance(result, SchemaResult)
+        assert mock_store_schema.called
 
     async def test_finish_schema(self):
         self.profile.transaction = mock.Mock(

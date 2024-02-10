@@ -1,6 +1,5 @@
 """DID exchange response handler under RFC 23."""
 
-
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,

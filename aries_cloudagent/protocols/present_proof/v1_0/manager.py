@@ -516,16 +516,16 @@ class PresentationManager:
         connection_id = connection_record.connection_id if connection_record else None
 
         async with self._profile.session() as session:
-            (
-                presentation_exchange_record
-            ) = await V10PresentationExchange.retrieve_by_tag_filter(
-                session,
-                {"thread_id": message._thread_id},
-                {
-                    # connection_id can be null in connectionless
-                    "connection_id": connection_id,
-                    "role": V10PresentationExchange.ROLE_PROVER,
-                },
+            (presentation_exchange_record) = (
+                await V10PresentationExchange.retrieve_by_tag_filter(
+                    session,
+                    {"thread_id": message._thread_id},
+                    {
+                        # connection_id can be null in connectionless
+                        "connection_id": connection_id,
+                        "role": V10PresentationExchange.ROLE_PROVER,
+                    },
+                )
             )
             presentation_exchange_record.verified = message._verification_result
             presentation_exchange_record.state = (

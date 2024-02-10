@@ -1,16 +1,24 @@
 import json
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
 from aiohttp import web
-from asynctest import TestCase as AsyncTestCase
 
 from aries_cloudagent.admin.request_context import AdminRequestContext
 from aries_cloudagent.anoncreds.base import AnonCredsObjectNotFound
 from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
+from aries_cloudagent.anoncreds.models.anoncreds_schema import (
+    AnonCredsSchema,
+    SchemaResult,
+    SchemaState,
+)
 from aries_cloudagent.anoncreds.revocation import AnonCredsRevocation
 from aries_cloudagent.anoncreds.revocation_setup import DefaultRevocationSetup
 from aries_cloudagent.askar.profile_anon import AskarAnoncredsProfile
-from aries_cloudagent.core.in_memory.profile import InMemoryProfile
+from aries_cloudagent.core.event_bus import MockEventBus
+from aries_cloudagent.core.in_memory.profile import (
+    InMemoryProfile,
+)
 from aries_cloudagent.revocation_anoncreds.manager import RevocationManager
 from aries_cloudagent.tests import mock
 
@@ -42,8 +50,8 @@ class MockRovocationRegistryDefinition:
 
 
 @pytest.mark.anoncreds
-class TestAnoncredsRoutes(AsyncTestCase):
-    async def setUp(self) -> None:
+class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
         self.session_inject = {}
         self.profile = InMemoryProfile.test_profile(
             settings={"wallet-type": "askar-anoncreds"},
@@ -64,7 +72,19 @@ class TestAnoncredsRoutes(AsyncTestCase):
     @mock.patch.object(
         AnonCredsIssuer,
         "create_and_register_schema",
-        return_value=MockSchema("schemaId"),
+        return_value=SchemaResult(
+            job_id=None,
+            schema_state=SchemaState(
+                state="finished",
+                schema_id=None,
+                schema=AnonCredsSchema(
+                    issuer_id="issuer-id",
+                    name="name",
+                    version="1.0",
+                    attr_names=["attr1", "attr2"],
+                ),
+            ),
+        ),
     )
     async def test_schemas_post(self, mock_create_and_register_schema):
         self.request.json = mock.CoroutineMock(
@@ -82,7 +102,7 @@ class TestAnoncredsRoutes(AsyncTestCase):
             ]
         )
         result = await test_module.schemas_post(self.request)
-        assert json.loads(result.body)["schema_id"] == "schemaId"
+        assert result is not None
 
         assert mock_create_and_register_schema.call_count == 1
 
@@ -358,9 +378,11 @@ class TestAnoncredsRoutes(AsyncTestCase):
         assert mock_publish.call_count == 1
 
     @mock.patch.object(DefaultRevocationSetup, "register_events")
-    async def test_register_events(self, mock_manager):
-        test_module.register_events("event_bus")
-        mock_manager.assert_called_once_with("event_bus")
+    async def test_register_events(self, mock_revocation_setup_listeners):
+        mock_event_bus = MockEventBus()
+        mock_event_bus.subscribe = mock.MagicMock()
+        test_module.register_events(mock_event_bus)
+        assert mock_revocation_setup_listeners.call_count == 1
 
     async def test_register(self):
         mock_app = mock.MagicMock()

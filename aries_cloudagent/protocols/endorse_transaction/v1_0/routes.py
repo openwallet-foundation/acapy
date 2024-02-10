@@ -1,6 +1,5 @@
 """Endorse Transaction handling admin routes."""
 
-import json
 import logging
 
 from aiohttp import web
@@ -116,17 +115,6 @@ class DateSchema(OpenAPISchema):
     )
 
 
-class EndorserWriteLedgerTransactionSchema(OpenAPISchema):
-    """Sets endorser_write_txn. Option for the endorser to write the transaction."""
-
-    endorser_write_txn = fields.Boolean(
-        required=False,
-        metadata={
-            "description": "Endorser will write the transaction after endorsing it"
-        },
-    )
-
-
 class EndorserInfoSchema(OpenAPISchema):
     """Class for user to input the DID associated with the requested endorser."""
 
@@ -203,7 +191,6 @@ async def transactions_retrieve(request: web.BaseRequest):
     summary="For author to send a transaction request",
 )
 @querystring_schema(TranIdMatchInfoSchema())
-@querystring_schema(EndorserWriteLedgerTransactionSchema())
 @request_schema(DateSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_create_request(request: web.BaseRequest):
@@ -218,7 +205,7 @@ async def transaction_create_request(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     transaction_id = request.query.get("tran_id")
-    endorser_write_txn = json.loads(request.query.get("endorser_write_txn", "false"))
+    endorser_write_txn = False
 
     body = await request.json()
     expires_time = body.get("expires_time")

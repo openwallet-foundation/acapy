@@ -1,4 +1,5 @@
 """Tests for Domain Txn Handling Utils."""
+
 import base58
 import json
 

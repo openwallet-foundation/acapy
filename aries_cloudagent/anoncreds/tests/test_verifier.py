@@ -1,7 +1,7 @@
 from copy import deepcopy
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from asynctest import TestCase
 
 from aries_cloudagent.anoncreds.models.anoncreds_cred_def import (
     CredDef,
@@ -38,8 +38,8 @@ from .mock_objects import (
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsVerifier(TestCase):
-    def setUp(self) -> None:
+class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
         self.profile = InMemoryProfile.test_profile(
             settings={"wallet-type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,

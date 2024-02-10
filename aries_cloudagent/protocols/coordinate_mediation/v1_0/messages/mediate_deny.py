@@ -1,6 +1,5 @@
 """mediate-deny message used to notify mediation client of a denied mediation request."""
 
-
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATE_DENY, PROTOCOL_PACKAGE
 

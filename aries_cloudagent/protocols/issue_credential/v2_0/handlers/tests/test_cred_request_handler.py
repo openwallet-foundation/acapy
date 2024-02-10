@@ -1,6 +1,5 @@
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
-from asynctest import mock as async_mock
 
 from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
@@ -157,7 +156,7 @@ class TestV20CredRequestHandler(IsolatedAsyncioTestCase):
                 return_value=cred_ex_rec
             )
             mock_cred_mgr.return_value.receive_request.return_value.auto_issue = True
-            mock_cred_mgr.return_value.issue_credential = async_mock.CoroutineMock(
+            mock_cred_mgr.return_value.issue_credential = mock.AsyncMock(
                 side_effect=test_module.AnonCredsIssuerError()
             )
 

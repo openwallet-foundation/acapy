@@ -7,6 +7,7 @@ apply_requirement [filter credentials] ->
 merge [return applicable credential list and descriptor_map for presentation_submission]
 returns VerifiablePresentation
 """
+
 import pytz
 import re
 import logging

@@ -26,7 +26,7 @@ Feature: RFC 0454 Aries agent present proof
          | Faber  | --public-did                           | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
 
-   @T001-RFC0454-DID-PEER
+   @T001-RFC0454-DID-PEER @GHA
    Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
       Given we have "2" agents
          | name  | role     | capabilities        | extra        |

@@ -1,6 +1,5 @@
 import json
 
-from asynctest import mock as async_mock
 import pytest
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
@@ -48,8 +47,8 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             clear_pending=mock.CoroutineMock(),
             pending_pub=["2"],
         )
-        issuer = async_mock.MagicMock(AnonCredsIssuer, autospec=True)
-        issuer.revoke_credentials = async_mock.CoroutineMock(
+        issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
+        issuer.revoke_credentials = mock.AsyncMock(
             return_value=(
                 json.dumps(
                     {
@@ -109,7 +108,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
         ) as mock_retrieve:
             mock_retrieve.side_effect = test_module.StorageNotFoundError("no such rec")
 
-            issuer = async_mock.MagicMock(AnonCredsIssuer, autospec=True)
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
             self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
             with self.assertRaises(RevocationManagerError):
@@ -131,7 +130,7 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 return_value=None
             )
 
-            issuer = async_mock.MagicMock(AnonCredsIssuer, autospec=True)
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
             self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
             with self.assertRaises(RevocationManagerError):
@@ -140,10 +139,8 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
     @pytest.mark.skip(reason="Anoncreds-break")
     async def test_revoke_credential_pend(self):
         CRED_REV_ID = "1"
-        mock_issuer_rev_reg_record = async_mock.MagicMock(
-            mark_pending=async_mock.CoroutineMock()
-        )
-        issuer = async_mock.MagicMock(AnonCredsIssuer, autospec=True)
+        mock_issuer_rev_reg_record = mock.MagicMock(mark_pending=mock.AsyncMock())
+        issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
         self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
         with mock.patch.object(
@@ -205,10 +202,8 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             "retrieve_by_id",
             mock.CoroutineMock(return_value=mock_issuer_rev_reg_record),
         ):
-            issuer = async_mock.MagicMock(AnonCredsIssuer, autospec=True)
-            issuer.merge_revocation_registry_deltas = async_mock.CoroutineMock(
-                side_effect=deltas
-            )
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
+            issuer.merge_revocation_registry_deltas = mock.AsyncMock(side_effect=deltas)
 
             issuer.revoke_credentials = mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
@@ -265,10 +260,8 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
             ),
         ):
-            issuer = async_mock.MagicMock(AnonCredsIssuer, autospec=True)
-            issuer.merge_revocation_registry_deltas = async_mock.CoroutineMock(
-                side_effect=deltas
-            )
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
+            issuer.merge_revocation_registry_deltas = mock.AsyncMock(side_effect=deltas)
 
             issuer.revoke_credentials = mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
@@ -326,10 +319,8 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 side_effect=lambda _, id, **args: mock_issuer_rev_reg_records[id]
             ),
         ):
-            issuer = async_mock.MagicMock(AnonCredsIssuer, autospec=True)
-            issuer.merge_revocation_registry_deltas = async_mock.CoroutineMock(
-                side_effect=deltas
-            )
+            issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
+            issuer.merge_revocation_registry_deltas = mock.AsyncMock(side_effect=deltas)
 
             issuer.revoke_credentials = mock.CoroutineMock(
                 side_effect=[(json.dumps(delta), []) for delta in deltas]

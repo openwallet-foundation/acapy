@@ -28,6 +28,13 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --multitenant --multi-ledger | --multitenant --multi-ledger | driverslicense |
          | --multitenant --multi-ledger --revocation | --multitenant --multi-ledger --revocation | driverslicense |
 
+      @WalletType_Askar_AnonCreds
+      Examples:
+         | Acme_capabilities         | Bob_capabilities          | Schema_name    |
+         | --wallet-type askar-anoncreds | --wallet-type askar-anoncreds   | anoncreds-testing |
+         | --wallet-type askar-anoncreds |                                 | driverslicense    |
+         |                               | --wallet-type askar-anoncreds   | anoncreds-testing |
+
 
    @T001.1-RFC0586 @GHA
    Scenario Outline: endorse a transaction and write to the ledger
@@ -194,3 +201,4 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |
          | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation       | driverslicense | Data_DL_NormalizedValues |
+         | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation --multitenant | driverslicense | Data_DL_NormalizedValues |

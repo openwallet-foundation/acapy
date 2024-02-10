@@ -7,13 +7,14 @@ repos:
         args: ["--config", ".commitlint.config.js"]
         additional_dependencies: ['@commitlint/config-conventional']
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    # Ensure this is synced with pyproject.toml
+    rev: 24.1.1
     hooks:
       - id: black
         stages: [commit]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
-    rev: v0.0.285
+    # Ensure this is synced with pyproject.toml
+    rev: v0.1.2
     hooks:
       - id: ruff
         stages: [commit]

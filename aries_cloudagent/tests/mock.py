@@ -1,4 +1,5 @@
 """Mock utilities."""
+
 from unittest.mock import AsyncMock, MagicMock, patch, create_autospec, Mock, ANY
 
 

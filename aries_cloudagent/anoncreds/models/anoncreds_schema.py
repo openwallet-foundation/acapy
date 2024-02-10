@@ -6,12 +6,11 @@ from anoncreds import Schema
 from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 
-from aries_cloudagent.messaging.valid import (
+from ...messaging.models.base import BaseModel, BaseModelSchema
+from ...messaging.valid import (
     INDY_OR_KEY_DID_EXAMPLE,
     INDY_SCHEMA_ID_EXAMPLE,
 )
-
-from ...messaging.models.base import BaseModel, BaseModelSchema
 
 
 class AnonCredsSchema(BaseModel):

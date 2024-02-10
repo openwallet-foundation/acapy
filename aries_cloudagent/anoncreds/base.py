@@ -1,4 +1,5 @@
 """Base Registry."""
+
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, Pattern, Sequence, TypeVar
 
