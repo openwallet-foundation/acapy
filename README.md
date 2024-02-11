@@ -80,7 +80,7 @@ in the [Aries ACA-Py Plugins repository]. Check them out -- it might have the ve
 
 ### Installation and Usage
 
-Use the ["install and go" page for developers](docs/features/DevReadMe.md) if you are comfortable with Trust over IP and Aries concepts. ACA-Py can be run with Docker without installation (highly recommended), or can be installed [from PyPi](https://pypi.org/project/aries-cloudagent/). In the [/demo directory](demo) there is a full set of demos for developers to use in getting started, and the [demo read me](docs/demo/README.md) is a great starting point for developers to use an "in-browser" approach to run a zero-install example. The [Read the Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) overview is also a way to understand the internal modules and APIs that make up an ACA-Py instance.
+Use the ["install and go" page for developers](docs/features/DevReadMe.md) if you are comfortable with Trust over IP and Aries concepts. ACA-Py can be run with Docker without installation (highly recommended), or can be installed [from PyPi](https://pypi.org/project/aries-cloudagent/). In the [/demo directory](./demo) there is a full set of demos for developers to use in getting started, and the [demo read me](docs/demo/README.md) is a great starting point for developers to use an "in-browser" approach to run a zero-install example. The [Read the Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) overview is also a way to understand the internal modules and APIs that make up an ACA-Py instance.
 
 If you would like to develop on ACA-Py locally note that we use Poetry for dependency management and packaging, if you are unfamiliar with poetry please see our [cheat sheet](docs/deploying/Poetry.md)
 
@@ -114,11 +114,11 @@ The initial implementation of ACA-Py was developed by the Government of British 
 See the [MAINTAINERS.md](./MAINTAINERS.md) file for a list of the current ACA-Py
 maintainers, and the guidelines for becoming a Maintainer. We'd love to have you
 join the team if you are willing and able to carry out the [duties of a
-Maintainer](MAINTAINERS.md#the-duties-of-a-maintainer).
+Maintainer](./MAINTAINERS.md#the-duties-of-a-maintainer).
 
 ## Contributing
 
-Pull requests are welcome! Please read our [contributions guide](CONTRIBUTING.md) and submit your PRs. We enforce [developer certificate of origin](https://developercertificate.org/) (DCO) commit signing — [guidance](https://github.com/apps/dco) on this is available. We also welcome issues submitted about problems you encounter in using ACA-Py.
+Pull requests are welcome! Please read our [contributions guide](./CONTRIBUTING.md) and submit your PRs. We enforce [developer certificate of origin](https://developercertificate.org/) (DCO) commit signing — [guidance](https://github.com/apps/dco) on this is available. We also welcome issues submitted about problems you encounter in using ACA-Py.
 
 ## License
 
