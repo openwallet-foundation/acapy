@@ -606,8 +606,10 @@ class RevListCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     rev_reg_def_id = fields.Str(
-        description="Revocation registry definition identifier",
-        example=INDY_REV_REG_ID_EXAMPLE,
+        metadata={
+            "description": "Revocation registry definition identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        }
     )
     options = fields.Nested(RevListOptionsSchema)
 
