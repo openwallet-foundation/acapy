@@ -3,21 +3,19 @@
 import json
 import logging
 import time
-
-from typing import Union, Tuple
+from typing import Optional, Tuple, Union
 
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.xform import indy_proof_req2non_revoc_intervals
 from ....ledger.multiple_ledger.ledger_requests_executor import (
-    GET_SCHEMA,
     GET_REVOC_REG_DELTA,
+    GET_SCHEMA,
     IndyLedgerRequestsExecutor,
 )
 from ....multitenant.base import BaseMultitenantManager
 from ....revocation.models.revocation_registry import RevocationRegistry
-
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
 from ..v2_0.models.pres_exchange import V20PresExRecord
@@ -43,12 +41,13 @@ class IndyPresExchHandler:
     async def return_presentation(
         self,
         pres_ex_record: Union[V10PresentationExchange, V20PresExRecord],
-        requested_credentials: dict = {},
+        requested_credentials: Optional[dict] = None,
     ) -> dict:
         """Return Indy proof request as dict."""
         # Get all credentials for this presentation
         holder = self._profile.inject(IndyHolder)
         credentials = {}
+        requested_credentials = requested_credentials or {}
 
         # extract credential ids and non_revoked
         requested_referents = {}

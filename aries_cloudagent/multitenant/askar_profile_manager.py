@@ -1,14 +1,15 @@
 """Manager for askar profile multitenancy mode."""
 
 from typing import Iterable, Optional, cast
+
+from ..askar.profile import AskarProfile
+from ..config.injection_context import InjectionContext
+from ..config.wallet import wallet_config
 from ..core.profile import (
     Profile,
 )
-from ..config.wallet import wallet_config
-from ..config.injection_context import InjectionContext
-from ..wallet.models.wallet_record import WalletRecord
-from ..askar.profile import AskarProfile
 from ..multitenant.base import BaseMultitenantManager
+from ..wallet.models.wallet_record import WalletRecord
 
 
 class AskarProfileMultitenantManager(BaseMultitenantManager):
@@ -38,7 +39,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         self,
         base_context: InjectionContext,
         wallet_record: WalletRecord,
-        extra_settings: dict = {},
+        extra_settings: Optional[dict] = None,
         *,
         provision=False,
     ) -> Profile:
@@ -60,6 +61,8 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
             Profile: Profile for the wallet record
 
         """
+        extra_settings = extra_settings or {}
+
         if not self._multitenant_profile:
             multitenant_wallet_name = base_context.settings.get(
                 "multitenant.wallet_name", self.DEFAULT_MULTITENANT_WALLET_NAME

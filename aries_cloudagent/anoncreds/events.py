@@ -1,7 +1,7 @@
 """Events fired by AnonCreds interface."""
 
 import re
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from ..core.event_bus import Event
 from .models.anoncreds_revocation import RevRegDef
@@ -52,7 +52,7 @@ class CredDefFinishedEvent(Event):
         issuer_id: str,
         support_revocation: bool,
         max_cred_num: int,
-        options: dict = {},
+        options: Optional[dict] = None,
     ):
         """With payload."""
         payload = CredDefFinishedPayload(
@@ -94,7 +94,7 @@ class RevRegDefFinishedEvent(Event):
         cls,
         rev_reg_def_id: str,
         rev_reg_def: RevRegDef,
-        options: dict = {},
+        options: Optional[dict] = None,
     ):
         """With payload."""
         payload = RevRegDefFinishedPayload(rev_reg_def_id, rev_reg_def, options)
@@ -132,7 +132,7 @@ class RevListFinishedEvent(Event):
     def with_payload(
         cls,
         rev_reg_def_id: str,
-        options: dict = {},
+        options: Optional[dict] = None,
     ):
         """With payload."""
         payload = RevListFinishedPayload(rev_reg_def_id, options)

@@ -312,6 +312,7 @@ class AnonCredsHolder:
                 *presentation_request["requested_attributes"],
                 *presentation_request["requested_predicates"],
             )
+        extra_query = extra_query or {}
 
         creds = {}
 

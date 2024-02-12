@@ -3,22 +3,19 @@
 import json
 import logging
 import re
-
 from collections import OrderedDict
-from typing import Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
 from ...indy.sdk.wallet_setup import IndyOpenWallet
 from ...ledger.base import BaseLedger
-from ...storage.indy import IndySdkStorage
 from ...storage.error import StorageError, StorageNotFoundError
+from ...storage.indy import IndySdkStorage
 from ...storage.record import StorageRecord
 from ...wallet.error import WalletNotFoundError
-
 from ..holder import IndyHolder, IndyHolderError
-
 from .error import IndyErrorHandler
 from .util import create_tails_reader
 
@@ -185,7 +182,7 @@ class IndySdkHolder(IndyHolder):
         referents: Sequence[str],
         start: int,
         count: int,
-        extra_query: dict = {},
+        extra_query: Optional[dict] = None,
     ):
         """Get credentials stored in the wallet.
 

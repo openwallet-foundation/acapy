@@ -91,7 +91,7 @@ class AnonCredsRegistry:
         self,
         profile: Profile,
         schema: AnonCredsSchema,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> SchemaResult:
         """Register a schema on the registry."""
         registrar = await self._registrar_for_identifier(schema.issuer_id)
@@ -112,7 +112,7 @@ class AnonCredsRegistry:
         profile: Profile,
         schema: GetSchemaResult,
         credential_definition: CredDef,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> CredDefResult:
         """Register a credential definition on the registry."""
         registrar = await self._registrar_for_identifier(
@@ -138,7 +138,7 @@ class AnonCredsRegistry:
         self,
         profile: Profile,
         revocation_registry_definition: RevRegDef,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevRegDefResult:
         """Register a revocation registry definition on the registry."""
         registrar = await self._registrar_for_identifier(
@@ -160,7 +160,7 @@ class AnonCredsRegistry:
         profile: Profile,
         rev_reg_def: RevRegDef,
         rev_list: RevList,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevListResult:
         """Register a revocation list on the registry."""
         registrar = await self._registrar_for_identifier(rev_list.issuer_id)
@@ -175,7 +175,7 @@ class AnonCredsRegistry:
         prev_list: RevList,
         curr_list: RevList,
         revoked: Sequence[int],
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevListResult:
         """Update a revocation list on the registry."""
         registrar = await self._registrar_for_identifier(prev_list.issuer_id)

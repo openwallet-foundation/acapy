@@ -220,8 +220,8 @@ class SchemaResult(BaseModel):
         super().__init__(**kwargs)
         self.job_id = job_id
         self.schema_state = schema_state
-        self.registration_metadata = registration_metadata
-        self.schema_metadata = schema_metadata
+        self.registration_metadata = registration_metadata or {}
+        self.schema_metadata = schema_metadata or {}
 
 
 class SchemaResultSchema(BaseModelSchema):

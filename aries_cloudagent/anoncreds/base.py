@@ -36,7 +36,7 @@ class AnonCredsObjectNotFound(BaseAnonCredsError):
     ):
         """Constructor."""
         super().__init__(message, resolution_metadata)
-        self.resolution_metadata = resolution_metadata
+        self.resolution_metadata = resolution_metadata or {}
 
 
 class AnonCredsRegistrationError(BaseAnonCredsError):
@@ -144,7 +144,7 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
         self,
         profile: Profile,
         schema: AnonCredsSchema,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> SchemaResult:
         """Register a schema on the registry."""
 
@@ -154,7 +154,7 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
         profile: Profile,
         schema: GetSchemaResult,
         credential_definition: CredDef,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> CredDefResult:
         """Register a credential definition on the registry."""
 
@@ -163,7 +163,7 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
         self,
         profile: Profile,
         revocation_registry_definition: RevRegDef,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevRegDefResult:
         """Register a revocation registry definition on the registry."""
 
@@ -173,7 +173,7 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
         profile: Profile,
         rev_reg_def: RevRegDef,
         rev_list: RevList,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevListResult:
         """Register a revocation list on the registry."""
 
@@ -185,6 +185,6 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
         prev_list: RevList,
         curr_list: RevList,
         revoked: Sequence[int],
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevListResult:
         """Update a revocation list on the registry."""

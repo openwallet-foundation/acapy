@@ -5,7 +5,7 @@ import logging
 import re
 import uuid
 from asyncio import shield
-from typing import List, Pattern, Sequence, Tuple
+from typing import List, Optional, Pattern, Sequence, Tuple
 
 from base58 import alphabet
 
@@ -198,10 +198,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self,
         profile: Profile,
         schema: AnonCredsSchema,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> SchemaResult:
         """Register a schema on the registry."""
-
+        options = options or {}
         schema_id = self.make_schema_id(schema)
 
         # Assume endorser role on the network, no option for 3rd-party endorser
@@ -359,10 +359,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         profile: Profile,
         schema: GetSchemaResult,
         credential_definition: CredDef,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> CredDefResult:
         """Register a credential definition on the registry."""
-
+        options = options or {}
         cred_def_id = self.make_cred_def_id(schema, credential_definition)
 
         ledger = profile.inject_or(BaseLedger)
@@ -547,9 +547,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self,
         profile: Profile,
         revocation_registry_definition: RevRegDef,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevRegDefResult:
         """Register a revocation registry definition on the registry."""
+        options = options or {}
         rev_reg_def_id = self.make_rev_reg_def_id(revocation_registry_definition)
 
         ledger = profile.inject(BaseLedger)
@@ -829,10 +830,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         profile: Profile,
         rev_reg_def: RevRegDef,
         rev_list: RevList,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevListResult:
         """Register a revocation list on the registry."""
-
+        options = options or {}
         rev_reg_entry = {"ver": "1.0", "value": {"accum": rev_list.current_accumulator}}
 
         endorser_did = None
@@ -929,9 +930,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         prev_list: RevList,
         curr_list: RevList,
         revoked: Sequence[int],
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevListResult:
         """Update a revocation list."""
+        options = options or {}
         newly_revoked_indices = list(revoked)
         rev_reg_entry = {
             "ver": "1.0",

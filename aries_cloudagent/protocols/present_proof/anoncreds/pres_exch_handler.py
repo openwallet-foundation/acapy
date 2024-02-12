@@ -3,17 +3,17 @@
 import json
 import logging
 import time
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.anoncreds_cred_def import CredDef
 from ....anoncreds.models.anoncreds_revocation import RevRegDef
 from ....anoncreds.models.anoncreds_schema import AnonCredsSchema
-from ....indy.models.xform import indy_proof_req2non_revoc_intervals
 from ....anoncreds.registry import AnonCredsRegistry
 from ....anoncreds.revocation import AnonCredsRevocation
 from ....core.error import BaseError
 from ....core.profile import Profile
+from ....indy.models.xform import indy_proof_req2non_revoc_intervals
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
 from ..v2_0.models.pres_exchange import V20PresExRecord
@@ -229,9 +229,10 @@ class AnonCredsPresExchHandler:
     async def return_presentation(
         self,
         pres_ex_record: Union[V10PresentationExchange, V20PresExRecord],
-        requested_credentials: dict = {},
+        requested_credentials: Optional[dict] = None,
     ) -> dict:
         """Return Indy proof request as dict."""
+        requested_credentials = requested_credentials or {}
         proof_request = self._extract_proof_request(pres_ex_record)
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
 

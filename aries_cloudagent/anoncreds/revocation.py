@@ -145,7 +145,7 @@ class AnonCredsRevocation:
         registry_type: str,
         tag: str,
         max_cred_num: int,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> RevRegDefResult:
         """Create a new revocation registry and register on network.
 
@@ -161,6 +161,7 @@ class AnonCredsRevocation:
             RevRegDefResult: revocation registry definition result
 
         """
+        options = options or {}
         try:
             async with self.profile.session() as session:
                 cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
@@ -216,9 +217,10 @@ class AnonCredsRevocation:
         self,
         result: RevRegDefResult,
         rev_reg_def_private: RevocationRegistryDefinitionPrivate,
-        options: dict = {},
+        options: Optional[dict] = None,
     ):
         """Store a revocation registry definition."""
+        options = options or {}
         identifier = result.job_id or result.rev_reg_def_id
         if not identifier:
             raise AnonCredsRevocationError(
@@ -262,9 +264,10 @@ class AnonCredsRevocation:
             ) from err
 
     async def finish_revocation_registry_definition(
-        self, job_id: str, rev_reg_def_id: str, options: dict = {}
+        self, job_id: str, rev_reg_def_id: str, options: Optional[dict] = None
     ):
         """Mark a rev reg def as finished."""
+        options = options or {}
         async with self.profile.transaction() as txn:
             entry = await self._finish_registration(
                 txn, CATEGORY_REV_REG_DEF, job_id, rev_reg_def_id, state=STATE_FINISHED
@@ -394,9 +397,10 @@ class AnonCredsRevocation:
             await txn.commit()
 
     async def create_and_register_revocation_list(
-        self, rev_reg_def_id: str, options: dict = {}
+        self, rev_reg_def_id: str, options: Optional[dict] = None
     ):
         """Create and register a revocation list."""
+        options = options or {}
         try:
             async with self.profile.session() as session:
                 rev_reg_def_entry = await session.handle.fetch(
@@ -518,9 +522,10 @@ class AnonCredsRevocation:
         prev: RevList,
         curr: RevList,
         revoked: Sequence[int],
-        options: dict = {},
+        options: Optional[dict] = None,
     ):
         """Publish and update to a revocation list."""
+        options = options or {}
         try:
             async with self.profile.session() as session:
                 rev_reg_def_entry = await session.handle.fetch(
