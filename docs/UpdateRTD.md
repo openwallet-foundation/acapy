@@ -38,7 +38,7 @@ Once generated, go into the `_build` folder and open `index.html` in a browser. 
 This is the hard part; looking for errors in docstrings added by devs. Some tips:
 
 - missing imports (`No module named 'async_timeout'`) can be solved by adding the module to the
-list of `autodoc_mock_imports` in the [conf.py](./conf.py) file.
+list of `autodoc_mock_imports` in the `conf.py` file in the ACA-Py `docs` folder.
 - Ignore any errors in .md files
 - Ignore the warnings about including `docs/README.md`
 - Ignore an dist-package errors
@@ -48,7 +48,7 @@ to adhere to the rules around processing docstrings, and especially around JSON 
 
 ### Checking for missing modules
 
-The file [`index.rst`](index.rst) in this folder drive the RTD generation. It should pick up all the modules
+The file `index.rst` in the ACA-Py `docs` folder drive the RTD generation. It picks up all the modules
 in the source code, starting from the root `../aries_cloudagent` folder. However, some modules
 are not picked up automatically from the root and have to be manually added to `index.rst`. To do that:
 
