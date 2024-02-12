@@ -5,11 +5,10 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
-from .error import WalletError
-
 from .did_info import DIDInfo, KeyInfo
-from .key_type import KeyType
 from .did_method import SOV, DIDMethod
+from .error import WalletError
+from .key_type import KeyType
 
 
 class BaseWallet(ABC):
@@ -150,7 +149,7 @@ class BaseWallet(ABC):
         key_type: KeyType,
         seed: str = None,
         did: str = None,
-        metadata: dict = {},
+        metadata: Optional[dict] = None,
     ) -> DIDInfo:
         """Create and store a new public DID.
 

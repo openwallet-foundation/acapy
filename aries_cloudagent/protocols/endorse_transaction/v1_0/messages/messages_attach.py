@@ -1,5 +1,7 @@
 """Represents the attached message to be included in the transaction record."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -24,7 +26,7 @@ class MessagesAttach(AgentMessage):
         author_did: str = None,
         author_verkey: str = None,
         endorser_did: str = None,
-        transaction_message: dict = {},
+        transaction_message: Optional[dict] = None,
         transaction_type: str = None,
         mechanism: str = None,
         taaDigest: str = None,
@@ -45,6 +47,7 @@ class MessagesAttach(AgentMessage):
 
         super().__init__(**kwargs)
 
+        transaction_message = transaction_message or {}
         self.mime_type = "application/json"
 
         self.data = {

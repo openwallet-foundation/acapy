@@ -165,7 +165,7 @@ class AnonCredsIssuer:
         name: str,
         version: str,
         attr_names: Sequence[str],
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> SchemaResult:
         """Create a new credential schema and store it in the wallet.
 
@@ -179,6 +179,7 @@ class AnonCredsIssuer:
             A SchemaResult instance
 
         """
+        options = options or {}
         # Check if record of a similar schema already exists in our records
         async with self.profile.session() as session:
             # TODO scan?
@@ -287,7 +288,7 @@ class AnonCredsIssuer:
         schema_id: str,
         tag: Optional[str] = None,
         signature_type: Optional[str] = None,
-        options: dict = {},
+        options: Optional[dict] = None,
     ) -> CredDefResult:
         """Create a new credential definition and store it in the wallet.
 
@@ -302,6 +303,7 @@ class AnonCredsIssuer:
             CredDefResult: the result of the credential definition creation
 
         """
+        options = options or {}
         support_revocation = options.get("support_revocation", False)
         if not isinstance(support_revocation, bool):
             raise ValueError("support_revocation must be a boolean")
@@ -360,9 +362,10 @@ class AnonCredsIssuer:
         key_proof: KeyCorrectnessProof,
         support_revocation: bool,
         max_cred_num: int,
-        options: dict = {},
+        options: Optional[dict] = None,
     ):
         """Store the cred def and it's components in the wallet."""
+        options = options or {}
         identifier = (
             cred_def_result.job_id
             or cred_def_result.credential_definition_state.credential_definition_id
@@ -415,7 +418,9 @@ class AnonCredsIssuer:
         except AskarError as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
 
-    async def finish_cred_def(self, job_id: str, cred_def_id: str, options: dict = {}):
+    async def finish_cred_def(
+        self, job_id: str, cred_def_id: str, options: Optional[dict] = None
+    ):
         """Finish a cred def."""
         async with self.profile.transaction() as txn:
             entry = await self._finish_registration(

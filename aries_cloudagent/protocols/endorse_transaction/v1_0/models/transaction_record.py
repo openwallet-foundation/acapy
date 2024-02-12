@@ -1,5 +1,7 @@
 """Handle transaction information interface."""
 
+from typing import Optional
+
 from marshmallow import fields
 
 from .....core.profile import ProfileSession
@@ -72,7 +74,7 @@ class TransactionRecord(BaseExchangeRecord):
         connection_id: str = None,
         state: str = None,
         endorser_write_txn: bool = None,
-        meta_data: dict = {"context": {}, "processing": {}},
+        meta_data: Optional[dict] = None,
         **kwargs,
     ):
         """Initialize a new TransactionRecord."""
@@ -88,7 +90,7 @@ class TransactionRecord(BaseExchangeRecord):
         self.thread_id = thread_id
         self.connection_id = connection_id
         self.endorser_write_txn = endorser_write_txn
-        self.meta_data = meta_data
+        self.meta_data = meta_data or {"context": {}, "processing": {}}
 
     @property
     def transaction_id(self) -> str:

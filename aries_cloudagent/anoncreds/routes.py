@@ -228,10 +228,10 @@ async def schema_get(request: web.BaseRequest):
     try:
         schema = await anoncreds_registry.get_schema(context.profile, schema_id)
         return web.json_response(schema.serialize())
-    except AnonCredsObjectNotFound:
-        raise web.HTTPNotFound(reason=f"Schema not found: {schema_id}")
+    except AnonCredsObjectNotFound as e:
+        raise web.HTTPNotFound(reason=f"Schema not found: {schema_id}") from e
     except AnonCredsResolutionError as e:
-        raise web.HTTPBadRequest(reason=e.roll_up)
+        raise web.HTTPBadRequest(reason=e.roll_up) from e
 
 
 @docs(tags=["anoncreds"], summary="Retrieve all schema ids")
@@ -410,9 +410,7 @@ async def cred_def_post(request: web.BaseRequest):
         AnonCredsResolutionError,
         ValueError,
     ) as e:
-        raise web.HTTPBadRequest(reason=e.roll_up)
-    except AnonCredsIssuerError as e:
-        raise web.HTTPServerError(reason=e.roll_up)
+        raise web.HTTPBadRequest(reason=e.roll_up) from e
 
 
 @docs(
@@ -438,10 +436,10 @@ async def cred_def_get(request: web.BaseRequest):
             context.profile, credential_id
         )
         return web.json_response(result.serialize())
-    except AnonCredsObjectNotFound:
+    except AnonCredsObjectNotFound as e:
         raise web.HTTPBadRequest(
             reason=f"Credential definition {credential_id} not found"
-        )
+        ) from e
 
 
 class GetCredDefsResponseSchema(OpenAPISchema):

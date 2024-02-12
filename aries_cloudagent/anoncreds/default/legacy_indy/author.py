@@ -12,8 +12,9 @@ from aries_cloudagent.protocols.endorse_transaction.v1_0.util import (
 from aries_cloudagent.storage.error import StorageNotFoundError
 
 
-async def get_endorser_info(profile, options: Optional[dict] = {}):
+async def get_endorser_info(profile, options: Optional[dict] = None):
     """Gets the endorser did for the current transaction."""
+    options = options or {}
     endorser_connection_id = options.get("endorser_connection_id", None)
     if not endorser_connection_id:
         endorser_connection_id = await get_endorser_connection_id(profile)
