@@ -82,17 +82,17 @@ class SchemaPostOptionSchema(OpenAPISchema):
     endorser_connection_id = fields.Str(
         metadata={
             "description": endorser_connection_id_description,
-            "required": False,
             "example": UUIDFour.EXAMPLE,
-        }
+        },
+        required=False,
     )
 
     create_transaction_for_endorser = fields.Bool(
         metadata={
             "description": create_transaction_for_endorser_description,
-            "required": False,
             "example": False,
-        }
+        },
+        required=False,
     )
 
 
@@ -263,8 +263,8 @@ class CredIdMatchInfo(OpenAPISchema):
         metadata={
             "description": "Credential definition identifier",
             "example": INDY_CRED_DEF_ID_EXAMPLE,
-            "required": True,
-        }
+        },
+        required=True,
     )
 
 
@@ -275,23 +275,23 @@ class InnerCredDefSchema(OpenAPISchema):
         metadata={
             "description": "Credential definition tag",
             "example": "default",
-            "required": True,
-        }
+        },
+        required=True,
     )
     schema_id = fields.Str(
         metadata={
             "description": "Schema identifier",
             "example": INDY_SCHEMA_ID_EXAMPLE,
-            "required": True,
         },
+        required=True,
         data_key="schemaId",
     )
     issuer_id = fields.Str(
         metadata={
             "description": "Issuer Identifier of the credential definition",
             "example": INDY_OR_KEY_DID_EXAMPLE,
-            "required": True,
         },
+        required=True,
         data_key="issuerId",
     )
 
@@ -303,28 +303,27 @@ class CredDefPostOptionsSchema(OpenAPISchema):
         metadata={
             "description": endorser_connection_id_description,
             "example": UUIDFour.EXAMPLE,
-            "required": False,
-        }
+        },
+        required=False,
     )
     create_transaction_for_endorser = fields.Bool(
         metadata={
             "description": create_transaction_for_endorser_description,
             "example": False,
-            "required": False,
-        }
+        },
+        required=False,
     )
     support_revocation = fields.Bool(
         metadata={
             "description": "Support credential revocation",
-            "required": False,
-        }
+        },
+        required=False,
     )
     revocation_registry_size = fields.Int(
         metadata={
             "description": "Maximum number of credential revocations per registry",
-            "example": 666,
-            "required": False,
-        }
+        },
+        required=False,
     )
 
 
@@ -512,15 +511,15 @@ class RevRegDefOptionsSchema(OpenAPISchema):
         metadata={
             "description": endorser_connection_id_description,
             "example": UUIDFour.EXAMPLE,
-            "required": False,
-        }
+        },
+        required=False,
     )
     create_transaction_for_endorser = fields.Bool(
         metadata={
             "description": create_transaction_for_endorser_description,
             "example": False,
-            "required": False,
-        }
+        },
+        required=False,
     )
 
 
@@ -587,15 +586,15 @@ class RevListOptionsSchema(OpenAPISchema):
         metadata={
             "description": endorser_connection_id_description,
             "example": UUIDFour.EXAMPLE,
-            "required": False,
-        }
+        },
+        required=False,
     )
     create_transaction_for_endorser = fields.Bool(
         metadata={
             "description": create_transaction_for_endorser_description,
             "example": False,
-            "required": False,
-        }
+        },
+        required=False,
     )
 
 
