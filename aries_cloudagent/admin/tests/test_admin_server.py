@@ -20,6 +20,11 @@ from .. import server as test_module
 from ..server import AdminServer, AdminSetupError
 
 
+# Ignore Marshmallow warning, as well as 'NotAppKeyWarning' coming from apispec packages
+@pytest.mark.filterwarnings(
+    "ignore:The 'missing' attribute of fields is deprecated. Use 'load_default' instead.",
+    "ignore:It is recommended to use web.AppKey instances for keys.",
+)
 class TestAdminServer(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.message_results = []
