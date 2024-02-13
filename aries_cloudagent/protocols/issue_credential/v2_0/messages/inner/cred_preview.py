@@ -178,4 +178,3 @@ class V20CredPreviewSchema(BaseModelSchema):
         V20CredAttrSpecSchema, many=True, required=True, data_key="attributes"
     )
  
- 
