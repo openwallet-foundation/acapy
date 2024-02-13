@@ -483,7 +483,7 @@ class AnonCredsRevocation:
                     value_json={
                         "rev_list": rev_list.serialize(),
                         "pending": None,
-                        # TODO THIS IS A HACK; this fixes ACA-Py expecting 1-based indexes
+                        # TODO THIS IS A HACK; this fixes ACA-Py expecting 1-based indexes  # noqa: E501
                         "next_index": 1,
                     },
                     tags={
@@ -505,16 +505,21 @@ class AnonCredsRevocation:
     async def finish_revocation_list(self, job_id: str, rev_reg_def_id: str):
         """Mark a revocation list as finished."""
         async with self.profile.transaction() as txn:
-            await self._finish_registration(
-                txn,
+            # Finish the registration if the list is new, otherwise already updated
+            existing_list = await txn.handle.fetch(
                 CATEGORY_REV_LIST,
-                job_id,
                 rev_reg_def_id,
-                state=STATE_FINISHED,
             )
-            await txn.commit()
-
-        await self.notify(RevListFinishedEvent.with_payload(rev_reg_def_id))
+            if not existing_list:
+                await self._finish_registration(
+                    txn,
+                    CATEGORY_REV_LIST,
+                    job_id,
+                    rev_reg_def_id,
+                    state=STATE_FINISHED,
+                )
+                await txn.commit()
+                await self.notify(RevListFinishedEvent.with_payload(rev_reg_def_id))
 
     async def update_revocation_list(
         self,
@@ -566,22 +571,21 @@ class AnonCredsRevocation:
             self.profile, rev_reg_def, prev, curr, revoked, options
         )
 
-        # TODO Handle `failed` state
-
+        # # TODO Handle `failed` state
         try:
             async with self.profile.session() as session:
                 rev_list_entry_upd = await session.handle.fetch(
-                    CATEGORY_REV_LIST, rev_reg_def_id, for_update=True
+                    CATEGORY_REV_LIST, result.rev_reg_def_id, for_update=True
                 )
                 if not rev_list_entry_upd:
                     raise AnonCredsRevocationError(
-                        "Revocation list not found for id {rev_reg_def_id}"
+                        f"Revocation list not found for id {rev_reg_def_id}"
                     )
                 tags = rev_list_entry_upd.tags
                 tags["state"] = result.revocation_list_state.state
                 await session.handle.replace(
                     CATEGORY_REV_LIST,
-                    rev_reg_def_id,
+                    result.rev_reg_def_id,
                     value=rev_list_entry_upd.value,
                     tags=tags,
                 )

@@ -47,6 +47,7 @@ class RevocationManager:
         thread_id: str = None,
         connection_id: str = None,
         comment: str = None,
+        options: Optional[dict] = None,
     ):
         """Revoke a credential by its credential exchange identifier at issue.
 
@@ -79,6 +80,7 @@ class RevocationManager:
             thread_id=thread_id,
             connection_id=connection_id,
             comment=comment,
+            options=options,
         )
 
     async def revoke_credential(
@@ -91,6 +93,7 @@ class RevocationManager:
         thread_id: str = None,
         connection_id: str = None,
         comment: str = None,
+        options: Optional[dict] = None,
     ):
         """Revoke a credential.
 
@@ -120,7 +123,11 @@ class RevocationManager:
             if result.curr and result.revoked:
                 await self.set_cred_revoked_state(rev_reg_id, result.revoked)
                 await revoc.update_revocation_list(
-                    rev_reg_id, result.prev, result.curr, result.revoked
+                    rev_reg_id,
+                    result.prev,
+                    result.curr,
+                    result.revoked,
+                    options=options,
                 )
             await notify_revocation_published_event(
                 self._profile, rev_reg_id, [cred_rev_id]
@@ -128,7 +135,6 @@ class RevocationManager:
 
         else:
             await revoc.mark_pending_revocations(rev_reg_id, int(cred_rev_id))
-
         if notify:
             thread_id = thread_id or f"indy::{rev_reg_id}::{cred_rev_id}"
             rev_notify_rec = RevNotificationRecord(
@@ -185,6 +191,7 @@ class RevocationManager:
     async def publish_pending_revocations(
         self,
         rrid2crid: Optional[Mapping[Text, Sequence[Text]]] = None,
+        options: Optional[dict] = None,
     ) -> Mapping[Text, Sequence[Text]]:
         """Publish pending revocations to the ledger.
 
@@ -208,6 +215,7 @@ class RevocationManager:
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
+        options = options or {}
         published_crids = {}
         revoc = AnonCredsRevocation(self._profile)
 
@@ -226,7 +234,7 @@ class RevocationManager:
             if result.curr and result.revoked:
                 await self.set_cred_revoked_state(rrid, result.revoked)
                 await revoc.update_revocation_list(
-                    rrid, result.prev, result.curr, result.revoked
+                    rrid, result.prev, result.curr, result.revoked, options
                 )
                 published_crids[rrid] = sorted(result.revoked)
                 await notify_revocation_published_event(

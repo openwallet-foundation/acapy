@@ -25,16 +25,12 @@ from ..messaging.valid import (
     INDY_SCHEMA_ID_EXAMPLE,
     UUIDFour,
 )
-from ..revocation.error import RevocationError, RevocationNotSupportedError
-from ..revocation_anoncreds.manager import RevocationManager, RevocationManagerError
-from ..revocation_anoncreds.routes import (
-    PublishRevocationsSchema,
+from ..revocation.error import RevocationNotSupportedError
+from ..revocation.routes import (
     RevocationModuleResponseSchema,
-    RevokeRequestSchema,
     RevRegIdMatchInfoSchema,
-    TxnOrPublishRevocationsResultSchema,
 )
-from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.error import StorageNotFoundError
 from .base import (
     AnonCredsObjectNotFound,
     AnonCredsRegistrationError,
@@ -685,91 +681,6 @@ async def set_active_registry(request: web.BaseRequest):
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
 
-@docs(
-    tags=["anoncreds"],
-    summary="Revoke an issued credential",
-)
-@request_schema(RevokeRequestSchema())
-@response_schema(RevocationModuleResponseSchema(), description="")
-async def revoke(request: web.BaseRequest):
-    """Request handler for storing a credential revocation.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The credential revocation details.
-
-    """
-    context: AdminRequestContext = request["context"]
-    body = await request.json()
-    cred_ex_id = body.get("cred_ex_id")
-    body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
-    notify = body.get("notify")
-    connection_id = body.get("connection_id")
-    body["notify_version"] = body.get("notify_version", "v1_0")
-    notify_version = body["notify_version"]
-
-    if notify and not connection_id:
-        raise web.HTTPBadRequest(reason="connection_id must be set when notify is true")
-    if notify and not notify_version:
-        raise web.HTTPBadRequest(
-            reason="Request must specify notify_version if notify is true"
-        )
-
-    rev_manager = RevocationManager(context.profile)
-    try:
-        if cred_ex_id:
-            # rev_reg_id and cred_rev_id should not be present so we can
-            # safely splat the body
-            await rev_manager.revoke_credential_by_cred_ex_id(**body)
-        else:
-            # no cred_ex_id so we can safely splat the body
-            await rev_manager.revoke_credential(**body)
-        return web.json_response({})
-    except (
-        RevocationManagerError,
-        AnonCredsRevocationError,
-        StorageError,
-        AnonCredsIssuerError,
-        AnonCredsRegistrationError,
-    ) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-
-@docs(tags=["revocation"], summary="Publish pending revocations to ledger")
-@request_schema(PublishRevocationsSchema())
-@response_schema(TxnOrPublishRevocationsResultSchema(), 200, description="")
-async def publish_revocations(request: web.BaseRequest):
-    """Request handler for publishing pending revocations to the ledger.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        Credential revocation ids published as revoked by revocation registry id.
-
-    """
-    context: AdminRequestContext = request["context"]
-    body = await request.json()
-    rrid2crid = body.get("rrid2crid")
-
-    rev_manager = RevocationManager(context.profile)
-
-    try:
-        rev_reg_resp = await rev_manager.publish_pending_revocations(
-            rrid2crid,
-        )
-        return web.json_response({"rrid2crid": rev_reg_resp})
-    except (
-        RevocationError,
-        StorageError,
-        AnonCredsIssuerError,
-        AnonCredsRevocationError,
-    ) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-
 def register_events(event_bus: EventBus):
     """Register events."""
     # TODO Make this pluggable?
@@ -800,8 +711,6 @@ async def register(app: web.Application):
             web.post("/anoncreds/revocation-list", rev_list_post),
             web.put("/anoncreds/registry/{rev_reg_id}/tails-file", upload_tails_file),
             web.put("/anoncreds/registry/{rev_reg_id}/active", set_active_registry),
-            web.post("/anoncreds/revoke", revoke),
-            web.post("/anoncreds/publish-revocations", publish_revocations),
         ]
     )
 
