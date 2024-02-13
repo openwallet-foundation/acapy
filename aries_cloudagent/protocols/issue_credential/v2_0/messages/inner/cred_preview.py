@@ -177,4 +177,3 @@ class V20CredPreviewSchema(BaseModelSchema):
     attributes = fields.Nested(
         V20CredAttrSpecSchema, many=True, required=True, data_key="attributes"
     )
- 
