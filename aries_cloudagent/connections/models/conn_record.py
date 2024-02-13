@@ -41,7 +41,7 @@ class ConnRecord(BaseRecord):
     class Meta:
         """ConnRecord metadata."""
 
-        schema_class = "ConnRecordSchema"
+        schema_class = "MaybeStoredConnRecordSchema"
 
     class Protocol(Enum):
         """Supported Protocols for Connection."""
@@ -637,11 +637,11 @@ class ConnRecord(BaseRecord):
         return super().__eq__(other)
 
 
-class ConnRecordSchema(BaseRecordSchema):
+class MaybeStoredConnRecordSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of connection records."""
 
     class Meta:
-        """ConnRecordSchema metadata."""
+        """MaybeStoredConnRecordSchema metadata."""
 
         model_class = ConnRecord
 
@@ -763,7 +763,7 @@ class ConnRecordSchema(BaseRecordSchema):
     )
 
 
-class StoredConnRecordSchema(ConnRecordSchema):
+class ConnRecordSchema(MaybeStoredConnRecordSchema):
     """Schema representing stored ConnRecords."""
 
     class Meta:
