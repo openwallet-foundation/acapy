@@ -26,7 +26,7 @@ jobs:
       commits_today: ${{ steps.commits.outputs.commits_today }}
       date: ${{ steps.date.outputs.date }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: print latest_commit
         run: echo ${{ github.sha }}
       - name: Get new commits
