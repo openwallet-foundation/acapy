@@ -81,13 +81,14 @@ class IndyCredRequestSchema(BaseModelSchema):
     )
 
 
-class BindingProof(BaseModel):
+class AnoncredsLinkSecret(BaseModel):
     """Binding proof model."""
 
     class Meta:
         """VCDI credential request schema metadata."""
 
         schema_class = "BindingProofSchema"
+        unknown = EXCLUDE
 
     def __init__(
         self,
@@ -107,13 +108,13 @@ class BindingProof(BaseModel):
         self.nonce = nonce
 
 
-class BindingProofSchema(BaseModelSchema):
+class AnoncredsLinkSecretSchema(BaseModelSchema):
     """VCDI credential request schema."""
 
     class Meta:
         """VCDI credential request schema metadata."""
 
-        model_class = BindingProof
+        model_class = AnoncredsLinkSecret
         unknown = EXCLUDE
 
     entropy = fields.Str(
@@ -146,6 +147,76 @@ class BindingProofSchema(BaseModelSchema):
     )
 
 
+class DidcommSignedAttachment(BaseModel):
+    """Didcomm Signed Attachment Model."""
+
+    class Meta:
+        """Didcomm signed attachment metadata."""
+
+        schema_class = "DidcommSignedAttachmentSchema"
+        unknown = EXCLUDE
+
+    def __init__(self, attachment_id: str = None, **kwargs):
+        """Initialize DidcommSignedAttachment."""
+        super().__init__(**kwargs)
+        self.attachment_id = attachment_id
+
+
+class DidcommSignedAttachmentSchema(BaseModelSchema):
+    """Didcomm Signed Attachment Schema."""
+
+    class Meta:
+        """Didcomm Signed Attachment schema metadata."""
+
+        model_class = DidcommSignedAttachment
+
+    attachment_id = fields.str(
+        required=True, metadata={"description": "", "example": ""}
+    )
+
+
+class BindingProof(BaseModel):
+    """Binding Proof Model."""
+
+    class Meta:
+        """Binding proof metadata."""
+
+        schema_class = "BindingProofSchema"
+        unknown = EXCLUDE
+
+    def __init__(
+        self,
+        anoncreds_link_secret: str = None,
+        didcomm_signed_attachment: str = None,
+        **kwargs,
+    ):
+        """Initialize binding proof."""
+        super().__init__(**kwargs)
+        self.anoncreds_link_secret = anoncreds_link_secret
+        self.didcomm_signed_attachment = didcomm_signed_attachment
+
+
+class BindingProofSchema(BaseModelSchema):
+    """Binding Proof Schema."""
+
+    class Meta:
+        """Binding proof schema metadata."""
+
+        model_class = BindingProof
+
+    anoncreds_link_secret = fields.Nested(
+        AnoncredsLinkSecretSchema(),
+        required=True,
+        metadata={"description": "", "example": ""},
+    )
+
+    didcomm_signed_attachment = fields.Nested(
+        DidcommSignedAttachmentSchema(),
+        required=True,
+        metadata={"description": "", "example": ""},
+    )
+
+
 class VCDICredRequest(BaseModel):
     """VCDI credential request model."""
 
@@ -175,8 +246,12 @@ class VCDICredRequestSchema(BaseModelSchema):
         model_class = VCDICredRequest
         unknown = EXCLUDE
 
-    data_model_version = fields.str(
+    data_model_version = fields.Str(
         required=True, metadata={"description": "", "example": ""}
     )
 
-    binding_proof = fields.str(required=True, metadata={"description": "", "example": ""})
+    binding_proof = fields.Nested(
+        BindingProofSchema(),
+        required=True,
+        metadata={"description": "", "example": ""},
+    )
