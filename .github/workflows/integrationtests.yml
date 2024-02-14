@@ -20,7 +20,7 @@ jobs:
     if: (github.event_name == 'pull_request' && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
     steps:
       - name: checkout-acapy
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: acapy
       #- name: run-von-network
