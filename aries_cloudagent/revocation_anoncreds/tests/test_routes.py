@@ -1,20 +1,18 @@
 import os
-import pytest
 import shutil
-
-from aiohttp.web import HTTPNotFound
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
 
+import pytest
+from aiohttp.web import HTTPNotFound
+
+from aries_cloudagent.tests import mock
 
 from ...anoncreds.models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefValue,
 )
 from ...askar.profile import AskarProfile
-
 from ...core.in_memory import InMemoryProfile
-
 from .. import routes as test_module
 
 

@@ -591,11 +591,22 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
     @mock.patch.object(test_module.AnonCredsRevocation, "_finish_registration")
     async def test_finish_revocation_list(self, mock_finish, mock_handle):
         self.profile.context.injector.bind_instance(EventBus, MockEventBus())
+
+        mock_handle.fetch = mock.CoroutineMock(side_effect=[None, MockEntry()])
+
+        # Fetch doesn't find list then it should be created
         await self.revocation.finish_revocation_list(
             job_id="test-job-id",
             rev_reg_def_id="test-rev-reg-def-id",
         )
         assert mock_finish.called
+
+        # Fetch finds list then there's nothing to do, it's already finished and updated
+        await self.revocation.finish_revocation_list(
+            job_id="test-job-id",
+            rev_reg_def_id="test-rev-reg-def-id",
+        )
+        assert mock_finish.call_count == 1
 
     @mock.patch.object(InMemoryProfileSession, "handle")
     async def test_update_revocation_list_get_rev_reg_errors(self, mock_handle):
