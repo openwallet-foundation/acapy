@@ -16,6 +16,7 @@ More background information including problem statement, design (algorithm) and 
   - [Write Requests](#write-requests)
 - [A Special Warning for TAA Acceptance](#a-special-warning-for-taa-acceptance)
 - [Impact on other ACA-Py function](#impact-on-other-aca-py-function)
+- [Known Issues](#known-issues)
 
 ## Usage
 
@@ -207,3 +208,8 @@ These changes are made here:
 - `./aries_cloudagent/protocols/trustping/v1_0/routes.py`
 - `./aries_cloudagent/resolver/routes.py`
 - `./aries_cloudagent/revocation/routes.py`
+
+
+## Known Issues
+
+* When in multi-ledger mode and switching ledgers (e.g.: the agent is registered on Ledger A and has published its DID there, and now wants to "move" to Ledger B) there is an [issue](https://github.com/hyperledger/aries-cloudagent-python/issues/2473) that will cause the registration to the new ledger to fail.
