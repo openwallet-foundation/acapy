@@ -1,5 +1,6 @@
 """Automated setup process for AnonCreds credential definitions with revocation."""
 
+import logging
 from abc import ABC, abstractmethod
 
 from aries_cloudagent.protocols.endorse_transaction.v1_0.util import is_author_role
@@ -15,6 +16,8 @@ from .events import (
     RevListFinishedEvent,
     RevRegDefFinishedEvent,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AnonCredsRevocationSetupManager(ABC):
@@ -102,3 +105,4 @@ class DefaultRevocationSetup(AnonCredsRevocationSetupManager):
 
     async def on_rev_list(self, profile: Profile, event: RevListFinishedEvent):
         """Handle rev list finished."""
+        LOGGER.debug("Revocation list finished: %s", event.payload.rev_reg_def_id)
