@@ -1,14 +1,12 @@
 """Service provider implementations."""
 
 import hashlib
-
 from typing import Optional, Sequence, Union
 from weakref import ReferenceType
 
 from ..utils.classloader import DeferLoad
 from ..utils.stats import Collector
-
-from .base import BaseProvider, BaseSettings, BaseInjector, InjectionError
+from .base import BaseInjector, BaseProvider, BaseSettings, InjectionError
 
 
 class InstanceProvider(BaseProvider):
@@ -52,10 +50,8 @@ class ClassProvider(BaseProvider):
         self._ctor_kwargs = ctor_kwargs
         self._init_method = init_method
         if isinstance(instance_cls, str):
-            cls = DeferLoad(instance_cls)
-        else:
-            cls = instance_cls
-        self._instance_cls: Union[type, DeferLoad] = cls
+            instance_cls = DeferLoad(instance_cls)
+        self._instance_cls = instance_cls
 
     def provide(self, config: BaseSettings, injector: BaseInjector):
         """Provide the object instance given a config and injector."""
