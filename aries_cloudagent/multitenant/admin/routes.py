@@ -8,7 +8,6 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ...admin.request_context import AdminRequestContext
@@ -40,6 +39,8 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_AUTO_WRITE_TRANSACTIONS": "endorser.auto_write",
     "ACAPY_CREATE_REVOCATION_TRANSACTIONS": "endorser.auto_create_rev_reg",
     "ACAPY_ENDORSER_ROLE": "endorser.protocol_role",
+    "ACAPY_EMIT_DID_PEER_2": "emit_did_peer_2",
+    "ACAPY_EMIT_DID_PEER_4": "emit_did_peer_4",
 }
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {
@@ -59,6 +60,8 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {
     "auto-write-transactions": "endorser.auto_write",
     "auto-create-revocation-transactions": "endorser.auto_create_rev_reg",
     "endorser-protocol-role": "endorser.protocol_role",
+    "emit-did-peer-2": "emit_did_peer_2",
+    "emit-did-peer-4": "emit_did_peer_4",
 }
 
 ACAPY_ENDORSER_FLAGS_DEPENDENT_ON_AUTHOR_ROLE = [
