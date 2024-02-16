@@ -452,8 +452,8 @@ class AdminServer(BaseAdminServer):
             return await handler(request)
 
         middlewares.append(setup_context)
-
-        # We register the validation_middleware last so we don't validate unauthorized requests
+        
+        # Register validation_middleware last avoiding unauthorized validations
         middlewares.append(validation_middleware)
 
         app = web.Application(
