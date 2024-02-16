@@ -75,7 +75,7 @@ async def issue_credential_route(request: web.BaseRequest):
     """
     body = await request.json()
     context: AdminRequestContext = request["context"]
-    manager = context.inject(VcLdpManager)
+    manager = VcLdpManager(context.profile)
     try:
         credential = body["credential"]
         options = {} if "options" not in body else body["options"]
@@ -120,7 +120,7 @@ async def verify_credential_route(request: web.BaseRequest):
     """
     body = await request.json()
     context: AdminRequestContext = request["context"]
-    manager = context.inject(VcLdpManager)
+    manager = VcLdpManager(context.profile)
     try:
         vc = VerifiableCredential.deserialize(body["verifiableCredential"])
         result = await manager.verify_credential(vc)
@@ -147,7 +147,7 @@ async def store_credential_route(request: web.BaseRequest):
     """
     body = await request.json()
     context: AdminRequestContext = request["context"]
-    manager = context.inject(VcLdpManager)
+    manager = VcLdpManager(context.profile)
 
     try:
         vc = body["verifiableCredential"]
@@ -183,7 +183,7 @@ async def prove_presentation_route(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    manager = context.inject(VcLdpManager)
+    manager = VcLdpManager(context.profile)
     body = await request.json()
     try:
         presentation = body["presentation"]
@@ -225,7 +225,7 @@ async def verify_presentation_route(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    manager = context.inject(VcLdpManager)
+    manager = VcLdpManager(context.profile)
     body = await request.json()
     try:
         vp = VerifiablePresentation.deserialize(body["verifiablePresentation"])
