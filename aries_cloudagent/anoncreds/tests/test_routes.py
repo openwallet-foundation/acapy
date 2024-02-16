@@ -19,7 +19,6 @@ from aries_cloudagent.core.event_bus import MockEventBus
 from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfile,
 )
-from aries_cloudagent.revocation_anoncreds.manager import RevocationManager
 from aries_cloudagent.tests import mock
 
 from .. import routes as test_module
@@ -337,45 +336,6 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
         self.request.match_info = {}
         with self.assertRaises(KeyError):
             await test_module.set_active_registry(self.request)
-
-    async def test_revoke_notify_without_connection_throws_x(self):
-        self.request.json = mock.CoroutineMock(return_value={"notify": True})
-        with self.assertRaises(web.HTTPBadRequest):
-            await test_module.revoke(self.request)
-
-    @mock.patch.object(
-        RevocationManager,
-        "revoke_credential_by_cred_ex_id",
-        return_value=None,
-    )
-    @mock.patch.object(
-        RevocationManager,
-        "revoke_credential",
-        return_value=None,
-    )
-    async def test_revoke(self, mock_revoke, mock_revoke_by_id):
-        self.request.json = mock.CoroutineMock(
-            return_value={"cred_ex_id": "cred_ex_id"}
-        )
-        await test_module.revoke(self.request)
-        assert mock_revoke_by_id.call_count == 1
-        assert mock_revoke.call_count == 0
-
-        self.request.json = mock.CoroutineMock(return_value={})
-        await test_module.revoke(self.request)
-        assert mock_revoke.call_count == 1
-
-    @mock.patch.object(
-        RevocationManager,
-        "publish_pending_revocations",
-        return_value="test-rrid",
-    )
-    async def test_publish_revocations(self, mock_publish):
-        self.request.json = mock.CoroutineMock(return_value={"rrid2crid": "rrid2crid"})
-        result = await test_module.publish_revocations(self.request)
-
-        assert json.loads(result.body)["rrid2crid"] == "test-rrid"
-        assert mock_publish.call_count == 1
 
     @mock.patch.object(DefaultRevocationSetup, "register_events")
     async def test_register_events(self, mock_revocation_setup_listeners):

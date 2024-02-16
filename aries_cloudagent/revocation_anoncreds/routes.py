@@ -12,28 +12,29 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
-from ..anoncreds.models.anoncreds_revocation import RevRegDefState
-
-from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
+from ..admin.request_context import AdminRequestContext
 from ..anoncreds.base import (
     AnonCredsObjectNotFound,
     AnonCredsRegistrationError,
     AnonCredsResolutionError,
 )
+from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 from ..anoncreds.issuer import AnonCredsIssuerError
+from ..anoncreds.models.anoncreds_revocation import RevRegDefState
 from ..anoncreds.revocation import AnonCredsRevocation, AnonCredsRevocationError
+from ..anoncreds.routes import (
+    create_transaction_for_endorser_description,
+    endorser_connection_id_description,
+)
 from ..askar.profile import AskarProfile
-from ..indy.models.revocation import IndyRevRegDef
-
-from ..admin.request_context import AdminRequestContext
 from ..indy.issuer import IndyIssuerError
+from ..indy.models.revocation import IndyRevRegDef
 from ..ledger.base import BaseLedger
-from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..ledger.error import LedgerError
+from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
@@ -48,28 +49,27 @@ from ..messaging.valid import (
     UUID4_VALIDATE,
     WHOLE_NUM_EXAMPLE,
     WHOLE_NUM_VALIDATE,
+    UUIDFour,
 )
 from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
-from ..storage.error import StorageError, StorageNotFoundError
-
 from ..revocation.error import RevocationError
+from ..revocation.models.issuer_rev_reg_record import (
+    IssuerRevRegRecord,
+    IssuerRevRegRecordSchema,
+)
+from ..storage.error import StorageError, StorageNotFoundError
 from .manager import RevocationManager, RevocationManagerError
 from .models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
     IssuerCredRevRecordSchema,
 )
-from ..revocation.models.issuer_rev_reg_record import (
-    IssuerRevRegRecord,
-    IssuerRevRegRecordSchema,
-)
-
 
 LOGGER = logging.getLogger(__name__)
 
 
-class RevocationModuleResponseSchema(OpenAPISchema):
+class RevocationAnoncredsModuleResponseSchema(OpenAPISchema):
     """Response schema for Revocation Module."""
 
 
@@ -187,113 +187,6 @@ class RevRegId(OpenAPISchema):
         metadata={
             "description": "Credential definition identifier",
             "example": INDY_CRED_DEF_ID_EXAMPLE,
-        },
-    )
-
-
-class RevokeRequestSchema(CredRevRecordQueryStringSchema):
-    """Parameters and validators for revocation request."""
-
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """Validate fields - connection_id and thread_id must be present if notify."""
-        super().validate_fields(data, **kwargs)
-
-        notify = data.get("notify")
-        connection_id = data.get("connection_id")
-        notify_version = data.get("notify_version", "v1_0")
-
-        if notify and not connection_id:
-            raise ValidationError(
-                "Request must specify connection_id if notify is true"
-            )
-        if notify and not notify_version:
-            raise ValidationError(
-                "Request must specify notify_version if notify is true"
-            )
-
-    publish = fields.Boolean(
-        required=False,
-        metadata={
-            "description": (
-                "(True) publish revocation to ledger immediately, or (default, False)"
-                " mark it pending"
-            )
-        },
-    )
-    notify = fields.Boolean(
-        required=False,
-        metadata={"description": "Send a notification to the credential recipient"},
-    )
-    notify_version = fields.String(
-        validate=validate.OneOf(["v1_0", "v2_0"]),
-        required=False,
-        metadata={
-            "description": (
-                "Specify which version of the revocation notification should be sent"
-            )
-        },
-    )
-    connection_id = fields.Str(
-        required=False,
-        validate=UUID4_VALIDATE,
-        metadata={
-            "description": (
-                "Connection ID to which the revocation notification will be sent;"
-                " required if notify is true"
-            ),
-            "example": UUID4_EXAMPLE,
-        },
-    )
-    thread_id = fields.Str(
-        required=False,
-        metadata={
-            "description": (
-                "Thread ID of the credential exchange message thread resulting in the"
-                " credential now being revoked; required if notify is true"
-            )
-        },
-    )
-    comment = fields.Str(
-        required=False,
-        metadata={
-            "description": "Optional comment to include in revocation notification"
-        },
-    )
-
-
-class PublishRevocationsSchema(OpenAPISchema):
-    """Request and result schema for revocation publication API call."""
-
-    rrid2crid = fields.Dict(
-        required=False,
-        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
-        values=fields.List(
-            fields.Str(
-                validate=INDY_CRED_REV_ID_VALIDATE,
-                metadata={
-                    "description": "Credential revocation identifier",
-                    "example": INDY_CRED_REV_ID_EXAMPLE,
-                },
-            )
-        ),
-        metadata={"description": "Credential revocation ids by revocation registry id"},
-    )
-
-
-class TxnOrPublishRevocationsResultSchema(OpenAPISchema):
-    """Result schema for credential definition send request."""
-
-    sent = fields.Nested(
-        PublishRevocationsSchema(),
-        required=False,
-        metadata={"definition": "Content sent"},
-    )
-    txn = fields.Nested(
-        TransactionRecordSchema(),
-        required=False,
-        metadata={
-            "description": "Revocation registry revocations transaction to endorse"
         },
     )
 
@@ -491,12 +384,143 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
     )
 
 
+class PublishRevocationsOptions(OpenAPISchema):
+    """Options for publishing revocations to ledger."""
+
+    endorser_connection_id = fields.Str(
+        metadata={
+            "description": endorser_connection_id_description,  # noqa: F821
+            "required": False,
+            "example": UUIDFour.EXAMPLE,
+        }
+    )
+
+    create_transaction_for_endorser = fields.Bool(
+        metadata={
+            "description": create_transaction_for_endorser_description,
+            "required": False,
+            "example": False,
+        }
+    )
+
+
+class PublishRevocationsSchema(OpenAPISchema):
+    """Request and result schema for revocation publication API call."""
+
+    rrid2crid = fields.Dict(
+        required=False,
+        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
+        values=fields.List(
+            fields.Str(
+                validate=INDY_CRED_REV_ID_VALIDATE,
+                metadata={
+                    "description": "Credential revocation identifier",
+                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                },
+            )
+        ),
+        metadata={"description": "Credential revocation ids by revocation registry id"},
+    )
+    options = fields.Nested(PublishRevocationsOptions())
+
+
+class PublishRevocationsResultSchema(OpenAPISchema):
+    """Result schema for credential definition send request."""
+
+    rrid2crid = fields.Dict(
+        required=False,
+        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
+        values=fields.List(
+            fields.Str(
+                validate=INDY_CRED_REV_ID_VALIDATE,
+                metadata={
+                    "description": "Credential revocation identifier",
+                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                },
+            )
+        ),
+        metadata={"description": "Credential revocation ids by revocation registry id"},
+    )
+
+
+class RevokeRequestSchema(CredRevRecordQueryStringSchema):
+    """Parameters and validators for revocation request."""
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate fields - connection_id and thread_id must be present if notify."""
+        super().validate_fields(data, **kwargs)
+
+        notify = data.get("notify")
+        connection_id = data.get("connection_id")
+        notify_version = data.get("notify_version", "v1_0")
+
+        if notify and not connection_id:
+            raise ValidationError(
+                "Request must specify connection_id if notify is true"
+            )
+        if notify and not notify_version:
+            raise ValidationError(
+                "Request must specify notify_version if notify is true"
+            )
+
+    publish = fields.Boolean(
+        required=False,
+        metadata={
+            "description": (
+                "(True) publish revocation to ledger immediately, or (default, False)"
+                " mark it pending"
+            )
+        },
+    )
+    notify = fields.Boolean(
+        required=False,
+        metadata={"description": "Send a notification to the credential recipient"},
+    )
+    notify_version = fields.String(
+        validate=validate.OneOf(["v1_0", "v2_0"]),
+        required=False,
+        metadata={
+            "description": (
+                "Specify which version of the revocation notification should be sent"
+            )
+        },
+    )
+    connection_id = fields.Str(
+        required=False,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": (
+                "Connection ID to which the revocation notification will be sent;"
+                " required if notify is true"
+            ),
+            "example": UUID4_EXAMPLE,
+        },
+    )
+    thread_id = fields.Str(
+        required=False,
+        metadata={
+            "description": (
+                "Thread ID of the credential exchange message thread resulting in the"
+                " credential now being revoked; required if notify is true"
+            )
+        },
+    )
+    comment = fields.Str(
+        required=False,
+        metadata={
+            "description": "Optional comment to include in revocation notification"
+        },
+    )
+    options = PublishRevocationsOptions()
+
+
 @docs(
     tags=["revocation"],
     summary="Revoke an issued credential",
 )
 @request_schema(RevokeRequestSchema())
-@response_schema(RevocationModuleResponseSchema(), description="")
+@response_schema(RevocationAnoncredsModuleResponseSchema(), description="")
 async def revoke(request: web.BaseRequest):
     """Request handler for storing a credential revocation.
 
@@ -507,12 +531,6 @@ async def revoke(request: web.BaseRequest):
         The credential revocation details.
 
     """
-    #
-    # this is exactly what is in anoncreds /revocation/revoke.
-    # we cannot import the revoke function as it imports classes from here,
-    # so circular dependency.
-    # we will clean this up and DRY at some point.
-    #
     context: AdminRequestContext = request["context"]
     body = await request.json()
     cred_ex_id = body.get("cred_ex_id")
@@ -538,6 +556,7 @@ async def revoke(request: web.BaseRequest):
         else:
             # no cred_ex_id so we can safely splat the body
             await rev_manager.revoke_credential(**body)
+        return web.json_response({})
     except (
         RevocationManagerError,
         AnonCredsRevocationError,
@@ -547,12 +566,10 @@ async def revoke(request: web.BaseRequest):
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({})
-
 
 @docs(tags=["revocation"], summary="Publish pending revocations to ledger")
 @request_schema(PublishRevocationsSchema())
-@response_schema(TxnOrPublishRevocationsResultSchema(), 200, description="")
+@response_schema(PublishRevocationsResultSchema(), 200, description="")
 async def publish_revocations(request: web.BaseRequest):
     """Request handler for publishing pending revocations to the ledger.
 
@@ -563,22 +580,16 @@ async def publish_revocations(request: web.BaseRequest):
         Credential revocation ids published as revoked by revocation registry id.
 
     """
-    #
-    # this is exactly what is in anoncreds /revocation/publish-revocations.
-    # we cannot import the function as it imports classes from here,
-    # so circular dependency.
-    # we will clean this up and DRY at some point.
-    #
     context: AdminRequestContext = request["context"]
     body = await request.json()
+    options = body.get("options", {})
     rrid2crid = body.get("rrid2crid")
 
     rev_manager = RevocationManager(context.profile)
 
     try:
-        rev_reg_resp = await rev_manager.publish_pending_revocations(
-            rrid2crid,
-        )
+        rev_reg_resp = await rev_manager.publish_pending_revocations(rrid2crid, options)
+        return web.json_response({"rrid2crid": rev_reg_resp})
     except (
         RevocationError,
         StorageError,
@@ -586,8 +597,6 @@ async def publish_revocations(request: web.BaseRequest):
         AnonCredsRevocationError,
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({"rrid2crid": rev_reg_resp})
 
 
 @docs(
@@ -1004,7 +1013,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
     produces=["application/octet-stream"],
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevocationModuleResponseSchema, description="tails file")
+@response_schema(RevocationAnoncredsModuleResponseSchema, description="tails file")
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """Request handler to download tails file for revocation registry.
 

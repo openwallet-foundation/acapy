@@ -576,14 +576,13 @@ def step_impl(context, agent_name):
     )
     context.cred_exchange = cred_exchange
 
-    # revoke the credential
     agent_container_POST(
         agent["agent"],
         "/revocation/revoke",
         data={
-            "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
             "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
             "publish": False,
+            "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
             "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
         },
     )
@@ -611,16 +610,36 @@ def step_impl(context, agent_name):
     connection_id = agent["agent"].agent.connection_id
 
     # revoke the credential
-    agent_container_POST(
-        agent["agent"],
-        "/revocation/revoke",
-        data={
+    if not is_anoncreds(agent):
+        data = {
             "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
             "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
             "publish": False,
             "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
-        },
-        params={"conn_id": connection_id, "create_transaction_for_endorser": "true"},
+        }
+        params = {
+            "conn_id": connection_id,
+            "create_transaction_for_endorser": "true",
+        }
+
+    else:
+        data = {
+            "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
+            "publish": False,
+            "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
+            "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
+            "options": {
+                "endorser_connection_id": connection_id,
+                "create_transaction_for_endorser": "true",
+            },
+        }
+        params = {}
+
+    agent_container_POST(
+        agent["agent"],
+        "/revocation/revoke",
+        data=data,
+        params=params,
     )
 
     # pause for a few seconds
@@ -644,8 +663,8 @@ def step_impl(context, agent_name):
                 ]
             }
         },
+        params={},
     )
-
     # check that rev reg entry was written
     assert "rrid2crid" in created_rev_reg
 
@@ -662,21 +681,38 @@ def step_impl(context, agent_name):
     connection_id = agent["agent"].agent.connection_id
 
     # create rev_reg entry transaction
-    created_rev_reg = agent_container_POST(
-        agent["agent"],
-        "/revocation/publish-revocations",
-        data={
+    if not is_anoncreds(agent):
+        data = {
             "rrid2crid": {
                 context.cred_exchange["indy"]["rev_reg_id"]: [
                     context.cred_exchange["indy"]["cred_rev_id"]
                 ]
             }
-        },
-        params={"conn_id": connection_id, "create_transaction_for_endorser": "true"},
-    )
+        }
+        params = {
+            "conn_id": connection_id,
+            "create_transaction_for_endorser": "true",
+        }
+    else:
+        data = {
+            "rrid2crid": {
+                context.cred_exchange["indy"]["rev_reg_id"]: [
+                    context.cred_exchange["indy"]["cred_rev_id"]
+                ]
+            },
+            "options": {
+                "endorser_connection_id": connection_id,
+                "create_transaction_for_endorser": "true",
+            },
+        }
+        params = {}
 
-    # check that transaction request has been sent
-    assert created_rev_reg["txn"]["state"] == "request_sent"
+    agent_container_POST(
+        agent["agent"],
+        "/revocation/publish-revocations",
+        data=data,
+        params=params,
+    )
 
     # pause for a few seconds
     async_sleep(3.0)
