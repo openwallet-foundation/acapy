@@ -42,6 +42,7 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_EMIT_DID_PEER_2": "emit_did_peer_2",
     "ACAPY_EMIT_DID_PEER_4": "emit_did_peer_4",
     "ACAPY_PRESERVE_EXCHANGE_RECORDS": "preserve_exchange_records",
+    "ACAPY_REQUESTS_THROUGH_PUBLIC_DID": "requests_through_public_did",
 }
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {
@@ -64,6 +65,7 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {
     "emit-did-peer-2": "emit_did_peer_2",
     "emit-did-peer-4": "emit_did_peer_4",
     "preserve-exchange-records": "preserve_exchange_records",
+    "requests-through-public-did": "requests_through_public_did",
 }
 
 ACAPY_ENDORSER_FLAGS_DEPENDENT_ON_AUTHOR_ROLE = [
