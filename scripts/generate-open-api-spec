@@ -38,8 +38,7 @@ ACA_PY_CMD_OPTIONS=" \
   --multitenant \
   --multitenant-admin \
   --jwt-secret test \
-  --no-ledger \
-  --log-file /usr/src/app/logs/agent.log"
+  --no-ledger"
 
 # Specify openAPI JSON config file and shared directory
 OPEN_API_JSON_CONFIG="openAPIJSON.config"

@@ -1,24 +1,30 @@
 # Aries Cloud Agent Python Changelog
 
-## 0.12.0rc0
+## 0.12.0rc1
 
-### January 23, 2024
+### February 17, 2024
 
-Release 0.12.0 is a relative large release (53 PRs and counting...) but currently with no breaking changes. We expect there will be breaking changes (at least in the handling of endorsement) before the 0.12.0 release is finalized, hence the minor version update.
+Release 0.12.0 is a relative large release but currently with no breaking changes. We expect there will be breaking changes (at least in the handling of endorsement) before the 0.12.0 release is finalized, hence the minor version update.
+
+The first `rc0` release candidate `rc0` introduced a regression via [PR \#2705] that has been reverted in [PR \#2789]. Further investigation is needed to determine how to accomplish the goal of [PR \#2705] ("feat: inject profile") without the regression.
+
+[PR \#2705]: https://github.com/hyperledger/aries-cloudagent-python/pull/2705
+[PR \#2789]: https://github.com/hyperledger/aries-cloudagent-python/pull/2789
 
 Much progress was made on `did:peer` support in this release, with the handling of inbound [DID Peer] 1 added, and inbound and outbound support for DID Peer 2 and 4. The goal of that work is to eliminate the remaining places where "unqualified" DIDs remain. Work continues in supporting ledger agnostic [AnonCreds], and the new [Hyperledger AnonCreds Rust] library. Attention was also given in the release to the handling of JSON-LD [Data Integrity Verifiable Credentials], with more expected before the release is finalized. In addition to those updates, there were fixes and improvements across the codebase.
+
+The most visible change in this release is the re-organization of the ACA-Py documentation, moving the vast majority of the documents to the folders within the `docs` folder -- a long overdue change that will allow us to soon publish the documents on [https://aca-py.org](https://aca-py.org) directly from the ACA-Py repository, rather than from the separate [aries-acapy-docs](https://github.com/hyperledger/aries-acapy-docs) currently being used.
 
 [DID Peer]: https://identity.foundation/peer-did-method-spec/
 [AnonCreds]: https://www.hyperledger.org/projects/anoncreds
 [Hyperledger AnonCreds Rust]: https://github.com/hyperledger/anoncreds-rs
 [Data Integrity Verifiable Credentials]: https://www.w3.org/TR/vc-data-integrity/
 
-### 0.12.0rc0 Breaking Changes
+### 0.12.0rc1 Breaking Changes
 
-There are no breaking changes in 0.12.0rc0.
+There are no breaking changes in 0.12.0rc1.
 
-
-#### 0.12.0rc0 Categorized List of Pull Requests
+#### 0.12.0rc1 Categorized List of Pull Requests
 
 - DID Handling and Connection Establishment Updates/Fixes
   - fix: save multi_use to the DB for OOB invitations [\#2694](https://github.com/hyperledger/aries-cloudagent-python/pull/2694) [frostyfrog](https://github.com/frostyfrog)
@@ -35,6 +41,12 @@ There are no breaking changes in 0.12.0rc0.
   - feat: support resolving did:peer:1 received in did exchange [\#2611](https://github.com/hyperledger/aries-cloudagent-python/pull/2611) [dbluhm](https://github.com/dbluhm)
 
 - Ledger Agnostic AnonCreds RS Changes
+  - Anoncreds revoke and publish-revocations endorsement [\#2782](https://github.com/hyperledger/aries-cloudagent-python/pull/2782) [jamshale](https://github.com/jamshale)
+  - Upgrade anoncreds to version 0.2.0-dev11 [\#2763](https://github.com/hyperledger/aries-cloudagent-python/pull/2763) [jamshale](https://github.com/jamshale)
+  - Update anoncreds to 0.2.0-dev10 [\#2758](https://github.com/hyperledger/aries-cloudagent-python/pull/2758) [jamshale](https://github.com/jamshale)
+  - Anoncreds - Cred Def and Revocation Endorsement [\#2752](https://github.com/hyperledger/aries-cloudagent-python/pull/2752) [jamshale](https://github.com/jamshale)
+  - Upgrade anoncreds to 0.2.0-dev9 [\#2741](https://github.com/hyperledger/aries-cloudagent-python/pull/2741) [jamshale](https://github.com/jamshale)
+  - Upgrade anoncred-rs to version 0.2.0-dev8 [\#2734](https://github.com/hyperledger/aries-cloudagent-python/pull/2734) [jamshale](https://github.com/jamshale)
   - Upgrade anoncreds to 0.2.0.dev7 [\#2719](https://github.com/hyperledger/aries-cloudagent-python/pull/2719) [jamshale](https://github.com/jamshale)
   - Improve api documentation and error handling [\#2690](https://github.com/hyperledger/aries-cloudagent-python/pull/2690) [jamshale](https://github.com/jamshale)
   - Add unit tests for anoncreds revocation [\#2688](https://github.com/hyperledger/aries-cloudagent-python/pull/2688) [jamshale](https://github.com/jamshale)
@@ -52,6 +64,9 @@ There are no breaking changes in 0.12.0rc0.
   - Fix: RevRegEntry Transaction Endorsement  0.11.0 [\#2558](https://github.com/hyperledger/aries-cloudagent-python/pull/2558) [shaangill025](https://github.com/shaangill025)
 
 - JSON-LD Verifiable Credential/DIF Presentation Exchange updates
+  - Revert profile injection for VcLdpManager on vc-api endpoints [\#2794](https://github.com/hyperledger/aries-cloudagent-python/pull/2794) [PatStLouis](https://github.com/PatStLouis)
+  - Add cached copy of BBS v1 context [\#2749](https://github.com/hyperledger/aries-cloudagent-python/pull/2749) [andrewwhitehead](https://github.com/andrewwhitehead)
+  - Update BBS+ context to bypass redirections [\#2739](https://github.com/hyperledger/aries-cloudagent-python/pull/2739) [swcurran](https://github.com/swcurran)
   - feat: make VcLdpManager pluggable [\#2706](https://github.com/hyperledger/aries-cloudagent-python/pull/2706) [dbluhm](https://github.com/dbluhm)
   - fix: minor type hint corrections for VcLdpManager [\#2704](https://github.com/hyperledger/aries-cloudagent-python/pull/2704) [dbluhm](https://github.com/dbluhm)
   - Remove if condition which checks if the credential.type array is equal to 1 [\#2670](https://github.com/hyperledger/aries-cloudagent-python/pull/2670) [PatStLouis](https://github.com/PatStLouis)
@@ -65,9 +80,13 @@ There are no breaking changes in 0.12.0rc0.
   - Add ConnectionProblemReport handler [\#2600](https://github.com/hyperledger/aries-cloudagent-python/pull/2600) [usingtechnology](https://github.com/usingtechnology)
 
 - Multitenancy Updates and Fixes
+  - feature/per tenant settings [\#2790](https://github.com/hyperledger/aries-cloudagent-python/pull/2790) [amanji](https://github.com/amanji)
   - Improve Per Tenant Logging: Fix issues around default log file path [\#2659](https://github.com/hyperledger/aries-cloudagent-python/pull/2659) [shaangill025](https://github.com/shaangill025)
 
 - Other Fixes, Demo, DevContainer and Documentation Fixes
+  - Demo description of reuse in establishing a connection [\#2787](https://github.com/hyperledger/aries-cloudagent-python/pull/2787) [swcurran](https://github.com/swcurran)
+  - Reorganize the ACA-Py Documentation Files [\#2765](https://github.com/hyperledger/aries-cloudagent-python/pull/2765) [swcurran](https://github.com/swcurran)
+  - Tweaks to MD files to enable aca-py.org publishing [\#2771](https://github.com/hyperledger/aries-cloudagent-python/pull/2771) [swcurran](https://github.com/swcurran)
   - Update devcontainer documentation [\#2729](https://github.com/hyperledger/aries-cloudagent-python/pull/2729) [jamshale](https://github.com/jamshale)
   - Update the SupportedRFCs Document to be up to date [\#2722](https://github.com/hyperledger/aries-cloudagent-python/pull/2722) [swcurran](https://github.com/swcurran)
   - Fix incorrect Sphinx search library version reference [\#2716](https://github.com/hyperledger/aries-cloudagent-python/pull/2716) [swcurran](https://github.com/swcurran)
@@ -78,6 +97,12 @@ There are no breaking changes in 0.12.0rc0.
   - Update the ReadTheDocs config in case we do another 0.10.x release [\#2629](https://github.com/hyperledger/aries-cloudagent-python/pull/2629) [swcurran](https://github.com/swcurran)
 
 - Dependencies and Internal Updates
+  - Revert profile inject [\#2789](https://github.com/hyperledger/aries-cloudagent-python/pull/2789) [jamshale](https://github.com/jamshale)
+
+  - Move emit events to profile and delay sending until after commit [\#2760](https://github.com/hyperledger/aries-cloudagent-python/pull/2760) [ianco](https://github.com/ianco)
+  - fix: partial revert of ConnRecord schema change  1.0.0 [\#2746](https://github.com/hyperledger/aries-cloudagent-python/pull/2746) [dbluhm](https://github.com/dbluhm)
+  - chore(deps): Bump aiohttp from 3.9.1 to 3.9.2  dependencies [\#2745](https://github.com/hyperledger/aries-cloudagent-python/pull/2745) [dependabot bot](https://github.com/dependabot bot)
+  - bump pydid to v 0.4.3 [\#2737](https://github.com/hyperledger/aries-cloudagent-python/pull/2737) [PatStLouis](https://github.com/PatStLouis)
   - Fix subwallet record removal [\#2721](https://github.com/hyperledger/aries-cloudagent-python/pull/2721) [andrewwhitehead](https://github.com/andrewwhitehead)
   - chore(deps): Bump jinja2 from 3.1.2 to 3.1.3  dependencies [\#2707](https://github.com/hyperledger/aries-cloudagent-python/pull/2707) [dependabot bot](https://github.com/dependabot bot)
   - feat: inject profile [\#2705](https://github.com/hyperledger/aries-cloudagent-python/pull/2705) [dbluhm](https://github.com/dbluhm)
@@ -90,10 +115,19 @@ There are no breaking changes in 0.12.0rc0.
   - Bump aiohttp from 3.8.6 to 3.9.0  dependencies [\#2635](https://github.com/hyperledger/aries-cloudagent-python/pull/2635) [dependabot bot](https://github.com/dependabot bot)
 
 - CI/CD, Testing, and Developer Tools/Productivity Updates
+  - chore(deps): Bump the all-actions group with 10 updates  dependencies [\#2784](https://github.com/hyperledger/aries-cloudagent-python/pull/2784) [dependabot bot](https://github.com/dependabot bot)
+  - Add Dependabot configuration [\#2783](https://github.com/hyperledger/aries-cloudagent-python/pull/2783) [WadeBarnes](https://github.com/WadeBarnes)
+  - Implement B006 rule [\#2775](https://github.com/hyperledger/aries-cloudagent-python/pull/2775) [jamshale](https://github.com/jamshale)
+  - ⬆️ Upgrade pytest to 8.0 [\#2773](https://github.com/hyperledger/aries-cloudagent-python/pull/2773) [ff137](https://github.com/ff137)
+  - ⬆️ Update pytest-asyncio to 0.23.4 [\#2764](https://github.com/hyperledger/aries-cloudagent-python/pull/2764) [ff137](https://github.com/ff137)
+  - Remove asynctest dependency and fix "coroutine not awaited" warnings [\#2755](https://github.com/hyperledger/aries-cloudagent-python/pull/2755) [ff137](https://github.com/ff137)
+  - Fix pytest collection errors when anoncreds package is not installed [\#2750](https://github.com/hyperledger/aries-cloudagent-python/pull/2750) [andrewwhitehead](https://github.com/andrewwhitehead)
+  - chore: pin black version [\#2747](https://github.com/hyperledger/aries-cloudagent-python/pull/2747) [dbluhm](https://github.com/dbluhm)
   - Tweak scope of GHA integration tests [\#2662](https://github.com/hyperledger/aries-cloudagent-python/pull/2662) [ianco](https://github.com/ianco)
   - Update snyk workflow to execute on Pull Request [\#2658](https://github.com/hyperledger/aries-cloudagent-python/pull/2658) [usingtechnology](https://github.com/usingtechnology)
 
 - Release management pull requests
+  - 0.12.0rc1 [\#2798](https://github.com/hyperledger/aries-cloudagent-python/pull/2798) [swcurran](https://github.com/swcurran)
   - 0.12.0rc0 [\#2732](https://github.com/hyperledger/aries-cloudagent-python/pull/2732) [swcurran](https://github.com/swcurran)
 
 ## 0.11.0
