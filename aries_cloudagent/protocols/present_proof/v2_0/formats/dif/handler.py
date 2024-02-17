@@ -446,7 +446,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_request = pres_ex_record.pres_request.attachment(
             DIFPresFormatHandler.format
         )
-        manager = self.profile.inject(VcLdpManager)
+        manager = VcLdpManager(self.profile)
 
         options = LDProofVCOptions.deserialize(pres_request["options"])
         if not options.challenge:

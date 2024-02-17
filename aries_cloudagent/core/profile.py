@@ -1,20 +1,17 @@
 """Classes for managing profile information within a request context."""
 
 import logging
-
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Type
-from weakref import ref
 
-from .event_bus import EventBus, Event
 from ..config.base import InjectionError
-from ..config.injector import BaseInjector, InjectType
 from ..config.injection_context import InjectionContext
+from ..config.injector import BaseInjector, InjectType
 from ..config.provider import BaseProvider
 from ..config.settings import BaseSettings
 from ..utils.classloader import ClassLoader, ClassNotFoundError
-
 from .error import ProfileSessionInactiveError
+from .event_bus import Event, EventBus
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,14 +30,9 @@ class Profile(ABC):
         created: bool = False,
     ):
         """Initialize a base profile."""
-        context = context or InjectionContext()
-        scope = "profile"
-        if name:
-            scope += ":" + name
-        self._context = context.start_scope(scope)
+        self._context = context or InjectionContext()
         self._created = created
         self._name = name or Profile.DEFAULT_NAME
-        self._context.injector.bind_instance(Profile, ref(self))
 
     @property
     def backend(self) -> str:
