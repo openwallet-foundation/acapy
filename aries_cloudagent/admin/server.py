@@ -452,7 +452,7 @@ class AdminServer(BaseAdminServer):
             return await handler(request)
 
         middlewares.append(setup_context)
-        
+
         # Register validation_middleware last avoiding unauthorized validations
         middlewares.append(validation_middleware)
 
