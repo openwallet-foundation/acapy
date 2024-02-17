@@ -127,7 +127,7 @@ There are no breaking changes in 0.12.0rc1.
   - Update snyk workflow to execute on Pull Request [\#2658](https://github.com/hyperledger/aries-cloudagent-python/pull/2658) [usingtechnology](https://github.com/usingtechnology)
 
 - Release management pull requests
-  - 0.12.0rc1 [\#2798](https://github.com/hyperledger/aries-cloudagent-python/pull/2798) [swcurran](https://github.com/swcurran)
+  - 0.12.0rc1 [\#2799](https://github.com/hyperledger/aries-cloudagent-python/pull/2799) [swcurran](https://github.com/swcurran)
   - 0.12.0rc0 [\#2732](https://github.com/hyperledger/aries-cloudagent-python/pull/2732) [swcurran](https://github.com/swcurran)
 
 ## 0.11.0
