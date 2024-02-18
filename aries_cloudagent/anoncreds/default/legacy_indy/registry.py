@@ -796,8 +796,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 #   Ledger rejected transaction request: client request invalid:
                 #   InvalidClientRequest(...)
                 # In this scenario we try to post a correction
-                LOGGER.warn("Retry ledger update/fix due to error")
-                LOGGER.warn(err)
+                LOGGER.warning("Retry ledger update/fix due to error")
+                LOGGER.warning(err)
                 (_, _, rev_entry_res) = await self.fix_ledger_entry(
                     profile,
                     rev_list,
@@ -806,7 +806,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     write_ledger,
                     endorser_did,
                 )
-                LOGGER.warn("Ledger update/fix applied")
+                LOGGER.warning("Ledger update/fix applied")
             elif "InvalidClientTaaAcceptanceError" in err.roll_up:
                 # if no write access (with "InvalidClientTaaAcceptanceError")
                 # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:

@@ -154,15 +154,15 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
     )
     rev_reg_id = fields.Str(
         required=False,
-        description="Revocation registry identifier",
+        metadata={"description": "Revocation registry identifier"},
     )
     cred_def_id = fields.Str(
         required=False,
-        description="Credential definition identifier",
+        metadata={"description": "Credential definition identifier"},
     )
     cred_rev_id = fields.Str(
         required=False,
-        description="Credential revocation identifier",
+        metadata={"description": "Credential revocation identifier"},
     )
     cred_ex_version = fields.Str(
         required=False, metadata={"description": "Credential exchange version"}

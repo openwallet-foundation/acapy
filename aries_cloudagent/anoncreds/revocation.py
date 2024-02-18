@@ -1209,7 +1209,7 @@ class AnonCredsRevocation:
                     )
                     failed_crids.add(rev_id)
                 elif rev_id >= rev_info["next_index"]:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s not yet issued",
                         revoc_reg_id,
@@ -1217,7 +1217,7 @@ class AnonCredsRevocation:
                     )
                     failed_crids.add(rev_id)
                 elif rev_list.revocation_list[rev_id] == 1:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s already revoked",
                         revoc_reg_id,
@@ -1259,7 +1259,7 @@ class AnonCredsRevocation:
                         CATEGORY_REV_LIST, revoc_reg_id, for_update=True
                     )
                     if not rev_info_upd:
-                        LOGGER.warn(
+                        LOGGER.warning(
                             "Revocation registry missing, skipping update: {}",
                             revoc_reg_id,
                         )

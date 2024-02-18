@@ -62,15 +62,18 @@ class RevRegDefValueSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     public_keys = fields.Dict(
-        data_key="publicKeys", example=INDY_RAW_PUBLIC_KEY_EXAMPLE
+        data_key="publicKeys", metadata={"example": INDY_RAW_PUBLIC_KEY_EXAMPLE}
     )
-    max_cred_num = fields.Int(data_key="maxCredNum", example=666)
+    max_cred_num = fields.Int(data_key="maxCredNum", metadata={"example": 777})
     tails_location = fields.Str(
         data_key="tailsLocation",
-        example="https://tails-server.com/hash/7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P",
+        metadata={
+            "example": "https://tails-server.com/hash/7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P"
+        },
     )
     tails_hash = fields.Str(
-        data_key="tailsHash", example="7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P"
+        data_key="tailsHash",
+        metadata={"example": "7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P"},
     )
 
 
@@ -130,18 +133,25 @@ class RevRegDefSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
+        metadata={
+            "description": "Issuer Identifier of the credential definition or schema",
+            "example": INDY_OR_KEY_DID_EXAMPLE,
+        },
         data_key="issuerId",
-        example=INDY_OR_KEY_DID_EXAMPLE,
     )
     type = fields.Str(data_key="revocDefType")
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
         data_key="credDefId",
-        example=INDY_CRED_DEF_ID_EXAMPLE,
     )
     tag = fields.Str(
-        description="tag for the revocation registry definition", example="default"
+        metadata={
+            "description": "tag for the revocation registry definition",
+            "example": "default",
+        }
     )
     value = fields.Nested(RevRegDefValueSchema())
 
@@ -204,11 +214,13 @@ class RevRegDefStateSchema(BaseModelSchema):
         )
     )
     revocation_registry_definition_id = fields.Str(
-        description="revocation registry definition id",
-        example=INDY_REV_REG_ID_EXAMPLE,
+        metadata={
+            "description": "revocation registry definition id",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        }
     )
     revocation_registry_definition = fields.Nested(
-        RevRegDefSchema(), description="revocation registry definition"
+        RevRegDefSchema(), metadata={"description": "revocation registry definition"}
     )
 
 
@@ -381,30 +393,40 @@ class RevListSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
+        metadata={
+            "description": "Issuer Identifier of the credential definition or schema",
+            "example": INDY_OR_KEY_DID_EXAMPLE,
+        },
         data_key="issuerId",
-        example=INDY_OR_KEY_DID_EXAMPLE,
     )
     rev_reg_def_id = fields.Str(
-        description="The ID of the revocation registry definition",
+        metadata={
+            "description": "The ID of the revocation registry definition",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
         data_key="revRegDefId",
-        example=INDY_REV_REG_ID_EXAMPLE,
     )
     revocation_list = fields.List(
         fields.Int(),
-        description="Bit list representing revoked credentials",
+        metadata={
+            "description": "Bit list representing revoked credentials",
+            "example": [0, 1, 1, 0],
+        },
         data_key="revocationList",
-        example=[0, 1, 1, 0],
     )
     current_accumulator = fields.Str(
-        description="The current accumalator value",
-        example="21 118...1FB",
+        metadata={
+            "description": "The current accumalator value",
+            "example": "21 118...1FB",
+        },
         data_key="currentAccumulator",
     )
     timestamp = fields.Int(
-        description="Timestamp at which revocation list is applicable",
+        metadata={
+            "description": "Timestamp at which revocation list is applicable",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
         required=False,
-        example=INDY_ISO8601_DATETIME_EXAMPLE,
     )
 
 
@@ -458,7 +480,9 @@ class RevListStateSchema(BaseModelSchema):
             ]
         )
     )
-    revocation_list = fields.Nested(RevListSchema(), description="revocation list")
+    revocation_list = fields.Nested(
+        RevListSchema(), metadata={"description": "revocation list"}
+    )
 
 
 class RevListResult(BaseModel):
