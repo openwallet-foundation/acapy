@@ -1,6 +1,5 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
-
 import logging
 from typing import Mapping
 
@@ -133,7 +132,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping
     ) -> CredFormatAttachment:
         """Create linked data proof credential proposal."""
-        manager = self.profile.inject(VcLdpManager)
+        manager = VcLdpManager(self.profile)
         detail = LDProofVCDetail.deserialize(proposal_data)
         assert detail.options and isinstance(detail.options, LDProofVCOptions)
         assert detail.credential and isinstance(detail.credential, VerifiableCredential)
@@ -165,7 +164,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         # but also when we create an offer (manager does some weird stuff)
         offer_data = cred_proposal_message.attachment(LDProofCredFormatHandler.format)
         detail = LDProofVCDetail.deserialize(offer_data)
-        manager = self.profile.inject(VcLdpManager)
+        manager = VcLdpManager(self.profile)
         assert detail.options and isinstance(detail.options, LDProofVCOptions)
         assert detail.credential and isinstance(detail.credential, VerifiableCredential)
         try:
@@ -225,7 +224,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             )
 
         detail = LDProofVCDetail.deserialize(request_data)
-        manager = self.profile.inject(VcLdpManager)
+        manager = VcLdpManager(self.profile)
         assert detail.options and isinstance(detail.options, LDProofVCOptions)
         assert detail.credential and isinstance(detail.credential, VerifiableCredential)
         try:
@@ -291,7 +290,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             LDProofCredFormatHandler.format
         )
         detail = LDProofVCDetail.deserialize(detail_dict)
-        manager = self.profile.inject(VcLdpManager)
+        manager = VcLdpManager(self.profile)
         assert detail.options and isinstance(detail.options, LDProofVCOptions)
         assert detail.credential and isinstance(detail.credential, VerifiableCredential)
         try:
@@ -382,7 +381,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         credential = VerifiableCredential.deserialize(cred_dict, unknown=INCLUDE)
 
         # Get signature suite, proof purpose and document loader
-        manager = self.profile.inject(VcLdpManager)
+        manager = VcLdpManager(self.profile)
         try:
             result = await manager.verify_credential(credential)
         except VcLdpManagerError as err:

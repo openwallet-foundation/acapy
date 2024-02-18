@@ -19,14 +19,26 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Then "Bob" can write the transaction to the ledger
       And "Bob" has written the schema <Schema_name> to the ledger
 
+      @GHA
       Examples:
          | Acme_capabilities         | Bob_capabilities          | Schema_name    |
          | --did-exchange            | --did-exchange            | driverslicense |
          | --mediation               | --mediation               | driverslicense |
          | --multitenant             | --multitenant             | driverslicense |
          | --mediation --multitenant | --mediation --multitenant | driverslicense |
+
+      @Mulitledger
+      Examples:
+         | Acme_capabilities         | Bob_capabilities          | Schema_name    |
          | --multitenant --multi-ledger | --multitenant --multi-ledger | driverslicense |
          | --multitenant --multi-ledger --revocation | --multitenant --multi-ledger --revocation | driverslicense |
+
+      @WalletType_Askar_AnonCreds @GHA
+      Examples:
+         | Acme_capabilities         | Bob_capabilities          | Schema_name    |
+         | --wallet-type askar-anoncreds | --wallet-type askar-anoncreds   | anoncreds-testing |
+         | --wallet-type askar-anoncreds |                                 | driverslicense |
+         |                               | --wallet-type askar-anoncreds   | anoncreds-testing |
 
 
    @T001.1-RFC0586 @GHA
@@ -48,8 +60,9 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Bob" has written the schema <Schema_name> to the ledger
 
       Examples:
-         | Acme_capabilities         | Bob_capabilities          | Schema_name    |
-         |                           |                           | driverslicense |
+         | Acme_capabilities         | Bob_capabilities              | Schema_name        |
+         |                           |                               | driverslicense     |
+         |                           | --wallet-type askar-anoncreds | anoncreds-testing  |
 
 
    @T002-RFC0586
@@ -89,13 +102,23 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       And "Bob" authors a revocation registry entry publishing transaction
       Then "Acme" can verify the credential from "Bob" was revoked
 
+      @GHA
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |
          | --revocation --public-did --did-exchange            | --revocation --did-exchange               | driverslicense | Data_DL_NormalizedValues |
          | --revocation --public-did --mediation               | --revocation --mediation                  | driverslicense | Data_DL_NormalizedValues |
          | --revocation --public-did --multitenant             | --revocation --multitenant                | driverslicense | Data_DL_NormalizedValues |
          | --revocation --public-did --mediation --multitenant | --revocation --mediation --multitenant    | driverslicense | Data_DL_NormalizedValues |
+
+      @Mulitledger
+      Examples:
+         | Acme_capabilities                                   | Bob_capabilties                           | Schema_name    | Credential_data          |
          | --multitenant --multi-ledger --revocation --public-did | --multitenant --multi-ledger --revocation | driverslicense | Data_DL_NormalizedValues |
+
+      @WalletType_Askar_AnonCreds @GHA
+      Examples:
+         | Acme_capabilities                                   | Bob_capabilities                                            | Schema_name    | Credential_data          |
+         | --revocation --public-did --did-exchange            | --revocation --did-exchange --wallet-type askar-anoncreds   | anoncreds-testing | Data_AC_NormalizedValues | 
 
    @T002.1-RFC0586 @GHA
    Scenario Outline: endorse a schema and cred def transaction, write to the ledger, issue and revoke a credential, manually invoking each endorsement endpoint
@@ -138,6 +161,12 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |
          | --revocation --public-did                           | --revocation                              | driverslicense | Data_DL_NormalizedValues |
 
+      @WalletType_Askar_AnonCreds
+      Examples:
+         | Acme_capabilities                                   | Bob_capabilities                             | Schema_name       | Credential_data          |
+         | --revocation --public-did                           | --revocation --wallet-type askar-anoncreds   | anoncreds-testing | Data_AC_NormalizedValues | 
+
+
    @T003-RFC0586
    Scenario Outline: endorse a schema and cred def transaction, write to the ledger, issue and revoke a credential, with auto endorsing workflow
       Given we have "2" agents
@@ -168,7 +197,12 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --endorser-role endorser --revocation --public-did --multitenant             | --endorser-role author --revocation --multitenant             | driverslicense | Data_DL_NormalizedValues |
          | --endorser-role endorser --revocation --public-did --mediation --multitenant | --endorser-role author --revocation --mediation --multitenant | driverslicense | Data_DL_NormalizedValues |
 
-   @T003.1-RFC0586 @GHA
+      @WalletType_Askar_AnonCreds
+      Examples:
+         | Acme_capabilities                                   | Bob_capabilities                             | Schema_name       | Credential_data          |
+         | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation --wallet-type askar-anoncreds   | anoncreds-testing | Data_AC_NormalizedValues |
+
+   @T003.1-RFC0586 @GHA 
    Scenario Outline: endorse a schema and cred def transaction, write to the ledger, issue and revoke a credential, with auto endorsing workflow
       Given we have "2" agents
          | name  | role     | capabilities        |
@@ -194,3 +228,9 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                          | Schema_name    | Credential_data          |
          | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation       | driverslicense | Data_DL_NormalizedValues |
+         | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation --multitenant | driverslicense | Data_DL_NormalizedValues |
+
+      @WalletType_Askar_AnonCreds
+      Examples:
+         | Acme_capabilities                                   | Bob_capabilities                             | Schema_name       | Credential_data          |
+         | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation --wallet-type askar-anoncreds   | anoncreds-testing | Data_AC_NormalizedValues |

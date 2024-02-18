@@ -1,4 +1,5 @@
 """Handler for keylist message."""
+
 import logging
 
 from .....messaging.base_handler import BaseHandler, HandlerException

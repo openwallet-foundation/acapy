@@ -1,4 +1,5 @@
 """Anoncreds admin routes."""
+
 import logging
 from asyncio import shield
 
@@ -12,11 +13,10 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
-from aries_cloudagent.ledger.error import LedgerError
-
 from ..admin.request_context import AdminRequestContext
 from ..askar.profile import AskarProfile
 from ..core.event_bus import EventBus
+from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
@@ -25,23 +25,22 @@ from ..messaging.valid import (
     INDY_SCHEMA_ID_EXAMPLE,
     UUIDFour,
 )
-from ..revocation.error import RevocationError, RevocationNotSupportedError
-from ..revocation_anoncreds.manager import RevocationManager, RevocationManagerError
-from ..revocation_anoncreds.routes import (
-    PublishRevocationsSchema,
+from ..revocation.error import RevocationNotSupportedError
+from ..revocation.routes import (
     RevocationModuleResponseSchema,
-    RevokeRequestSchema,
     RevRegIdMatchInfoSchema,
-    TxnOrPublishRevocationsResultSchema,
 )
-from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.error import StorageNotFoundError
 from .base import (
     AnonCredsObjectNotFound,
     AnonCredsRegistrationError,
     AnonCredsResolutionError,
 )
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
-from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
+from .models.anoncreds_cred_def import (
+    CredDefResultSchema,
+    GetCredDefResultSchema,
+)
 from .models.anoncreds_revocation import RevListResultSchema, RevRegDefResultSchema
 from .models.anoncreds_schema import (
     AnonCredsSchemaSchema,
@@ -56,78 +55,80 @@ LOGGER = logging.getLogger(__name__)
 
 SPEC_URI = "https://hyperledger.github.io/anoncreds-spec"
 
+endorser_connection_id_description = """
+    Connection identifier (optional) (this is an example)
+    You can set this is you know the endorsers connection id you want to use.
+    If not specified then the agent will attempt to find an endorser connection."""
+create_transaction_for_endorser_description = """
+    Create transaction for endorser (optional, default false). 
+    Use this for agents who don't specify an author role but want to 
+    create a transaction for an endorser to sign."""
+
 
 class SchemaIdMatchInfo(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""
 
     schema_id = fields.Str(
-        description="Schema identifier",
-        example=INDY_SCHEMA_ID_EXAMPLE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        }
     )
-
-
-class CredIdMatchInfo(OpenAPISchema):
-    """Path parameters and validators for request taking credential id."""
-
-    cred_def_id = fields.Str(
-        description="Credential identifier",
-        required=True,
-        example=INDY_CRED_DEF_ID_EXAMPLE,
-    )
-
-
-class InnerCredDefSchema(OpenAPISchema):
-    """Parameters and validators for credential definition."""
-
-    tag = fields.Str(description="Credential definition tag", example="default")
-    schema_id = fields.Str(
-        description="Schema identifier",
-        data_key="schemaId",
-        example=INDY_SCHEMA_ID_EXAMPLE,
-    )
-    issuer_id = fields.Str(
-        data_key="issuerId",
-        example=INDY_OR_KEY_DID_EXAMPLE,
-    )
-
-
-class CredDefPostOptionsSchema(OpenAPISchema):
-    """Parameters and validators for credential definition options."""
-
-    endorser_connection_id = fields.Str(required=False, example=UUIDFour.EXAMPLE)
-    support_revocation = fields.Bool(required=False)
-    revocation_registry_size = fields.Int(required=False, example=666)
-
-
-class CredDefPostRequestSchema(OpenAPISchema):
-    """Parameters and validators for query string in create credential definition."""
-
-    credential_definition = fields.Nested(InnerCredDefSchema())
-    options = fields.Nested(CredDefPostOptionsSchema())
-
-
-class CredDefsQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for credential definition list query."""
-
-    issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition",
-        example=INDY_OR_KEY_DID_EXAMPLE,
-    )
-    schema_id = fields.Str(
-        description="Schema identifier",
-        example=INDY_SCHEMA_ID_EXAMPLE,
-    )
-    schema_name = fields.Str(description="Schema name", example="Example schema")
-    schema_version = fields.Str(description="Schema version", example="1.0")
 
 
 class SchemaPostOptionSchema(OpenAPISchema):
     """Parameters and validators for schema options."""
 
     endorser_connection_id = fields.Str(
-        description="Connection identifier (optional) (this is an example)",
-        required=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": endorser_connection_id_description,
+            "required": False,
+            "example": UUIDFour.EXAMPLE,
+        }
+    )
+
+    create_transaction_for_endorser = fields.Bool(
+        metadata={
+            "description": create_transaction_for_endorser_description,
+            "required": False,
+            "example": False,
+        }
+    )
+
+
+class SchemasQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for query string in schemas list query."""
+
+    schema_name = fields.Str(
+        metadata={
+            "description": "Schema name",
+            "example": "example-schema",
+        }
+    )
+    schema_version = fields.Str(
+        metadata={
+            "description": "Schema version",
+            "example": "1.0",
+        }
+    )
+    schema_issuer_id = fields.Str(
+        metadata={
+            "description": "Schema issuer identifier",
+            "example": INDY_OR_KEY_DID_EXAMPLE,
+        }
+    )
+
+
+class GetSchemasResponseSchema(OpenAPISchema):
+    """Parameters and validators for schema list all response."""
+
+    schema_ids = fields.List(
+        fields.Str(
+            metadata={
+                "description": "Schema identifiers",
+                "example": INDY_SCHEMA_ID_EXAMPLE,
+            }
+        )
     )
 
 
@@ -179,7 +180,7 @@ async def schemas_post(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
 
     body = await request.json()
-    options = body.get("options")
+    options = body.get("options", {})
     schema_data = body.get("schema")
 
     if schema_data is None:
@@ -193,7 +194,11 @@ async def schemas_post(request: web.BaseRequest):
     issuer = AnonCredsIssuer(context.profile)
     try:
         result = await issuer.create_and_register_schema(
-            issuer_id, name, version, attr_names, options=options
+            issuer_id,
+            name,
+            version,
+            attr_names,
+            options,
         )
         return web.json_response(result.serialize())
     except (AnonCredsIssuerError, AnonCredsRegistrationError) as e:
@@ -219,29 +224,10 @@ async def schema_get(request: web.BaseRequest):
     try:
         schema = await anoncreds_registry.get_schema(context.profile, schema_id)
         return web.json_response(schema.serialize())
-    except AnonCredsObjectNotFound:
-        raise web.HTTPNotFound(reason=f"Schema not found: {schema_id}")
+    except AnonCredsObjectNotFound as e:
+        raise web.HTTPNotFound(reason=f"Schema not found: {schema_id}") from e
     except AnonCredsResolutionError as e:
-        raise web.HTTPBadRequest(reason=e.roll_up)
-
-
-class SchemasQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for query string in schemas list query."""
-
-    schema_name = fields.Str(description="Schema name", example="example-schema")
-    schema_version = fields.Str(description="Schema version", example="1.0")
-    schema_issuer_id = fields.Str(
-        description="Issuer identifier of the schema",
-        example=INDY_OR_KEY_DID_EXAMPLE,
-    )
-
-
-class GetSchemasResponseSchema(OpenAPISchema):
-    """Parameters and validators for schema list all response."""
-
-    schema_ids = fields.List(
-        fields.Str(description="Schema identifier", example=INDY_SCHEMA_ID_EXAMPLE)
-    )
+        raise web.HTTPBadRequest(reason=e.roll_up) from e
 
 
 @docs(tags=["anoncreds"], summary="Retrieve all schema ids")
@@ -270,6 +256,114 @@ async def schemas_get(request: web.BaseRequest):
     return web.json_response({"schema_ids": schema_ids})
 
 
+class CredIdMatchInfo(OpenAPISchema):
+    """Path parameters and validators for request taking credential id."""
+
+    cred_def_id = fields.Str(
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "required": True,
+        }
+    )
+
+
+class InnerCredDefSchema(OpenAPISchema):
+    """Parameters and validators for credential definition."""
+
+    tag = fields.Str(
+        metadata={
+            "description": "Credential definition tag",
+            "example": "default",
+            "required": True,
+        }
+    )
+    schema_id = fields.Str(
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+            "required": True,
+        },
+        data_key="schemaId",
+    )
+    issuer_id = fields.Str(
+        metadata={
+            "description": "Issuer Identifier of the credential definition",
+            "example": INDY_OR_KEY_DID_EXAMPLE,
+            "required": True,
+        },
+        data_key="issuerId",
+    )
+
+
+class CredDefPostOptionsSchema(OpenAPISchema):
+    """Parameters and validators for credential definition options."""
+
+    endorser_connection_id = fields.Str(
+        metadata={
+            "description": endorser_connection_id_description,
+            "example": UUIDFour.EXAMPLE,
+            "required": False,
+        }
+    )
+    create_transaction_for_endorser = fields.Bool(
+        metadata={
+            "description": create_transaction_for_endorser_description,
+            "example": False,
+            "required": False,
+        }
+    )
+    support_revocation = fields.Bool(
+        metadata={
+            "description": "Support credential revocation",
+            "required": False,
+        }
+    )
+    revocation_registry_size = fields.Int(
+        metadata={
+            "description": "Maximum number of credential revocations per registry",
+            "example": 666,
+            "required": False,
+        }
+    )
+
+
+class CredDefPostRequestSchema(OpenAPISchema):
+    """Parameters and validators for query string in create credential definition."""
+
+    credential_definition = fields.Nested(InnerCredDefSchema())
+    options = fields.Nested(CredDefPostOptionsSchema())
+
+
+class CredDefsQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for credential definition list query."""
+
+    issuer_id = fields.Str(
+        metadata={
+            "description": "Issuer Identifier of the credential definition",
+            "example": INDY_OR_KEY_DID_EXAMPLE,
+        }
+    )
+    schema_id = fields.Str(
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        }
+    )
+    schema_name = fields.Str(
+        metadata={
+            "description": "Schema name",
+            "example": "example-schema",
+        }
+    )
+    schema_version = fields.Str(
+        metadata={
+            "description": "Schema version",
+            "example": "1.0",
+        }
+    )
+
+
 @docs(
     tags=["anoncreds"], summary="Create a credential definition on the connected ledger"
 )
@@ -287,7 +381,7 @@ async def cred_def_post(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
-    options = body.get("options")
+    options = body.get("options", {})
     cred_def = body.get("credential_definition")
 
     if cred_def is None:
@@ -307,13 +401,12 @@ async def cred_def_post(request: web.BaseRequest):
         )
         return web.json_response(result.serialize())
     except (
+        AnonCredsIssuerError,
         AnonCredsObjectNotFound,
         AnonCredsResolutionError,
         ValueError,
     ) as e:
-        raise web.HTTPBadRequest(reason=e.roll_up)
-    except AnonCredsIssuerError as e:
-        raise web.HTTPServerError(reason=e.roll_up)
+        raise web.HTTPBadRequest(reason=e.roll_up) from e
 
 
 @docs(
@@ -339,10 +432,10 @@ async def cred_def_get(request: web.BaseRequest):
             context.profile, credential_id
         )
         return web.json_response(result.serialize())
-    except AnonCredsObjectNotFound:
+    except AnonCredsObjectNotFound as e:
         raise web.HTTPBadRequest(
             reason=f"Credential definition {credential_id} not found"
-        )
+        ) from e
 
 
 class GetCredDefsResponseSchema(OpenAPISchema):
@@ -406,9 +499,18 @@ class RevRegDefOptionsSchema(OpenAPISchema):
     """Parameters and validators for rev reg def options."""
 
     endorser_connection_id = fields.Str(
-        description="Connection identifier (optional) (this is an example)",
-        required=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": endorser_connection_id_description,
+            "example": UUIDFour.EXAMPLE,
+            "required": False,
+        }
+    )
+    create_transaction_for_endorser = fields.Bool(
+        metadata={
+            "description": create_transaction_for_endorser_description,
+            "example": False,
+            "required": False,
+        }
     )
 
 
@@ -431,7 +533,7 @@ async def rev_reg_def_post(request: web.BaseRequest):
     body = await request.json()
 
     revocation_registry_definition = body.get("revocation_registry_definition")
-    options = body.get("options")
+    options = body.get("options", {})
 
     if revocation_registry_definition is None:
         raise web.HTTPBadRequest(
@@ -441,6 +543,7 @@ async def rev_reg_def_post(request: web.BaseRequest):
     issuer_id = revocation_registry_definition.get("issuerId")
     cred_def_id = revocation_registry_definition.get("credDefId")
     max_cred_num = revocation_registry_definition.get("maxCredNum")
+    tag = revocation_registry_definition.get("tag")
 
     issuer = AnonCredsIssuer(context.profile)
     revocation = AnonCredsRevocation(context.profile)
@@ -458,13 +561,32 @@ async def rev_reg_def_post(request: web.BaseRequest):
                 cred_def_id,
                 registry_type="CL_ACCUM",
                 max_cred_num=max_cred_num,
-                tag="default",
+                tag=tag,
                 options=options,
             )
         )
         return web.json_response(result.serialize())
     except (RevocationNotSupportedError, AnonCredsRevocationError) as e:
         raise web.HTTPBadRequest(reason=e.roll_up) from e
+
+
+class RevListOptionsSchema(OpenAPISchema):
+    """Parameters and validators for revocation list options."""
+
+    endorser_connection_id = fields.Str(
+        metadata={
+            "description": endorser_connection_id_description,
+            "example": UUIDFour.EXAMPLE,
+            "required": False,
+        }
+    )
+    create_transaction_for_endorser = fields.Bool(
+        metadata={
+            "description": create_transaction_for_endorser_description,
+            "example": False,
+            "required": False,
+        }
+    )
 
 
 class RevListCreateRequestSchema(OpenAPISchema):
@@ -474,6 +596,7 @@ class RevListCreateRequestSchema(OpenAPISchema):
         description="Revocation registry definition identifier",
         example=INDY_REV_REG_ID_EXAMPLE,
     )
+    options = fields.Nested(RevListOptionsSchema)
 
 
 @docs(
@@ -487,7 +610,7 @@ async def rev_list_post(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     rev_reg_def_id = body.get("rev_reg_def_id")
-    options = body.get("options")
+    options = body.get("options", {})
 
     revocation = AnonCredsRevocation(context.profile)
     try:
@@ -558,89 +681,11 @@ async def set_active_registry(request: web.BaseRequest):
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
 
-@docs(
-    tags=["anoncreds"],
-    summary="Revoke an issued credential",
-)
-@request_schema(RevokeRequestSchema())
-@response_schema(RevocationModuleResponseSchema(), description="")
-async def revoke(request: web.BaseRequest):
-    """Request handler for storing a credential revocation.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        The credential revocation details.
-
-    """
-    context: AdminRequestContext = request["context"]
-    body = await request.json()
-    cred_ex_id = body.get("cred_ex_id")
-    body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
-    notify = body.get("notify")
-    connection_id = body.get("connection_id")
-    body["notify_version"] = body.get("notify_version", "v1_0")
-    notify_version = body["notify_version"]
-
-    if notify and not connection_id:
-        raise web.HTTPBadRequest(reason="connection_id must be set when notify is true")
-    if notify and not notify_version:
-        raise web.HTTPBadRequest(
-            reason="Request must specify notify_version if notify is true"
-        )
-
-    rev_manager = RevocationManager(context.profile)
-    try:
-        if cred_ex_id:
-            # rev_reg_id and cred_rev_id should not be present so we can
-            # safely splat the body
-            await rev_manager.revoke_credential_by_cred_ex_id(**body)
-        else:
-            # no cred_ex_id so we can safely splat the body
-            await rev_manager.revoke_credential(**body)
-        return web.json_response({})
-    except (
-        RevocationManagerError,
-        AnonCredsRevocationError,
-        StorageError,
-        AnonCredsIssuerError,
-        AnonCredsRegistrationError,
-    ) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-
-@docs(tags=["revocation"], summary="Publish pending revocations to ledger")
-@request_schema(PublishRevocationsSchema())
-@response_schema(TxnOrPublishRevocationsResultSchema(), 200, description="")
-async def publish_revocations(request: web.BaseRequest):
-    """Request handler for publishing pending revocations to the ledger.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        Credential revocation ids published as revoked by revocation registry id.
-
-    """
-    context: AdminRequestContext = request["context"]
-    body = await request.json()
-    rrid2crid = body.get("rrid2crid")
-
-    rev_manager = RevocationManager(context.profile)
-
-    try:
-        rev_reg_resp = await rev_manager.publish_pending_revocations(
-            rrid2crid,
-        )
-        return web.json_response({"rrid2crid": rev_reg_resp})
-    except (
-        RevocationError,
-        StorageError,
-        AnonCredsIssuerError,
-        AnonCredsRevocationError,
-    ) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+def register_events(event_bus: EventBus):
+    """Register events."""
+    # TODO Make this pluggable?
+    setup_manager = DefaultRevocationSetup()
+    setup_manager.register_events(event_bus)
 
 
 async def register(app: web.Application):
@@ -666,17 +711,8 @@ async def register(app: web.Application):
             web.post("/anoncreds/revocation-list", rev_list_post),
             web.put("/anoncreds/registry/{rev_reg_id}/tails-file", upload_tails_file),
             web.put("/anoncreds/registry/{rev_reg_id}/active", set_active_registry),
-            web.post("/anoncreds/revoke", revoke),
-            web.post("/anoncreds/publish-revocations", publish_revocations),
         ]
     )
-
-
-def register_events(event_bus: EventBus):
-    """Register events."""
-    # TODO Make this pluggable?
-    setup_manager = DefaultRevocationSetup()
-    setup_manager.register_events(event_bus)
 
 
 def post_process_routes(app: web.Application):

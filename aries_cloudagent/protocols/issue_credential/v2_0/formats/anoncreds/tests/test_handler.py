@@ -3,7 +3,6 @@ import json
 import pytest
 from time import time
 
-from asynctest import mock as async_mock
 from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
 from marshmallow import ValidationError
@@ -228,11 +227,11 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         self.context.injector.bind_instance(BaseCache, self.cache)
 
         # Issuer
-        self.issuer = async_mock.MagicMock(AnonCredsIssuer, autospec=True)
+        self.issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
         self.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
 
         # Holder
-        self.holder = async_mock.MagicMock(AnonCredsHolder, autospec=True)
+        self.holder = mock.MagicMock(AnonCredsHolder, autospec=True)
         self.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
         self.handler = AnonCredsCredFormatHandler(self.profile)
@@ -1042,7 +1041,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
             state=V20CredExRecord.STATE_REQUEST_RECEIVED,
         )
 
-        self.issuer.create_credential = async_mock.CoroutineMock(
+        self.issuer.create_credential = mock.AsyncMock(
             side_effect=AnonCredsRevocationRegistryFullError("Nope")
         )
         with mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc:
@@ -1261,7 +1260,7 @@ class TestV20AnonCredsCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         cred_id = "cred-id"
-        self.holder.store_credential = async_mock.CoroutineMock(
+        self.holder.store_credential = mock.AsyncMock(
             side_effect=test_module.AnonCredsHolderError("Problem", {"message": "Nope"})
         )
 

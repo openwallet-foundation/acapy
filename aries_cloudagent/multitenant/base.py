@@ -1,9 +1,9 @@
 """Manager for multitenancy."""
 
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-import logging
-from typing import Iterable, List, Optional, cast, Tuple
+from typing import Iterable, List, Optional, Tuple, cast
 
 import jwt
 
@@ -126,7 +126,7 @@ class BaseMultitenantManager(ABC):
         self,
         base_context: InjectionContext,
         wallet_record: WalletRecord,
-        extra_settings: dict = {},
+        extra_settings: Optional[dict] = None,
         *,
         provision=False,
     ) -> Profile:

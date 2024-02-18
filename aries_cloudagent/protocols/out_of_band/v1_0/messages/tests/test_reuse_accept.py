@@ -1,4 +1,5 @@
 """Test Reuse Accept Message."""
+
 import pytest
 
 from unittest import TestCase

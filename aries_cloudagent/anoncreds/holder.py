@@ -14,8 +14,8 @@ from anoncreds import (
     CredentialRevocationState,
     Presentation,
     PresentCredentials,
+    create_link_secret,
 )
-from anoncreds.bindings import create_link_secret
 from aries_askar import AskarError, AskarErrorCode
 
 from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
@@ -128,7 +128,7 @@ class AnonCredsHolder:
         Args:
             credential_offer: The credential offer to create request for
             credential_definition: The credential definition to create an offer for
-            holder_did: the DID of the agent making the request
+            holder_did: the DID of the agent making the request (may not be a real DID)
 
         Returns:
             A tuple of the credential request and credential request metadata
@@ -312,6 +312,7 @@ class AnonCredsHolder:
                 *presentation_request["requested_attributes"],
                 *presentation_request["requested_predicates"],
             )
+        extra_query = extra_query or {}
 
         creds = {}
 

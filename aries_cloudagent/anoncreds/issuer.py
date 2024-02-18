@@ -1,7 +1,6 @@
 """anoncreds-rs issuer implementation."""
 
 import asyncio
-import json
 import logging
 from time import time
 from typing import Optional, Sequence
@@ -10,7 +9,9 @@ from anoncreds import (
     AnoncredsError,
     Credential,
     CredentialDefinition,
+    CredentialDefinitionPrivate,
     CredentialOffer,
+    KeyCorrectnessProof,
     Schema,
 )
 from aries_askar import AskarError
@@ -22,7 +23,10 @@ from ..askar.profile_anon import (
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
-from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
+from .base import (
+    AnonCredsSchemaAlreadyExists,
+    BaseAnonCredsError,
+)
 from .events import CredDefFinishedEvent
 from .models.anoncreds_cred_def import CredDef, CredDefResult
 from .models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
@@ -130,20 +134,20 @@ class AnonCredsIssuer:
         await txn.handle.remove(category, job_id)
         return entry
 
-    async def _store_schema(
+    async def store_schema(
         self,
         result: SchemaResult,
     ):
         """Store schema after reaching finished state."""
-        ident = result.schema_state.schema_id or result.job_id
-        if not ident:
+        identifier = result.job_id or result.schema_state.schema_id
+        if not identifier:
             raise ValueError("Schema id or job id must be set")
 
         try:
             async with self.profile.session() as session:
                 await session.handle.insert(
                     CATEGORY_SCHEMA,
-                    ident,
+                    identifier,
                     result.schema_state.schema.to_json(),
                     {
                         "name": result.schema_state.schema.name,
@@ -175,6 +179,7 @@ class AnonCredsIssuer:
             A SchemaResult instance
 
         """
+        options = options or {}
         # Check if record of a similar schema already exists in our records
         async with self.profile.session() as session:
             # TODO scan?
@@ -203,15 +208,14 @@ class AnonCredsIssuer:
                 options,
             )
 
-            await self._store_schema(schema_result)
-
+            await self.store_schema(schema_result)
             return schema_result
 
         except AnonCredsSchemaAlreadyExists as err:
             # If we find that we've previously written a schema that looks like
             # this one before but that schema is not in our wallet, add it to
             # the wallet so we can return from our get schema calls
-            await self._store_schema(
+            await self.store_schema(
                 SchemaResult(
                     job_id=None,
                     schema_state=SchemaState(
@@ -299,9 +303,6 @@ class AnonCredsIssuer:
             CredDefResult: the result of the credential definition creation
 
         """
-        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
-        schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
-
         options = options or {}
         support_revocation = options.get("support_revocation", False)
         if not isinstance(support_revocation, bool):
@@ -311,91 +312,122 @@ class AnonCredsIssuer:
         if not isinstance(max_cred_num, int):
             raise ValueError("max_cred_num must be an integer")
 
-        try:
-            # Create the cred def
-            (
-                cred_def,
-                cred_def_private,
-                key_proof,
-            ) = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: CredentialDefinition.create(
-                    schema_id,
-                    schema_result.schema.serialize(),
-                    issuer_id,
-                    tag or DEFAULT_CRED_DEF_TAG,
-                    signature_type or DEFAULT_SIGNATURE_TYPE,
-                    support_revocation=support_revocation,
-                ),
-            )
-            cred_def_json = cred_def.to_json()
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
 
-            # Register the cred def
-            result = await anoncreds_registry.register_credential_definition(
+        # Create the cred def
+        (
+            cred_def,
+            cred_def_private,
+            key_proof,
+        ) = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: CredentialDefinition.create(
+                schema_id,
+                schema_result.schema.serialize(),
+                issuer_id,
+                tag or DEFAULT_CRED_DEF_TAG,
+                signature_type or DEFAULT_SIGNATURE_TYPE,
+                support_revocation=support_revocation,
+            ),
+        )
+
+        try:
+            cred_def_result = await anoncreds_registry.register_credential_definition(
                 self.profile,
                 schema_result,
                 CredDef.from_native(cred_def),
                 options,
             )
+
+            await self.store_credential_definition(
+                schema_result,
+                cred_def_result,
+                cred_def_private,
+                key_proof,
+                support_revocation,
+                max_cred_num,
+                options,
+            )
+
+            return cred_def_result
         except (AnoncredsError, BaseAnonCredsError) as err:
             raise AnonCredsIssuerError("Error creating credential definition") from err
 
-        # Store the cred def and it's components
-        ident = (
-            result.credential_definition_state.credential_definition_id or result.job_id
+    async def store_credential_definition(
+        self,
+        schema_result: SchemaResult,
+        cred_def_result: CredDefResult,
+        cred_def_private: CredentialDefinitionPrivate,
+        key_proof: KeyCorrectnessProof,
+        support_revocation: bool,
+        max_cred_num: int,
+        options: Optional[dict] = None,
+    ):
+        """Store the cred def and it's components in the wallet."""
+        options = options or {}
+        identifier = (
+            cred_def_result.job_id
+            or cred_def_result.credential_definition_state.credential_definition_id
         )
-        if not ident:
+
+        if not identifier:
             raise AnonCredsIssuerError("cred def id or job id required")
 
         try:
             async with self.profile.transaction() as txn:
                 await txn.handle.insert(
                     CATEGORY_CRED_DEF,
-                    ident,
-                    cred_def_json,
+                    identifier,
+                    cred_def_result.credential_definition_state.credential_definition.to_json(),
                     tags={
-                        "schema_id": schema_id,
+                        "schema_id": schema_result.schema_id,
                         "schema_issuer_id": schema_result.schema.issuer_id,
-                        "issuer_id": issuer_id,
+                        "issuer_id": cred_def_result.credential_definition_state.credential_definition.issuer_id,  # noqa: E501
                         "schema_name": schema_result.schema.name,
                         "schema_version": schema_result.schema.version,
-                        "state": result.credential_definition_state.state,
+                        "state": cred_def_result.credential_definition_state.state,
                         "epoch": str(int(time())),
                         # TODO We need to keep track of these but tags probably
                         # isn't ideal. This suggests that a full record object
                         # is necessary for non-private values
-                        "support_revocation": json.dumps(support_revocation),
+                        "support_revocation": str(support_revocation),
                         "max_cred_num": str(max_cred_num),
                     },
                 )
                 await txn.handle.insert(
                     CATEGORY_CRED_DEF_PRIVATE,
-                    ident,
+                    identifier,
                     cred_def_private.to_json_buffer(),
                 )
                 await txn.handle.insert(
-                    CATEGORY_CRED_DEF_KEY_PROOF, ident, key_proof.to_json_buffer()
+                    CATEGORY_CRED_DEF_KEY_PROOF, identifier, key_proof.to_json_buffer()
                 )
                 await txn.commit()
-            if result.credential_definition_state.state == STATE_FINISHED:
+            if cred_def_result.credential_definition_state.state == STATE_FINISHED:
                 await self.notify(
                     CredDefFinishedEvent.with_payload(
-                        schema_id, ident, issuer_id, support_revocation, max_cred_num
+                        schema_result.schema_id,
+                        identifier,
+                        cred_def_result.credential_definition_state.credential_definition.issuer_id,
+                        support_revocation,
+                        max_cred_num,
+                        options,
                     )
                 )
         except AskarError as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
 
-        return result
-
-    async def finish_cred_def(self, job_id: str, cred_def_id: str):
+    async def finish_cred_def(
+        self, job_id: str, cred_def_id: str, options: Optional[dict] = None
+    ):
         """Finish a cred def."""
         async with self.profile.transaction() as txn:
             entry = await self._finish_registration(
                 txn, CATEGORY_CRED_DEF, job_id, cred_def_id
             )
             cred_def = CredDef.from_json(entry.value)
-            support_revocation = json.loads(entry.tags["support_revocation"])
+            support_revocation = entry.tags["support_revocation"] == "True"
             max_cred_num = int(entry.tags["max_cred_num"])
 
             await self._finish_registration(
@@ -413,6 +445,7 @@ class AnonCredsIssuer:
                 issuer_id=cred_def.issuer_id,
                 support_revocation=support_revocation,
                 max_cred_num=max_cred_num,
+                options=options,
             )
         )
 

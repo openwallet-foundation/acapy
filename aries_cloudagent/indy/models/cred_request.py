@@ -8,8 +8,7 @@ from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
-    INDY_DID_EXAMPLE,
-    INDY_DID_VALIDATE,
+    UUID4_EXAMPLE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
 )
@@ -52,8 +51,10 @@ class IndyCredRequestSchema(BaseModelSchema):
 
     prover_did = fields.Str(
         required=True,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Prover DID", "example": INDY_DID_EXAMPLE},
+        metadata={
+            "description": "Prover DID/Random String/UUID",
+            "example": UUID4_EXAMPLE,
+        },
     )
     cred_def_id = fields.Str(
         required=True,

@@ -529,9 +529,11 @@ async def main(args):
                 the_agent=agent,
                 schema_name=faber_schema_name,
                 schema_attrs=faber_schema_attrs,
-                create_endorser_agent=(faber_agent.endorser_role == "author")
-                if faber_agent.endorser_role
-                else False,
+                create_endorser_agent=(
+                    (faber_agent.endorser_role == "author")
+                    if faber_agent.endorser_role
+                    else False
+                ),
             )
         elif faber_agent.cred_type == (CRED_FORMAT_JSON_LD or CRED_FORMAT_VC_DI):
             faber_agent.public_did = True

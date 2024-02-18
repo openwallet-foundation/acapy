@@ -1,21 +1,18 @@
 import os
-import pytest
 import shutil
-
-from asynctest import mock as async_mock
-from aiohttp.web import HTTPNotFound
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
 
+import pytest
+from aiohttp.web import HTTPNotFound
+
+from aries_cloudagent.tests import mock
 
 from ...anoncreds.models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefValue,
 )
 from ...askar.profile import AskarProfile
-
 from ...core.in_memory import InMemoryProfile
-
 from .. import routes as test_module
 
 
@@ -176,12 +173,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
         }
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.AnonCredsRevocation,
             "get_created_revocation_registry_definitions",
-            async_mock.CoroutineMock(),
-        ) as mock_query, async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
+            mock.AsyncMock(),
+        ) as mock_query, mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
         ) as mock_json_response:
             mock_query.return_value = ["dummy"]
 
@@ -196,16 +193,16 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         RECORD_ID = "4ba81d6e-f341-4e37-83d4-6b1d3e25a7bd"
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "AnonCredsRevocation", autospec=True
-        ) as mock_anon_creds_revoc, async_mock.patch.object(
-            test_module.uuid, "uuid4", async_mock.Mock()
-        ) as mock_uuid, async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_anon_creds_revoc, mock.patch.object(
+            test_module.uuid, "uuid4", mock.Mock()
+        ) as mock_uuid, mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
         ) as mock_json_response:
             mock_uuid.return_value = RECORD_ID
-            mock_anon_creds_revoc.return_value = async_mock.MagicMock(
-                get_created_revocation_registry_definition=async_mock.CoroutineMock(
+            mock_anon_creds_revoc.return_value = mock.MagicMock(
+                get_created_revocation_registry_definition=mock.AsyncMock(
                     return_value=RevRegDef(
                         issuer_id="issuer_id",
                         type="CL_ACCUM",
@@ -219,10 +216,10 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
                         ),
                     )
                 ),
-                get_created_revocation_registry_definition_state=async_mock.CoroutineMock(
+                get_created_revocation_registry_definition_state=mock.AsyncMock(
                     return_value=test_module.RevRegDefState.STATE_FINISHED
                 ),
-                get_pending_revocations=async_mock.CoroutineMock(return_value=[]),
+                get_pending_revocations=mock.AsyncMock(return_value=[]),
             )
 
             result = await test_module.get_rev_reg(self.request)
@@ -258,13 +255,13 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "AnonCredsRevocation", autospec=True
-        ) as mock_anon_creds_revoc, async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_anon_creds_revoc, mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
         ) as mock_json_response:
-            mock_anon_creds_revoc.return_value = async_mock.MagicMock(
-                get_created_revocation_registry_definition=async_mock.CoroutineMock(
+            mock_anon_creds_revoc.return_value = mock.MagicMock(
+                get_created_revocation_registry_definition=mock.AsyncMock(
                     return_value=None
                 ),
             )
@@ -279,11 +276,11 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.AnonCredsRevocation,
             "get_created_revocation_registry_definition",
             autospec=True,
-        ) as mock_rev_reg_def, async_mock.patch.object(
+        ) as mock_rev_reg_def, mock.patch.object(
             test_module.IssuerCredRevRecord,
             "query_by_ids",
             mock.CoroutineMock(),
@@ -303,7 +300,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.AnonCredsRevocation,
             "get_created_revocation_registry_definition",
             autospec=True,
@@ -387,12 +384,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.AnonCredsRevocation,
             "get_created_revocation_registry_definition",
-            async_mock.CoroutineMock(),
-        ) as mock_get_rev_reg, async_mock.patch.object(
-            test_module.web, "FileResponse", async_mock.Mock()
+            mock.AsyncMock(),
+        ) as mock_get_rev_reg, mock.patch.object(
+            test_module.web, "FileResponse", mock.Mock()
         ) as mock_file_response:
             mock_get_rev_reg.return_value = RevRegDef(
                 issuer_id="issuer_id",
@@ -419,12 +416,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.AnonCredsRevocation,
             "get_created_revocation_registry_definition",
-            async_mock.CoroutineMock(),
-        ) as mock_get_rev_reg, async_mock.patch.object(
-            test_module.web, "FileResponse", async_mock.Mock()
+            mock.AsyncMock(),
+        ) as mock_get_rev_reg, mock.patch.object(
+            test_module.web, "FileResponse", mock.Mock()
         ) as mock_file_response:
             mock_get_rev_reg.return_value = None
 
@@ -443,17 +440,17 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             "state": test_module.RevRegDefState.STATE_FINISHED,
         }
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "AnonCredsRevocation", autospec=True
-        ) as mock_anon_creds_revoc, async_mock.patch.object(
-            test_module.uuid, "uuid4", async_mock.Mock()
-        ) as mock_uuid, async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_anon_creds_revoc, mock.patch.object(
+            test_module.uuid, "uuid4", mock.Mock()
+        ) as mock_uuid, mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
         ) as mock_json_response:
             mock_uuid.return_value = RECORD_ID
-            mock_anon_creds_revoc.return_value = async_mock.MagicMock(
-                set_rev_reg_state=async_mock.CoroutineMock(return_value={}),
-                get_created_revocation_registry_definition=async_mock.CoroutineMock(
+            mock_anon_creds_revoc.return_value = mock.MagicMock(
+                set_rev_reg_state=mock.AsyncMock(return_value={}),
+                get_created_revocation_registry_definition=mock.AsyncMock(
                     return_value=RevRegDef(
                         issuer_id="issuer_id",
                         type="CL_ACCUM",
@@ -467,10 +464,10 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
                         ),
                     )
                 ),
-                get_created_revocation_registry_definition_state=async_mock.CoroutineMock(
+                get_created_revocation_registry_definition_state=mock.AsyncMock(
                     return_value=test_module.RevRegDefState.STATE_FINISHED
                 ),
-                get_pending_revocations=async_mock.CoroutineMock(return_value=[]),
+                get_pending_revocations=mock.AsyncMock(return_value=[]),
             )
 
             result = await test_module.set_rev_reg_state(self.request)
@@ -510,12 +507,12 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             "state": test_module.RevRegDefState.STATE_FINISHED,
         }
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module.AnonCredsRevocation,
             "get_created_revocation_registry_definition",
-            async_mock.CoroutineMock(),
-        ) as mock_rev_reg_def, async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
+            mock.AsyncMock(),
+        ) as mock_rev_reg_def, mock.patch.object(
+            test_module.web, "json_response", mock.Mock()
         ) as mock_json_response:
             mock_rev_reg_def.return_value = None
 

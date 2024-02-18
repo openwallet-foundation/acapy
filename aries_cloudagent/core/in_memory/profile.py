@@ -1,4 +1,5 @@
 """Manage in-memory profile interaction."""
+
 from collections import OrderedDict
 from typing import Any, Mapping, Type
 from weakref import ref

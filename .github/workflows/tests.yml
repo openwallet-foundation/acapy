@@ -15,9 +15,9 @@ jobs:
     name: Test Python ${{ inputs.python-version }}
     runs-on: ${{ inputs.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ inputs.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python-version }}
           cache: 'pip'
@@ -27,4 +27,11 @@ jobs:
           pip install poetry
           poetry install -E "askar bbs"
       - name: Tests
-        run: poetry run pytest
+        run: |
+          poetry run pytest 2>&1 | tee pytest.log
+          PYTEST_EXIT_CODE=${PIPESTATUS[0]}
+          if grep -Eq "RuntimeWarning: coroutine .* was never awaited" pytest.log; then
+            echo "Failure: Detected unawaited coroutine warning in pytest output."
+            exit 1
+          fi
+          exit $PYTEST_EXIT_CODE

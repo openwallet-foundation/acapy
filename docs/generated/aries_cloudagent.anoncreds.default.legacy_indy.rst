@@ -9,6 +9,14 @@ aries\_cloudagent.anoncreds.default.legacy\_indy package
 Submodules
 ----------
 
+aries\_cloudagent.anoncreds.default.legacy\_indy.author module
+--------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.anoncreds.default.legacy_indy.author
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.anoncreds.default.legacy\_indy.registry module
 ----------------------------------------------------------------
 

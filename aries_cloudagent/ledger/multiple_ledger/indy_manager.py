@@ -1,25 +1,23 @@
 """Multiple IndySdkLedger Manager."""
+
 import asyncio
 import concurrent.futures
-import logging
 import json
-
+import logging
 from collections import OrderedDict
-from typing import Optional, Tuple, Mapping, List
+from typing import List, Mapping, Optional, Tuple
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.crypto import did_is_self_certified
-
 from ..indy import IndySdkLedger
 from ..merkel_validation.domain_txn_handler import (
-    prepare_for_state_read,
     get_proof_nodes,
+    prepare_for_state_read,
 )
 from ..merkel_validation.trie import SubTrie
-
 from .base_manager import BaseMultipleLedgerManager, MultipleLedgerManagerError
 
 LOGGER = logging.getLogger(__name__)
@@ -31,10 +29,10 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
     def __init__(
         self,
         profile: Profile,
-        production_ledgers: OrderedDict = OrderedDict(),
-        non_production_ledgers: OrderedDict = OrderedDict(),
-        writable_ledgers: set = set(),
-        endorser_map: dict = {},
+        production_ledgers: Optional[OrderedDict] = None,
+        non_production_ledgers: Optional[OrderedDict] = None,
+        writable_ledgers: Optional[set] = None,
+        endorser_map: Optional[dict] = None,
         cache_ttl: int = None,
     ):
         """Initialize MultiIndyLedgerManager.
@@ -47,10 +45,10 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
 
         """
         self.profile = profile
-        self.production_ledgers = production_ledgers
-        self.non_production_ledgers = non_production_ledgers
-        self.writable_ledgers = writable_ledgers
-        self.endorser_map = endorser_map
+        self.production_ledgers = production_ledgers or OrderedDict()
+        self.non_production_ledgers = non_production_ledgers or OrderedDict()
+        self.writable_ledgers = writable_ledgers or set()
+        self.endorser_map = endorser_map or {}
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
 

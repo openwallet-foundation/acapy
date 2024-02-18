@@ -1,42 +1,41 @@
 """Upgrade command for handling breaking changes when updating ACA-PY versions."""
 
 import asyncio
+import json
 import logging
 import os
-import json
-import yaml
-
-from configargparse import ArgumentParser
 from enum import Enum
-from packaging import version as package_version
 from typing import (
-    Callable,
-    Sequence,
-    Optional,
-    List,
-    Union,
-    Mapping,
     Any,
+    Callable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
     Tuple,
+    Union,
 )
 
-from ..core.profile import Profile, ProfileSession
+import yaml
+from configargparse import ArgumentParser
+from packaging import version as package_version
+
 from ..config import argparse as arg
-from ..config.injection_context import InjectionContext
-from ..config.default_context import DefaultContextBuilder
 from ..config.base import BaseError, BaseSettings
+from ..config.default_context import DefaultContextBuilder
+from ..config.injection_context import InjectionContext
 from ..config.util import common_config
 from ..config.wallet import wallet_config
+from ..core.profile import Profile, ProfileSession
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.base_record import BaseRecord, RecordType
+from ..revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ..storage.base import BaseStorage, BaseStorageSearch
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
-from ..revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ..utils.classloader import ClassLoader, ClassNotFoundError
-from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
+from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ..wallet.models.wallet_record import WalletRecord
-
 from . import PROG
 
 DEFAULT_UPGRADE_CONFIG_FILE_NAME = "default_version_upgrade_config.yml"
@@ -106,9 +105,9 @@ class VersionUpgradeConfig:
                 except KeyError:
                     pass
                 if "explicit_upgrade" in provided_config:
-                    tagged_config_dict[config_id][
-                        "explicit_upgrade"
-                    ] = provided_config.get("explicit_upgrade")
+                    tagged_config_dict[config_id]["explicit_upgrade"] = (
+                        provided_config.get("explicit_upgrade")
+                    )
                 try:
                     config_key_set.remove("explicit_upgrade")
                 except KeyError:
@@ -275,9 +274,10 @@ def get_webhook_urls(
 async def get_wallet_profile(
     base_context: InjectionContext,
     wallet_record: WalletRecord,
-    extra_settings: dict = {},
+    extra_settings: Optional[dict] = None,
 ) -> Profile:
     """Get profile for a wallet record."""
+    extra_settings = extra_settings or {}
     context = base_context.copy()
     reset_settings = {
         "wallet.recreate": False,

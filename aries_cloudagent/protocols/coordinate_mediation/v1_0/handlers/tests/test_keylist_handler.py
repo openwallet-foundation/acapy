@@ -1,4 +1,5 @@
 """Test keylist handler."""
+
 import logging
 import pytest
 

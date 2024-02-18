@@ -1,4 +1,3 @@
-import asyncio
 from copy import deepcopy
 from datetime import datetime
 from typing import Sequence
@@ -62,14 +61,7 @@ from .test_data import (
 )
 
 
-@pytest.fixture(scope="class")
-def event_loop(request):
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def profile():
     profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
     context = profile.context
@@ -82,7 +74,7 @@ def profile():
     return profile
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 async def setup_tuple(profile):
     async with profile.session() as session:
         wallet = session.inject_or(BaseWallet)

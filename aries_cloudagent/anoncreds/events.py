@@ -1,21 +1,18 @@
 """Events fired by AnonCreds interface."""
 
 import re
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from ..core.event_bus import Event
 from .models.anoncreds_revocation import RevRegDef
-
 
 CRED_DEF_FINISHED_EVENT = "anoncreds::credential-definition::finished"
 REV_REG_DEF_FINISHED_EVENT = "anoncreds::revocation-registry-definition::finished"
 REV_LIST_FINISHED_EVENT = "anoncreds::revocation-list::finished"
 
-CRED_DEF_FINISHED_PATTERN = re.compile("anoncreds::credential-definition::finished")
-REV_REG_DEF_FINISHED_PATTERN = re.compile(
-    "anoncreds::revocation-registry-definition::finished"
-)
-REV_LIST_FINISHED_PATTERN = re.compile("anoncreds::revocation-list::finished")
+CRED_DEF_FINISHED_PATTERN = re.compile(CRED_DEF_FINISHED_EVENT)
+REV_REG_DEF_FINISHED_PATTERN = re.compile(REV_REG_DEF_FINISHED_EVENT)
+REV_LIST_FINISHED_PATTERN = re.compile(REV_LIST_FINISHED_EVENT)
 
 
 class CredDefFinishedPayload(NamedTuple):
@@ -26,6 +23,7 @@ class CredDefFinishedPayload(NamedTuple):
     issuer_id: str
     support_revocation: bool
     max_cred_num: int
+    options: dict
 
 
 class CredDefFinishedEvent(Event):
@@ -54,10 +52,11 @@ class CredDefFinishedEvent(Event):
         issuer_id: str,
         support_revocation: bool,
         max_cred_num: int,
+        options: Optional[dict] = None,
     ):
         """With payload."""
         payload = CredDefFinishedPayload(
-            schema_id, cred_def_id, issuer_id, support_revocation, max_cred_num
+            schema_id, cred_def_id, issuer_id, support_revocation, max_cred_num, options
         )
         return cls(payload)
 
@@ -72,6 +71,7 @@ class RevRegDefFinishedPayload(NamedTuple):
 
     rev_reg_def_id: str
     rev_reg_def: RevRegDef
+    options: dict
 
 
 class RevRegDefFinishedEvent(Event):
@@ -94,9 +94,10 @@ class RevRegDefFinishedEvent(Event):
         cls,
         rev_reg_def_id: str,
         rev_reg_def: RevRegDef,
+        options: Optional[dict] = None,
     ):
         """With payload."""
-        payload = RevRegDefFinishedPayload(rev_reg_def_id, rev_reg_def)
+        payload = RevRegDefFinishedPayload(rev_reg_def_id, rev_reg_def, options)
         return cls(payload)
 
     @property
@@ -107,6 +108,9 @@ class RevRegDefFinishedEvent(Event):
 
 class RevListFinishedPayload(NamedTuple):
     """Payload of rev list finished event."""
+
+    rev_reg_def_id: str
+    options: dict
 
 
 class RevListFinishedEvent(Event):
@@ -123,6 +127,16 @@ class RevListFinishedEvent(Event):
         """
         self._topic = REV_LIST_FINISHED_EVENT
         self._payload = payload
+
+    @classmethod
+    def with_payload(
+        cls,
+        rev_reg_def_id: str,
+        options: Optional[dict] = None,
+    ):
+        """With payload."""
+        payload = RevListFinishedPayload(rev_reg_def_id, options)
+        return cls(payload)
 
     @property
     def payload(self) -> RevListFinishedPayload:

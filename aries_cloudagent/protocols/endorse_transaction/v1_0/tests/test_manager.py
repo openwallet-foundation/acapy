@@ -1,19 +1,22 @@
 import asyncio
 import json
 import uuid
-
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
 
 from .....admin.request_context import AdminRequestContext
+from .....anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
+from .....anoncreds.issuer import AnonCredsIssuer
+from .....anoncreds.revocation import AnonCredsRevocation
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
+from .....tests import mock
 from .....wallet.base import BaseWallet
 from .....wallet.did_method import SOV, DIDMethods
 from .....wallet.key_type import ED25519
+from ....issue_credential.v1_0.tests import REV_REG_ID
 from ..manager import TransactionManager, TransactionManagerError
 from ..models.transaction_record import TransactionRecord
 from ..transaction_jobs import TransactionJob
@@ -497,6 +500,66 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
 
         assert transaction_record.state == TransactionRecord.STATE_TRANSACTION_ACKED
 
+    @mock.patch.object(
+        LegacyIndyRegistry,
+        "txn_submit",
+        return_value=json.dumps(
+            {
+                "result": {
+                    "txn": {"type": "101", "metadata": {"from": TEST_DID}},
+                    "txnMetadata": {"txnId": SCHEMA_ID},
+                },
+            }
+        ),
+    )
+    @mock.patch.object(AnonCredsIssuer, "finish_schema")
+    async def test_complete_transaction_anoncreds(
+        self, mock_finish_schema, mock_txn_submit
+    ):
+        self.profile.settings.set_value("wallet.type", "askar-anoncreds")
+
+        transaction_record = await self.manager.create_record(
+            messages_attach=self.test_messages_attach,
+            connection_id=self.test_connection_id,
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "schema_id": "FB5yHWKaZk59hiKqjJKEHs:2:author-schema:3.3",
+                }
+            },
+        )
+        future = asyncio.Future()
+        future.set_result(
+            mock.MagicMock(return_value=mock.MagicMock(add_record=mock.CoroutineMock()))
+        )
+        self.ledger.get_indy_storage = future
+
+        with mock.patch.object(
+            TransactionRecord, "save", autospec=True
+        ) as save_record, mock.patch.object(
+            ConnRecord, "retrieve_by_id"
+        ) as mock_conn_rec_retrieve:
+            mock_conn_rec_retrieve.return_value = mock.MagicMock(
+                metadata_get=mock.CoroutineMock(
+                    return_value={
+                        "transaction_their_job": (
+                            TransactionJob.TRANSACTION_ENDORSER.name
+                        ),
+                        "transaction_my_job": (TransactionJob.TRANSACTION_AUTHOR.name),
+                    }
+                )
+            )
+
+            (
+                transaction_record,
+                transaction_acknowledgement_message,
+            ) = await self.manager.complete_transaction(transaction_record, False)
+            save_record.assert_called_once()
+
+        assert transaction_record.state == TransactionRecord.STATE_TRANSACTION_ACKED
+        assert mock_txn_submit.called
+        assert mock_finish_schema.called
+
     async def test_create_refuse_response_bad_state(self):
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
@@ -775,3 +838,113 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
 
             with self.assertRaises(TransactionManagerError):
                 await self.manager.set_transaction_their_job(mock_job, mock_receipt)
+
+    @mock.patch.object(AnonCredsIssuer, "finish_schema")
+    @mock.patch.object(AnonCredsIssuer, "finish_cred_def")
+    @mock.patch.object(AnonCredsRevocation, "finish_revocation_registry_definition")
+    @mock.patch.object(AnonCredsRevocation, "finish_revocation_list")
+    async def test_endorsed_txn_post_processing_anoncreds(
+        self,
+        mock_finish_revocation_list,
+        mock_finish_revocation_registry_definition,
+        mock_finish_cred_def,
+        mock_finish_schema,
+    ):
+        self.profile.settings.set_value("wallet.type", "askar-anoncreds")
+        transaction = TransactionRecord(
+            connection_id="123",
+            thread_id="456",
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "schema_id": SCHEMA_ID,
+                }
+            },
+        )
+
+        ledger_response = {
+            "result": {
+                "txn": {"type": "101", "metadata": {"from": TEST_DID}},
+                "txnMetadata": {"txnId": SCHEMA_ID},
+            },
+        }
+
+        await self.manager.endorsed_txn_post_processing(transaction, ledger_response)
+        mock_finish_schema.assert_called_once()
+
+        transaction = TransactionRecord(
+            connection_id="123",
+            thread_id="456",
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "cred_def_id": CRED_DEF_ID,
+                    "issuer_did": "TUku9MDGa7QALbAJX4oAww",
+                    "options": {},
+                }
+            },
+        )
+
+        ledger_response = {
+            "result": {
+                "txn": {
+                    "type": "102",
+                    "metadata": {"from": TEST_DID},
+                    "data": {"ref": 1},
+                },
+                "txnMetadata": {"txnId": CRED_DEF_ID},
+            },
+        }
+
+        await self.manager.endorsed_txn_post_processing(transaction, ledger_response)
+        mock_finish_cred_def.assert_called_once()
+
+        transaction = TransactionRecord(
+            connection_id="123",
+            thread_id="456",
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "rev_reg_id": REV_REG_ID,
+                    "options": {},
+                }
+            },
+        )
+
+        ledger_response = {
+            "result": {
+                "txn": {
+                    "type": "113",
+                    "metadata": {"from": TEST_DID},
+                },
+                "txnMetadata": {"txnId": REV_REG_ID},
+            },
+        }
+
+        await self.manager.endorsed_txn_post_processing(transaction, ledger_response)
+        mock_finish_revocation_registry_definition.assert_called_once()
+
+        transaction = TransactionRecord(
+            connection_id="123",
+            thread_id="456",
+            meta_data={
+                "context": {
+                    "job_id": "217544da8ab14b12b18eccd11f07d269",
+                    "rev_reg_id": REV_REG_ID,
+                }
+            },
+        )
+
+        ledger_response = {
+            "result": {
+                "txn": {
+                    "type": "114",
+                    "metadata": {"from": TEST_DID},
+                    "data": {"revocRegDefId": REV_REG_ID},
+                },
+                "txnMetadata": {"txnId": REV_REG_ID},
+            },
+        }
+
+        await self.manager.endorsed_txn_post_processing(transaction, ledger_response)
+        mock_finish_revocation_list.assert_called_once()

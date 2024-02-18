@@ -47,9 +47,11 @@ class CredentialAckHandler(BaseHandler):
         credential_manager = CredentialManager(context.profile)
         await credential_manager.receive_credential_ack(
             context.message,
-            context.connection_record.connection_id
-            if context.connection_record
-            else None,
+            (
+                context.connection_record.connection_id
+                if context.connection_record
+                else None
+            ),
         )
 
         trace_event(

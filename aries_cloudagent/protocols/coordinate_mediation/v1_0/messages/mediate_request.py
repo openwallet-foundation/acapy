@@ -1,6 +1,5 @@
 """mediate-request message used to request mediation from a mediator."""
 
-
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATE_REQUEST, PROTOCOL_PACKAGE
 

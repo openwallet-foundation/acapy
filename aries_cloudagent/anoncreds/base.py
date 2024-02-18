@@ -1,4 +1,5 @@
 """Base Registry."""
+
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, Pattern, Sequence, TypeVar
 
@@ -35,7 +36,7 @@ class AnonCredsObjectNotFound(BaseAnonCredsError):
     ):
         """Constructor."""
         super().__init__(message, resolution_metadata)
-        self.resolution_metadata = resolution_metadata
+        self.resolution_metadata = resolution_metadata or {}
 
 
 class AnonCredsRegistrationError(BaseAnonCredsError):

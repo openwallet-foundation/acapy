@@ -5,15 +5,14 @@ import json
 import logging
 import re
 import uuid
-
-from typing import Dict, Sequence, Tuple, Union
+from typing import Dict, Optional, Sequence, Tuple, Union
 
 from aries_askar import AskarError, AskarErrorCode
 from indy_credx import (
-    CredxError,
     Credential,
     CredentialRequest,
     CredentialRevocationState,
+    CredxError,
     LinkSecret,
     Presentation,
     PresentCredentials,
@@ -22,7 +21,6 @@ from indy_credx import (
 from ...askar.profile import AskarProfile
 from ...ledger.base import BaseLedger
 from ...wallet.error import WalletNotFoundError
-
 from ..holder import IndyHolder, IndyHolderError
 
 LOGGER = logging.getLogger(__name__)
@@ -274,7 +272,7 @@ class IndyCredxHolder(IndyHolder):
         referents: Sequence[str],
         start: int,
         count: int,
-        extra_query: dict = {},
+        extra_query: Optional[dict] = None,
     ):
         """Get credentials stored in the wallet.
 
@@ -286,7 +284,7 @@ class IndyCredxHolder(IndyHolder):
             extra_query: wql query dict
 
         """
-
+        extra_query = extra_query or {}
         if not referents:
             referents = (
                 *presentation_request["requested_attributes"],

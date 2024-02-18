@@ -1,7 +1,7 @@
 """Manager for multitenancy."""
 
 import logging
-from typing import Iterable
+from typing import Iterable, Optional
 
 from ..config.injection_context import InjectionContext
 from ..config.wallet import wallet_config
@@ -36,7 +36,7 @@ class MultitenantManager(BaseMultitenantManager):
         self,
         base_context: InjectionContext,
         wallet_record: WalletRecord,
-        extra_settings: dict = {},
+        extra_settings: Optional[dict] = None,
         *,
         provision=False,
     ) -> Profile:
@@ -51,6 +51,7 @@ class MultitenantManager(BaseMultitenantManager):
             Profile: Profile for the wallet record
 
         """
+        extra_settings = extra_settings or {}
         wallet_id = wallet_record.wallet_id
         profile = self._profiles.get(wallet_id)
         if not profile:

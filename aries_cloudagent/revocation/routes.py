@@ -1270,7 +1270,6 @@ async def send_rev_reg_def(request: web.BaseRequest):
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -1388,7 +1387,6 @@ async def send_rev_reg_entry(request: web.BaseRequest):
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -1543,7 +1541,6 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
                         transaction=revo_transaction,
                         # TODO see if we need to parameterize these params
                         # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
                     )
                 except (StorageError, TransactionManagerError) as err:
                     raise TransactionManagerError(reason=err.roll_up) from err
@@ -1625,7 +1622,6 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
                     transaction=revo_transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise RevocationError(err.roll_up) from err

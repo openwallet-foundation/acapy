@@ -1,11 +1,11 @@
 from copy import deepcopy
-from .......vc.ld_proofs.error import LinkedDataProofException
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
 from unittest.mock import patch
+
 from marshmallow import ValidationError
 
-from .. import handler as test_module
+from aries_cloudagent.tests import mock
+
 from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......storage.vc_holder.base import VCHolder
@@ -15,6 +15,7 @@ from .......vc.ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
+from .......vc.ld_proofs.error import LinkedDataProofException
 from .......vc.tests.document_loader import custom_document_loader
 from .......vc.vc_ld.manager import VcLdpManager
 from .......vc.vc_ld.models.credential import VerifiableCredential
@@ -39,8 +40,9 @@ from ....messages.cred_request import V20CredRequest
 from ....models.cred_ex_record import V20CredExRecord
 from ....models.detail.ld_proof import V20CredExRecordLDProof
 from ...handler import V20CredFormatError
-from ..handler import LDProofCredFormatHandler
+from .. import handler as test_module
 from ..handler import LOGGER as LD_PROOF_LOGGER
+from ..handler import LDProofCredFormatHandler
 from ..models.cred_detail import LDProofVCDetail
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
@@ -249,7 +251,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
 
     async def test_create_offer(self):
         with mock.patch.object(
-            self.manager,
+            VcLdpManager,
             "assert_can_issue_with_id_and_proof_type",
             mock.CoroutineMock(),
         ) as mock_can_issue, patch.object(
@@ -289,7 +291,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            self.manager,
+            VcLdpManager,
             "assert_can_issue_with_id_and_proof_type",
             mock.CoroutineMock(),
         ), patch.object(test_module, "get_properties_without_context", return_value=[]):
@@ -314,7 +316,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            self.manager,
+            VcLdpManager,
             "assert_can_issue_with_id_and_proof_type",
             mock.CoroutineMock(),
         ), patch.object(test_module, "get_properties_without_context", return_value=[]):
@@ -585,7 +587,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with mock.patch.object(
-            self.manager,
+            VcLdpManager,
             "issue",
             mock.CoroutineMock(
                 return_value=VerifiableCredential.deserialize(LD_PROOF_VC)
@@ -843,7 +845,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         self.holder.store_credential = mock.CoroutineMock()
 
         with mock.patch.object(
-            self.manager,
+            VcLdpManager,
             "verify_credential",
             mock.CoroutineMock(return_value=DocumentVerificationResult(verified=True)),
         ) as mock_verify_credential:

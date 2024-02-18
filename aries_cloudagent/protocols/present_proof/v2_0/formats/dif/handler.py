@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Mapping, Sequence, Tuple
+from typing import Mapping, Optional, Sequence, Tuple
 from uuid import uuid4
 
 from marshmallow import RAISE
@@ -139,9 +139,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
     async def create_pres(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict = {},
+        request_data: Optional[dict] = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
+        request_data = request_data or {}
         proof_request = pres_ex_record.pres_request.attachment(
             DIFPresFormatHandler.format
         )
@@ -445,7 +446,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_request = pres_ex_record.pres_request.attachment(
             DIFPresFormatHandler.format
         )
-        manager = self.profile.inject(VcLdpManager)
+        manager = VcLdpManager(self.profile)
 
         options = LDProofVCOptions.deserialize(pres_request["options"])
         if not options.challenge:

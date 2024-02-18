@@ -1,4 +1,5 @@
 """Constants for State Proof and LeafHash Inclusion Verification."""
+
 ALL_ATR_KEYS = ["raw", "enc", "hash"]
 LAST_SEQ_NO = "lsn"
 VALUE = "value"

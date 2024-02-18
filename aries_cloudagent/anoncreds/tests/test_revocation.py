@@ -1,6 +1,7 @@
 import http
 import json
 import os
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
 from anoncreds import (
@@ -12,7 +13,6 @@ from anoncreds import (
     Schema,
 )
 from aries_askar import AskarError, AskarErrorCode
-from asynctest import TestCase
 from requests import RequestException, Session
 
 from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
@@ -30,6 +30,7 @@ from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     AnonCredsSchema,
     GetSchemaResult,
 )
+from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
 from aries_cloudagent.anoncreds.tests.mock_objects import (
     MOCK_REV_REG_DEF,
 )
@@ -37,7 +38,7 @@ from aries_cloudagent.anoncreds.tests.test_issuer import MockCredDefEntry
 from aries_cloudagent.askar.profile_anon import (
     AskarAnoncredsProfile,
 )
-from aries_cloudagent.core.event_bus import Event, MockEventBus
+from aries_cloudagent.core.event_bus import Event, EventBus, MockEventBus
 from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfile,
     InMemoryProfileSession,
@@ -120,8 +121,8 @@ class MockRevListEntry:
 
 
 @pytest.mark.anoncreds
-class TestAnonCredsRevocation(TestCase):
-    def setUp(self) -> None:
+class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
         self.profile = InMemoryProfile.test_profile(
             settings={
                 "wallet-type": "askar-anoncreds",
@@ -555,8 +556,9 @@ class TestAnonCredsRevocation(TestCase):
         )
         mock_handle.insert = mock.CoroutineMock(return_value=None)
 
-        self.profile.inject = mock.Mock(
-            return_value=mock.MagicMock(
+        self.profile.context.injector.bind_instance(
+            AnonCredsRegistry,
+            mock.MagicMock(
                 register_revocation_list=mock.CoroutineMock(
                     return_value=RevListResult(
                         job_id="test-job-id",
@@ -568,8 +570,9 @@ class TestAnonCredsRevocation(TestCase):
                         revocation_list_metadata={},
                     )
                 )
-            )
+            ),
         )
+        self.profile.context.injector.bind_instance(EventBus, MockEventBus())
         await self.revocation.create_and_register_revocation_list(
             rev_reg_def_id="test-rev-reg-def-id",
         )
@@ -580,39 +583,30 @@ class TestAnonCredsRevocation(TestCase):
         assert mock_deserialize_cred_def.called
         assert mock_deserialize_rev_reg.called
         assert mock_load_rev_list.called
+        assert self.profile.context.injector.get_provider(
+            AnonCredsRegistry
+        )._instance.register_revocation_list.called
 
     @mock.patch.object(InMemoryProfileSession, "handle")
-    async def test_finish_revocation_list(self, mock_handle):
-        mock_handle.fetch = mock.CoroutineMock(
-            side_effect=[
-                None,
-                MockEntry(
-                    tags={
-                        "state": RevListState.STATE_FINISHED,
-                    }
-                ),
-            ]
-        )
-        mock_handle.replace = mock.CoroutineMock(return_value=None)
+    @mock.patch.object(test_module.AnonCredsRevocation, "_finish_registration")
+    async def test_finish_revocation_list(self, mock_finish, mock_handle):
+        self.profile.context.injector.bind_instance(EventBus, MockEventBus())
 
-        # fetch returns None
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.finish_revocation_list(
-                rev_reg_def_id="test-rev-reg-def-id",
-            )
-        assert mock_handle.fetch.call_count == 1
-        assert mock_handle.replace.call_count == 0
+        mock_handle.fetch = mock.CoroutineMock(side_effect=[None, MockEntry()])
 
-        # valid
+        # Fetch doesn't find list then it should be created
         await self.revocation.finish_revocation_list(
+            job_id="test-job-id",
             rev_reg_def_id="test-rev-reg-def-id",
         )
-        assert mock_handle.fetch.call_count == 2
-        assert mock_handle.replace.call_count == 1
-        assert (
-            mock_handle.replace.call_args.kwargs["tags"]["state"]
-            == RevListState.STATE_FINISHED
+        assert mock_finish.called
+
+        # Fetch finds list then there's nothing to do, it's already finished and updated
+        await self.revocation.finish_revocation_list(
+            job_id="test-job-id",
+            rev_reg_def_id="test-rev-reg-def-id",
         )
+        assert mock_finish.call_count == 1
 
     @mock.patch.object(InMemoryProfileSession, "handle")
     async def test_update_revocation_list_get_rev_reg_errors(self, mock_handle):

@@ -1,6 +1,5 @@
 """Abstract admin server interface."""
 
-
 from abc import ABC, abstractmethod
 
 

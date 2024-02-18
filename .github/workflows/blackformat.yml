@@ -10,9 +10,11 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.9"
       - name: Black Code Formatter Check
-        uses: psf/black@stable
+        # The version of black should be adjusted at the same time dev
+        # dependencies are updated.
+        uses: psf/black@24.2.0

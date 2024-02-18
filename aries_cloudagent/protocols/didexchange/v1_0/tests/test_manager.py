@@ -22,7 +22,7 @@ from .....resolver.tests import DOC
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo
-from .....wallet.did_method import PEER2, SOV, DIDMethods
+from .....wallet.did_method import PEER2, PEER4, SOV, DIDMethods
 from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
@@ -554,11 +554,20 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             my_did=None,
             save=mock.CoroutineMock(),
         )
+        mock_did_info = DIDInfo(
+            TestConfig.test_did_peer_2,
+            TestConfig.test_verkey,
+            None,
+            method=PEER2,
+            key_type=ED25519,
+        )
 
         self.profile.context.update_settings({"emit_did_peer_2": True})
 
         with mock.patch.object(
-            self.manager, "create_did_peer_2", mock.AsyncMock()
+            self.manager,
+            "create_did_peer_2",
+            mock.AsyncMock(return_value=mock_did_info),
         ) as mock_create_did_peer_2:
             request = await self.manager.create_request(
                 mock_conn_rec, use_public_did=True
@@ -577,11 +586,20 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             my_did=None,
             save=mock.CoroutineMock(),
         )
+        mock_did_info = DIDInfo(
+            TestConfig.test_did_peer_4,
+            TestConfig.test_verkey,
+            None,
+            method=PEER4,
+            key_type=ED25519,
+        )
 
         self.profile.context.update_settings({"emit_did_peer_4": True})
 
         with mock.patch.object(
-            self.manager, "create_did_peer_4", mock.AsyncMock()
+            self.manager,
+            "create_did_peer_4",
+            mock.AsyncMock(return_value=mock_did_info),
         ) as mock_create_did_peer_4:
             request = await self.manager.create_request(
                 mock_conn_rec, use_public_did=True
@@ -1702,7 +1720,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 TestConfig.test_did_peer_4,
                 TestConfig.test_verkey,
                 None,
-                method=PEER2,
+                method=PEER4,
                 key_type=ED25519,
             )
             response = await self.manager.create_response(
@@ -2018,10 +2036,11 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 await self.manager.accept_response(mock_response, receipt)
 
     async def test_accept_response_find_by_thread_id_no_did_doc_attached(self):
-        mock_response = mock.AsyncMock()
-        mock_response._thread = mock.AsyncMock()
+        mock_response = mock.MagicMock()
+        mock_response._thread = mock.MagicMock()
         mock_response.did = TestConfig.test_target_did
         mock_response.did_doc_attach = None
+        mock_response.did_rotate_attach.data.verify = mock.AsyncMock(return_value=True)
 
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,

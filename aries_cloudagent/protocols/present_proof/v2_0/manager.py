@@ -1,23 +1,20 @@
 """Classes to manage presentations."""
 
 import logging
-
 from typing import Optional, Tuple
 
-from ...out_of_band.v1_0.models.oob_record import OobRecord
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
-
+from ...out_of_band.v1_0.models.oob_record import OobRecord
 from .messages.pres import V20Pres
 from .messages.pres_ack import V20PresAck
 from .messages.pres_format import V20PresFormat
-from .messages.pres_problem_report import V20PresProblemReport, ProblemReportReason
+from .messages.pres_problem_report import ProblemReportReason, V20PresProblemReport
 from .messages.pres_proposal import V20PresProposal
 from .messages.pres_request import V20PresRequest
 from .models.pres_exchange import V20PresExRecord
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -223,7 +220,7 @@ class V20PresManager:
     async def create_pres(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict = {},
+        request_data: Optional[dict] = None,
         *,
         comment: str = None,
     ) -> Tuple[V20PresExRecord, V20Pres]:
@@ -263,6 +260,7 @@ class V20PresManager:
         """
         proof_request = pres_ex_record.pres_request
         input_formats = proof_request.formats
+        request_data = request_data or {}
         pres_formats = []
         for format in input_formats:
             pres_exch_format = V20PresFormat.Format.get(format.format)
@@ -331,9 +329,7 @@ class V20PresManager:
         connection_id = (
             None
             if oob_record
-            else connection_record.connection_id
-            if connection_record
-            else None
+            else connection_record.connection_id if connection_record else None
         )
 
         async with self._profile.session() as session:

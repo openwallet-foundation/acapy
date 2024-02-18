@@ -1,22 +1,21 @@
 """Utilities for dif presentation exchange attachment."""
+
 import json
 import logging
 import time
-
-from typing import Union, Tuple
+from typing import Optional, Tuple, Union
 
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.xform import indy_proof_req2non_revoc_intervals
 from ....ledger.multiple_ledger.ledger_requests_executor import (
-    GET_SCHEMA,
     GET_REVOC_REG_DELTA,
+    GET_SCHEMA,
     IndyLedgerRequestsExecutor,
 )
 from ....multitenant.base import BaseMultitenantManager
 from ....revocation.models.revocation_registry import RevocationRegistry
-
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
 from ..v2_0.models.pres_exchange import V20PresExRecord
@@ -42,12 +41,13 @@ class IndyPresExchHandler:
     async def return_presentation(
         self,
         pres_ex_record: Union[V10PresentationExchange, V20PresExRecord],
-        requested_credentials: dict = {},
+        requested_credentials: Optional[dict] = None,
     ) -> dict:
         """Return Indy proof request as dict."""
         # Get all credentials for this presentation
         holder = self._profile.inject(IndyHolder)
         credentials = {}
+        requested_credentials = requested_credentials or {}
 
         # extract credential ids and non_revoked
         requested_referents = {}
@@ -116,10 +116,11 @@ class IndyPresExchHandler:
                 if credential.get("rev_reg_id"):
                     revocation_registry_id = credential["rev_reg_id"]
                     if revocation_registry_id not in revocation_registries:
-                        revocation_registries[
-                            revocation_registry_id
-                        ] = RevocationRegistry.from_definition(
-                            await ledger.get_revoc_reg_def(revocation_registry_id), True
+                        revocation_registries[revocation_registry_id] = (
+                            RevocationRegistry.from_definition(
+                                await ledger.get_revoc_reg_def(revocation_registry_id),
+                                True,
+                            )
                         )
         # Get delta with non-revocation interval defined in "non_revoked"
         # of the presentation request or attributes
@@ -198,13 +199,13 @@ class IndyPresExchHandler:
             if "timestamp" not in precis:
                 continue
             if referent in requested_credentials["requested_attributes"]:
-                requested_credentials["requested_attributes"][referent][
-                    "timestamp"
-                ] = precis["timestamp"]
+                requested_credentials["requested_attributes"][referent]["timestamp"] = (
+                    precis["timestamp"]
+                )
             if referent in requested_credentials["requested_predicates"]:
-                requested_credentials["requested_predicates"][referent][
-                    "timestamp"
-                ] = precis["timestamp"]
+                requested_credentials["requested_predicates"][referent]["timestamp"] = (
+                    precis["timestamp"]
+                )
         indy_proof_json = await holder.create_presentation(
             proof_request,
             requested_credentials,
@@ -250,17 +251,17 @@ class IndyPresExchHandler:
                     )
 
                 if identifier["cred_def_id"] not in cred_defs:
-                    cred_defs[
-                        identifier["cred_def_id"]
-                    ] = await ledger.get_credential_definition(
-                        identifier["cred_def_id"]
+                    cred_defs[identifier["cred_def_id"]] = (
+                        await ledger.get_credential_definition(
+                            identifier["cred_def_id"]
+                        )
                     )
 
                 if identifier.get("rev_reg_id"):
                     if identifier["rev_reg_id"] not in rev_reg_defs:
-                        rev_reg_defs[
-                            identifier["rev_reg_id"]
-                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+                        rev_reg_defs[identifier["rev_reg_id"]] = (
+                            await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
+                        )
 
                     if identifier.get("timestamp"):
                         rev_reg_entries.setdefault(identifier["rev_reg_id"], {})

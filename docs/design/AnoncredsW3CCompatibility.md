@@ -4,7 +4,7 @@ This design proposes to extend the Aries Cloud Agent Python (ACA-PY) to support 
 
 ## Overview
 
-The pre-requsites for the work are:
+The pre-requisites for the work are:
 
 - The availability of the AnonCreds RS library supporting the generation and processing of AnonCreds VCs in W3C VC format.
 - The availability of the AnonCreds RS library supporting the generation and verification of AnonCreds VPs in W3C VP format.
@@ -28,7 +28,7 @@ Related notes:
 
 - The Issue Credential v1.0 protocol will not be updated to support AnonCreds W3C VC format credentials.
 - Once an instance of the Issue Credential v2.0 protocol is started using [RFC 0809 VC-DI] format attachments, subsequent messages in the protocol **MUST** use [RFC 0809 VC-DI] attachments.
-- The ACA-Py maintainers are discussing the possiblity of making pluggable the Issue Credential v2.0 and Present Proof v2.0 attachment formats, to simplify supporting additional formats, including [RFC 0809 VC-DI].
+- The ACA-Py maintainers are discussing the possibility of making pluggable the Issue Credential v2.0 and Present Proof v2.0 attachment formats, to simplify supporting additional formats, including [RFC 0809 VC-DI].
 
 A mechanism must be defined such that an Issuer controller can use the ACA-Py Admin API to initiate the sending of an AnonCreds credential Offer using the [RFC 0809 VC-DI] attachment format.
 
@@ -59,7 +59,7 @@ On receiving an [RFC 0510 DIF Presentation Exchange] `request` message, a holder
 - If and how the W3C VC Format attachments for the Issue Credential V2.0 and Present Proof V2 Aries DIDComm Protocols should be used when using AnonCreds W3C VC Format credentials. Anticipated triggers:
   - An Issuer Controller invokes the Admin API to trigger an Issue Credential v2.0 protocol instance such that the [RFC 0809 VC-DI] will be used.
   - A Holder receives an Issue Credential v2.0 `offer` message with an [RFC 0809 VC-DI] attachment.
-  - A Verifier intiates a Present Proof v2.0 protocol instance with an [RFC 0510 DIF Presentation Exchange] that can be satified by AnonCreds VCs held by the holder.
+  - A Verifier initiates a Present Proof v2.0 protocol instance with an [RFC 0510 DIF Presentation Exchange] that can be satisfied by AnonCreds VCs held by the holder.
   - A Holder receives a present proof `request` message with an [RFC 0510 DIF Presentation Exchange] format attachment that can be satisfied with AnonCreds credentials held by the holder.
     - How are the `restrictions` and `revocation` data elements conveyed?
 - How AnonCreds W3C VC Format verifiable credentials are stored by the holder such that they will be discoverable when needed for creating verifiable presentations.
@@ -92,55 +92,60 @@ It appears that the issue and presentation sides can be approached independently
 
 ### What are the functions we are going to wrap?
 
-After thoroughly reviewing upcoming changes from [anoncreds-rs PR273](https://github.com/hyperledger/anoncreds-rs/pull/273), the classes or `AnoncredsObject` impacted by changes are as follows:<br>
+After thoroughly reviewing upcoming changes from [anoncreds-rs PR273](https://github.com/hyperledger/anoncreds-rs/pull/273), the classes or `AnoncredsObject` impacted by changes are as follows:
 
-[W3CCredential](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R424)<br>
-class methods (`create`, `load`)<br>
-instance methods (`proceess`, `to_legacy`, `add_non_anoncreds_integrity_proof`, `set_id`, `set_subject_id`, `add_context`, `add_type`)<br>
-class properties (`schema_id`, `cred_def_id`, `rev_reg_id`, `rev_reg_index`)<br>
-bindings functions (`create_w3c_credential`, `process_w3c_credential`, `_object_from_json`, `_object_get_attribute`, `w3c_credential_add_non_anoncreds_integrity_proof`, `w3c_credential_set_id`, `w3c_credential_set_subject_id`, `w3c_credential_add_context`, `w3c_credential_add_type`)<br>
+[W3CCredential](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R424)
 
-[W3CPresentation](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R791)<br>
-class methods (`create`, `load`)<br>
-instance methods (`verify`)<br>
-bindings functions (`create_w3c_presentation`, `_object_from_json`, `verify_w3c_presentation`)<br>
+- class methods (`create`, `load`)
+- instance methods (`process`, `to_legacy`, `add_non_anoncreds_integrity_proof`, `set_id`, `set_subject_id`, `add_context`, `add_type`)
+- class properties (`schema_id`, `cred_def_id`, `rev_reg_id`, `rev_reg_index`)
+- bindings functions (`create_w3c_credential`, `process_w3c_credential`, `_object_from_json`, `_object_get_attribute`, `w3c_credential_add_non_anoncreds_integrity_proof`, `w3c_credential_set_id`, `w3c_credential_set_subject_id`, `w3c_credential_add_context`, `w3c_credential_add_type`)
 
-They will be added to [\_\_init\_\_.py](https://github.com/hyperledger/anoncreds-rs/blob/main/wrappers/python/anoncreds/__init__.py) as additional exports of AnoncredsObject. <br><br>
+[W3CPresentation](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R791)
+
+- class methods (`create`, `load`)
+- instance methods (`verify`)
+- bindings functions (`create_w3c_presentation`, `_object_from_json`, `verify_w3c_presentation`)
+
+They will be added to [\_\_init\_\_.py](https://github.com/hyperledger/anoncreds-rs/blob/main/wrappers/python/anoncreds/__init__.py) as additional exports of AnoncredsObject.
 
 We also have to consider which classes or anoncreds objects have been modified
 
-The classes modified according to the same [PR](https://github.com/hyperledger/anoncreds-rs/pull/273) mentioned above are:<br>
+The classes modified according to the same [PR](https://github.com/hyperledger/anoncreds-rs/pull/273) mentioned above are:
 
-[Credential](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R402)<br>
-added class methods (`from_w3c`)<br>
-added instance methods (`to_w3c`)<br>
-added bindings functions (`credential_from_w3c`, `credential_to_w3c`)<br>
+[Credential](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R402)
 
-[PresentCredential](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R603)<br>
-modified instance methods (`_get_entry`, `add_attributes`, `add_predicates`)<br>
-<br>
+- added class methods (`from_w3c`)
+- added instance methods (`to_w3c`)
+- added bindings functions (`credential_from_w3c`, `credential_to_w3c`)
+
+[PresentCredential](https://github.com/hyperledger/anoncreds-rs/pull/273/files#diff-6f8cbd34bbd373240b6af81f159177023c05b074b63c7757fc6b3796a66ee240R603)
+
+- modified instance methods (`_get_entry`, `add_attributes`, `add_predicates`)
 
 #### Creating a W3C VC credential from credential definition, and issuing and presenting it as is
 
 The issuance, presentation and verification of legacy anoncreds are implemented in this [./aries_cloudagent/anoncreds](https://github.com/hyperledger/aries-cloudagent-python/tree/main/aries_cloudagent/anoncreds) directory. Therefore, we will also start from there.
 
-Let us navigate these implementation examples through the respective processes of the concerning agents - **Issuer** and **Holder** as described in https://github.com/hyperledger/anoncreds-rs/blob/main/README.md.
+Let us navigate these implementation examples through the respective processes of the concerning agents - **Issuer** and **Holder** as described in [https://github.com/hyperledger/anoncreds-rs/blob/main/README.md](https://github.com/hyperledger/anoncreds-rs/blob/main/README.md).
 We will proceed through the following processes in comparison with the legacy anoncreds implementations while watching out for signature differences between the two.
 Looking at the [/anoncreds/issuer.py](https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/anoncreds/issuer.py) file, from `AnonCredsIssuer` class:
 
-- Create VC_DI Credential Offer
+Create VC_DI Credential Offer
 
 According to this DI credential offer attachment format - [didcomm/w3c-di-vc-offer@v0.1](https://github.com/hyperledger/aries-rfcs/pull/809/files#diff-40b1f86053dd6f0b34250d5be1319d3a0662b96a5a121957fe4dc8cceaa9cbc8R30-R63),
--- binding_required
--- binding_method
--- credential_definition
+
+- binding_required
+- binding_method
+- credential_definition
+
 could be the parameters for `create_offer` method.
 
-- Create VC_DI Credential
+Create VC_DI Credential
 
 **NOTE: There has been some changes to _encoding of attribute values_ for creating a credential, so we have to be adjust to the new changes.**
 
-```
+```python
 async def create_credential(
         self,
         credential_offer: dict,
@@ -167,9 +172,9 @@ async def create_credential(
 ...
 ```
 
-- Create VC_DI Credential Request
+Create VC_DI Credential Request
 
-```
+```python
 async def create_vc_di_credential_request(
         self, credential_offer: dict, credential_definition: CredDef, holder_did: str
     ) -> Tuple[str, str]:
@@ -193,9 +198,9 @@ try:
 ...
 ```
 
-- Create VC_DI Credential Presentation
+Create VC_DI Credential Presentation
 
-```
+```python
 async def create_vc_di_presentation(
         self,
         presentation_request: dict,
@@ -229,17 +234,17 @@ async def create_vc_di_presentation(
 
 #### Converting an already issued legacy anoncreds to VC_DI format(vice versa)
 
-In this case, we can use `to_w3c` method of `Credential` class to convert from legacy to w3c and `to_legacy` method of `W3CCredential` class to convert from w3c to legacy.<br>
+In this case, we can use `to_w3c` method of `Credential` class to convert from legacy to w3c and `to_legacy` method of `W3CCredential` class to convert from w3c to legacy.
 
 We could call `to_w3c` method like this:
 
-```
+```python
 vc_di_cred = Credential.to_w3c(cred_def)
 ```
 
 and for `to_legacy`:
 
-```
+```python
 legacy_cred = W3CCredential.to_legacy()
 ```
 
@@ -249,7 +254,7 @@ We don't need to input any parameters to it as it in turn calls `Credential.from
 
 Keeping in mind that we are trying to create anoncreds(not another type of VC) in w3c format, what if we add a protocol-level **vc_di** format support by adding a new format `VC_DI` in `./protocols/issue_credential/v2_0/messages/cred_format.py` -
 
-```
+```python
 # /protocols/issue_credential/v2_0/messages/cred_format.py
 
 class Format(Enum):
@@ -257,18 +262,18 @@ class Format(Enum):
     INDY = FormatSpec(...)
     LD_PROOF = FormatSpec(...)
     VC_DI = FormatSpec(
-	“vc_di/”,
-	CredExRecordVCDI,
-	DeferLoad(
-	    “aries_cloudagent.protocols.issue_credential.v2_0”
-	    “.formats.vc_di.handler.AnonCredsW3CFormatHandler”
-	),
+        “vc_di/”,
+        CredExRecordVCDI,
+        DeferLoad(
+            “aries_cloudagent.protocols.issue_credential.v2_0”
+            “.formats.vc_di.handler.AnonCredsW3CFormatHandler”
+        ),
     )
 ```
 
 And create a new CredExRecordVCDI in reference to V20CredExRecordLDProof
 
-```
+```python
 # /protocols/issue_credential/v2_0/models/detail/w3c.py
 
 class CredExRecordW3C(BaseRecord):
@@ -288,7 +293,7 @@ class CredExRecordW3C(BaseRecord):
 
 Based on the proposed credential attachment format with the new Data Integrity proof in [aries-rfcs 809](https://github.com/hyperledger/aries-rfcs/pull/809/files#diff-40b1f86053dd6f0b34250d5be1319d3a0662b96a5a121957fe4dc8cceaa9cbc8R132-R151) -
 
-```
+```json
 {
   "@id": "284d3996-ba85-45d9-964b-9fd5805517b6",
   "@type": "https://didcomm.org/issue-credential/2.0/issue-credential",
@@ -313,7 +318,7 @@ Based on the proposed credential attachment format with the new Data Integrity p
 
 Assuming `VCDIDetail` and `VCDIOptions` are already in place, `VCDIDetailSchema` can be created like so:
 
-```
+```python
 # /protocols/issue_credential/v2_0/formats/vc_di/models/cred_detail.py
 
 class VCDIDetailSchema(BaseModelSchema):
@@ -356,7 +361,7 @@ class VCDIDetailSchema(BaseModelSchema):
 
 Then create w3c format handler with mapping like so:
 
-```
+```python
 # /protocols/issue_credential/v2_0/formats/w3c/handler.py
 
 mapping = {
@@ -373,7 +378,7 @@ Doing so would allow us to be more independent in defining the schema suited for
 
 To make sure that once an endpoint has been called to trigger the `Issue Credential` flow in `0809 W3C_DI attachment formats` the subsequent endpoints also follow this format, we can keep track of this [ATTACHMENT_FORMAT](https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/protocols/issue_credential/v2_0/message_types.py#L41-L59) dictionary with the proposed `VC_DI` format.
 
-```
+```python
 # Format specifications
 ATTACHMENT_FORMAT = {
     CRED_20_PROPOSAL: {
@@ -418,7 +423,7 @@ The same goes for [ATTACHMENT_FORMAT](https://github.com/hyperledger/aries-cloud
 
 This route indirectly calls `_formats_filters` function to create credential proposal, which is in turn used to create a credential offer in the filter format. The request body for this route might look like this:
 
-```
+```python
 {
     "filter": ["vc_di"],
     "comment: <some_comment>,
@@ -439,7 +444,7 @@ This route indirectly calls `_formats_filters` function to create credential pro
 
 This route indirectly calls `_format_result_with_details` function to generate a cred_ex_record in the specified format, which is then returned. The request body for this route might look like this:
 
-```
+```python
 {
     "filter": ["vc_di"],
     "comment: <some_comment>,
@@ -458,7 +463,7 @@ This route indirectly calls `_format_result_with_details` function to generate a
 
 The request body for this route might look like this:
 
-```
+```python
 {
     "connection_id": <connection_id>,
     "filter": ["vc_di"],
@@ -479,7 +484,7 @@ The request body for this route might look like this:
 
 The request body for this route might look like this:
 
-```
+```python
 {
     "connection_id": <connection_id>,
     "filter": ["vc_di"],
@@ -502,7 +507,7 @@ The request body for this route might look like this:
 
 The request body for this route might look like this:
 
-```
+```python
 {
     "connection_id": <connection_id>,
     "filter": ["vc_di"],
@@ -526,7 +531,7 @@ The request body for this route might look like this:
 
 The request body for this route might look like this:
 
-```
+```python
 {
     ...
     ...
@@ -543,7 +548,7 @@ The request body for this route might look like this:
 
 The request body for this route might look like this:
 
-```
+```python
 {
     ...
     ...
@@ -560,7 +565,7 @@ The request body for this route might look like this:
 
 The request body for this route might look like this:
 
-```
+```python
 {
     ...
     ...
@@ -578,9 +583,9 @@ The request body for this route might look like this:
 
 The request body for this route might look like this:
 
-```
+```python
 {
-    "presentation_definition": <presentation_defintion_schema>,
+    "presentation_definition": <presentation_definition_schema>,
     "auto_remove": true,
     "dif": {
         issuer_id: "<issuer_id>",
@@ -597,15 +602,15 @@ The request body for this route might look like this:
 
 ```
 
-### How a W3C credential is stored in the wallet.
+### How a W3C credential is stored in the wallet
 
-Storing a credential in the wallet is somewhat dependent on the kinds of metadata that are relevent. The metadata mapping between the W3C credential and an AnonCreds credential is not fully clear yet.
+Storing a credential in the wallet is somewhat dependent on the kinds of metadata that are relevant. The metadata mapping between the W3C credential and an AnonCreds credential is not fully clear yet.
 
 One of the questions we need to answer is whether the preferred approach is to modify the existing store credential function so that any credential type is a valid input, or whether there should be a special function just for storing W3C credentials.
 
 We will duplicate this [store_credential](https://github.com/hyperledger/aries-cloudagent-python/blob/8cfe8283ddb2a85e090ea1b8a916df2d78298ec0/aries_cloudagent/anoncreds/holder.py#L167) function and modify it:
 
-```
+```python
 async def store_w3c_credential(...) {
     ...
     ...
@@ -636,7 +641,7 @@ We will write a test for the Aries Agent Test Framework that issues a W3C VC ins
 
 ### Will we introduce new dependencies, and what is risky or easy?
 
-Any signfiicant bugs in the Rust implementation may prevent our wrappers from working, which would also prevent progress (or at least confirmed test results) on the higher-level code.
+Any significant bugs in the Rust implementation may prevent our wrappers from working, which would also prevent progress (or at least confirmed test results) on the higher-level code.
 
 If AFJ lags behind in delivering equivalent functionality, we may not be able to demonstrate compatibility with the test harness.
 

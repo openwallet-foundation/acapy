@@ -72,7 +72,7 @@ s/^/- /
   merged:>2022-04-07`) and for each page, highlight, and copy the text
   of only the list of PRs on the page to use in the following step.
 - For each page, run the command
-  `sed -e :a -e '$!N;s/\n#/ #/;ta' -e 'P;D' <<EOF | sed -f changelog.sed`, 
+  `sed -e :a -e '$!N;s/\n#/ #/;ta' -e 'P;D' <<EOF | sed -f changelog.sed`,
   paste in the copied text and then type `EOF`.
   Redirect the output to a file, appending each page of output to the file.
   - The first `sed` command in the pipeline merges the PR title and PR number
@@ -103,9 +103,9 @@ Once you have the list of PRs:
    `./scripts/generate-open-api-spec`.
 
 6. Update the version number listed in
-   [pyproject.toml](pyproject.toml) and, prefixed with
-   a "v" in [open-api/openapi.json](open-api/openapi.json) and
-   [open-api/swagger.json](open-api/swagger.json) (e.g. "0.7.2" in the
+   [pyproject.toml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/pyproject.toml) and, prefixed with
+   a "v" in [open-api/openapi.json](https://github.com/hyperledger/open-api/tree/main/openapi.json) and
+   [open-api/swagger.json](https://github.com/hyperledger/open-api/tree/main/swagger.json) (e.g. "0.7.2" in the
    pyproject.toml file and "v0.7.2" in the openapi.json file). The incremented
    version number should adhere to the [Semantic Versioning
    Specification](https://semver.org/#semantic-versioning-specification-semver)
@@ -131,7 +131,7 @@ Once you have the list of PRs:
 
 10. Immediately after it is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
-   version in [pyproject.toml](pyproject.toml). Use
+   version in [pyproject.toml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/pyproject.toml). Use
    the "Generate Release Notes" capability to get a sequential listing of the
    PRs in the release, to complement the manually curated Changelog. Verify on
    PyPi that the version is published.
@@ -145,11 +145,10 @@ Once you have the list of PRs:
    "Packages").
 
    Additional information about the container image publication process can be
-   found in the document [Container Images and Github Actions]().
+   found in the document [Container Images and Github Actions](docs/deploying/ContainerImagesAndGithubActions.md).
 
 [publish.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish.yml
 [publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
-[Container Images and Github Actions]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/ContainerImagesAndGithubActions.md
 
 12. Update the ACA-Py Read The Docs site by building the new "latest" (main
     branch) and activating and building the new release. Appropriate permissions

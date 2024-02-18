@@ -1,6 +1,5 @@
 """Abstract base class for linked data proofs."""
 
-
 from abc import ABC
 from typing import ClassVar, List, Optional, Union
 

@@ -90,13 +90,6 @@
     },
     "name" : "jsonld"
   }, {
-    "description" : "Issue and verify LDP VCs and VPs",
-    "externalDocs" : {
-      "description" : "Specification",
-      "url" : "https://www.w3.org/TR/vc-data-model/"
-    },
-    "name" : "ldp-vc"
-  }, {
     "description" : "Interaction with ledger",
     "externalDocs" : {
       "description" : "Overview",
@@ -165,6 +158,13 @@
       "url" : "https://github.com/hyperledger/aries-rfcs/tree/527849ec3aa2a8fd47a7bb6c57f918ff8bcb5e8c/features/0048-trust-ping"
     },
     "name" : "trustping"
+  }, {
+    "description" : "Endpoints for managing w3c credentials and presentations",
+    "externalDocs" : {
+      "description" : "Specification",
+      "url" : "https://w3c-ccg.github.io/vc-api/"
+    },
+    "name" : "vc-api"
   }, {
     "description" : "DID and tag policy management",
     "externalDocs" : {
@@ -376,7 +376,7 @@
           "in" : "query",
           "name" : "state",
           "schema" : {
-            "enum" : [ "request", "abandoned", "active", "init", "error", "invitation", "start", "response", "completed" ],
+            "enum" : [ "active", "error", "invitation", "start", "init", "completed", "request", "response", "abandoned" ],
             "type" : "string"
           }
         }, {
@@ -547,7 +547,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StoredConnRecord"
+                  "$ref" : "#/components/schemas/ConnRecord"
                 }
               }
             },
@@ -600,7 +600,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StoredConnRecord"
+                  "$ref" : "#/components/schemas/ConnRecord"
                 }
               }
             },
@@ -650,7 +650,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StoredConnRecord"
+                  "$ref" : "#/components/schemas/ConnRecord"
                 }
               }
             },
@@ -685,7 +685,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StoredConnRecord"
+                  "$ref" : "#/components/schemas/ConnRecord"
                 }
               }
             },
@@ -1423,7 +1423,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StoredConnRecord"
+                  "$ref" : "#/components/schemas/ConnRecord"
                 }
               }
             },
@@ -1482,7 +1482,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StoredConnRecord"
+                  "$ref" : "#/components/schemas/ConnRecord"
                 }
               }
             },
@@ -1525,7 +1525,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StoredConnRecord"
+                  "$ref" : "#/components/schemas/ConnRecord"
                 }
               }
             },
@@ -1575,7 +1575,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StoredConnRecord"
+                  "$ref" : "#/components/schemas/ConnRecord"
                 }
               }
             },
@@ -1612,7 +1612,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StoredConnRecord"
+                  "$ref" : "#/components/schemas/ConnRecord"
                 }
               }
             },
@@ -5903,13 +5903,31 @@
         "tags" : [ "endorse-transaction" ]
       }
     },
-    "/vc/ldp/issue" : {
+    "/vc/credentials" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ListCredentialsResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "List credentials",
+        "tags" : [ "vc-api" ]
+      }
+    },
+    "/vc/credentials/issue" : {
       "post" : {
         "requestBody" : {
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/LdpIssueRequest"
+                "$ref" : "#/components/schemas/IssueCredentialRequest"
               }
             }
           },
@@ -5920,25 +5938,31 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/LdpIssueResponse"
+                  "$ref" : "#/components/schemas/IssueCredentialResponse"
                 }
               }
             },
             "description" : ""
           }
         },
-        "summary" : "Sign an LDP VC.",
-        "tags" : [ "ldp_vc" ],
+        "summary" : "Issue a credential",
+        "tags" : [ "vc-api" ],
         "x-codegen-request-body-name" : "body"
       }
     },
-    "/vc/ldp/verify" : {
+    "/vc/credentials/store" : {
+      "post" : {
+        "summary" : "Store a credential",
+        "tags" : [ "vc-api" ]
+      }
+    },
+    "/vc/credentials/verify" : {
       "post" : {
         "requestBody" : {
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/LdpVerifyRequest"
+                "$ref" : "#/components/schemas/VerifyCredentialRequest"
               }
             }
           },
@@ -5949,15 +5973,99 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/LdpVerifyResponse"
+                  "$ref" : "#/components/schemas/VerifyCredentialResponse"
                 }
               }
             },
             "description" : ""
           }
         },
-        "summary" : "Verify an LDP VC or VP.",
-        "tags" : [ "ldp_vc" ],
+        "summary" : "Verify a credential",
+        "tags" : [ "vc-api" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/vc/credentials/{credential_id}" : {
+      "get" : {
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "credential_id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FetchCredentialResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Fetch credential by ID",
+        "tags" : [ "vc-api" ]
+      }
+    },
+    "/vc/presentations/prove" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProvePresentationRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProvePresentationResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Prove a presentation",
+        "tags" : [ "vc-api" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/vc/presentations/verify" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerifyPresentationRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/VerifyPresentationResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Verify a Presentation",
+        "tags" : [ "vc-api" ],
         "x-codegen-request-body-name" : "body"
       }
     },
@@ -6664,6 +6772,117 @@
         },
         "type" : "object"
       },
+      "ConnRecord" : {
+        "properties" : {
+          "accept" : {
+            "description" : "Connection acceptance: manual or auto",
+            "enum" : [ "manual", "auto" ],
+            "example" : "auto",
+            "type" : "string"
+          },
+          "alias" : {
+            "description" : "Optional alias to apply to connection for later use",
+            "example" : "Bob, providing quotes",
+            "type" : "string"
+          },
+          "connection_id" : {
+            "description" : "Connection identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "connection_protocol" : {
+            "description" : "Connection protocol used",
+            "enum" : [ "connections/1.0", "didexchange/1.0" ],
+            "example" : "connections/1.0",
+            "type" : "string"
+          },
+          "created_at" : {
+            "description" : "Time of record creation",
+            "example" : "2021-12-31T23:59:59Z",
+            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
+            "type" : "string"
+          },
+          "error_msg" : {
+            "description" : "Error message",
+            "example" : "No DIDDoc provided; cannot connect to public DID",
+            "type" : "string"
+          },
+          "inbound_connection_id" : {
+            "description" : "Inbound routing connection id to use",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "invitation_key" : {
+            "description" : "Public key for connection",
+            "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$",
+            "type" : "string"
+          },
+          "invitation_mode" : {
+            "description" : "Invitation mode",
+            "enum" : [ "once", "multi", "static" ],
+            "example" : "once",
+            "type" : "string"
+          },
+          "invitation_msg_id" : {
+            "description" : "ID of out-of-band invitation message",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "my_did" : {
+            "description" : "Our DID for connection",
+            "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
+            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$",
+            "type" : "string"
+          },
+          "request_id" : {
+            "description" : "Connection request identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "rfc23_state" : {
+            "description" : "State per RFC 23",
+            "example" : "invitation-sent",
+            "readOnly" : true,
+            "type" : "string"
+          },
+          "state" : {
+            "description" : "Current record state",
+            "example" : "active",
+            "type" : "string"
+          },
+          "their_did" : {
+            "description" : "Their DID for connection",
+            "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
+            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$",
+            "type" : "string"
+          },
+          "their_label" : {
+            "description" : "Their label for connection",
+            "example" : "Bob",
+            "type" : "string"
+          },
+          "their_public_did" : {
+            "description" : "Other agent's public DID for connection",
+            "example" : "2cpBmR3FqGKWi5EyUbpRY8",
+            "type" : "string"
+          },
+          "their_role" : {
+            "description" : "Their role in the connection protocol",
+            "enum" : [ "invitee", "requester", "inviter", "responder" ],
+            "example" : "requester",
+            "type" : "string"
+          },
+          "updated_at" : {
+            "description" : "Time of last record update",
+            "example" : "2021-12-31T23:59:59Z",
+            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
+            "type" : "string"
+          }
+        },
+        "required" : [ "connection_id" ],
+        "type" : "object"
+      },
       "ConnectionInvitation" : {
         "properties" : {
           "@id" : {
@@ -6728,7 +6947,7 @@
           "results" : {
             "description" : "List of connection records",
             "items" : {
-              "$ref" : "#/components/schemas/StoredConnRecord"
+              "$ref" : "#/components/schemas/ConnRecord"
             },
             "type" : "array"
           }
@@ -6824,7 +7043,7 @@
             "type" : "string"
           },
           "record" : {
-            "$ref" : "#/components/schemas/StoredConnRecord"
+            "$ref" : "#/components/schemas/ConnRecord"
           },
           "their_did" : {
             "description" : "Remote DID",
@@ -7220,6 +7439,10 @@
               "type" : "object"
             },
             "type" : "array"
+          },
+          "credentialStatus" : {
+            "example" : "",
+            "type" : "object"
           },
           "credentialSubject" : {
             "example" : "",
@@ -7912,6 +8135,14 @@
             "example" : "https://myhost:8021",
             "pattern" : "^[A-Za-z0-9\\.\\-\\+]+://([A-Za-z0-9][.A-Za-z0-9-_]+[A-Za-z0-9])+(:[1-9][0-9]*)?(/[^?&#]+)?$",
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "FetchCredentialResponse" : {
+        "properties" : {
+          "results" : {
+            "$ref" : "#/components/schemas/VerifiableCredential"
           }
         },
         "type" : "object"
@@ -9275,7 +9506,47 @@
         "required" : [ "connection_id", "invitation", "invitation_url" ],
         "type" : "object"
       },
+      "IssuanceOptions" : {
+        "properties" : {
+          "challenge" : {
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "created" : {
+            "example" : "2010-01-01T19:23:24Z",
+            "type" : "string"
+          },
+          "domain" : {
+            "example" : "website.example",
+            "type" : "string"
+          },
+          "type" : {
+            "example" : "Ed25519Signature2020",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "IssueCredentialModuleResponse" : {
+        "type" : "object"
+      },
+      "IssueCredentialRequest" : {
+        "properties" : {
+          "credential" : {
+            "$ref" : "#/components/schemas/Credential"
+          },
+          "options" : {
+            "$ref" : "#/components/schemas/IssuanceOptions"
+          }
+        },
+        "type" : "object"
+      },
+      "IssueCredentialResponse" : {
+        "properties" : {
+          "verifiableCredential" : {
+            "$ref" : "#/components/schemas/VerifiableCredential"
+          }
+        },
         "type" : "object"
       },
       "IssuerCredRevRecord" : {
@@ -9658,63 +9929,6 @@
         },
         "type" : "object"
       },
-      "LdpIssueRequest" : {
-        "properties" : {
-          "credential" : {
-            "$ref" : "#/components/schemas/Credential"
-          },
-          "options" : {
-            "$ref" : "#/components/schemas/LDProofVCOptions"
-          }
-        },
-        "type" : "object"
-      },
-      "LdpIssueResponse" : {
-        "properties" : {
-          "vc" : {
-            "$ref" : "#/components/schemas/VerifiableCredential"
-          }
-        },
-        "type" : "object"
-      },
-      "LdpVerifyRequest" : {
-        "properties" : {
-          "options" : {
-            "$ref" : "#/components/schemas/LDProofVCOptions"
-          },
-          "vc" : {
-            "$ref" : "#/components/schemas/VerifiableCredential"
-          },
-          "vp" : {
-            "$ref" : "#/components/schemas/VerifiableCredential"
-          }
-        },
-        "type" : "object"
-      },
-      "LdpVerifyResponse" : {
-        "properties" : {
-          "credential_results" : {
-            "items" : {
-              "$ref" : "#/components/schemas/DocumentVerificationResult"
-            },
-            "type" : "array"
-          },
-          "errors" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          },
-          "presentation_result" : {
-            "$ref" : "#/components/schemas/DocumentVerificationResult"
-          },
-          "verified" : {
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "verified" ],
-        "type" : "object"
-      },
       "LedgerConfigInstance" : {
         "properties" : {
           "genesis_file" : {
@@ -9770,7 +9984,7 @@
           },
           "domain" : {
             "description" : "A string value specifying the restricted domain of the signature.",
-            "example" : "example.com",
+            "example" : "https://example.com",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
           },
@@ -9807,6 +10021,9 @@
           }
         },
         "required" : [ "created", "proofPurpose", "type", "verificationMethod" ],
+        "type" : "object"
+      },
+      "ListCredentialsResponse" : {
         "type" : "object"
       },
       "MediationCreateRequest" : {
@@ -10123,6 +10340,11 @@
           "invitation" : {
             "$ref" : "#/components/schemas/InvitationRecord_invitation"
           },
+          "multi_use" : {
+            "description" : "Allow for multiple uses of the oobinvitation",
+            "example" : true,
+            "type" : "boolean"
+          },
           "oob_id" : {
             "description" : "Oob record identifier",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -10197,6 +10419,48 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "Presentation" : {
+        "properties" : {
+          "@context" : {
+            "description" : "The JSON-LD context of the presentation",
+            "example" : [ "https://www.w3.org/2018/credentials/v1" ],
+            "items" : {
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "holder" : {
+            "description" : "The JSON-LD Verifiable Credential Holder. Either string of object with id field.",
+            "example" : "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH",
+            "type" : "object"
+          },
+          "id" : {
+            "example" : "http://example.edu/presentations/1872",
+            "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
+            "type" : "string"
+          },
+          "proof" : {
+            "$ref" : "#/components/schemas/Presentation_proof"
+          },
+          "type" : {
+            "description" : "The JSON-LD type of the presentation",
+            "example" : [ "VerifiablePresentation" ],
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "verifiableCredential" : {
+            "items" : {
+              "properties" : { },
+              "type" : "object"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "@context", "type" ],
         "type" : "object"
       },
       "PresentationDefinition" : {
@@ -10286,6 +10550,30 @@
         "required" : [ "request_presentations~attach" ],
         "type" : "object"
       },
+      "PresentationVerificationResult" : {
+        "properties" : {
+          "credential_results" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DocumentVerificationResult"
+            },
+            "type" : "array"
+          },
+          "errors" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "presentation_result" : {
+            "$ref" : "#/components/schemas/DocumentVerificationResult"
+          },
+          "verified" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "verified" ],
+        "type" : "object"
+      },
       "ProfileSettings" : {
         "properties" : {
           "settings" : {
@@ -10336,6 +10624,25 @@
           }
         },
         "required" : [ "pid" ],
+        "type" : "object"
+      },
+      "ProvePresentationRequest" : {
+        "properties" : {
+          "options" : {
+            "$ref" : "#/components/schemas/IssuanceOptions"
+          },
+          "presentation" : {
+            "$ref" : "#/components/schemas/Presentation"
+          }
+        },
+        "type" : "object"
+      },
+      "ProvePresentationResponse" : {
+        "properties" : {
+          "verifiablePresentation" : {
+            "$ref" : "#/components/schemas/VerifiablePresentation"
+          }
+        },
         "type" : "object"
       },
       "PublishRevocations" : {
@@ -11037,117 +11344,6 @@
         "required" : [ "proof" ],
         "type" : "object"
       },
-      "StoredConnRecord" : {
-        "properties" : {
-          "accept" : {
-            "description" : "Connection acceptance: manual or auto",
-            "enum" : [ "manual", "auto" ],
-            "example" : "auto",
-            "type" : "string"
-          },
-          "alias" : {
-            "description" : "Optional alias to apply to connection for later use",
-            "example" : "Bob, providing quotes",
-            "type" : "string"
-          },
-          "connection_id" : {
-            "description" : "Connection identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "connection_protocol" : {
-            "description" : "Connection protocol used",
-            "enum" : [ "connections/1.0", "didexchange/1.0" ],
-            "example" : "connections/1.0",
-            "type" : "string"
-          },
-          "created_at" : {
-            "description" : "Time of record creation",
-            "example" : "2021-12-31T23:59:59Z",
-            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
-            "type" : "string"
-          },
-          "error_msg" : {
-            "description" : "Error message",
-            "example" : "No DIDDoc provided; cannot connect to public DID",
-            "type" : "string"
-          },
-          "inbound_connection_id" : {
-            "description" : "Inbound routing connection id to use",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "invitation_key" : {
-            "description" : "Public key for connection",
-            "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$",
-            "type" : "string"
-          },
-          "invitation_mode" : {
-            "description" : "Invitation mode",
-            "enum" : [ "once", "multi", "static" ],
-            "example" : "once",
-            "type" : "string"
-          },
-          "invitation_msg_id" : {
-            "description" : "ID of out-of-band invitation message",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "my_did" : {
-            "description" : "Our DID for connection",
-            "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
-            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$",
-            "type" : "string"
-          },
-          "request_id" : {
-            "description" : "Connection request identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "rfc23_state" : {
-            "description" : "State per RFC 23",
-            "example" : "invitation-sent",
-            "readOnly" : true,
-            "type" : "string"
-          },
-          "state" : {
-            "description" : "Current record state",
-            "example" : "active",
-            "type" : "string"
-          },
-          "their_did" : {
-            "description" : "Their DID for connection",
-            "example" : "did:peer:WgWxqztrNooG92RXvxSTWv",
-            "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$",
-            "type" : "string"
-          },
-          "their_label" : {
-            "description" : "Their label for connection",
-            "example" : "Bob",
-            "type" : "string"
-          },
-          "their_public_did" : {
-            "description" : "Other agent's public DID for connection",
-            "example" : "2cpBmR3FqGKWi5EyUbpRY8",
-            "type" : "string"
-          },
-          "their_role" : {
-            "description" : "Their role in the connection protocol",
-            "enum" : [ "invitee", "requester", "inviter", "responder" ],
-            "example" : "requester",
-            "type" : "string"
-          },
-          "updated_at" : {
-            "description" : "Time of last record update",
-            "example" : "2021-12-31T23:59:59Z",
-            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
-            "type" : "string"
-          }
-        },
-        "required" : [ "connection_id" ],
-        "type" : "object"
-      },
       "SubmissionRequirements" : {
         "properties" : {
           "count" : {
@@ -11367,7 +11563,7 @@
                 "author_goal_code" : "aries.transaction.ledger.write",
                 "context" : "did:sov",
                 "method" : "add-signature",
-                "signature_type" : "<requested signature type>",
+                "signature_type" : "default",
                 "signer_goal_code" : "aries.transaction.endorse"
               },
               "properties" : { },
@@ -13608,6 +13804,10 @@
             },
             "type" : "array"
           },
+          "credentialStatus" : {
+            "example" : "",
+            "type" : "object"
+          },
           "credentialSubject" : {
             "example" : "",
             "type" : "object"
@@ -13647,6 +13847,86 @@
           }
         },
         "required" : [ "@context", "credentialSubject", "issuanceDate", "issuer", "proof", "type" ],
+        "type" : "object"
+      },
+      "VerifiablePresentation" : {
+        "properties" : {
+          "@context" : {
+            "description" : "The JSON-LD context of the presentation",
+            "example" : [ "https://www.w3.org/2018/credentials/v1" ],
+            "items" : {
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "holder" : {
+            "description" : "The JSON-LD Verifiable Credential Holder. Either string of object with id field.",
+            "example" : "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH",
+            "type" : "object"
+          },
+          "id" : {
+            "example" : "http://example.edu/presentations/1872",
+            "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
+            "type" : "string"
+          },
+          "proof" : {
+            "$ref" : "#/components/schemas/Presentation_proof"
+          },
+          "type" : {
+            "description" : "The JSON-LD type of the presentation",
+            "example" : [ "VerifiablePresentation" ],
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "verifiableCredential" : {
+            "items" : {
+              "properties" : { },
+              "type" : "object"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "@context", "proof", "type" ],
+        "type" : "object"
+      },
+      "VerifyCredentialRequest" : {
+        "properties" : {
+          "options" : {
+            "$ref" : "#/components/schemas/LDProofVCOptions"
+          },
+          "verifiableCredential" : {
+            "$ref" : "#/components/schemas/VerifiableCredential"
+          }
+        },
+        "type" : "object"
+      },
+      "VerifyCredentialResponse" : {
+        "properties" : {
+          "results" : {
+            "$ref" : "#/components/schemas/PresentationVerificationResult"
+          }
+        },
+        "type" : "object"
+      },
+      "VerifyPresentationRequest" : {
+        "properties" : {
+          "options" : {
+            "$ref" : "#/components/schemas/LDProofVCOptions"
+          },
+          "verifiablePresentation" : {
+            "$ref" : "#/components/schemas/VerifiablePresentation"
+          }
+        },
+        "type" : "object"
+      },
+      "VerifyPresentationResponse" : {
+        "properties" : {
+          "results" : {
+            "$ref" : "#/components/schemas/PresentationVerificationResult"
+          }
+        },
         "type" : "object"
       },
       "VerifyRequest" : {
@@ -14068,6 +14348,20 @@
           "$ref" : "#/components/schemas/CredentialStatusOptions"
         } ],
         "description" : "The credential status mechanism to use for the credential. Omitting the property indicates the issued credential will not include a credential status",
+        "type" : "object"
+      },
+      "Presentation_proof" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/LinkedDataProof"
+        } ],
+        "description" : "The proof of the presentation",
+        "example" : {
+          "created" : "2019-12-11T03:50:55",
+          "jws" : "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ",
+          "proofPurpose" : "assertionMethod",
+          "type" : "Ed25519Signature2018",
+          "verificationMethod" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+        },
         "type" : "object"
       },
       "SchemaSendResult_schema" : {

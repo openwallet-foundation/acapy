@@ -1,6 +1,5 @@
 """Utils for messages."""
 
-
 import logging
 import re
 

@@ -2,17 +2,17 @@
 
 import re
 from typing import Any, List, Mapping, Optional, Union
-from marshmallow import fields
+
 from jsonpath_ng.ext import parse as jsonpath_parse
+from marshmallow import fields
 from sd_jwt.common import SDObj
 from sd_jwt.issuer import SDJWTIssuer
 from sd_jwt.verifier import SDJWTVerifier
 
-from ..core.profile import Profile
-from ..wallet.jwt import JWTVerifyResult, JWTVerifyResultSchema, jwt_sign, jwt_verify
 from ..core.error import BaseError
+from ..core.profile import Profile
 from ..messaging.valid import StrOrDictField
-
+from ..wallet.jwt import JWTVerifyResult, JWTVerifyResultSchema, jwt_sign, jwt_verify
 
 CLAIMS_NEVER_SD = ["iss", "iat", "exp", "cnf"]
 
@@ -139,7 +139,7 @@ async def sd_jwt_sign(
     profile: Profile,
     headers: Mapping[str, Any],
     payload: Mapping[str, Any],
-    non_sd_list: List = [],
+    non_sd_list: Optional[List] = None,
     did: Optional[str] = None,
     verification_method: Optional[str] = None,
 ) -> str:
@@ -150,6 +150,7 @@ async def sd_jwt_sign(
     selectively disclosable claims with SDObj within payload,
     create SDJWTIssuerACAPy object, and call SDJWTIssuerACAPy.issue().
     """
+    non_sd_list = non_sd_list or []
     sd_list = create_sd_list(payload, non_sd_list)
     for sd in sd_list:
         jsonpath_expression = jsonpath_parse(f"$.{sd}")
@@ -162,9 +163,9 @@ async def sd_jwt_sign(
                     match.context.value.remove(match.value)
                     match.context.value.append(SDObj(match.value))
                 else:
-                    match.context.value[
-                        SDObj(str(match.path))
-                    ] = match.context.value.pop(str(match.path))
+                    match.context.value[SDObj(str(match.path))] = (
+                        match.context.value.pop(str(match.path))
+                    )
 
     return await SDJWTIssuerACAPy(
         user_claims=payload,

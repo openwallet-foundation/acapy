@@ -14,7 +14,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ....admin.request_context import AdminRequestContext
-from ....connections.models.conn_record import ConnRecord, StoredConnRecordSchema
+from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
@@ -197,7 +197,7 @@ class DIDXRejectRequestSchema(OpenAPISchema):
 )
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptInvitationQueryStringSchema())
-@response_schema(StoredConnRecordSchema(), 200, description="")
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_accept_invitation(request: web.BaseRequest):
     """Request handler for accepting a stored connection invitation.
 
@@ -243,7 +243,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
     summary="Create and send a request against public DID's implicit invitation",
 )
 @querystring_schema(DIDXCreateRequestImplicitQueryStringSchema())
-@response_schema(StoredConnRecordSchema(), 200, description="")
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_create_request_implicit(request: web.BaseRequest):
     """Request handler for creating and sending a request to an implicit invitation.
 
@@ -294,7 +294,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
 )
 @querystring_schema(DIDXReceiveRequestImplicitQueryStringSchema())
 @request_schema(DIDXRequestSchema())
-@response_schema(StoredConnRecordSchema(), 200, description="")
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_receive_request_implicit(request: web.BaseRequest):
     """Request handler for receiving a request against public DID's implicit invitation.
 
@@ -340,7 +340,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
 )
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptRequestQueryStringSchema())
-@response_schema(StoredConnRecordSchema(), 200, description="")
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_accept_request(request: web.BaseRequest):
     """Request handler for accepting a stored connection request.
 
@@ -385,7 +385,7 @@ async def didx_accept_request(request: web.BaseRequest):
 )
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @request_schema(DIDXRejectRequestSchema())
-@response_schema(StoredConnRecordSchema(), 200, description="")
+@response_schema(ConnRecordSchema(), 200, description="")
 async def didx_reject(request: web.BaseRequest):
     """Abandon or reject a DID Exchange."""
     context: AdminRequestContext = request["context"]
