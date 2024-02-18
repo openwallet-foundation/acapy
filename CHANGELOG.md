@@ -15,6 +15,8 @@ Much progress was made on `did:peer` support in this release, with the handling 
 
 The most visible change in this release is the re-organization of the ACA-Py documentation, moving the vast majority of the documents to the folders within the `docs` folder -- a long overdue change that will allow us to soon publish the documents on [https://aca-py.org](https://aca-py.org) directly from the ACA-Py repository, rather than from the separate [aries-acapy-docs](https://github.com/hyperledger/aries-acapy-docs) currently being used.
 
+A big developer improvement is a revampling of the test handling to eliminate ~2500 warnings that were previously generated in the test suite.  Nice job [@ff137](https://github.com/ff137)!
+
 [DID Peer]: https://identity.foundation/peer-did-method-spec/
 [AnonCreds]: https://www.hyperledger.org/projects/anoncreds
 [Hyperledger AnonCreds Rust]: https://github.com/hyperledger/anoncreds-rs
@@ -23,6 +25,8 @@ The most visible change in this release is the re-organization of the ACA-Py doc
 ### 0.12.0rc1 Breaking Changes
 
 There are no breaking changes in 0.12.0rc1.
+
+<!-- Latest: 2756 -->
 
 #### 0.12.0rc1 Categorized List of Pull Requests
 
@@ -59,6 +63,7 @@ There are no breaking changes in 0.12.0rc1.
   - Initial code migration from anoncreds-rs branch  AnonCreds [\#2596](https://github.com/hyperledger/aries-cloudagent-python/pull/2596) [ianco](https://github.com/ianco)
 
 - Hyperledger Indy ledger related updates and fixes
+  - Add known issues section to Multiledger.md documentation [\#2788](https://github.com/hyperledger/aries-cloudagent-python/pull/2788) [esune](https://github.com/esune)
   - fix: update constants in TransactionRecord [\#2698](https://github.com/hyperledger/aries-cloudagent-python/pull/2698) [amanji](https://github.com/amanji)
   - Cache TAA by wallet name [\#2676](https://github.com/hyperledger/aries-cloudagent-python/pull/2676) [jamshale](https://github.com/jamshale)
   - Fix: RevRegEntry Transaction Endorsement  0.11.0 [\#2558](https://github.com/hyperledger/aries-cloudagent-python/pull/2558) [shaangill025](https://github.com/shaangill025)
@@ -97,8 +102,8 @@ There are no breaking changes in 0.12.0rc1.
   - Update the ReadTheDocs config in case we do another 0.10.x release [\#2629](https://github.com/hyperledger/aries-cloudagent-python/pull/2629) [swcurran](https://github.com/swcurran)
 
 - Dependencies and Internal Updates
+  - Bump pyld version to 2.0.4 [\#2795](https://github.com/hyperledger/aries-cloudagent-python/pull/2795) [PatStLouis](https://github.com/PatStLouis)
   - Revert profile inject [\#2789](https://github.com/hyperledger/aries-cloudagent-python/pull/2789) [jamshale](https://github.com/jamshale)
-
   - Move emit events to profile and delay sending until after commit [\#2760](https://github.com/hyperledger/aries-cloudagent-python/pull/2760) [ianco](https://github.com/ianco)
   - fix: partial revert of ConnRecord schema change  1.0.0 [\#2746](https://github.com/hyperledger/aries-cloudagent-python/pull/2746) [dbluhm](https://github.com/dbluhm)
   - chore(deps): Bump aiohttp from 3.9.1 to 3.9.2  dependencies [\#2745](https://github.com/hyperledger/aries-cloudagent-python/pull/2745) [dependabot bot](https://github.com/dependabot bot)
@@ -115,6 +120,7 @@ There are no breaking changes in 0.12.0rc1.
   - Bump aiohttp from 3.8.6 to 3.9.0  dependencies [\#2635](https://github.com/hyperledger/aries-cloudagent-python/pull/2635) [dependabot bot](https://github.com/dependabot bot)
 
 - CI/CD, Testing, and Developer Tools/Productivity Updates
+  - Fix deprecation warnings [\#2756](https://github.com/hyperledger/aries-cloudagent-python/pull/2756) [ff137](https://github.com/ff137)
   - chore(deps): Bump the all-actions group with 10 updates  dependencies [\#2784](https://github.com/hyperledger/aries-cloudagent-python/pull/2784) [dependabot bot](https://github.com/dependabot bot)
   - Add Dependabot configuration [\#2783](https://github.com/hyperledger/aries-cloudagent-python/pull/2783) [WadeBarnes](https://github.com/WadeBarnes)
   - Implement B006 rule [\#2775](https://github.com/hyperledger/aries-cloudagent-python/pull/2775) [jamshale](https://github.com/jamshale)
