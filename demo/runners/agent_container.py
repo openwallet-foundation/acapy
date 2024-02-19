@@ -16,6 +16,7 @@ from aiohttp import ClientError
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from runners.support.agent import (  # noqa:E402
+    CRED_FORMAT_VC_DI,
     DemoAgent,
     default_genesis_txns,
     start_mediator_agent,
@@ -214,9 +215,7 @@ class AriesAgent(DemoAgent):
             cred_attrs = self.cred_attrs[message["credential_definition_id"]]
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
-                "attributes": [
-                    {"name": n, "value": v} for (n, v) in cred_attrs.items()
-                ],
+                "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()],
             }
             try:
                 cred_ex_rec = await self.admin_POST(
@@ -423,9 +422,7 @@ class AriesAgent(DemoAgent):
                 pres_request_indy = (
                     message["by_format"].get("pres_request", {}).get("indy")
                 )
-                pres_request_dif = (
-                    message["by_format"].get("pres_request", {}).get("dif")
-                )
+                pres_request_dif = message["by_format"].get("pres_request", {}).get("dif")
                 request = {}
 
                 if not pres_request_dif and not pres_request_indy:
@@ -602,9 +599,7 @@ class AriesAgent(DemoAgent):
         self._connection_ready = asyncio.Future()
         with log_timer("Generate invitation duration:"):
             # Generate an invitation
-            log_status(
-                "#7 Create a connection to alice and print out the invite details"
-            )
+            log_status("#7 Create a connection to alice and print out the invite details")
             invi_rec = await self.get_invite(
                 use_did_exchange,
                 auto_accept=auto_accept,
@@ -816,9 +811,7 @@ class AgentContainer:
                 raise Exception("Endorser agent returns None :-(")
 
             # set the endorser invite so the agent can auto-connect
-            self.agent.endorser_invite = (
-                self.endorser_agent.endorser_multi_invitation_url
-            )
+            self.agent.endorser_invite = self.endorser_agent.endorser_multi_invitation_url
             self.agent.endorser_did = self.endorser_agent.endorser_public_did
         else:
             self.endorser_agent = None
@@ -854,25 +847,17 @@ class AgentContainer:
             if self.mediation:
                 # we need to pre-connect the agent to its mediator
                 self.agent.log("Connect wallet to mediator ...")
-                if not await connect_wallet_to_mediator(
-                    self.agent, self.mediator_agent
-                ):
+                if not await connect_wallet_to_mediator(self.agent, self.mediator_agent):
                     raise Exception("Mediation setup FAILED :-(")
             if self.endorser_agent:
                 self.agent.log("Connect wallet to endorser ...")
-                if not await connect_wallet_to_endorser(
-                    self.agent, self.endorser_agent
-                ):
+                if not await connect_wallet_to_endorser(self.agent, self.endorser_agent):
                     raise Exception("Endorser setup FAILED :-(")
         if self.taa_accept:
             await self.agent.taa_accept()
 
         # if we are an author, create our public DID here ...
-        if (
-            self.endorser_role
-            and self.endorser_role == "author"
-            and self.endorser_agent
-        ):
+        if self.endorser_role and self.endorser_role == "author" and self.endorser_agent:
             if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
                 new_did = await self.agent.admin_POST("/wallet/did/create")
                 self.agent.did = new_did["result"]["did"]
@@ -905,9 +890,7 @@ class AgentContainer:
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        if self.cred_type in [
-            CRED_FORMAT_INDY,
-        ]:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             # need to redister schema and cred def on the ledger
             self.cred_def_id = await self.agent.create_schema_and_cred_def(
                 schema_name,
@@ -974,6 +957,25 @@ class AgentContainer:
 
             return cred_exchange
 
+        elif self.cred_type == CRED_FORMAT_VC_DI:
+            cred_preview = {
+                "@type": CRED_PREVIEW_TYPE,
+                "attributes": cred_attrs,
+            }
+            offer_request = {
+                "connection_id": self.agent.connection_id,
+                "comment": f"Offer on cred def id {cred_def_id}",
+                "auto_remove": False,
+                "credential_preview": cred_preview,
+                "filter": {"vc_di": {"cred_def_id": cred_def_id}},
+                "trace": self.exchange_tracing,
+            }
+            cred_exchange = await self.agent.admin_POST(
+                "/issue-credential-2.0/send-offer", offer_request
+            )
+
+            return cred_exchange
+
         elif self.cred_type == CRED_FORMAT_JSON_LD:
             # TODO create and send the json-ld credential offer
             pass
@@ -1015,9 +1017,7 @@ class AgentContainer:
     async def request_proof(self, proof_request, explicit_revoc_required: bool = False):
         log_status("#20 Request proof of degree from alice")
 
-        if self.cred_type in [
-            CRED_FORMAT_INDY,
-        ]:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             indy_proof_request = {
                 "name": (
                     proof_request["name"]
@@ -1100,9 +1100,7 @@ class AgentContainer:
 
         # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
-        if self.cred_type in [
-            CRED_FORMAT_INDY,
-        ]:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             # return verified status
             return self.agent.last_proof_received["verified"]
 
@@ -1304,9 +1302,7 @@ def arg_parser(ident: str = None, port: int = 8020):
         metavar=("<api>"),
         help="API level (10 or 20 (default))",
     )
-    parser.add_argument(
-        "--timing", action="store_true", help="Enable timing information"
-    )
+    parser.add_argument("--timing", action="store_true", help="Enable timing information")
     parser.add_argument(
         "--multitenant", action="store_true", help="Enable multitenancy options"
     )
