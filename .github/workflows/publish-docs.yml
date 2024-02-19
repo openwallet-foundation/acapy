@@ -1,0 +1,53 @@
+name: publish-docs 
+
+on:
+  push:
+    # Publish `main` as latest
+    branches:
+      - main
+
+    # Publish `v1.2.3` tags as releases
+    tags:
+      - v*
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all commits/branches
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+      - uses: actions/cache@v2
+        with:
+          key: ${{ github.ref }}
+          path: .cache
+      - name: Install Python dependencies
+        run: pip install -r ./mkdocs-requirements.txt
+      - name: Configure git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Deploy docs
+        run: |
+          # Strip git ref prefix from version
+          echo "${{ github.ref }}"
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && ALIAS=$(echo $VERSION | sed -e 's/^v//')
+          # Copy all of the root level md files into the docs folder for deployment, tweaking the relative paths
+          for i in *.md; do sed -e "s#docs/#./#g" $i >docs/$i; done
+          # Create overrides folder, populate it for version, and then move to not apply if VERSION is main branch
+          mkdir overrides
+          echo -e "{% extends "base.html" %}\n\n{% block outdated %}\n  You are viewing the documentation for ACA-Py Release $VERSION.\n{% endblock %}" >overrides/base.html
+          # If building from main, use latest as ALIAS
+          [ "$VERSION" == "main" ] && ALIAS=latest && mv overrides/base.html overrides/base.txt
+          echo $VERSION $ALIAS
+          mike deploy --push --update-aliases $VERSION $ALIAS
+          mike set-default latest
