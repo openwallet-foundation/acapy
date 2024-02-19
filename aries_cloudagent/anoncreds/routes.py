@@ -82,17 +82,17 @@ class SchemaPostOptionSchema(OpenAPISchema):
     endorser_connection_id = fields.Str(
         metadata={
             "description": endorser_connection_id_description,
-            "required": False,
             "example": UUIDFour.EXAMPLE,
-        }
+        },
+        required=False,
     )
 
     create_transaction_for_endorser = fields.Bool(
         metadata={
             "description": create_transaction_for_endorser_description,
-            "required": False,
             "example": False,
-        }
+        },
+        required=False,
     )
 
 
@@ -263,8 +263,8 @@ class CredIdMatchInfo(OpenAPISchema):
         metadata={
             "description": "Credential definition identifier",
             "example": INDY_CRED_DEF_ID_EXAMPLE,
-            "required": True,
-        }
+        },
+        required=True,
     )
 
 
@@ -275,23 +275,23 @@ class InnerCredDefSchema(OpenAPISchema):
         metadata={
             "description": "Credential definition tag",
             "example": "default",
-            "required": True,
-        }
+        },
+        required=True,
     )
     schema_id = fields.Str(
         metadata={
             "description": "Schema identifier",
             "example": INDY_SCHEMA_ID_EXAMPLE,
-            "required": True,
         },
+        required=True,
         data_key="schemaId",
     )
     issuer_id = fields.Str(
         metadata={
             "description": "Issuer Identifier of the credential definition",
             "example": INDY_OR_KEY_DID_EXAMPLE,
-            "required": True,
         },
+        required=True,
         data_key="issuerId",
     )
 
@@ -303,28 +303,27 @@ class CredDefPostOptionsSchema(OpenAPISchema):
         metadata={
             "description": endorser_connection_id_description,
             "example": UUIDFour.EXAMPLE,
-            "required": False,
-        }
+        },
+        required=False,
     )
     create_transaction_for_endorser = fields.Bool(
         metadata={
             "description": create_transaction_for_endorser_description,
             "example": False,
-            "required": False,
-        }
+        },
+        required=False,
     )
     support_revocation = fields.Bool(
         metadata={
             "description": "Support credential revocation",
-            "required": False,
-        }
+        },
+        required=False,
     )
     revocation_registry_size = fields.Int(
         metadata={
             "description": "Maximum number of credential revocations per registry",
-            "example": 666,
-            "required": False,
-        }
+        },
+        required=False,
     )
 
 
@@ -443,8 +442,10 @@ class GetCredDefsResponseSchema(OpenAPISchema):
 
     credential_definition_ids = fields.List(
         fields.Str(
-            description="credential definition identifiers",
-            example="GvLGiRogTJubmj5B36qhYz:3:CL:8:faber.agent.degree_schema",
+            metadata={
+                "description": "credential definition identifiers",
+                "example": "GvLGiRogTJubmj5B36qhYz:3:CL:8:faber.agent.degree_schema",
+            }
         )
     )
 
@@ -478,20 +479,28 @@ class InnerRevRegDefSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
+        metadata={
+            "description": "Issuer Identifier of the credential definition or schema",
+            "example": INDY_OR_KEY_DID_EXAMPLE,
+        },
         data_key="issuerId",
-        example=INDY_OR_KEY_DID_EXAMPLE,
     )
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
         data_key="credDefId",
-        example=INDY_SCHEMA_ID_EXAMPLE,
     )
-    tag = fields.Str(description="tag for revocation registry", example="default")
+    tag = fields.Str(
+        metadata={"description": "tag for revocation registry", "example": "default"}
+    )
     max_cred_num = fields.Int(
-        description="Maximum number of credential revocations per registry",
+        metadata={
+            "description": "Maximum number of credential revocations per registry",
+            "example": 777,
+        },
         data_key="maxCredNum",
-        example=666,
     )
 
 
@@ -502,15 +511,15 @@ class RevRegDefOptionsSchema(OpenAPISchema):
         metadata={
             "description": endorser_connection_id_description,
             "example": UUIDFour.EXAMPLE,
-            "required": False,
-        }
+        },
+        required=False,
     )
     create_transaction_for_endorser = fields.Bool(
         metadata={
             "description": create_transaction_for_endorser_description,
             "example": False,
-            "required": False,
-        }
+        },
+        required=False,
     )
 
 
@@ -577,15 +586,15 @@ class RevListOptionsSchema(OpenAPISchema):
         metadata={
             "description": endorser_connection_id_description,
             "example": UUIDFour.EXAMPLE,
-            "required": False,
-        }
+        },
+        required=False,
     )
     create_transaction_for_endorser = fields.Bool(
         metadata={
             "description": create_transaction_for_endorser_description,
             "example": False,
-            "required": False,
-        }
+        },
+        required=False,
     )
 
 
@@ -593,8 +602,10 @@ class RevListCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     rev_reg_def_id = fields.Str(
-        description="Revocation registry definition identifier",
-        example=INDY_REV_REG_ID_EXAMPLE,
+        metadata={
+            "description": "Revocation registry definition identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        }
     )
     options = fields.Nested(RevListOptionsSchema)
 

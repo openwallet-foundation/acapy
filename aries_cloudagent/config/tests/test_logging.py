@@ -136,19 +136,26 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
         assert test_did in output
 
     def test_load_resource(self):
+        # Testing local file access
         with mock.patch("builtins.open", mock.MagicMock()) as mock_open:
             test_module.load_resource("abc", encoding="utf-8")
             mock_open.side_effect = IOError("insufficient privilege")
+            # load_resource should absorb IOError
             test_module.load_resource("abc", encoding="utf-8")
 
-        with mock.patch.object(
-            test_module.pkg_resources, "resource_stream", mock.MagicMock()
-        ) as mock_res_stream, mock.patch.object(
-            test_module.io, "TextIOWrapper", mock.MagicMock()
+        # Testing package resource access with encoding (text mode)
+        with mock.patch(
+            "importlib.resources.open_binary", mock.MagicMock()
+        ) as mock_open_binary, mock.patch(
+            "io.TextIOWrapper", mock.MagicMock()
         ) as mock_text_io_wrapper:
             test_module.load_resource("abc:def", encoding="utf-8")
+            mock_open_binary.assert_called_once_with("abc", "def")
+            mock_text_io_wrapper.assert_called_once()
 
-        with mock.patch.object(
-            test_module.pkg_resources, "resource_stream", mock.MagicMock()
-        ) as mock_res_stream:
+        # Testing package resource access without encoding (binary mode)
+        with mock.patch(
+            "importlib.resources.open_binary", mock.MagicMock()
+        ) as mock_open_binary:
             test_module.load_resource("abc:def", encoding=None)
+            mock_open_binary.assert_called_once_with("abc", "def")

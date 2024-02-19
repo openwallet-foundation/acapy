@@ -8,7 +8,7 @@ import re
 import sys
 import yaml
 import time as mod_time
-import pkg_resources
+from importlib import resources
 
 from contextvars import ContextVar
 from datetime import datetime, timedelta
@@ -21,7 +21,6 @@ from logging.config import (
 )
 from logging.handlers import BaseRotatingHandler
 from random import randint
-from typing import TextIO
 from portalocker import LOCK_EX, lock, unlock
 from pythonjsonlogger import jsonlogger
 
@@ -58,7 +57,7 @@ class ContextFilter(logging.Filter):
             return True
 
 
-def load_resource(path: str, encoding: str = None) -> TextIO:
+def load_resource(path: str, encoding: str = None):
     """Open a resource file located in a python package or the local filesystem.
 
     Args:
@@ -69,9 +68,12 @@ def load_resource(path: str, encoding: str = None) -> TextIO:
     components = path.rsplit(":", 1)
     try:
         if len(components) == 1:
+            # Local filesystem resource
             return open(components[0], encoding=encoding)
         else:
-            bstream = pkg_resources.resource_stream(components[0], components[1])
+            # Package resource
+            package, resource = components
+            bstream = resources.open_binary(package, resource)
             if encoding:
                 return io.TextIOWrapper(bstream, encoding=encoding)
             return bstream
