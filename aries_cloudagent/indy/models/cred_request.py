@@ -171,7 +171,9 @@ class DidcommSignedAttachmentSchema(BaseModelSchema):
         model_class = DidcommSignedAttachment
         unknown = EXCLUDE
 
-    attachment_id = fields.Str(required=True, metadata={"description": "", "example": ""})
+    attachment_id = fields.Str(
+        required=True, metadata={"description": "", "example": ""}
+    )
 
 
 class BindingProof(BaseModel):
