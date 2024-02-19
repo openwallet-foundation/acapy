@@ -551,9 +551,7 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
                 )
         except AskarError as err:
-            raise AnonCredsIssuerError(
-                "Error retrieving credential definition"
-            ) from err
+            raise AnonCredsIssuerError("Error retrieving credential definition") from err
         if not cred_def or not key_proof:
             raise AnonCredsIssuerError(
                 "Credential definition not found for credential offer"
@@ -594,9 +592,7 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
         except AskarError as err:
-            raise AnonCredsIssuerError(
-                "Error retrieving credential definition"
-            ) from err
+            raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:
             raise AnonCredsIssuerError(
@@ -633,60 +629,59 @@ class AnonCredsIssuer:
 
         return credential.to_json()
 
+    async def create_credential_vc_di(
+        self,
+        credential_offer: dict,
+        credential_request: dict,
+        credential_values: dict,
+    ) -> str:
+        """Create Credential."""
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        schema_id = credential_offer["schema_id"]
+        schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
+        cred_def_id = credential_offer["cred_def_id"]
+        schema_attributes = schema_result.schema_value.attr_names
 
-async def create_credential_vc_di(
-    self,
-    credential_offer: dict,
-    credential_request: dict,
-    credential_values: dict,
-) -> str:
-    """Create Credential."""
-    anoncreds_registry = self.profile.inject(AnonCredsRegistry)
-    schema_id = credential_offer["schema_id"]
-    schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
-    cred_def_id = credential_offer["cred_def_id"]
-    schema_attributes = schema_result.schema_value.attr_names
-
-    try:
-        async with self.profile.session() as session:
-            cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
-            cred_def_private = await session.handle.fetch(
-                CATEGORY_CRED_DEF_PRIVATE, cred_def_id
-            )
-    except AskarError as err:
-        raise AnonCredsIssuerError("Error retrieving credential definition") from err
-
-    if not cred_def or not cred_def_private:
-        raise AnonCredsIssuerError(
-            "Credential definition not found for credential issuance"
-        )
-
-    raw_values = {}
-    for attribute in schema_attributes:
-        # Ensure every attribute present in schema to be set.
-        # Extraneous attribute names are ignored.
         try:
-            credential_value = credential_values[attribute]
-        except KeyError:
+            async with self.profile.session() as session:
+                cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
+                cred_def_private = await session.handle.fetch(
+                    CATEGORY_CRED_DEF_PRIVATE, cred_def_id
+                )
+        except AskarError as err:
+            raise AnonCredsIssuerError("Error retrieving credential definition") from err
+
+        if not cred_def or not cred_def_private:
             raise AnonCredsIssuerError(
-                "Provided credential values are missing a value "
-                f"for the schema attribute '{attribute}'"
+                "Credential definition not found for credential issuance"
             )
 
-        raw_values[attribute] = str(credential_value)
+        raw_values = {}
+        for attribute in schema_attributes:
+            # Ensure every attribute present in schema to be set.
+            # Extraneous attribute names are ignored.
+            try:
+                credential_value = credential_values[attribute]
+            except KeyError:
+                raise AnonCredsIssuerError(
+                    "Provided credential values are missing a value "
+                    f"for the schema attribute '{attribute}'"
+                )
 
-    try:
-        credential = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: Credential.create(
-                cred_def.raw_value,
-                cred_def_private.raw_value,
-                credential_offer,
-                credential_request,
-                raw_values,
-            ),
-        )
-    except AnoncredsError as err:
-        raise AnonCredsIssuerError("Error creating credential") from err
+            raw_values[attribute] = str(credential_value)
 
-    return credential.to_json()
+        try:
+            credential = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: Credential.create(
+                    cred_def.raw_value,
+                    cred_def_private.raw_value,
+                    credential_offer,
+                    credential_request,
+                    raw_values,
+                ),
+            )
+        except AnoncredsError as err:
+            raise AnonCredsIssuerError("Error creating credential") from err
+
+        return credential.to_json()

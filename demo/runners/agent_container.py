@@ -215,9 +215,7 @@ class AriesAgent(DemoAgent):
             cred_attrs = self.cred_attrs[message["credential_definition_id"]]
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
-                "attributes": [
-                    {"name": n, "value": v} for (n, v) in cred_attrs.items()
-                ],
+                "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()],
             }
             try:
                 cred_ex_rec = await self.admin_POST(
@@ -424,9 +422,7 @@ class AriesAgent(DemoAgent):
                 pres_request_indy = (
                     message["by_format"].get("pres_request", {}).get("indy")
                 )
-                pres_request_dif = (
-                    message["by_format"].get("pres_request", {}).get("dif")
-                )
+                pres_request_dif = message["by_format"].get("pres_request", {}).get("dif")
                 request = {}
 
                 if not pres_request_dif and not pres_request_indy:
@@ -603,9 +599,7 @@ class AriesAgent(DemoAgent):
         self._connection_ready = asyncio.Future()
         with log_timer("Generate invitation duration:"):
             # Generate an invitation
-            log_status(
-                "#7 Create a connection to alice and print out the invite details"
-            )
+            log_status("#7 Create a connection to alice and print out the invite details")
             invi_rec = await self.get_invite(
                 use_did_exchange,
                 auto_accept=auto_accept,
@@ -817,9 +811,7 @@ class AgentContainer:
                 raise Exception("Endorser agent returns None :-(")
 
             # set the endorser invite so the agent can auto-connect
-            self.agent.endorser_invite = (
-                self.endorser_agent.endorser_multi_invitation_url
-            )
+            self.agent.endorser_invite = self.endorser_agent.endorser_multi_invitation_url
             self.agent.endorser_did = self.endorser_agent.endorser_public_did
         else:
             self.endorser_agent = None
@@ -855,25 +847,17 @@ class AgentContainer:
             if self.mediation:
                 # we need to pre-connect the agent to its mediator
                 self.agent.log("Connect wallet to mediator ...")
-                if not await connect_wallet_to_mediator(
-                    self.agent, self.mediator_agent
-                ):
+                if not await connect_wallet_to_mediator(self.agent, self.mediator_agent):
                     raise Exception("Mediation setup FAILED :-(")
             if self.endorser_agent:
                 self.agent.log("Connect wallet to endorser ...")
-                if not await connect_wallet_to_endorser(
-                    self.agent, self.endorser_agent
-                ):
+                if not await connect_wallet_to_endorser(self.agent, self.endorser_agent):
                     raise Exception("Endorser setup FAILED :-(")
         if self.taa_accept:
             await self.agent.taa_accept()
 
         # if we are an author, create our public DID here ...
-        if (
-            self.endorser_role
-            and self.endorser_role == "author"
-            and self.endorser_agent
-        ):
+        if self.endorser_role and self.endorser_role == "author" and self.endorser_agent:
             if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
                 new_did = await self.agent.admin_POST("/wallet/did/create")
                 self.agent.did = new_did["result"]["did"]
@@ -1318,9 +1302,7 @@ def arg_parser(ident: str = None, port: int = 8020):
         metavar=("<api>"),
         help="API level (10 or 20 (default))",
     )
-    parser.add_argument(
-        "--timing", action="store_true", help="Enable timing information"
-    )
+    parser.add_argument("--timing", action="store_true", help="Enable timing information")
     parser.add_argument(
         "--multitenant", action="store_true", help="Enable multitenancy options"
     )
