@@ -8,6 +8,8 @@ from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
     UUID4_EXAMPLE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
@@ -88,7 +90,6 @@ class AnoncredsLinkSecret(BaseModel):
         """VCDI credential request schema metadata."""
 
         schema_class = "BindingProofSchema"
-        unknown = EXCLUDE
 
     def __init__(
         self,
@@ -154,7 +155,6 @@ class DidcommSignedAttachment(BaseModel):
         """Didcomm signed attachment metadata."""
 
         schema_class = "DidcommSignedAttachmentSchema"
-        unknown = EXCLUDE
 
     def __init__(self, attachment_id: str = None, **kwargs):
         """Initialize DidcommSignedAttachment."""
@@ -169,8 +169,9 @@ class DidcommSignedAttachmentSchema(BaseModelSchema):
         """Didcomm Signed Attachment schema metadata."""
 
         model_class = DidcommSignedAttachment
+        unknown = EXCLUDE
 
-    attachment_id = fields.str(
+    attachment_id = fields.Str(
         required=True, metadata={"description": "", "example": ""}
     )
 
@@ -182,7 +183,6 @@ class BindingProof(BaseModel):
         """Binding proof metadata."""
 
         schema_class = "BindingProofSchema"
-        unknown = EXCLUDE
 
     def __init__(
         self,
@@ -203,6 +203,7 @@ class BindingProofSchema(BaseModelSchema):
         """Binding proof schema metadata."""
 
         model_class = BindingProof
+        unknown = EXCLUDE
 
     anoncreds_link_secret = fields.Nested(
         AnoncredsLinkSecretSchema(),

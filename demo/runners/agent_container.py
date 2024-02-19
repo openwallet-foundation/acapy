@@ -16,6 +16,7 @@ from aiohttp import ClientError
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from runners.support.agent import (  # noqa:E402
+    CRED_FORMAT_VC_DI,
     DemoAgent,
     default_genesis_txns,
     start_mediator_agent,
@@ -905,9 +906,7 @@ class AgentContainer:
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        if self.cred_type in [
-            CRED_FORMAT_INDY,
-        ]:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             # need to redister schema and cred def on the ledger
             self.cred_def_id = await self.agent.create_schema_and_cred_def(
                 schema_name,
@@ -974,6 +973,25 @@ class AgentContainer:
 
             return cred_exchange
 
+        elif self.cred_type == CRED_FORMAT_VC_DI:
+            cred_preview = {
+                "@type": CRED_PREVIEW_TYPE,
+                "attributes": cred_attrs,
+            }
+            offer_request = {
+                "connection_id": self.agent.connection_id,
+                "comment": f"Offer on cred def id {cred_def_id}",
+                "auto_remove": False,
+                "credential_preview": cred_preview,
+                "filter": {"vc_di": {"cred_def_id": cred_def_id}},
+                "trace": self.exchange_tracing,
+            }
+            cred_exchange = await self.agent.admin_POST(
+                "/issue-credential-2.0/send-offer", offer_request
+            )
+
+            return cred_exchange
+
         elif self.cred_type == CRED_FORMAT_JSON_LD:
             # TODO create and send the json-ld credential offer
             pass
@@ -1015,9 +1033,7 @@ class AgentContainer:
     async def request_proof(self, proof_request, explicit_revoc_required: bool = False):
         log_status("#20 Request proof of degree from alice")
 
-        if self.cred_type in [
-            CRED_FORMAT_INDY,
-        ]:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             indy_proof_request = {
                 "name": (
                     proof_request["name"]
@@ -1100,9 +1116,7 @@ class AgentContainer:
 
         # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
-        if self.cred_type in [
-            CRED_FORMAT_INDY,
-        ]:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             # return verified status
             return self.agent.last_proof_received["verified"]
 

@@ -188,7 +188,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
-        """Create indy credential proposal."""
+        """Create vc_di credential proposal."""
         if proposal_data is None:
             proposal_data = {}
 
@@ -260,15 +260,15 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
     ) -> None:
-        """Receive indy credential offer."""
+        """Receive vcdi credential offer."""
 
     async def create_request(
         self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
     ) -> CredFormatAttachment:
-        """Create indy credential request."""
+        """Create vcdi credential request."""
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
             raise V20CredFormatError(
-                "Indy issue credential format cannot start from credential request"
+                "vcdi issue credential format cannot start from credential request"
             )
 
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
@@ -332,16 +332,16 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
-        """Receive indy credential request."""
+        """Receive vcdi credential request."""
         if not cred_ex_record.cred_offer:
             raise V20CredFormatError(
-                "Indy issue credential format cannot start from credential request"
+                "vcdi issue credential format cannot start from credential request"
             )
 
     async def issue_credential(
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
-        """Issue indy credential."""
+        """Issue vcdi credential."""
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
         attached_credential = cred_ex_record.cred_offer.attachment(
@@ -402,7 +402,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def receive_credential(
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
     ) -> None:
-        """Receive indy credential.
+        """Receive vcdi credential.
 
         Validation is done in the store credential step.
         """
@@ -410,7 +410,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     async def store_credential(
         self, cred_ex_record: V20CredExRecord, cred_id: str = None
     ) -> None:
-        """Store indy credential."""
+        """Store vcdi credential."""
         cred = cred_ex_record.cred_issue.attachment(VCDICredFormatHandler.format)
 
         rev_reg_def = None
