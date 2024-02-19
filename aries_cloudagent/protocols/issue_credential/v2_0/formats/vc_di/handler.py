@@ -285,7 +285,9 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             )
 
         nonce = cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"]
-        cred_def_id = cred_offer["binding_method"]["anoncreds_link_secret"]["cred_def_id"]
+        cred_def_id = cred_offer["binding_method"]["anoncreds_link_secret"][
+            "cred_def_id"
+        ]
 
         async def _create():
             anoncreds_registry = self.profile.inject(AnonCredsRegistry)
