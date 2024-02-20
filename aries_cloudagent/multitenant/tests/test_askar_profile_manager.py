@@ -99,6 +99,42 @@ class TestAskarProfileMultitenantManager(IsolatedAsyncioTestCase):
                 == wallet_record.wallet_id
             )
 
+    async def test_get_anoncreds_wallet_profile_should_open_store_and_return_anoncreds_profile(
+        self,
+    ):
+        askar_profile_mock_name = "AskarProfile"
+        wallet_record = WalletRecord(
+            wallet_id="test",
+            settings={
+                "wallet.recreate": True,
+                "wallet.seed": "test_seed",
+                "wallet.name": "test_name",
+                "wallet.type": "askar-anoncreds",
+                "wallet.rekey": "test_rekey",
+            },
+        )
+
+        with mock.patch(
+            "aries_cloudagent.multitenant.askar_profile_manager.wallet_config"
+        ) as wallet_config, mock.patch(
+            "aries_cloudagent.multitenant.askar_profile_manager.AskarAnoncredsProfile",
+        ) as AskarAnoncredsProfile:
+            sub_wallet_profile_context = InjectionContext()
+            sub_wallet_profile = AskarAnoncredsProfile(None, None)
+            sub_wallet_profile.context.copy.return_value = sub_wallet_profile_context
+
+            def side_effect(context, provision):
+                sub_wallet_profile.name = askar_profile_mock_name
+                return sub_wallet_profile, None
+
+            wallet_config.side_effect = side_effect
+
+            await self.manager.get_wallet_profile(self.profile.context, wallet_record)
+
+            AskarAnoncredsProfile.assert_called_with(
+                sub_wallet_profile.opened, sub_wallet_profile_context, profile_id="test"
+            )
+
     async def test_get_wallet_profile_should_create_profile(self):
         wallet_record = WalletRecord(wallet_id="test", settings={})
         create_profile_stub = asyncio.Future()
