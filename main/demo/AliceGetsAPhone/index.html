@@ -1,0 +1,2415 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../AriesOpenAPIDemo/">
+      
+      
+        <link rel="next" href="../Endorser/">
+      
+      
+      <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-cloudagent-python/main/docs/assets/aries-favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.10">
+    
+    
+      
+        <title>Alice Gets a Phone - Hyperledger Aries ACA-Py Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#alice-gets-a-mobile-agent" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-header__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-acapy-docs/main/assets/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hyperledger Aries ACA-Py Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Alice Gets a Phone
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hyperledger/aries-cloudagent-python" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hyperledger/aries-cloudagent-python
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../aca-py.org/" class="md-tabs__link">
+          
+  
+  Welcome!
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/DevReadMe/" class="md-tabs__link">
+          
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  Demos
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../gettingStarted/" class="md-tabs__link">
+          
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../deploying/deploymentModel/" class="md-tabs__link">
+          
+  
+  Deploying
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../testing/UnitTests/" class="md-tabs__link">
+          
+  
+  Testing/Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-nav__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-acapy-docs/main/assets/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    Hyperledger Aries ACA-Py Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hyperledger/aries-cloudagent-python" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hyperledger/aries-cloudagent-python
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Welcome!
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Welcome!
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aca-py.org/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Welcome
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py README
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Features
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Features
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DevReadMe/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/devcontainer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DevContainer Support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/SupportedRFCs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Supported Aries Interop Profiles and RFCs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AdminAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Admin API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/PlugIns/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Plugins
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multitenancy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multitenant ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DIDMethods/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DID Methods
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DIDResolution/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DID Resolution
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multiledger/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuring Multiple Indy Ledgers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Endorser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Automatically Endorsing Indy Transations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/JsonLdCredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using W3C JSON-LD Signed Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/SelectiveDisclosureJWTs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using SD-JWTs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AnoncredsProofValidation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AnonCreds Presentation Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multicredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multiple Credential Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/UsingOpenAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code Generation with the Open API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Mediation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py as a DIDComm Mediator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Demos
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Demos
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Alice-Faber Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AriesOpenAPIDemo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Open API Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Alice Gets a Phone
+  </span>
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Endorser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Indy Endorser In Action
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AliceWantsAJsonCredential/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using W3C JSON-LD Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AcmeDemoWorkshop/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIY -- ACME Controller Workshop
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AriesPostmanDemo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Using Postman Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Becoming an Indy/Aries Developer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IndyBasics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Indy Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesBasics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Aries Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DecentralizedIdentityDemos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decentralized Identity Demos
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesBigPicture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries - The Big Picture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesAgentArchitecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Architecture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesMessaging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Messaging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesDeveloperDemos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Developer Demos
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AgentConnections/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agent Connections
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IssuingAnonCredsCredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Issuing AnonCreds Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/PresentingAnonCredsProofs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Presenting AnonCreds Proofs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/YourOwnAriesAgent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Making Your Own ACA-Py Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IndyAriesDevOptions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Developer Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DIDcommMsgs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIDComm Messaging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/RoutingEncryption/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIDComm Message Routing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesRoutingExample/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIDComm Message Routing Example
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ConnectIndyNetwork/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TODO Connecting to an Indy Network
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/CredentialRevocation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AnonCreds Credential Revocation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Deploying
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Deploying
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/deploymentModel/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deployment Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/UpgradingACA-Py/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Upgrading ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/IndySDKtoAskarMigration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Indy SDK to Askar Migration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/Poetry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Use of Poetry in ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/ContainerImagesAndGithubActions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Container Images
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/Databases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Databases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/RedisPlugins/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Persistent Queues and Caching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/AnonCredsWalletType/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The askar-anoncreds Wallet Type
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Testing/Troubleshooting
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Testing/Troubleshooting
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/UnitTests/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Running and Creating Unit Tests
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/Logging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Managing Logging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/INTEGRATION-TESTS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Integration Tests
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/AgentTracing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Protocol Tracing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/Troubleshooting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Contributing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    How to Contribute
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MAINTAINERS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Maintainers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Code of Conduct
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security Vulnerability Reporting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PUBLISHING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Publishing an ACA-Py Release
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../UpdateRTD/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Updating the ACA-Py ReadTheDocs Site
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="alice-gets-a-mobile-agent">Alice Gets a Mobile Agent! <!-- omit in toc --><a class="headerlink" href="#alice-gets-a-mobile-agent" title="Permanent link">&para;</a></h1>
+<p>In this demo, we'll again use our familiar Faber ACA-Py agent to issue credentials to Alice, but this time Alice will use a mobile wallet. To do this we need to run the Faber agent on a publicly accessible port, and Alice will need a compatible mobile wallet. We'll provide pointers to where you can get them.</p>
+<p>This demo also introduces revocation of credentials.</p>
+<h1 id="contents">Contents <!-- omit in toc --><a class="headerlink" href="#contents" title="Permanent link">&para;</a></h1>
+<ul>
+<li><a href="#getting-started">Getting Started</a></li>
+<li><a href="#get-a-mobile-agent">Get a mobile agent</a></li>
+<li><a href="#running-locally-in-docker">Running Locally in Docker</a><ul>
+<li><a href="#install-ngrok-and-jq">Install ngrok and jq</a></li>
+<li><a href="#expose-services-publicly-using-ngrok">Expose services publicly using ngrok</a></li>
+</ul>
+</li>
+<li><a href="#running-in-play-with-docker">Running in Play With Docker</a></li>
+<li><a href="#run-an-instance-of-indy-tails-server">Run an instance of indy-tails-server</a><ul>
+<li><a href="#running-locally-in-a-bash-shell">Running locally in a bash shell?</a></li>
+<li><a href="#running-in-play-with-docker-1">Running in Play with Docker?</a></li>
+</ul>
+</li>
+<li><a href="#run-faber-with-extra-parameters">Run <code>faber</code> With Extra Parameters</a><ul>
+<li><a href="#running-locally-in-a-bash-shell-1">Running locally in a bash shell?</a></li>
+<li><a href="#running-in-play-with-docker-2">Running in Play with Docker?</a></li>
+<li><a href="#waiting-for-the-faber-agent-to-start-">Waiting for the Faber agent to start ...</a></li>
+</ul>
+</li>
+<li><a href="#accept-the-invitation">Accept the Invitation</a></li>
+<li><a href="#issue-a-credential">Issue a Credential</a></li>
+<li><a href="#accept-the-credential">Accept the Credential</a></li>
+<li><a href="#issue-a-presentation-request">Issue a Presentation Request</a></li>
+<li><a href="#present-the-proof">Present the Proof</a></li>
+<li><a href="#review-the-proof">Review the Proof</a></li>
+<li><a href="#revoke-the-credential-and-send-another-proof-request">Revoke the Credential and Send Another Proof Request</a></li>
+<li><a href="#send-a-connectionless-proof-request">Send a Connectionless Proof Request</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+</ul>
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<p>This demo can be run on your local machine or on Play with Docker (PWD), and will demonstrate credential exchange and proof exchange as well as revocation with a mobile agent. Both approaches (running locally and on PWD) will be described, for the most part the commands are the same, but there are a couple of different parameters you need to provide when starting up.</p>
+<p>If you are not familiar with how revocation is currently implemented in Hyperledger Indy, <a href="https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation">this article</a> provides a good background on the technique. A challenge with revocation as it is currently implemented in Hyperledger Indy is the need for the prover (the agent creating the proof) to download tails files associated with the credentials it holds.</p>
+<h3 id="get-a-mobile-agent">Get a mobile agent<a class="headerlink" href="#get-a-mobile-agent" title="Permanent link">&para;</a></h3>
+<p>Of course for this, you need to have a mobile agent. To find, install and setup a compatible mobile agent, follow the instructions <a href="https://github.com/bcgov/identity-kit-poc/blob/master/docs/GettingApp.md">here</a>.</p>
+<h3 id="running-locally-in-docker">Running Locally in Docker<a class="headerlink" href="#running-locally-in-docker" title="Permanent link">&para;</a></h3>
+<p>Open a new bash shell and in a project directory run the following:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/hyperledger/aries-cloudagent-python.git
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>aries-cloudagent-python/demo
+</code></pre></div>
+<p>We'll come back to this in a minute, when we start the <code>faber</code> agent!</p>
+<p>There are a couple of extra steps you need to take to prepare to run the Faber agent locally:</p>
+<h4 id="install-ngrok-and-jq">Install ngrok and jq<a class="headerlink" href="#install-ngrok-and-jq" title="Permanent link">&para;</a></h4>
+<p><a href="https://ngrok.com/">ngrok</a> is used to expose public endpoints for services running locally on your computer.</p>
+<p><a href="https://github.com/stedolan/jq">jq</a> is a json parser that is used to automatically detect the endpoints exposed by ngrok.</p>
+<p>You can install ngrok from <a href="https://ngrok.com/">here</a></p>
+<p>You can download jq releases <a href="https://github.com/stedolan/jq/releases">here</a></p>
+<h4 id="expose-services-publicly-using-ngrok">Expose services publicly using ngrok<a class="headerlink" href="#expose-services-publicly-using-ngrok" title="Permanent link">&para;</a></h4>
+<p>Note that this is <em>only required when running docker on your local machine</em>. When you run on PWD a public endpoint for your agent is exposed automatically.</p>
+<p>Since the mobile agent will need some way to communicate with the agent running on your local machine in docker, we will need to create a publicly accesible url for some services on your machine. The easiest way to do this is with <a href="https://ngrok.com/">ngrok</a>. Once ngrok is installed, create a tunnel to your local machine:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ngrok<span class="w"> </span>http<span class="w"> </span><span class="m">8020</span>
+</code></pre></div>
+<p>This service is used for your local aca-py agent - it is the endpoint that is advertised for other Aries agents to connect to.</p>
+<p>You will see something like this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Forwarding                    http://abc123.ngrok.io -&gt; http://localhost:8020
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Forwarding                    https://abc123.ngrok.io -&gt; http://localhost:8020
+</code></pre></div>
+<p>This creates a public url for ports 8020 on your local machine.</p>
+<p>Note that an ngrok process is created automatically for your tails server.</p>
+<p>Keep this process running as we'll come back to it in a moment.</p>
+<h3 id="running-in-play-with-docker">Running in Play With Docker<a class="headerlink" href="#running-in-play-with-docker" title="Permanent link">&para;</a></h3>
+<p>To run the necessary terminal sessions in your browser, go to the Docker playground service <a href="https://labs.play-with-docker.com/">Play with Docker</a>. Don't know about Play with Docker? Check <a href="https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker">this out</a> to learn more.</p>
+<p>Open a new bash shell and in a project directory run the following:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/hyperledger/aries-cloudagent-python.git
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>aries-cloudagent-python/demo
+</code></pre></div>
+<p>We'll come back to this in a minute, when we start the <code>faber</code> agent!</p>
+<h3 id="run-an-instance-of-indy-tails-server">Run an instance of indy-tails-server<a class="headerlink" href="#run-an-instance-of-indy-tails-server" title="Permanent link">&para;</a></h3>
+<p>For revocation to function, we need another component running that is used to store what are called tails files.</p>
+<p>If you are not running with revocation enabled you can skip this step.</p>
+<h4 id="running-locally-in-a-bash-shell">Running locally in a bash shell?<a class="headerlink" href="#running-locally-in-a-bash-shell" title="Permanent link">&para;</a></h4>
+<p>Open a new bash shell, and in a project directory, run:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/bcgov/indy-tails-server.git
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>indy-tails-server/docker
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>./manage<span class="w"> </span>build
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>./manage<span class="w"> </span>start
+</code></pre></div>
+<p>This will run the required components for the tails server to function and make a tails server available on port 6543.</p>
+<p>This will also automatically start an ngrok server that will expose a public url for your tails server - this is required to support mobile agents. The docker output will look something like this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ngrok-tails-server_1<span class="w">  </span><span class="p">|</span><span class="w"> </span><span class="nv">t</span><span class="o">=</span><span class="m">2020</span>-05-13T22:51:14+0000<span class="w"> </span><span class="nv">lvl</span><span class="o">=</span>info<span class="w"> </span><span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;started tunnel&quot;</span><span class="w"> </span><span class="nv">obj</span><span class="o">=</span>tunnels<span class="w"> </span><span class="nv">name</span><span class="o">=</span><span class="s2">&quot;command_line (http)&quot;</span><span class="w"> </span><span class="nv">addr</span><span class="o">=</span>http://tails-server:6543<span class="w"> </span><span class="nv">url</span><span class="o">=</span>http://c5789aa0.ngrok.io
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>ngrok-tails-server_1<span class="w">  </span><span class="p">|</span><span class="w"> </span><span class="nv">t</span><span class="o">=</span><span class="m">2020</span>-05-13T22:51:14+0000<span class="w"> </span><span class="nv">lvl</span><span class="o">=</span>info<span class="w"> </span><span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;started tunnel&quot;</span><span class="w"> </span><span class="nv">obj</span><span class="o">=</span>tunnels<span class="w"> </span><span class="nv">name</span><span class="o">=</span>command_line<span class="w"> </span><span class="nv">addr</span><span class="o">=</span>http://tails-server:6543<span class="w"> </span><span class="nv">url</span><span class="o">=</span>https://c5789aa0.ngrok.io
+</code></pre></div>
+<p>Note the server name in the <code>url=https://c5789aa0.ngrok.io</code> parameter (<code>https://c5789aa0.ngrok.io</code>) - this is the external url for your tails server. Make sure you use the <code>https</code> url!</p>
+<h4 id="running-in-play-with-docker_1">Running in Play with Docker?<a class="headerlink" href="#running-in-play-with-docker_1" title="Permanent link">&para;</a></h4>
+<p>Run the same steps on <em>PWD</em> as you would run locally (see above).  Open a new shell (click on "ADD NEW INSTANCE") to run the tails server.</p>
+<p>Note that with <em>Play with Docker</em> it can be challenging to capture the information you need from the log file as it scrolls by, you can try leaving off the <code>--events</code> option when you run the Faber agent to reduce the quantity of information logged to the screen.</p>
+<h3 id="run-faber-with-extra-parameters">Run <code>faber</code> With Extra Parameters<a class="headerlink" href="#run-faber-with-extra-parameters" title="Permanent link">&para;</a></h3>
+<h4 id="running-locally-in-a-bash-shell_1">Running locally in a bash shell?<a class="headerlink" href="#running-locally-in-a-bash-shell_1" title="Permanent link">&para;</a></h4>
+<p>If you are running in a <em>local bash shell</em>, navigate to the <code>demo</code> directory in
+your fork/clone of the Aries Cloud Agent Python repository and run:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">TAILS_NETWORK</span><span class="o">=</span>docker_tails-server<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--aip<span class="w"> </span><span class="m">10</span><span class="w"> </span>--revocation<span class="w"> </span>--events
+</code></pre></div>
+<p>(Note that we have to start faber with <code>--aip 10</code> for compatibility with mobile clients.)</p>
+<p>The <code>TAILS_NETWORK</code> parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).</p>
+<h4 id="running-in-play-with-docker_2">Running in Play with Docker?<a class="headerlink" href="#running-in-play-with-docker_2" title="Permanent link">&para;</a></h4>
+<p>If you are running in <em>Play with Docker</em>, navigate to the <code>demo</code> folder in the
+clone of Aries Cloud Agent Python and run the following:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">PUBLIC_TAILS_URL</span><span class="o">=</span>https://c4f7fbb85911.ngrok.io<span class="w"> </span><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--aip<span class="w"> </span><span class="m">10</span><span class="w"> </span>--revocation<span class="w"> </span>--events
+</code></pre></div>
+<p>The <code>PUBLIC_TAILS_URL</code> parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.</p>
+<p>Use the ngrok url for the tails server that you noted earlier.</p>
+<p>*Note that you <em>must</em> use the <code>https</code> url for the tails server endpoint.</p>
+<p>*Note - you may want to leave off the <code>--events</code> option when you run the Faber agent, if you are finding you are getting too much logging output.</p>
+<h4 id="waiting-for-the-faber-agent-to-start">Waiting for the Faber agent to start ...<a class="headerlink" href="#waiting-for-the-faber-agent-to-start" title="Permanent link">&para;</a></h4>
+<p>The <code>Preparing agent image...</code> step on the first run takes a bit of time, so while we wait, let's look at the details of the commands. Running Faber is similar to the instructions in the <a href="../AriesOpenAPIDemo/">Aries OpenAPI Demo</a> "Play with Docker" section, except:</p>
+<ul>
+<li>We are using the BCovrin Test network because that is a network that the mobile agents can be configured to use.</li>
+<li>We are running in "auto" mode, so we will make no manual acknowledgements.</li>
+<li>The revocation related changes:</li>
+<li>The <code>TAILS_NETWORK</code> parameter tells the <code>./run_demo</code> script how to connect to the tails server and determine the public ngrok endpoint.</li>
+<li>The <code>PUBLIC_TAILS_URL</code> environment variable is the address of your tails server (must be <code>https</code>).</li>
+<li>The <code>--revocation</code> parameter to the <code>./run-demo</code> script activates the ACA-Py revocation issuance.</li>
+</ul>
+<p>As part of its startup process, the agent will publish a revocation registry to the ledger.</p>
+<details>
+    <summary>Click here to view screenshot of the revocation registry on the ledger</summary>
+    <img src="collateral/revocation-2-ledger.png" alt="Ledger">
+</details>
+
+<h2 id="accept-the-invitation">Accept the Invitation<a class="headerlink" href="#accept-the-invitation" title="Permanent link">&para;</a></h2>
+<p>When the Faber agent starts up it automatically creates an invitation and generates a QR code on the screen. On your mobile app, select "SCAN CODE" (or equivalent) and point your camera at the generated QR code. The mobile agent should automatically capture the code and ask you to confirm the connection. Confirm it.</p>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-1-connect-1.jpg" alt="Accept Invitation">
+</details>
+
+<p>The mobile agent will give you feedback on the connection process, something like "A connection was added to your wallet".</p>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-1-connect-2.jpg" alt="Add Connection to Wallet">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-1-connect-3.jpg" alt="Add Connection to Wallet">
+</details>
+
+<p>Switch your browser back to Play with Docker. You should see that the connection has been established, and there is a prompt for what actions you want to take, e.g. "Issue Credential", "Send Proof Request" and so on.</p>
+<p>Tip: If your screen is too small to display the QR code (this can happen in Play With Docker because the shell is only given a small portion of the browser) you can copy the invitation url to a site like <a href="https://www.the-qrcode-generator.com/">https://www.the-qrcode-generator.com/</a> to convert the invitation url into a QR code that you can scan. Make sure you select the <code>URL</code> option, and copy the <code>invitation_url</code>, which will look something like:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>https://abfde260.ngrok.io?c_i<span class="o">=</span>eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZjI2ZjA2YTItNWU1Mi00YTA5LWEwMDctOTNkODBiZTYyNGJlIiwgInJlY2lwaWVudEtleXMiOiBbIjlQRFE2alNXMWZwZkM5UllRWGhCc3ZBaVJrQmVKRlVhVmI0QnRQSFdWbTFXIl0sICJsYWJlbCI6ICJGYWJlci5BZ2VudCIsICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cHM6Ly9hYmZkZTI2MC5uZ3Jvay5pbyJ9
+</code></pre></div>
+<p>Or this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>http://ip10-0-121-4-bquqo816b480a4bfn3kg-8020.direct.play-with-docker.com?c_i<span class="o">=</span><span class="nv">eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZWI2MTI4NDUtYmU1OC00YTNiLTk2MGUtZmE3NDUzMGEwNzkyIiwgInJlY2lwaWVudEtleXMiOiBbIkFacEdoMlpIOTJVNnRFRTlmYk13Z3BqQkp3TEUzRFJIY1dCbmg4Y2FqdzNiIl0sICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cDovL2lwMTAtMC0xMjEtNC1icXVxbzgxNmI0ODBhNGJmbjNrZy04MDIwLmRpcmVjdC5wbGF5LXdpdGgtdm9uLnZvbnguaW8iLCAibGFiZWwiOiAiRmFiZXIuQWdlbnQifQ</span><span class="o">==</span>
+</code></pre></div>
+<p>Note that this will use the ngrok endpoint if you are running locally, or your PWD endpoint if you are running on PWD.</p>
+<h2 id="issue-a-credential">Issue a Credential<a class="headerlink" href="#issue-a-credential" title="Permanent link">&para;</a></h2>
+<p>We will use the Faber console to issue a credential. This could be done using the Swagger API as we have done in the connection process. We'll leave that as an exercise to the user.</p>
+<p>In the Faber console, select option <code>1</code> to send a credential to the mobile agent.</p>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-3-credential-0.png" alt="Issue Credential">
+</details>
+
+<p>The Faber agent outputs details to the console; e.g.,</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Faber      | Credential: state = credential-issued, cred_ex_id = ba3089d6-92da-4cb7-9062-7f24066b2a2a
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>Faber      | Revocation registry ID: CMqNjZ8e59jDuBYcquce4D:4:CMqNjZ8e59jDuBYcquce4D:3:CL:50:faber.agent.degree_schema:CL_ACCUM:4f4fb2e4-3a59-45b1-8921-578d005a7ff6
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>Faber      | Credential revocation ID: 1
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>Faber      | Credential: state = done, cred_ex_id = ba3089d6-92da-4cb7-9062-7f24066b2a2a
+</code></pre></div>
+<p>The revocation registry id and credential revocation id only appear if revocation is active. If you are doing revocation, you to need the <code>Revocation registry id</code> later, so we recommend that you copy it it now and paste it into a text file or someplace that you can access later. If you don't write it down, you can get the Id from the Admin API using the <strong><code>GET /revocation/active-registry/{cred_def_id}</code></strong> endpoint, and passing in the credential definition Id (which you can get from the <strong><code>GET /credential-definitions/created</code></strong> endpoint).</p>
+<h3 id="accept-the-credential">Accept the Credential<a class="headerlink" href="#accept-the-credential" title="Permanent link">&para;</a></h3>
+<p>The credential offer should automatically show up in the mobile agent. Accept the offered credential following the instructions provided by the mobile agent. That will look something like this:</p>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-3-credential-1.jpg" alt="Credential Offer">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-3-credential-2.jpg" alt="Credential Details">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-3-credential-3.jpg" alt="Credential Acceptance">
+</details>
+
+<h2 id="issue-a-presentation-request">Issue a Presentation Request<a class="headerlink" href="#issue-a-presentation-request" title="Permanent link">&para;</a></h2>
+<p>We will use the Faber console to ask mobile agent for a proof. This could be done using the Swagger API, but we'll leave that as an exercise to the user.</p>
+<p>In the Faber console, select option <code>2</code> to send a proof request to the mobile agent.</p>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-4-proof-0.png" alt="Request Proof">
+</details>
+
+<h2 id="present-the-proof">Present the Proof<a class="headerlink" href="#present-the-proof" title="Permanent link">&para;</a></h2>
+<p>The presentation (proof) request should automatically show up in the mobile agent. Follow the instructions provided by the mobile agent to prepare and send the proof back to Faber. That will look something like this:</p>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-4-proof-1.jpg" alt="Proof Request Notice">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-4-proof-2.jpg" alt="Proof Request Details">
+</details>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-4-proof-3.jpg" alt="Proof Presentation">
+</details>
+
+<p>If the mobile agent is able to successfully prepare and send the proof, you can go back to the Play with Docker terminal to see the status of the proof.</p>
+<p>The process should "just work" for the non-revocation use case. If you are using revocation, your results may vary. As of writing this, we get failures on the wallet side with some mobile wallets, and on the Faber side with others (an error in the Indy SDK). As the results improve, we'll update this. Please let us know through GitHub issues if you have any problems running this.</p>
+<h2 id="review-the-proof">Review the Proof<a class="headerlink" href="#review-the-proof" title="Permanent link">&para;</a></h2>
+<p>In the Faber console window, the proof should be received as validated.</p>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/S-4-proof-4.png" alt="Proof Validation">
+</details>
+
+<h2 id="revoke-the-credential-and-send-another-proof-request">Revoke the Credential and Send Another Proof Request<a class="headerlink" href="#revoke-the-credential-and-send-another-proof-request" title="Permanent link">&para;</a></h2>
+<p>If you have enabled revocation, you can try revoking the credential and publishing its pending revoked status (<code>faber</code> options <code>5</code> and <code>6</code>). For the revocation step, You will need the revocation registry identifier and the credential revocation identifier (which is 1 for the first credential you issued), as the Faber agent logged them to the console at credential issue.</p>
+<p>Once that is done, try sending another proof request and see what happens! Experiment with immediate and pending publication. Note that immediate publication also publishes any pending revocations on its revocation registry.</p>
+<details>
+    <summary>Click here to view screenshot</summary>
+    <img src="collateral/revocation-3-console.png" alt="Revocation">
+</details>
+
+<h2 id="send-a-connectionless-proof-request">Send a Connectionless Proof Request<a class="headerlink" href="#send-a-connectionless-proof-request" title="Permanent link">&para;</a></h2>
+<p>A connectionless proof request works the same way as a regular proof request, however it does not require a connection to be established between the Verifier and Holder/Prover.</p>
+<p>This is supported in the Faber demo, however note that it will only work when running Faber on the Docker playground service <a href="https://labs.play-with-docker.com/">Play with Docker</a>.  (This is because both the Faber agent <em>and</em> controller both need to be exposed to the mobile agent.)</p>
+<p>If you have gone through the above steps, you can delete the Faber connection in your mobile agent (however <em>do not</em> delete the credential that Faber issued to you).</p>
+<p>Then in the faber demo, select option <code>2a</code> - Faber will display a QR code which you can scan with your mobile agent.  You will see the same proof request displayed in your mobile agent, which you can respond to.</p>
+<p>Behind the scenes, the Faber controller delivers the proof request information (linked from the url encoded in the QR code) directly to your mobile agent, without establishing and agent-to-agent connection first.  If you are interested in the underlying mechanics, you can review the <code>faber.py</code> code in the repository.</p>
+<h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
+<p>That’s the Faber-Mobile Alice demo. Feel free to play with the Swagger API and experiment further and figure out what an instance of a controller has to do to make things work.</p>
+<!-- Docs to Markdown version 1.0β17 -->
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../AriesOpenAPIDemo/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Open API Tutorial">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Open API Tutorial
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../Endorser/" class="md-footer__link md-footer__link--next" aria-label="Next: Hyperledger Indy Endorser In Action">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Hyperledger Indy Endorser In Action
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.expand", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "toc.follow"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.8fd75fb4.min.js"></script>
+      
+    
+  </body>
+</html>

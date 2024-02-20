@@ -1,0 +1,2636 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../ConnectIndyNetwork/">
+      
+      
+        <link rel="next" href="../../deploying/deploymentModel/">
+      
+      
+      <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-cloudagent-python/main/docs/assets/aries-favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.10">
+    
+    
+      
+        <title>AnonCreds Credential Revocation - Hyperledger Aries ACA-Py Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#credential-revocation-in-aca-py" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-header__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-acapy-docs/main/assets/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hyperledger Aries ACA-Py Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              AnonCreds Credential Revocation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hyperledger/aries-cloudagent-python" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hyperledger/aries-cloudagent-python
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../aca-py.org/" class="md-tabs__link">
+          
+  
+  Welcome!
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/DevReadMe/" class="md-tabs__link">
+          
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../demo/" class="md-tabs__link">
+          
+  
+  Demos
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../deploying/deploymentModel/" class="md-tabs__link">
+          
+  
+  Deploying
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../testing/UnitTests/" class="md-tabs__link">
+          
+  
+  Testing/Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-nav__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-acapy-docs/main/assets/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    Hyperledger Aries ACA-Py Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hyperledger/aries-cloudagent-python" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hyperledger/aries-cloudagent-python
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Welcome!
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Welcome!
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aca-py.org/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Welcome
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py README
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Features
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Features
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DevReadMe/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/devcontainer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DevContainer Support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/SupportedRFCs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Supported Aries Interop Profiles and RFCs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AdminAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Admin API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/PlugIns/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Plugins
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multitenancy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multitenant ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DIDMethods/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DID Methods
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DIDResolution/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DID Resolution
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multiledger/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuring Multiple Indy Ledgers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Endorser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Automatically Endorsing Indy Transations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/JsonLdCredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using W3C JSON-LD Signed Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/SelectiveDisclosureJWTs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using SD-JWTs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AnoncredsProofValidation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AnonCreds Presentation Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multicredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multiple Credential Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/UsingOpenAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code Generation with the Open API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Mediation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py as a DIDComm Mediator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Demos
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Demos
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Alice-Faber Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo/AriesOpenAPIDemo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Open API Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo/AliceGetsAPhone/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Alice Gets a Phone
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo/Endorser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Indy Endorser In Action
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo/AliceWantsAJsonCredential/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using W3C JSON-LD Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo/AcmeDemoWorkshop/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIY -- ACME Controller Workshop
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../demo/AriesPostmanDemo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Using Postman Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Becoming an Indy/Aries Developer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IndyBasics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Indy Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AriesBasics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Aries Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DecentralizedIdentityDemos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decentralized Identity Demos
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AriesBigPicture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries - The Big Picture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AriesAgentArchitecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Architecture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AriesMessaging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Messaging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AriesDeveloperDemos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Developer Demos
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AgentConnections/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agent Connections
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IssuingAnonCredsCredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Issuing AnonCreds Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PresentingAnonCredsProofs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Presenting AnonCreds Proofs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../YourOwnAriesAgent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Making Your Own ACA-Py Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IndyAriesDevOptions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Developer Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DIDcommMsgs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIDComm Messaging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RoutingEncryption/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIDComm Message Routing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AriesRoutingExample/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIDComm Message Routing Example
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConnectIndyNetwork/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TODO Connecting to an Indy Network
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    AnonCreds Credential Revocation
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    AnonCreds Credential Revocation
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-aca-py-revocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using ACA-Py Revocation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#revocation-notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      Revocation Notification
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Revocation Notification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#issuer-role" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issuer Role
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#holder-role" class="md-nav__link">
+    <span class="md-ellipsis">
+      Holder Role
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manually-creating-revocation-registries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manually Creating Revocation Registries
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#revocation-registry-rotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Revocation Registry Rotation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Deploying
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Deploying
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/deploymentModel/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deployment Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/UpgradingACA-Py/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Upgrading ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/IndySDKtoAskarMigration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Indy SDK to Askar Migration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/Poetry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Use of Poetry in ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/ContainerImagesAndGithubActions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Container Images
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/Databases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Databases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/RedisPlugins/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Persistent Queues and Caching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/AnonCredsWalletType/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The askar-anoncreds Wallet Type
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Testing/Troubleshooting
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Testing/Troubleshooting
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/UnitTests/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Running and Creating Unit Tests
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/Logging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Managing Logging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/INTEGRATION-TESTS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Integration Tests
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/AgentTracing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Protocol Tracing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/Troubleshooting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Contributing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    How to Contribute
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MAINTAINERS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Maintainers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Code of Conduct
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security Vulnerability Reporting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PUBLISHING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Publishing an ACA-Py Release
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../UpdateRTD/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Updating the ACA-Py ReadTheDocs Site
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-aca-py-revocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using ACA-Py Revocation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#revocation-notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      Revocation Notification
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Revocation Notification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#issuer-role" class="md-nav__link">
+    <span class="md-ellipsis">
+      Issuer Role
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#holder-role" class="md-nav__link">
+    <span class="md-ellipsis">
+      Holder Role
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manually-creating-revocation-registries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manually Creating Revocation Registries
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#revocation-registry-rotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Revocation Registry Rotation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="credential-revocation-in-aca-py">Credential Revocation in ACA-Py<a class="headerlink" href="#credential-revocation-in-aca-py" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Revocation is perhaps the most difficult aspect of verifiable credentials to
+manage. This is true in AnonCreds, particularly in the management of AnonCreds
+revocation registries (RevRegs). Through experience in deploying use cases with
+ACA-Py we have found that it is very difficult for the controller (the
+application code) to manage revocation registries, and as such, we have changed
+the implementation in ACA-Py to ensure that it is handling almost all the work
+in revoking credentials. The only thing the controller writer has to do is track
+the minimum things necessary to the business rules around revocation, such as
+whose credentials should be revoked, and how close to real-time should
+revocations be published?</p>
+<p>Here is a  summary of all of the AnonCreds revocation activities performed
+by issuers. After this, we'll provide a (much shorter) list of what an ACA-Py
+issuer controller has to do. For those interested, there is a more
+<a href="https://github.com/hyperledger/indy-hipe/blob/main/text/0011-cred-revocation/README.md">complete overview of AnonCreds revocation</a>, including all of the roles, and some details
+of the cryptography behind the approach:</p>
+<ul>
+<li>Issuers indicate that a credential will support revocation when creating the
+  credential definition (CredDef).</li>
+<li>Issuers create a Revocation Registry definition object of a given size
+  (MaxSize -- the number of credentials that can use the RevReg) and publish it
+  to the ledger (or more precisely, the verifiable data registry). In doing
+  that, a Tails file is also created and published somewhere on the Internet,
+  accessible to all Holders.</li>
+<li>Issuers create and publish an initial Revocation Registry Entry that defines
+  the state of all credentials within the RevReg, either all active or all
+  revoked. It's a really bad idea to create a RevReg starting with "all
+  revoked", so don't do that.</li>
+<li>Issuers issue credentials and note the "revocation ID" of each credential. The
+  "revocation Id" is a compound key consisting of the RevRegId from which the
+  credential was issued, and the index within that registry of that credential.
+  An index (from 1 to Max Size of the registry -- or perhaps 0 to Max Size - 1)
+  can only be associated with one issued credential.</li>
+<li>At some point, a RevReg is all used up (full), and the Issuer must create another
+  one. Ideally, this does not cause an extra delay in the process of issuing credentials.</li>
+<li>At some point, the Issuer revokes the credential of a holder, using the
+  revocation Id of the relevant credential.</li>
+<li>At some point, either in conjunction with each revocation, or for a batch of
+  revocations, the Issuer publishes the RevReg(s) associated with a CredDef to
+  the ledger. If there are multiple revocations spread across multiple RevRegs,
+  there may be multiple writes to the ledger.</li>
+</ul>
+<p>Since managing RevRegs is really hard for an ACA-Py controller, we have tried to
+minimize what an ACA-Py Issuer controller has to do, leaving everything else to be
+handled by ACA-Py. Of the items in the previous list, here is what an ACA-Py
+issuer controller does:</p>
+<ul>
+<li>Issuers flag that revocation will be used when creating the CredDef and the
+  desired size of the RevReg. ACA-Py takes case of creating the initial
+  RevReg(s) without further action by the controller.</li>
+<li>Two RevRegs are initially created, so there is no delay when one fills up,
+    and another is needed. In ongoing operations, when one RevReg fills up, the
+    other active RevReg is used, and a new RevReg is created.</li>
+<li>On creation of each RevReg, its corresponding tails file is published by
+    ACA-Py.</li>
+<li>On Issuance, the controller receives the logical “revocation ID" (combination
+  of RevRegId+Index) of the issued credential to track.</li>
+<li>On Revocation, the controller passes in the logical “revocation ID" of the
+  credential to be revoked, including a “notify holder” flag. ACA-Py records the
+  revocation as pending and, if asked, sends a notification to the holder using
+  a DIDComm message (<a href="https://github.com/hyperledger/aries-rfcs/blob/main/features/0183-revocation-notification/README.md">Aries RFC 0183: Revocation Notification</a>).</li>
+<li>The Issuer requests that the revocations for a CredDefId be published. ACA-Py
+  figures out what RevRegs contain pending revocation and so need to be
+  published, and publishes each.</li>
+</ul>
+<p>That is the minimum amount of tracking the controller must do while still being
+able to execute the business rules around revoking credentials.</p>
+<p>From experience, we’ve added to two extra features to deal with unexpected
+conditions:</p>
+<ul>
+<li>When using an Indy (or similar) ledger, if the local copy of a RevReg gets out
+  of sync with the ledger copy (perhaps due to a failed ledger write), the
+  Framework can create an update transaction to “fix” the issue. This is needed
+  for a revocation state using deltas-type solution (like Indy), but not for a
+  ledger that publishes revocation states containing the entire state of each
+  credential.</li>
+<li>From time to time there may be a need to <a href="#revocation-registry-rotation">“rotate” a
+  RevReg</a> — to mark existing, active RevRegs as
+  “decommissioned”, and create new ones in their place. We’ve added an endpoint
+  (api call) for that.</li>
+</ul>
+<h2 id="using-aca-py-revocation">Using ACA-Py Revocation<a class="headerlink" href="#using-aca-py-revocation" title="Permanent link">&para;</a></h2>
+<p>The following are the ACA-Py steps and APIs involved in handling credential revocation.</p>
+<p>To try these out, use the ACA-Py Alice/Faber demo with tails server support
+enabled. You will need to have the URL of an running instance of
+<a href="https://github.com/bcgov/indy-tails-server">https://github.com/bcgov/indy-tails-server</a>.</p>
+<p>Include the command line parameter <code>--tails-server-base-url &lt;indy-tails-server url&gt;</code></p>
+<ol>
+<li>
+<p>Publish credential definition</p>
+<p>Credential definition is created. All required revocation collateral is also created
+and managed including revocation registry definition, entry, and tails file.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="err">POST</span><span class="w"> </span><span class="err">/crede</span><span class="kc">nt</span><span class="err">ial</span><span class="mi">-</span><span class="err">de</span><span class="kc">f</span><span class="err">i</span><span class="kc">n</span><span class="err">i</span><span class="kc">t</span><span class="err">io</span><span class="kc">ns</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p">{</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;schema_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">schema_id</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;support_revocation&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="err">#</span><span class="w"> </span><span class="err">O</span><span class="kc">nl</span><span class="err">y</span><span class="w"> </span><span class="kc">nee</span><span class="err">ded</span><span class="w"> </span><span class="err">i</span><span class="kc">f</span><span class="w"> </span><span class="err">suppor</span><span class="kc">t</span><span class="err">_revoca</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="err">is</span><span class="w"> </span><span class="kc">true</span><span class="err">.</span><span class="w"> </span><span class="err">De</span><span class="kc">faults</span><span class="w"> </span><span class="kc">t</span><span class="err">o</span><span class="w"> </span><span class="mi">100</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">&quot;revocation_registry_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">size_i</span><span class="kc">nt</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">&quot;tag&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">cred_de</span><span class="kc">f</span><span class="err">_</span><span class="kc">ta</span><span class="err">g</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="err">Op</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">}</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="err">Respo</span><span class="kc">nse</span><span class="p">:</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">{</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="nt">&quot;credential_definition_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;credential_definition_id&quot;</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">}</span>
+</code></pre></div>
+</li>
+<li>
+<p>Issue credential</p>
+<p>This endpoint manages revocation data. If new revocation registry data is required,
+it is automatically managed in the background.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">POST</span><span class="w"> </span><span class="err">/issue</span><span class="mi">-</span><span class="err">crede</span><span class="kc">nt</span><span class="err">ial/se</span><span class="kc">n</span><span class="err">d</span><span class="mi">-</span><span class="err">o</span><span class="kc">ffer</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="p">{</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">crede</span><span class="kc">nt</span><span class="err">ial_de</span><span class="kc">f</span><span class="err">i</span><span class="kc">n</span><span class="err">i</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_id</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">&quot;revoc_reg_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">revoca</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_regis</span><span class="kc">tr</span><span class="err">y_id</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">&quot;auto_remove&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">False</span><span class="p">,</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="err">We</span><span class="w"> </span><span class="kc">nee</span><span class="err">d</span><span class="w"> </span><span class="kc">t</span><span class="err">he</span><span class="w"> </span><span class="err">crede</span><span class="kc">nt</span><span class="err">ial</span><span class="w"> </span><span class="err">excha</span><span class="kc">n</span><span class="err">ge</span><span class="w"> </span><span class="err">record</span><span class="w"> </span><span class="err">whe</span><span class="kc">n</span><span class="w"> </span><span class="err">revoki</span><span class="kc">n</span><span class="err">g</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="err">...</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">}</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="err">Respo</span><span class="kc">nse</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">{</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">&quot;credential_exchange_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">crede</span><span class="kc">nt</span><span class="err">ial_excha</span><span class="kc">n</span><span class="err">ge_id</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">}</span>
+</code></pre></div>
+</li>
+<li>
+<p>Revoking credential</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="err">POST</span><span class="w"> </span><span class="err">/revoca</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">/revoke</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="p">{</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&quot;rev_reg_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;revoca</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_regis</span><span class="kc">tr</span><span class="err">y_id&gt;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">&quot;cred_rev_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;crede</span><span class="kc">nt</span><span class="err">ial_revoca</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_id&gt;</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">&quot;publish&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;</span><span class="kc">true</span><span class="err">|</span><span class="kc">false</span><span class="err">&gt;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>If publish=false, you must use <code>​/issue-credential​/publish-revocations</code> to publish
+pending revocations in batches. Revocation are not written to ledger until this is called.</p>
+</li>
+<li>
+<p>When asking for proof, specify the time span when the credential is NOT revoked</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="w"> </span><span class="err">POST</span><span class="w"> </span><span class="err">/prese</span><span class="kc">nt</span><span class="mi">-</span><span class="err">proo</span><span class="kc">f</span><span class="err">/se</span><span class="kc">n</span><span class="err">d</span><span class="mi">-</span><span class="err">reques</span><span class="kc">t</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">   </span><span class="nt">&quot;connection_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">   </span><span class="nt">&quot;proof_request&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">     </span><span class="nt">&quot;requested_attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">       </span><span class="p">{</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">         </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">         </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span><span class="p">,</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">         </span><span class="err">...</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">         </span><span class="nt">&quot;non_revoked&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="err">Op</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span><span class="p">,</span><span class="w"> </span><span class="err">override</span><span class="w"> </span><span class="kc">t</span><span class="err">he</span><span class="w"> </span><span class="err">global</span><span class="w"> </span><span class="err">o</span><span class="kc">ne</span><span class="w"> </span><span class="err">whe</span><span class="kc">n</span><span class="w"> </span><span class="err">speci</span><span class="kc">f</span><span class="err">ied</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">         </span><span class="p">{</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">           </span><span class="nt">&quot;from&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;seco</span><span class="kc">n</span><span class="err">ds</span><span class="w"> </span><span class="kc">fr</span><span class="err">om</span><span class="w"> </span><span class="err">U</span><span class="kc">n</span><span class="err">ix</span><span class="w"> </span><span class="err">Epoch&gt;</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="err">Op</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span><span class="p">,</span><span class="w"> </span><span class="err">de</span><span class="kc">fault</span><span class="w"> </span><span class="err">is</span><span class="w"> </span><span class="mi">0</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">           </span><span class="nt">&quot;to&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;seco</span><span class="kc">n</span><span class="err">ds</span><span class="w"> </span><span class="kc">fr</span><span class="err">om</span><span class="w"> </span><span class="err">U</span><span class="kc">n</span><span class="err">ix</span><span class="w"> </span><span class="err">Epoch&gt;</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">         </span><span class="p">}</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">       </span><span class="p">},</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">       </span><span class="err">...</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">     </span><span class="p">],</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">     </span><span class="nt">&quot;requested_predicates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">       </span><span class="p">{</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">         </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">...</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">         </span><span class="err">...</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">         </span><span class="nt">&quot;non_revoked&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="err">Op</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span><span class="p">,</span><span class="w"> </span><span class="err">override</span><span class="w"> </span><span class="kc">t</span><span class="err">he</span><span class="w"> </span><span class="err">global</span><span class="w"> </span><span class="err">o</span><span class="kc">ne</span><span class="w"> </span><span class="err">whe</span><span class="kc">n</span><span class="w"> </span><span class="err">speci</span><span class="kc">f</span><span class="err">ied</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">         </span><span class="p">{</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">           </span><span class="nt">&quot;from&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;seco</span><span class="kc">n</span><span class="err">ds</span><span class="w"> </span><span class="kc">fr</span><span class="err">om</span><span class="w"> </span><span class="err">U</span><span class="kc">n</span><span class="err">ix</span><span class="w"> </span><span class="err">Epoch&gt;</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="err">Op</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span><span class="p">,</span><span class="w"> </span><span class="err">de</span><span class="kc">fault</span><span class="w"> </span><span class="err">is</span><span class="w"> </span><span class="mi">0</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">           </span><span class="nt">&quot;to&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;seco</span><span class="kc">n</span><span class="err">ds</span><span class="w"> </span><span class="kc">fr</span><span class="err">om</span><span class="w"> </span><span class="err">U</span><span class="kc">n</span><span class="err">ix</span><span class="w"> </span><span class="err">Epoch&gt;</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">         </span><span class="p">}</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">       </span><span class="p">},</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">       </span><span class="err">...</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="w">     </span><span class="p">],</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">     </span><span class="nt">&quot;non_revoked&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="err">Op</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span><span class="p">,</span><span class="w"> </span><span class="err">o</span><span class="kc">nl</span><span class="err">y</span><span class="w"> </span><span class="err">check</span><span class="w"> </span><span class="err">revoca</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="err">i</span><span class="kc">f</span><span class="w"> </span><span class="err">speci</span><span class="kc">f</span><span class="err">ied</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">     </span><span class="p">{</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="w">       </span><span class="nt">&quot;from&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;seco</span><span class="kc">n</span><span class="err">ds</span><span class="w"> </span><span class="kc">fr</span><span class="err">om</span><span class="w"> </span><span class="err">U</span><span class="kc">n</span><span class="err">ix</span><span class="w"> </span><span class="err">Epoch&gt;</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="err">Op</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span><span class="p">,</span><span class="w"> </span><span class="err">de</span><span class="kc">fault</span><span class="w"> </span><span class="err">is</span><span class="w"> </span><span class="mi">0</span>
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">       </span><span class="nt">&quot;to&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;seco</span><span class="kc">n</span><span class="err">ds</span><span class="w"> </span><span class="kc">fr</span><span class="err">om</span><span class="w"> </span><span class="err">U</span><span class="kc">n</span><span class="err">ix</span><span class="w"> </span><span class="err">Epoch&gt;</span>
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">     </span><span class="p">}</span>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="w">   </span><span class="p">}</span>
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+</li>
+</ol>
+<h2 id="revocation-notification">Revocation Notification<a class="headerlink" href="#revocation-notification" title="Permanent link">&para;</a></h2>
+<p>ACA-Py supports <a href="https://github.com/hyperledger/aries-rfcs/blob/main/features/0183-revocation-notification/README.md">Revocation Notification v1.0</a>.</p>
+<blockquote>
+<p><strong>Note:</strong> The optional <code>~please_ack</code> is not currently supported.</p>
+</blockquote>
+<h3 id="issuer-role">Issuer Role<a class="headerlink" href="#issuer-role" title="Permanent link">&para;</a></h3>
+<p>To notify connections to which credentials have been issued, during step 2
+above, include the following attributes in the request body:</p>
+<ul>
+<li><code>notify</code> - A boolean value indicating whether or not a notification should be
+  sent. If the argument <code>--notify-revocation</code> is used on startup, this value
+  defaults to <code>true</code>. Otherwise, it will default to <code>false</code>. This value
+  overrides the <code>--notify-revocation</code> flag; the value of <code>notify</code> always takes
+  precedence.</li>
+<li><code>connection_id</code> - Connection ID for the connection of the credential holder.
+  This is required when <code>notify</code> is <code>true</code>.</li>
+<li><code>thread_id</code> - Message Thread ID of the credential exchange message that
+  resulted in the credential now being revoked. This is required when <code>notify</code>
+  is <code>true</code></li>
+<li><code>comment</code> - An optional comment presented to the credential holder as part of
+  the revocation notification. This field might contain the reason for
+  revocation or some other human readable information about the revocation.</li>
+</ul>
+<p>Your request might look something like:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="err">POST</span><span class="w"> </span><span class="err">/revoca</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">/revoke</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">&quot;rev_reg_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;revoca</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_regis</span><span class="kc">tr</span><span class="err">y_id&gt;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">&quot;cred_rev_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;crede</span><span class="kc">nt</span><span class="err">ial_revoca</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_id&gt;</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nt">&quot;publish&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;</span><span class="kc">true</span><span class="err">|</span><span class="kc">false</span><span class="err">&gt;</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nt">&quot;notify&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">&quot;connection_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;co</span><span class="kc">nne</span><span class="err">c</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="w"> </span><span class="err">id&gt;</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="nt">&quot;thread_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="err">&lt;</span><span class="kc">t</span><span class="err">hread</span><span class="w"> </span><span class="err">id&gt;</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;optional comment&quot;</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="holder-role">Holder Role<a class="headerlink" href="#holder-role" title="Permanent link">&para;</a></h3>
+<p>On receipt of a revocation notification, an event with topic
+<code>acapy::revocation-notification::received</code> and payload containing the thread ID
+and comment is emitted on the event bus. This can be handled in plugins to
+further customize notification handling.</p>
+<p>If the argument <code>--monitor-revocation-notification</code> is used on startup, a
+webhook with the topic <code>revocation-notification</code> and a payload containing the
+thread ID and comment is emitted to registered webhook urls.</p>
+<h2 id="manually-creating-revocation-registries">Manually Creating Revocation Registries<a class="headerlink" href="#manually-creating-revocation-registries" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>NOTE: This capability is deprecated and will likely be removed entirely in an upcoming release of ACA-Py.</p>
+</blockquote>
+<p>The process for creating revocation registries is completely automated - when you create a Credential Definition with revocation enabled, a revocation registry is automatically created (in fact 2 registries are created), and when a registry fills up, a new one is automatically created.</p>
+<p>However the ACA-Py admin api supports endpoints to explicitly create a new revocation registry, if you desire.</p>
+<p>There are several endpoints that must be called, and they must be called in this order:</p>
+<ol>
+<li>
+<p>Create revoc registry <code>POST /revocation/create-registry</code></p>
+</li>
+<li>
+<p>you need to provide the credential definition id and the size of the registry</p>
+</li>
+<li>
+<p>Fix the tails file URI <code>PATCH /revocation/registry/{rev_reg_id}</code></p>
+</li>
+<li>
+<p>here you need to provide the full URI that will be written to the ledger, for example:</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">&quot;tails_public_uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://host.docker.internal:6543/VDKEEMMSRTEqK4m7iiq5ZL:4:VDKEEMMSRTEqK4m7iiq5ZL:3:CL:8:faber.agent.degree_schema:CL_ACCUM:3cb5c439-928c-483c-a9a8-629c307e6b2d&quot;</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="p">}</span>
+</code></pre></div>
+<ol>
+<li>
+<p>Post the revoc def to the ledger <code>POST /revocation/registry/{rev_reg_id}/definition</code></p>
+</li>
+<li>
+<p>if you are an author (i.e. have a DID with restricted ledger write access) then this transaction may need to go through an endorser</p>
+</li>
+<li>
+<p>Write the tails file <code>PUT /revocation/registry/{rev_reg_id}/tails-file</code></p>
+</li>
+<li>
+<p>the tails server will check that the registry definition is already written to the ledger</p>
+</li>
+<li>
+<p>Post the initial accumulator value to the ledger <code>POST /revocation/registry/{rev_reg_id}/entry</code></p>
+</li>
+<li>
+<p>if you are an author (i.e. have a DID with restricted ledger write access) then this transaction may need to go through an endorser</p>
+</li>
+<li>this operation <strong>MUST</strong> be performed on the the new revoc registry def <strong>BEFORE</strong> any revocation operations are performed</li>
+</ol>
+<h2 id="revocation-registry-rotation">Revocation Registry Rotation<a class="headerlink" href="#revocation-registry-rotation" title="Permanent link">&para;</a></h2>
+<p>From time to time an Issuer may want to issue credentials from a new Revocation Registry. That can be done by changing the Credential Definition, but that could impact verifiers.
+Revocation Registries go through a series of state changes: <code>init</code>, <code>generated</code>, <code>posted</code>, <code>active</code>, <code>full</code>, <code>decommissioned</code>. When issuing revocable credentials, the work is done with the <code>active</code> registry record. There are always 2 <code>active</code> registry records: one for tracking revocation until it is full, and the second to act as a "hot swap" in case issuance is done when the primary is full and being replaced. This ensures that there is always an <code>active</code> registry. When rotating, all registry records (except records in <code>init</code> state) are <code>decommissioned</code> and a new pair of <code>active</code> registry records are created.</p>
+<p>Issuers can rotate their Credential Definition Revocation Registry records with a simple call: <code>POST /revocation/active-registry/{cred_def_id}/rotate</code></p>
+<p>It is advised that Issuers ensure the active registry is ready by calling <code>GET /revocation/active-registry/{cred_def_id}</code> after rotation and before issuance (if possible).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../ConnectIndyNetwork/" class="md-footer__link md-footer__link--prev" aria-label="Previous: TODO Connecting to an Indy Network">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                TODO Connecting to an Indy Network
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../deploying/deploymentModel/" class="md-footer__link md-footer__link--next" aria-label="Next: Deployment Model">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Deployment Model
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.expand", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "toc.follow"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.8fd75fb4.min.js"></script>
+      
+    
+  </body>
+</html>

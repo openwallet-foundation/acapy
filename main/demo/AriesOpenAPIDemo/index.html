@@ -1,0 +1,2859 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../AliceGetsAPhone/">
+      
+      
+      <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-cloudagent-python/main/docs/assets/aries-favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.10">
+    
+    
+      
+        <title>Open API Tutorial - Hyperledger Aries ACA-Py Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#aries-openapi-demo" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-header__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-acapy-docs/main/assets/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hyperledger Aries ACA-Py Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Open API Tutorial
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hyperledger/aries-cloudagent-python" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hyperledger/aries-cloudagent-python
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../aca-py.org/" class="md-tabs__link">
+          
+  
+  Welcome!
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/DevReadMe/" class="md-tabs__link">
+          
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  Demos
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../gettingStarted/" class="md-tabs__link">
+          
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../deploying/deploymentModel/" class="md-tabs__link">
+          
+  
+  Deploying
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../testing/UnitTests/" class="md-tabs__link">
+          
+  
+  Testing/Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hyperledger Aries ACA-Py Docs" class="md-nav__button md-logo" aria-label="Hyperledger Aries ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-acapy-docs/main/assets/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    Hyperledger Aries ACA-Py Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hyperledger/aries-cloudagent-python" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hyperledger/aries-cloudagent-python
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Welcome!
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Welcome!
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../aca-py.org/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Welcome
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py README
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release Notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Features
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Features
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DevReadMe/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/devcontainer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DevContainer Support
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/SupportedRFCs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Supported Aries Interop Profiles and RFCs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AdminAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Admin API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/PlugIns/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Plugins
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multitenancy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multitenant ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DIDMethods/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DID Methods
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DIDResolution/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DID Resolution
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multiledger/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuring Multiple Indy Ledgers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Endorser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Automatically Endorsing Indy Transations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/JsonLdCredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using W3C JSON-LD Signed Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/SelectiveDisclosureJWTs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using SD-JWTs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AnoncredsProofValidation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AnonCreds Presentation Validation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multicredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multiple Credential Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/UsingOpenAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code Generation with the Open API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Mediation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py as a DIDComm Mediator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Demos
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Demos
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Alice-Faber Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Open API Tutorial
+  </span>
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AliceGetsAPhone/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Alice Gets a Phone
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Endorser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Indy Endorser In Action
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AliceWantsAJsonCredential/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using W3C JSON-LD Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AcmeDemoWorkshop/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIY -- ACME Controller Workshop
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AriesPostmanDemo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Using Postman Demo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Becoming an Indy/Aries Developer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IndyBasics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Indy Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesBasics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Aries Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DecentralizedIdentityDemos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decentralized Identity Demos
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesBigPicture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries - The Big Picture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesAgentArchitecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Architecture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesMessaging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Messaging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesDeveloperDemos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Developer Demos
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AgentConnections/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agent Connections
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IssuingAnonCredsCredentials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Issuing AnonCreds Credentials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/PresentingAnonCredsProofs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Presenting AnonCreds Proofs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/YourOwnAriesAgent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Making Your Own ACA-Py Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IndyAriesDevOptions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Aries Developer Options
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DIDcommMsgs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIDComm Messaging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/RoutingEncryption/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIDComm Message Routing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AriesRoutingExample/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DIDComm Message Routing Example
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ConnectIndyNetwork/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TODO Connecting to an Indy Network
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/CredentialRevocation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AnonCreds Credential Revocation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Deploying
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Deploying
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/deploymentModel/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deployment Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/UpgradingACA-Py/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Upgrading ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/IndySDKtoAskarMigration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Indy SDK to Askar Migration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/Poetry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The Use of Poetry in ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/ContainerImagesAndGithubActions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Container Images
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/Databases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Databases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/RedisPlugins/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Persistent Queues and Caching
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/AnonCredsWalletType/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The askar-anoncreds Wallet Type
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Testing/Troubleshooting
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Testing/Troubleshooting
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/UnitTests/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Running and Creating Unit Tests
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/Logging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Managing Logging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/INTEGRATION-TESTS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ACA-Py Integration Tests
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/AgentTracing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Protocol Tracing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/Troubleshooting/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Contributing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    How to Contribute
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MAINTAINERS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Maintainers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperledger Code of Conduct
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security Vulnerability Reporting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PUBLISHING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Publishing an ACA-Py Release
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../UpdateRTD/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Updating the ACA-Py ReadTheDocs Site
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="aries-openapi-demo">Aries OpenAPI Demo <!-- omit in toc --><a class="headerlink" href="#aries-openapi-demo" title="Permanent link">&para;</a></h1>
+<p>What better way to learn about controllers than by actually being one yourself! In this demo, that’s just what happens&mdash;you are the controller. You have access to the full set of API endpoints exposed by an ACA-Py instance, and you will see the events coming from ACA-Py as they happen. Using that information, you'll help Alice's and Faber's agents connect, Faber's agent issue an education credential to Alice, and then ask Alice to prove she possesses the credential. Who knows why Faber needs to get the proof, but it lets us show off more protocols.</p>
+<h1 id="contents">Contents <!-- omit in toc --><a class="headerlink" href="#contents" title="Permanent link">&para;</a></h1>
+<ul>
+<li><a href="#getting-started">Getting Started</a></li>
+<li><a href="#running-in-a-browser">Running in a Browser</a></li>
+<li><a href="#start-the-faber-agent">Start the Faber Agent</a></li>
+<li><a href="#start-the-alice-agent">Start the Alice Agent</a></li>
+<li><a href="#running-in-docker">Running in Docker</a></li>
+<li><a href="#start-the-faber-agent-1">Start the Faber Agent</a></li>
+<li><a href="#start-the-alice-agent-1">Start the Alice Agent</a></li>
+<li><a href="#restarting-the-docker-containers">Restarting the Docker Containers</a></li>
+<li><a href="#using-the-openapiswagger-user-interface">Using the OpenAPI/Swagger User Interface</a></li>
+<li><a href="#establishing-a-connection">Establishing a Connection</a></li>
+<li><a href="#use-the-faber-agent-to-create-an-invitation">Use the Faber Agent to Create an Invitation</a></li>
+<li><a href="#copy-the-invitation-created-by-the-faber-agent">Copy the Invitation created by the Faber Agent</a></li>
+<li><a href="#use-the-alice-agent-to-receive-fabers-invitation">Use the Alice Agent to Receive Faber's Invitation</a></li>
+<li><a href="#tell-alices-agent-to-accept-the-invitation">Tell Alice's Agent to <em>Accept</em> the Invitation</a></li>
+<li><a href="#the-faber-agent-gets-the-request">The Faber Agent Gets the Request</a></li>
+<li><a href="#the-faber-agent-completes-the-connection">The Faber Agent Completes the Connection</a></li>
+<li><a href="#review-the-connection-status-in-alices-agent">Review the Connection Status in Alice's Agent</a></li>
+<li><a href="#review-the-connection-status-in-fabers-agent">Review the Connection Status in Faber's Agent</a></li>
+<li><a href="#basic-messaging-between-agents">Basic Messaging Between Agents</a></li>
+<li><a href="#sending-a-message-from-alice-to-faber">Sending a message from Alice to Faber</a></li>
+<li><a href="#receiving-a-basic-message-faber">Receiving a Basic Message (Faber)</a></li>
+<li><a href="#alices-agent-verifies-that-faber-has-received-the-message">Alice's Agent Verifies that Faber has Received the Message</a></li>
+<li><a href="#preparing-to-issue-a-credential">Preparing to Issue a Credential</a></li>
+<li><a href="#confirming-your-schema-and-credential-definition">Confirming your Schema and Credential Definition</a></li>
+<li><a href="#notes">Notes</a></li>
+<li><a href="#issuing-a-credential">Issuing a Credential</a></li>
+<li><a href="#faber---preparing-to-issue-a-credential">Faber - Preparing to Issue a Credential</a></li>
+<li><a href="#faber---issuing-the-credential">Faber - Issuing the Credential</a></li>
+<li><a href="#alice-receives-credential">Alice Receives Credential</a></li>
+<li><a href="#alice-stores-credential-in-her-wallet">Alice Stores Credential in her Wallet</a></li>
+<li><a href="#faber-receives-acknowledgment-that-the-credential-was-received">Faber Receives Acknowledgment that the Credential was Received</a></li>
+<li><a href="#issue-credential-notes">Issue Credential Notes</a></li>
+<li><a href="#bonus-points">Bonus Points</a></li>
+<li><a href="#requestingpresenting-a-proof">Requesting/Presenting a Proof</a></li>
+<li><a href="#faber-sends-a-proof-request">Faber sends a Proof Request</a></li>
+<li><a href="#alice---responding-to-the-proof-request">Alice - Responding to the Proof Request</a></li>
+<li><a href="#faber---verifying-the-proof">Faber - Verifying the Proof</a></li>
+<li><a href="#present-proof-notes">Present Proof Notes</a></li>
+<li><a href="#bonus-points-1">Bonus Points</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+</ul>
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<p>We will get started by opening three browser tabs that will be used throughout the lab. Two will be Swagger UIs for the Faber and Alice agent and one for the public ledger (showing the Hyperledger Indy ledger). As well, we'll keep the terminal sessions where we started the demos handy, as we'll be grabbing information from them as well.</p>
+<p>Let's start with the ledger browser. For this demo, we're going to use an open public ledger operated by the BC Government's VON Team. In your first browser tab, go to: <a href="http://test.bcovrin.vonx.io">http://test.bcovrin.vonx.io</a>. This will be called the "ledger tab" in the instructions below.</p>
+<p>For the rest of the set up, you can choose to run the terminal sessions in your browser (no local resources needed), or you can run it in Docker on your local system. Your choice, each is covered in the next two sections.</p>
+<blockquote>
+<p>Note: In the following, when we start the agents we use several special demo settings. The command we use is this: <code>LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --events --no-auto --bg</code>. In that:</p>
+<ul>
+<li>The <code>LEDGER_URL</code> environment variable informs the agent what ledger to use.</li>
+<li>The <code>--events</code> option indicates that we want the controller to display the webhook events from ACA-Py in the log displayed on the terminal.</li>
+<li>The <code>--no-auto</code> option indicates that we don't want the ACA-Py agent to automatically handle some events such as connecting. We want the controller (you!) to handle each step of the protocol.</li>
+<li>The <code>--bg</code> option indicates that the docker container will run in the background, so accidentally hitting Ctrl-C won't stop the process.</li>
+</ul>
+</blockquote>
+<h2 id="running-in-a-browser">Running in a Browser<a class="headerlink" href="#running-in-a-browser" title="Permanent link">&para;</a></h2>
+<p>To run the necessary terminal sessions in your browser, go to the Docker playground service <a href="https://labs.play-with-docker.com/">Play with Docker</a>. Don't know about Play with Docker? Check <a href="https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-play-with-docker">this out</a> to learn more.</p>
+<h3 id="start-the-faber-agent">Start the Faber Agent<a class="headerlink" href="#start-the-faber-agent" title="Permanent link">&para;</a></h3>
+<p>In a browser, go to the <a href="https://labs.play-with-docker.com/">Play with Docker</a> home page, Login (if necessary) and click "Start." On the next screen, click (in the left menu) "+Add a new instance."  That will start up a terminal in your browser. Run the following commands to start the Faber agent.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/hyperledger/aries-cloudagent-python
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>aries-cloudagent-python/demo
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
+</code></pre></div>
+<p>Once you are back at the command prompt, we'll use docker's logging capability to see what's being written to the terminal:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>faber
+</code></pre></div>
+<p>Once the Faber agent has started up (with the invite displayed), click the link near the top of the screen <code>8021</code>. That will start an instance of the OpenAPI/Swagger user interface connected to the Faber instance. Note that the URL on the OpenAPI/Swagger instance is: <code>http://ip....8021.direct...</code>.</p>
+<p><strong>Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.</strong></p>
+<blockquote>
+<p>NOTE: Hit "Ctrl-C" at any time to get back to the command line. When you are done with the command line, you can return to seeing the logs from the Faber agent by running <code>docker logs -f faber</code></p>
+</blockquote>
+<details>
+    <summary>Show me a screenshot!</summary>
+    <img src="collateral/Faber-Agent.png" alt="Swagger Page for Faber Agent">
+</details>
+
+<h3 id="start-the-alice-agent">Start the Alice Agent<a class="headerlink" href="#start-the-alice-agent" title="Permanent link">&para;</a></h3>
+<p>Now to start Alice's agent. Click the "+Add a new instance" button again to open another terminal session. Run the following commands to start Alice's agent:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/hyperledger/aries-cloudagent-python
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>aries-cloudagent-python/demo
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
+</code></pre></div>
+<p>Once you are back at the command prompt, we'll use docker's logging capability to see what's being written to the terminal:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>alice
+</code></pre></div>
+<p>You can ignore a message like <code>WARNING: your terminal doesn't support cursor position requests (CPR).</code></p>
+<p>Once the Alice agent has started up (with the <code>invite:</code> prompt displayed), click the link near the top of the screen <code>8031</code>. That will start an instance of the OpenAPI/Swagger User Interface connected to the Alice instance. Note that the URL on the OpenAPI/Swagger instance is: <code>http://ip....8031.direct...</code>.</p>
+<blockquote>
+<p>NOTE: Hit "Ctrl-C" to get back to the command line. When you are done with the command line, you can return to seeing the logs from the Faber agent by running <code>docker logs -f faber</code></p>
+</blockquote>
+<p><strong>Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.</strong></p>
+<details>
+    <summary>Show me a screenshot!</summary>
+    <img src="collateral/Alice-Agent.png" alt="Swagger Page for Alice Agent">
+</details>
+
+<p>You are ready to go. Skip down to the <a href="#using-the-openapiswagger-user-interface">Using the OpenAPI/Swagger User Interface</a> section.</p>
+<h2 id="running-in-docker">Running in Docker<a class="headerlink" href="#running-in-docker" title="Permanent link">&para;</a></h2>
+<p>To run the demo on your local system, you must have git, a running Docker installation, and terminal windows running bash. Need more information about getting set up? Click <a href="https://github.com/cloudcompass/ToIPLabs/blob/master/docs/LFS173x/RunningLabs.md#running-on-docker-locally">here</a> to learn more.</p>
+<h3 id="start-the-faber-agent_1">Start the Faber Agent<a class="headerlink" href="#start-the-faber-agent_1" title="Permanent link">&para;</a></h3>
+<p>To begin running the demo in Docker, open up two terminal windows, one each for Faber’s and Alice’s agent.</p>
+<p>In the first terminal window, clone the ACA-Py repo, change into the demo folder and start the Faber agent:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/hyperledger/aries-cloudagent-python
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>aries-cloudagent-python/demo
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>faber<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
+</code></pre></div>
+<p>Once you are back at the command prompt, we'll use docker's logging capability to see what's being written to the terminal:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>faber
+</code></pre></div>
+<p>If all goes well, the agent will show a message indicating it is running. Use the second browser tab to navigate to <a href="http://localhost:8021">http://localhost:8021</a>. You should see an OpenAPI/Swagger user interface with a (long-ish) list of API endpoints. These are the endpoints exposed by the Faber agent.</p>
+<blockquote>
+<p>NOTE: Hit "Ctrl-C" to get back to the command line. When you are done with the command line, you can return to seeing the logs from the Faber agent by running <code>docker logs -f faber</code></p>
+</blockquote>
+<p><strong>Remember that the OpenAPI/Swagger browser tab with an address containing 8021 is the Faber agent.</strong></p>
+<details>
+    <summary>Show me a screenshot!</summary>
+    <img src="collateral/Faber-Agent-Local.png" alt="Swagger Page for Faber Agent">
+</details>
+
+<h3 id="start-the-alice-agent_1">Start the Alice Agent<a class="headerlink" href="#start-the-alice-agent_1" title="Permanent link">&para;</a></h3>
+<p>To start Alice's agent, open up a second terminal window and in it, change to the same <code>demo</code> directory as where Faber's agent was started above. Once there, start Alice's agent:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">LEDGER_URL</span><span class="o">=</span>http://test.bcovrin.vonx.io<span class="w"> </span>./run_demo<span class="w"> </span>alice<span class="w"> </span>--events<span class="w"> </span>--no-auto<span class="w"> </span>--bg
+</code></pre></div>
+<p>Once you are back at the command prompt, we'll use docker's logging capability to see what's being written to the terminal:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>alice
+</code></pre></div>
+<p>You can ignore a message like <code>WARNING: your terminal doesn't support cursor position requests (CPR)</code> that may appear.</p>
+<p>If all goes well, the agent will show a message indicating it is running. Open a third browser tab and navigate to <a href="http://localhost:8031">http://localhost:8031</a>. Again, you should see the OpenAPI/Swagger user interface with a list of API endpoints, this time the endpoints for Alice’s agent.</p>
+<blockquote>
+<p>NOTE: Hit "Ctrl-C" to get back to the command line. When you are done with the command line, you can return to seeing the logs from the Alice agent by running <code>docker logs -f alice</code></p>
+</blockquote>
+<p><strong>Remember that the OpenAPI/Swagger browser tab with an address containing 8031 is Alice's agent.</strong></p>
+<details>
+    <summary>Show me a screenshot!</summary>
+    <img src="collateral/Alice-Agent-Local.png" alt="Swagger Page for Alice Agent">
+</details>
+
+<h3 id="restarting-the-docker-containers">Restarting the Docker Containers<a class="headerlink" href="#restarting-the-docker-containers" title="Permanent link">&para;</a></h3>
+<p>When you complete the entire demo (<strong>not now!!</strong>), you can need to stop the two agents.  To do that, get to the command line by hitting Ctrl-C and running:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker<span class="w"> </span>stop<span class="w"> </span>faber
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>docker<span class="w"> </span>stop<span class="w"> </span>alice
+</code></pre></div>
+<h2 id="using-the-openapiswagger-user-interface">Using the OpenAPI/Swagger User Interface<a class="headerlink" href="#using-the-openapiswagger-user-interface" title="Permanent link">&para;</a></h2>
+<p>Try to organize what you see on your screen to include both the Alice and Faber OpenAPI/Swagger tabs, and both (Alice and Faber) terminal sessions, all at the same time. After you execute an API call in one of the browser tabs, you will see a webhook event from the ACA-Py instance in the terminal window of the other agent. That's a controller's life. See an event, process it, send a response.</p>
+<p>From time to time you will want to see what's happening on the ledger, so keep that handy as well. As well, if you make an error with one of the commands (e.g. bad data, improperly structured JSON), you will see the errors in the terminals.</p>
+<p>In the instructions that follow, we’ll let you know if you need to be in the Faber, Alice or Indy browser tab. We’ll leave it to you to track which is which.</p>
+<p>Using the OpenAPI/Swagger user interface is pretty simple. In the steps below, we’ll indicate what API endpoint you need use, such as <strong><code>POST /connections/create-invitation</code></strong>. That means you must:</p>
+<ol>
+<li>scroll to and find that endpoint;</li>
+<li>click on the endpoint name to expand its section of the UI;</li>
+<li>click on the <code>Try it out</code> button;</li>
+<li>fill in any data necessary to run the command;</li>
+<li>click <code>Execute</code>;</li>
+<li>check the response to see if the request worked.</li>
+</ol>
+<p>So, the mechanical steps are easy. It’s fourth step from the list above that can be tricky. Supplying the right data and, where JSON is involved, getting the syntax correct - braces and quotes can be a pain. When steps don’t work, start your debugging by looking at your JSON.</p>
+<p>Enough with the preliminaries, let’s get started!</p>
+<h2 id="establishing-a-connection">Establishing a Connection<a class="headerlink" href="#establishing-a-connection" title="Permanent link">&para;</a></h2>
+<p>We’ll start the demo by establishing a connection between the Alice and Faber agents. We’re starting there to demonstrate that you can use agents without having a ledger. We won’t be using the Indy public ledger at all for this step. Since the agents communicate using DIDComm messaging and connect by exchanging pairwise DIDs and DIDDocs based on (an early version of) the <code>did:peer</code> DID method, a public ledger is not needed.</p>
+<h3 id="use-the-faber-agent-to-create-an-invitation">Use the Faber Agent to Create an Invitation<a class="headerlink" href="#use-the-faber-agent-to-create-an-invitation" title="Permanent link">&para;</a></h3>
+<p>In the Faber browser tab, navigate to the <strong><code>POST /connections/create-invitation</code></strong> endpoint. Replace the sample body with and empty production (<code>{}</code>) and execute the call. If successful, you should see a connection id, an invitation, and the invitation URL. The connection ids will be different on each run.</p>
+<p><strong>Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on</strong></p>
+<details>
+    <summary>Show me a screenshot - Create Invitation Request</summary>
+    <img src="collateral/1-Faber-Invitation-1.png" alt="Create Invitation Request">
+</details>
+
+<details>
+    <summary>Show me a screenshot - Create Invitation Response</summary>
+    <img src="collateral/1-Faber-Invitation-2.png" alt="Create Invitation Response">
+</details>
+
+<h3 id="copy-the-invitation-created-by-the-faber-agent">Copy the Invitation created by the Faber Agent<a class="headerlink" href="#copy-the-invitation-created-by-the-faber-agent" title="Permanent link">&para;</a></h3>
+<p>Copy the entire block of the <code>invitation</code> object, from the curly brackets <code>{}</code>, excluding the trailing comma.</p>
+<details>
+    <summary>Show me a screenshot - Create Invitation Response</summary>
+    <img src="collateral/1-Faber-Invitation-3.png" alt="Create Invitation Response">
+</details>
+
+<p>Before switching over to the Alice browser tab, scroll to and execute  the <strong><code>GET /connections</code></strong> endpoint to see the list of Faber's connections. You should see a connection with a <code>connection_id</code> that is identical to the invitation you just created, and that its state is <code>invitation</code>.</p>
+<details>
+    <summary>Show me a screenshot - Faber Connection Status</summary>
+    <img src="collateral/1-Faber-Invitation-4.png" alt="Faber Connection Status">
+</details>
+
+<h3 id="use-the-alice-agent-to-receive-fabers-invitation">Use the Alice Agent to Receive Faber's Invitation<a class="headerlink" href="#use-the-alice-agent-to-receive-fabers-invitation" title="Permanent link">&para;</a></h3>
+<p>Switch to the Alice browser tab and get ready to execute the <strong><code>POST /connections/receive-invitation</code></strong> endpoint. Select all of the pre-populated text and replace it with the invitation object from the Faber tab. When you click <code>Execute</code> you should get back a connection response with a connection Id, an invitation key, and the state of the connection, which should be <code>invitation</code>.</p>
+<p><strong>Hint: set an Alias on the Invitation, this makes it easier to find the Connection later on</strong></p>
+<details>
+    <summary>Show me a screenshot - Receive Invitation Request</summary>
+    <img src="collateral/2-Alice-Invitation-1.png" alt="Receive Invitation Request">
+</details>
+
+<details>
+    <summary>Show me a screenshot - Receive Invitation Response</summary>
+    <img src="collateral/2-Alice-Invitation-2.png" alt="Receive Invitation Request">
+</details>
+
+<blockquote>
+<p>A key observation to make here. The "copy and paste" we are doing here from Faber's agent to Alice's agent is what is called an "out of band" message. Because we don't yet have a DIDComm connection between the two agents, we have to convey the invitation in plaintext (we can't encrypt it - no channel) using some other mechanism than DIDComm. With mobile agents, that's where QR codes often come in. Once we have the invitation in the receivers agent, we can get back to using DIDComm.</p>
+</blockquote>
+<h3 id="tell-alices-agent-to-accept-the-invitation">Tell Alice's Agent to <em>Accept</em> the Invitation<a class="headerlink" href="#tell-alices-agent-to-accept-the-invitation" title="Permanent link">&para;</a></h3>
+<p>At this point Alice has simply stored the invitation in her wallet. You can see the status using the <strong><code>GET /connections</code></strong> endpoint.</p>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="collateral/2-Alice-Invitation-3.png" alt="Invitation Status">
+</details>
+
+<p>To complete a connection with Faber, she must accept the invitation and send a corresponding connection request to Faber. Find the <code>connection_id</code> in the connection response from the previous <strong><code>POST /connections/receive-invitation</code></strong> endpoint call. You may note that the same data was sent to the controller as an event from ACA-Py and is visible in the terminal. Scroll to the <strong><code>POST /connections/{conn_id}/accept-invitation</code></strong> endpoint and paste the <code>connection_id</code> in the <code>id</code> parameter field (you will have to click the <code>Try it out</code> button to see the available URL parameters). The response from clicking <code>Execute</code> should show that the connection has a state of <code>request</code>.</p>
+<details>
+    <summary>Show me a screenshot - Accept Invitation Request</summary>
+    <img src="collateral/2-Alice-Invitation-4.png" alt="Receive Invitation Request">
+</details>
+
+<details>
+    <summary>Show me a screenshot - Accept Invitation Response</summary>
+    <img src="collateral/2-Alice-Invitation-5.png" alt="Receive Invitation Response">
+</details>
+
+<h3 id="the-faber-agent-gets-the-request">The Faber Agent Gets the Request<a class="headerlink" href="#the-faber-agent-gets-the-request" title="Permanent link">&para;</a></h3>
+<p>In the Faber terminal session, an event (a web service callback from ACA-Py to the controller) has been received about the request from Alice. Copy the <code>connection_id</code> from the event for the next step.</p>
+<details>
+    <summary>Show me the event</summary>
+    <img src="collateral/3-Faber-Connection-2.png" alt="Connection Request Event">
+</details>
+
+<p>Note that the connection ID held by Alice is different from the one held by Faber. That makes sense, as both independently created connection objects, each with a unique, self-generated GUID.</p>
+<h3 id="the-faber-agent-completes-the-connection">The Faber Agent Completes the Connection<a class="headerlink" href="#the-faber-agent-completes-the-connection" title="Permanent link">&para;</a></h3>
+<p>To complete the connection process, Faber will respond to the connection request from Alice. Scroll to the <strong><code>POST /connections/{conn_id}/accept-request</code></strong> endpoint and paste the <code>connection_id</code> you previously copied into the <code>id</code> parameter field (you will have to click the <code>Try it out</code> button to see the available URL parameters). The response from clicking the <code>Execute</code> button should show that the connection has a state of <code>response</code>, which indicates that Faber has accepted Alice's connection request.</p>
+<details>
+    <summary>Show me a screenshot - Accept Connection Request</summary>
+    <img src="collateral/3-Faber-Connection-3.png" alt="Accept Connection Request">
+</details>
+
+<details>
+    <summary>Show me a screenshot - Accept Connection Request</summary>
+    <img src="collateral/3-Faber-Connection-4.png" alt="Accept Connection Request">
+</details>
+
+<h3 id="review-the-connection-status-in-alices-agent">Review the Connection Status in Alice's Agent<a class="headerlink" href="#review-the-connection-status-in-alices-agent" title="Permanent link">&para;</a></h3>
+<p>Switch over to the Alice browser tab.</p>
+<p>Scroll to and execute <strong><code>GET /connections</code></strong> to see a list of Alice's connections, and the information tracked about each connection. You should see the one connection Alice’s agent has, that it is with the Faber agent, and that its state is <code>active</code>.</p>
+<details>
+    <summary>Show me a screenshot - Alice Connection Status</summary>
+    <img src="collateral/4-Alice-Connection-2.png" alt="Alice Connection Event">
+</details>
+
+<p>As with Faber's side of the connection, Alice received a notification that Faber had accepted her connection request.</p>
+<details>
+    <summary>Show me the event</summary>
+    <img src="collateral/4-Alice-Connection-1.png" alt="Alice Connection Status">
+</details>
+
+<h3 id="review-the-connection-status-in-fabers-agent">Review the Connection Status in Faber's Agent<a class="headerlink" href="#review-the-connection-status-in-fabers-agent" title="Permanent link">&para;</a></h3>
+<p>You are connected! Switch to the Faber browser tab and run the same <strong><code>GET /connections</code></strong> endpoint to see Faber's view of the connection. Its state is also <code>active</code>. Note the <code>connection_id</code>, you’ll need it later in the tutorial.</p>
+<details>
+    <summary>Show me a screenshot - Faber Connection Status</summary>
+    <img src="collateral/5-Faber-Connection-1.png" alt="Faber Connection Status">
+</details>
+
+<h2 id="basic-messaging-between-agents">Basic Messaging Between Agents<a class="headerlink" href="#basic-messaging-between-agents" title="Permanent link">&para;</a></h2>
+<p>Once you have a connection between two agents, you have a channel to exchange secure, encrypted messages. In fact these underlying encrypted messages (similar to envelopes in a postal system) enable the delivery of messages that form the higher level protocols, such as issuing Credentials and providing Proofs. So, let's send a couple of messages that contain the simplest of context&mdash;text. For this we wil use the Basic Message protocol, <a href="https://github.com/hyperledger/aries-rfcs/tree/master/features/0095-basic-message">Aries RFC 0095</a>.</p>
+<h3 id="sending-a-message-from-alice-to-faber">Sending a message from Alice to Faber<a class="headerlink" href="#sending-a-message-from-alice-to-faber" title="Permanent link">&para;</a></h3>
+<p>On Alice's swagger page, scroll to the <strong><code>POST /connections/{conn_id}/send-message</code></strong> endpoint. Click on <code>Try it Out</code> and enter a message in the body provided (for example <code>{"content": "Hello Faber"}</code>). Enter the connection id of Alice's connection in the field provided. Then click on <code>Execute</code>.</p>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="collateral/6-Alice-Basic-Msg.png" alt="Alice Send Message">
+</details>
+
+<h3 id="receiving-a-basic-message-faber">Receiving a Basic Message (Faber)<a class="headerlink" href="#receiving-a-basic-message-faber" title="Permanent link">&para;</a></h3>
+<p>How does Faber know that a message was sent? If you take a look at Faber's console window, you can see that Faber's agent has raised an Event that the message was received:</p>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="collateral/7-Faber-Basic-Msg.png" alt="Faber Receive Message">
+</details>
+
+<p>Faber's controller application can take whatever action is necessary to process this message. It could trigger some application code, or it might just be something the Faber application needs to display to its user (for example a reminder about some action the user needs to take).</p>
+<h3 id="alices-agent-verifies-that-faber-has-received-the-message">Alice's Agent Verifies that Faber has Received the Message<a class="headerlink" href="#alices-agent-verifies-that-faber-has-received-the-message" title="Permanent link">&para;</a></h3>
+<p>How does Alice get feedback that Faber has received the message? The same way - when Faber's agent acknowledges receipt of the message, Alice's agent raises an Event to let the Alice controller know:</p>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="collateral/8-Alice-Basic-Msg.png" alt="Alice Receive Message Confirmation">
+</details>
+
+<p>Again, Alice's agent can take whatever action is necessary, possibly just flagging the message as having been <code>received</code>.</p>
+<h2 id="preparing-to-issue-a-credential">Preparing to Issue a Credential<a class="headerlink" href="#preparing-to-issue-a-credential" title="Permanent link">&para;</a></h2>
+<p>The next thing we want to do in the demo is have the Faber agent issue a credential to Alice’s agent. To this point, we have not used the Indy ledger at all. Establishing the connection and messaging has been done with pairwise DIDs based on the <code>did:peer</code> method. Verifiable credentials must be rooted in a public DID ledger to enable the presentation of proofs.</p>
+<p>Before the Faber agent can issue a credential, it must register a DID on the Indy public ledger, publish a schema, and create a credential definition. In the “real world”, the Faber agent would do this before connecting with any other agents. And, since we are using the handy "./run_demo faber" (and "./run_demo alice") scripts to start up our agents, the Faber version of the script has already:</p>
+<ol>
+<li>registered a public DID and stored it on the ledger;</li>
+<li>created a schema and registered it on the ledger;</li>
+<li>created a credential definition and registered it on the ledger.</li>
+</ol>
+<p>The schema and credential definition could also be created through this swagger interface.</p>
+<p>We don't cover the details of those actions in this tutorial, but there are other materials available that go through these details.</p>
+<blockquote>
+<p>To Do: Add a link to directions for doing this manually, and to where in the controller Python code this is done.</p>
+</blockquote>
+<h3 id="confirming-your-schema-and-credential-definition">Confirming your Schema and Credential Definition<a class="headerlink" href="#confirming-your-schema-and-credential-definition" title="Permanent link">&para;</a></h3>
+<p>You can confirm the schema and credential definition were published by going back to the Indy ledger browser tab using Faber's public DID. You may have saved that from a previous step, but if not here is an API call you can make to get that information. Using Faber's swagger page and scroll to the <strong><code>GET /wallet/did/public</code></strong> endpoint. Click on <code>Try it Out</code> and <code>Execute</code> and you will see Faber's public DID.</p>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="collateral/C-1-Faber-DID-Public.png" alt="Faber Public DID">
+</details>
+
+<p>On the ledger browser of the <a href="http://test.bcovrin.vonx.io">BCovrin ledger</a>, click the <code>Domain</code> page, refresh, and paste the Faber public DID into the <code>Filter:</code> field:</p>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="collateral/C-2-Faber-Ledger-Search-0.png" alt="Search Ledger by DID">
+</details>
+
+<p>The ledger browser should refresh and display the four (4) transactions on the ledger related to this DID:</p>
+<ul>
+<li>the initial DID registration</li>
+<li>registration of the DID endpoint (Faber is an issuer so it has a public endpoint)</li>
+<li>the registered schema</li>
+<li>the registered credential definition</li>
+</ul>
+<details>
+    <summary>Show me the ledger transactions</summary>
+    <img src="collateral/C-2-Faber-Ledger-Search-1.png" alt="DID Transaction">
+    <img src="collateral/C-2-Faber-Ledger-Search-2.png" alt="DID Endpoint Transaction">
+    <img src="collateral/C-2-Faber-Ledger-Search-3.png" alt="Schema Transaction">
+    <img src="collateral/C-2-Faber-Ledger-Search-4.png" alt="Credential Definition Transaction">
+</details>
+
+<p>You can also look up the Schema and Credential Definition information using Faber's swagger page. Use the <strong><code>GET /schemas/created</code></strong> endpoint to get a list of schemas, including the one <code>schema_id</code> that the Faber agent has defined. Keep this section of the Swagger page expanded as we'll need to copy the Id as part of starting the issue credential protocol coming next.</p>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="collateral/C-3-Faber-Info-2.png" alt="Search Schemas">
+    <img src="collateral/C-3-Faber-Info-3.png" alt="Search Schemas">
+</details>
+
+<p>Likewise use the <strong><code>GET /credential-definitions/created</code></strong> endpoint to get the list of the one (in this case) credential definition id created by Faber. Keep this section of the Swagger page expanded as we'll also need to copy the Id as part of starting the issue credential protocol coming next.</p>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="collateral/C-3-Faber-Info-4.png" alt="Search Credential Definitions">
+    <img src="collateral/C-3-Faber-Info-5.png" alt="Search Credential Definitions">
+</details>
+
+<p><strong>Hint</strong>: Remember how the schema and credential definitions were created for you as Faber started up? To do it yourself, use the <strong><code>POST</code></strong> versions of these endpoints. Now you know!</p>
+<h3 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h3>
+<p>The one time setup work for issuing a credential is complete&mdash;creating a DID, schema and credential definition. We can now issue 1 or 1 million credentials without having to do those steps again. Astute readers might note that we did not setup a revocation registry, so we cannot revoke the credentials we issue with that credential definition. You can’t have everything in an "easy" tutorial!</p>
+<h2 id="issuing-a-credential">Issuing a Credential<a class="headerlink" href="#issuing-a-credential" title="Permanent link">&para;</a></h2>
+<p>Triggering the issuance of a credential from the Faber agent to Alice’s agent is done with another API call. In the Faber browser tab, scroll down to the <strong><code>POST /issue-credential-2.0/send</code></strong> and get ready to (but don’t yet) execute the request. Before execution, you need to update most of the data elements in the JSON. We now cover how to update all the fields.</p>
+<h3 id="faber-preparing-to-issue-a-credential">Faber - Preparing to Issue a Credential<a class="headerlink" href="#faber-preparing-to-issue-a-credential" title="Permanent link">&para;</a></h3>
+<p>First, get the connection Id for Faber's connection with Alice. You can copy that from the Faber terminal (the last received event includes it), or scroll up on the Faber swagger tab to the <strong><code>GET /connections</code></strong> API endpoint, execute, copy it and paste the <code>connection_id</code> value into the same field in the issue credential JSON.</p>
+<details>
+    <summary>Click here to see a screenshot</summary>
+    <img src="collateral/C-3-Faber-Info-1.png" alt="Connection Id">
+</details>
+
+<p>For the following fields, scroll on Faber's Swagger page to the listed endpoint, execute (if necessary), copy the response value and paste as the values of the following JSON items:</p>
+<ul>
+<li><code>issuer_did</code> the Faber public DID (use <strong><code>GET /wallet/DID/public</code></strong>), </li>
+<li><code>schema_id</code> the Id of the schema Faber created (use <strong><code>GET /schemas/created</code></strong>) and,</li>
+<li><code>cred_def_id</code> the Id of the credential definition Faber created (use <strong><code>GET /credential-definitions/created</code></strong>)</li>
+</ul>
+<p>into the <code>filter</code> section's <code>indy</code> subsection. Remove the <code>"dif"</code> subsection of the <code>filter</code> section within the JSON, and specify the remaining indy filter criteria as follows:</p>
+<ul>
+<li><code>schema_version</code>: set to the last segment of the <code>schema_id</code>, a three part version number that was randomly generated on startup of the Faber agent. Segments of the <code>schema_id</code> are separated by ":"s.</li>
+<li><code>schema_issuer_did</code>: set to the same the value as in <code>issuer_did</code>,</li>
+<li><code>schema_name</code>: set to the second last segment of the <code>schema_id</code>, in this case <code>degree schema</code></li>
+</ul>
+<p>Finally, set the remaining values as follows:
+- <code>auto_remove</code>: set to <code>true</code> (no quotes), see note below
+- <code>comment</code>: set to any string. It's intended to let Alice know something about the credential being offered.
+- <code>trace</code>: set to <code>false</code> (no quotes). It's for troubleshooting, performance profiling, and/or diagnostics.</p>
+<p>By setting <code>auto_remove</code> to true, ACA-Py will automatically remove the credential exchange record after the protocol completes. When implementing a controller, this is the likely setting to use to reduce agent storage usage, but implies if a record of the issuance of the credential is needed, the controller must save it somewhere else. For example, Faber College might extend their Student Information System, where they track all their students, to record when credentials are issued to students, and the Ids of the issued credentials.</p>
+<h3 id="faber-issuing-the-credential">Faber - Issuing the Credential<a class="headerlink" href="#faber-issuing-the-credential" title="Permanent link">&para;</a></h3>
+<p>Finally, we need put into the JSON the data values for the <code>credential_preview</code> section of the JSON. Copy the following and paste it between the square brackets of the <code>attributes</code> item, replacing what is there. Feel free to change the attribute <code>value</code> items, but don't change the labels or names:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>      {
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>        &quot;name&quot;: &quot;name&quot;,
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>        &quot;value&quot;: &quot;Alice Smith&quot;
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>      },
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>      {
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>        &quot;name&quot;: &quot;timestamp&quot;,
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>        &quot;value&quot;: &quot;1234567890&quot;
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>      },
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>      {
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>        &quot;name&quot;: &quot;date&quot;,
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>        &quot;value&quot;: &quot;2018-05-28&quot;
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>      },
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>      {
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>        &quot;name&quot;: &quot;degree&quot;,
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>        &quot;value&quot;: &quot;Maths&quot;
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>      },
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>      {
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>        &quot;name&quot;: &quot;birthdate_dateint&quot;,
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>        &quot;value&quot;: &quot;19640101&quot;
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>      }
+</code></pre></div>
+<p>(Note that the birthdate above is used to present later on to pass an "age proof".)</p>
+<p>OK, finally, you are ready to click <code>Execute</code>. The request should work, but if it doesn’t - check your JSON! Did you get all the quotes and commas right?</p>
+<details>
+    <summary>Show me a screenshot - credential offer</summary>
+    <img src="collateral/C-4-Faber-Credential-Offer-1.png" alt="Faber Submit Credential Offer">
+    <img src="collateral/C-4-Faber-Credential-Offer-2.png" alt="Faber Submit Credential Offer">
+</details>
+
+<p>To confirm the issuance worked, scroll up on the Faber Swagger page to the <code>issue-credential v2.0</code> section and execute the <strong><code>GET /issue-credential-2.0/records</code></strong> endpoint. You should see a lot of information about the exchange just initiated.</p>
+<h3 id="alice-receives-credential">Alice Receives Credential<a class="headerlink" href="#alice-receives-credential" title="Permanent link">&para;</a></h3>
+<p>Let’s look at it from Alice’s side. Alice's agent source code automatically handles credential offers by immediately responding with a credential request. Scroll back in the Alice terminal to where the credential issuance started. If you've followed the full script, that is just after where we used the basic message protocol to send text messages between Alice and Faber.</p>
+<p>Alice's agent first received a notification of a Credential Offer, to which it responded with a Credential Request. Faber received the Credential Request and responded in turn with an Issue Credential message. Scroll down through the events from ACA-Py to the controller to see the notifications of those messages. Make sure you scroll all the way to the bottom of the terminal so you can continue with the process.</p>
+<details>
+    <summary>Show me a screenshot - issue credential</summary>
+    <img src="collateral/C-5-Alice-Credential-Offer-1.png" alt="Issue Credential">
+</details>
+
+<h3 id="alice-stores-credential-in-her-wallet">Alice Stores Credential in her Wallet<a class="headerlink" href="#alice-stores-credential-in-her-wallet" title="Permanent link">&para;</a></h3>
+<p>We can check (via Alice's Swagger interface) the issue credential status by hitting the <strong><code>GET /issue-credential-2.0/records</code></strong> endpoint. Note that within the results, the <code>cred_ex_record</code> just received has a <code>state</code> of <code>credential-received</code>, but not yet <code>done</code>. Let's address that.</p>
+<details>
+    <summary>Show me a screenshot - check credential exchange status</summary>
+    <img src="collateral/C-7-Alice-Store-Credential-1.png" alt="">
+    <img src="collateral/C-7-Alice-Store-Credential-2.png" alt="">
+</details>
+
+<p>First, we need the <code>cred_ex_id</code> from the API call response above, or from the event in the terminal; use the endpoint <strong><code>POST /issue-credential-2.0/records/{cred_ex_id}/store</code></strong> to tell Alice's ACA-Py instance to store the credential in agent storage (aka the Indy Wallet). Note that in the JSON for that endpoint we can provide a credential Id to store in the wallet by setting a value in the <code>credential_id</code> string. A real controller might use the <code>cred_ex_id</code> for that, or use something else that makes sense in the agent's business scenario (but the agent generates a random credential identifier by default).</p>
+<details>
+    <summary>Show me a screenshot - store credential</summary>
+    <img src="collateral/C-7-Alice-Store-Credential-3.png" alt="">
+    <img src="collateral/C-7-Alice-Store-Credential-4.png" alt="">
+</details>
+
+<p>Now, in Alice’s swagger browser tab, find the <code>credentials</code> section and within that, execute the <strong><code>GET /credentials</code></strong> endpoint. There should be a list of credentials held by Alice, with just a single entry, the credential issued from the Faber agent. Note that the element <code>referent</code> is the value of the <code>credential_id</code> element used in other calls. <code>referent</code> is the name returned in the <code>indy-sdk</code> call to get the set of credentials for the wallet and ACA-Py code does not change it in the response.</p>
+<h3 id="faber-receives-acknowledgment-that-the-credential-was-received">Faber Receives Acknowledgment that the Credential was Received<a class="headerlink" href="#faber-receives-acknowledgment-that-the-credential-was-received" title="Permanent link">&para;</a></h3>
+<p>On the Faber side, we can see by scanning back in the terminal that it receive events to notify that the credential was issued and accepted.</p>
+<details>
+    <summary>Show me Faber's event activity</summary>
+    <img src="collateral/C-6-Faber-Credential-Request.png" alt="">
+    <img src="collateral/C-8-Faber-Credential-Ack-0.png" alt="">
+</details>
+
+<p>Note that once the credential processing completed, Faber's agent deleted the credential exchange record from its wallet. This can be confirmed by executing the endpoint <strong><code>GET /issue-credential-2.0/records</code></strong></p>
+<details>
+    <summary>Show me a screenshot</summary>
+    <img src="collateral/C-8-Faber-Credential-Ack-1.png" alt="">
+    <img src="collateral/C-8-Faber-Credential-Ack-2.png" alt="">
+</details>
+
+<p>You’ve done it, issued a credential!  w00t!</p>
+<h3 id="issue-credential-notes">Issue Credential Notes<a class="headerlink" href="#issue-credential-notes" title="Permanent link">&para;</a></h3>
+<p>Those that know something about the Indy process for issuing a credential and the DIDComm <code>Issue Credential</code> protocol know that there multiple steps to issuing credentials, a back and forth between the issuer and the holder to (at least) offer, request and issue the credential. All of those messages happened, but the two agents took care of those details rather than bothering the controller (you, in this case) with managing the back and forth.</p>
+<ul>
+<li>On the Faber agent side, this is because we used the <strong><code>POST /issue-credential-2.0/send</code></strong> administrative message, which handles the back and forth for the issuer automatically. We could have used the other <code>/issue-credential-2.0/</code> endpoints to allow the controller to handle each step of the protocol.</li>
+<li>On Alice's agent side, this is because the handler for the <code>issue_credential_v2_0</code> event always responds to credential offers with corresponding credential requests.</li>
+</ul>
+<h3 id="bonus-points">Bonus Points<a class="headerlink" href="#bonus-points" title="Permanent link">&para;</a></h3>
+<p>If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other <code>/issue-credential-2.0/</code> messages. Use the <strong><code>GET /issue-credential-2.0/records</code></strong> to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.</p>
+<p>The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to. See the <a href="../features/AdminAPI">detailed API docs</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Protocol Step</th>
+<th>Faber (Issuer)</th>
+<th>Alice (Holder)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Send Credential Offer</td>
+<td><strong><code>POST /issue-credential-2.0/send-offer</code></strong></td>
+<td></td>
+<td>REST service</td>
+</tr>
+<tr>
+<td>Receive Offer</td>
+<td></td>
+<td><agent_cb>/issue_credential_v2_0/</td>
+<td>callback</td>
+</tr>
+<tr>
+<td>Send Credential Request</td>
+<td></td>
+<td><strong><code>POST /issue-credential-2.0/records/{cred_ex_id}/send-request</code></strong></td>
+<td>REST service</td>
+</tr>
+<tr>
+<td>Receive Request</td>
+<td><agent_cb>/issue_credential_v2_0/</td>
+<td></td>
+<td>callback</td>
+</tr>
+<tr>
+<td>Issue Credential</td>
+<td><strong><code>POST /issue-credential-2.0/records/{cred_ex_id}/issue</code></strong></td>
+<td></td>
+<td>REST service</td>
+</tr>
+<tr>
+<td>Receive Credential</td>
+<td></td>
+<td><agent_cb>/issue_credential_v2_0/</td>
+<td>callback</td>
+</tr>
+<tr>
+<td>Store Credential</td>
+<td></td>
+<td><strong><code>POST /issue-credential-2.0/records/{cred_ex_id}/store</code></strong></td>
+<td>REST service</td>
+</tr>
+<tr>
+<td>Receive Acknowledgement</td>
+<td><agent_cb>/issue_credential_v2_0/</td>
+<td></td>
+<td>callback</td>
+</tr>
+<tr>
+<td>Store Credential Id</td>
+<td></td>
+<td></td>
+<td>application function</td>
+</tr>
+</tbody>
+</table>
+<h2 id="requestingpresenting-a-proof">Requesting/Presenting a Proof<a class="headerlink" href="#requestingpresenting-a-proof" title="Permanent link">&para;</a></h2>
+<p>Alice now has her Faber credential. Let’s have the Faber agent send a request for a presentation (a proof) using that credential. This should be pretty easy for you at this point.</p>
+<h3 id="faber-sends-a-proof-request">Faber sends a Proof Request<a class="headerlink" href="#faber-sends-a-proof-request" title="Permanent link">&para;</a></h3>
+<p>From the Faber browser tab, get ready to execute the <strong><code>POST /present-proof-2.0/send-request</code></strong> endpoint. After hitting <code>Try it Now</code>, erase the data in the block labelled "Edit Value Model", replacing it with the text below. Once that is done, replace in the JSON each instance of <code>cred_def_id</code> (there are four instances) and <code>connection_id</code> with the values found using the same techniques we've used earlier in this tutorial. Both can be found by scrolling back a little in the Faber terminal, or you can execute API endpoints we've already covered. You can also change the value of the <code>comment</code> item to whatever you want.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>{
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  &quot;comment&quot;: &quot;This is a comment about the reason for the proof&quot;,
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  &quot;connection_id&quot;: &quot;e469e0f3-2b4d-4b12-9ac7-293f23e8a816&quot;,
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  &quot;presentation_request&quot;: {
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    &quot;indy&quot;: {
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>      &quot;name&quot;: &quot;Proof of Education&quot;,
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>      &quot;version&quot;: &quot;1.0&quot;,
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>      &quot;requested_attributes&quot;: {
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>        &quot;0_name_uuid&quot;: {
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>          &quot;name&quot;: &quot;name&quot;,
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>          &quot;restrictions&quot;: [
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>            {
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>              &quot;cred_def_id&quot;: &quot;SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema&quot;
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>            }
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>          ]
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>        },
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>        &quot;0_date_uuid&quot;: {
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>          &quot;name&quot;: &quot;date&quot;,
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>          &quot;restrictions&quot;: [
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>            {
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>              &quot;cred_def_id&quot;: &quot;SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema&quot;
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>            }
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>          ]
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>        },
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>        &quot;0_degree_uuid&quot;: {
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>          &quot;name&quot;: &quot;degree&quot;,
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>          &quot;restrictions&quot;: [
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>            {
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>              &quot;cred_def_id&quot;: &quot;SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema&quot;
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>            }
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>          ]
+<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a>        },
+<a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a>        &quot;0_self_attested_thing_uuid&quot;: {
+<a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>          &quot;name&quot;: &quot;self_attested_thing&quot;
+<a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a>        }
+<a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a>      },
+<a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a>      &quot;requested_predicates&quot;: {
+<a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a>        &quot;0_age_GE_uuid&quot;: {
+<a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a>          &quot;name&quot;: &quot;birthdate_dateint&quot;,
+<a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a>          &quot;p_type&quot;: &quot;&lt;=&quot;,
+<a id="__codelineno-10-41" name="__codelineno-10-41" href="#__codelineno-10-41"></a>          &quot;p_value&quot;: 20030101,
+<a id="__codelineno-10-42" name="__codelineno-10-42" href="#__codelineno-10-42"></a>          &quot;restrictions&quot;: [
+<a id="__codelineno-10-43" name="__codelineno-10-43" href="#__codelineno-10-43"></a>            {
+<a id="__codelineno-10-44" name="__codelineno-10-44" href="#__codelineno-10-44"></a>              &quot;cred_def_id&quot;: &quot;SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema&quot;
+<a id="__codelineno-10-45" name="__codelineno-10-45" href="#__codelineno-10-45"></a>            }
+<a id="__codelineno-10-46" name="__codelineno-10-46" href="#__codelineno-10-46"></a>          ]
+<a id="__codelineno-10-47" name="__codelineno-10-47" href="#__codelineno-10-47"></a>        }
+<a id="__codelineno-10-48" name="__codelineno-10-48" href="#__codelineno-10-48"></a>      }
+<a id="__codelineno-10-49" name="__codelineno-10-49" href="#__codelineno-10-49"></a>    }
+<a id="__codelineno-10-50" name="__codelineno-10-50" href="#__codelineno-10-50"></a>  }
+<a id="__codelineno-10-51" name="__codelineno-10-51" href="#__codelineno-10-51"></a>}
+</code></pre></div>
+<p>(Note that the birthdate requested above is used as an "age proof", the calculation is something like <code>now() - years(18)</code>, and the presented birthdate must be on or before this date.  You can see the calculation in action in the <code>faber.py</code> demo code.)</p>
+<p>Notice that the proof request is using a predicate to check if Alice is older than 18 without asking for her age. Not sure what this has to do with her education level! Click <code>Execute</code> and cross your fingers. If the request fails check your JSON!</p>
+<details>
+    <summary>Show me a screenshot - send proof request</summary>
+    <img src="collateral/P-1-Faber-Proof-Request-1.png" alt="Send Proof Request">
+    <img src="collateral/P-1-Faber-Proof-Request-2.png" alt="Send Proof Request">
+</details>
+
+<h3 id="alice-responding-to-the-proof-request">Alice - Responding to the Proof Request<a class="headerlink" href="#alice-responding-to-the-proof-request" title="Permanent link">&para;</a></h3>
+<p>As before, Alice receives a webhook event from her agent telling her she has received a Proof Request. In our scenario, the ACA-Py instance automatically selects a matching credential and responds with a Proof.</p>
+<details>
+    <summary>Show me Alice's event activity</summary>
+    <img src="collateral/P-2-Alice-Proof-Request-1.png" alt="Proof Request">
+    <img src="collateral/P-2-Alice-Proof-Request-2.png" alt="Proof Request">
+</details>
+
+<p>In a real scenario, for example if Alice had a mobile agent on her smartphone, the agent would prompt Alice whether she wanted to respond or not.</p>
+<h3 id="faber-verifying-the-proof">Faber - Verifying the Proof<a class="headerlink" href="#faber-verifying-the-proof" title="Permanent link">&para;</a></h3>
+<p>Note that in the response, the state is <code>request-sent</code>. That is because when the HTTP response was generated (immediately after sending the request), Alice's agent had not yet responded to the request. We’ll have to do another request to verify the presentation worked. Copy the value of the <code>pres_ex_id</code> field from the event in the Faber terminal and use it in executing the <strong><code>GET /present-proof-2.0/records/{pres_ex_id}</code></strong> endpoint. That should return a result showing the <code>state</code> as <code>done</code> and <code>verified</code> as <code>true</code>. Proof positive!</p>
+<p>You can see some of Faber's activity below:</p>
+<details>
+    <summary>Show me Faber's event activity</summary>
+    <img src="collateral/P-3-Faber-Proof-1.png" alt="Receive and Verify Proof">
+    <img src="collateral/P-3-Faber-Proof-2.png" alt="Receive and Verify Proof">
+    <img src="collateral/P-3-Faber-Proof-3.png" alt="Receive and Verify Proof">
+</details>
+
+<h3 id="present-proof-notes">Present Proof Notes<a class="headerlink" href="#present-proof-notes" title="Permanent link">&para;</a></h3>
+<p>As with the issue credential process, the agents handled some of the presentation steps without bothering the controller. In this case, Alice's agent processed the presentation request automatically through its handler for the <code>present_proof_v2_0</code> event, and her wallet contained exactly one credential that satisfied the presentation-request from the Faber agent. Similarly, the Faber agent's handler for the event responds automatically and so on receipt of the presentation, it verified the presentation and updated the status accordingly.</p>
+<h3 id="bonus-points_1">Bonus Points<a class="headerlink" href="#bonus-points_1" title="Permanent link">&para;</a></h3>
+<p>If you would like to perform all of the proof request/response steps manually, you can call all of the individual <code>/present-proof-2.0</code> messages.</p>
+<p>The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that you need to respond to. See the <a href="../features/AdminAPI">detailed API docs</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Protocol Step</th>
+<th>Faber (Verifier)</th>
+<th>Alice (Holder/Prover)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Send Proof Request</td>
+<td><strong><code>POST /present-proof-2.0/send-request</code></strong></td>
+<td></td>
+<td>REST service</td>
+</tr>
+<tr>
+<td>Receive Proof Request</td>
+<td></td>
+<td><agent_cb>/present_proof_v2_0</td>
+<td>callback (webhook)</td>
+</tr>
+<tr>
+<td>Find Credentials</td>
+<td></td>
+<td><strong><code>GET /present-proof-2.0/records/{pres_ex_id}/credentials</code></strong></td>
+<td>REST service</td>
+</tr>
+<tr>
+<td>Select Credentials</td>
+<td></td>
+<td></td>
+<td>application or user function</td>
+</tr>
+<tr>
+<td>Send Proof</td>
+<td></td>
+<td><strong><code>POST /present-proof-2.0/records/{pres_ex_id}/send-presentation</code></strong></td>
+<td>REST service</td>
+</tr>
+<tr>
+<td>Receive Proof</td>
+<td><agent_cb>/present_proof_v2_0</td>
+<td></td>
+<td>callback (webhook)</td>
+</tr>
+<tr>
+<td>Validate Proof</td>
+<td><strong><code>POST /present-proof-2.0/records/{pres_ex_id}/verify-presentation</code></strong></td>
+<td></td>
+<td>REST service</td>
+</tr>
+<tr>
+<td>Save Proof</td>
+<td></td>
+<td></td>
+<td>application data</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
+<p>That’s the OpenAPI-based tutorial. Feel free to play with the API and learn how it works. More importantly, as you implement a controller, use the OpenAPI user interface to test out the calls you will be using as you go. The list of API calls is grouped by protocol and if you are familiar with the protocols (Aries RFCs) the API call names should be pretty obvious.</p>
+<p>One limitation of you being the controller is that you don't see the events from the agent that a controller program sees. For example, you, as Alice's agent, are not notified when Faber initiates the sending of a Credential. Some of those things show up in the terminal as messages, but others you just have to know have happened based on a successful API call.</p>
+<!-- Docs to Markdown version 1.0β17 -->
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: The Alice-Faber Demo">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                The Alice-Faber Demo
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../AliceGetsAPhone/" class="md-footer__link md-footer__link--next" aria-label="Next: Alice Gets a Phone">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Alice Gets a Phone
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.expand", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "toc.follow"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.8fd75fb4.min.js"></script>
+      
+    
+  </body>
+</html>
