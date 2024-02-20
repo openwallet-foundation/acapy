@@ -43,11 +43,10 @@ jobs:
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && ALIAS=$(echo $VERSION | sed -e 's/^v//')
           # Copy all of the root level md files into the docs folder for deployment, tweaking the relative paths
           for i in *.md; do sed -e "s#docs/#./#g" $i >docs/$i; done
-          # Create overrides folder, populate it for version, and then move to not apply if VERSION is main branch
-          mkdir overrides
+          # Populate overrides for the current version, and then remove to not apply if VERSION is main branch
           echo -e "{% extends "base.html" %}\n\n{% block outdated %}\n  You are viewing the documentation for ACA-Py Release $VERSION.\n{% endblock %}" >overrides/base.html
           # If building from main, use latest as ALIAS
-          [ "$VERSION" == "main" ] && ALIAS=latest && mv overrides/base.html overrides/base.txt
+          [ "$VERSION" == "main" ] && ALIAS=latest && rm overrides/base.html
           echo $VERSION $ALIAS
           mike deploy --push --update-aliases $VERSION $ALIAS
           mike set-default latest
