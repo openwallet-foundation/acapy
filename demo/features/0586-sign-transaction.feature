@@ -39,6 +39,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --wallet-type askar-anoncreds | --wallet-type askar-anoncreds   | anoncreds-testing |
          | --wallet-type askar-anoncreds |                                 | driverslicense |
          |                               | --wallet-type askar-anoncreds   | anoncreds-testing |
+         |                               | --wallet-type askar-anoncreds --multitenant  | anoncreds-testing |
 
 
    @T001.1-RFC0586 @GHA
@@ -234,3 +235,4 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                             | Schema_name       | Credential_data          |
          | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation --wallet-type askar-anoncreds   | anoncreds-testing | Data_AC_NormalizedValues |
+         | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation --multitanant --wallet-type askar-anoncreds   | anoncreds-testing | Data_AC_NormalizedValues |
