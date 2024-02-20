@@ -5,6 +5,7 @@ from pydid import DIDDocument
 
 from aries_cloudagent.tests import mock
 
+from .....admin.server import AdminResponder
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
@@ -72,7 +73,7 @@ class TestConfig:
 class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
     async def asyncSetUp(self):
         self.responder = MockResponder()
-
+        self.responder.send_fn = mock.CoroutineMock()
         self.oob_mock = mock.MagicMock(
             clean_finished_oob_record=mock.CoroutineMock(return_value=None)
         )
@@ -181,7 +182,9 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 test_module, "AttachDecorator", autospec=True
             ) as mock_attach_deco, mock.patch.object(
                 self.multitenant_mgr, "get_default_mediator"
-            ) as mock_get_default_mediator:
+            ) as mock_get_default_mediator, mock.patch.object(
+                AdminResponder, "send_reply"
+            ) as mock_send_reply:
                 mock_get_default_mediator.return_value = mediation_record
                 invi_rec = await self.oob_manager.create_invitation(
                     my_endpoint="testendpoint",
@@ -195,6 +198,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 )
                 invitee_record = await self.manager.receive_invitation(invi_msg)
                 assert invitee_record.state == ConnRecord.State.REQUEST.rfc23
+                assert mock_send_reply.called
 
     async def test_receive_invitation_oob_public_did(self):
         async with self.profile.session() as session:
@@ -211,7 +215,9 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 self.multitenant_mgr, "get_default_mediator"
             ) as mock_get_default_mediator, mock.patch.object(
                 self.manager, "resolve_connection_targets", mock.CoroutineMock()
-            ) as mock_resolve_targets:
+            ) as mock_resolve_targets, mock.patch.object(
+                AdminResponder, "send_reply"
+            ) as mock_send_reply:
                 mock_resolve_targets.return_value = [
                     mock.MagicMock(recipient_keys=["test"])
                 ]
@@ -231,6 +237,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     invi_msg, their_public_did=public_did_info.did
                 )
                 assert invitee_record.state == ConnRecord.State.REQUEST.rfc23
+                assert mock_send_reply.called
 
     async def test_receive_invitation_no_auto_accept(self):
         async with self.profile.session() as session:
