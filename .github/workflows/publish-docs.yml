@@ -2,13 +2,13 @@ name: publish-docs
 
 on:
   push:
-    # Publish `main` as latest
+    # Publish `main` as latest, and when pushes are done to branches with "v-doc" prefix
     branches:
       - main
+      - docs-v*
 
-    # Publish `v1.2.3` tags as releases
-    tags:
-      - v*
+  create:
+    # Publish any `docs-v` branches -- check below to not run on other created branches
 
 permissions:
   contents: write
@@ -39,13 +39,15 @@ jobs:
           # Strip git ref prefix from version
           echo "${{ github.ref }}"
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && ALIAS=$(echo $VERSION | sed -e 's/^v//')
+          # If this is for a branch other than main or one starting with "docs-v" then exit happily
+          [[ "$VERSION" != "main" && "$VERSION" != "docs-v"* ]] && echo Not a docs branch...exiting && exit 0
+          # Strip "docs-v" prefix from branch name
+          [[ "$VERSION" == "docs-v"* ]] && ALIAS=$(echo $VERSION | sed -e 's/^docs-v//')
           # Copy all of the root level md files into the docs folder for deployment, tweaking the relative paths
           for i in *.md; do sed -e "s#docs/#./#g" $i >docs/$i; done
           # Populate overrides for the current version, and then remove to not apply if VERSION is main branch
           echo -e "{% extends "base.html" %}\n\n{% block outdated %}\n  You are viewing the documentation for ACA-Py Release $VERSION.\n{% endblock %}" >overrides/base.html
-          # If building from main, use latest as ALIAS
+          # If building from main, use latest as ALIAS and remove the base.html override
           [ "$VERSION" == "main" ] && ALIAS=latest && rm overrides/base.html
           echo $VERSION $ALIAS
           mike deploy --push --update-aliases $VERSION $ALIAS
