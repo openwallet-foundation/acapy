@@ -2,7 +2,6 @@
 
 import abc
 import json
-
 from functools import reduce
 from itertools import chain
 from os import environ
@@ -10,15 +9,12 @@ from typing import Type
 
 import deepmerge
 import yaml
-
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
 from ..utils.tracing import trace_event
-
 from .error import ArgsParseError
-from .util import BoundedInt, ByteSize
-
 from .plugin_settings import PLUGIN_CONFIG_KEY
+from .util import BoundedInt, ByteSize
 
 CAT_PROVISION = "general"
 CAT_START = "start"
@@ -787,13 +783,13 @@ class RevocationGroup(ArgumentGroup):
         if args.notify_revocation:
             settings["revocation.notify"] = args.notify_revocation
         if args.monitor_revocation_notification:
-            settings[
-                "revocation.monitor_notification"
-            ] = args.monitor_revocation_notification
+            settings["revocation.monitor_notification"] = (
+                args.monitor_revocation_notification
+            )
         if args.anoncreds_legacy_revocation:
-            settings[
-                "revocation.anoncreds_legacy_support"
-            ] = args.anoncreds_legacy_revocation
+            settings["revocation.anoncreds_legacy_support"] = (
+                args.anoncreds_legacy_revocation
+            )
         return settings
 
 
@@ -992,13 +988,15 @@ class LoggingGroup(ArgumentGroup):
         parser.add_argument(
             "--log-file",
             dest="log_file",
-            type=str,
             metavar="<log-file>",
+            nargs="?",
+            const="",
             default=None,
             env_var="ACAPY_LOG_FILE",
             help=(
-                "Overrides the output destination for the root logger (as defined "
-                "by the log config file) to the named <log-file>."
+                "--log-file enables writing of logs to file, if a value is "
+                "provided then it uses that as log file location, otherwise "
+                "the default location in log config file is used."
             ),
         )
         parser.add_argument(
@@ -1013,79 +1011,16 @@ class LoggingGroup(ArgumentGroup):
                 "('debug', 'info', 'warning', 'error', 'critical')"
             ),
         )
-        parser.add_argument(
-            "--log-handler-config",
-            dest="log_handler_config",
-            type=str,
-            metavar="<log-handler-config>",
-            default=None,
-            env_var="ACAPY_LOG_HANDLER_CONFIG",
-            help=(
-                "Specifies when, interval, backupCount for the "
-                "TimedRotatingFileHandler. These attributes are "
-                "passed as a ; seperated string. For example, "
-                "when of D (days), interval of 7 and backupCount "
-                "of 1 will be passed as 'D;7;1'. Note: "
-                "backupCount of 0 will mean all backup log files "
-                "will be retained and not deleted at all."
-            ),
-        )
-        parser.add_argument(
-            "--log-fmt-pattern",
-            dest="log_fmt_pattern",
-            type=str,
-            metavar="<log-fmt-pattern>",
-            default=None,
-            env_var="ACAPY_LOG_FMT_PATTERN",
-            help=(
-                "Specifies logging formatter pattern as string. Examples are included "
-                "in 'Logging.md'. For information regarding different attributes "
-                "supported in the pattern, please look at "
-                "https://docs.python.org/3/library/logging.html#logrecord-attributes."
-            ),
-        )
-        parser.add_argument(
-            "--log-json-fmt",
-            action="store_true",
-            env_var="ACAPY_LOG_JSON_FMT",
-            help=(
-                "Specifies whether to use JSON logging formatter or "
-                "text logging formatter."
-            ),
-        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract logging settings."""
         settings = {}
         if args.log_config:
             settings["log.config"] = args.log_config
-        if args.log_file:
+        if args.log_file or args.log_file == "":
             settings["log.file"] = args.log_file
         if args.log_level:
             settings["log.level"] = args.log_level
-        if args.log_handler_config:
-            try:
-                handler_config_attribs = (args.log_handler_config).split(";")
-                settings["log.handler_when"] = handler_config_attribs[0]
-                settings["log.handler_interval"] = int(handler_config_attribs[1])
-                settings["log.handler_bakcount"] = int(handler_config_attribs[2])
-            except IndexError:
-                raise ArgsParseError(
-                    "With --log-handler-config, the provided argument must be "
-                    "in 'when;interval;backupCount' format. Each of the 3 "
-                    "attributes for TimedRotatingFileHandler must be specified."
-                )
-            except ValueError:
-                raise ArgsParseError(
-                    "With --log-handler-config, 'interval' and 'backupCount' "
-                    "should be a number [int]"
-                )
-        if args.log_fmt_pattern:
-            settings["log.fmt_pattern"] = args.log_fmt_pattern
-        if args.log_json_fmt:
-            settings["log.json_fmt"] = True
-        else:
-            settings["log.json_fmt"] = False
         return settings
 
 
@@ -1207,7 +1142,8 @@ class ProtocolGroup(ArgumentGroup):
             help=(
                 "Emit protocol messages with new DIDComm prefix; i.e., "
                 "'https://didcomm.org/' instead of (default) prefix "
-                "'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'."
+                "'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'. "
+                "Forced to `true` as the old prefix must never be used."
             ),
         )
         parser.add_argument(
@@ -1217,7 +1153,8 @@ class ProtocolGroup(ArgumentGroup):
             help=(
                 "Send packed agent messages with the DIDComm MIME type "
                 "as of RFC 0044; i.e., 'application/didcomm-envelope-enc' "
-                "instead of 'application/ssi-agent-wire'."
+                "instead of 'application/ssi-agent-wire'. "
+                "Forced to `true` as the old MIME type must never be used."
             ),
         )
         parser.add_argument(
@@ -1228,6 +1165,19 @@ class ProtocolGroup(ArgumentGroup):
                 "Store tags for exchange protocols (credential and presentation) "
                 "using unencrypted rather than encrypted tags"
             ),
+        )
+        parser.add_argument(
+            "--emit-did-peer-2",
+            action="store_true",
+            env_var="ACAPY_EMIT_DID_PEER_2",
+            help=("Emit did:peer:2 DIDs in DID Exchange Protocol"),
+        )
+
+        parser.add_argument(
+            "--emit-did-peer-4",
+            action="store_true",
+            env_var="ACAPY_EMIT_DID_PEER_4",
+            help=("Emit did:peer:4 DIDs in DID Exchange Protocol"),
         )
 
     def get_settings(self, args: Namespace) -> dict:
@@ -1288,13 +1238,19 @@ class ProtocolGroup(ArgumentGroup):
                 raise ArgsParseError("Error writing trace event " + str(e))
         if args.preserve_exchange_records:
             settings["preserve_exchange_records"] = True
-        if args.emit_new_didcomm_prefix:
-            settings["emit_new_didcomm_prefix"] = True
-        if args.emit_new_didcomm_mime_type:
-            settings["emit_new_didcomm_mime_type"] = True
+        # NOT setting the following two parameters `True` is no longer supported
+        # Even if the args are not set, the config setting is True.
+        settings["emit_new_didcomm_prefix"] = True
+        settings["emit_new_didcomm_mime_type"] = True
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
+
+        if args.emit_did_peer_2:
+            settings["emit_did_peer_2"] = True
+        if args.emit_did_peer_4:
+            settings["emit_did_peer_4"] = True
+
         return settings
 
 
@@ -1636,8 +1592,9 @@ class WalletGroup(ArgumentGroup):
             env_var="ACAPY_WALLET_TYPE",
             help=(
                 "Specifies the type of Indy wallet provider to use. "
-                "Supported internal storage types are 'basic' (memory) and 'indy'. "
-                "The default (if not specified) is 'basic'."
+                "Supported internal storage types are 'basic' (memory), 'askar' "
+                "and 'askar-anoncreds'."
+                "The default (if not specified) is 'basic'. 'indy' is deprecated."
             ),
         )
         parser.add_argument(
@@ -1647,7 +1604,7 @@ class WalletGroup(ArgumentGroup):
             default="default",
             env_var="ACAPY_WALLET_STORAGE_TYPE",
             help=(
-                "Specifies the type of Indy wallet backend to use. "
+                "Specifies the type of wallet backend to use. "
                 "Supported internal storage types are 'basic' (memory), "
                 "'default' (sqlite), and 'postgres_storage'.  The default, "
                 "if not specified, is 'default'."
@@ -1743,13 +1700,13 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.replace_public_did"] = True
         if args.recreate_wallet:
             settings["wallet.recreate"] = True
-        # check required settings for 'indy' wallets
-        if settings["wallet.type"] == "indy":
+        # check required settings for persistent wallets
+        if settings["wallet.type"] in ["indy", "askar", "askar-anoncreds"]:
             # requires name, key
             if not args.wallet_name or not args.wallet_key:
                 raise ArgsParseError(
                     "Parameters --wallet-name and --wallet-key must be provided "
-                    "for indy wallets"
+                    "for persistent wallets"
                 )
             # postgres storage requires additional configuration
             if (
@@ -1861,9 +1818,9 @@ class MultitenantGroup(ArgumentGroup):
                         )
 
                     if multitenancy_config.get("key_derivation_method"):
-                        settings[
-                            "multitenant.key_derivation_method"
-                        ] = multitenancy_config.get("key_derivation_method")
+                        settings["multitenant.key_derivation_method"] = (
+                            multitenancy_config.get("key_derivation_method")
+                        )
 
                 else:
                     for value_str in args.multitenancy_config:
@@ -2011,9 +1968,9 @@ class EndorsementGroup(ArgumentGroup):
 
         if args.endorser_endorse_with_did:
             if settings["endorser.endorser"]:
-                settings[
-                    "endorser.endorser_endorse_with_did"
-                ] = args.endorser_endorse_with_did
+                settings["endorser.endorser_endorse_with_did"] = (
+                    args.endorser_endorse_with_did
+                )
             else:
                 raise ArgsParseError(
                     "Parameter --endorser-endorse-with-did should only be set for "
@@ -2139,6 +2096,40 @@ class UpgradeGroup(ArgumentGroup):
             ),
         )
 
+        parser.add_argument(
+            "--named-tag",
+            action="append",
+            env_var="ACAPY_UPGRADE_NAMED_TAGS",
+            help=("Runs upgrade steps associated with tags provided in the config"),
+        )
+
+        parser.add_argument(
+            "--upgrade-all-subwallets",
+            action="store_true",
+            env_var="ACAPY_UPGRADE_ALL_SUBWALLETS",
+            help="Apply upgrade to all subwallets and the base wallet",
+        )
+
+        parser.add_argument(
+            "--upgrade-subwallet",
+            action="append",
+            env_var="ACAPY_UPGRADE_SUBWALLETS",
+            help=(
+                "Apply upgrade to specified subwallets (identified by wallet id)"
+                " and the base wallet"
+            ),
+        )
+
+        parser.add_argument(
+            "--upgrade-page-size",
+            type=str,
+            env_var="ACAPY_UPGRADE_PAGE_SIZE",
+            help=(
+                "Specify page/batch size to process BaseRecords, "
+                "this provides a way to prevent out-of-memory issues."
+            ),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
@@ -2148,4 +2139,19 @@ class UpgradeGroup(ArgumentGroup):
             settings["upgrade.from_version"] = args.from_version
         if args.force_upgrade:
             settings["upgrade.force_upgrade"] = args.force_upgrade
+        if args.named_tag:
+            settings["upgrade.named_tags"] = (
+                list(args.named_tag) if args.named_tag else []
+            )
+        if args.upgrade_all_subwallets:
+            settings["upgrade.upgrade_all_subwallets"] = args.upgrade_all_subwallets
+        if args.upgrade_subwallet:
+            settings["upgrade.upgrade_subwallets"] = (
+                list(args.upgrade_subwallet) if args.upgrade_subwallet else []
+            )
+        if args.upgrade_page_size:
+            try:
+                settings["upgrade.page_size"] = int(args.upgrade_page_size)
+            except ValueError:
+                raise ArgsParseError("Parameter --upgrade-page-size must be an integer")
         return settings

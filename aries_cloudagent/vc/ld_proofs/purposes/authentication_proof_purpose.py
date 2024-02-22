@@ -1,7 +1,7 @@
 """Authentication proof purpose class."""
 
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
@@ -23,9 +23,9 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
         self,
         *,
         challenge: str,
-        domain: str = None,
-        date: datetime = None,
-        max_timestamp_delta: timedelta = None,
+        domain: Optional[str] = None,
+        date: Optional[datetime] = None,
+        max_timestamp_delta: Optional[timedelta] = None,
     ):
         """Initialize new AuthenticationProofPurpose instance."""
         super().__init__(
@@ -68,7 +68,7 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
                 document_loader=document_loader,
             )
         except Exception as e:
-            return PurposeResult(valid=False, error=e)
+            return PurposeResult(valid=False, error=str(e))
 
     def update(self, proof: dict) -> dict:
         """Update poof purpose, challenge and domain on proof."""

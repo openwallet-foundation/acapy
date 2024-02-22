@@ -1,7 +1,8 @@
 """Test Problem Report Handler."""
+
 import pytest
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 
 from ......connections.models.conn_record import ConnRecord
 from ......core.profile import ProfileSession
@@ -36,9 +37,9 @@ async def session(request_context) -> ProfileSession:
 
 class TestOOBProblemReportHandler:
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "OutOfBandManager")
+    @mock.patch.object(test_module, "OutOfBandManager")
     async def test_called(self, mock_oob_mgr, request_context, connection_record):
-        mock_oob_mgr.return_value.receive_problem_report = async_mock.CoroutineMock()
+        mock_oob_mgr.return_value.receive_problem_report = mock.CoroutineMock()
         request_context.message = OOBProblemReport(
             description={
                 "en": "No such connection",
@@ -55,9 +56,9 @@ class TestOOBProblemReportHandler:
         )
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "OutOfBandManager")
+    @mock.patch.object(test_module, "OutOfBandManager")
     async def test_exception(self, mock_oob_mgr, request_context, connection_record):
-        mock_oob_mgr.return_value.receive_problem_report = async_mock.CoroutineMock()
+        mock_oob_mgr.return_value.receive_problem_report = mock.CoroutineMock()
         mock_oob_mgr.return_value.receive_problem_report.side_effect = (
             OutOfBandManagerError("error")
         )
@@ -68,10 +69,10 @@ class TestOOBProblemReportHandler:
             }
         )
         handler = test_module.OOBProblemReportMessageHandler()
-        with async_mock.patch.object(
-            handler._logger, "exception", async_mock.MagicMock()
+        with mock.patch.object(
+            handler._logger, "exception", mock.MagicMock()
         ) as mock_exc_logger:
             responder = MockResponder()
             await handler.handle(context=request_context, responder=responder)
 
-        assert mock_exc_logger.called_once()
+        mock_exc_logger.assert_called_once()

@@ -1,10 +1,9 @@
-import asyncio
 from copy import deepcopy
 from datetime import datetime
 from typing import Sequence
 from uuid import uuid4
 
-import mock as async_mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from aries_cloudagent.wallet.key_type import BLS12381G2, ED25519
@@ -62,14 +61,7 @@ from .test_data import (
 )
 
 
-@pytest.fixture(scope="class")
-def event_loop(request):
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def profile():
     profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
     context = profile.context
@@ -82,7 +74,7 @@ def profile():
     return profile
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 async def setup_tuple(profile):
     async with profile.session() as session:
         wallet = session.inject_or(BaseWallet)
@@ -1844,7 +1836,7 @@ class TestPresExchHandler:
     @pytest.mark.asyncio
     async def test_credential_subject_as_list(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
-        with async_mock.patch.object(
+        with mock.patch.object(
             dif_pres_exch_handler, "new_credential_builder", autospec=True
         ) as mock_cred_builder:
             mock_cred_builder.return_value = {}
@@ -2037,10 +2029,10 @@ class TestPresExchHandler:
                 cred_tags={"some": "tag"},
             ),
         ]
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:sov:LjgpST2rjsoxYegQDRm7EL",
@@ -2102,10 +2094,10 @@ class TestPresExchHandler:
                 cred_tags={"some": "tag"},
             ),
         ]
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:sov:LjgpST2rjsoxYegQDRm7EL",
@@ -2170,10 +2162,10 @@ class TestPresExchHandler:
                 cred_tags={"some": "tag"},
             ),
         ]
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
@@ -2240,29 +2232,29 @@ class TestPresExchHandler:
                 cred_tags={"some": "tag"},
             ),
         ]
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.AsyncMock(),
-        ) as mock_did_info, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_did_info, mock.patch.object(
             DIFPresExchHandler,
             "make_requirement",
-            async_mock.AsyncMock(),
-        ) as mock_make_req, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_make_req, mock.patch.object(
             DIFPresExchHandler,
             "apply_requirements",
-            async_mock.AsyncMock(),
-        ) as mock_apply_req, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_apply_req, mock.patch.object(
             DIFPresExchHandler,
             "merge",
-            async_mock.AsyncMock(),
-        ) as mock_merge, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_merge, mock.patch.object(
             test_module,
             "create_presentation",
-            async_mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
-            mock_make_req.return_value = async_mock.MagicMock()
-            mock_apply_req.return_value = async_mock.MagicMock()
+            mock_make_req.return_value = mock.MagicMock()
+            mock_apply_req.return_value = mock.MagicMock()
             mock_merge.return_value = (VC_RECORDS, {})
             dif_pres_exch_handler.is_holder = True
             mock_create_vp.return_value = {"test": "1"}
@@ -2293,33 +2285,33 @@ class TestPresExchHandler:
             profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_list, pd_list = setup_tuple
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.AsyncMock(),
-        ) as mock_did_info, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_did_info, mock.patch.object(
             DIFPresExchHandler,
             "make_requirement",
-            async_mock.AsyncMock(),
-        ) as mock_make_req, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_make_req, mock.patch.object(
             DIFPresExchHandler,
             "apply_requirements",
-            async_mock.AsyncMock(),
-        ) as mock_apply_req, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_apply_req, mock.patch.object(
             DIFPresExchHandler,
             "merge",
-            async_mock.AsyncMock(),
-        ) as mock_merge, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_merge, mock.patch.object(
             test_module,
             "create_presentation",
-            async_mock.AsyncMock(),
-        ) as mock_create_vp, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_create_vp, mock.patch.object(
             test_module,
             "sign_presentation",
-            async_mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_sign_vp:
-            mock_make_req.return_value = async_mock.MagicMock()
-            mock_apply_req.return_value = async_mock.MagicMock()
+            mock_make_req.return_value = mock.MagicMock()
+            mock_apply_req.return_value = mock.MagicMock()
             mock_merge.return_value = (cred_list, {})
             dif_pres_exch_handler.is_holder = True
             mock_create_vp.return_value = {"test": "1", "@context": ["test"]}
@@ -2351,33 +2343,33 @@ class TestPresExchHandler:
             profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_list, pd_list = setup_tuple
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.AsyncMock(),
-        ) as mock_did_info, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_did_info, mock.patch.object(
             DIFPresExchHandler,
             "make_requirement",
-            async_mock.AsyncMock(),
-        ) as mock_make_req, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_make_req, mock.patch.object(
             DIFPresExchHandler,
             "apply_requirements",
-            async_mock.AsyncMock(),
-        ) as mock_apply_req, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_apply_req, mock.patch.object(
             DIFPresExchHandler,
             "merge",
-            async_mock.AsyncMock(),
-        ) as mock_merge, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_merge, mock.patch.object(
             test_module,
             "create_presentation",
-            async_mock.AsyncMock(),
-        ) as mock_create_vp, async_mock.patch.object(
+            mock.CoroutineMock(),
+        ) as mock_create_vp, mock.patch.object(
             DIFPresExchHandler,
             "get_sign_key_credential_subject_id",
-            async_mock.AsyncMock(),
+            mock.CoroutineMock(),
         ) as mock_sign_key_cred_subject:
-            mock_make_req.return_value = async_mock.MagicMock()
-            mock_apply_req.return_value = async_mock.MagicMock()
+            mock_make_req.return_value = mock.MagicMock()
+            mock_apply_req.return_value = mock.MagicMock()
             mock_merge.return_value = (cred_list, {})
             dif_pres_exch_handler.is_holder = True
             mock_create_vp.return_value = {"test": "1", "@context": ["test"]}
@@ -3290,11 +3282,11 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3326,13 +3318,14 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert not await dif_pres_exch_handler.apply_constraint_received_cred(
-                constraint=constraint, cred_dict=cred_dict
-            )
+            with pytest.raises(DIFPresExchError):
+                await dif_pres_exch_handler.apply_constraint_received_cred(
+                    constraint=constraint, cred_dict=cred_dict
+                )
 
         constraint = {
             "limit_disclosure": "required",
@@ -3344,13 +3337,14 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert not await dif_pres_exch_handler.apply_constraint_received_cred(
-                constraint=constraint, cred_dict=cred_dict
-            )
+            with pytest.raises(DIFPresExchError):
+                await dif_pres_exch_handler.apply_constraint_received_cred(
+                    constraint=constraint, cred_dict=cred_dict
+                )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -3370,11 +3364,11 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3388,11 +3382,11 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3416,11 +3410,11 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3460,11 +3454,11 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3478,11 +3472,11 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3496,11 +3490,11 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3514,11 +3508,11 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            await dif_pres_exch_handler.apply_constraint_received_cred(
                 constraint=constraint, cred_dict=cred_dict
             )
 
@@ -3538,13 +3532,14 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            assert not await dif_pres_exch_handler.apply_constraint_received_cred(
-                constraint=constraint, cred_dict=cred_dict
-            )
+            with pytest.raises(DIFPresExchError):
+                await dif_pres_exch_handler.apply_constraint_received_cred(
+                    constraint=constraint, cred_dict=cred_dict
+                )
 
     @pytest.mark.asyncio
     async def test_get_updated_path(self, profile):
@@ -3625,8 +3620,8 @@ class TestPresExchHandler:
             "@type": "fhir:resource-types#Patient",
             "address": {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
         }
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
             vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
@@ -3650,8 +3645,8 @@ class TestPresExchHandler:
             "type": "xsd:integer",
             "@value": "10",
         }
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
@@ -3671,8 +3666,8 @@ class TestPresExchHandler:
             "type": "xsd:dateTime",
             "@value": "2020-09-28T11:00:00+00:00",
         }
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
@@ -3693,8 +3688,8 @@ class TestPresExchHandler:
             "type": "xsd:boolean",
             "@value": "false",
         }
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
@@ -3710,8 +3705,8 @@ class TestPresExchHandler:
             "type": "xsd:double",
             "@value": "10.2",
         }
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
@@ -3726,8 +3721,8 @@ class TestPresExchHandler:
             "@id": "test",
             "test": "val",
         }
-        with async_mock.patch.object(
-            test_module.jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)

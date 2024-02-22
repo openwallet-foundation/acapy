@@ -1,13 +1,13 @@
 """Key pair storage manager."""
 
 import json
-from typing import List, Mapping, Optional, Sequence
 import uuid
+from typing import List, Mapping, Optional, Sequence
 
 from ..storage.base import BaseStorage
 from ..storage.record import StorageRecord
-from .util import bytes_to_b58
 from .key_type import KeyType
+from .util import bytes_to_b58
 
 KEY_PAIR_STORAGE_TYPE = "key_pair"
 
@@ -28,8 +28,8 @@ class KeyPairStorageManager:
         public_key: bytes,
         secret_key: bytes,
         key_type: KeyType,
-        metadata: dict = {},
-        tags: dict = {},
+        metadata: Optional[dict] = None,
+        tags: Optional[dict] = None,
     ):
         """Store signing key pair in storage.
 
@@ -40,6 +40,8 @@ class KeyPairStorageManager:
             metadata (dict, optional): The metadata
             tags (dict, optional): The tags.
         """
+        metadata = metadata or {}
+        tags = tags or {}
         verkey = bytes_to_b58(public_key)
         data = {
             "verkey": verkey,

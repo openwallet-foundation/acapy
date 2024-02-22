@@ -7,6 +7,7 @@ apply_requirement [filter credentials] ->
 merge [return applicable credential list and descriptor_map for presentation_submission]
 returns VerifiablePresentation
 """
+
 import pytz
 import re
 import logging
@@ -115,7 +116,6 @@ class DIFPresExchHandler:
     async def _get_issue_suite(
         self,
         *,
-        wallet: BaseWallet,
         issuer_id: str,
     ):
         """Get signature suite for signing presentation."""
@@ -139,17 +139,13 @@ class DIFPresExchHandler:
         return SignatureClass(
             verification_method=verification_method,
             key_pair=WalletKeyPair(
-                wallet=wallet,
+                profile=self.profile,
                 key_type=self.ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
                 public_key_base58=did_info.verkey if did_info else None,
             ),
         )
 
-    async def _get_derive_suite(
-        self,
-        *,
-        wallet: BaseWallet,
-    ):
+    async def _get_derive_suite(self):
         """Get signature suite for deriving credentials."""
         # Get signature class based on proof type
         SignatureClass = self.DERIVED_PROOF_TYPE_SIGNATURE_SUITE_MAPPING[
@@ -159,7 +155,7 @@ class DIFPresExchHandler:
         # Generically create signature class
         return SignatureClass(
             key_pair=WalletKeyPair(
-                wallet=wallet,
+                profile=self.profile,
                 key_type=self.DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
             ),
         )
@@ -406,18 +402,14 @@ class DIFPresExchHandler:
                 new_credential_dict = self.reveal_doc(
                     credential_dict=credential_dict, constraints=constraints
                 )
-                async with self.profile.session() as session:
-                    wallet = session.inject(BaseWallet)
-                    derive_suite = await self._get_derive_suite(
-                        wallet=wallet,
-                    )
-                    signed_new_credential_dict = await derive_credential(
-                        credential=credential_dict,
-                        reveal_document=new_credential_dict,
-                        suite=derive_suite,
-                        document_loader=document_loader,
-                    )
-                    credential = self.create_vcrecord(signed_new_credential_dict)
+                derive_suite = await self._get_derive_suite()
+                signed_new_credential_dict = await derive_credential(
+                    credential=credential_dict,
+                    reveal_document=new_credential_dict,
+                    suite=derive_suite,
+                    document_loader=document_loader,
+                )
+                credential = self.create_vcrecord(signed_new_credential_dict)
             result.append(credential)
         return result
 
@@ -1101,30 +1093,33 @@ class DIFPresExchHandler:
         nested_result = []
         cred_uid_descriptors = {}
         # recursion logic for nested requirements
-        for requirement in req.nested_req:
-            # recursive call
-            result = await self.apply_requirements(
-                requirement, credentials, records_filter
-            )
-            if result == {}:
-                continue
-            # cred_uid_descriptors maps applicable credentials
-            # to their respective descriptor.
-            # Structure: {cred.given_id: {
-            #           desc_id_1: {}
-            #      },
-            #      ......
-            # }
-            #  This will be used to construct exclude dict.
-            for descriptor_id in result.keys():
-                credential_list = result.get(descriptor_id)
-                for credential in credential_list:
-                    cred_id = credential.given_id or credential.record_id
-                    if cred_id:
-                        cred_uid_descriptors.setdefault(cred_id, {})[descriptor_id] = {}
+        if req.nested_req:
+            for requirement in req.nested_req:
+                # recursive call
+                result = await self.apply_requirements(
+                    requirement, credentials, records_filter
+                )
+                if result == {}:
+                    continue
+                # cred_uid_descriptors maps applicable credentials
+                # to their respective descriptor.
+                # Structure: {cred.given_id: {
+                #           desc_id_1: {}
+                #      },
+                #      ......
+                # }
+                #  This will be used to construct exclude dict.
+                for descriptor_id in result.keys():
+                    credential_list = result.get(descriptor_id)
+                    for credential in credential_list:
+                        cred_id = credential.given_id or credential.record_id
+                        if cred_id:
+                            cred_uid_descriptors.setdefault(cred_id, {})[
+                                descriptor_id
+                            ] = {}
 
-            if len(result.keys()) != 0:
-                nested_result.append(result)
+                if len(result.keys()) != 0:
+                    nested_result.append(result)
 
         exclude = {}
         for uid in cred_uid_descriptors.keys():
@@ -1297,18 +1292,15 @@ class DIFPresExchHandler:
             vp["presentation_submission"] = submission_property.serialize()
             if self.proof_type is BbsBlsSignature2020.signature_type:
                 vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                issue_suite = await self._get_issue_suite(
-                    wallet=wallet,
-                    issuer_id=issuer_id,
-                )
-                signed_vp = await sign_presentation(
-                    presentation=vp,
-                    suite=issue_suite,
-                    challenge=challenge,
-                    document_loader=document_loader,
-                )
+            issue_suite = await self._get_issue_suite(
+                issuer_id=issuer_id,
+            )
+            signed_vp = await sign_presentation(
+                presentation=vp,
+                suite=issue_suite,
+                challenge=challenge,
+                document_loader=document_loader,
+            )
             result_vp.append(signed_vp)
         if len(result_vp) == 1:
             return result_vp[0]
@@ -1409,12 +1401,15 @@ class DIFPresExchHandler:
                     f"{desc_map_item_path} path in descriptor_map not applicable"
                 )
             for match_item in match:
-                if not await self.apply_constraint_received_cred(
-                    constraint, match_item.value
-                ):
+                try:
+                    await self.apply_constraint_received_cred(
+                        constraint, match_item.value
+                    )
+                except BaseError as err:
                     raise DIFPresExchError(
                         f"Constraint specified for {desc_map_item_id} does not "
                         f"apply to the enclosed credential in {desc_map_item_path}"
+                        f" Reason: {err.message}"
                     )
                 if (
                     not len(
@@ -1446,8 +1441,9 @@ class DIFPresExchHandler:
 
     async def apply_constraint_received_cred(
         self, constraint: Constraints, cred_dict: dict
-    ) -> bool:
+    ) -> None:
         """Evaluate constraint from the request against received credential."""
+        """If successful, returns None, else raises an error with reason for failure"""
         fields = constraint._fields
         field_paths = []
         credential = self.create_vcrecord(cred_dict)
@@ -1456,7 +1452,10 @@ class DIFPresExchHandler:
             if is_limit_disclosure:
                 field = await self.get_updated_field(field, cred_dict)
             if not await self.filter_by_field(field, credential):
-                return False
+                raise DIFPresExchError(
+                    "Credential is not applicable for field "
+                    f"{field.id} with paths {field.paths}"
+                )
             field_paths = field_paths + (
                 await self.restrict_field_paths_one_of_filter(
                     field_paths=field.paths, cred_dict=cred_dict
@@ -1492,31 +1491,39 @@ class DIFPresExchHandler:
 
             for attrs in cred_dict.keys():
                 if attrs not in field_paths:
-                    return False
+                    raise DIFPresExchError(
+                        "No field in constraints for "
+                        f"{'at least one of ' if isinstance(attrs, list) else ''}{attrs}"
+                    )
             for nested_attr_key in nested_field_paths:
                 nested_attr_values = nested_field_paths[nested_attr_key]
                 extracted = self.nested_get(cred_dict, nested_attr_key)
-                if isinstance(extracted, dict):
-                    if not self.check_attr_in_extracted_dict(
-                        extracted, nested_attr_values
-                    ):
-                        return False
-                elif isinstance(extracted, list):
-                    for extracted_dict in extracted:
-                        if not self.check_attr_in_extracted_dict(
-                            extracted_dict, nested_attr_values
-                        ):
-                            return False
-        return True
+                try:
+                    if isinstance(extracted, dict):
+                        self.check_attr_in_extracted_dict(extracted, nested_attr_values)
+                    elif isinstance(extracted, list):
+                        for extracted_dict in extracted:
+                            self.check_attr_in_extracted_dict(
+                                extracted_dict, nested_attr_values
+                            )
+                except BaseError as err:
+                    raise DIFPresExchError(
+                        f"{err.message} under parent path '$.{nested_attr_key}'"
+                    )
+        return None
 
     def check_attr_in_extracted_dict(
         self, extracted_dict: dict, nested_attr_values: dict
-    ) -> bool:
+    ) -> None:
         """Check if keys of extracted_dict exists in nested_attr_values."""
+        """If successful, returns None, else raises an error with reason for failure"""
         for attrs in extracted_dict.keys():
             if attrs not in nested_attr_values:
-                return False
-        return True
+                raise DIFPresExchError(
+                    "No field in constraints for "
+                    f"{'at least one of ' if isinstance(attrs, list) else ''}{attrs}"
+                )
+        return None
 
     def get_dict_keys_from_path(self, derived_cred_dict: dict, path: str) -> List:
         """Return additional_attrs to build nested_field_paths."""

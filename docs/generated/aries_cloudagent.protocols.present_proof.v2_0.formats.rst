@@ -12,6 +12,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   aries_cloudagent.protocols.present_proof.v2_0.formats.anoncreds
    aries_cloudagent.protocols.present_proof.v2_0.formats.dif
    aries_cloudagent.protocols.present_proof.v2_0.formats.indy
 

@@ -1,49 +1,39 @@
 from copy import deepcopy
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 from marshmallow import ValidationError
 from pyld import jsonld
 
-from aries_cloudagent.protocols.present_proof.dif.pres_exch import SchemaInputDescriptor
-
+from .. import handler as test_module
 from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
-from .......messaging.responder import MockResponder, BaseResponder
+from .......messaging.responder import BaseResponder, MockResponder
 from .......storage.vc_holder.base import VCHolder
 from .......storage.vc_holder.vc_record import VCRecord
-from .......vc.ld_proofs import (
-    DocumentLoader,
-    Ed25519Signature2018,
-    Ed25519Signature2020,
-    BbsBlsSignature2020,
-    BbsBlsSignatureProof2020,
-)
+from .......vc.ld_proofs import DocumentLoader
 from .......vc.tests.document_loader import custom_document_loader
+from .......vc.vc_ld.manager import VcLdpManager
 from .......vc.vc_ld.validation_result import PresentationVerificationResult
 from .......wallet.base import BaseWallet
-
-from .....dif.pres_exch_handler import DIFPresExchHandler, DIFPresExchError
+from .....dif.pres_exch import SchemaInputDescriptor
+from .....dif.pres_exch_handler import DIFPresExchError, DIFPresExchHandler
 from .....dif.tests.test_data import (
-    TEST_CRED_DICT,
     EXPANDED_CRED_FHIR_TYPE_1,
     EXPANDED_CRED_FHIR_TYPE_2,
+    TEST_CRED_DICT,
 )
-
 from ....message_types import (
     ATTACHMENT_FORMAT,
-    PRES_20_REQUEST,
     PRES_20,
     PRES_20_PROPOSAL,
+    PRES_20_REQUEST,
 )
 from ....messages.pres import V20Pres
+from ....messages.pres_format import V20PresFormat
 from ....messages.pres_proposal import V20PresProposal
 from ....messages.pres_request import V20PresRequest
-from ....messages.pres_format import V20PresFormat
 from ....models.pres_exchange import V20PresExRecord
-
 from ...handler import V20PresFormatHandlerError
-
-from .. import handler as test_module
 from ..handler import DIFPresFormatHandler
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
@@ -363,23 +353,24 @@ TEST_CRED = {
 }
 
 
-class TestDIFFormatHandler(AsyncTestCase):
-    async def setUp(self):
-        self.holder = async_mock.MagicMock()
-        self.wallet = async_mock.MagicMock(BaseWallet, autospec=True)
+class TestDIFFormatHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.holder = mock.MagicMock()
+        self.wallet = mock.MagicMock(BaseWallet, autospec=True)
 
         self.session = InMemoryProfile.test_session(
             bind={VCHolder: self.holder, BaseWallet: self.wallet}
         )
         self.profile = self.session.profile
         self.context = self.profile.context
-        setattr(
-            self.profile, "session", async_mock.MagicMock(return_value=self.session)
-        )
+        setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
 
         # Set custom document loader
         self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
         self.context.injector.bind_instance(BaseResponder, MockResponder())
+
+        self.manager = VcLdpManager(self.profile)
+        self.context.injector.bind_instance(VcLdpManager, self.manager)
 
         self.handler = DIFPresFormatHandler(self.profile)
         assert self.handler.profile
@@ -394,18 +385,6 @@ class TestDIFFormatHandler(AsyncTestCase):
             incorrect_pres = DIF_PRES.copy()
             incorrect_pres.pop("@context")
             self.handler.validate_fields(PRES_20, incorrect_pres)
-
-    async def test_get_all_suites(self):
-        suites = await self.handler._get_all_suites(self.wallet)
-        assert len(suites) == 4
-        types = [
-            Ed25519Signature2018,
-            Ed25519Signature2020,
-            BbsBlsSignature2020,
-            BbsBlsSignatureProof2020,
-        ]
-        for suite in suites:
-            assert type(suite) in types
 
     async def test_create_bound_request_a(self):
         dif_proposal_dict = {
@@ -601,10 +580,10 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -644,10 +623,10 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
         request_data = {}
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -686,10 +665,10 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
         request_data = {}
         request_data["dif"] = dif_pres_spec
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -754,19 +733,19 @@ class TestDIFFormatHandler(AsyncTestCase):
 
         self.context.injector.bind_instance(
             VCHolder,
-            async_mock.MagicMock(
-                search_credentials=async_mock.MagicMock(
-                    return_value=async_mock.MagicMock(
-                        fetch=async_mock.CoroutineMock(return_value=cred_list)
+            mock.MagicMock(
+                search_credentials=mock.MagicMock(
+                    return_value=mock.MagicMock(
+                        fetch=mock.CoroutineMock(return_value=cred_list)
                     )
                 )
             ),
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -848,19 +827,19 @@ class TestDIFFormatHandler(AsyncTestCase):
 
         self.context.injector.bind_instance(
             VCHolder,
-            async_mock.MagicMock(
-                search_credentials=async_mock.MagicMock(
-                    return_value=async_mock.MagicMock(
-                        fetch=async_mock.CoroutineMock(return_value=cred_list)
+            mock.MagicMock(
+                search_credentials=mock.MagicMock(
+                    return_value=mock.MagicMock(
+                        fetch=mock.CoroutineMock(return_value=cred_list)
                     )
                 )
             ),
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -931,19 +910,19 @@ class TestDIFFormatHandler(AsyncTestCase):
 
         self.context.injector.bind_instance(
             VCHolder,
-            async_mock.MagicMock(
-                search_credentials=async_mock.MagicMock(
-                    return_value=async_mock.MagicMock(
-                        fetch=async_mock.CoroutineMock(return_value=cred_list)
+            mock.MagicMock(
+                search_credentials=mock.MagicMock(
+                    return_value=mock.MagicMock(
+                        fetch=mock.CoroutineMock(return_value=cred_list)
                     )
                 )
             ),
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -981,10 +960,10 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
         request_data = {}
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -1022,10 +1001,10 @@ class TestDIFFormatHandler(AsyncTestCase):
 
         self.context.injector.bind_instance(
             VCHolder,
-            async_mock.MagicMock(
-                search_credentials=async_mock.MagicMock(
-                    return_value=async_mock.MagicMock(
-                        fetch=async_mock.CoroutineMock(
+            mock.MagicMock(
+                search_credentials=mock.MagicMock(
+                    return_value=mock.MagicMock(
+                        fetch=mock.CoroutineMock(
                             side_effect=test_module.StorageNotFoundError()
                         )
                     )
@@ -1069,10 +1048,10 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -1112,10 +1091,10 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -1163,20 +1142,20 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with async_mock.patch.object(
-            test_module,
+        with mock.patch.object(
+            self.manager,
             "verify_presentation",
-            async_mock.CoroutineMock(
+            mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=True)
             ),
         ):
             output = await self.handler.verify_pres(record)
             assert output.verified
 
-        with async_mock.patch.object(
-            test_module,
+        with mock.patch.object(
+            self.manager,
             "verify_presentation",
-            async_mock.CoroutineMock(
+            mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=False)
             ),
         ):
@@ -1220,10 +1199,10 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with async_mock.patch.object(
-            test_module,
+        with mock.patch.object(
+            self.manager,
             "verify_presentation",
-            async_mock.CoroutineMock(
+            mock.CoroutineMock(
                 return_value=PresentationVerificationResult(verified=True)
             ),
         ) as mock_vr:
@@ -1413,10 +1392,10 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with async_mock.patch.object(
+        with mock.patch.object(
             DIFPresExchHandler,
             "create_vp",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -1836,8 +1815,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with async_mock.patch.object(
-            jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
@@ -1915,8 +1894,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with async_mock.patch.object(
-            jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
@@ -1967,8 +1946,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2020,8 +1999,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2073,8 +2052,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2123,8 +2102,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2173,8 +2152,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
         ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
@@ -2263,10 +2242,10 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with async_mock.patch.object(
-            test_module.LOGGER, "error", async_mock.MagicMock()
-        ) as mock_log_err, async_mock.patch.object(
-            jsonld, "expand", async_mock.MagicMock()
+        with mock.patch.object(
+            test_module.LOGGER, "error", mock.MagicMock()
+        ) as mock_log_err, mock.patch.object(
+            jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
@@ -2275,9 +2254,7 @@ class TestDIFFormatHandler(AsyncTestCase):
     async def test_create_pres_catch_typeerror(self):
         self.context.injector.bind_instance(
             VCHolder,
-            async_mock.MagicMock(
-                search_credentials=async_mock.MagicMock(side_effect=TypeError)
-            ),
+            mock.MagicMock(search_credentials=mock.MagicMock(side_effect=TypeError)),
         )
         test_pd = deepcopy(DIF_PRES_REQUEST_B)
         dif_pres_request = V20PresRequest(
@@ -2332,10 +2309,10 @@ class TestDIFFormatHandler(AsyncTestCase):
         ]
         self.context.injector.bind_instance(
             VCHolder,
-            async_mock.MagicMock(
-                search_credentials=async_mock.MagicMock(
-                    return_value=async_mock.MagicMock(
-                        fetch=async_mock.CoroutineMock(return_value=cred_list)
+            mock.MagicMock(
+                search_credentials=mock.MagicMock(
+                    return_value=mock.MagicMock(
+                        fetch=mock.CoroutineMock(return_value=cred_list)
                     )
                 )
             ),
@@ -2366,8 +2343,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with async_mock.patch.object(
-            DIFPresExchHandler, "create_vp", async_mock.MagicMock()
+        with mock.patch.object(
+            DIFPresExchHandler, "create_vp", mock.MagicMock()
         ) as mock_create_vp:
             mock_create_vp.side_effect = DIFPresExchError("TEST")
             await self.handler.create_pres(record)

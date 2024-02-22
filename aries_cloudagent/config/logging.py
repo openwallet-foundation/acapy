@@ -1,33 +1,63 @@
 """Utilities related to logging."""
-import asyncio
-from datetime import datetime, timedelta
-from io import TextIOWrapper
+
+import configparser
+import io
 import logging
-from logging.config import fileConfig
-from logging.handlers import BaseRotatingHandler
 import os
-from random import randint
 import re
 import sys
+import yaml
 import time as mod_time
-from typing import Optional, TextIO
+from importlib import resources
 
-import pkg_resources
+from contextvars import ContextVar
+from datetime import datetime, timedelta
+from logging.config import (
+    dictConfigClass,
+    _create_formatters,
+    _clearExistingHandlers,
+    _install_handlers,
+    _install_loggers,
+)
+from logging.handlers import BaseRotatingHandler
+from random import randint
 from portalocker import LOCK_EX, lock, unlock
 from pythonjsonlogger import jsonlogger
 
 from ..config.settings import Settings
-from ..core.profile import Profile
 from ..version import __version__
-from ..wallet.base import BaseWallet, DIDInfo
 from .banner import Banner
-from .base import BaseSettings
-
 
 DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
+DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI = (
+    "aries_cloudagent.config:default_per_tenant_logging_config.ini"
+)
+LOG_FORMAT_FILE_ALIAS_PATTERN = (
+    "%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
+)
+
+context_wallet_id: ContextVar[str] = ContextVar("context_wallet_id")
 
 
-def load_resource(path: str, encoding: str = None) -> TextIO:
+class ContextFilter(logging.Filter):
+    """Custom logging Filter to adapt logs with contextual wallet_id."""
+
+    def __init__(self):
+        """Initialize an instance of Custom logging.Filter."""
+        super(ContextFilter, self).__init__()
+
+    def filter(self, record):
+        """Filter LogRecords and add wallet id to them."""
+        try:
+            wallet_id = context_wallet_id.get()
+            record.wallet_id = wallet_id
+            return True
+        except LookupError:
+            record.wallet_id = None
+            return True
+
+
+def load_resource(path: str, encoding: str = None):
     """Open a resource file located in a python package or the local filesystem.
 
     Args:
@@ -38,14 +68,69 @@ def load_resource(path: str, encoding: str = None) -> TextIO:
     components = path.rsplit(":", 1)
     try:
         if len(components) == 1:
+            # Local filesystem resource
             return open(components[0], encoding=encoding)
         else:
-            bstream = pkg_resources.resource_stream(components[0], components[1])
+            # Package resource
+            package, resource = components
+            bstream = resources.open_binary(package, resource)
             if encoding:
-                return TextIOWrapper(bstream, encoding=encoding)
+                return io.TextIOWrapper(bstream, encoding=encoding)
             return bstream
     except IOError:
         pass
+
+
+def dictConfig(config, new_file_path=None):
+    """Custom dictConfig, https://github.com/python/cpython/blob/main/Lib/logging/config.py."""
+    if new_file_path:
+        config["handlers"]["rotating_file"]["filename"] = f"{new_file_path}"
+    dictConfigClass(config).configure()
+
+
+def fileConfig(
+    fname,
+    new_file_path=None,
+    defaults=None,
+    disable_existing_loggers=True,
+    encoding=None,
+):
+    """Custom fileConfig to update filepath in ConfigParser file handler section."""
+    if isinstance(fname, str):
+        if not os.path.exists(fname):
+            raise FileNotFoundError(f"{fname} doesn't exist")
+        elif not os.path.getsize(fname):
+            raise RuntimeError(f"{fname} is an empty file")
+    if isinstance(fname, configparser.RawConfigParser):
+        cp = fname
+    else:
+        try:
+            cp = configparser.ConfigParser(defaults)
+            if hasattr(fname, "readline"):
+                cp.read_file(fname)
+            else:
+                encoding = io.text_encoding(encoding)
+                cp.read(fname, encoding=encoding)
+        except configparser.ParsingError as e:
+            raise RuntimeError(f"{fname} is invalid: {e}")
+    if new_file_path:
+        cp.set(
+            "handler_timed_file_handler",
+            "args",
+            str(
+                (
+                    f"{new_file_path}",
+                    "d",
+                    7,
+                    1,
+                )
+            ),
+        )
+    formatters = _create_formatters(cp)
+    with logging._lock:
+        _clearExistingHandlers()
+        handlers = _install_handlers(cp, formatters)
+        _install_loggers(cp, handlers, disable_existing_loggers)
 
 
 class LoggingConfigurator:
@@ -57,6 +142,7 @@ class LoggingConfigurator:
         logging_config_path: str = None,
         log_level: str = None,
         log_file: str = None,
+        multitenant: bool = False,
     ):
         """Configure logger.
 
@@ -65,28 +151,91 @@ class LoggingConfigurator:
 
         :param log_level: str: (Default value = None)
         """
+        is_dict_config = False
+        if log_file:
+            write_to_log_file = True
+        elif log_file == "":
+            log_file = None
+            write_to_log_file = True
+        else:
+            write_to_log_file = False
         if logging_config_path is not None:
             config_path = logging_config_path
         else:
-            config_path = DEFAULT_LOGGING_CONFIG_PATH
-
-        log_config = load_resource(config_path, "utf-8")
+            if multitenant and write_to_log_file:
+                config_path = DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI
+            else:
+                config_path = DEFAULT_LOGGING_CONFIG_PATH
+                if write_to_log_file and not log_file:
+                    raise ValueError(
+                        "log_file (--log-file) must be provided "
+                        "as config does not specify it."
+                    )
+        if ".yml" in config_path or ".yaml" in config_path:
+            is_dict_config = True
+            with open(config_path, "r") as stream:
+                log_config = yaml.safe_load(stream)
+        else:
+            log_config = load_resource(config_path, "utf-8")
         if log_config:
-            with log_config:
-                fileConfig(log_config, disable_existing_loggers=False)
+            if is_dict_config:
+                dictConfig(log_config, new_file_path=log_file)
+            else:
+                with log_config:
+                    fileConfig(
+                        log_config,
+                        new_file_path=log_file if multitenant else None,
+                        disable_existing_loggers=False,
+                    )
         else:
             logging.basicConfig(level=logging.WARNING)
             logging.root.warning(f"Logging config file not found: {config_path}")
-
-        if log_file:
-            logging.root.handlers.clear()
+        if multitenant:
+            file_handler_set = False
+            handler_pattern = None
+            # Create context filter to adapt wallet_id in logger messages
+            _cf = ContextFilter()
+            for _handler in logging.root.handlers:
+                if isinstance(_handler, TimedRotatingFileMultiProcessHandler):
+                    file_handler_set = True
+                    handler_pattern = _handler.formatter._fmt
+                    # Set Json formatter for rotated file handler which
+                    # cannot be set with config file. By default this will
+                    # be set up.
+                    _handler.setFormatter(jsonlogger.JsonFormatter(handler_pattern))
+                # Add context filter to handlers
+                _handler.addFilter(_cf)
+                if log_level:
+                    _handler.setLevel(log_level.upper())
+            if not file_handler_set and log_file:
+                file_path = os.path.join(
+                    os.path.dirname(os.path.realpath(__file__)).replace(
+                        "aries_cloudagent/config", ""
+                    ),
+                    log_file,
+                )
+                # If configuration is not provided within .ini or dict config file
+                # then by default the rotated file handler will have interval=7,
+                # when=d and backupCount=1 configuration
+                timed_file_handler = TimedRotatingFileMultiProcessHandler(
+                    filename=file_path,
+                    interval=7,
+                    when="d",
+                    backupCount=1,
+                )
+                timed_file_handler.addFilter(_cf)
+                # By default this will be set up.
+                timed_file_handler.setFormatter(
+                    jsonlogger.JsonFormatter(LOG_FORMAT_FILE_ALIAS_PATTERN)
+                )
+                logging.root.handlers.append(timed_file_handler)
+        elif log_file and not multitenant:
+            # Don't go with rotated file handler when not in multitenant mode.
             logging.root.handlers.append(
                 logging.FileHandler(log_file, encoding="utf-8")
             )
-
         if log_level:
-            log_level = log_level.upper()
-            logging.root.setLevel(log_level)
+            logging.root.setLevel(log_level.upper())
 
     @classmethod
     def print_banner(
@@ -498,128 +647,6 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         self.release()
 
 
-LOG_FORMAT_FILE_ALIAS_PATTERN = (
-    "%(asctime)s [%(did)s] %(levelname)s %(filename)s %(lineno)d %(message)s"
+logging.handlers.TimedRotatingFileMultiProcessHandler = (
+    TimedRotatingFileMultiProcessHandler
 )
-
-LOG_FORMAT_FILE_NO_ALIAS_PATTERN = (
-    "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s"
-)
-
-LOG_FORMAT_STREAM_PATTERN = (
-    "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s"
-)
-
-
-def clear_prev_handlers(logger: logging.Logger) -> logging.Logger:
-    """Remove all handler classes associated with logger instance."""
-    iter_count = 0
-    num_handlers = len(logger.handlers)
-    while iter_count < num_handlers:
-        logger.removeHandler(logger.handlers[0])
-        iter_count = iter_count + 1
-    return logger
-
-
-def get_logger_inst(profile: Profile, logger_name) -> logging.Logger:
-    """Return a logger instance with provided name and handlers."""
-    did_ident = get_did_ident(profile)
-    if did_ident:
-        logger_name = f"{logger_name}_{did_ident}"
-    return get_logger_with_handlers(
-        settings=profile.settings,
-        logger=logging.getLogger(logger_name),
-        did_ident=did_ident,
-        interval=profile.settings.get("log.handler_interval") or 7,
-        backup_count=profile.settings.get("log.handler_bakcount") or 1,
-        at_when=profile.settings.get("log.handler_when") or "d",
-    )
-
-
-def get_did_ident(profile: Profile) -> Optional[str]:
-    """Get public did identifier for logging, if applicable."""
-    did_ident = None
-    if profile.settings.get("log.file"):
-
-        async def _fetch_did() -> Optional[str]:
-            async with profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                req_did_info: DIDInfo = await wallet.get_public_did()
-                if not req_did_info:
-                    req_did_info: DIDInfo = (await wallet.get_local_dids())[0]
-                if req_did_info:
-                    did_ident = req_did_info.did
-                return did_ident
-
-        loop = asyncio.get_event_loop()
-        did_ident = loop.run_until_complete(_fetch_did())
-    return did_ident
-
-
-def get_logger_with_handlers(
-    settings: BaseSettings,
-    logger: logging.Logger,
-    at_when: str = None,
-    interval: int = None,
-    backup_count: int = None,
-    did_ident: str = None,
-) -> logging.Logger:
-    """Return logger instance with necessary handlers if required."""
-    if settings.get("log.file"):
-        # Clear handlers set previously for this logger instance
-        logger = clear_prev_handlers(logger)
-        # log file handler
-        file_path = settings.get("log.file")
-        file_handler = TimedRotatingFileMultiProcessHandler(
-            filename=file_path,
-            interval=interval,
-            when=at_when,
-            backupCount=backup_count,
-        )
-        if did_ident:
-            if settings.get("log.json_fmt"):
-                file_handler.setFormatter(
-                    jsonlogger.JsonFormatter(
-                        settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_ALIAS_PATTERN
-                    )
-                )
-            else:
-                file_handler.setFormatter(
-                    logging.Formatter(
-                        settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_ALIAS_PATTERN
-                    )
-                )
-        else:
-            if settings.get("log.json_fmt"):
-                file_handler.setFormatter(
-                    jsonlogger.JsonFormatter(
-                        settings.get("log.fmt_pattern")
-                        or LOG_FORMAT_FILE_NO_ALIAS_PATTERN
-                    )
-                )
-            else:
-                file_handler.setFormatter(
-                    logging.Formatter(
-                        settings.get("log.fmt_pattern")
-                        or LOG_FORMAT_FILE_NO_ALIAS_PATTERN
-                    )
-                )
-        logger.addHandler(file_handler)
-        # stream console handler
-        std_out_handler = logging.StreamHandler(sys.stdout)
-        std_out_handler.setFormatter(
-            logging.Formatter(
-                settings.get("log.fmt_pattern") or LOG_FORMAT_STREAM_PATTERN
-            )
-        )
-        logger.addHandler(std_out_handler)
-        if did_ident:
-            logger = logging.LoggerAdapter(logger, {"did": did_ident})
-    # set log level
-    logger_level = (
-        (settings.get("log.level")).upper()
-        if settings.get("log.level")
-        else logging.INFO
-    )
-    logger.setLevel(logger_level)
-    return logger

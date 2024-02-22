@@ -33,6 +33,8 @@ CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
 
+DEMO_EXTRA_AGENT_ARGS = os.getenv("DEMO_EXTRA_AGENT_ARGS")
+
 logging.basicConfig(level=logging.WARNING)
 LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +49,9 @@ class FaberAgent(AriesAgent):
         endorser_role: str = None,
         revocation: bool = False,
         anoncreds_legacy_revocation: str = None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -58,6 +63,9 @@ class FaberAgent(AriesAgent):
             endorser_role=endorser_role,
             revocation=revocation,
             anoncreds_legacy_revocation=anoncreds_legacy_revocation,
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
             **kwargs,
         )
         self.connection_id = None
@@ -375,7 +383,15 @@ class FaberAgent(AriesAgent):
 
 
 async def main(args):
-    faber_agent = await create_agent_with_args(args, ident="faber")
+    extra_args = None
+    if DEMO_EXTRA_AGENT_ARGS:
+        extra_args = json.loads(DEMO_EXTRA_AGENT_ARGS)
+        print("Got extra args:", extra_args)
+    faber_agent = await create_agent_with_args(
+        args,
+        ident="faber",
+        extra_args=extra_args,
+    )
 
     try:
         log_status(
@@ -403,6 +419,10 @@ async def main(args):
             aip=faber_agent.aip,
             endorser_role=faber_agent.endorser_role,
             anoncreds_legacy_revocation=faber_agent.anoncreds_legacy_revocation,
+            log_file=faber_agent.log_file,
+            log_config=faber_agent.log_config,
+            log_level=faber_agent.log_level,
+            extra_args=extra_args,
         )
 
         faber_schema_name = "degree schema"
@@ -419,9 +439,11 @@ async def main(args):
                 the_agent=agent,
                 schema_name=faber_schema_name,
                 schema_attrs=faber_schema_attrs,
-                create_endorser_agent=(faber_agent.endorser_role == "author")
-                if faber_agent.endorser_role
-                else False,
+                create_endorser_agent=(
+                    (faber_agent.endorser_role == "author")
+                    if faber_agent.endorser_role
+                    else False
+                ),
             )
         elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
             faber_agent.public_did = True

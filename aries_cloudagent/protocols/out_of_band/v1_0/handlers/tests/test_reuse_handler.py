@@ -1,7 +1,8 @@
 """Test Reuse Message Handler."""
+
 import pytest
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 
 from ......connections.models.conn_record import ConnRecord
 from ......core.profile import ProfileSession
@@ -29,9 +30,9 @@ async def session(request_context) -> ProfileSession:
 
 class TestHandshakeReuseHandler:
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "OutOfBandManager")
+    @mock.patch.object(test_module, "OutOfBandManager")
     async def test_called(self, mock_oob_mgr, request_context):
-        mock_oob_mgr.return_value.receive_reuse_message = async_mock.CoroutineMock()
+        mock_oob_mgr.return_value.receive_reuse_message = mock.CoroutineMock()
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
         request_context.connection_record = ConnRecord()
@@ -44,9 +45,9 @@ class TestHandshakeReuseHandler:
         )
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "OutOfBandManager")
+    @mock.patch.object(test_module, "OutOfBandManager")
     async def test_reuse_accepted(self, mock_oob_mgr, request_context):
-        mock_oob_mgr.return_value.receive_reuse_message = async_mock.CoroutineMock()
+        mock_oob_mgr.return_value.receive_reuse_message = mock.CoroutineMock()
         reuse_accepted = HandshakeReuseAccept()
         mock_oob_mgr.return_value.receive_reuse_message.return_value = reuse_accepted
         request_context.message = HandshakeReuse()
@@ -61,9 +62,11 @@ class TestHandshakeReuseHandler:
         )
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(test_module, "OutOfBandManager")
-    async def test_exception(self, mock_oob_mgr, request_context):
-        mock_oob_mgr.return_value.receive_reuse_message = async_mock.CoroutineMock()
+    @mock.patch.object(test_module, "OutOfBandManager")
+    async def test_exception(
+        self, mock_oob_mgr, request_context, caplog: pytest.LogCaptureFixture
+    ):
+        mock_oob_mgr.return_value.receive_reuse_message = mock.CoroutineMock()
         mock_oob_mgr.return_value.receive_reuse_message.side_effect = (
             OutOfBandManagerError("error")
         )
@@ -71,5 +74,6 @@ class TestHandshakeReuseHandler:
         handler = test_module.HandshakeReuseMessageHandler()
         request_context.connection_record = ConnRecord()
         responder = MockResponder()
-        await handler.handle(request_context, responder)
-        assert mock_oob_mgr.return_value._logger.exception.called_once_("error")
+        with caplog.at_level("ERROR"):
+            await handler.handle(request_context, responder)
+        assert "Error processing" in caplog.text

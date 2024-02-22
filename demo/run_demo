@@ -25,6 +25,11 @@ j=1
 for i in "$@"
 do
   ((j++))
+  # Demo agent with --multitenant requires the ../log dir to exist and write access to it
+  if [ ! -d "../log" ]; then
+    mkdir ../log && chmod -R uga+rws ../log
+    DOCKER_VOL="${DOCKER_VOL} -v /$(pwd)/../log:/home/aries/log"
+  fi
   if [ ! -z "$SKIP" ]; then
     SKIP=""
     continue
@@ -77,15 +82,11 @@ do
       continue
     ;;
   --timing)
-    if [ ! -d "../logs" ]; then
-      mkdir ../logs && chmod -R uga+rws ../logs
-    fi
-    if [ "$(ls -ld ../logs | grep dr..r..rwx)" == "" ]; then
-      echo "Error: To use the --timing parameter, the directory '../logs' must exist and all users must be able to write to it."
-      echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
+    if [ "$(ls -ld ../log | grep dr..r..rwx)" == "" ]; then
+      echo "Error: To use the --timing parameter, the directory '../log' must exist and all users must be able to write to it."
+      echo "For example, to create the directory and then set the permissions use: 'mkdir ../log; chmod uga+rws ../log'"
       exit 1
     fi
-    DOCKER_VOL="${DOCKER_VOL} -v /$(pwd)/../logs:/home/aries/logs"
     continue
   ;;
   --bg)
@@ -147,10 +148,16 @@ else
   echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'."
   exit 1
 fi
+# allow override for agent ports
+if [ ! -z "$AGENT_PORT_OVERRIDE" ]; then
+  AGENT_PORT=$AGENT_PORT_OVERRIDE
+  AGENT_PORT_END=$(expr $AGENT_PORT_OVERRIDE + 9)
+  AGENT_PORT_RANGE="$AGENT_PORT-$AGENT_PORT_END"
+fi
 
 echo "Preparing agent image..."
-docker build -q -t acapy-base -f ../docker/Dockerfile .. || exit 1
-docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo --build-arg from_image=acapy-base .. || exit 1
+docker build -t acapy-base -f ../docker/Dockerfile .. || exit 1
+docker build -t faber-alice-demo -f ../docker/Dockerfile.demo --build-arg from_image=acapy-base .. || exit 1
 
 if [ ! -z "$DOCKERHOST" ]; then
   # provided via APPLICATION_URL environment variable
@@ -238,6 +245,9 @@ if ! [ -z "$TAILS_FILE_COUNT" ]; then
 fi
 if ! [ -z "$ACAPY_ARG_FILE" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e ACAPY_ARG_FILE=${ACAPY_ARG_FILE}"
+fi
+if ! [ -z "$DEMO_EXTRA_AGENT_ARGS" ]; then
+  DOCKER_ENV="${DOCKER_ENV} -e DEMO_EXTRA_AGENT_ARGS=${DEMO_EXTRA_AGENT_ARGS}"
 fi
 
 if ! [ -z "${ENABLE_PYDEVD_PYCHARM}" ]; then

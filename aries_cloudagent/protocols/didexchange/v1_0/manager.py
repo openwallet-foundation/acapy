@@ -2,24 +2,20 @@
 
 import json
 import logging
-from typing import Optional
+from typing import Optional, Sequence, Union
 
-import pydid
-from pydid import BaseDIDDocument as ResolvedDocument
-from pydid import DIDCommService
+from did_peer_4 import LONG_PATTERN, long_to_short
 
+from ....admin.server import AdminResponder
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.diddoc import DIDDoc
+from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....multitenant.base import BaseMultitenantManager
-from ....resolver.base import ResolverError
-from ....resolver.did_resolver import DIDResolver
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -144,12 +140,10 @@ class DIDXManager(BaseConnectionManager):
             # Save the invitation for later processing
             await conn_rec.attach_invitation(session, invitation)
             if not conn_rec.invitation_key and conn_rec.their_public_did:
-                did_document = await self.get_resolved_did_document(
+                targets = await self.resolve_connection_targets(
                     conn_rec.their_public_did
                 )
-                conn_rec.invitation_key = did_document.verification_method[
-                    0
-                ].public_key_base58
+                conn_rec.invitation_key = targets[0].recipient_keys[0]
 
         await self._route_manager.save_mediator_for_connection(
             self.profile, conn_rec, mediation_id=mediation_id
@@ -157,7 +151,8 @@ class DIDXManager(BaseConnectionManager):
 
         if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
             request = await self.create_request(conn_rec, mediation_id=mediation_id)
-            responder = self.profile.inject_or(BaseResponder)
+            base_responder = self.profile.inject(BaseResponder)
+            responder = AdminResponder(self.profile, base_responder.send_fn)
             if responder:
                 await responder.send_reply(
                     request,
@@ -182,6 +177,7 @@ class DIDXManager(BaseConnectionManager):
         alias: str = None,
         goal_code: str = None,
         goal: str = None,
+        auto_accept: bool = False,
     ) -> ConnRecord:
         """Create and send a request against a public DID only (no explicit invitation).
 
@@ -193,6 +189,7 @@ class DIDXManager(BaseConnectionManager):
             use_public_did: use my public DID for this connection
             goal_code: Optional self-attested code for sharing intent of connection
             goal: Optional self-attested string for sharing intent of connection
+            auto_accept: auto-accept a corresponding connection request
 
         Returns:
             The new `ConnRecord` instance
@@ -224,20 +221,26 @@ class DIDXManager(BaseConnectionManager):
                     )
                 except StorageNotFoundError:
                     pass
-
+        auto_accept = bool(
+            auto_accept
+            or (
+                auto_accept is None
+                and self.profile.settings.get("debug.auto_accept_requests")
+            )
+        )
         conn_rec = ConnRecord(
-            my_did=my_public_info.did
-            if my_public_info
-            else None,  # create-request will fill in on local DID creation
+            my_did=(
+                my_public_info.did if my_public_info else None
+            ),  # create-request will fill in on local DID creation
             their_did=their_public_did,
             their_label=None,
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             invitation_key=None,
             invitation_msg_id=None,
-            accept=None,
             alias=alias,
             their_public_did=their_public_did,
             connection_protocol=DIDX_PROTO,
+            accept=ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL,
         )
         request = await self.create_request(  # saves and updates conn_rec
             conn_rec=conn_rec,
@@ -285,36 +288,14 @@ class DIDXManager(BaseConnectionManager):
 
         """
         # Mediation Support
-        mediation_record = await self._route_manager.mediation_record_for_connection(
+        mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile,
             conn_rec,
             mediation_id,
             or_default=True,
         )
 
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-
-        base_mediation_record = None
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
-
         my_info = None
-
-        if conn_rec.my_did:
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(conn_rec.my_did)
-        else:
-            # Create new DID for connection
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(
-                    method=SOV,
-                    key_type=ED25519,
-                )
-                conn_rec.my_did = my_info.did
 
         # Create connection request message
         if my_endpoint:
@@ -326,7 +307,35 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        if use_public_did:
+        emit_did_peer_4 = self.profile.settings.get("emit_did_peer_4")
+        emit_did_peer_2 = self.profile.settings.get("emit_did_peer_2")
+        if emit_did_peer_2 and emit_did_peer_4:
+            self._logger.warning(
+                "emit_did_peer_2 and emit_did_peer_4 both set, \
+                 using did:peer:4"
+            )
+
+        if conn_rec.my_did:
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.get_local_did(conn_rec.my_did)
+        elif emit_did_peer_4:
+            my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
+        elif emit_did_peer_2:
+            my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
+        else:
+            # Create new DID for connection
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.create_local_did(
+                    method=SOV,
+                    key_type=ED25519,
+                )
+                conn_rec.my_did = my_info.did
+
+        if use_public_did or emit_did_peer_2 or emit_did_peer_4:
             # Omit DID Doc attachment if we're using a public DID
             did_doc = None
             attach = None
@@ -336,11 +345,8 @@ class DIDXManager(BaseConnectionManager):
         else:
             did_doc = await self.create_did_document(
                 my_info,
-                conn_rec.inbound_connection_id,
                 my_endpoints,
-                mediation_records=list(
-                    filter(None, [base_mediation_record, mediation_record])
-                ),
+                mediation_records=mediation_records,
             )
             attach = AttachDecorator.data_base64(did_doc.serialize())
             async with self.profile.session() as session:
@@ -348,12 +354,11 @@ class DIDXManager(BaseConnectionManager):
                 await attach.data.sign(my_info.verkey, wallet)
             did = conn_rec.my_did
 
+        did_url = None
         if conn_rec.their_public_did is not None:
-            qualified_did = conn_rec.their_public_did
-            did_document = await self.get_resolved_did_document(qualified_did)
-            did_url = await self.get_first_applicable_didcomm_service(did_document)
-        else:
-            did_url = None
+            services = await self.resolve_didcomm_services(conn_rec.their_public_did)
+            if services:
+                did_url = services[0].id
 
         pthid = conn_rec.invitation_msg_id or did_url
 
@@ -377,7 +382,7 @@ class DIDXManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
-            self.profile, conn_rec, mediation_record
+            self.profile, conn_rec, mediation_records
         )
 
         return request
@@ -497,11 +502,18 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
                 await self.store_did_document(conn_did_doc)
-            if request.did != conn_did_doc.did:
+
+            # Special case: legacy DIDs were unqualified in request, qualified in doc
+            if request.did and not request.did.startswith("did:"):
+                did_to_check = f"did:sov:{request.did}"
+            else:
+                did_to_check = request.did
+
+            if did_to_check != conn_did_doc["id"]:
                 raise DIDXManagerError(
                     (
                         f"Connection DID {request.did} does not match "
-                        f"DID Doc id {conn_did_doc.did}"
+                        f"DID Doc id {conn_did_doc['id']}"
                     ),
                     error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
                 )
@@ -599,17 +611,9 @@ class DIDXManager(BaseConnectionManager):
             settings=self.profile.settings,
         )
 
-        mediation_record = await self._route_manager.mediation_record_for_connection(
+        mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile, conn_rec, mediation_id
         )
-
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-
-        base_mediation_record = None
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         if ConnRecord.State.get(conn_rec.state) is not ConnRecord.State.REQUEST:
             raise DIDXManagerError(
@@ -618,10 +622,34 @@ class DIDXManager(BaseConnectionManager):
         async with self.profile.session() as session:
             request = await conn_rec.retrieve_request(session)
 
+        if my_endpoint:
+            my_endpoints = [my_endpoint]
+        else:
+            my_endpoints = []
+            default_endpoint = self.profile.settings.get("default_endpoint")
+            if default_endpoint:
+                my_endpoints.append(default_endpoint)
+            my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
+
+        respond_with_did_peer_2 = self.profile.settings.get("emit_did_peer_2") or (
+            conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2")
+        )
+        respond_with_did_peer_4 = self.profile.settings.get("emit_did_peer_4") or (
+            conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4")
+        )
+
         if conn_rec.my_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(conn_rec.my_did)
+            did = my_info.did
+        elif respond_with_did_peer_4:
+            my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
+            did = my_info.did
+        elif respond_with_did_peer_2:
+            my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
+            conn_rec.my_did = my_info.did
             did = my_info.did
         elif use_public_did:
             async with self.profile.session() as session:
@@ -633,6 +661,7 @@ class DIDXManager(BaseConnectionManager):
             did = my_info.did
             if not did.startswith("did:"):
                 did = f"did:sov:{did}"
+
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -645,38 +674,32 @@ class DIDXManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
-            self.profile, conn_rec, mediation_record
+            self.profile, conn_rec, mediation_records
         )
 
-        # Create connection response message
-        if my_endpoint:
-            my_endpoints = [my_endpoint]
-        else:
-            my_endpoints = []
-            default_endpoint = self.profile.settings.get("default_endpoint")
-            if default_endpoint:
-                my_endpoints.append(default_endpoint)
-            my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
-
-        if use_public_did:
-            # Omit DID Doc attachment if we're using a public DID
-            did_doc = None
-            attach = None
+        if use_public_did or respond_with_did_peer_2 or respond_with_did_peer_4:
+            # Omit DID Doc attachment if we're using a public DID or peer did
+            attach = AttachDecorator.data_base64_string(did)
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                if conn_rec.invitation_key is not None:
+                    await attach.data.sign(conn_rec.invitation_key, wallet)
+                else:
+                    self._logger.warning("Invitation key was not set for connection")
+                    attach = None
+            response = DIDXResponse(did=did, did_rotate_attach=attach)
         else:
             did_doc = await self.create_did_document(
                 my_info,
-                conn_rec.inbound_connection_id,
                 my_endpoints,
-                mediation_records=list(
-                    filter(None, [base_mediation_record, mediation_record])
-                ),
+                mediation_records=mediation_records,
             )
             attach = AttachDecorator.data_base64(did_doc.serialize())
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 await attach.data.sign(conn_rec.invitation_key, wallet)
+            response = DIDXResponse(did=did, did_doc_attach=attach)
 
-        response = DIDXResponse(did=did, did_doc_attach=attach)
         # Assign thread information
         response.assign_thread_from(request)
         response.assign_trace_from(request)
@@ -783,15 +806,38 @@ class DIDXManager(BaseConnectionManager):
                 conn_did_doc = await self.verify_diddoc(
                     wallet, response.did_doc_attach, conn_rec.invitation_key
                 )
-            if their_did != conn_did_doc.did:
+            # Special case: legacy DIDs were unqualified in response, qualified in doc
+            if their_did and not their_did.startswith("did:"):
+                did_to_check = f"did:sov:{their_did}"
+            else:
+                did_to_check = their_did
+
+            if did_to_check != conn_did_doc["id"]:
                 raise DIDXManagerError(
                     f"Connection DID {their_did} "
-                    f"does not match DID doc id {conn_did_doc.did}"
+                    f"does not match DID doc id {conn_did_doc['id']}"
                 )
             await self.store_did_document(conn_did_doc)
         else:
             if response.did is None:
                 raise DIDXManagerError("No DID in response")
+
+            if response.did_rotate_attach is None:
+                raise DIDXManagerError(
+                    "did_rotate~attach required if no signed doc attachment"
+                )
+
+            self._logger.debug("did_rotate~attach found; verifying signature")
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                signed_did = await self.verify_rotate(
+                    wallet, response.did_rotate_attach, conn_rec.invitation_key
+                )
+                if their_did != response.did:
+                    raise DIDXManagerError(
+                        f"Connection DID {their_did} "
+                        f"does not match singed DID rotate {signed_did}"
+                    )
 
             self._logger.debug(
                 "No DID Doc attachment in response; doc will be resolved from DID"
@@ -799,6 +845,13 @@ class DIDXManager(BaseConnectionManager):
             await self.record_keys_for_resolvable_did(response.did)
 
         conn_rec.their_did = their_did
+
+        # The long format I sent has been acknoledged, use short form now.
+        if LONG_PATTERN.match(conn_rec.my_did or ""):
+            conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
+        if LONG_PATTERN.match(conn_rec.their_did or ""):
+            conn_rec.their_did = long_to_short(conn_rec.their_did)
+
         conn_rec.state = ConnRecord.State.RESPONSE.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Accepted connection response")
@@ -884,6 +937,11 @@ class DIDXManager(BaseConnectionManager):
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value,
             )
 
+        if LONG_PATTERN.match(conn_rec.my_did or ""):
+            conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
+        if LONG_PATTERN.match(conn_rec.their_did or ""):
+            conn_rec.their_did = long_to_short(conn_rec.their_did)
+
         conn_rec.state = ConnRecord.State.COMPLETED.rfc160
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Received connection complete")
@@ -955,7 +1013,7 @@ class DIDXManager(BaseConnectionManager):
         wallet: BaseWallet,
         attached: AttachDecorator,
         invi_key: str = None,
-    ) -> DIDDoc:
+    ) -> dict:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
         if not signed_diddoc_bytes:
@@ -963,44 +1021,54 @@ class DIDXManager(BaseConnectionManager):
         if not await attached.data.verify(wallet, invi_key):
             raise DIDXManagerError("DID doc attachment signature failed verification")
 
-        return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
+        return json.loads(signed_diddoc_bytes.decode())
 
-    async def get_resolved_did_document(self, qualified_did: str) -> ResolvedDocument:
-        """Return resolved DID document."""
-        resolver = self._profile.inject(DIDResolver)
-        if not qualified_did.startswith("did:"):
-            qualified_did = f"did:sov:{qualified_did}"
-        try:
-            doc_dict: dict = await resolver.resolve(self._profile, qualified_did)
-            doc = pydid.deserialize_document(doc_dict, strict=True)
-            return doc
-        except ResolverError as error:
-            raise DIDXManagerError(
-                "Failed to resolve public DID in invitation"
-            ) from error
-
-    async def get_first_applicable_didcomm_service(
-        self, did_doc: ResolvedDocument
+    async def verify_rotate(
+        self,
+        wallet: BaseWallet,
+        attached: AttachDecorator,
+        invi_key: str = None,
     ) -> str:
-        """Return first applicable DIDComm service url with highest priority."""
-        if not did_doc.service:
+        """Verify a signed DID rotate attachment and return did."""
+        signed_diddoc_bytes = attached.data.signed
+        if not signed_diddoc_bytes:
+            raise DIDXManagerError("DID rotate attachment is not signed.")
+        if not await attached.data.verify(wallet, invi_key):
             raise DIDXManagerError(
-                "Cannot connect via public DID that has no associated services"
+                "DID rotate attachment signature failed verification"
             )
 
-        didcomm_services = sorted(
-            [
-                service
-                for service in did_doc.service
-                if isinstance(service, DIDCommService)
-            ],
-            key=lambda service: service.priority,
-        )
+        return signed_diddoc_bytes.decode()
 
-        if not didcomm_services:
-            raise DIDXManagerError(
-                "Cannot connect via public DID that has no associated DIDComm services"
+    async def manager_error_to_problem_report(
+        self,
+        e: DIDXManagerError,
+        message: Union[DIDXRequest, DIDXResponse],
+        message_receipt,
+    ) -> tuple[DIDXProblemReport, Sequence[ConnectionTarget]]:
+        """Convert DIDXManagerError to problem report."""
+        self._logger.exception("Error receiving RFC 23 connection request")
+        targets = None
+        report = None
+        if e.error_code:
+            report = DIDXProblemReport(
+                description={"en": e.message, "code": e.error_code}
             )
+            report.assign_thread_from(message)
+            if message.did_doc_attach:
+                try:
+                    # convert diddoc attachment to diddoc...
+                    async with self.profile.session() as session:
+                        wallet = session.inject(BaseWallet)
+                        conn_did_doc = await self.verify_diddoc(
+                            wallet, message.did_doc_attach
+                        )
+                    # get the connection targets...
+                    targets = self.diddoc_connection_targets(
+                        conn_did_doc,
+                        message_receipt.recipient_verkey,
+                    )
+                except DIDXManagerError:
+                    self._logger.exception("Error parsing DIDDoc for problem report")
 
-        first_didcomm_service, *_ = didcomm_services
-        return first_didcomm_service.id
+        return report, targets

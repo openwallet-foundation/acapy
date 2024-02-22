@@ -1,6 +1,5 @@
 """Endorse Transaction handling admin routes."""
 
-import json
 import logging
 
 from aiohttp import web
@@ -11,7 +10,6 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
@@ -24,17 +22,11 @@ from ....ledger.error import LedgerError
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE
-from ....protocols.connections.v1_0.manager import ConnectionManager
-from ....protocols.connections.v1_0.messages.connection_invitation import (
-    ConnectionInvitation,
-)
-from ....protocols.out_of_band.v1_0.manager import OutOfBandManager
-from ....protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ....storage.error import StorageError, StorageNotFoundError
+from ....utils.endorsement_setup import attempt_auto_author_with_endorser_setup
 from .manager import TransactionManager, TransactionManagerError
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
 from .transaction_jobs import TransactionJob
-from .util import get_endorser_connection_id, is_author_role
 
 LOGGER = logging.getLogger(__name__)
 
@@ -116,17 +108,6 @@ class DateSchema(OpenAPISchema):
     )
 
 
-class EndorserWriteLedgerTransactionSchema(OpenAPISchema):
-    """Sets endorser_write_txn. Option for the endorser to write the transaction."""
-
-    endorser_write_txn = fields.Boolean(
-        required=False,
-        metadata={
-            "description": "Endorser will write the transaction after endorsing it"
-        },
-    )
-
-
 class EndorserInfoSchema(OpenAPISchema):
     """Class for user to input the DID associated with the requested endorser."""
 
@@ -203,7 +184,6 @@ async def transactions_retrieve(request: web.BaseRequest):
     summary="For author to send a transaction request",
 )
 @querystring_schema(TranIdMatchInfoSchema())
-@querystring_schema(EndorserWriteLedgerTransactionSchema())
 @request_schema(DateSchema())
 @response_schema(TransactionRecordSchema(), 200)
 async def transaction_create_request(request: web.BaseRequest):
@@ -218,7 +198,7 @@ async def transaction_create_request(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     transaction_id = request.query.get("tran_id")
-    endorser_write_txn = json.loads(request.query.get("endorser_write_txn", "false"))
+    endorser_write_txn = False
 
     body = await request.json()
     expires_time = body.get("expires_time")
@@ -720,85 +700,7 @@ def register_events(event_bus: EventBus):
 async def on_startup_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
 
-    # auto setup is only for authors
-    if not is_author_role(profile):
-        return
-
-    # see if we have an invitation to connect to the endorser
-    endorser_invitation = profile.settings.get_value("endorser.endorser_invitation")
-    if not endorser_invitation:
-        # no invitation, we can't connect automatically
-        return
-
-    # see if we need to initiate an endorser connection
-    endorser_alias = profile.settings.get_value("endorser.endorser_alias")
-    if not endorser_alias:
-        # no alias is specified for the endorser connection
-        # note that alias is required if invitation is specified
-        return
-
-    connection_id = await get_endorser_connection_id(profile)
-    if connection_id:
-        # there is already a connection
-        return
-
-    endorser_did = profile.settings.get_value("endorser.endorser_public_did")
-    if not endorser_did:
-        # no DID, we can connect but we can't properly setup the connection metadata
-        # note that DID is required if invitation is specified
-        return
-
-    try:
-        # OK, we are an author, we have no endorser connection but we have enough info
-        # to automatically initiate the connection
-        invite = InvitationMessage.from_url(endorser_invitation)
-        if invite:
-            oob_mgr = OutOfBandManager(profile)
-            oob_record = await oob_mgr.receive_invitation(
-                invitation=invite,
-                auto_accept=True,
-                alias=endorser_alias,
-            )
-            async with profile.session() as session:
-                conn_record = await ConnRecord.retrieve_by_id(
-                    session, oob_record.connection_id
-                )
-        else:
-            invite = ConnectionInvitation.from_url(endorser_invitation)
-            if invite:
-                conn_mgr = ConnectionManager(profile)
-                conn_record = await conn_mgr.receive_invitation(
-                    invitation=invite,
-                    auto_accept=True,
-                    alias=endorser_alias,
-                )
-            else:
-                raise Exception(
-                    "Failed to establish endorser connection, invalid "
-                    "invitation format."
-                )
-
-        # configure the connection role and info (don't need to wait for the connection)
-        transaction_mgr = TransactionManager(profile)
-        await transaction_mgr.set_transaction_my_job(
-            record=conn_record,
-            transaction_my_job=TransactionJob.TRANSACTION_AUTHOR.name,
-        )
-
-        async with profile.session() as session:
-            value = await conn_record.metadata_get(session, "endorser_info")
-            if value:
-                value["endorser_did"] = endorser_did
-                value["endorser_name"] = endorser_alias
-            else:
-                value = {"endorser_did": endorser_did, "endorser_name": endorser_alias}
-            await conn_record.metadata_set(session, key="endorser_info", value=value)
-
-    except Exception:
-        # log the error, but continue
-        LOGGER.exception(
-            "Error accepting endorser invitation/configuring endorser connection: %s",
-        )
+    await attempt_auto_author_with_endorser_setup(profile)
 
 
 async def on_shutdown_event(profile: Profile, event: Event):

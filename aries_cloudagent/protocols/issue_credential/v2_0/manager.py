@@ -412,6 +412,17 @@ class V20CredManager:
         # the record by connection_id.
         connection_id = None if oob_record else connection_record.connection_id
 
+        handlers = [
+            f.handler(self.profile)
+            for format in cred_request_message.formats
+            if (f := V20CredFormat.Format.get(format.format))
+        ]
+        handlers_without_offer = [
+            handler
+            for handler in handlers
+            if handler.can_receive_request_without_offer()
+        ]
+
         async with self._profile.session() as session:
             try:
                 cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
@@ -420,31 +431,31 @@ class V20CredManager:
                     cred_request_message._thread_id,
                     role=V20CredExRecord.ROLE_ISSUER,
                 )
-            except StorageNotFoundError:
+            except StorageNotFoundError as ex:
                 # holder sent this request free of any offer
-                cred_ex_record = V20CredExRecord(
-                    connection_id=connection_id,
-                    thread_id=cred_request_message._thread_id,
-                    initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-                    role=V20CredExRecord.ROLE_ISSUER,
-                    auto_remove=not self._profile.settings.get(
-                        "preserve_exchange_records"
-                    ),
-                    trace=(cred_request_message._trace is not None),
-                    auto_issue=self._profile.settings.get(
-                        "debug.auto_respond_credential_request"
-                    ),
-                )
+                if handlers_without_offer:
+                    handlers = handlers_without_offer
+                    cred_ex_record = V20CredExRecord(
+                        connection_id=connection_id,
+                        thread_id=cred_request_message._thread_id,
+                        initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+                        role=V20CredExRecord.ROLE_ISSUER,
+                        auto_remove=not self._profile.settings.get(
+                            "preserve_exchange_records"
+                        ),
+                        trace=(cred_request_message._trace is not None),
+                        auto_issue=self._profile.settings.get(
+                            "debug.auto_respond_credential_request"
+                        ),
+                    )
+                else:
+                    raise ex
 
         if connection_record:
             cred_ex_record.connection_id = connection_record.connection_id
 
-        for format in cred_request_message.formats:
-            cred_format = V20CredFormat.Format.get(format.format)
-            if cred_format:
-                await cred_format.handler(self.profile).receive_request(
-                    cred_ex_record, cred_request_message
-                )
+        for handler in handlers:
+            await handler.receive_request(cred_ex_record, cred_request_message)
 
         cred_ex_record.cred_request = cred_request_message
         cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED

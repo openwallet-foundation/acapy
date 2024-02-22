@@ -30,16 +30,16 @@ class PresentationProblemReportHandler(BaseHandler):
             raise HandlerException(
                 "Connection used for presentation problem report not ready"
             )
-        elif not context.connection_record:
-            raise HandlerException(
-                "Connectionless not supported for presentation problem report"
-            )
 
         presentation_manager = PresentationManager(context.profile)
         try:
             await presentation_manager.receive_problem_report(
                 context.message,
-                context.connection_record.connection_id,
+                (
+                    context.connection_record.connection_id
+                    if context.connection_record is not None
+                    else None
+                ),
             )
         except (StorageError, StorageNotFoundError):
             self._logger.exception(

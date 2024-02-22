@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-
 from typing import Mapping, Optional, Tuple
 
 from ....cache.base import BaseCache
@@ -18,8 +17,8 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ....messaging.credential_definitions.util import (
-    CRED_DEF_TAGS,
     CRED_DEF_SENT_RECORD_TYPE,
+    CRED_DEF_TAGS,
 )
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
@@ -28,7 +27,6 @@ from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
-
 from ...out_of_band.v1_0.models.oob_record import OobRecord
 from .messages.credential_ack import CredentialAck
 from .messages.credential_issue import CredentialIssue
@@ -410,6 +408,9 @@ class CredentialManager:
         cred_req_ser = None
         cred_req_meta = None
 
+        # hold on to values that may have changed so we can restore after fetch
+        auto_remove = cred_ex_record.auto_remove
+
         async def _create():
             multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
@@ -478,6 +479,8 @@ class CredentialManager:
                 cred_ex_record.credential_request = cred_req_ser
                 cred_ex_record.credential_request_metadata = cred_req_meta
                 cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_SENT
+                # restore values passed in...
+                cred_ex_record.auto_remove = auto_remove
                 await cred_ex_record.save(txn, reason="create credential request")
                 await txn.commit()
         else:
@@ -536,10 +539,12 @@ class CredentialManager:
                         )
                     )
                 )
-            except StorageNotFoundError:
-                raise CredentialManagerError(
-                    "Indy issue credential format can't start from credential request"
-                ) from None
+            except StorageNotFoundError as ex:
+                LOGGER.error(
+                    f"Credential Exchange (thread id = {message._thread_id}) not found."
+                    " Indy issue credential format can't start from credential request.",
+                )
+                raise ex
             if cred_ex_record.state != V10CredentialExchange.STATE_OFFER_SENT:
                 LOGGER.error(
                     "Skipping credential request; exchange state is %s (id=%s)",

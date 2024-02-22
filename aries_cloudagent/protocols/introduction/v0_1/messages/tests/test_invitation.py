@@ -1,6 +1,6 @@
 from unittest import mock
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 
@@ -8,7 +8,7 @@ from ..invitation import Invitation as IntroInvitation
 from ...message_types import PROTOCOL_PACKAGE
 
 
-class TestInvitation(AsyncTestCase):
+class TestInvitation(IsolatedAsyncioTestCase):
     def setUp(self):
         self.label = "Label"
         self.test_did = "55GkHamhTU1ZbTbV2ab9DE"

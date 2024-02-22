@@ -23,6 +23,9 @@ from runners.support.utils import (  # noqa:E402
     prompt_loop,
 )
 
+
+DEMO_EXTRA_AGENT_ARGS = os.getenv("DEMO_EXTRA_AGENT_ARGS")
+
 logging.basicConfig(level=logging.WARNING)
 LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +39,9 @@ class AliceAgent(AriesAgent):
         no_auto: bool = False,
         aip: int = 20,
         endorser_role: str = None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -47,6 +53,9 @@ class AliceAgent(AriesAgent):
             seed=None,
             aip=aip,
             endorser_role=endorser_role,
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
             **kwargs,
         )
         self.connection_id = None
@@ -104,7 +113,15 @@ async def input_invitation(agent_container):
 
 
 async def main(args):
-    alice_agent = await create_agent_with_args(args, ident="alice")
+    extra_args = None
+    if DEMO_EXTRA_AGENT_ARGS:
+        extra_args = json.loads(DEMO_EXTRA_AGENT_ARGS)
+        print("Got extra args:", extra_args)
+    alice_agent = await create_agent_with_args(
+        args,
+        ident="alice",
+        extra_args=extra_args,
+    )
 
     try:
         log_status(
@@ -130,6 +147,10 @@ async def main(args):
             wallet_type=alice_agent.wallet_type,
             aip=alice_agent.aip,
             endorser_role=alice_agent.endorser_role,
+            log_file=alice_agent.log_file,
+            log_config=alice_agent.log_config,
+            log_level=alice_agent.log_level,
+            extra_args=extra_args,
         )
 
         await alice_agent.initialize(the_agent=agent)

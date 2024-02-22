@@ -1,41 +1,46 @@
 """Upgrade command for handling breaking changes when updating ACA-PY versions."""
 
 import asyncio
+import json
 import logging
 import os
-import yaml
-
-from configargparse import ArgumentParser
 from enum import Enum
-from packaging import version as package_version
 from typing import (
-    Callable,
-    Sequence,
-    Optional,
-    List,
-    Union,
-    Mapping,
     Any,
+    Callable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
     Tuple,
+    Union,
 )
 
-from ..core.profile import Profile
+import yaml
+from configargparse import ArgumentParser
+from packaging import version as package_version
+
 from ..config import argparse as arg
-from ..config.default_context import DefaultContextBuilder
 from ..config.base import BaseError, BaseSettings
+from ..config.default_context import DefaultContextBuilder
+from ..config.injection_context import InjectionContext
 from ..config.util import common_config
 from ..config.wallet import wallet_config
-from ..messaging.models.base_record import BaseRecord
-from ..storage.base import BaseStorage
+from ..core.profile import Profile, ProfileSession
+from ..messaging.models.base import BaseModelError
+from ..messaging.models.base_record import BaseRecord, RecordType
+from ..revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
+from ..storage.base import BaseStorage, BaseStorageSearch
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..utils.classloader import ClassLoader, ClassNotFoundError
-from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
-
+from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
+from ..wallet.models.wallet_record import WalletRecord
 from . import PROG
 
 DEFAULT_UPGRADE_CONFIG_FILE_NAME = "default_version_upgrade_config.yml"
 LOGGER = logging.getLogger(__name__)
+BATCH_SIZE = 25
 
 
 class ExplicitUpgradeOption(Enum):
@@ -78,10 +83,10 @@ class VersionUpgradeConfig:
         """Set ups config dict from the provided YML file."""
         with open(path, "r") as stream:
             config_dict = yaml.safe_load(stream)
-            version_config_dict = {}
-            for version, provided_config in config_dict.items():
+            tagged_config_dict = {}
+            for config_id, provided_config in config_dict.items():
                 recs_list = []
-                version_config_dict[version] = {}
+                tagged_config_dict[config_id] = {}
                 if "resave_records" in provided_config:
                     if provided_config.get("resave_records").get("base_record_path"):
                         recs_list = recs_list + provided_config.get(
@@ -93,27 +98,27 @@ class VersionUpgradeConfig:
                         recs_list = recs_list + provided_config.get(
                             "resave_records"
                         ).get("base_exch_record_path")
-                version_config_dict[version]["resave_records"] = recs_list
+                tagged_config_dict[config_id]["resave_records"] = recs_list
                 config_key_set = set(provided_config.keys())
                 try:
                     config_key_set.remove("resave_records")
                 except KeyError:
                     pass
                 if "explicit_upgrade" in provided_config:
-                    version_config_dict[version][
-                        "explicit_upgrade"
-                    ] = provided_config.get("explicit_upgrade")
+                    tagged_config_dict[config_id]["explicit_upgrade"] = (
+                        provided_config.get("explicit_upgrade")
+                    )
                 try:
                     config_key_set.remove("explicit_upgrade")
                 except KeyError:
                     pass
                 for executable in config_key_set:
-                    version_config_dict[version][executable] = (
+                    tagged_config_dict[config_id][executable] = (
                         provided_config.get(executable) or False
                     )
-            if version_config_dict == {}:
+            if tagged_config_dict == {}:
                 raise UpgradeError(f"No version configs found in {path}")
-            self.upgrade_configs = version_config_dict
+            self.upgrade_configs = tagged_config_dict
 
     def get_callable(self, executable: str) -> Optional[Callable]:
         """Return callable function for executable name."""
@@ -159,9 +164,12 @@ def get_upgrade_version_list(
     if not sorted_version_list:
         version_upgrade_config_inst = VersionUpgradeConfig(config_path)
         upgrade_configs = version_upgrade_config_inst.upgrade_configs
-        versions_found_in_config = upgrade_configs.keys()
+        tags_found_in_config = upgrade_configs.keys()
+        version_found_in_config, _ = _get_version_and_name_tags(
+            list(tags_found_in_config)
+        )
         sorted_version_list = sorted(
-            versions_found_in_config, key=lambda x: package_version.parse(x)
+            version_found_in_config, key=lambda x: package_version.parse(x)
         )
 
     version_list = []
@@ -193,34 +201,190 @@ async def add_version_record(profile: Profile, version: str):
     LOGGER.info(f"{RECORD_TYPE_ACAPY_VERSION} storage record set to {version}")
 
 
+def _get_version_and_name_tags(tags_found_in_config: List) -> Tuple[List, List]:
+    """Get version and named tag key lists from config."""
+    version_found_in_config = []
+    named_tag_found_in_config = []
+    for tag in tags_found_in_config:
+        try:
+            package_version.parse(tag)
+            version_found_in_config.append(tag)
+        except package_version.InvalidVersion:
+            named_tag_found_in_config.append(tag)
+    return version_found_in_config, named_tag_found_in_config
+
+
+def _perform_upgrade(
+    upgrade_config: dict,
+    resave_record_path_sets: set,
+    executables_call_set: set,
+    tag: str,
+) -> Tuple[set, set]:
+    """Update and return resave record path and executables call sets."""
+    LOGGER.info(f"Running upgrade process for {tag}")
+    # Step 1 re-saving all BaseRecord and BaseExchangeRecord
+    if "resave_records" in upgrade_config:
+        resave_record_paths = upgrade_config.get("resave_records")
+        for record_path in resave_record_paths:
+            resave_record_path_sets.add(record_path)
+
+    # Step 2 Update existing records, if required
+    config_key_set = set(upgrade_config.keys())
+    try:
+        config_key_set.remove("resave_records")
+    except KeyError:
+        pass
+    for callable_name in list(config_key_set):
+        if upgrade_config.get(callable_name) is False:
+            continue
+        executables_call_set.add(callable_name)
+    return resave_record_path_sets, executables_call_set
+
+
+def get_webhook_urls(
+    base_context: InjectionContext,
+    wallet_record: WalletRecord,
+) -> list:
+    """Get the webhook urls according to dispatch_type."""
+    wallet_id = wallet_record.wallet_id
+    dispatch_type = wallet_record.wallet_dispatch_type
+    subwallet_webhook_urls = wallet_record.wallet_webhook_urls or []
+    base_webhook_urls = base_context.settings.get("admin.webhook_urls", [])
+
+    if dispatch_type == "both":
+        webhook_urls = list(set(base_webhook_urls) | set(subwallet_webhook_urls))
+        if not webhook_urls:
+            LOGGER.warning(
+                "No webhook URLs in context configuration "
+                f"nor wallet record {wallet_id}, but wallet record "
+                f"configures dispatch type {dispatch_type}"
+            )
+    elif dispatch_type == "default":
+        webhook_urls = subwallet_webhook_urls
+        if not webhook_urls:
+            LOGGER.warning(
+                f"No webhook URLs in nor wallet record {wallet_id}, but "
+                f"wallet record configures dispatch type {dispatch_type}"
+            )
+    else:
+        webhook_urls = base_webhook_urls
+    return webhook_urls
+
+
+async def get_wallet_profile(
+    base_context: InjectionContext,
+    wallet_record: WalletRecord,
+    extra_settings: Optional[dict] = None,
+) -> Profile:
+    """Get profile for a wallet record."""
+    extra_settings = extra_settings or {}
+    context = base_context.copy()
+    reset_settings = {
+        "wallet.recreate": False,
+        "wallet.seed": None,
+        "wallet.rekey": None,
+        "wallet.name": None,
+        "wallet.type": None,
+        "mediation.open": None,
+        "mediation.invite": None,
+        "mediation.default_id": None,
+        "mediation.clear": None,
+    }
+    extra_settings["admin.webhook_urls"] = get_webhook_urls(base_context, wallet_record)
+
+    context.settings = (
+        context.settings.extend(reset_settings)
+        .extend(wallet_record.settings)
+        .extend(extra_settings)
+    )
+
+    profile, _ = await wallet_config(context, provision=False)
+    return profile
+
+
 async def upgrade(
     settings: Optional[Union[Mapping[str, Any], BaseSettings]] = None,
     profile: Optional[Profile] = None,
 ):
+    """Invoke upgradation process for each applicable profile."""
+    profiles_to_upgrade = []
+    if settings:
+        batch_size = settings.get("upgrade.page_size", BATCH_SIZE)
+    else:
+        batch_size = BATCH_SIZE
+    if profile and (settings or settings == {}):
+        raise UpgradeError("upgrade requires either profile or settings, not both.")
+    if profile:
+        root_profile = profile
+        settings = profile.settings
+    else:
+        context_builder = DefaultContextBuilder(settings)
+        context = await context_builder.build_context()
+        root_profile, _ = await wallet_config(context)
+    profiles_to_upgrade.append(root_profile)
+    base_storage_search_inst = root_profile.inject(BaseStorageSearch)
+    if "upgrade.upgrade_all_subwallets" in settings and settings.get(
+        "upgrade.upgrade_all_subwallets"
+    ):
+        search_session = base_storage_search_inst.search_records(
+            type_filter=WalletRecord.RECORD_TYPE, page_size=batch_size
+        )
+        while search_session._done is False:
+            wallet_storage_records = await search_session.fetch()
+            for wallet_storage_record in wallet_storage_records:
+                wallet_record = WalletRecord.from_storage(
+                    wallet_storage_record.id,
+                    json.loads(wallet_storage_record.value),
+                )
+                wallet_profile = await get_wallet_profile(
+                    base_context=root_profile.context, wallet_record=wallet_record
+                )
+                profiles_to_upgrade.append(wallet_profile)
+        del settings["upgrade.upgrade_all_subwallets"]
+    if (
+        "upgrade.upgrade_subwallets" in settings
+        and len(settings.get("upgrade.upgrade_subwallets")) >= 1
+    ):
+        for _wallet_id in settings.get("upgrade.upgrade_subwallets"):
+            async with root_profile.session() as session:
+                wallet_record = await WalletRecord.retrieve_by_id(
+                    session, record_id=_wallet_id
+                )
+            wallet_profile = await get_wallet_profile(
+                base_context=root_profile.context, wallet_record=wallet_record
+            )
+            profiles_to_upgrade.append(wallet_profile)
+        del settings["upgrade.upgrade_subwallets"]
+    for _profile in profiles_to_upgrade:
+        await upgrade_per_profile(profile=_profile, settings=settings)
+
+
+async def upgrade_per_profile(
+    profile: Profile,
+    settings: Optional[Union[Mapping[str, Any], BaseSettings]] = None,
+):
     """Perform upgradation steps."""
     try:
-        if profile and (settings or settings == {}):
-            raise UpgradeError("upgrade requires either profile or settings, not both.")
-        if profile:
-            root_profile = profile
-            settings = profile.settings
-        else:
-            context_builder = DefaultContextBuilder(settings)
-            context = await context_builder.build_context()
-            root_profile, _ = await wallet_config(context)
         version_upgrade_config_inst = VersionUpgradeConfig(
             settings.get("upgrade.config_path")
         )
+        upgrade_from_tags = None
+        force_upgrade_flag = settings.get("upgrade.force_upgrade") or False
+        if force_upgrade_flag:
+            upgrade_from_tags = settings.get("upgrade.named_tags")
         upgrade_configs = version_upgrade_config_inst.upgrade_configs
         upgrade_to_version = f"v{__version__}"
-        versions_found_in_config = upgrade_configs.keys()
+        tags_found_in_config = upgrade_configs.keys()
+        version_found_in_config, named_tag_found_in_config = _get_version_and_name_tags(
+            list(tags_found_in_config)
+        )
         sorted_versions_found_in_config = sorted(
-            versions_found_in_config, key=lambda x: package_version.parse(x)
+            version_found_in_config, key=lambda x: package_version.parse(x)
         )
         upgrade_from_version_storage = None
         upgrade_from_version_config = None
         upgrade_from_version = None
-        async with root_profile.session() as session:
+        async with profile.session() as session:
             storage = session.inject(BaseStorage)
             try:
                 version_storage_record = await storage.find_record(
@@ -240,7 +404,6 @@ async def upgrade(
                     )
                 )
 
-        force_upgrade_flag = settings.get("upgrade.force_upgrade") or False
         if upgrade_from_version_storage and upgrade_from_version_config:
             if (
                 package_version.parse(upgrade_from_version_storage)
@@ -261,107 +424,120 @@ async def upgrade(
             and not upgrade_from_version_config
         ):
             upgrade_from_version = upgrade_from_version_storage
-        if not upgrade_from_version:
+        if not upgrade_from_version and not upgrade_from_tags:
             raise UpgradeError(
-                "No upgrade from version found in wallet or settings [--from-version]"
+                "No upgrade from version or tags found in wallet"
+                " or settings [--from-version or --named-tag]"
             )
-        upgrade_version_in_config = get_upgrade_version_list(
-            sorted_version_list=sorted_versions_found_in_config,
-            from_version=upgrade_from_version,
-        )
-        # Perform explicit upgrade check if the function was called during startup
-        if profile:
-            (
-                explicit_flag,
-                to_skip_explicit_versions,
-                explicit_upg_ver,
-            ) = explicit_upgrade_required_check(
-                to_apply_version_list=upgrade_version_in_config,
-                upgrade_config=upgrade_configs,
-            )
-            if explicit_flag:
-                raise UpgradeError(
-                    "Explicit upgrade flag with critical value found "
-                    f"for {explicit_upg_ver} config. Please use ACA-Py "
-                    "upgrade command to complete the process and proceed."
-                )
-            if len(to_skip_explicit_versions) >= 1:
-                LOGGER.warning(
-                    "Explicit upgrade flag with warning value found "
-                    f"for {str(to_skip_explicit_versions)} versions. "
-                    "Proceeding with ACA-Py startup. You can apply "
-                    "the explicit upgrades using the ACA-Py upgrade "
-                    "command later."
-                )
-                return
+        resave_record_path_sets = set()
+        executables_call_set = set()
         to_update_flag = False
-        if upgrade_from_version == upgrade_to_version:
-            LOGGER.info(
-                (
-                    f"Version {upgrade_from_version} to upgrade from and "
-                    f"current version to upgrade to {upgrade_to_version} "
-                    "are same. You can apply upgrade from a lower "
-                    "version by running the upgrade command with "
-                    f"--from-version [< {upgrade_to_version}] and "
-                    "--force-upgrade"
-                )
+        if upgrade_from_version:
+            upgrade_version_in_config = get_upgrade_version_list(
+                sorted_version_list=sorted_versions_found_in_config,
+                from_version=upgrade_from_version,
             )
-        else:
-            resave_record_path_sets = set()
-            executables_call_set = set()
-            for config_from_version in upgrade_version_in_config:
-                LOGGER.info(f"Running upgrade process for {config_from_version}")
-                upgrade_config = upgrade_configs.get(config_from_version)
-                # Step 1 re-saving all BaseRecord and BaseExchangeRecord
-                if "resave_records" in upgrade_config:
-                    resave_record_paths = upgrade_config.get("resave_records")
-                    for record_path in resave_record_paths:
-                        resave_record_path_sets.add(record_path)
-
-                # Step 2 Update existing records, if required
-                config_key_set = set(upgrade_config.keys())
-                try:
-                    config_key_set.remove("resave_records")
-                except KeyError:
-                    pass
-                for callable_name in list(config_key_set):
-                    if upgrade_config.get(callable_name) is False:
-                        continue
-                    executables_call_set.add(callable_name)
-
-            if len(resave_record_path_sets) >= 1 or len(executables_call_set) >= 1:
-                to_update_flag = True
-            for record_path in resave_record_path_sets:
-                try:
-                    rec_type = ClassLoader.load_class(record_path)
-                except ClassNotFoundError as err:
-                    raise UpgradeError(f"Unknown Record type {record_path}") from err
-                if not issubclass(rec_type, BaseRecord):
+            # Perform explicit upgrade check if the function was called during startup
+            if profile:
+                (
+                    explicit_flag,
+                    to_skip_explicit_versions,
+                    explicit_upg_ver,
+                ) = explicit_upgrade_required_check(
+                    to_apply_version_list=upgrade_version_in_config,
+                    upgrade_config=upgrade_configs,
+                )
+                if explicit_flag:
                     raise UpgradeError(
-                        f"Only BaseRecord can be resaved, found: {str(rec_type)}"
+                        "Explicit upgrade flag with critical value found "
+                        f"for {explicit_upg_ver} config. Please use ACA-Py "
+                        "upgrade command to complete the process and proceed."
                     )
-                async with root_profile.session() as session:
-                    all_records = await rec_type.query(session)
-                    for record in all_records:
-                        await record.save(
-                            session,
-                            reason="re-saving record during the upgrade process",
-                        )
-                    if len(all_records) == 0:
-                        LOGGER.info(f"No records of {str(rec_type)} found")
-                    else:
-                        LOGGER.info(
-                            f"All recs of {str(rec_type)} successfully re-saved"
-                        )
-            for callable_name in executables_call_set:
-                _callable = version_upgrade_config_inst.get_callable(callable_name)
-                if not _callable:
-                    raise UpgradeError(f"No function specified for {callable_name}")
-                await _callable(root_profile)
+                if len(to_skip_explicit_versions) >= 1:
+                    LOGGER.warning(
+                        "Explicit upgrade flag with warning value found "
+                        f"for {str(to_skip_explicit_versions)} versions. "
+                        "Proceeding with ACA-Py startup. You can apply "
+                        "the explicit upgrades using the ACA-Py upgrade "
+                        "command later."
+                    )
+                    return
+            if upgrade_from_version == upgrade_to_version:
+                LOGGER.info(
+                    (
+                        f"Version {upgrade_from_version} to upgrade from and "
+                        f"current version to upgrade to {upgrade_to_version} "
+                        "are same. You can apply upgrade from a lower "
+                        "version by running the upgrade command with "
+                        f"--from-version [< {upgrade_to_version}] and "
+                        "--force-upgrade"
+                    )
+                )
+            else:
+                for config_from_version in upgrade_version_in_config:
+                    resave_record_path_sets, executables_call_set = _perform_upgrade(
+                        upgrade_config=upgrade_configs.get(config_from_version),
+                        resave_record_path_sets=resave_record_path_sets,
+                        executables_call_set=executables_call_set,
+                        tag=config_from_version,
+                    )
+        if upgrade_from_tags and len(upgrade_from_tags) >= 1:
+            for named_tag in upgrade_from_tags:
+                if named_tag not in named_tag_found_in_config:
+                    continue
+                resave_record_path_sets, executables_call_set = _perform_upgrade(
+                    upgrade_config=upgrade_configs.get(named_tag),
+                    resave_record_path_sets=resave_record_path_sets,
+                    executables_call_set=executables_call_set,
+                    tag=named_tag,
+                )
+        if len(resave_record_path_sets) >= 1 or len(executables_call_set) >= 1:
+            to_update_flag = True
+        for record_path in resave_record_path_sets:
+            try:
+                rec_type = ClassLoader.load_class(record_path)
+            except ClassNotFoundError as err:
+                raise UpgradeError(f"Unknown Record type {record_path}") from err
+            if not issubclass(rec_type, BaseRecord):
+                raise UpgradeError(
+                    f"Only BaseRecord can be resaved, found: {str(rec_type)}"
+                )
+            all_records = []
+            if settings:
+                batch_size = settings.get("upgrade.page_size", BATCH_SIZE)
+            else:
+                batch_size = BATCH_SIZE
+            base_storage_search_inst = profile.inject(BaseStorageSearch)
+            search_session = base_storage_search_inst.search_records(
+                type_filter=rec_type.RECORD_TYPE, page_size=batch_size
+            )
+            while search_session._done is False:
+                storage_records = await search_session.fetch()
+                for storage_record in storage_records:
+                    _record = rec_type.from_storage(
+                        storage_record.id,
+                        json.loads(storage_record.value),
+                    )
+                    all_records.append(_record)
+            async with profile.session() as session:
+                for record in all_records:
+                    await record.save(
+                        session,
+                        reason="re-saving record during the upgrade process",
+                    )
+                if len(all_records) == 0:
+                    LOGGER.info(f"No records of {str(rec_type)} found")
+                else:
+                    LOGGER.info(f"All recs of {str(rec_type)} successfully re-saved")
+        for callable_name in executables_call_set:
+            _callable = version_upgrade_config_inst.get_callable(callable_name)
+            if not _callable:
+                raise UpgradeError(f"No function specified for {callable_name}")
+            await _callable(profile)
 
         # Update storage version
         if to_update_flag:
-            async with root_profile.session() as session:
+            async with profile.session() as session:
                 storage = session.inject(BaseStorage)
                 if not version_storage_record:
                     await storage.add_record(
@@ -379,7 +555,7 @@ async def upgrade(
                     f"set to {upgrade_to_version}"
                 )
         if not profile:
-            await root_profile.close()
+            await profile.close()
     except BaseError as e:
         raise UpgradeError(f"Error during upgrade: {e}")
 
@@ -392,6 +568,67 @@ async def update_existing_records(profile: Profile):
 
     """
     pass
+
+
+##########################################################
+# Fix for ACA-Py Issue #2485
+# issuance_type attribue in IssuerRevRegRecord was removed
+# in 0.5.3 version. IssuerRevRegRecord created previously
+# will need
+##########################################################
+
+
+async def find_affected_issue_rev_reg_records(
+    session: ProfileSession,
+) -> Sequence[RecordType]:
+    """Get IssuerRevRegRecord records with issuance_type for re-saving.
+
+    Args:
+        session: The profile session to use
+    """
+    storage = session.inject(BaseStorage)
+    rows = await storage.find_all_records(
+        IssuerRevRegRecord.RECORD_TYPE,
+    )
+    issue_rev_reg_records_to_update = []
+    for record in rows:
+        vals = json.loads(record.value)
+        to_update = False
+        try:
+            record_id = record.id
+            record_id_name = IssuerRevRegRecord.RECORD_ID_NAME
+            if record_id_name in vals:
+                raise ValueError(f"Duplicate {record_id_name} inputs; {vals}")
+            params = dict(**vals)
+            # Check for issuance_type and add record_id for later tracking
+            if "issuance_type" in params:
+                LOGGER.info(
+                    f"IssuerRevRegRecord {record_id} tagged for fixing issuance_type."
+                )
+                del params["issuance_type"]
+                to_update = True
+            params[record_id_name] = record_id
+            if to_update:
+                issue_rev_reg_records_to_update.append(IssuerRevRegRecord(**params))
+        except BaseModelError as err:
+            raise BaseModelError(f"{err}, for record id {record.id}")
+    return issue_rev_reg_records_to_update
+
+
+async def fix_issue_rev_reg_records(profile: Profile):
+    """Update IssuerRevRegRecord records.
+
+    Args:
+        profile: Root profile
+
+    """
+    async with profile.session() as session:
+        issue_rev_reg_records = await find_affected_issue_rev_reg_records(session)
+        for record in issue_rev_reg_records:
+            await record.save(
+                session,
+                reason="re-saving issue_rev_reg record without issuance type",
+            )
 
 
 def execute(argv: Sequence[str] = None):
@@ -413,7 +650,8 @@ def main():
 
 
 UPGRADE_EXISTING_RECORDS_FUNCTION_MAPPING = {
-    "update_existing_records": update_existing_records
+    "update_existing_records": update_existing_records,
+    "fix_issue_rev_reg_records": fix_issue_rev_reg_records,
 }
 
 main()

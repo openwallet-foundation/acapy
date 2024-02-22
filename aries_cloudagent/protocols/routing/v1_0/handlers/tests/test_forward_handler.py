@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 import json
 
 from ......connections.models.connection_target import ConnectionTarget
@@ -18,8 +18,8 @@ TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
 
-class TestForwardHandler(AsyncTestCase):
-    async def setUp(self):
+class TestForwardHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = RequestContext.test_context()
         self.context.connection_ready = True
         self.context.message = Forward(to="sample-did", msg={"msg": "sample-message"})
@@ -29,18 +29,18 @@ class TestForwardHandler(AsyncTestCase):
         handler = test_module.ForwardHandler()
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "RoutingManager", autospec=True
-        ) as mock_mgr, async_mock.patch.object(
+        ) as mock_mgr, mock.patch.object(
             test_module, "ConnectionManager", autospec=True
-        ) as mock_connection_mgr, async_mock.patch.object(
+        ) as mock_connection_mgr, mock.patch.object(
             self.context.profile, "notify", autospec=True
         ) as mock_notify:
-            mock_mgr.return_value.get_recipient = async_mock.CoroutineMock(
+            mock_mgr.return_value.get_recipient = mock.CoroutineMock(
                 return_value=RouteRecord(connection_id="dummy")
             )
             mock_connection_mgr.return_value.get_connection_targets = (
-                async_mock.CoroutineMock(
+                mock.CoroutineMock(
                     return_value=[
                         ConnectionTarget(
                             recipient_keys=["recip_key"],
@@ -77,10 +77,10 @@ class TestForwardHandler(AsyncTestCase):
         handler = test_module.ForwardHandler()
 
         responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             test_module, "RoutingManager", autospec=True
         ) as mock_mgr:
-            mock_mgr.return_value.get_recipient = async_mock.CoroutineMock(
+            mock_mgr.return_value.get_recipient = mock.CoroutineMock(
                 side_effect=test_module.RoutingManagerError()
             )
 

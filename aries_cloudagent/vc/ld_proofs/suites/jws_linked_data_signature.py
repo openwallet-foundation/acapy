@@ -3,7 +3,7 @@
 import json
 
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 from pyld.jsonld import JsonLdProcessor
 
@@ -22,13 +22,12 @@ class JwsLinkedDataSignature(LinkedDataSignature):
     def __init__(
         self,
         *,
-        signature_type: str,
         algorithm: str,
         required_key_type: str,
         key_pair: KeyPair,
-        proof: dict = None,
-        verification_method: str = None,
-        date: Union[datetime, str] = None,
+        proof: Optional[dict] = None,
+        verification_method: Optional[str] = None,
+        date: Union[datetime, str, None] = None,
     ):
         """Create new JwsLinkedDataSignature instance.
 
@@ -47,7 +46,6 @@ class JwsLinkedDataSignature(LinkedDataSignature):
         """
 
         super().__init__(
-            signature_type=signature_type,
             verification_method=verification_method,
             proof=proof,
             date=date,

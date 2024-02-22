@@ -62,7 +62,8 @@ class IndyCredxVerifier(IndyVerifier):
             msgs.append(f"{PresVerifyMsg.PRES_VALUE_ERROR.value}::{s}")
             LOGGER.error(
                 f"Presentation on nonce={pres_req['nonce']} "
-                f"cannot be validated: {str(err)}"
+                f"cannot be validated (presentation will be marked as Invalid)"
+                f": {str(err)}"
             )
             return (False, msgs)
 

@@ -1,4 +1,5 @@
 """Utilities for Processing Replies to Domain Read Requests."""
+
 import base58
 import base64
 import hashlib

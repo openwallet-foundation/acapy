@@ -1,0 +1,55 @@
+name: publish-docs 
+
+on:
+  push:
+    # Publish `main` as latest, and when pushes are done to branches with "v-doc" prefix
+    branches:
+      - main
+      - docs-v*
+
+  create:
+    # Publish any `docs-v` branches -- check below to not run on other created branches
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all commits/branches
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+      - uses: actions/cache@v2
+        with:
+          key: ${{ github.ref }}
+          path: .cache
+      - name: Install Python dependencies
+        run: pip install -r ./mkdocs-requirements.txt
+      - name: Configure git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Deploy docs
+        run: |
+          # Strip git ref prefix from version
+          echo "${{ github.ref }}"
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # If this is for a branch other than main or one starting with "docs-v" then exit happily
+          [[ "$VERSION" != "main" && "$VERSION" != "docs-v"* ]] && echo Not a docs branch...exiting && exit 0
+          # Strip "docs-v" prefix from branch name
+          [[ "$VERSION" == "docs-v"* ]] && ALIAS=$(echo $VERSION | sed -e 's/^docs-v//')
+          # Copy all of the root level md files into the docs folder for deployment, tweaking the relative paths
+          for i in *.md; do sed -e "s#docs/#./#g" $i >docs/$i; done
+          # Populate overrides for the current version, and then remove to not apply if VERSION is main branch
+          OVERRIDE=overrides/main.html
+          echo -e "{% extends \"base.html\" %}\n\n{% block outdated %}\n  You are viewing the documentation for ACA-Py Release $ALIAS.\n{% endblock %}" >$OVERRIDE
+          # If building from main, use latest as ALIAS and remove the override
+          [ "$VERSION" == "main" ] && ALIAS=latest && rm $OVERRIDE
+          echo $VERSION $ALIAS
+          mike deploy --push --update-aliases $VERSION $ALIAS
+          mike set-default latest

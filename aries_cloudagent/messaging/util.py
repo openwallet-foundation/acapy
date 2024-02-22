@@ -1,6 +1,5 @@
 """Utils for messages."""
 
-
 import logging
 import re
 
@@ -14,7 +13,7 @@ LOGGER = logging.getLogger(__name__)
 I32_BOUND = 2**31
 
 
-def datetime_to_str(dt: Union[str, datetime]) -> str:
+def datetime_to_str(dt: Union[str, datetime, None]) -> Union[str, None]:
     """Convert a datetime object to an indy-standard datetime string.
 
     Args:
@@ -95,7 +94,7 @@ def epoch_to_str(epoch: int) -> str:
 
 def datetime_now() -> datetime:
     """Timestamp in UTC."""
-    return datetime.utcnow().replace(tzinfo=timezone.utc)
+    return datetime.now(tz=timezone.utc)
 
 
 def time_now() -> str:

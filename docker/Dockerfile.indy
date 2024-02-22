@@ -93,7 +93,7 @@ ENV HOME="/home/$user" \
     PIP_NO_CACHE_DIR=off \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    RUST_LOG=warning \
+    RUST_LOG=warn \
     SHELL=/bin/bash \
     SUMMARY="indy-python base image" \
     DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \
@@ -130,7 +130,6 @@ RUN apt-get update -y && \
     net-tools \
     openssl \
     sqlite3 \
-    vim-tiny \
     zlib1g && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc/*
 
@@ -189,10 +188,11 @@ WORKDIR /home/indy/src
 RUN mkdir -p test-reports && chown -R indy:indy test-reports && chmod -R ug+rw test-reports
 
 ADD ./README.md pyproject.toml ./poetry.lock ./
+COPY ./aries_cloudagent/ ./aries_cloudagent/
 
 USER root
 RUN pip install --no-cache-dir poetry
-RUN poetry install --no-root --no-directory -E "askar bbs indy"
+RUN poetry install --compile -E "askar bbs indy"
 
 ADD --chown=indy:root . .
 USER indy
@@ -227,7 +227,7 @@ ENV HOME="/home/$user" \
     PIP_NO_CACHE_DIR=off \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    RUST_LOG=warning \
+    RUST_LOG=warn \
     SHELL=/bin/bash \
     SUMMARY="aries-cloudagent image" \
     DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \

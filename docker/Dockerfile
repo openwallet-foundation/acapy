@@ -22,7 +22,7 @@ ENV HOME="/home/$user" \
     PIP_NO_CACHE_DIR=off \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    RUST_LOG=warning \
+    RUST_LOG=warn \
     SHELL=/bin/bash \
     SUMMARY="aries-cloudagent image" \
     DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \
@@ -59,7 +59,6 @@ RUN apt-get update -y && \
     net-tools \
     openssl \
     sqlite3 \
-    vim-tiny \
     zlib1g && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc/*
 

@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -10,6 +10,7 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
+from ..config.injection_context import InjectionContext
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
@@ -35,7 +36,12 @@ from ..messaging.valid import (
     INDY_RAW_PUBLIC_KEY_VALIDATE,
     JWT_EXAMPLE,
     JWT_VALIDATE,
+    SD_JWT_EXAMPLE,
+    SD_JWT_VALIDATE,
+    NON_SD_LIST_EXAMPLE,
+    NON_SD_LIST_VALIDATE,
     IndyDID,
+    StrOrDictField,
     Uri,
 )
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
@@ -50,6 +56,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
 from ..resolver.base import ResolverError
 from ..storage.error import StorageError, StorageNotFoundError
 from ..wallet.jwt import jwt_sign, jwt_verify
+from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
 from .base import BaseWallet
 from .did_info import DIDInfo
 from .did_method import KEY, SOV, DIDMethod, DIDMethods, HolderDefinedDid
@@ -69,10 +76,12 @@ class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     did = fields.Str(
+        required=True,
         validate=GENERIC_DID_VALIDATE,
         metadata={"description": "DID of interest", "example": GENERIC_DID_EXAMPLE},
     )
     verkey = fields.Str(
+        required=True,
         validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
         metadata={
             "description": "Public verification key",
@@ -80,6 +89,7 @@ class DIDSchema(OpenAPISchema):
         },
     )
     posture = fields.Str(
+        required=True,
         validate=DID_POSTURE_VALIDATE,
         metadata={
             "description": (
@@ -90,12 +100,14 @@ class DIDSchema(OpenAPISchema):
         },
     )
     method = fields.Str(
+        required=True,
         metadata={
             "description": "Did method associated with the DID",
             "example": SOV.method_name,
-        }
+        },
     )
     key_type = fields.Str(
+        required=True,
         validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
         metadata={
             "description": "Key type associated with the DID",
@@ -171,14 +183,32 @@ class JWSCreateSchema(OpenAPISchema):
     )
 
 
+class SDJWSCreateSchema(JWSCreateSchema):
+    """Request schema to create an sd-jws with a particular DID."""
+
+    non_sd_list = fields.List(
+        fields.Str(
+            required=False,
+            validate=NON_SD_LIST_VALIDATE,
+            metadata={"example": NON_SD_LIST_EXAMPLE},
+        )
+    )
+
+
 class JWSVerifySchema(OpenAPISchema):
     """Request schema to verify a jws created from a DID."""
 
     jwt = fields.Str(validate=JWT_VALIDATE, metadata={"example": JWT_EXAMPLE})
 
 
+class SDJWSVerifySchema(OpenAPISchema):
+    """Request schema to verify an sd-jws created from a DID."""
+
+    sd_jwt = fields.Str(validate=SD_JWT_VALIDATE, metadata={"example": SD_JWT_EXAMPLE})
+
+
 class JWSVerifyResponseSchema(OpenAPISchema):
-    """Response schema for verification result."""
+    """Response schema for JWT verification result."""
 
     valid = fields.Bool(required=True)
     error = fields.Str(required=False, metadata={"description": "Error text"})
@@ -188,6 +218,25 @@ class JWSVerifyResponseSchema(OpenAPISchema):
     )
     payload = fields.Dict(
         required=True, metadata={"description": "Payload from verified JWT"}
+    )
+
+
+class SDJWSVerifyResponseSchema(JWSVerifyResponseSchema):
+    """Response schema for SD-JWT verification result."""
+
+    disclosures = fields.List(
+        fields.List(StrOrDictField()),
+        metadata={
+            "description": "Disclosure arrays associated with the SD-JWT",
+            "example": [
+                ["fx1iT_mETjGiC-JzRARnVg", "name", "Alice"],
+                [
+                    "n4-t3mlh8jSS6yMIT7QHnA",
+                    "street_address",
+                    {"_sd": ["kLZrLK7enwfqeOzJ9-Ss88YS3mhjOAEk9lr_ix2Heng"]},
+                ],
+            ],
+        },
     )
 
 
@@ -588,7 +637,6 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
 
     outbound_handler = request["outbound_message_router"]
 
@@ -610,9 +658,10 @@ async def wallet_set_public_did(request: web.BaseRequest):
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
 
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
@@ -628,15 +677,12 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     routing_keys, mediator_endpoint = await route_manager.routing_info(
         profile,
-        None,
         mediation_record,
     )
 
     try:
         info, attrib_def = await promote_wallet_public_did(
-            context.profile,
             context,
-            context.session,
             did,
             write_ledger=write_ledger,
             connection_id=connection_id,
@@ -671,7 +717,6 @@ async def wallet_set_public_did(request: web.BaseRequest):
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -682,11 +727,10 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
 
 async def promote_wallet_public_did(
-    profile: Profile,
-    context: AdminRequestContext,
-    session_fn,
+    context: Union[AdminRequestContext, InjectionContext],
     did: str,
     write_ledger: bool = False,
+    profile: Profile = None,
     connection_id: str = None,
     routing_keys: List[str] = None,
     mediator_endpoint: str = None,
@@ -698,8 +742,22 @@ async def promote_wallet_public_did(
     is_indy_did = bool(IndyDID.PATTERN.match(did))
     # write only Indy DID
     write_ledger = is_indy_did and write_ledger
-
-    ledger = profile.inject_or(BaseLedger)
+    is_ctx_admin_request = True
+    if isinstance(context, InjectionContext):
+        is_ctx_admin_request = False
+        if not profile:
+            raise web.HTTPForbidden(
+                reason=(
+                    "InjectionContext is provided but no profile is provided. "
+                    "InjectionContext does not have profile attribute but "
+                    "AdminRequestContext does."
+                )
+            )
+    ledger = (
+        context.profile.inject_or(BaseLedger)
+        if is_ctx_admin_request
+        else profile.inject_or(BaseLedger)
+    )
 
     if is_indy_did:
         if not ledger:
@@ -712,31 +770,41 @@ async def promote_wallet_public_did(
             if not await ledger.get_key_for_did(did):
                 raise LookupError(f"DID {did} is not posted to the ledger")
 
+        is_author_profile = (
+            is_author_role(context.profile)
+            if is_ctx_admin_request
+            else is_author_role(profile)
+        )
         # check if we need to endorse
-        if is_author_role(profile):
+        if is_author_profile:
             # authors cannot write to the ledger
             write_ledger = False
 
             # author has not provided a connection id, so determine which to use
             if not connection_id:
-                connection_id = await get_endorser_connection_id(profile)
+                connection_id = (
+                    await get_endorser_connection_id(context.profile)
+                    if is_ctx_admin_request
+                    else await get_endorser_connection_id(profile)
+                )
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
         if not write_ledger:
-            try:
-                async with profile.session() as session:
+            async with (
+                context.session() if is_ctx_admin_request else profile.session()
+            ) as session:
+                try:
                     connection_record = await ConnRecord.retrieve_by_id(
                         session, connection_id
                     )
-            except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-            except BaseModelError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-            async with profile.session() as session:
+                except StorageNotFoundError as err:
+                    raise web.HTTPNotFound(reason=err.roll_up) from err
+                except BaseModelError as err:
+                    raise web.HTTPBadRequest(reason=err.roll_up) from err
                 endorser_info = await connection_record.metadata_get(
                     session, "endorser_info"
                 )
+
             if not endorser_info:
                 raise web.HTTPForbidden(
                     reason=(
@@ -755,18 +823,18 @@ async def promote_wallet_public_did(
 
     did_info: DIDInfo = None
     attrib_def = None
-    async with session_fn() as session:
+    async with (
+        context.session() if is_ctx_admin_request else profile.session()
+    ) as session:
         wallet = session.inject_or(BaseWallet)
         did_info = await wallet.get_local_did(did)
         info = await wallet.set_public_did(did_info)
 
-    if info:
-        # Publish endpoint if necessary
-        endpoint = did_info.metadata.get("endpoint")
+        if info:
+            # Publish endpoint if necessary
+            endpoint = did_info.metadata.get("endpoint")
 
-        if is_indy_did and not endpoint:
-            async with session_fn() as session:
-                wallet = session.inject_or(BaseWallet)
+            if is_indy_did and not endpoint:
                 endpoint = mediator_endpoint or context.settings.get("default_endpoint")
                 attrib_def = await wallet.set_did_endpoint(
                     info.did,
@@ -777,9 +845,18 @@ async def promote_wallet_public_did(
                     routing_keys=routing_keys,
                 )
 
+    if info:
         # Route the public DID
-        route_manager = profile.inject(RouteManager)
-        await route_manager.route_verkey(profile, info.verkey)
+        route_manager = (
+            context.profile.inject(RouteManager)
+            if is_ctx_admin_request
+            else profile.inject(RouteManager)
+        )
+        (
+            await route_manager.route_verkey(context.profile, info.verkey)
+            if is_ctx_admin_request
+            else await route_manager.route_verkey(profile, info.verkey)
+        )
 
     return info, attrib_def
 
@@ -897,7 +974,6 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -941,6 +1017,44 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     return web.json_response(jws)
 
 
+@docs(
+    tags=["wallet"], summary="Create a EdDSA sd-jws using did keys with a given payload"
+)
+@request_schema(SDJWSCreateSchema)
+@response_schema(WalletModuleResponseSchema(), description="")
+async def wallet_sd_jwt_sign(request: web.BaseRequest):
+    """Request handler for sd-jws creation using did.
+
+    Args:
+        "headers": { ... },
+        "payload": { ... },
+        "did": "did:example:123",
+        "verificationMethod": "did:example:123#keys-1"
+        with did and verification being mutually exclusive.
+        "non_sd_list": []
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    did = body.get("did")
+    verification_method = body.get("verificationMethod")
+    headers = body.get("headers", {})
+    payload = body.get("payload", {})
+    non_sd_list = body.get("non_sd_list", [])
+
+    try:
+        sd_jws = await sd_jwt_sign(
+            context.profile, headers, payload, non_sd_list, did, verification_method
+        )
+    except ValueError as err:
+        raise web.HTTPBadRequest(reason="Bad did or verification method") from err
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response(sd_jws)
+
+
 @docs(tags=["wallet"], summary="Verify a EdDSA jws using did keys with a given JWS")
 @request_schema(JWSVerifySchema())
 @response_schema(JWSVerifyResponseSchema(), 200, description="")
@@ -968,6 +1082,32 @@ async def wallet_jwt_verify(request: web.BaseRequest):
             "kid": result.kid,
         }
     )
+
+
+@docs(
+    tags=["wallet"],
+    summary="Verify a EdDSA sd-jws using did keys with a given SD-JWS with "
+    "optional key binding",
+)
+@request_schema(SDJWSVerifySchema())
+@response_schema(SDJWSVerifyResponseSchema(), 200, description="")
+async def wallet_sd_jwt_verify(request: web.BaseRequest):
+    """Request handler for sd-jws validation using did.
+
+    Args:
+        "sd-jwt": { ... }
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    sd_jwt = body["sd_jwt"]
+    try:
+        result = await sd_jwt_verify(context.profile, sd_jwt)
+    except (BadJWSHeaderError, InvalidVerificationMethod) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except ResolverError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+
+    return web.json_response(result.serialize())
 
 
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
@@ -1056,8 +1196,11 @@ async def on_register_nym_event(profile: Profile, event: Event):
         did = event.payload["did"]
         connection_id = event.payload.get("connection_id")
         try:
-            info, attrib_def = await promote_wallet_public_did(
-                profile, profile.context, profile.session, did, connection_id
+            _info, attrib_def = await promote_wallet_public_did(
+                context=profile.context,
+                did=did,
+                connection_id=connection_id,
+                profile=profile,
             )
         except Exception as err:
             # log the error, but continue
@@ -1088,7 +1231,6 @@ async def on_register_nym_event(profile: Profile, event: Event):
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 # log the error, but continue
@@ -1125,6 +1267,8 @@ async def register(app: web.Application):
             web.post("/wallet/set-did-endpoint", wallet_set_did_endpoint),
             web.post("/wallet/jwt/sign", wallet_jwt_sign),
             web.post("/wallet/jwt/verify", wallet_jwt_verify),
+            web.post("/wallet/sd-jwt/sign", wallet_sd_jwt_sign),
+            web.post("/wallet/sd-jwt/verify", wallet_sd_jwt_verify),
             web.get(
                 "/wallet/get-did-endpoint", wallet_get_did_endpoint, allow_head=False
             ),

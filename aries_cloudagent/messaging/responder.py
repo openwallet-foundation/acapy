@@ -3,28 +3,29 @@
 The responder is provided to message handlers to enable them to send a new message
 in response to the message being handled.
 """
+
 import asyncio
 import json
-
 from abc import ABC, abstractmethod
-from typing import List, Sequence, Union, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple, Union
 
 from ..cache.base import BaseCache
-from ..connections.models.connection_target import ConnectionTarget
 from ..connections.models.conn_record import ConnRecord
+from ..connections.models.connection_target import ConnectionTarget
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..transport.outbound.message import OutboundMessage
-
-from .base_message import BaseMessage
 from ..transport.outbound.status import OutboundSendStatus
+from .base_message import BaseMessage
 
 SKIP_ACTIVE_CONN_CHECK_MSG_TYPES = [
     "didexchange/1.0/request",
     "didexchange/1.0/response",
+    "didexchange/1.0/problem_report",
     "connections/1.0/invitation",
     "connections/1.0/request",
     "connections/1.0/response",
+    "connections/1.0/problem_report",
 ]
 
 

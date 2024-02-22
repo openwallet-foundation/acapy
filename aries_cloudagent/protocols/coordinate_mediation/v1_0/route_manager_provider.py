@@ -1,4 +1,5 @@
 """RouteManager provider."""
+
 from ....config.base import BaseInjector, BaseProvider, BaseSettings
 from ....core.profile import Profile
 from ....multitenant.base import BaseMultitenantManager

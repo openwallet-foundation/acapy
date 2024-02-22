@@ -49,6 +49,7 @@ class ConnectionListSchema(OpenAPISchema):
 
     results = fields.List(
         fields.Nested(ConnRecordSchema()),
+        required=True,
         metadata={"description": "List of connection records"},
     )
 
@@ -146,14 +147,16 @@ class InvitationResultSchema(OpenAPISchema):
     """Result schema for a new connection invitation."""
 
     connection_id = fields.Str(
-        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE}
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
-    invitation = fields.Nested(ConnectionInvitationSchema())
+    invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
     invitation_url = fields.Str(
+        required=True,
         metadata={
             "description": "Invitation URL",
             "example": "http://192.168.56.101:8020/invite?c_i=eyJAdHlwZSI6Li4ufQ==",
-        }
+        },
     )
 
 
@@ -230,7 +233,7 @@ class ConnectionStaticResultSchema(OpenAPISchema):
             "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
         },
     )
-    record = fields.Nested(ConnRecordSchema, required=True)
+    record = fields.Nested(ConnRecordSchema(), required=True)
 
 
 class ConnectionsListQueryStringSchema(OpenAPISchema):
@@ -289,7 +292,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
             "example": ConnRecord.Protocol.RFC_0160.aries_protocol,
         },
     )
-    invitation_msg_id = fields.UUID(
+    invitation_msg_id = fields.Str(
         required=False,
         metadata={
             "description": "Identifier of the associated Invitation Mesage",

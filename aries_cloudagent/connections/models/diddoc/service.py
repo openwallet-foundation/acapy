@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 from typing import List, Sequence, Union
 
 from .util import canon_did, canon_ref
@@ -36,7 +35,7 @@ class Service:
         ident: str,
         typ: str,
         recip_keys: Union[Sequence, PublicKey],
-        routing_keys: Union[Sequence, PublicKey],
+        routing_keys: List[str],
         endpoint: str,
         priority: int = 0,
     ):
@@ -65,17 +64,9 @@ class Service:
         self._recip_keys = (
             [recip_keys]
             if isinstance(recip_keys, PublicKey)
-            else list(recip_keys)
-            if recip_keys
-            else None
+            else list(recip_keys) if recip_keys else None
         )
-        self._routing_keys = (
-            [routing_keys]
-            if isinstance(routing_keys, PublicKey)
-            else list(routing_keys)
-            if routing_keys
-            else None
-        )
+        self._routing_keys = routing_keys or []
         self._endpoint = endpoint
         self._priority = priority
 
@@ -104,7 +95,7 @@ class Service:
         return self._recip_keys
 
     @property
-    def routing_keys(self) -> List[PublicKey]:
+    def routing_keys(self) -> List[str]:
         """Accessor for the routing keys."""
 
         return self._routing_keys
@@ -128,7 +119,7 @@ class Service:
         if self.recip_keys:
             rv["recipientKeys"] = [k.value for k in self.recip_keys]
         if self.routing_keys:
-            rv["routingKeys"] = [k.value for k in self.routing_keys]
+            rv["routingKeys"] = self.routing_keys
         rv["serviceEndpoint"] = self.endpoint
 
         return rv

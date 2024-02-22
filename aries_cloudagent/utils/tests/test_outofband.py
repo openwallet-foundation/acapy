@@ -1,4 +1,4 @@
-from asynctest import TestCase
+from unittest import TestCase
 
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...wallet.did_info import DIDInfo

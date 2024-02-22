@@ -32,7 +32,7 @@ from .messages.mediate_grant import MediationGrantSchema
 from .models.mediation_record import MediationRecord, MediationRecordSchema
 from .route_manager import RouteManager
 
-CONNECTION_ID_SCHEMA = fields.UUID(
+CONNECTION_ID_SCHEMA = fields.Str(
     required=False,
     metadata={
         "description": "Connection identifier (optional)",
@@ -41,7 +41,8 @@ CONNECTION_ID_SCHEMA = fields.UUID(
 )
 
 
-MEDIATION_ID_SCHEMA = fields.UUID(
+MEDIATION_ID_SCHEMA = fields.Str(
+    required=True,
     metadata={"description": "Mediation record identifier", "example": UUID4_EXAMPLE},
 )
 
@@ -62,37 +63,12 @@ MEDIATION_STATE_SCHEMA = fields.Str(
 )
 
 
-MEDIATOR_TERMS_SCHEMA = fields.List(
-    fields.Str(
-        metadata={
-            "description": (
-                "Indicate terms to which the mediator requires the recipient to agree"
-            )
-        }
-    ),
-    required=False,
-    metadata={"description": "List of mediator rules for recipient"},
-)
-
-
-RECIPIENT_TERMS_SCHEMA = fields.List(
-    fields.Str(
-        metadata={
-            "description": (
-                "Indicate terms to which the recipient requires the mediator to agree"
-            )
-        }
-    ),
-    required=False,
-    metadata={"description": "List of recipient rules for mediation"},
-)
-
-
 class MediationListSchema(OpenAPISchema):
     """Result schema for mediation list query."""
 
     results = fields.List(
         fields.Nested(MediationRecordSchema),
+        required=True,
         metadata={"description": "List of mediation records"},
     )
 
@@ -101,23 +77,15 @@ class MediationListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for mediation record list request query string."""
 
     conn_id = CONNECTION_ID_SCHEMA
-    mediator_terms = MEDIATOR_TERMS_SCHEMA
-    recipient_terms = RECIPIENT_TERMS_SCHEMA
     state = MEDIATION_STATE_SCHEMA
 
 
 class MediationCreateRequestSchema(OpenAPISchema):
     """Parameters and validators for create Mediation request query string."""
 
-    mediator_terms = MEDIATOR_TERMS_SCHEMA
-    recipient_terms = RECIPIENT_TERMS_SCHEMA
-
 
 class AdminMediationDenySchema(OpenAPISchema):
     """Parameters and validators for Mediation deny admin request query string."""
-
-    mediator_terms = MEDIATOR_TERMS_SCHEMA
-    recipient_terms = RECIPIENT_TERMS_SCHEMA
 
 
 class MediationIdMatchInfoSchema(OpenAPISchema):
@@ -281,10 +249,6 @@ async def request_mediation(request: web.BaseRequest):
 
     conn_id = request.match_info["conn_id"]
 
-    body = await request.json()
-    mediator_terms = body.get("mediator_terms")
-    recipient_terms = body.get("recipient_terms")
-
     try:
         async with profile.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, conn_id)
@@ -300,11 +264,7 @@ async def request_mediation(request: web.BaseRequest):
 
         mediation_record, mediation_request = await MediationManager(
             profile
-        ).prepare_request(
-            connection_id=conn_id,
-            mediator_terms=mediator_terms,
-            recipient_terms=recipient_terms,
-        )
+        ).prepare_request(connection_id=conn_id)
 
         result = mediation_record.serialize()
     except StorageNotFoundError as err:
@@ -348,15 +308,10 @@ async def mediation_request_deny(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     mediation_id = request.match_info.get("mediation_id")
-    body = await request.json()
-    mediator_terms = body.get("mediator_terms")
-    recipient_terms = body.get("recipient_terms")
     try:
         mediation_manager = MediationManager(context.profile)
         record, deny_request = await mediation_manager.deny_request(
             mediation_id=mediation_id,
-            mediator_terms=mediator_terms,
-            recipient_terms=recipient_terms,
         )
         result = record.serialize()
     except StorageNotFoundError as err:
@@ -545,14 +500,14 @@ async def update_keylist_for_connection(request: web.BaseRequest):
 
         async with context.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
-            mediation_record = await route_manager.mediation_record_for_connection(
+            mediation_records = await route_manager.mediation_records_for_connection(
                 context.profile, connection_record, mediation_id, or_default=True
             )
 
         # MediationRecord is permitted to be None; route manager will
         # ensure the correct mediator is notified.
         keylist_update = await route_manager.route_connection(
-            context.profile, connection_record, mediation_record
+            context.profile, connection_record, mediation_records
         )
 
         results = keylist_update.serialize() if keylist_update else {}

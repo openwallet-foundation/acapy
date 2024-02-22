@@ -5,45 +5,92 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run/Debug ACA-Py",
+            "name": "Run/Debug Faber",
             "type": "python",
             "request": "launch",
             "module": "aries_cloudagent",
             "justMyCode": true,
             "args": [
                 "start",
-                "--arg-file=${workspaceRoot}/.vscode/multitenant.yml"
+                "--arg-file=${workspaceRoot}/.vscode/faber.yml"
             ]
         },
         {
-            "name": "flake8 - aries_cloudagent",
+            "name": "Run/Debug Alice",
             "type": "python",
             "request": "launch",
-            "module": "flake8",
-            "console": "integratedTerminal",
+            "module": "aries_cloudagent",
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": [
-                "--max-line-length=90",
-                "--exclude=*/tests/**",
-                "--extend-ignore=D202,W503",
-                "--per-file-ignores=*/__init__.py:D104"
-            ],
+                "start",
+                "--arg-file=${workspaceRoot}/.vscode/alice.yml"
+            ]
         },
         {
-            "name": "flake8 - current file",
+            "name": "Run/Debug Endorser",
             "type": "python",
             "request": "launch",
-            "module": "flake8",
-            "console": "integratedTerminal",
+            "module": "aries_cloudagent",
             "justMyCode": true,
             "args": [
-                "--max-line-length=90",
-                "--exclude=*/tests/**",
-                "--extend-ignore=D202,W503",
-                "--per-file-ignores=*/__init__.py:D104",
-                "${file}"
-            ],
+                "start",
+                "--arg-file=${workspaceRoot}/.vscode/endorser.yml"
+            ]
+        },
+        {
+            "name": "Run/Debug Author",
+            "type": "python",
+            "request": "launch",
+            "module": "aries_cloudagent",
+            "justMyCode": true,
+            "args": [
+                "start",
+                "--arg-file=${workspaceRoot}/.vscode/author.yml"
+            ]
+        },
+        {
+            "name": "Run/Debug Multitenant Admin",
+            "type": "python",
+            "request": "launch",
+            "module": "aries_cloudagent",
+            "justMyCode": true,
+            "args": [
+                "start",
+                "--arg-file=${workspaceRoot}/.vscode/multitenant-admin.yml"
+            ]
+        },
+        {
+            "name": "ruff - aries_cloudagent",
+            "type": "python",
+            "request": "launch",
+            "module": "ruff",
+            "console": "integratedTerminal",
+            "sudo": true,
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "args": ["check", "."]
+        },
+        {
+            "name": "ruff fix - aries_cloudagent",
+            "type": "python",
+            "request": "launch",
+            "module": "ruff",
+            "console": "integratedTerminal",
+            "sudo": true,
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "args": ["check", ".", "--fix"]
+        },
+        {
+            "name": "ruff - current file",
+            "type": "python",
+            "request": "launch",
+            "module": "ruff",
+            "console": "integratedTerminal",
+            "sudo": true,
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "args": ["check", ".", "${file}"]
         },
         {
             "name": "black (check) - aries_cloudagent",
@@ -56,7 +103,7 @@
             "args": [
                 ".",
                 "--check"
-            ],
+            ]
         },
         {
             "name": "black (check) - current file",
@@ -68,7 +115,7 @@
             "args": [
                 "${file}",
                 "--check"
-            ],
+            ]
         },
         {
             "name": "black (format) - aries_cloudagent",
@@ -80,7 +127,7 @@
             "cwd": "${workspaceFolder}/aries_cloudagent",
             "args": [
                 "."
-            ],
+            ]
         },
         {
             "name": "black (format) - current file",
@@ -90,8 +137,8 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "${file}",
-            ],
-        },
+                "${file}"
+            ]
+        }
     ]
 }

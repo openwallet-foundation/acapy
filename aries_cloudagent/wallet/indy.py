@@ -3,7 +3,7 @@
 import json
 import logging
 
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import indy.anoncreds
 import indy.did
@@ -136,7 +136,10 @@ class IndySdkWallet(BaseWallet):
         return verkey
 
     async def create_signing_key(
-        self, key_type: KeyType, seed: str = None, metadata: dict = None
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> KeyInfo:
         """Create a new public/private signing keypair.
 
@@ -151,6 +154,28 @@ class IndySdkWallet(BaseWallet):
             WalletDuplicateError: If the resulting verkey already exists in the wallet
             WalletError: If there is a libindy error
 
+        """
+        return await self.create_key(key_type, seed, metadata)
+
+    async def create_key(
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> KeyInfo:
+        """Create a new public/private keypair.
+
+        Args:
+            key_type: Key type to create
+            seed: Seed for key
+            metadata: Optional metadata to store with the keypair
+
+        Returns:
+            A `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateError: If the resulting verkey already exists in the wallet
+            WalletError: If there is another backend error
         """
 
         # must save metadata to allow identity check
@@ -415,9 +440,9 @@ class IndySdkWallet(BaseWallet):
         self,
         method: DIDMethod,
         key_type: KeyType,
-        seed: str = None,
-        did: str = None,
-        metadata: dict = None,
+        seed: Optional[str] = None,
+        did: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> DIDInfo:
         """Create and store a new local DID.
 
@@ -457,6 +482,20 @@ class IndySdkWallet(BaseWallet):
             return await self.__create_keypair_local_did(
                 method, key_type, metadata, seed
             )
+
+    async def store_did(self, did_info: DIDInfo) -> DIDInfo:
+        """Store a DID in the wallet.
+
+        This enables components external to the wallet to define how a DID
+        is created and then store it in the wallet for later use.
+
+        Args:
+            did_info: The DID to store
+
+        Returns:
+            The stored `DIDInfo`
+        """
+        raise WalletError("This operation is not supported by Indy-SDK wallets")
 
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """Get list of defined local DIDs.

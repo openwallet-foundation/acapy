@@ -1,7 +1,7 @@
-import logging
 import pytest
 
-from unittest import mock, TestCase
+from unittest import mock
+from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
 
@@ -16,13 +16,11 @@ from ..cred_problem_report import (
     ValidationError,
 )
 
+from .. import cred_problem_report as test_module
+
 
 class TestCredProblemReport(TestCase):
     """Problem report tests."""
-
-    @pytest.fixture(autouse=True)
-    def inject_fixtures(self, caplog):
-        self._caplog = caplog
 
     def test_init_type(self):
         """Test initializer."""
@@ -99,9 +97,9 @@ class TestCredProblemReport(TestCase):
                 "code": "invalid_code",
             },
         ).serialize()
-        self._caplog.set_level(logging.WARNING)
-        V20CredProblemReportSchema().validate_fields(data)
-        assert "Unexpected error code received" in self._caplog.text
+        with mock.patch.object(test_module, "LOGGER", autospec=True) as mock_logger:
+            V20CredProblemReportSchema().validate_fields(data)
+        assert mock_logger.warning.call_count == 1
 
     def test_validate_x(self):
         """Exercise validation requirements."""

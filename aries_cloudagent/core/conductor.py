@@ -88,7 +88,7 @@ class Conductor:
     """Conductor class.
 
     Class responsible for initializing concrete implementations
-    of our require interfaces and routing inbound and outbound message data.
+    of our required interfaces and routing inbound and outbound message data.
     """
 
     def __init__(self, context_builder: ContextBuilder) -> None:
@@ -151,6 +151,17 @@ class Conductor:
                         IndyVerifier,
                         ClassProvider(
                             "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                elif (
+                    self.root_profile.BACKEND_NAME == "askar-anoncreds"
+                    and ledger.BACKEND_NAME == "indy-vdr"
+                ):
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.anoncreds.credx.verifier.IndyCredxVerifier",
                             self.root_profile,
                         ),
                     )

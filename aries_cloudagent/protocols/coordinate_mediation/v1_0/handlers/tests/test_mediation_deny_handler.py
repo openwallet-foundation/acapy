@@ -1,6 +1,7 @@
 """Test mediate deny message handler."""
+
 import pytest
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
@@ -11,20 +12,16 @@ from ...models.mediation_record import MediationRecord
 from ..mediation_deny_handler import MediationDenyHandler
 
 TEST_CONN_ID = "conn-id"
-TEST_MEDIATOR_TERMS = ["test", "mediator", "terms"]
-TEST_RECIPIENT_TERMS = ["test", "recipient", "terms"]
 
 
-class TestMediationDenyHandler(AsyncTestCase):
+class TestMediationDenyHandler(IsolatedAsyncioTestCase):
     """Test mediate deny message handler."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         """Setup test dependencies."""
         self.context = RequestContext.test_context()
         self.session = await self.context.session()
-        self.context.message = MediationDeny(
-            mediator_terms=TEST_MEDIATOR_TERMS, recipient_terms=TEST_RECIPIENT_TERMS
-        )
+        self.context.message = MediationDeny()
         self.context.connection_ready = True
         self.context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
 
@@ -50,5 +47,3 @@ class TestMediationDenyHandler(AsyncTestCase):
         )
         assert record
         assert record.state == MediationRecord.STATE_DENIED
-        assert record.mediator_terms == TEST_MEDIATOR_TERMS
-        assert record.recipient_terms == TEST_RECIPIENT_TERMS

@@ -3,7 +3,6 @@
 An attach decorator embeds content or specifies appended content.
 """
 
-
 import copy
 import json
 import uuid
@@ -448,13 +447,19 @@ class AttachDecoratorData(BaseModel):
 
             sign_input = (b64_protected + "." + b64_payload).encode("ascii")
             b_sig = b64_to_bytes(b64_sig, urlsafe=True)
-            verkey = bytes_to_b58(b64_to_bytes(protected["jwk"]["x"], urlsafe=True))
-            encoded_pk = DIDKey.from_did(protected["jwk"]["kid"]).public_key_b58
-            verkey_to_check.append(encoded_pk)
+            jwk = protected["jwk"]
+            verkey = bytes_to_b58(b64_to_bytes(jwk["x"], urlsafe=True))
             if not await wallet.verify_message(sign_input, b_sig, verkey, ED25519):
                 return False
-            if not await wallet.verify_message(sign_input, b_sig, encoded_pk, ED25519):
-                return False
+
+            if "kid" in jwk:
+                encoded_pk = DIDKey.from_did(protected["jwk"]["kid"]).public_key_b58
+                verkey_to_check.append(encoded_pk)
+                if not await wallet.verify_message(
+                    sign_input, b_sig, encoded_pk, ED25519
+                ):
+                    return False
+
         if signer_verkey and signer_verkey not in verkey_to_check:
             return False
         return True
@@ -590,6 +595,40 @@ class AttachDecorator(BaseModel):
             )
         else:
             return None
+
+    @classmethod
+    def data_base64_string(
+        cls,
+        content: str,
+        *,
+        ident: str = None,
+        description: str = None,
+        filename: str = None,
+        lastmod_time: str = None,
+        byte_count: int = None,
+    ):
+        """Create `AttachDecorator` instance on base64-encoded string data.
+
+        Given string content, base64-encode, and embed it as data; mark
+        `text/string` MIME type.
+
+        Args:
+            content: string content
+            ident: optional attachment identifier (default random UUID4)
+            description: optional attachment description
+            filename: optional attachment filename
+            lastmod_time: optional attachment last modification time
+            byte_count: optional attachment byte count
+        """
+        return AttachDecorator(
+            ident=ident or str(uuid.uuid4()),
+            description=description,
+            filename=filename,
+            mime_type="text/string",
+            lastmod_time=lastmod_time,
+            byte_count=byte_count,
+            data=AttachDecoratorData(base64_=bytes_to_b64(content.encode())),
+        )
 
     @classmethod
     def data_base64(

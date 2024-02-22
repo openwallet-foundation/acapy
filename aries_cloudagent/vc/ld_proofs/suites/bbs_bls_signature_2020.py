@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 from pytz import utc
-from typing import List, Union
+from typing import List, Optional, Union
 
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 
@@ -24,8 +24,8 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         self,
         *,
         key_pair: KeyPair,
-        proof: dict = None,
-        verification_method: str = None,
+        proof: Optional[dict] = None,
+        verification_method: Optional[str] = None,
         date: Union[datetime, None] = None,
     ):
         """Create new BbsBlsSignature2020 instance.
@@ -39,7 +39,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
             date (datetime, optional): Signing date to use. Defaults to now
 
         """
-        super().__init__(signature_type=BbsBlsSignature2020.signature_type, proof=proof)
+        super().__init__(proof=proof)
         self.key_pair = key_pair
         self.verification_method = verification_method
         self.date = date
@@ -63,7 +63,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
             date = self.date or datetime.now(timezone.utc)
             if not date.tzinfo:
                 date = utc.localize(date)
-            proof["created"] = date.isoformat()
+            proof["created"] = date.isoformat(timespec="seconds")
 
         # Allow purpose to update the proof; the `proof` is in the
         # SECURITY_CONTEXT_URL `@context` -- therefore the `purpose` must

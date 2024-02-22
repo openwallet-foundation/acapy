@@ -407,10 +407,8 @@ async def register_ledger_nym(request: web.BaseRequest):
                         if endorser_write_txn
                         else None
                     ),
-                    endorser_write_txn=endorser_write_txn,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
                 txn = transaction.serialize()
             except (StorageError, TransactionManagerError) as err:

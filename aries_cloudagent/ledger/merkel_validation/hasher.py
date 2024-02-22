@@ -1,4 +1,5 @@
 """Merkle tree hasher for leaf and children nodes."""
+
 import hashlib
 
 from binascii import hexlify, unhexlify

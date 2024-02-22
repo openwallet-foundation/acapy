@@ -90,21 +90,35 @@ You can now access the agent Admin APIs via Swagger at:
 - acme: [http://localhost:9013/api/doc#](http://localhost:9013/api/doc#)
 - multi: [http://localhost:9014/api/doc#](http://localhost:9014/api/doc#)
 
-## Scripts
+## Examples
 
 While having the Swagger Admin API is excellent, you may need to do something more complex than a single API call. You may need to see how agents with varying capabilities interact or validate that single-tenant and multi-tenant work the same. Jumping around from multiple browser tabs and cutting and pasting ids and JSON blocks can quickly grow tiresome.
 
-A few Python (3.9) [scripts](./scripts) are provided as examples of what you may do once your agents are up and running.
+A [examples](./examples) are provided to illustrate communication between agents. The examples are pytests that are run in another container. Running the examples/tests requires that the playground is up and running locally (it uses the playground network and agents).
+
+In a second terminal:
 
 ```shell
-cd scripts
-pip install -r requirements.txt
-python ping_agents.py
+cd examples
+docker compose build
+docker compose run tests -s
+- or -
+docker compose up
 ```
 
-The [`ping_agents`](./scripts/ping_agents.py) script is a trivial example using the ACA-Py API to create tenants in the multi-agent instance and interact between the agents. We create and receive invitations and ping each other.
+Currently, we show how to connect two agents with each other and send pings back and forth. This includes adding a tenant to the multi-tenanted instance and interacting with that tenant.
 
-The [`mediator_ping_agents`](./scripts/mediator_ping_agents) script requires that you have a mediator service running and have the mediator's invitation URL. See [Aries Mediator Service](https://github.com/hyperledger/aries-mediator-service) for standing up a local instance and how to find the invitation URL. In this script, each agent requests mediation and we can see the mediator forwarding messages between the agents.
+A more involved test requires that you have a mediator service running and have the mediator's invitation URL. See [Aries Mediator Service](https://github.com/hyperledger/aries-mediator-service) for standing up a local instance and how to find the invitation URL. In this script, each agent requests mediation and we can see the mediator forwarding messages between the agents.
+
+Assuming you have stood up both the mediator service and the playground, and have copied the mediator's invitation url...
+
+```shell
+cd examples
+docker compose build
+docker compose run  -e MEDIATOR_INVITATION_URL=<mediator url> tests -s
+- or -
+MEDIATOR_INVITATION_URL=<mediator url> docker compose up
+```
 
 ## Run without NGrok
 

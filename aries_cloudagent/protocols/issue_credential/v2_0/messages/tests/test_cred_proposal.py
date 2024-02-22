@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
@@ -25,7 +25,7 @@ TEST_INDY_FILTER = {
 }
 
 
-class TestV20CredProposal(AsyncTestCase):
+class TestV20CredProposal(IsolatedAsyncioTestCase):
     """Credential proposal tests."""
 
     async def test_init(self):
@@ -234,7 +234,7 @@ class TestV20CredProposal(AsyncTestCase):
         }
 
 
-class TestV20CredProposalSchema(AsyncTestCase):
+class TestV20CredProposalSchema(IsolatedAsyncioTestCase):
     """Test credential proposal schema."""
 
     async def test_make_model(self):

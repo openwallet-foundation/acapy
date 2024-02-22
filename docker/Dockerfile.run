@@ -1,20 +1,25 @@
+ARG python_version=3.9.16
 FROM python:3.9-slim-bullseye
 
-ENV ENABLE_PTVSD 0
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    libsodium23 git curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
 
 # For consistency with base images, include curl for healthchecks
 RUN apt-get update && apt-get install -y curl && apt-get clean
 
 RUN pip install --no-cache-dir poetry
 
-ADD . .
+RUN mkdir -p aries_cloudagent && touch aries_cloudagent/__init__.py
+ADD pyproject.toml poetry.lock README.md ./
+RUN mkdir -p log && chmod -R ug+rw log
 
 RUN poetry install -E "askar bbs"
 
-RUN mkdir -p aries_cloudagent && touch aries_cloudagent/__init__.py
-ADD aries_cloudagent/version.py aries_cloudagent/version.py
-
-RUN mkdir -p logs && chmod -R ug+rw logs
-ADD aries_cloudagent ./aries_cloudagent
+ADD . .
 
 ENTRYPOINT ["/bin/bash", "-c", "poetry run aca-py \"$@\"", "--"]

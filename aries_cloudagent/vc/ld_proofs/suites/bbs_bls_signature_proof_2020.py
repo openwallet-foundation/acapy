@@ -51,7 +51,6 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
 
         """
         super().__init__(
-            signature_type=BbsBlsSignatureProof2020.signature_type,
             supported_derive_proof_types=(
                 BbsBlsSignatureProof2020.supported_derive_proof_types
             ),

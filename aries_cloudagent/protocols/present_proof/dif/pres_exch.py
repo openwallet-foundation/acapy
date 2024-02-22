@@ -1,5 +1,6 @@
 """Schemas for dif presentation exchange attachment."""
-from typing import Mapping, Sequence, Union
+
+from typing import Mapping, Optional, Sequence
 
 from marshmallow import (
     EXCLUDE,
@@ -12,13 +13,11 @@ from marshmallow import (
 )
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
-from ....messaging.valid import (
-    UUID4_EXAMPLE,
-    UUID4_VALIDATE,
-    StrOrDictField,
-    StrOrNumberField,
+from ....messaging.valid import StrOrNumberField, UUID4_EXAMPLE, UUID4_VALIDATE
+from ....vc.vc_ld.models.presentation import (
+    VerifiablePresentation,
+    VerifiablePresentationSchema,
 )
-from ....vc.vc_ld import LinkedDataProofSchema
 
 
 class ClaimFormat(BaseModel):
@@ -840,60 +839,34 @@ class PresentationSubmissionSchema(BaseModelSchema):
     )
 
 
-class VerifiablePresentation(BaseModel):
+class VPWithSubmission(VerifiablePresentation):
     """Single VerifiablePresentation object."""
 
     class Meta:
         """VerifiablePresentation metadata."""
 
-        schema_class = "VerifiablePresentationSchema"
+        schema_class = "VPWithSubmissionSchema"
 
     def __init__(
         self,
         *,
-        id: str = None,
-        contexts: Sequence[Union[str, dict]] = None,
-        types: Sequence[str] = None,
-        credentials: Sequence[dict] = None,
-        proof: Sequence[dict] = None,
-        presentation_submission: PresentationSubmission = None,
+        presentation_submission: Optional[PresentationSubmission] = None,
+        **kwargs,
     ):
         """Initialize VerifiablePresentation."""
-        self.id = id
-        self.contexts = contexts
-        self.types = types
-        self.credentials = credentials
-        self.proof = proof
+        super().__init__(**kwargs)
         self.presentation_submission = presentation_submission
 
 
-class VerifiablePresentationSchema(BaseModelSchema):
+class VPWithSubmissionSchema(VerifiablePresentationSchema):
     """Single Verifiable Presentation Schema."""
 
     class Meta:
         """VerifiablePresentationSchema metadata."""
 
-        model_class = VerifiablePresentation
+        model_class = VPWithSubmission
         unknown = INCLUDE
 
-    id = fields.Str(
-        required=False,
-        validate=UUID4_VALIDATE,
-        metadata={"description": "ID", "example": UUID4_EXAMPLE},
-    )
-    contexts = fields.List(StrOrDictField(), data_key="@context")
-    types = fields.List(
-        fields.Str(required=False, metadata={"description": "Types"}), data_key="type"
-    )
-    credentials = fields.List(
-        fields.Dict(required=False, metadata={"description": "Credentials"}),
-        data_key="verifiableCredential",
-    )
-    proof = fields.Nested(
-        LinkedDataProofSchema(),
-        required=True,
-        metadata={"description": "The proof of the credential"},
-    )
     presentation_submission = fields.Nested(PresentationSubmissionSchema)
 
 

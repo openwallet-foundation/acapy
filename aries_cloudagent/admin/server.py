@@ -22,6 +22,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
+from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import Profile
@@ -70,7 +71,9 @@ class AdminModulesSchema(OpenAPISchema):
 class AdminConfigSchema(OpenAPISchema):
     """Schema for the config endpoint."""
 
-    config = fields.Dict(metadata={"description": "Configuration settings"})
+    config = fields.Dict(
+        required=True, metadata={"description": "Configuration settings"}
+    )
 
 
 class AdminStatusSchema(OpenAPISchema):
@@ -296,7 +299,7 @@ class AdminServer(BaseAdminServer):
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        middlewares = [ready_middleware, debug_middleware, validation_middleware]
+        middlewares = [ready_middleware, debug_middleware]
 
         # admin-token and admin-token are mutually exclusive and required.
         # This should be enforced during parameter parsing but to be sure,
@@ -407,6 +410,8 @@ class AdminServer(BaseAdminServer):
                     ) = self.multitenant_manager.get_wallet_details_from_token(
                         token=token
                     )
+                    wallet_id = profile.settings.get("wallet.id")
+                    context_wallet_id.set(wallet_id)
                     meta_data = {
                         "wallet_id": walletid,
                         "wallet_key": walletkey,
@@ -447,6 +452,9 @@ class AdminServer(BaseAdminServer):
             return await handler(request)
 
         middlewares.append(setup_context)
+
+        # Register validation_middleware last avoiding unauthorized validations
+        middlewares.append(validation_middleware)
 
         app = web.Application(
             middlewares=middlewares,

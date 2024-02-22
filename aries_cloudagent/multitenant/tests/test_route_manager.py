@@ -1,4 +1,4 @@
-from asynctest import mock
+from aries_cloudagent.tests import mock
 import pytest
 
 from ...core.in_memory import InMemoryProfile
@@ -18,6 +18,8 @@ TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_ROUTE_RECORD_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
+TEST_ROUTE_VERKEY_REF = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya#z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
+TEST_ROUTE_VERKEY_REF2 = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhyz#z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhyz"
 
 
 @pytest.fixture
@@ -292,12 +294,10 @@ async def test_routing_info_with_mediator(
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id",
         connection_id="test-mediator-conn-id",
-        routing_keys=["test-key-0", "test-key-1"],
+        routing_keys=[TEST_ROUTE_VERKEY_REF],
         endpoint="http://mediator.example.com",
     )
-    keys, endpoint = await route_manager.routing_info(
-        sub_profile, "http://example.com", mediation_record
-    )
+    keys, endpoint = await route_manager.routing_info(sub_profile, mediation_record)
     assert keys == mediation_record.routing_keys
     assert endpoint == mediation_record.endpoint
 
@@ -307,11 +307,9 @@ async def test_routing_info_no_mediator(
     sub_profile: Profile,
     route_manager: MultitenantRouteManager,
 ):
-    keys, endpoint = await route_manager.routing_info(
-        sub_profile, "http://example.com", None
-    )
-    assert keys == []
-    assert endpoint == "http://example.com"
+    keys, endpoint = await route_manager.routing_info(sub_profile, None)
+    assert keys is None
+    assert endpoint is None
 
 
 @pytest.mark.asyncio
@@ -322,7 +320,7 @@ async def test_routing_info_with_base_mediator(
     base_mediation_record = MediationRecord(
         mediation_id="test-base-mediation-id",
         connection_id="test-base-mediator-conn-id",
-        routing_keys=["test-key-0", "test-key-1"],
+        routing_keys=[TEST_ROUTE_VERKEY_REF],
         endpoint="http://base.mediator.example.com",
     )
 
@@ -331,9 +329,7 @@ async def test_routing_info_with_base_mediator(
         "get_base_wallet_mediator",
         mock.CoroutineMock(return_value=base_mediation_record),
     ):
-        keys, endpoint = await route_manager.routing_info(
-            sub_profile, "http://example.com", None
-        )
+        keys, endpoint = await route_manager.routing_info(sub_profile, None)
     assert keys == base_mediation_record.routing_keys
     assert endpoint == base_mediation_record.endpoint
 
@@ -346,13 +342,13 @@ async def test_routing_info_with_base_mediator_and_sub_mediator(
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id",
         connection_id="test-mediator-conn-id",
-        routing_keys=["test-key-0", "test-key-1"],
+        routing_keys=[TEST_ROUTE_VERKEY_REF2],
         endpoint="http://mediator.example.com",
     )
     base_mediation_record = MediationRecord(
         mediation_id="test-base-mediation-id",
         connection_id="test-base-mediator-conn-id",
-        routing_keys=["test-base-key-0", "test-base-key-1"],
+        routing_keys=[TEST_ROUTE_VERKEY_REF],
         endpoint="http://base.mediator.example.com",
     )
 
@@ -361,9 +357,7 @@ async def test_routing_info_with_base_mediator_and_sub_mediator(
         "get_base_wallet_mediator",
         mock.CoroutineMock(return_value=base_mediation_record),
     ):
-        keys, endpoint = await route_manager.routing_info(
-            sub_profile, "http://example.com", mediation_record
-        )
+        keys, endpoint = await route_manager.routing_info(sub_profile, mediation_record)
     assert keys == [*base_mediation_record.routing_keys, *mediation_record.routing_keys]
     assert endpoint == mediation_record.endpoint
 

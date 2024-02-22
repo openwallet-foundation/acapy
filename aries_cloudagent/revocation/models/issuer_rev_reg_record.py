@@ -1,6 +1,7 @@
 """Issuer revocation registry storage handling."""
 
 import json
+import importlib
 import logging
 import uuid
 from functools import total_ordering
@@ -13,6 +14,10 @@ from urllib.parse import urlparse
 from marshmallow import fields, validate
 
 from ...core.profile import Profile, ProfileSession
+from ...indy.credx.issuer import (
+    CATEGORY_CRED_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
+)
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.revocation import (
     IndyRevRegDef,
@@ -325,15 +330,15 @@ class IssuerRevRegRecord(BaseRecord):
                     #   Ledger rejected transaction request: client request invalid:
                     #   InvalidClientRequest(...)
                     # In this scenario we try to post a correction
-                    LOGGER.warn("Retry ledger update/fix due to error")
-                    LOGGER.warn(err)
+                    LOGGER.warning("Retry ledger update/fix due to error")
+                    LOGGER.warning(err)
                     (_, _, res) = await self.fix_ledger_entry(
                         profile,
                         True,
                         ledger.pool.genesis_txns,
                     )
                     rev_entry_res = {"result": res}
-                    LOGGER.warn("Ledger update/fix applied")
+                    LOGGER.warning("Ledger update/fix applied")
                 elif "InvalidClientTaaAcceptanceError" in err.roll_up:
                     # if no write access (with "InvalidClientTaaAcceptanceError")
                     # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
@@ -379,41 +384,59 @@ class IssuerRevRegRecord(BaseRecord):
                 session, rev_reg_id=self.revoc_reg_id
             )
 
-            revoked_ids = []
-            for rec in recs:
-                if rec.state == IssuerCredRevRecord.STATE_REVOKED:
-                    revoked_ids.append(int(rec.cred_rev_id))
-                    if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
-                        # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
-                        rec_count += 1
+        revoked_ids = []
+        for rec in recs:
+            if rec.state == IssuerCredRevRecord.STATE_REVOKED:
+                revoked_ids.append(int(rec.cred_rev_id))
+                if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
+                    # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
+                    rec_count += 1
 
-            LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
-            LOGGER.debug(
-                ">>> rev_reg_record.revoc_reg_entry.value: %s",
-                self.revoc_reg_entry.value,
-            )
-            LOGGER.debug(
-                '>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value")
-            )
+        LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
+        LOGGER.debug(
+            ">>> rev_reg_record.revoc_reg_entry.value: %s",
+            self.revoc_reg_entry.value,
+        )
+        LOGGER.debug('>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value"))
 
-            # if we had any revocation discrepencies, check the accumulator value
-            if rec_count > 0:
-                if (self.revoc_reg_entry.value and rev_reg_delta.get("value")) and not (
-                    self.revoc_reg_entry.value.accum == rev_reg_delta["value"]["accum"]
-                ):
-                    # self.revoc_reg_entry = rev_reg_delta["value"]
-                    # await self.save(session)
-                    accum_count += 1
-
-                calculated_txn = await generate_ledger_rrrecovery_txn(
-                    genesis_transactions,
-                    self.revoc_reg_id,
-                    revoked_ids,
+        # if we had any revocation discrepencies, check the accumulator value
+        if rec_count > 0:
+            if (self.revoc_reg_entry.value and rev_reg_delta.get("value")) and not (
+                self.revoc_reg_entry.value.accum == rev_reg_delta["value"]["accum"]
+            ):
+                # self.revoc_reg_entry = rev_reg_delta["value"]
+                # await self.save(session)
+                accum_count += 1
+            async with profile.session() as session:
+                issuer_rev_reg_record = (
+                    await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
+                        session, self.revoc_reg_id
+                    )
                 )
-                recovery_txn = json.loads(calculated_txn.to_json())
+                cred_def_id = issuer_rev_reg_record.cred_def_id
+                _cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
+                _rev_reg_def_private = await session.handle.fetch(
+                    CATEGORY_REV_REG_DEF_PRIVATE, self.revoc_reg_id
+                )
+            credx_module = importlib.import_module("indy_credx")
+            cred_defn = credx_module.CredentialDefinition.load(_cred_def.value_json)
+            rev_reg_defn_private = (
+                credx_module.RevocationRegistryDefinitionPrivate.load(
+                    _rev_reg_def_private.value_json
+                )
+            )
+            calculated_txn = await generate_ledger_rrrecovery_txn(
+                genesis_transactions,
+                self.revoc_reg_id,
+                revoked_ids,
+                cred_defn,
+                rev_reg_defn_private,
+            )
+            recovery_txn = json.loads(calculated_txn.to_json())
 
-                LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
-                if apply_ledger_update:
+            LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
+            if apply_ledger_update:
+                async with profile.session() as session:
                     ledger = session.inject_or(BaseLedger)
                     if not ledger:
                         reason = "No ledger available"
@@ -426,7 +449,7 @@ class IssuerRevRegRecord(BaseRecord):
                             self.revoc_reg_id, "CL_ACCUM", recovery_txn
                         )
 
-                    applied_txn = ledger_response["result"]
+                applied_txn = ledger_response["result"]
 
         return (rev_reg_delta, recovery_txn, applied_txn)
 

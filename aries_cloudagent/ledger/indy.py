@@ -8,7 +8,7 @@ from datetime import date, datetime
 from io import StringIO
 from os import path
 from time import time
-from typing import TYPE_CHECKING, List, Tuple, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import indy.ledger
 import indy.pool
@@ -483,6 +483,26 @@ class IndySdkLedger(BaseLedger):
 
         return request_json
 
+    async def _create_revoc_reg_def_request(
+        self,
+        public_info: DIDInfo,
+        revoc_reg_def_json: str,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ):
+        """Create the ledger request for publishing a revocation registry definition."""
+        with IndyErrorHandler("Exception building revoc reg def request", LedgerError):
+            request_json = await indy.ledger.build_revoc_reg_def_request(
+                public_info.did, revoc_reg_def_json
+            )
+
+        if endorser_did and not write_ledger:
+            request_json = await indy.ledger.append_request_endorser(
+                request_json, endorser_did
+            )
+
+        return request_json
+
     async def get_schema(self, schema_id: str) -> dict:
         """Get a schema from the cache if available, otherwise fetch from the ledger.
 
@@ -766,7 +786,8 @@ class IndySdkLedger(BaseLedger):
         if exist_endpoint_of_type != endpoint:
             if await self.is_ledger_read_only():
                 raise LedgerError(
-                    "Error cannot update endpoint when ledger is in read only mode"
+                    "Error cannot update endpoint when ledger is in read only mode, "
+                    "or TAA is required and not accepted"
                 )
 
             nym = self.did_to_nym(did)
@@ -817,7 +838,8 @@ class IndySdkLedger(BaseLedger):
         """
         if await self.is_ledger_read_only():
             raise LedgerError(
-                "Error cannot register nym when ledger is in read only mode"
+                "Error cannot register nym when ledger is in read only mode, "
+                "or TAA is required and not accepted"
             )
 
         public_info = await self.get_wallet_public_did()
@@ -981,7 +1003,11 @@ class IndySdkLedger(BaseLedger):
 
         Anything more accurate is a privacy concern.
         """
-        return int(datetime.combine(date.today(), datetime.min.time()).timestamp())
+        return int(
+            datetime.combine(
+                date.today(), datetime.min.time(), datetime.timezone.utc
+            ).timestamp()
+        )
 
     async def accept_txn_author_agreement(
         self, taa_record: dict, mechanism: str, accept_time: int = None
@@ -1145,20 +1171,54 @@ class IndySdkLedger(BaseLedger):
             raise LedgerTransactionError(
                 "No issuer DID found for revocation registry definition"
             )
-        with IndyErrorHandler("Exception building rev reg def", LedgerError):
-            request_json = await indy.ledger.build_revoc_reg_def_request(
-                did_info.did, json.dumps(revoc_reg_def)
+
+        if self.profile.context.settings.get("wallet.type") == "askar-anoncreds":
+            from aries_cloudagent.anoncreds.default.legacy_indy.registry import (
+                LegacyIndyRegistry,
             )
 
-        if endorser_did and not write_ledger:
-            request_json = await indy.ledger.append_request_endorser(
-                request_json, endorser_did
+            rev_reg_def_req = await self._create_revoc_reg_def_request(
+                did_info,
+                json.dumps(revoc_reg_def),
+                write_ledger=write_ledger,
+                endorser_did=endorser_did,
             )
-        resp = await self._submit(
-            request_json, True, sign_did=did_info, write_ledger=write_ledger
-        )
+            legacy_indy_registry = LegacyIndyRegistry()
 
-        return {"result": resp}
+            resp = await legacy_indy_registry.txn_submit(
+                self.profile,
+                rev_reg_def_req,
+                sign=True,
+                sign_did=did_info,
+                write_ledger=write_ledger,
+            )
+
+            if not write_ledger:
+                return revoc_reg_def["id"], {"signed_txn": resp}
+
+            try:
+                # parse sequence number out of response
+                seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
+                return seq_no
+            except KeyError as err:
+                raise LedgerError(
+                    "Failed to parse sequence number from ledger response"
+                ) from err
+        else:
+            with IndyErrorHandler("Exception building rev reg def", LedgerError):
+                request_json = await indy.ledger.build_revoc_reg_def_request(
+                    did_info.did, json.dumps(revoc_reg_def)
+                )
+
+            if endorser_did and not write_ledger:
+                request_json = await indy.ledger.append_request_endorser(
+                    request_json, endorser_did
+                )
+            resp = await self._submit(
+                request_json, True, sign_did=did_info, write_ledger=write_ledger
+            )
+
+            return {"result": resp}
 
     async def send_revoc_reg_entry(
         self,
@@ -1180,17 +1240,54 @@ class IndySdkLedger(BaseLedger):
             raise LedgerTransactionError(
                 "No issuer DID found for revocation registry entry"
             )
-        with IndyErrorHandler("Exception building rev reg entry", LedgerError):
-            request_json = await indy.ledger.build_revoc_reg_entry_request(
-                did_info.did, revoc_reg_id, revoc_def_type, json.dumps(revoc_reg_entry)
+
+        if self.profile.context.settings.get("wallet.type") == "askar-anoncreds":
+            from aries_cloudagent.anoncreds.default.legacy_indy.registry import (
+                LegacyIndyRegistry,
             )
 
-        if endorser_did and not write_ledger:
-            request_json = await indy.ledger.append_request_endorser(
-                request_json, endorser_did
+            rev_reg_def_entry_req = await self._create_revoc_reg_def_request(
+                did_info,
+                json.dumps(revoc_reg_entry),
+                write_ledger=write_ledger,
+                endorser_did=endorser_did,
             )
-        resp = await self._submit(
-            request_json, True, sign_did=did_info, write_ledger=write_ledger
-        )
+            legacy_indy_registry = LegacyIndyRegistry()
 
-        return {"result": resp}
+            resp = await legacy_indy_registry.txn_submit(
+                self.profile,
+                rev_reg_def_entry_req,
+                sign=True,
+                sign_did=did_info,
+                write_ledger=write_ledger,
+            )
+
+            if not write_ledger:
+                return rev_reg_def_entry_req["id"], {"signed_txn": resp}
+
+            try:
+                # parse sequence number out of response
+                seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
+                return seq_no
+            except KeyError as err:
+                raise LedgerError(
+                    "Failed to parse sequence number from ledger response"
+                ) from err
+        else:
+            with IndyErrorHandler("Exception building rev reg entry", LedgerError):
+                request_json = await indy.ledger.build_revoc_reg_entry_request(
+                    did_info.did,
+                    revoc_reg_id,
+                    revoc_def_type,
+                    json.dumps(revoc_reg_entry),
+                )
+
+            if endorser_did and not write_ledger:
+                request_json = await indy.ledger.append_request_endorser(
+                    request_json, endorser_did
+                )
+
+            resp = await self._submit(
+                request_json, True, sign_did=did_info, write_ledger=write_ledger
+            )
+            return {"result": resp}

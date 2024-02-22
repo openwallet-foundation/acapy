@@ -1,5 +1,5 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from unittest import mock
 
 from .....core.event_bus import EventBus, MockEventBus
 from .....core.in_memory import InMemoryProfile
@@ -8,8 +8,8 @@ from .....messaging.request_context import RequestContext
 from .. import driver_service as test_module
 
 
-class TestActionMenuService(AsyncTestCase):
-    async def setUp(self):
+class TestActionMenuService(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.context = RequestContext(self.session.profile)
 
@@ -21,7 +21,7 @@ class TestActionMenuService(AsyncTestCase):
             self.context
         )
 
-        connection = async_mock.MagicMock()
+        connection = mock.MagicMock()
         connection.connection_id = "connid"
         thread_id = "thid"
 
@@ -47,7 +47,7 @@ class TestActionMenuService(AsyncTestCase):
 
         action_name = "action"
         action_params = {"a": 1, "b": 2}
-        connection = async_mock.MagicMock()
+        connection = mock.MagicMock()
         connection.connection_id = "connid"
         thread_id = "thid"
 

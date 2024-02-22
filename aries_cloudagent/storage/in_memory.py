@@ -255,6 +255,7 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
         self.page_size = page_size or DEFAULT_PAGE_SIZE
         self.tag_query = tag_query
         self.type_filter = type_filter
+        self._done = False
 
     async def fetch(self, max_count: int = None) -> Sequence[StorageRecord]:
         """Fetch the next list of results from the store.
@@ -270,7 +271,7 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
             StorageSearchError: If the search query has not been opened
 
         """
-        if self._cache is None:
+        if self._cache is None and self._done:
             raise StorageSearchError("Search query is complete")
 
         ret = []
@@ -291,9 +292,11 @@ class InMemoryStorageSearch(BaseStorageSearchSession):
 
         if not ret:
             self._cache = None
+            self._done = True
 
         return ret
 
     async def close(self):
         """Dispose of the search query."""
         self._cache = None
+        self._done = True

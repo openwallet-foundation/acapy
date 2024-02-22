@@ -81,11 +81,11 @@ class BaseRecord(BaseModel):
 
     def __init__(
         self,
-        id: str = None,
-        state: str = None,
+        id: Optional[str] = None,
+        state: Optional[str] = None,
         *,
-        created_at: Union[str, datetime] = None,
-        updated_at: Union[str, datetime] = None,
+        created_at: Union[str, datetime, None] = None,
+        updated_at: Union[str, datetime, None] = None,
         new_with_id: bool = False,
     ):
         """Initialize a new BaseRecord."""
@@ -430,7 +430,7 @@ class BaseRecord(BaseModel):
         if not payload:
             payload = self.serialize()
 
-        await session.profile.notify(topic, payload)
+        await session.emit_event(topic, payload)
 
     @classmethod
     def log_state(
@@ -506,8 +506,8 @@ class BaseExchangeRecord(BaseRecord):
 
     def __init__(
         self,
-        id: str = None,
-        state: str = None,
+        id: Optional[str] = None,
+        state: Optional[str] = None,
         *,
         trace: bool = False,
         **kwargs,

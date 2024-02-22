@@ -1,5 +1,7 @@
 """Handle transaction information interface."""
 
+from typing import Optional
+
 from marshmallow import fields
 
 from .....core.profile import ProfileSession
@@ -29,11 +31,11 @@ class TransactionRecord(BaseExchangeRecord):
     STATE_INIT = "init"
     RECORD_TOPIC = "endorse_transaction"
 
-    SIGNATURE_REQUEST = "http://didcomm.org/sign-attachment/%VER/signature-request"
+    SIGNATURE_REQUEST = "https://didcomm.org/sign-attachment/1.0/signature-request"
 
-    SIGNATURE_RESPONSE = "http://didcomm.org/sign-attachment/%VER/signature-response"
+    SIGNATURE_RESPONSE = "https://didcomm.org/sign-attachment/1.0/signature-response"
 
-    SIGNATURE_TYPE = "<requested signature type>"
+    SIGNATURE_TYPE = "default"
 
     SIGNATURE_CONTEXT = "did:sov"
 
@@ -72,7 +74,7 @@ class TransactionRecord(BaseExchangeRecord):
         connection_id: str = None,
         state: str = None,
         endorser_write_txn: bool = None,
-        meta_data: dict = {"context": {}, "processing": {}},
+        meta_data: Optional[dict] = None,
         **kwargs,
     ):
         """Initialize a new TransactionRecord."""
@@ -88,7 +90,7 @@ class TransactionRecord(BaseExchangeRecord):
         self.thread_id = thread_id
         self.connection_id = connection_id
         self.endorser_write_txn = endorser_write_txn
-        self.meta_data = meta_data
+        self.meta_data = meta_data or {"context": {}, "processing": {}}
 
     @property
     def transaction_id(self) -> str:
@@ -244,8 +246,9 @@ class TransactionRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": (
-                "If True, Endorser will write the transaction after endorsing it"
+                "Request Endorser to write the ledger transaction, "
+                "this parameter is deprecated and no longer supported."
             ),
-            "example": True,
+            "example": False,
         },
     )

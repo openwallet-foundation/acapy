@@ -5,7 +5,7 @@ retrieving did's from different sources provided by the method type.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import chain
 import logging
 from typing import List, Optional, Sequence, Text, Tuple, Union
@@ -68,6 +68,7 @@ class DIDResolver:
                     ),
                     timeout if timeout is not None else self.DEFAULT_TIMEOUT,
                 )
+                LOGGER.debug("Resolved DID %s with %s: %s", did, resolver, document)
                 return resolver, document
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)
@@ -90,11 +91,11 @@ class DIDResolver:
         self, profile: Profile, did: Union[str, DID], *, timeout: Optional[int] = None
     ) -> ResolutionResult:
         """Resolve a DID and return the ResolutionResult."""
-        resolution_start_time = datetime.utcnow()
+        resolution_start_time = datetime.now(tz=timezone.utc)
 
         resolver, doc = await self._resolve(profile, did, timeout=timeout)
 
-        time_now = datetime.utcnow()
+        time_now = datetime.now(tz=timezone.utc)
         duration = int((time_now - resolution_start_time).total_seconds() * 1000)
         retrieved_time = time_now.strftime("%Y-%m-%dT%H:%M:%SZ")
         resolver_metadata = ResolutionMetadata(
@@ -122,7 +123,7 @@ class DIDResolver:
         )
         resolvers = list(chain(native_resolvers, non_native_resolvers))
         if not resolvers:
-            raise DIDMethodNotSupported(f'No resolver supprting DID "{did}" loaded')
+            raise DIDMethodNotSupported(f'No resolver supporting DID "{did}" loaded')
         return resolvers
 
     async def dereference(

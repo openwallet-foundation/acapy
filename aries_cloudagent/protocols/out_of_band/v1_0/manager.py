@@ -254,9 +254,11 @@ class OutOfBandManager(BaseConnectionManager):
                     invitation_mode=invitation_mode,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                     state=ConnRecord.State.INVITATION.rfc23,
-                    accept=ConnRecord.ACCEPT_AUTO
-                    if auto_accept
-                    else ConnRecord.ACCEPT_MANUAL,
+                    accept=(
+                        ConnRecord.ACCEPT_AUTO
+                        if auto_accept
+                        else ConnRecord.ACCEPT_MANUAL
+                    ),
                     alias=alias,
                     connection_protocol=connection_protocol,
                 )
@@ -305,9 +307,11 @@ class OutOfBandManager(BaseConnectionManager):
                     invitation_key=connection_key.verkey,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                     state=ConnRecord.State.INVITATION.rfc23,
-                    accept=ConnRecord.ACCEPT_AUTO
-                    if auto_accept
-                    else ConnRecord.ACCEPT_MANUAL,
+                    accept=(
+                        ConnRecord.ACCEPT_AUTO
+                        if auto_accept
+                        else ConnRecord.ACCEPT_MANUAL
+                    ),
                     invitation_mode=invitation_mode,
                     alias=alias,
                     connection_protocol=connection_protocol,
@@ -317,9 +321,10 @@ class OutOfBandManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Created new connection")
 
-            routing_keys, my_endpoint = await self._route_manager.routing_info(
-                self.profile, my_endpoint, mediation_record
+            routing_keys, routing_endpoint = await self._route_manager.routing_info(
+                self.profile, mediation_record
             )
+            my_endpoint = routing_endpoint or my_endpoint
 
             if not conn_rec:
                 our_service = ServiceDecorator(
@@ -333,10 +338,12 @@ class OutOfBandManager(BaseConnectionManager):
                 )
 
             routing_keys = [
-                key
-                if len(key.split(":")) == 3
-                else DIDKey.from_public_key_b58(key, ED25519).did
-                for key in routing_keys
+                (
+                    key
+                    if len(key.split(":")) == 3
+                    else DIDKey.from_public_key_b58(key, ED25519).key_id
+                )
+                for key in routing_keys or []
             ]
 
             # Create connection invitation message
@@ -353,16 +360,19 @@ class OutOfBandManager(BaseConnectionManager):
                     _id="#inline",
                     _type="did-communication",
                     recipient_keys=[
-                        DIDKey.from_public_key_b58(connection_key.verkey, ED25519).did
+                        DIDKey.from_public_key_b58(
+                            connection_key.verkey, ED25519
+                        ).key_id
                     ],
                     service_endpoint=my_endpoint,
                     routing_keys=routing_keys,
                 )
             ]
-            invi_url = invi_msg.to_url()
             if goal and goal_code:
                 invi_msg.goal_code = goal_code
                 invi_msg.goal = goal
+
+            invi_url = invi_msg.to_url()
 
             # Update connection record
             if conn_rec:
@@ -814,11 +824,11 @@ class OutOfBandManager(BaseConnectionManager):
                     "id": "#inline",
                     "type": "did-communication",
                     "recipientKeys": [
-                        DIDKey.from_public_key_b58(key, ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).key_id
                         for key in recipient_keys
                     ],
                     "routingKeys": [
-                        DIDKey.from_public_key_b58(key, ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).key_id
                         for key in routing_keys
                     ],
                     "serviceEndpoint": endpoint,
@@ -942,6 +952,28 @@ class OutOfBandManager(BaseConnectionManager):
             )
             for conn_rec in conn_records:
                 await conn_rec.delete_record(session)
+
+    async def delete_conn_and_oob_record_invitation(self, invi_msg_id: str):
+        """Delete conn_record and oob_record associated with an invi_msg_id."""
+        async with self.profile.session() as session:
+            conn_records = await ConnRecord.query(
+                session,
+                tag_filter={
+                    "invitation_msg_id": invi_msg_id,
+                },
+                post_filter_positive={},
+            )
+            for conn_rec in conn_records:
+                await conn_rec.delete_record(session)
+            oob_records = await OobRecord.query(
+                session,
+                tag_filter={
+                    "invi_msg_id": invi_msg_id,
+                },
+                post_filter_positive={},
+            )
+            for oob_rec in oob_records:
+                await oob_rec.delete_record(session)
 
     async def receive_reuse_message(
         self,

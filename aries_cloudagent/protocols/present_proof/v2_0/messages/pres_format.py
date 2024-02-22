@@ -37,6 +37,16 @@ class V20PresFormat(BaseModel):
                 ".formats.indy.handler.IndyPresExchangeHandler"
             ),
         )
+        """
+        To make the switch from indy to anoncreds replace the above with the following
+        INDY = FormatSpec(
+            "hlindy/",
+            DeferLoad(
+                "aries_cloudagent.protocols.present_proof.v2_0"
+                ".formats.anoncreds.handler.AnonCredsPresExchangeHandler"
+            ),
+        )
+        """
         DIF = FormatSpec(
             "dif/",
             DeferLoad(

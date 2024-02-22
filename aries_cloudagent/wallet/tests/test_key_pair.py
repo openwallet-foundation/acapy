@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 import json
 
@@ -10,11 +10,11 @@ from ...storage.in_memory import InMemoryStorage
 from ..key_pair import KeyPairStorageManager, KEY_PAIR_STORAGE_TYPE
 
 
-class TestKeyPairStorageManager(AsyncTestCase):
+class TestKeyPairStorageManager(IsolatedAsyncioTestCase):
     test_public_key = b"somepublickeybytes"
     test_secret = b"verysecretkey"
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.store = InMemoryStorage(self.profile)
         self.key_pair_mgr = KeyPairStorageManager(self.store)

@@ -3,9 +3,10 @@
 import json
 import logging
 import uuid
-
 from asyncio import shield
 
+from ....anoncreds.issuer import AnonCredsIssuer
+from ....anoncreds.revocation import AnonCredsRevocation
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -15,17 +16,16 @@ from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import notify_cred_def_event
 from ....messaging.schemas.util import notify_schema_event
 from ....revocation.util import (
-    notify_revocation_reg_endorsed_event,
     notify_revocation_entry_endorsed_event,
+    notify_revocation_reg_endorsed_event,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import (
-    notify_endorse_did_event,
     notify_endorse_did_attrib_event,
+    notify_endorse_did_event,
 )
-
 from .messages.cancel_transaction import CancelTransaction
 from .messages.endorsed_transaction_response import EndorsedTransactionResponse
 from .messages.refused_transaction_response import RefusedTransactionResponse
@@ -114,7 +114,7 @@ class TransactionManager:
         signature: str = None,
         signed_request: dict = None,
         expires_time: str = None,
-        endorser_write_txn: bool = None,
+        endorser_write_txn: bool = False,
         author_goal_code: str = None,
         signer_goal_code: str = None,
     ):
@@ -140,12 +140,16 @@ class TransactionManager:
             "context": TransactionRecord.SIGNATURE_CONTEXT,
             "method": TransactionRecord.ADD_SIGNATURE,
             "signature_type": TransactionRecord.SIGNATURE_TYPE,
-            "signer_goal_code": signer_goal_code
-            if signer_goal_code
-            else TransactionRecord.ENDORSE_TRANSACTION,
-            "author_goal_code": author_goal_code
-            if author_goal_code
-            else TransactionRecord.WRITE_TRANSACTION,
+            "signer_goal_code": (
+                signer_goal_code
+                if signer_goal_code
+                else TransactionRecord.ENDORSE_TRANSACTION
+            ),
+            "author_goal_code": (
+                author_goal_code
+                if author_goal_code
+                else TransactionRecord.WRITE_TRANSACTION
+            ),
         }
         transaction.signature_request.clear()
         transaction.signature_request.append(signature_request)
@@ -203,8 +207,6 @@ class TransactionManager:
 
         return transaction
 
-    # todo - implementing changes for writing final transaction to the ledger
-    # (For Sign Transaction Protocol)
     async def create_endorse_response(
         self,
         transaction: TransactionRecord,
@@ -327,18 +329,11 @@ class TransactionManager:
             transaction.endorser_write_txn
             and txn_goal_code == TransactionRecord.ENDORSE_TRANSACTION
         ):
-            # running as the endorser, we've been asked to write the transaction
-            ledger_response = await self.complete_transaction(transaction, True)
-            endorsed_transaction_response = EndorsedTransactionResponse(
-                transaction_id=transaction.thread_id,
-                thread_id=transaction._id,
-                signature_response=signature_response,
-                state=TransactionRecord.STATE_TRANSACTION_ACKED,
-                endorser_did=endorser_did,
-                ledger_response=ledger_response,
+            # no longer supported - if the author asks the endorser to write
+            # the transaction, raise an error
+            raise TransactionManagerError(
+                "Operation not supported, endorser cannot write the ledger transaction"
             )
-
-            return transaction, endorsed_transaction_response
 
         endorsed_transaction_response = EndorsedTransactionResponse(
             transaction_id=transaction.thread_id,
@@ -381,14 +376,10 @@ class TransactionManager:
             await transaction.save(session, reason="Received an endorsed response")
 
         # this scenario is where the author has asked the endorser to write the ledger
+        # we are not supporting endorser ledger writes ...
         if transaction.endorser_write_txn:
-            connection_id = transaction.connection_id
-            async with self._profile.session() as session:
-                connection_record = await ConnRecord.retrieve_by_id(
-                    session, connection_id
-                )
-            await self.endorsed_txn_post_processing(
-                transaction, response.ledger_response, connection_record
+            raise TransactionManagerError(
+                "Endorser ledger writes are no longer supported"
             )
 
         return transaction
@@ -411,26 +402,45 @@ class TransactionManager:
 
         ledger_transaction = transaction.messages_attach[0]["data"]["json"]
 
-        # check if we (author) have requested the endorser to write the transaction
-        if (endorser and transaction.endorser_write_txn) or (
-            (not endorser) and (not transaction.endorser_write_txn)
-        ):
-            ledger = self._profile.inject(BaseLedger)
-            if not ledger:
-                reason = "No ledger available"
-                if not self._profile.context.settings.get_value("wallet.type"):
-                    reason += ": missing wallet-type?"
-                raise TransactionManagerError(reason)
+        # check our goal code!
+        txn_goal_code = (
+            transaction.signature_request[0]["signer_goal_code"]
+            if transaction.signature_request
+            and "signer_goal_code" in transaction.signature_request[0]
+            else TransactionRecord.ENDORSE_TRANSACTION
+        )
 
-            async with ledger:
-                try:
-                    ledger_response_json = await shield(
-                        ledger.txn_submit(
-                            ledger_transaction, sign=False, taa_accept=False
+        # if we are the author, we need to write the endorsed ledger transaction ...
+        # ... EXCEPT for DID transactions, which the endorser will write
+        if (not endorser) and (
+            txn_goal_code != TransactionRecord.WRITE_DID_TRANSACTION
+        ):
+            if (
+                self._profile.context.settings.get_value("wallet.type")
+                == "askar-anoncreds"
+            ):
+                from aries_cloudagent.anoncreds.default.legacy_indy.registry import (
+                    LegacyIndyRegistry,
+                )
+
+                legacy_indy_registry = LegacyIndyRegistry()
+                ledger_response_json = await legacy_indy_registry.txn_submit(
+                    self._profile, ledger_transaction, sign=False, taa_accept=False
+                )
+            else:
+                ledger = self.profile.inject(BaseLedger)
+                if not ledger:
+                    raise TransactionManagerError("No ledger available")
+
+                async with ledger:
+                    try:
+                        ledger_response_json = await shield(
+                            ledger.txn_submit(
+                                ledger_transaction, sign=False, taa_accept=False
+                            )
                         )
-                    )
-                except (IndyIssuerError, LedgerError) as err:
-                    raise TransactionManagerError(err.roll_up) from err
+                    except (IndyIssuerError, LedgerError) as err:
+                        raise TransactionManagerError(err.roll_up) from err
 
             ledger_response = json.loads(ledger_response_json)
 
@@ -443,9 +453,11 @@ class TransactionManager:
             await transaction.save(session, reason="Completed transaction")
 
         # this scenario is where the endorser is writing the transaction
-        # (called from self.create_endorse_response())
+        # shouldn't get to this point, but check and raise an error just in case
         if endorser and transaction.endorser_write_txn:
-            return ledger_response
+            raise TransactionManagerError(
+                "Operation not supported, endorser cannot write the ledger transaction"
+            )
 
         connection_id = transaction.connection_id
         async with self._profile.session() as session:
@@ -786,6 +798,8 @@ class TransactionManager:
             "connection_id": transaction.connection_id,
         }
 
+        is_anoncreds = self._profile.settings.get("wallet.type") == "askar-anoncreds"
+
         # write the wallet non-secrets record
         if ledger_response["result"]["txn"]["type"] == "101":
             # schema transaction
@@ -795,7 +809,13 @@ class TransactionManager:
             meta_data["context"]["public_did"] = public_did
 
             # Notify schema ledger write event
-            await notify_schema_event(self._profile, schema_id, meta_data)
+            if is_anoncreds:
+                await AnonCredsIssuer(self._profile).finish_schema(
+                    meta_data["context"]["job_id"],
+                    meta_data["context"]["schema_id"],
+                )
+            else:
+                await notify_schema_event(self._profile, schema_id, meta_data)
 
         elif ledger_response["result"]["txn"]["type"] == "102":
             # cred def transaction
@@ -814,23 +834,44 @@ class TransactionManager:
             meta_data["context"]["issuer_did"] = issuer_did
 
             # Notify event
-            await notify_cred_def_event(self._profile, cred_def_id, meta_data)
+            if is_anoncreds:
+                await AnonCredsIssuer(self._profile).finish_cred_def(
+                    meta_data["context"]["job_id"],
+                    meta_data["context"]["cred_def_id"],
+                    meta_data["context"]["options"],
+                )
+            else:
+                await notify_cred_def_event(self._profile, cred_def_id, meta_data)
 
         elif ledger_response["result"]["txn"]["type"] == "113":
             # revocation registry transaction
             rev_reg_id = ledger_response["result"]["txnMetadata"]["txnId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
-            await notify_revocation_reg_endorsed_event(
-                self._profile, rev_reg_id, meta_data
-            )
+            if is_anoncreds:
+                await AnonCredsRevocation(
+                    self._profile
+                ).finish_revocation_registry_definition(
+                    meta_data["context"]["job_id"],
+                    meta_data["context"]["rev_reg_id"],
+                    meta_data["context"]["options"],
+                )
+            else:
+                await notify_revocation_reg_endorsed_event(
+                    self._profile, rev_reg_id, meta_data
+                )
 
         elif ledger_response["result"]["txn"]["type"] == "114":
             # revocation entry transaction
             rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
-            await notify_revocation_entry_endorsed_event(
-                self._profile, rev_reg_id, meta_data
-            )
+            if is_anoncreds:
+                await AnonCredsRevocation(self._profile).finish_revocation_list(
+                    meta_data["context"]["job_id"], rev_reg_id
+                )
+            else:
+                await notify_revocation_entry_endorsed_event(
+                    self._profile, rev_reg_id, meta_data
+                )
 
         elif ledger_response["result"]["txn"]["type"] == "1":
             # write DID to ledger

@@ -1,5 +1,6 @@
 """Credential proposal message handler."""
 
+from .....anoncreds.issuer import AnonCredsIssuerError
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -68,6 +69,7 @@ class V20CredProposalHandler(BaseHandler):
                 await responder.send_reply(cred_offer_message)
             except (
                 BaseModelError,
+                AnonCredsIssuerError,
                 IndyIssuerError,
                 LedgerError,
                 StorageError,

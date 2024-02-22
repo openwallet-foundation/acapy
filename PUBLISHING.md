@@ -22,8 +22,8 @@ Once ready to do a release, create a local branch that includes the following up
   - Use a command like the following, adjusting the tag parameters as
     appropriate. `docker run -it --rm -v "$(pwd)":/usr/local/src/your-app
     githubchangeloggenerator/github-changelog-generator --user hyperledger
-    --project aries-cloudagent-python --output 0.7.4-rc0.md --since-tag 0.7.3
-    --future-release 0.7.4-rc0 --release-branch main --token <your-token>`
+    --project aries-cloudagent-python --output 0.11.0rc2.md --since-tag 0.10.4
+    --future-release 0.11.1rc2 --release-branch main --token <your-token>`
   - In the generated file, use only the PR list -- we don't include the list of
     closed issues in the Change Log.
 
@@ -72,7 +72,7 @@ s/^/- /
   merged:>2022-04-07`) and for each page, highlight, and copy the text
   of only the list of PRs on the page to use in the following step.
 - For each page, run the command
-  `sed -e :a -e '$!N;s/\n#/ #/;ta' -e 'P;D' <<EOF | sed -f changelog.sed`, 
+  `sed -e :a -e '$!N;s/\n#/ #/;ta' -e 'P;D' <<EOF | sed -f changelog.sed`,
   paste in the copied text and then type `EOF`.
   Redirect the output to a file, appending each page of output to the file.
   - The first `sed` command in the pipeline merges the PR title and PR number
@@ -91,7 +91,9 @@ Once you have the list of PRs:
 - Organize the list into suitable categories, update (if necessary) the PR description and add notes to clarify the changes. See previous release entries to understand the style -- a format that should help developers.
 - Add a narrative about the release above the PR that highlights what has gone into the release.
 
-4. Update the ReadTheDocs in the `/docs` folder by following the instructions in
+4. Check to see if there are any other PRs that should be included in the release.
+
+5. Update the ReadTheDocs in the `/docs` folder by following the instructions in
    the `docs/README.md` file. That will likely add a number of new and modified
    files to the PR. Eliminate all of the errors in the generation process,
    either by mocking external dependencies or by fixing ACA-Py code. If
@@ -99,34 +101,31 @@ Once you have the list of PRs:
    developer. Experience has demonstrated to use that documentation generation
    errors should be fixed in the code.
 
-5. Update the version number listed in
-   [pyproject.toml](pyproject.toml) and, prefixed with
-   a "v" in [open-api/openapi.json](open-api/openapi.json) and
-   [open-api/swagger.json](open-api/swagger.json) (e.g. "0.7.2" in the
-   version.py file and "v0.7.2" in the openapi.json file). The incremented
-   version number should adhere to the [Semantic Versioning
+6. Search across the repository for the previous version number and update it
+   everywhere that makes sense. The CHANGELOG.md is a likely exception, and the
+   `pyproject.toml` in the root is **MUST**. You can skip (although it won't
+   hurt) to update the files in the `open-api` folder as they will be
+   automagically updated by the next step in publishing. The incremented version
+   number **MUST** adhere to the [Semantic Versioning
    Specification](https://semver.org/#semantic-versioning-specification-semver)
    based on the changes since the last published release. For Release
-   Candidates, the form of the tag is "0.7.2-rc0".
-  
-6. An extra search of the repo for the existing tag is recommended to see if
-   there are any other instances of the tag in the repo. If any are found to be
-   required (other than in CHANGELOG.md and the examples in this file, of
-   course), finding a way to not need them is best, but if they are needed,
-   please update this document to note where the tag can be found.
+   Candidates, the form of the tag is "0.11.0rc2". As of release `0.11.0` we
+   have dropped the previously used `-` in the release candidate version string
+   to better follow the semver rules.
 
-7. Check to see if there are any other PRs that should be included in the release.
+7. Regenerate openapi.json and swagger.json by running
+   `./scripts/generate-open-api-spec`.
 
-8. Double check all of these steps above, and then submit a PR from the branch.
+8.  Double check all of these steps above, and then submit a PR from the branch.
    Add this new PR to CHANGELOG.md so that all the PRs are included.
    If there are still further changes to be merged, mark the PR as "Draft",
    repeat **ALL** of the steps again, and then mark this PR as ready and then
    wait until it is merged. It's embarrassing when you have to do a whole new
    release just because you missed something silly...I know!
 
-9. Immediately after it is merged, create a new GitHub tag representing the
+9.  Immediately after it is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
-   version in [pyproject.toml](pyproject.toml). Use
+   version in [pyproject.toml](https://github.com/hyperledger/aries-cloudagent-python/tree/main/pyproject.toml). Use
    the "Generate Release Notes" capability to get a sequential listing of the
    PRs in the release, to complement the manually curated Changelog. Verify on
    PyPi that the version is published.
@@ -140,11 +139,10 @@ Once you have the list of PRs:
    "Packages").
 
    Additional information about the container image publication process can be
-   found in the document [Container Images and Github Actions]().
+   found in the document [Container Images and Github Actions](docs/deploying/ContainerImagesAndGithubActions.md).
 
 [publish.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish.yml
 [publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
-[Container Images and Github Actions]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/ContainerImagesAndGithubActions.md
 
 11. Update the ACA-Py Read The Docs site by building the new "latest" (main
     branch) and activating and building the new release. Appropriate permissions

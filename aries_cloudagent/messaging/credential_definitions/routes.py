@@ -100,6 +100,7 @@ class CredentialDefinitionSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     credential_definition_id = fields.Str(
+        required=True,
         validate=INDY_CRED_DEF_ID_VALIDATE,
         metadata={
             "description": "Credential definition identifier",
@@ -348,7 +349,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err

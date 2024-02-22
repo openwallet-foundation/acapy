@@ -1,6 +1,7 @@
 """Test handler for keylist-update message."""
+
 import pytest
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
@@ -19,10 +20,10 @@ TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
 
-class TestKeylistUpdateHandler(AsyncTestCase):
+class TestKeylistUpdateHandler(IsolatedAsyncioTestCase):
     """Test handler for keylist-update message."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         """Setup test dependencies."""
         self.context = RequestContext.test_context()
         self.session = await self.context.session()
