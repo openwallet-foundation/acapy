@@ -5,5 +5,12 @@
     "aliases": [
       "latest"
     ]
+  },
+  {
+    "version": "docs-v0.12.0rc1",
+    "title": "docs-v0.12.0rc1",
+    "aliases": [
+      "0.12.0rc1"
+    ]
   }
 ]
