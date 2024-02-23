@@ -863,14 +863,17 @@ class TransactionManager:
         elif ledger_response["result"]["txn"]["type"] == "114":
             # revocation entry transaction
             rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
+            revoked = ledger_response["result"]["txn"]["data"]["value"].get(
+                "revoked", []
+            )
             meta_data["context"]["rev_reg_id"] = rev_reg_id
             if is_anoncreds:
                 await AnonCredsRevocation(self._profile).finish_revocation_list(
-                    meta_data["context"]["job_id"], rev_reg_id
+                    meta_data["context"]["job_id"], rev_reg_id, revoked
                 )
             else:
                 await notify_revocation_entry_endorsed_event(
-                    self._profile, rev_reg_id, meta_data
+                    self._profile, rev_reg_id, meta_data, revoked
                 )
 
         elif ledger_response["result"]["txn"]["type"] == "1":

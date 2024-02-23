@@ -1,11 +1,10 @@
 import json
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from aries_cloudagent.revocation.models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
 )
+from aries_cloudagent.tests import mock
 
 from ...connections.models.conn_record import ConnRecord
 from ...core.in_memory import InMemoryProfile
@@ -14,11 +13,8 @@ from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
 from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-
-
-from ..manager import RevocationManager, RevocationManagerError
-
 from .. import manager as test_module
+from ..manager import RevocationManager, RevocationManagerError
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"
