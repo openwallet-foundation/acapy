@@ -180,9 +180,6 @@ class RevocationManager:
                         write_ledger=write_ledger,
                         endorser_did=endorser_did,
                     )
-                    await notify_revocation_published_event(
-                        self._profile, rev_reg_id, [cred_rev_id]
-                    )
                     return rev_entry_resp
         else:
             async with self._profile.transaction() as txn:
@@ -299,9 +296,6 @@ class RevocationManager:
                         rev_entry_resp = await issuer_rr_upd.send_entry(self._profile)
                 published = sorted(crid for crid in crids if crid not in failed_crids)
                 result[issuer_rr_rec.revoc_reg_id] = published
-                await notify_revocation_published_event(
-                    self._profile, issuer_rr_rec.revoc_reg_id, published
-                )
 
         return rev_entry_resp, result
 

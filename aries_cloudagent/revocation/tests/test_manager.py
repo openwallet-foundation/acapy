@@ -83,7 +83,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             revoc.return_value.get_ledger_registry = mock.CoroutineMock(
                 return_value=mock_rev_reg
             )
-            test_module.notify_revocation_published_event = mock.CoroutineMock()
 
             await self.manager.revoke_credential_by_cred_ex_id(CRED_EX_ID, publish=True)
 
@@ -93,7 +92,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             mock_issuer_rev_reg_record.tails_local_path,
             ["2", "1"],
         )
-        assert test_module.notify_revocation_published_event.called
 
     async def test_revoke_credential_publish_endorser(self):
         conn_record = ConnRecord(
@@ -168,7 +166,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             revoc.return_value.get_ledger_registry = mock.CoroutineMock(
                 return_value=mock_rev_reg
             )
-            test_module.notify_revocation_published_event = mock.CoroutineMock()
 
             await self.manager.revoke_credential_by_cred_ex_id(
                 cred_ex_id=CRED_EX_ID,
@@ -176,8 +173,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 connection_id=conn_id,
                 write_ledger=False,
             )
-
-            assert test_module.notify_revocation_published_event.called
 
         issuer.revoke_credentials.assert_awaited_once_with(
             mock_issuer_rev_reg_record.cred_def_id,
@@ -385,7 +380,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
                 side_effect=[(json.dumps(delta), []) for delta in deltas]
             )
             self.profile.context.injector.bind_instance(IndyIssuer, issuer)
-            test_module.notify_revocation_published_event = mock.CoroutineMock()
             manager = RevocationManager(self.profile)
             _, result = await manager.publish_pending_revocations(
                 rrid2crid={REV_REG_ID: "2"}, connection_id=conn_id
@@ -393,7 +387,6 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             assert result == {REV_REG_ID: ["2"]}
             mock_issuer_rev_reg_records[0].clear_pending.assert_called_once()
             mock_issuer_rev_reg_records[1].clear_pending.assert_not_called()
-            assert test_module.notify_revocation_published_event.called
 
     async def test_publish_pending_revocations_endorser_x(self):
         deltas = [
