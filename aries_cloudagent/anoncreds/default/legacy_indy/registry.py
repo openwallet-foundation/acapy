@@ -12,6 +12,7 @@ from base58 import alphabet
 from ....anoncreds.default.legacy_indy.author import get_endorser_info
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
+from ....core.event_bus import EventBus
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import (
@@ -967,10 +968,12 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         )
 
         if write_ledger:
-            await self.notify(
+            event_bus = profile.inject(EventBus)
+            await event_bus.notify(
+                profile,
                 RevListFinishedEvent.with_payload(
                     curr_list.rev_reg_def_id, newly_revoked_indices
-                )
+                ),
             )
             return RevListResult(
                 job_id=None,
