@@ -940,7 +940,7 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
                 "txn": {
                     "type": "114",
                     "metadata": {"from": TEST_DID},
-                    "data": {"revocRegDefId": REV_REG_ID},
+                    "data": {"revocRegDefId": REV_REG_ID, "value": {"revoked": [1]}},
                 },
                 "txnMetadata": {"txnId": REV_REG_ID},
             },
