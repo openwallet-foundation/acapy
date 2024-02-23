@@ -16,7 +16,6 @@ from ..protocols.revocation_notification.v1_0.models.rev_notification_record imp
 )
 from ..revocation.util import (
     notify_pending_cleared_event,
-    notify_revocation_published_event,
 )
 from ..storage.error import StorageNotFoundError
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
@@ -129,9 +128,6 @@ class RevocationManager:
                     result.revoked,
                     options=options,
                 )
-            await notify_revocation_published_event(
-                self._profile, rev_reg_id, [cred_rev_id]
-            )
 
         else:
             await revoc.mark_pending_revocations(rev_reg_id, int(cred_rev_id))
@@ -237,9 +233,6 @@ class RevocationManager:
                     rrid, result.prev, result.curr, result.revoked, options
                 )
                 published_crids[rrid] = sorted(result.revoked)
-                await notify_revocation_published_event(
-                    self._profile, rrid, [str(crid) for crid in result.revoked]
-                )
 
         return published_crids
 
