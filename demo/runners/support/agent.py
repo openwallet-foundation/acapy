@@ -145,6 +145,8 @@ class DemoAgent:
         log_file: str = None,
         log_config: str = None,
         log_level: str = None,
+        reuse_connections: bool = False,
+        public_did_connections: bool = False,
         **params,
     ):
         self.ident = ident
@@ -179,6 +181,8 @@ class DemoAgent:
         self.log_file = log_file
         self.log_config = log_config
         self.log_level = log_level
+        self.reuse_connections = reuse_connections
+        self.public_did_connections = public_did_connections
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -1446,16 +1450,18 @@ class DemoAgent:
         use_did_exchange: bool,
         auto_accept: bool = True,
         reuse_connections: bool = False,
+        public_did_connections: bool = False,
     ):
         self.connection_id = None
         if use_did_exchange:
             # TODO can mediation be used with DID exchange connections?
             invi_params = {
                 "auto_accept": json.dumps(auto_accept),
+                "multi_use": json.dumps(reuse_connections),
             }
             payload = {
                 "handshake_protocols": ["rfc23"],
-                "use_public_did": reuse_connections,
+                "use_public_did": public_did_connections,
             }
             if self.mediation:
                 payload["mediation_id"] = self.mediator_request_id

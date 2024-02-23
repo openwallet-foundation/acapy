@@ -100,7 +100,7 @@ instruction up to the point where you are about to start the Faber and Alice age
 [Alice Faber Demo]: ./README.md
 
 1. On a command line, run Faber with these parameters: `./run_demo faber
-   --reuse-connection --events`.
+   --reuse-connection --public-did-connections --events`.
 2. On a second command line, run Alice as normal, perhaps with the `events`
    option: `./run_demo alice --events`
 3. Copy the invitation from the Faber terminal and paste it into the Alice
@@ -133,6 +133,18 @@ issuer (and uses in creating the schema and Cred Def for the demo), Faber could
 use any *resolvable* (not inline) DID, including DID Peer types 2 or 4 DIDs, as
 long as the DID is the same in every invitation. It is the fact that the DID is
 always the same that tells the invitee that they can reuse an existing connection.
+
+For example, to run faber with connection reuse using a non-public DID:
+
+```
+./run_demo faber --reuse-connection --events
+```
+
+To run faber using a `did_peer` and reusable connections:
+
+```
+DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connection --events
+```
 
 Note that the invitation does **NOT** have to be a multi-use invitation for
 reuse to be useful, as long as the other requirements (at the top of this
