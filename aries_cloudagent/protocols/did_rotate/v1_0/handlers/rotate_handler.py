@@ -3,7 +3,7 @@
 from .....messaging.base_handler import BaseHandler
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-
+from ..manager import DIDRotateManager
 from ..messages.rotate import Rotate
 
 
@@ -19,3 +19,12 @@ class RotateHandler(BaseHandler):
         """
         self._logger.debug("RotateHandler called with context %s", context)
         assert isinstance(context.message, Rotate)
+
+        connection_record = context.connection_record
+        rotate = context.message
+
+        profile = context.profile
+        did_rotate_mgr = DIDRotateManager(profile)
+
+        if record := await did_rotate_mgr.receive_rotate(connection_record, rotate):
+            await did_rotate_mgr.commit_rotate(connection_record, record)

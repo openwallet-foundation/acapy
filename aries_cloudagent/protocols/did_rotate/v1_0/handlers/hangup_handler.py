@@ -1,9 +1,9 @@
-"""Hangup handler."""
+"""Rotate hangup handler."""
 
 from .....messaging.base_handler import BaseHandler
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-
+from ..manager import DIDRotateManager
 from ..messages.hangup import Hangup
 
 
@@ -11,7 +11,7 @@ class HangupHandler(BaseHandler):
     """Message handler class for rotate message."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """Handle rotate message.
+        """Handle rotate hangup message.
 
         Args:
             context: request context
@@ -19,3 +19,11 @@ class HangupHandler(BaseHandler):
         """
         self._logger.debug("HangupHandler called with context %s", context)
         assert isinstance(context.message, Hangup)
+
+        connection_record = context.connection_record
+        hangup = context.message
+
+        profile = context.profile
+        did_rotate_mgr = DIDRotateManager(profile)
+
+        await did_rotate_mgr.receive_hangup(connection_record, hangup)
