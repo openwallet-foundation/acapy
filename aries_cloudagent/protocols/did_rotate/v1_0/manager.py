@@ -12,7 +12,7 @@ from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
 from ....resolver.base import DIDMethodNotSupported, DIDNotFound
 from ....resolver.did_resolver import DIDResolver
-from .messages import RotateProblemReport, Rotate, RotateAck
+from .messages import Hangup, Rotate, RotateAck, RotateProblemReport
 from .models import RotateRecord
 
 
@@ -62,7 +62,21 @@ class DIDRotateManager:
         """Initialize DID Rotate Manager."""
         self.profile = profile
 
-    async def rotate_my_did(self, conn: ConnRecord, new_did: str):
+    async def hangup(self, conn: ConnRecord) -> Hangup:
+        """Hangup the connection.
+
+        Args:
+            conn (ConnRecord): The connection to hangup.
+        """
+
+        hangup = Hangup()
+
+        responder = self.profile.inject(BaseResponder)
+        await responder.send(hangup, connection_id=conn.connection_id)
+
+        return hangup
+
+    async def rotate_my_did(self, conn: ConnRecord, new_did: str) -> Rotate:
         """Rotate my DID.
 
         Args:
@@ -85,22 +99,7 @@ class DIDRotateManager:
         async with self.profile.session() as session:
             await record.save(session, reason="Sent rotate message")
 
-    async def ensure_supported_did(self, did: str):
-        """Check if the DID is supported."""
-        resolver = self.profile.inject(DIDResolver)
-        conn_mgr = BaseConnectionManager(self.profile)
-        try:
-            await resolver.resolve(self.profile, did)
-        except DIDMethodNotSupported:
-            raise UnsupportedDIDMethodError(RotateProblemReport.method_unsupported(did))
-        except DIDNotFound:
-            raise UnresolvableDIDError(RotateProblemReport.unresolvable(did))
-
-        try:
-            await conn_mgr.resolve_didcomm_services(did)
-        except BaseConnectionManagerError:
-            # TODO Make this reportable?
-            raise DIDRotateManagerError("Unable to resolve DIDComm services for DID")
+        return rotate
 
     async def receive_rotate(self, conn: ConnRecord, rotate: Rotate):
         """Receive rotate message.
@@ -118,7 +117,7 @@ class DIDRotateManager:
         )
 
         try:
-            await self.ensure_supported_did(rotate.to_did)
+            await self._ensure_supported_did(rotate.to_did)
         except ReportableDIDRotateError as err:
             responder = self.profile.inject(BaseResponder)
             err.message.assign_thread_from(rotate)
@@ -213,3 +212,20 @@ class DIDRotateManager:
         record.error = problem_report.description["code"]
         async with self.profile.session() as session:
             await record.save(session, reason="Received problem report")
+
+    async def _ensure_supported_did(self, did: str):
+        """Check if the DID is supported."""
+        resolver = self.profile.inject(DIDResolver)
+        conn_mgr = BaseConnectionManager(self.profile)
+        try:
+            await resolver.resolve(self.profile, did)
+        except DIDMethodNotSupported:
+            raise UnsupportedDIDMethodError(RotateProblemReport.method_unsupported(did))
+        except DIDNotFound:
+            raise UnresolvableDIDError(RotateProblemReport.unresolvable(did))
+
+        try:
+            await conn_mgr.resolve_didcomm_services(did)
+        except BaseConnectionManagerError:
+            # TODO Make this reportable?
+            raise DIDRotateManagerError("Unable to resolve DIDComm services for DID")

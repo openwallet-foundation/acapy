@@ -3,6 +3,7 @@
 from typing import Optional
 
 from marshmallow import EXCLUDE, fields, validate
+
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
 
 
@@ -19,13 +20,18 @@ class RotateRecord(BaseRecord):
 
     RECORD_TYPE = "did_rotate"
     RECORD_ID_NAME = "record_id"
+
+    # Role values
     ROLE_ROTATING = "rotating"
     ROLE_OBSERVING = "observing"
+
+    # State values
     STATE_ROTATE_SENT = "rotate-sent"
     STATE_ROTATE_RECEIVED = "rotate-received"
     STATE_ACK_SENT = "ack-sent"
     STATE_ACK_RECEIVED = "ack-received"
     STATE_FAILED = "failed"
+
     TAG_NAMES = {"connection_id", "state", "role", "thread_id"}
 
     def __init__(
@@ -98,7 +104,9 @@ class RotateRecordSchema(BaseRecordSchema):
         metadata={
             "description": "Role in the DID rotate protocol: rotating or observing"
         },
-        validate=validate.OneOf(["rotating", "observing"]),
+        validate=validate.OneOf(
+            [RotateRecord.ROLE_ROTATING, RotateRecord.ROLE_OBSERVING]
+        ),
     )
     state = fields.Str(
         required=True,
@@ -110,11 +118,11 @@ class RotateRecordSchema(BaseRecordSchema):
         },
         validate=validate.OneOf(
             [
-                "rotate-sent",
-                "rotate-received",
-                "ack-sent",
-                "ack-received",
-                "failed",
+                RotateRecord.STATE_ROTATE_SENT,
+                RotateRecord.STATE_ROTATE_RECEIVED,
+                RotateRecord.STATE_ACK_SENT,
+                RotateRecord.STATE_ACK_RECEIVED,
+                RotateRecord.STATE_FAILED,
             ]
         ),
     )

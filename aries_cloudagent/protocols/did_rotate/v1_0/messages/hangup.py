@@ -18,10 +18,9 @@ class Hangup(AgentMessage):
         message_type = HANGUP
         schema_class = "HangupSchema"
 
-    def __init__(self, *, to_did: str, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize a Hangup message instance."""
         super().__init__(**kwargs)
-        self.to_did = to_did
 
 
 class HangupSchema(AgentMessageSchema):
