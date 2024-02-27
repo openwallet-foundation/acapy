@@ -795,14 +795,14 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ) as mock_response, mock.patch.object(
                 self.manager,
                 "verify_diddoc",
-                async_mock.CoroutineMock(return_value=DIDDoc(TestConfig.test_did)),
-            ), async_mock.patch.object(
-                self.manager, "create_did_document", async_mock.CoroutineMock()
-            ) as mock_create_did_doc, async_mock.patch.object(
+                mock.CoroutineMock(return_value=DIDDoc(TestConfig.test_did)),
+            ), mock.patch.object(
+                self.manager, "create_did_document", mock.CoroutineMock()
+            ) as mock_create_did_doc, mock.patch.object(
                 self.manager,
                 "record_keys_for_resolvable_did",
-                async_mock.CoroutineMock(),
-            ) as mock_record_keys_for_resolvable_did, async_mock.patch.object(
+                mock.CoroutineMock(),
+            ) as mock_record_keys_for_resolvable_did, mock.patch.object(
                 MediationManager, "prepare_request", autospec=True
             ) as mock_mediation_mgr_prep_req:
                 mock_create_did_doc.return_value = mock.MagicMock(
@@ -2058,19 +2058,19 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         with mock.patch.object(
             ConnRecord, "save", autospec=True
-        ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
-            DIDDoc, "deserialize", async_mock.MagicMock()
-        ) as mock_did_doc_deser, async_mock.patch.object(
-            self.manager, "record_keys_for_resolvable_did", async_mock.CoroutineMock()
+        ) as mock_conn_rec_save, mock.patch.object(
+            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_id, mock.patch.object(
+            DIDDoc, "deserialize", mock.MagicMock()
+        ) as mock_did_doc_deser, mock.patch.object(
+            self.manager, "record_keys_for_resolvable_did", mock.CoroutineMock()
         ) as mock_record_keys_for_resolvable_did:
-            mock_did_doc_deser.return_value = async_mock.MagicMock(
+            mock_did_doc_deser.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did
             )
-            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
+            mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
                 my_did=None,
                 state=ConnRecord.State.REQUEST.rfc23,
@@ -2100,19 +2100,19 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
 
         with mock.patch.object(
             ConnRecord, "save", autospec=True
-        ) as mock_conn_rec_save, async_mock.patch.object(
-            ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
-            DIDDoc, "deserialize", async_mock.MagicMock()
-        ) as mock_did_doc_deser, async_mock.patch.object(
-            self.manager, "record_keys_for_resolvable_did", async_mock.CoroutineMock()
+        ) as mock_conn_rec_save, mock.patch.object(
+            ConnRecord, "retrieve_by_request_id", mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_req_id, mock.patch.object(
+            ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_id, mock.patch.object(
+            DIDDoc, "deserialize", mock.MagicMock()
+        ) as mock_did_doc_deser, mock.patch.object(
+            self.manager, "record_keys_for_resolvable_did", mock.CoroutineMock()
         ) as mock_record_keys_for_resolvable_did:
-            mock_did_doc_deser.return_value = async_mock.MagicMock(
+            mock_did_doc_deser.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did
             )
-            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
+            mock_conn_retrieve_by_req_id.return_value = mock.MagicMock(
                 did=TestConfig.test_target_did,
                 state=ConnRecord.State.REQUEST.rfc23,
                 save=mock.CoroutineMock(),
