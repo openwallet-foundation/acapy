@@ -1498,7 +1498,9 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     reuse_connections = "reuse_connections" in args and args.reuse_connections
     if reuse_connections and aip != 20:
         raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
-    public_did_connections = "public_did_connections" in args and args.public_did_connections
+    public_did_connections = (
+        "public_did_connections" in args and args.public_did_connections
+    )
     if public_did_connections and aip != 20:
         raise Exception("Can only specify `--public-did-connections` with AIP 2.0")
 
