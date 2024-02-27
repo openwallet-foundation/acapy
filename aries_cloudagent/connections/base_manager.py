@@ -314,7 +314,7 @@ class BaseConnectionManager:
                 await storage.update_record(record, doc, {"did": did})
 
         await self.remove_keys_for_did(did)
-        await self.record_did(did)
+        await self.record_keys_for_resolvable_did(did)
 
     async def add_key_for_did(self, did: str, key: str):
         """Store a verkey for lookup against a DID.
