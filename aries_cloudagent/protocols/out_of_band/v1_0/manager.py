@@ -294,25 +294,29 @@ class OutOfBandManager(BaseConnectionManager):
                 my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
             my_info = None
+            my_did = None
             if did_peer_4:
                 my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
-                conn_rec.my_did = my_info.did
+                my_did = my_info.did
             else:
                 my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
-                conn_rec.my_did = my_info.did
+                my_did = my_info.did
+            print("my_info:", my_info)
+            print("my_did:", my_did)
 
             invi_msg = InvitationMessage(  # create invitation message
                 _id=invitation_message_id,
                 label=my_label or self.profile.settings.get("default_label"),
                 handshake_protocols=handshake_protocols,
                 requests_attach=message_attachments,
-                services=[my_info.did],
+                services=[my_did],
                 accept=service_accept if protocol_version != "1.0" else None,
                 version=protocol_version or DEFAULT_VERSION,
                 image_url=image_url,
             )
+            invi_url = invi_msg.to_url()
 
-            our_recipient_key = my_info.did.verkey
+            our_recipient_key = my_info.verkey
 
             # Only create connection record if hanshake_protocols is defined
             if handshake_protocols:
@@ -322,7 +326,7 @@ class OutOfBandManager(BaseConnectionManager):
                     else ConnRecord.INVITATION_MODE_ONCE
                 )
                 conn_rec = ConnRecord(  # create connection record
-                    invitation_key=my_info.did.verkey,
+                    invitation_key=our_recipient_key,
                     invitation_msg_id=invi_msg._id,
                     invitation_mode=invitation_mode,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
