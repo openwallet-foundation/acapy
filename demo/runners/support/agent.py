@@ -146,6 +146,7 @@ class DemoAgent:
         log_config: str = None,
         log_level: str = None,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
         public_did_connections: bool = False,
         **params,
     ):
@@ -182,6 +183,7 @@ class DemoAgent:
         self.log_config = log_config
         self.log_level = log_level
         self.reuse_connections = reuse_connections
+        self.multi_use_invitations = multi_use_invitations
         self.public_did_connections = public_did_connections
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
@@ -1450,6 +1452,7 @@ class DemoAgent:
         use_did_exchange: bool,
         auto_accept: bool = True,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
         public_did_connections: bool = False,
     ):
         self.connection_id = None
@@ -1457,7 +1460,7 @@ class DemoAgent:
             # TODO can mediation be used with DID exchange connections?
             invi_params = {
                 "auto_accept": json.dumps(auto_accept),
-                "multi_use": json.dumps(reuse_connections),
+                "multi_use": json.dumps(multi_use_invitations),
             }
             payload = {
                 "handshake_protocols": ["rfc23"],
@@ -1465,6 +1468,7 @@ class DemoAgent:
             }
             if self.mediation:
                 payload["mediation_id"] = self.mediator_request_id
+            print("Calling /out-of-band/create-invitation with:", payload, invi_params)
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
                 payload,
@@ -1494,8 +1498,8 @@ class DemoAgent:
         if self.mediation:
             params["mediation_id"] = self.mediator_request_id
         if "/out-of-band/" in invite.get("@type", ""):
-            # always reuse connections if possible
-            params["use_existing_connection"] = "true"
+            # reuse connections if requested and possible
+            params["use_existing_connection"] = json.dumps(self.reuse_connections)
             connection = await self.admin_POST(
                 "/out-of-band/receive-invitation",
                 invite,

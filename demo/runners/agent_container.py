@@ -62,6 +62,7 @@ class AriesAgent(DemoAgent):
         log_config: str = None,
         log_level: str = None,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
         public_did_connections: bool = False,
         extra_args: List[str] = [],
         **kwargs,
@@ -93,6 +94,7 @@ class AriesAgent(DemoAgent):
             log_config=log_config,
             log_level=log_level,
             reuse_connections=reuse_connections,
+            multi_use_invitations=multi_use_invitations,
             public_did_connections=public_did_connections,
             **kwargs,
         )
@@ -151,8 +153,7 @@ class AriesAgent(DemoAgent):
         if (not self.connection_id) and message["rfc23_state"] == "invitation-received":
             self.connection_id = conn_id
 
-        print(conn_id, self.connection_id, self.reuse_connections)
-        if conn_id == self.connection_id or self.reuse_connections:
+        if conn_id == self.connection_id or self.reuse_connections or self.multi_use_invitations:
             # inviter or invitee:
             if message["rfc23_state"] in ["completed", "response-sent"]:
                 if not self._connection_ready.done():
@@ -605,6 +606,7 @@ class AriesAgent(DemoAgent):
         auto_accept: bool = True,
         display_qr: bool = False,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
         public_did_connections: bool = False,
         wait: bool = False,
     ):
@@ -618,6 +620,7 @@ class AriesAgent(DemoAgent):
                 use_did_exchange,
                 auto_accept=auto_accept,
                 reuse_connections=reuse_connections,
+                multi_use_invitations=multi_use_invitations,
                 public_did_connections=public_did_connections,
             )
 
@@ -718,6 +721,7 @@ class AgentContainer:
         arg_file: str = None,
         endorser_role: str = None,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
         public_did_connections: bool = False,
         taa_accept: bool = False,
         anoncreds_legacy_revocation: str = None,
@@ -758,6 +762,7 @@ class AgentContainer:
                 self.cred_type = CRED_FORMAT_INDY
 
         self.reuse_connections = reuse_connections
+        self.multi_use_invitations = multi_use_invitations
         self.public_did_connections = public_did_connections
         self.exchange_tracing = False
 
@@ -1152,6 +1157,7 @@ class AgentContainer:
         auto_accept: bool = True,
         display_qr: bool = False,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
         public_did_connections: bool = False,
         wait: bool = False,
     ):
@@ -1160,6 +1166,7 @@ class AgentContainer:
             auto_accept=auto_accept,
             display_qr=display_qr,
             reuse_connections=reuse_connections,
+            multi_use_invitations=multi_use_invitations,
             public_did_connections=public_did_connections,
             wait=wait,
         )
@@ -1356,20 +1363,28 @@ def arg_parser(ident: str = None, port: int = 8020):
             "directly."
         ),
     )
+    parser.add_argument(
+        "--reuse-connections",
+        action="store_true",
+        help=(
+            "Reuse connections by generating a reusable invitation. "
+            "Only applicable for AIP 2.0 (OOB) connections."
+        ),
+    )
     if (not ident) or (ident != "alice"):
-        parser.add_argument(
-            "--reuse-connections",
-            action="store_true",
-            help=(
-                "Reuse connections by generating a reusable invitation. "
-                "Only applicable for AIP 2.0 (OOB) connections."
-            ),
-        )
         parser.add_argument(
             "--public-did-connections",
             action="store_true",
             help=(
                 "Use Faber public key in the invite. "
+                "Only applicable for AIP 2.0 (OOB) connections."
+            ),
+        )
+        parser.add_argument(
+            "--multi-use-invitations",
+            action="store_true",
+            help=(
+                "Create multi-use invitations. "
                 "Only applicable for AIP 2.0 (OOB) connections."
             ),
         )
@@ -1498,6 +1513,9 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     reuse_connections = "reuse_connections" in args and args.reuse_connections
     if reuse_connections and aip != 20:
         raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
+    multi_use_invitations = "multi_use_invitations" in args and args.multi_use_invitations
+    if multi_use_invitations and aip != 20:
+        raise Exception("Can only specify `--multi-use-invitations` with AIP 2.0")
     public_did_connections = (
         "public_did_connections" in args and args.public_did_connections
     )
@@ -1528,6 +1546,7 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
         aip=aip,
         endorser_role=args.endorser_role,
         reuse_connections=reuse_connections,
+        multi_use_invitations=multi_use_invitations,
         public_did_connections=public_did_connections,
         taa_accept=args.taa_accept,
         anoncreds_legacy_revocation=anoncreds_legacy_revocation,
