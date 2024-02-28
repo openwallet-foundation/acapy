@@ -81,6 +81,8 @@ class OutOfBandManager(BaseConnectionManager):
         my_endpoint: str = None,
         auto_accept: bool = None,
         public: bool = False,
+        did_peer_2: bool = False,
+        did_peer_4: bool = False,
         hs_protos: Sequence[HSProto] = None,
         multi_use: bool = False,
         alias: str = None,
@@ -250,6 +252,77 @@ class OutOfBandManager(BaseConnectionManager):
                 )
                 conn_rec = ConnRecord(  # create connection record
                     invitation_key=public_did.verkey,
+                    invitation_msg_id=invi_msg._id,
+                    invitation_mode=invitation_mode,
+                    their_role=ConnRecord.Role.REQUESTER.rfc23,
+                    state=ConnRecord.State.INVITATION.rfc23,
+                    accept=(
+                        ConnRecord.ACCEPT_AUTO
+                        if auto_accept
+                        else ConnRecord.ACCEPT_MANUAL
+                    ),
+                    alias=alias,
+                    connection_protocol=connection_protocol,
+                )
+
+                async with self.profile.session() as session:
+                    await conn_rec.save(session, reason="Created new invitation")
+                    await conn_rec.attach_invitation(session, invi_msg)
+
+                    await conn_rec.attach_invitation(session, invi_msg)
+
+                    if metadata:
+                        for key, value in metadata.items():
+                            await conn_rec.metadata_set(session, key, value)
+            else:
+                our_service = ServiceDecorator(
+                    recipient_keys=[our_recipient_key],
+                    endpoint=endpoint,
+                    routing_keys=[],
+                ).serialize()
+
+        elif did_peer_4 or did_peer_2:
+            mediation_records = [mediation_record] if mediation_record else []
+
+            if my_endpoint:
+                my_endpoints = [my_endpoint]
+            else:
+                my_endpoints = []
+                default_endpoint = self.profile.settings.get("default_endpoint")
+                if default_endpoint:
+                    my_endpoints.append(default_endpoint)
+                my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
+
+            my_info = None
+            if did_peer_4:
+                my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
+                conn_rec.my_did = my_info.did
+            else:
+                my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
+                conn_rec.my_did = my_info.did
+
+            invi_msg = InvitationMessage(  # create invitation message
+                _id=invitation_message_id,
+                label=my_label or self.profile.settings.get("default_label"),
+                handshake_protocols=handshake_protocols,
+                requests_attach=message_attachments,
+                services=[my_info.did],
+                accept=service_accept if protocol_version != "1.0" else None,
+                version=protocol_version or DEFAULT_VERSION,
+                image_url=image_url,
+            )
+
+            our_recipient_key = my_info.did.verkey
+
+            # Only create connection record if hanshake_protocols is defined
+            if handshake_protocols:
+                invitation_mode = (
+                    ConnRecord.INVITATION_MODE_MULTI
+                    if multi_use
+                    else ConnRecord.INVITATION_MODE_ONCE
+                )
+                conn_rec = ConnRecord(  # create connection record
+                    invitation_key=my_info.did.verkey,
                     invitation_msg_id=invi_msg._id,
                     invitation_mode=invitation_mode,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,

@@ -233,12 +233,23 @@ async def invitation_create(request: web.BaseRequest):
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
 
     profile = context.profile
+
+    emit_did_peer_4 = profile.settings.get("emit_did_peer_4", False)
+    emit_did_peer_2 = profile.settings.get("emit_did_peer_2", False)
+    if emit_did_peer_2 and emit_did_peer_4:
+        LOGGER.warning(
+            "emit_did_peer_2 and emit_did_peer_4 both set, \
+             using did:peer:4"
+        )
+
     oob_mgr = OutOfBandManager(profile)
     try:
         invi_rec = await oob_mgr.create_invitation(
             my_label=my_label,
             auto_accept=auto_accept,
             public=use_public_did,
+            did_peer_2=emit_did_peer_2,
+            did_peer_4=emit_did_peer_4,
             hs_protos=[
                 h for h in [HSProto.get(hsp) for hsp in handshake_protocols] if h
             ],

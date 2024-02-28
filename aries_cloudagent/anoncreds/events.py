@@ -109,7 +109,8 @@ class RevRegDefFinishedEvent(Event):
 class RevListFinishedPayload(NamedTuple):
     """Payload of rev list finished event."""
 
-    rev_reg_def_id: str
+    rev_reg_id: str
+    revoked: list
     options: dict
 
 
@@ -131,11 +132,12 @@ class RevListFinishedEvent(Event):
     @classmethod
     def with_payload(
         cls,
-        rev_reg_def_id: str,
+        rev_reg_id: str,
+        revoked: list,
         options: Optional[dict] = None,
     ):
         """With payload."""
-        payload = RevListFinishedPayload(rev_reg_def_id, options)
+        payload = RevListFinishedPayload(rev_reg_id, revoked, options)
         return cls(payload)
 
     @property

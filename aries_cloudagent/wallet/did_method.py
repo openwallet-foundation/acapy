@@ -101,6 +101,7 @@ class DIDMethods:
             KEY.method_name: KEY,
             WEB.method_name: WEB,
             PEER2.method_name: PEER2,
+            PEER4.method_name: PEER4,
         }
 
     def registered(self, method: str) -> bool:
