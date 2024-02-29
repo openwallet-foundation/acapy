@@ -596,15 +596,13 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
 
         # Fetch doesn't find list then it should be created
         await self.revocation.finish_revocation_list(
-            job_id="test-job-id",
-            rev_reg_def_id="test-rev-reg-def-id",
+            job_id="test-job-id", rev_reg_def_id="test-rev-reg-def-id", revoked=[]
         )
         assert mock_finish.called
 
         # Fetch finds list then there's nothing to do, it's already finished and updated
         await self.revocation.finish_revocation_list(
-            job_id="test-job-id",
-            rev_reg_def_id="test-rev-reg-def-id",
+            job_id="test-job-id", rev_reg_def_id="test-rev-reg-def-id", revoked=[]
         )
         assert mock_finish.call_count == 1
 

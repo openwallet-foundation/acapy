@@ -12,6 +12,7 @@ from base58 import alphabet
 from ....anoncreds.default.legacy_indy.author import get_endorser_info
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
+from ....core.event_bus import EventBus
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import (
@@ -47,6 +48,7 @@ from ...base import (
     BaseAnonCredsRegistrar,
     BaseAnonCredsResolver,
 )
+from ...events import RevListFinishedEvent
 from ...issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...models.anoncreds_cred_def import (
     CredDef,
@@ -966,6 +968,13 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         )
 
         if write_ledger:
+            event_bus = profile.inject(EventBus)
+            await event_bus.notify(
+                profile,
+                RevListFinishedEvent.with_payload(
+                    curr_list.rev_reg_def_id, newly_revoked_indices
+                ),
+            )
             return RevListResult(
                 job_id=None,
                 revocation_list_state=RevListState(
@@ -983,6 +992,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             "context": {
                 "job_id": job_id,
                 "rev_reg_def_id": rev_reg_def_id,
+                "rev_list": curr_list.serialize(),
                 "options": {
                     "endorser_connection_id": endorser_connection_id,
                     "create_transaction_for_endorser": create_transaction,
