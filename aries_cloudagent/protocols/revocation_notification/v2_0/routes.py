@@ -8,8 +8,8 @@ from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
 from ....revocation.util import (
     REVOCATION_CLEAR_PENDING_EVENT,
-    REVOCATION_PUBLISHED_EVENT,
     REVOCATION_EVENT_PREFIX,
+    REVOCATION_PUBLISHED_EVENT,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from .models.rev_notification_record import RevNotificationRecord
@@ -31,11 +31,14 @@ def register_events(event_bus: EventBus):
 
 async def on_revocation_published(profile: Profile, event: Event):
     """Handle issuer revoke event."""
-    LOGGER.debug("Sending notification of revocation to recipient: %s", event.payload)
+    LOGGER.debug("Received notification of revocation publication: %s", event.payload)
 
     should_notify = profile.settings.get("revocation.notify", False)
     responder = profile.inject(BaseResponder)
     crids = event.payload.get("crids") or []
+    # Allow for crids to be integers
+    if crids and isinstance(crids[0], int):
+        crids = [str(crid) for crid in crids]
 
     try:
         async with profile.session() as session:
@@ -50,6 +53,10 @@ async def on_revocation_published(profile: Profile, event: Event):
                 if should_notify:
                     await responder.send(
                         record.to_message(), connection_id=record.connection_id
+                    )
+                    LOGGER.info(
+                        "Sent revocation notification for credential to %s",
+                        record.connection_id,
                     )
 
     except StorageNotFoundError:
