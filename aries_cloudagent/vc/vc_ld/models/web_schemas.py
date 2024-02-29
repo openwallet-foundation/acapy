@@ -24,11 +24,26 @@ from .presentation import (
 class IssuanceOptionsSchema(Schema):
     """Linked data proof verifiable credential options schema."""
 
-    type = fields.Str(required=False, metadata={"example": "Ed25519Signature2020"})
+    proof_type = fields.Str(
+        data_key="proofType",
+        required=False, 
+        metadata={"example": "Ed25519Signature2020"}
+        )
+    proof_purpose = fields.Str(
+        data_key="proofPurpose",
+        required=False, 
+        metadata={"example": "assertionMethod"}
+        )
+    verification_method = fields.Str(
+        data_key="verificationMethod",
+        required=False,
+        metadata={
+            "example": "did:example:123456#key-1",
+        },
+    )
     created = fields.Str(required=False, metadata={"example": RFC3339_DATETIME_EXAMPLE})
     domain = fields.Str(required=False, metadata={"example": "website.example"})
     challenge = fields.Str(required=False, metadata={"example": UUID4_EXAMPLE})
-    # TODO, implement status list publication through a plugin
     # credential_status = fields.Dict(
     #     data_key="credentialStatus",
     #     required=False,

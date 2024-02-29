@@ -81,7 +81,7 @@ async def issue_credential_route(request: web.BaseRequest):
         options = {} if "options" not in body else body["options"]
 
         # We derive the proofType from the issuer DID if not provided in options
-        if not options.get("type", None) and not options.get("proofType", None):
+        if not options.get("proofType", None):
             issuer = credential["issuer"]
             did = issuer if isinstance(issuer, str) else issuer["id"]
             async with context.session() as session:
@@ -93,10 +93,6 @@ async def issue_credential_route(request: web.BaseRequest):
                 options["proofType"] = "Ed25519Signature2020"
             elif key_type == "bls12381g2":
                 options["proofType"] = "BbsBlsSignature2020"
-        else:
-            options["proofType"] = (
-                options.pop("type") if "type" in options else options["proofType"]
-            )
 
         credential = VerifiableCredential.deserialize(credential)
         options = LDProofVCOptions.deserialize(options)
