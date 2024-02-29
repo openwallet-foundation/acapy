@@ -301,8 +301,6 @@ class OutOfBandManager(BaseConnectionManager):
             else:
                 my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
                 my_did = my_info.did
-            print("my_info:", my_info)
-            print("my_did:", my_did)
 
             invi_msg = InvitationMessage(  # create invitation message
                 _id=invitation_message_id,
@@ -886,8 +884,10 @@ class OutOfBandManager(BaseConnectionManager):
             # If it's in the did format, we need to convert to a full service block
             # An existing connection can only be reused based on a public DID
             # in an out-of-band message (RFC 0434).
+            # OR did:peer:2 or did:peer:4.
 
-            public_did = service.split(":")[-1]
+            if not service.startswith("did:peer"):
+                public_did = service.split(":")[-1]
 
             # TODO: resolve_invitation should resolve key_info objects
             # or something else that includes the key type. We now assume
@@ -912,7 +912,10 @@ class OutOfBandManager(BaseConnectionManager):
                 }
             )
 
-        LOGGER.debug(f"Creating connection with public did {public_did}")
+        if public_did:
+            LOGGER.debug(f"Creating connection with public did {public_did}")
+        else:
+            LOGGER.debug(f"Creating connection with service {service}")
 
         conn_record = None
         for protocol in supported_handshake_protocols:
