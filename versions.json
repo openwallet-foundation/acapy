@@ -9,8 +9,11 @@
   {
     "version": "docs-v0.12.0rc1",
     "title": "docs-v0.12.0rc1",
-    "aliases": [
-      "0.12.0rc1"
-    ]
+    "aliases": []
+  },
+  {
+    "version": "0.12.0rc1",
+    "title": "0.12.0rc1",
+    "aliases": []
   }
 ]
