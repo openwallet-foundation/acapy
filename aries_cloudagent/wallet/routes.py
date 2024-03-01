@@ -59,7 +59,7 @@ from ..wallet.jwt import jwt_sign, jwt_verify
 from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import KEY, SOV, DIDMethod, DIDMethods, HolderDefinedDid
+from .did_method import KEY, SOV, DIDMethod, DIDMethods, HolderDefinedDid, PEER2, PEER4
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyTypes
@@ -112,6 +112,12 @@ class DIDSchema(OpenAPISchema):
         metadata={
             "description": "Key type associated with the DID",
             "example": ED25519.key_type,
+        },
+    )
+    metadata = fields.Dict(
+        required=False,
+        metadata={
+            "description": "Additional metadata associated with the DID",
         },
     )
 
@@ -287,7 +293,9 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     method = fields.Str(
         required=False,
-        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
+        validate=validate.OneOf(
+            [KEY.method_name, SOV.method_name, PEER2.method_name, PEER4.method_name]
+        ),
         metadata={
             "example": KEY.method_name,
             "description": (
@@ -411,6 +419,7 @@ def format_did_info(info: DIDInfo):
             "posture": DIDPosture.get(info.metadata).moniker,
             "key_type": info.key_type.key_type,
             "method": info.method.method_name,
+            "metadata": info.metadata,
         }
 
 

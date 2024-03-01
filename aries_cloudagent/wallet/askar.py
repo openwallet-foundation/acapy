@@ -30,6 +30,7 @@ from .crypto import (
     validate_seed,
     verify_signed_message,
 )
+from .did_info import INVITATION_REUSE_KEY
 from .did_method import SOV, DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
@@ -230,21 +231,25 @@ class AskarWallet(BaseWallet):
                         CATEGORY_DID, did, value_json=did_info, tags=item.tags
                     )
             else:
+                value_json = {
+                    "did": did,
+                    "method": method.method_name,
+                    "verkey": verkey,
+                    "verkey_type": key_type.key_type,
+                    "metadata": metadata,
+                }
+                tags = {
+                    "method": method.method_name,
+                    "verkey": verkey,
+                    "verkey_type": key_type.key_type,
+                }
+                if INVITATION_REUSE_KEY in metadata:
+                    tags[INVITATION_REUSE_KEY] = "true"
                 await self._session.handle.insert(
                     CATEGORY_DID,
                     did,
-                    value_json={
-                        "did": did,
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                        "metadata": metadata,
-                    },
-                    tags={
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                    },
+                    value_json=value_json,
+                    tags=tags,
                 )
 
         except AskarError as err:
@@ -273,21 +278,25 @@ class AskarWallet(BaseWallet):
             if item:
                 raise WalletDuplicateError("DID already present in wallet")
             else:
+                value_json = {
+                    "did": did_info.did,
+                    "method": did_info.method.method_name,
+                    "verkey": did_info.verkey,
+                    "verkey_type": did_info.key_type.key_type,
+                    "metadata": did_info.metadata,
+                }
+                tags = {
+                    "method": did_info.method.method_name,
+                    "verkey": did_info.verkey,
+                    "verkey_type": did_info.key_type.key_type,
+                }
+                if INVITATION_REUSE_KEY in did_info.metadata:
+                    tags[INVITATION_REUSE_KEY] = "true"
                 await self._session.handle.insert(
                     CATEGORY_DID,
                     did_info.did,
-                    value_json={
-                        "did": did_info.did,
-                        "method": did_info.method.method_name,
-                        "verkey": did_info.verkey,
-                        "verkey_type": did_info.key_type.key_type,
-                        "metadata": did_info.metadata,
-                    },
-                    tags={
-                        "method": did_info.method.method_name,
-                        "verkey": did_info.verkey,
-                        "verkey_type": did_info.key_type.key_type,
-                    },
+                    value_json=value_json,
+                    tags=tags,
                 )
         except AskarError as err:
             raise WalletError("Error when storing DID") from err

@@ -1461,6 +1461,7 @@ class DemoAgent:
             invi_params = {
                 "auto_accept": json.dumps(auto_accept),
                 "multi_use": json.dumps(multi_use_invitations),
+                "create_unique_did": json.dumps(not reuse_connections),
             }
             payload = {
                 "handshake_protocols": ["rfc23"],

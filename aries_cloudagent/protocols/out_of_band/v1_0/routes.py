@@ -45,6 +45,12 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
         required=False,
         metadata={"description": "Create invitation for multiple use (default false)"},
     )
+    create_unique_did = fields.Boolean(
+        required=False,
+        metadata={
+            "description": "Create unique DID for this invitation (default false)"
+        },
+    )
 
 
 class InvitationCreateRequestSchema(OpenAPISchema):
@@ -231,6 +237,12 @@ async def invitation_create(request: web.BaseRequest):
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    create_unique_did = json.loads(request.query.get("create_unique_did", "false"))
+
+    if create_unique_did and use_public_did:
+        raise web.HTTPBadRequest(
+            reason="create_unique_did cannot be used with use_public_did"
+        )
 
     profile = context.profile
 
@@ -241,6 +253,8 @@ async def invitation_create(request: web.BaseRequest):
             "emit_did_peer_2 and emit_did_peer_4 both set, \
              using did:peer:4"
         )
+    if create_unique_did and not (emit_did_peer_4 or emit_did_peer_2):
+        raise web.HTTPBadRequest(reason="create_unique_did must be used with did:peer")
 
     oob_mgr = OutOfBandManager(profile)
     try:
@@ -254,6 +268,7 @@ async def invitation_create(request: web.BaseRequest):
                 h for h in [HSProto.get(hsp) for hsp in handshake_protocols] if h
             ],
             multi_use=multi_use,
+            create_unique_did=create_unique_did,
             attachments=attachments,
             metadata=metadata,
             alias=alias,

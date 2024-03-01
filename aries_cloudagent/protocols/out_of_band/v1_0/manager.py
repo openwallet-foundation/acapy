@@ -21,6 +21,8 @@ from ....messaging.valid import IndyDID
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
+from ....wallet.did_info import INVITATION_REUSE_KEY
+from ....wallet.did_method import PEER2, PEER4
 from ....wallet.key_type import ED25519
 from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
@@ -85,6 +87,7 @@ class OutOfBandManager(BaseConnectionManager):
         did_peer_4: bool = False,
         hs_protos: Sequence[HSProto] = None,
         multi_use: bool = False,
+        create_unique_did: bool = False,
         alias: str = None,
         attachments: Sequence[Mapping] = None,
         metadata: dict = None,
@@ -291,16 +294,38 @@ class OutOfBandManager(BaseConnectionManager):
                 default_endpoint = self.profile.settings.get("default_endpoint")
                 if default_endpoint:
                     my_endpoints.append(default_endpoint)
-                my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
+                my_endpoints.extend(
+                    self.profile.settings.get("additional_endpoints", [])
+                )
 
             my_info = None
             my_did = None
-            if did_peer_4:
-                my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
-                my_did = my_info.did
-            else:
-                my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
-                my_did = my_info.did
+            if not create_unique_did:
+                # check wallet to see if there is an existing "invitation" DID available
+                did_method = PEER4 if did_peer_4 else PEER2
+                my_info = await self.fetch_invitation_reuse_did(did_method)
+                if my_info:
+                    my_did = my_info.did
+
+            if not my_did:
+                did_metadata = (
+                    {INVITATION_REUSE_KEY: "true"} if not create_unique_did else {}
+                )
+                if did_peer_4:
+                    my_info = await self.create_did_peer_4(
+                        my_endpoints, mediation_records, did_metadata
+                    )
+                    my_did = my_info.did
+                else:
+                    my_info = await self.create_did_peer_2(
+                        my_endpoints, mediation_records, did_metadata
+                    )
+                    my_did = my_info.did
+
+                if not create_unique_did:
+                    # save DID to wallet to re-use in next invitation
+                    # TODO
+                    pass
 
             invi_msg = InvitationMessage(  # create invitation message
                 _id=invitation_message_id,
