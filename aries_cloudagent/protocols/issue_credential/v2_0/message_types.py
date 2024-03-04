@@ -22,9 +22,7 @@ PROTOCOL_PACKAGE = "aries_cloudagent.protocols.issue_credential.v2_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
-        CRED_20_PROPOSAL: (
-            f"{PROTOCOL_PACKAGE}.messages.cred_proposal.V20CredProposal"
-        ),
+        CRED_20_PROPOSAL: (f"{PROTOCOL_PACKAGE}.messages.cred_proposal.V20CredProposal"),
         CRED_20_OFFER: f"{PROTOCOL_PACKAGE}.messages.cred_offer.V20CredOffer",
         CRED_20_REQUEST: f"{PROTOCOL_PACKAGE}.messages.cred_request.V20CredRequest",
         CRED_20_ISSUE: f"{PROTOCOL_PACKAGE}.messages.cred_issue.V20CredIssue",
