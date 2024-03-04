@@ -494,7 +494,9 @@ class AnonCredsRevocation:
 
             if result.revocation_list_state.state == STATE_FINISHED:
                 await self.notify(
-                    RevListFinishedEvent.with_payload(rev_list.rev_reg_def_id, rev_list)
+                    RevListFinishedEvent.with_payload(
+                        rev_list.rev_reg_def_id, rev_list.revocation_list
+                    )
                 )
 
         except AskarError as err:
