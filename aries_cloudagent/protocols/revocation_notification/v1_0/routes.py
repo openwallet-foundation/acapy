@@ -54,6 +54,10 @@ async def on_revocation_published(profile: Profile, event: Event):
                     await responder.send(
                         record.to_message(), connection_id=record.connection_id
                     )
+                    LOGGER.info(
+                        "Sent revocation notification for credential to %s",
+                        record.connection_id,
+                    )
 
     except StorageNotFoundError:
         LOGGER.info(
