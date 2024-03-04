@@ -153,7 +153,11 @@ class AriesAgent(DemoAgent):
         if (not self.connection_id) and message["rfc23_state"] == "invitation-received":
             self.connection_id = conn_id
 
-        if conn_id == self.connection_id or self.reuse_connections or self.multi_use_invitations:
+        if (
+            conn_id == self.connection_id
+            or self.reuse_connections
+            or self.multi_use_invitations
+        ):
             # inviter or invitee:
             if message["rfc23_state"] in ["completed", "response-sent"]:
                 if not self._connection_ready.done():
@@ -1513,7 +1517,9 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     reuse_connections = "reuse_connections" in args and args.reuse_connections
     if reuse_connections and aip != 20:
         raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
-    multi_use_invitations = "multi_use_invitations" in args and args.multi_use_invitations
+    multi_use_invitations = (
+        "multi_use_invitations" in args and args.multi_use_invitations
+    )
     if multi_use_invitations and aip != 20:
         raise Exception("Can only specify `--multi-use-invitations` with AIP 2.0")
     public_did_connections = (

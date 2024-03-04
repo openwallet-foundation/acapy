@@ -1501,6 +1501,7 @@ class DemoAgent:
         if "/out-of-band/" in invite.get("@type", ""):
             # reuse connections if requested and possible
             params["use_existing_connection"] = json.dumps(self.reuse_connections)
+            print("Receiving invitation with params:", params)
             connection = await self.admin_POST(
                 "/out-of-band/receive-invitation",
                 invite,

@@ -150,6 +150,7 @@ async def main(args):
             log_file=alice_agent.log_file,
             log_config=alice_agent.log_config,
             log_level=alice_agent.log_level,
+            reuse_connections=alice_agent.reuse_connections,
             extra_args=extra_args,
         )
 
