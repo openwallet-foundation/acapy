@@ -179,6 +179,7 @@ class AliceAgent(BaseAgent):
         log_file: str = None,
         log_config: str = None,
         log_level: str = None,
+        cred_type: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -188,6 +189,7 @@ class AliceAgent(BaseAgent):
             log_file=log_file,
             log_config=log_config,
             log_level=log_level,
+            cred_type=cred_type,
             **kwargs,
         )
         self.extra_args = [
@@ -330,6 +332,7 @@ async def main(
     log_file: str = None,
     log_config: str = None,
     log_level: str = None,
+    cred_type: str = None,
 ):
     if multi_ledger:
         genesis = None
@@ -377,6 +380,7 @@ async def main(
             log_file=log_file,
             log_config=log_config,
             log_level=log_level,
+            cred_type=cred_type,
         )
         await faber.listen_webhooks(start_port + 5)
         await faber.register_did()
@@ -759,6 +763,13 @@ if __name__ == "__main__":
             "Specifies a custom logging level as one of: "
             "('debug', 'info', 'warning', 'error', 'critical')"
         ),
+    )
+    parser.add_argument(
+        "--cred-type",
+        type=str,
+        metavar="<cred-type>",
+        default=None,
+        help=("Specifyng the credential type"),
     )
     args = parser.parse_args()
 

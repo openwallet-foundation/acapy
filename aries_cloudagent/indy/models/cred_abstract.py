@@ -236,12 +236,15 @@ class DidcommSignedAttachment(BaseModel):
 class DidcommSignedAttachmentSchema(BaseModelSchema):
     """Didcomm Signed Attachment Schema."""
 
+<<<<<<< HEAD
     class Meta:
         """Didcomm signed attachment schema metadata."""
 
         model_class = DidcommSignedAttachment
         unknown = EXCLUDE
 
+=======
+>>>>>>> 16dc5f738 (feat: add new format and implement VCDICredFormatHandler (Draft))
     algs_supported = fields.List(fields.Str(), required=True)
 
     did_methods_supported = fields.List(fields.Str(), required=True)
@@ -256,6 +259,7 @@ class DidcommSignedAttachmentSchema(BaseModelSchema):
     )
 
 
+<<<<<<< HEAD
 class BindingMethod(BaseModel):
     """Binding Method Model."""
 
@@ -285,6 +289,11 @@ class BindingMethodSchema(BaseModelSchema):
         model_class = BindingMethod
         unknown = EXCLUDE
 
+=======
+class BindingMethodSchema(BaseModelSchema):
+    """VCDI Binding Method Schema."""
+
+>>>>>>> 16dc5f738 (feat: add new format and implement VCDICredFormatHandler (Draft))
     anoncreds_link_secret = fields.Nested(AnoncredsLinkSecretSchema, required=False)
     didcomm_signed_attachment = fields.Nested(
         DidcommSignedAttachmentSchema, required=True
@@ -301,7 +310,11 @@ class VCDICredAbstract(BaseModel):
 
     def __init__(
         self,
+<<<<<<< HEAD
         data_model_versions_supported: Sequence[str] = None,
+=======
+        data_model_versions_supported: str = None,
+>>>>>>> 16dc5f738 (feat: add new format and implement VCDICredFormatHandler (Draft))
         binding_required: str = None,
         binding_methods: str = None,
         credential: Union[dict, VerifiableCredential] = None,
@@ -332,7 +345,11 @@ class VCDICredAbstractSchema(BaseModelSchema):
         unknown = EXCLUDE
 
         data_model_versions_supported = fields.List(
+<<<<<<< HEAD
             fields.Str(), required=True, metadata={"description": "", "example": ""}
+=======
+            required=True, validate="", metadata={"description": "", "example": ""}
+>>>>>>> 16dc5f738 (feat: add new format and implement VCDICredFormatHandler (Draft))
         )
 
         binding_required = fields.Bool(
@@ -346,7 +363,11 @@ class VCDICredAbstractSchema(BaseModelSchema):
         )
 
         credential = fields.Nested(
+<<<<<<< HEAD
             CredentialSchema(),
             required=True,
             metadata={"description": "", "example": ""},
+=======
+            CredentialSchema(), required=True, metadata={"description": "", "example": ""}
+>>>>>>> 16dc5f738 (feat: add new format and implement VCDICredFormatHandler (Draft))
         )
