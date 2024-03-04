@@ -14,13 +14,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # fetch all commits/branches
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           key: ${{ github.ref }}
           path: .cache
@@ -35,9 +35,8 @@ jobs:
         run: |
           # Strip git ref prefix from version
           echo "${{ github.ref }}"
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          # Strip "docs-v" prefix from branch name
-          [[ "$VERSION" == "docs-v"* ]] && ALIAS=$(echo $VERSION | sed -e 's/^docs-v//') && VERSION=${ALIAS}
+          # Extract the version and if it is in `docs-v` form, strip that off the version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,' -e 's/^docs-v//')
           # Copy all of the root level md files into the docs folder for deployment, tweaking the relative paths
           for i in *.md; do sed -e "s#docs/#./#g" $i >docs/$i; done
           # Populate overrides for the current version, and then remove to not apply if VERSION is main branch
