@@ -19,7 +19,9 @@ class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     UNRESOLVABLE = "e.did.unresolvable"
-    METHOD_UNSUPPORTED = "e.did.method_unsupported"
+    UNSUPPORTED_METHOD = "e.did.unsupported_method"
+    UNRESOLVABLE_SERVICES = "e.did.unresolvable_services"
+    UNRECORDABLE_KEYS = "e.did.unrecordable_keys"
 
 
 class RotateProblemReport(ProblemReport):
@@ -45,8 +47,10 @@ class RotateProblemReport(ProblemReport):
             An instance of RotateProblemReport
         """
         description = {
-            ProblemReportReason.UNRESOLVABLE: "DID Unresolvable",
-            ProblemReportReason.METHOD_UNSUPPORTED: "DID Method Unsupported",
+            ProblemReportReason.UNRESOLVABLE: "Unable to resolve DID",
+            ProblemReportReason.UNSUPPORTED_METHOD: "Unsupported DID Method",
+            ProblemReportReason.UNRESOLVABLE_SERVICES: "Unable to resolve DIDComm Services",  # noqa: E501
+            ProblemReportReason.UNRECORDABLE_KEYS: "Unable to record Keys ro Resolvable DID",  # noqa: E501
         }[problem_code]
         return cls(
             description={
@@ -73,7 +77,7 @@ class RotateProblemReport(ProblemReport):
         return cls.for_code(ProblemReportReason.UNRESOLVABLE, did, **kwargs)
 
     @classmethod
-    def method_unsupported(cls, did: str, **kwargs):
+    def unsupported_method(cls, did: str, **kwargs):
         """Initialize a ProblemReport message instance for an unsupported DID method.
 
         Args:
@@ -83,7 +87,33 @@ class RotateProblemReport(ProblemReport):
         Returns:
             An instance of RotateProblemReport
         """
-        return cls.for_code(ProblemReportReason.METHOD_UNSUPPORTED, did, **kwargs)
+        return cls.for_code(ProblemReportReason.UNSUPPORTED_METHOD, did, **kwargs)
+
+    @classmethod
+    def unresolvable_services(cls, did: str, **kwargs):
+        """Initialize a ProblemReport message instance for unresolvable DIDComm services.
+
+        Args:
+            did: The DID contained in the rotate message the problem report is about
+            kwargs: Optional keyword arguments to pass through to the problem report
+                constructor
+        Returns:
+            An instance of RotateProblemReport
+        """
+        return cls.for_code(ProblemReportReason.UNRESOLVABLE_SERVICES, did, **kwargs)
+
+    @classmethod
+    def unrecordable_keys(cls, did: str, **kwargs):
+        """Initialize a ProblemReport message instance for unrecordable keys for resolvable DID.
+
+        Args:
+            did: The DID contained in the rotate message the problem report is about
+            kwargs: Optional keyword arguments to pass through to the problem report
+                constructor
+        Returns:
+            An instance of RotateProblemReport
+        """  # noqa: E501
+        return cls.for_code(ProblemReportReason.UNRECORDABLE_KEYS, did, **kwargs)
 
 
 class RotateProblemReportSchema(ProblemReportSchema):

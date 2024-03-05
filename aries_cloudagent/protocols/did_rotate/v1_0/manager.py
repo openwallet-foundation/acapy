@@ -36,6 +36,14 @@ class UnsupportedDIDMethodError(ReportableDIDRotateError):
     """Raised when a DID method is not supported."""
 
 
+class UnresolvableDIDCommServicesError(ReportableDIDRotateError):
+    """Raised when DIDComm services cannot be resolved."""
+
+
+class UnrecordableKeysError(ReportableDIDRotateError):
+    """Raised when keys cannot be recorded for a resolvable DID."""
+
+
 class DIDRotateManager:
     """DID Rotate Manager.
 
@@ -144,11 +152,10 @@ class DIDRotateManager:
         conn_mgr = BaseConnectionManager(self.profile)
         try:
             await conn_mgr.record_keys_for_resolvable_did(record.new_did)
-        except BaseConnectionManagerError as err:
-            # TODO Make this reportable?
-            raise DIDRotateManagerError(
-                "Unable to record keys for resolvable DID"
-            ) from err
+        except BaseConnectionManagerError:
+            raise UnrecordableKeysError(
+                RotateProblemReport.unrecordable_keys(record.new_did)
+            )
 
         conn.their_did = record.new_did
 
@@ -233,12 +240,13 @@ class DIDRotateManager:
         try:
             await resolver.resolve(self.profile, did)
         except DIDMethodNotSupported:
-            raise UnsupportedDIDMethodError(RotateProblemReport.method_unsupported(did))
+            raise UnsupportedDIDMethodError(RotateProblemReport.unsupported_method(did))
         except DIDNotFound:
             raise UnresolvableDIDError(RotateProblemReport.unresolvable(did))
 
         try:
             await conn_mgr.resolve_didcomm_services(did)
         except BaseConnectionManagerError:
-            # TODO Make this reportable?
-            raise DIDRotateManagerError("Unable to resolve DIDComm services for DID")
+            raise UnresolvableDIDCommServicesError(
+                RotateProblemReport.unresolvable_services(did)
+            )
