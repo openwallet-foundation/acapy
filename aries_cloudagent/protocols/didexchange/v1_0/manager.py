@@ -414,10 +414,6 @@ class DIDXManager(BaseConnectionManager):
             {"request": request},
             settings=self.profile.settings,
         )
-        print(
-            "Receiving connection request:",
-            {"request": request},
-        )
 
         conn_rec = None
         connection_key = None
@@ -440,7 +436,6 @@ class DIDXManager(BaseConnectionManager):
                         f"in state {ConnRecord.State.INVITATION.rfc23}: "
                         "a prior connection request may have updated the connection state"
                     )
-            print("EXISTING conn_rec:", conn_rec)
         else:
             if not self.profile.settings.get("public_invites"):
                 raise DIDXManagerError(
@@ -463,14 +458,11 @@ class DIDXManager(BaseConnectionManager):
                     invitation_msg_id=request._thread.pthid,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
-            print("PUBLIC DID conn_rec with new DID:", conn_rec, my_info)
 
         if conn_rec:  # invitation was explicit
             connection_key = conn_rec.invitation_key
             if conn_rec.is_multiuse_invitation:
-                print("Handling multi-use invitation ...")
                 async with self.profile.session() as session:
-                    print("Creating a new local SOV did ...")
                     wallet = session.inject(BaseWallet)
                     my_info = await wallet.create_local_did(
                         method=SOV,

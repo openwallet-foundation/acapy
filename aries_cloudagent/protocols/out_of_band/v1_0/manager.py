@@ -300,22 +300,19 @@ class OutOfBandManager(BaseConnectionManager):
 
             my_info = None
             my_did = None
-            print("Create unique DID:", create_unique_did)
             if not create_unique_did:
                 # check wallet to see if there is an existing "invitation" DID available
                 did_method = PEER4 if did_peer_4 else PEER2
                 my_info = await self.fetch_invitation_reuse_did(did_method)
                 if my_info:
-                    print("Reusing DID for invitation:", my_info)
                     my_did = my_info.did
                 else:
-                    print("No invitation DID found, creating new DID")
+                    LOGGER.warn("No invitation DID found, creating new DID")
 
             if not my_did:
                 did_metadata = (
                     {INVITATION_REUSE_KEY: "true"} if not create_unique_did else {}
                 )
-                print("Creating new DID with did_metadata:", did_metadata)
                 if did_peer_4:
                     my_info = await self.create_did_peer_4(
                         my_endpoints, mediation_records, did_metadata
@@ -574,12 +571,10 @@ class OutOfBandManager(BaseConnectionManager):
                 "Trying to find existing connection for oob invitation with "
                 f"did {public_did}"
             )
-            print("Trying to find existing connection with did:", public_did)
             async with self._profile.session() as session:
                 conn_rec = await ConnRecord.find_existing_connection(
                     session=session, their_public_did=public_did
                 )
-            print("Found conn_rec:", conn_rec)
 
         oob_record = OobRecord(
             role=OobRecord.ROLE_RECEIVER,
@@ -942,10 +937,8 @@ class OutOfBandManager(BaseConnectionManager):
 
         if public_did:
             LOGGER.debug(f"Creating connection with public did {public_did}")
-            print("Creating connection with public did:", public_did)
         else:
             LOGGER.debug(f"Creating connection with service {service}")
-            print("Creating connection with service:", service)
 
         conn_record = None
         for protocol in supported_handshake_protocols:

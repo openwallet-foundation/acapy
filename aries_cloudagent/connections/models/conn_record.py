@@ -366,7 +366,6 @@ class ConnRecord(BaseRecord):
             session: The active profile session
             their_public_did: Inviter public DID (or did:peer)
         """
-        print("find connection with did:", their_public_did)
         if their_public_did.startswith("did:peer"):
             tag_filter = {"their_did": their_public_did}
         else:
