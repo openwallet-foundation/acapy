@@ -18,8 +18,9 @@ from aiohttp_apispec import (
     setup_aiohttp_apispec,
     validation_middleware,
 )
-
 from marshmallow import fields
+
+from aries_cloudagent.wallet import singletons
 
 from ..config.injection_context import InjectionContext
 from ..config.logging import context_wallet_id
@@ -31,13 +32,16 @@ from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..messaging.valid import UUIDFour
 from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
+from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
+from ..storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..wallet.anoncreds_upgrade import check_upgrade_completion_loop
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -57,6 +61,9 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::actionmenu::perform-menu-action": "perform-menu-action",
     "acapy::keylist::updated": "keylist",
 }
+
+anoncreds_wallets = singletons.IsAnoncredsSingleton().wallets
+in_progress_upgrades = singletons.UpgradeInProgressSingleton()
 
 
 class AdminModulesSchema(OpenAPISchema):
@@ -206,6 +213,40 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
 
 
 @web.middleware
+async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
+    """Blocking middleware for upgrades."""
+    context: AdminRequestContext = request["context"]
+
+    # Already upgraded
+    if context.profile.name in anoncreds_wallets:
+        return await handler(request)
+
+    # Upgrade in progress
+    if context.profile.name in in_progress_upgrades.wallets:
+        raise web.HTTPServiceUnavailable(reason="Upgrade in progress")
+
+    # Avoid try/except in middleware with find_all_records
+    upgrade_initiated = []
+    async with context.profile.session() as session:
+        storage = session.inject(BaseStorage)
+        upgrade_initiated = await storage.find_all_records(RECORD_TYPE_ACAPY_UPGRADING)
+        if upgrade_initiated:
+            # If we get here, than another instance started an upgrade
+            # We need to check for completion (or fail) in another process
+            in_progress_upgrades.set_wallet(context.profile.name)
+            is_subwallet = context.metadata and "wallet_id" in context.metadata
+            asyncio.create_task(
+                check_upgrade_completion_loop(
+                    context.profile,
+                    is_subwallet,
+                )
+            )
+            raise web.HTTPServiceUnavailable(reason="Upgrade in progress")
+
+    return await handler(request)
+
+
+@web.middleware
 async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
     """Show request detail in debug log."""
 
@@ -351,6 +392,8 @@ class AdminServer(BaseAdminServer):
 
                 is_multitenancy_path = path.startswith("/multitenancy")
                 is_server_path = path in self.server_paths or path == "/features"
+                # allow base wallets to trigger update through api
+                is_upgrade_path = path.startswith("/anoncreds/wallet/upgrade")
 
                 # subwallets are not allowed to access multitenancy routes
                 if authorization_header and is_multitenancy_path:
@@ -380,6 +423,7 @@ class AdminServer(BaseAdminServer):
                     and not is_unprotected_path(path)
                     and not base_limited_access_path
                     and not (request.method == "OPTIONS")  # CORS fix
+                    and not is_upgrade_path
                 ):
                     raise web.HTTPUnauthorized()
 
@@ -452,6 +496,9 @@ class AdminServer(BaseAdminServer):
             return await handler(request)
 
         middlewares.append(setup_context)
+
+        # Upgrade middleware needs the context setup
+        middlewares.append(upgrade_middleware)
 
         # Register validation_middleware last avoiding unauthorized validations
         middlewares.append(validation_middleware)
@@ -583,6 +630,10 @@ class AdminServer(BaseAdminServer):
 
     async def stop(self) -> None:
         """Stop the webserver."""
+        # Stopped before admin server is created
+        if not self.app:
+            return
+
         self.app._state["ready"] = False  # in case call does not come through OpenAPI
         for queue in self.websocket_queues.values():
             queue.stop()

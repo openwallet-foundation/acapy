@@ -1,22 +1,28 @@
 import gc
 import json
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
+
+from aries_cloudagent.tests import mock
+from aries_cloudagent.wallet import singletons
 
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event
+from ...core.goal_code_registry import GoalCodeRegistry
 from ...core.in_memory import InMemoryProfile
 from ...core.protocol_registry import ProtocolRegistry
-from ...core.goal_code_registry import GoalCodeRegistry
+from ...storage.base import BaseStorage
+from ...storage.record import StorageRecord
+from ...storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
-
+from ...wallet.anoncreds_upgrade import UPGRADING_RECORD_IN_PROGRESS
 from .. import server as test_module
+from ..request_context import AdminRequestContext
 from ..server import AdminServer, AdminSetupError
 
 
@@ -476,6 +482,47 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         ) as response:
             assert response.status == 503
         await server.stop()
+
+    async def test_upgrade_middleware(self):
+        profile = InMemoryProfile.test_profile()
+        self.context = AdminRequestContext.test_context({}, profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        request = mock.MagicMock(
+            method="GET",
+            path_qs="/schemas/created",
+            match_info={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
+        handler = mock.CoroutineMock()
+
+        await test_module.upgrade_middleware(request, handler)
+
+        async with profile.session() as session:
+            storage = session.inject(BaseStorage)
+            upgrading_record = StorageRecord(
+                RECORD_TYPE_ACAPY_UPGRADING,
+                UPGRADING_RECORD_IN_PROGRESS,
+            )
+            # No upgrade in progress
+            await storage.add_record(upgrading_record)
+
+            # Upgrade in progress without cache
+            with self.assertRaises(test_module.web.HTTPServiceUnavailable):
+                await test_module.upgrade_middleware(request, handler)
+
+            # Upgrade in progress with cache
+            singletons.UpgradeInProgressSingleton().set_wallet("test-profile")
+            with self.assertRaises(test_module.web.HTTPServiceUnavailable):
+                await test_module.upgrade_middleware(request, handler)
+
+            singletons.UpgradeInProgressSingleton().remove_wallet("test-profile")
+            await storage.delete_record(upgrading_record)
+
+            # Upgrade in progress with cache
+            singletons.IsAnoncredsSingleton().set_wallet("test-profile")
+            await test_module.upgrade_middleware(request, handler)
 
 
 @pytest.fixture

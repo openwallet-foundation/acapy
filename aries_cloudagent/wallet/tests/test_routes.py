@@ -3,6 +3,7 @@ from unittest import IsolatedAsyncioTestCase
 from aiohttp.web import HTTPForbidden
 
 from aries_cloudagent.tests import mock
+from aries_cloudagent.wallet import singletons
 
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
@@ -11,6 +12,7 @@ from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...wallet.did_method import SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from ...wallet.key_type import ED25519, KeyTypes
 from .. import routes as test_module
+from ..anoncreds_upgrade import UPGRADING_RECORD_IN_PROGRESS
 from ..base import BaseWallet
 from ..did_info import DIDInfo
 from ..did_posture import DIDPosture
@@ -1005,6 +1007,26 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.wallet_rotate_did_keypair(self.request)
+
+    async def test_upgrade_anoncreds(self):
+        self.profile.settings["wallet.name"] = "test_wallet"
+        self.request.query = {"wallet_name": "not_test_wallet"}
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.upgrade_anoncreds(self.request)
+
+        self.request.query = {"wallet_name": "not_test_wallet"}
+        self.profile.settings["wallet.type"] = "askar-anoncreds"
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.upgrade_anoncreds(self.request)
+
+        self.request.query = {"wallet_name": "test_wallet"}
+        self.profile.settings["wallet.type"] = "askar"
+        result = await test_module.upgrade_anoncreds(self.request)
+        print(result)
+        _, upgrade_record = next(iter(self.profile.records.items()))
+        assert upgrade_record.type == "acapy_upgrading"
+        assert upgrade_record.value == UPGRADING_RECORD_IN_PROGRESS
+        assert "test-profile" in singletons.UpgradeInProgressSingleton().wallets
 
     async def test_register(self):
         mock_app = mock.MagicMock()

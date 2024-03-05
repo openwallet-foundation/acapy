@@ -7,6 +7,7 @@ wallet.
 
 """
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -17,12 +18,8 @@ from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
-from ..commands.upgrade import (
-    add_version_record,
-    get_upgrade_version_list,
-    upgrade,
-)
-from ..config.default_context import ContextBuilder
+from ..commands.upgrade import add_version_record, get_upgrade_version_list, upgrade
+from ..config.default_context import ContextBuilder, DefaultContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.ledger import (
     get_genesis_transactions,
@@ -63,7 +60,11 @@ from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, Invitation
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
-from ..storage.type import RECORD_TYPE_ACAPY_STORAGE_TYPE
+from ..storage.type import (
+    RECORD_TYPE_ACAPY_STORAGE_TYPE,
+    STORAGE_TYPE_VALUE_ANONCREDS,
+    STORAGE_TYPE_VALUE_ASKAR,
+)
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -71,10 +72,12 @@ from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboun
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.wire_format import BaseWireFormat
+from ..utils.profiles import get_subwallet_profiles_from_storage
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
+from ..wallet.anoncreds_upgrade import upgrade_wallet_to_anoncreds_if_requested
 from ..wallet.did_info import DIDInfo
 from .dispatcher import Dispatcher
 from .error import StartupError
@@ -111,6 +114,8 @@ class Conductor:
         self.root_profile: Profile = None
         self.setup_public_did: DIDInfo = None
 
+    force_agent_anoncreds = False
+
     @property
     def context(self) -> InjectionContext:
         """Accessor for the injection context."""
@@ -120,6 +125,9 @@ class Conductor:
         """Initialize the global request context."""
 
         context = await self.context_builder.build_context()
+
+        if self.force_agent_anoncreds:
+            context.settings.set_value("wallet.type", "askar-anoncreds")
 
         # Fetch genesis transactions if necessary
         if context.settings.get("ledger.ledger_config_list"):
@@ -522,7 +530,9 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Error accepting mediation invitation")
 
-        # notify protocols of startup status
+        await self.check_for_wallet_upgrades_in_progress()
+
+        # notify protcols of startup status
         await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
 
     async def stop(self, timeout=1.0):
@@ -796,8 +806,9 @@ class Conductor:
                     )
                 except StorageNotFoundError:
                     acapy_version = None
+                # Any existing agent will have acapy_version record
                 if acapy_version:
-                    storage_type_from_storage = "askar"
+                    storage_type_from_storage = STORAGE_TYPE_VALUE_ASKAR
                     LOGGER.info(
                         f"Existing agent found. Setting wallet type to {storage_type_from_storage}."  # noqa: E501
                     )
@@ -820,6 +831,38 @@ class Conductor:
                     )
 
             if storage_type_from_storage != storage_type_from_config:
-                raise StartupError(
-                    f"Wallet type config [{storage_type_from_config}] doesn't match with the wallet type in storage [{storage_type_record.value}]"  # noqa: E501
-                )
+                if (
+                    storage_type_from_config == STORAGE_TYPE_VALUE_ASKAR
+                    and storage_type_from_storage == STORAGE_TYPE_VALUE_ANONCREDS
+                ):
+                    LOGGER.warning(
+                        "The agent has been upgrade to use anoncreds wallet. Please update the wallet.type in the config file to 'askar-anoncreds'"  # noqa: E501
+                    )
+                    # Allow agent to create anoncreds profile with askar
+                    # wallet type config by stopping conductor and reloading context
+                    await self.stop()
+                    self.force_agent_anoncreds = True
+                    self.context.settings.set_value("wallet.type", "askar-anoncreds")
+                    self.context_builder = DefaultContextBuilder(self.context.settings)
+                    await self.setup()
+                else:
+                    raise StartupError(
+                        f"Wallet type config [{storage_type_from_config}] doesn't match with the wallet type in storage [{storage_type_record.value}]"  # noqa: E501
+                    )
+
+    async def check_for_wallet_upgrades_in_progress(self):
+        """Check for upgrade and upgrade if needed."""
+        multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            subwallet_profiles = await get_subwallet_profiles_from_storage(
+                self.root_profile
+            )
+            await asyncio.gather(
+                *[
+                    upgrade_wallet_to_anoncreds_if_requested(profile, is_subwallet=True)
+                    for profile in subwallet_profiles
+                ]
+            )
+
+        else:
+            await upgrade_wallet_to_anoncreds_if_requested(self.root_profile)
