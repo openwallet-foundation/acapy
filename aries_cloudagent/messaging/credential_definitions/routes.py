@@ -14,7 +14,6 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
@@ -44,6 +43,7 @@ from ...protocols.endorse_transaction.v1_0.util import (
 from ...revocation.indy import IndyRevocation
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError, StorageNotFoundError
+from ...utils.profiles import is_anoncreds_profile_raise_web_exception
 from ..models.base import BaseModelError
 from ..models.openapi import OpenAPISchema
 from ..valid import (
@@ -195,6 +195,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     outbound_handler = request["outbound_message_router"]
 
     create_transaction_for_endorser = json.loads(
@@ -381,6 +384,8 @@ async def credential_definitions_created(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
+    is_anoncreds_profile_raise_web_exception(context.profile)
+
     session = await context.session()
     storage = session.inject(BaseStorage)
     found = await storage.find_all_records(
@@ -412,6 +417,9 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     """
     context: AdminRequestContext = request["context"]
+
+    is_anoncreds_profile_raise_web_exception(context.profile)
+
     cred_def_id = request.match_info["cred_def_id"]
 
     async with context.profile.session() as session:
@@ -458,6 +466,8 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
 
     """
     context: AdminRequestContext = request["context"]
+
+    is_anoncreds_profile_raise_web_exception(context.profile)
 
     cred_def_id = request.match_info["cred_def_id"]
 

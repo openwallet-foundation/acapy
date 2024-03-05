@@ -3,6 +3,7 @@ from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
 
 from ....admin.request_context import AdminRequestContext
+from ....askar.profile_anon import AskarAnoncredsProfile
 from ....connections.models.conn_record import ConnRecord
 from ....core.in_memory import InMemoryProfile
 from ....indy.issuer import IndyIssuer
@@ -397,6 +398,43 @@ class TestSchemaRoutes(IsolatedAsyncioTestCase):
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.schemas_get_schema(self.request)
+
+    async def test_schema_endpoints_wrong_profile_403(self):
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet-type": "askar"},
+            profile_class=AskarAnoncredsProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            context=self.context,
+        )
+
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "schema_name": "schema_name",
+                "schema_version": "1.0",
+                "attributes": ["table", "drink", "colour"],
+            }
+        )
+
+        self.request.query = {"create_transaction_for_endorser": "false"}
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.schemas_send_schema(self.request)
+
+        self.request.match_info = {"schema_id": SCHEMA_ID}
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.schemas_created(self.request)
+
+        self.request.match_info = {"schema_id": SCHEMA_ID}
+        with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.schemas_get_schema(self.request)
 
     async def test_register(self):
