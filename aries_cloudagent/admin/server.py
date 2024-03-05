@@ -18,7 +18,6 @@ from aiohttp_apispec import (
     setup_aiohttp_apispec,
     validation_middleware,
 )
-
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
@@ -38,6 +37,7 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..wallet.upgrade_singleton import UpgradeSingleton
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -57,6 +57,8 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::actionmenu::perform-menu-action": "perform-menu-action",
     "acapy::keylist::updated": "keylist",
 }
+
+upgrade_singleton = UpgradeSingleton()
 
 
 class AdminModulesSchema(OpenAPISchema):
@@ -206,6 +208,17 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
 
 
 @web.middleware
+async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
+    """Blocking middleware for upgrades."""
+    context: AdminRequestContext = request["context"]
+
+    if context._profile.name in upgrade_singleton.current_upgrades:
+        raise web.HTTPServiceUnavailable(reason="Upgrade in progress")
+
+    return await handler(request)
+
+
+@web.middleware
 async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
     """Show request detail in debug log."""
 
@@ -351,6 +364,8 @@ class AdminServer(BaseAdminServer):
 
                 is_multitenancy_path = path.startswith("/multitenancy")
                 is_server_path = path in self.server_paths or path == "/features"
+                # allow base wallets to trigger update through api
+                is_upgrade_path = path.startswith("/anoncreds/wallet/upgrade")
 
                 # subwallets are not allowed to access multitenancy routes
                 if authorization_header and is_multitenancy_path:
@@ -380,6 +395,7 @@ class AdminServer(BaseAdminServer):
                     and not is_unprotected_path(path)
                     and not base_limited_access_path
                     and not (request.method == "OPTIONS")  # CORS fix
+                    and not is_upgrade_path
                 ):
                     raise web.HTTPUnauthorized()
 
@@ -452,6 +468,9 @@ class AdminServer(BaseAdminServer):
             return await handler(request)
 
         middlewares.append(setup_context)
+
+        # Upgrade middleware needs the context setup
+        middlewares.append(upgrade_middleware)
 
         # Register validation_middleware last avoiding unauthorized validations
         middlewares.append(validation_middleware)

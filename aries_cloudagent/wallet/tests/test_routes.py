@@ -1006,6 +1006,25 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.wallet_rotate_did_keypair(self.request)
 
+    async def test_upgrade_anoncreds(self):
+        self.profile.settings["wallet.name"] = "test_wallet"
+        self.request.query = {"wallet_name": "not_test_wallet"}
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.upgrade_anoncreds(self.request)
+
+        self.request.query = {"wallet_name": "not_test_wallet"}
+        self.profile.settings["wallet.type"] = "askar-anoncreds"
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.upgrade_anoncreds(self.request)
+
+        self.request.query = {"wallet_name": "test_wallet"}
+        self.profile.settings["wallet.type"] = "askar"
+        result = await test_module.upgrade_anoncreds(self.request)
+        print(result)
+        _, upgrade_record = next(iter(self.profile.records.items()))
+        assert upgrade_record.type == "acapy_upgrading"
+        assert upgrade_record.value == "true"
+
     async def test_register(self):
         mock_app = mock.MagicMock()
         mock_app.add_routes = mock.MagicMock()

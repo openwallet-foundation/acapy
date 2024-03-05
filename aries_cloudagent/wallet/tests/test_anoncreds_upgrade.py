@@ -1,0 +1,210 @@
+from time import time
+from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
+
+from ...anoncreds.issuer import CATEGORY_CRED_DEF_PRIVATE
+from ...core.in_memory.profile import InMemoryProfile
+from ...indy.credx.issuer import CATEGORY_CRED_DEF_KEY_PROOF
+from ...messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
+from ...messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
+from ...multitenant.base import BaseMultitenantManager
+from ...multitenant.manager import MultitenantManager
+from ...storage.base import BaseStorage
+from ...storage.record import StorageRecord
+from ...storage.type import RECORD_TYPE_ACAPY_STORAGE_TYPE, RECORD_TYPE_ACAPY_UPGRADING
+from .. import anoncreds_upgrade
+from ..upgrade_singleton import UpgradeSingleton
+
+
+class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet.type": "askar", "wallet.id": "test-wallet-id"}
+        )
+        self.context = self.profile.context
+        self.context.injector.bind_instance(
+            BaseMultitenantManager, mock.MagicMock(MultitenantManager, autospec=True)
+        )
+
+    async def test_convert_records_to_anoncreds(self):
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+
+            schema_id = "GHjSbphAcdsrZrLjSvsjMp:2:faber-simple:1.1"
+            schema_id_parts = schema_id.split(":")
+            schema_tags = {
+                "schema_id": schema_id,
+                "schema_issuer_did": schema_id_parts[0],
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "epoch": str(int(time())),
+            }
+            await storage.add_record(
+                StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
+            )
+
+            credential_definition_id = "GHjSbphAcdsrZrLjSvsjMp:3:CL:8:default"
+            cred_def_tags = {
+                "schema_id": schema_id,
+                "schema_issuer_did": schema_id_parts[0],
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "issuer_did": "GHjSbphAcdsrZrLjSvsjMp",
+                "cred_def_id": credential_definition_id,
+                "epoch": str(int(time())),
+            }
+            await storage.add_record(
+                StorageRecord(
+                    CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
+                )
+            )
+            storage.get_record = mock.CoroutineMock(
+                side_effect=[
+                    StorageRecord(
+                        CATEGORY_CRED_DEF_PRIVATE,
+                        {"p_key": {"p": "123...782", "q": "234...456"}, "r_key": None},
+                        {},
+                    ),
+                    StorageRecord(
+                        CATEGORY_CRED_DEF_KEY_PROOF,
+                        {"c": "103...961", "xz_cap": "563...205", "xr_cap": []},
+                        {},
+                    ),
+                ]
+            )
+            anoncreds_upgrade.IndyLedgerRequestsExecutor = mock.MagicMock()
+            anoncreds_upgrade.IndyLedgerRequestsExecutor.return_value.get_ledger_for_identifier = mock.CoroutineMock(
+                return_value=(
+                    None,
+                    mock.MagicMock(
+                        get_schema=mock.CoroutineMock(
+                            return_value={
+                                "attrNames": [
+                                    "name",
+                                    "age",
+                                ],
+                            },
+                        ),
+                        get_credential_definition=mock.CoroutineMock(
+                            return_value={
+                                "type": "CL",
+                                "tag": "default",
+                                "value": {
+                                    "primary": {
+                                        "n": "123",
+                                    },
+                                },
+                            },
+                        ),
+                    ),
+                )
+            )
+
+            with mock.patch.object(
+                anoncreds_upgrade, "upgrade_and_delete_schema_records"
+            ), mock.patch.object(
+                anoncreds_upgrade, "upgrade_and_delete_cred_def_records"
+            ):
+                await anoncreds_upgrade.convert_records_to_anoncreds(self.profile)
+
+    async def test_retry_converting_records(self):
+        with mock.patch.object(
+            anoncreds_upgrade, "convert_records_to_anoncreds", mock.CoroutineMock()
+        ) as mock_convert_records_to_anoncreds:
+            mock_convert_records_to_anoncreds.side_effect = [
+                Exception("Error"),
+                Exception("Error"),
+                None,
+            ]
+            async with self.profile.session() as session:
+                storage = session.inject(BaseStorage)
+                upgrading_record = StorageRecord(
+                    RECORD_TYPE_ACAPY_UPGRADING,
+                    "true",
+                )
+                await storage.add_record(upgrading_record)
+            await anoncreds_upgrade.retry_converting_records(
+                self.profile, upgrading_record, 0
+            )
+            upgrade_singleton = UpgradeSingleton()
+            assert mock_convert_records_to_anoncreds.called
+            assert mock_convert_records_to_anoncreds.call_count == 3
+            _, storage_type_record = next(iter(self.profile.records.items()))
+            assert storage_type_record.value == "askar-anoncreds"
+            assert not upgrade_singleton.current_upgrades
+
+    async def test_upgrade_wallet_to_anoncreds(self):
+        # upgrading record not present
+        await anoncreds_upgrade.upgrade_wallet_to_anoncreds(self.profile)
+
+        # upgrading record present
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            await storage.add_record(
+                StorageRecord(
+                    RECORD_TYPE_ACAPY_UPGRADING,
+                    "true",
+                )
+            )
+            await anoncreds_upgrade.upgrade_wallet_to_anoncreds(self.profile)
+            # Upgrading record should be deleted
+            assert len(storage.profile.records) == 1
+            _, storage_type_record = next(iter(self.profile.records.items()))
+            assert storage_type_record.value == "askar-anoncreds"
+
+            upgrade_singleton = UpgradeSingleton()
+            assert not upgrade_singleton.current_upgrades
+
+        # retry called on exception
+        with mock.patch.object(
+            anoncreds_upgrade,
+            "convert_records_to_anoncreds",
+            mock.CoroutineMock(side_effect=[Exception("Error")]),
+        ) as mock_convert_records_to_anoncreds, mock.patch.object(
+            anoncreds_upgrade, "retry_converting_records", mock.CoroutineMock()
+        ) as mock_retry_converting_records:
+            async with self.profile.session() as session:
+                storage = session.inject(BaseStorage)
+                await storage.add_record(
+                    StorageRecord(
+                        RECORD_TYPE_ACAPY_UPGRADING,
+                        "true",
+                    )
+                )
+            await anoncreds_upgrade.upgrade_wallet_to_anoncreds(self.profile)
+            assert mock_retry_converting_records.called
+
+    async def test_set_storage_type_to_anoncreds_no_existing_record(self):
+        await anoncreds_upgrade.set_storage_type_to_anoncreds(self.profile)
+        _, storage_type_record = next(iter(self.profile.records.items()))
+        assert storage_type_record.value == "askar-anoncreds"
+
+    async def test_set_storage_type_to_anoncreds_has_existing_record(self):
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            await storage.add_record(
+                StorageRecord(
+                    RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                    "askar",
+                )
+            )
+            await anoncreds_upgrade.set_storage_type_to_anoncreds(self.profile)
+            _, storage_type_record = next(iter(self.profile.records.items()))
+            assert storage_type_record.value == "askar-anoncreds"
+
+    async def test_update_if_subwallet_and_set_storage_type_with_subwallet(self):
+
+        await anoncreds_upgrade.set_storage_type_and_update_profile_if_subwallet(
+            self.profile, True
+        )
+        _, storage_type_record = next(iter(self.profile.records.items()))
+        assert storage_type_record.value == "askar-anoncreds"
+
+    async def test_update_if_subwallet_and_set_storage_type_with_base_wallet(self):
+
+        await anoncreds_upgrade.set_storage_type_and_update_profile_if_subwallet(
+            self.profile, False
+        )
+        _, storage_type_record = next(iter(self.profile.records.items()))
+        assert storage_type_record.value == "askar-anoncreds"

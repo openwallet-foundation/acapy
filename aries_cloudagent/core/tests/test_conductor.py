@@ -117,6 +117,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -166,6 +168,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
             mock_inbound_mgr.return_value.stop.assert_awaited_once_with()
             mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
+            assert mock_upgrade.called
 
     async def test_startup_version_no_upgrade_add_record(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -176,6 +179,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -213,6 +218,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -257,6 +264,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -296,6 +305,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -335,6 +346,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -373,6 +386,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -449,6 +464,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -492,6 +509,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_inbound_mgr, mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger:
             mock_inbound_mgr.return_value.sessions = ["dummy"]
@@ -884,6 +903,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as admin_start, mock.patch.object(
             admin, "stop", autospec=True
         ) as admin_stop, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -936,6 +957,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as oob_mgr, mock.patch.object(
             test_module, "ConnectionManager"
         ) as conn_mgr, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -992,7 +1015,9 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             ),
         ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr:
+        ) as mock_outbound_mgr, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade:
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
@@ -1166,7 +1191,9 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             ),
         ), mock.patch.object(
             test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr:
+        ) as mock_outbound_mgr, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade:
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": mock.MagicMock(schemes=["http"])
             }
@@ -1203,6 +1230,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             "MediationManager",
             return_value=mock.MagicMock(clear_default_mediator=mock.CoroutineMock()),
         ) as mock_mgr, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -1254,7 +1283,9 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                     mock.MagicMock(value=f"v{__version__}"),
                 ]
             ),
-        ):
+        ), mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade:
             await conductor.start()
             await conductor.stop()
             mock_mgr.return_value.set_default_mediator_by_id.assert_called_once()
@@ -1277,6 +1308,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             "retrieve_by_id",
             mock.CoroutineMock(side_effect=Exception()),
         ), mock.patch.object(test_module, "LOGGER") as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -1425,6 +1458,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         ) as mock_mgr, mock.patch.object(
             mock_conn_record, "metadata_set", mock.CoroutineMock()
         ), mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -1484,6 +1519,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
                 )
             ),
         ) as mock_mgr, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -1542,6 +1579,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         ), mock.patch.object(
             test_module, "MediationManager", return_value=mock_mediation_manager
         ), mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -1596,7 +1635,9 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
                     mock.MagicMock(value=f"v{__version__}"),
                 ]
             ),
-        ):
+        ), mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade:
             # when
             await conductor.start()
             await conductor.stop()
@@ -1631,6 +1672,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         ) as mock_from_url, mock.patch.object(
             test_module, "LOGGER"
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -1694,6 +1737,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LOGGER"
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -1735,6 +1780,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -1838,6 +1885,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(
@@ -1902,6 +1951,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         ) as mock_outbound_mgr, mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger, mock.patch.object(
+            test_module, "upgrade_wallet_to_anoncreds", return_value=False
+        ) as mock_upgrade, mock.patch.object(
             BaseStorage,
             "find_record",
             mock.CoroutineMock(

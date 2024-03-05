@@ -1,22 +1,24 @@
 import gc
 import json
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
+
+from aries_cloudagent.tests import mock
 
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event
+from ...core.goal_code_registry import GoalCodeRegistry
 from ...core.in_memory import InMemoryProfile
 from ...core.protocol_registry import ProtocolRegistry
-from ...core.goal_code_registry import GoalCodeRegistry
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
-
+from ...wallet.upgrade_singleton import UpgradeSingleton
 from .. import server as test_module
+from ..request_context import AdminRequestContext
 from ..server import AdminServer, AdminSetupError
 
 
@@ -476,6 +478,31 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         ) as response:
             assert response.status == 503
         await server.stop()
+
+    async def test_upgrade_middleware(self):
+        upgrade_singleton = UpgradeSingleton()
+        self.context = AdminRequestContext.test_context(
+            {}, InMemoryProfile.test_profile()
+        )
+        self.request_dict = {
+            "context": self.context,
+        }
+        request = mock.MagicMock(
+            method="GET",
+            path_qs="/schemas/created",
+            match_info={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
+        handler = mock.CoroutineMock()
+
+        await test_module.upgrade_middleware(request, handler)
+
+        upgrade_singleton.set_wallet("test-profile")
+        with self.assertRaises(test_module.web.HTTPServiceUnavailable):
+            await test_module.upgrade_middleware(request, handler)
+
+        upgrade_singleton.remove_wallet("test-profile")
+        await test_module.upgrade_middleware(request, handler)
 
 
 @pytest.fixture

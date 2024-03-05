@@ -643,7 +643,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         try:
             legacy_indy_registry = LegacyIndyRegistry()
             resp = await legacy_indy_registry.txn_submit(
-                self.profile,
+                self,
                 schema_req,
                 sign=True,
                 sign_did=public_info,
