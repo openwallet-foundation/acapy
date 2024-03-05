@@ -253,8 +253,6 @@ async def invitation_create(request: web.BaseRequest):
             "emit_did_peer_2 and emit_did_peer_4 both set, \
              using did:peer:4"
         )
-    if create_unique_did and not (emit_did_peer_4 or emit_did_peer_2):
-        raise web.HTTPBadRequest(reason="create_unique_did must be used with did:peer")
 
     oob_mgr = OutOfBandManager(profile)
     try:

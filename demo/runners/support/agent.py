@@ -1458,10 +1458,11 @@ class DemoAgent:
         self.connection_id = None
         if use_did_exchange:
             # TODO can mediation be used with DID exchange connections?
+            create_unique_did = (not reuse_connections) and (not public_did_connections)
             invi_params = {
                 "auto_accept": json.dumps(auto_accept),
                 "multi_use": json.dumps(multi_use_invitations),
-                "create_unique_did": json.dumps(not reuse_connections),
+                "create_unique_did": json.dumps(create_unique_did),
             }
             payload = {
                 "handshake_protocols": ["rfc23"],

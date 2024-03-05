@@ -102,27 +102,21 @@ instruction up to the point where you are about to start the Faber and Alice age
 1. On a command line, run Faber with these parameters: `./run_demo faber
    --reuse-connection --public-did-connections --events`.
 2. On a second command line, run Alice as normal, perhaps with the `events`
-   option: `./run_demo alice --events`
+   option: `./run_demo alice --reuse-connection --events`
 3. Copy the invitation from the Faber terminal and paste it into the Alice
    terminal at the prompt.
 4. Verify that the connection was established.
    1. If you want, go to the Alice OpenAPI screen (port `8031`, path
       `api/docs`), and then use the `GET Connections` to see that Alice has one
       connection to Faber.
-5. In the Alice terminal, type `4` to get a prompt for a new connection, and
-   paste the same invitation as in Step 3 (above).
-6. Note from the webhook events in the Faber terminal that the `reuse` message
+5. In the Faber terminal, type `4` to get a prompt for a new connection. This
+   will generate a new invitation with the same public DID.
+6. In the Alice terminal, type `4` to get a prompt for a new connection, and
+   paste the new invitation.
+7. Note from the webhook events in the Faber terminal that the `reuse` message
    is received from Alice, and as a result, no new connection was created.
    1. Execute again the `GET Connections` endpoint on the Alice OpenAPI screen
       to confirm that there is still just one established connection.
-7. In the Faber terminal, type `4` to get a new invitation, copy the invitation,
-   in the Alice terminal, type `4` to get prompted for an invitation, and paste
-   in the new invitation from Faber. Again, the `reuse` webhook event will be
-   visible in the Faber terminal.
-   1. Execute again the `GET Connections` endpoint on the Alice OpenAPI screen
-      to confirm that there is still just one established connection.
-   2. Notice that in the invitations in Step 3 and 7 both have the same DID in
-      the `services`.
 8. Try running the demo again **without** the `--reuse-connection` parameter and
    compare the `services` value in the new invitation vs. what was generated in
    Steps 3 and 7. It is not a DID, but rather a one time use, inline DIDDoc
@@ -146,6 +140,8 @@ To run faber using a `did_peer` and reusable connections:
 DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connection --events
 ```
 
-Note that the invitation does **NOT** have to be a multi-use invitation for
-reuse to be useful, as long as the other requirements (at the top of this
-document) are met.
+To run this demo using a multi-use invitation (from Faber):
+
+```
+DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connection --multi-use-invitations --events
+```
