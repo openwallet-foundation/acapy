@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from marshmallow import EXCLUDE, ValidationError, validates_schema
+from marshmallow import EXCLUDE, ValidationError, pre_dump, validates_schema
 
 from .....protocols.problem_report.v1_0.message import (
     ProblemReport,
@@ -114,5 +114,9 @@ class RotateProblemReportSchema(ProblemReportSchema):
                 "Rotate problem report problem_items must contain did"
             )
 
-        if "~thread" not in data or "thid" not in data["~thread"]:
-            raise ValidationError("Rotate problem report must contain ~thread.thid")
+    @pre_dump
+    def check_thread_deco(self, obj, **kwargs):
+        """Thread decorator, and its thid, are mandatory."""
+        if not obj._decorators.to_dict().get("~thread", {}).keys() >= {"thid"}:
+            raise ValidationError("Missing required field(s) in thread decorator")
+        return obj

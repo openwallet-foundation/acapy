@@ -117,9 +117,10 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
         self.request.json = mock.CoroutineMock(return_value=test_valid_rotate_request)
 
         with mock.patch.object(
-            test_module.ConnRecord, "retrieve_by_id", mock.CoroutineMock()
+            test_module.ConnRecord,
+            "retrieve_by_id",
+            mock.CoroutineMock(side_effect=StorageNotFoundError()),
         ) as mock_retrieve_by_id:
-            mock_retrieve_by_id.side_effect = StorageNotFoundError()
 
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.rotate(self.request)

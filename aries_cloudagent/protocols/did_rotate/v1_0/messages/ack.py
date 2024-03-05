@@ -1,9 +1,8 @@
 """Rotate ack message."""
 
-from marshmallow import EXCLUDE, ValidationError, validates_schema
+from marshmallow import EXCLUDE, ValidationError, pre_dump
 
 from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
-
 from ..message_types import ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.ack_handler.RotateAckHandler"
@@ -33,16 +32,9 @@ class RotateAckSchema(V10AckSchema):
         model_class = RotateAck
         unknown = EXCLUDE
 
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """Validate schema fields.
-
-        Args:
-            data: The data to validate
-
-        Raises:
-            ValidationError: if data is invalid
-
-        """
-        if "~thread" not in data or "thid" not in data["~thread"]:
-            raise ValidationError("Rotate problem report must contain ~thread.thid")
+    @pre_dump
+    def check_thread_deco(self, obj, **kwargs):
+        """Thread decorator, and its thid, are mandatory."""
+        if not obj._decorators.to_dict().get("~thread", {}).keys() >= {"thid"}:
+            raise ValidationError("Missing required field(s) in thread decorator")
+        return obj

@@ -128,16 +128,19 @@ class RotateRecordSchema(BaseRecordSchema):
     )
     connection_id = fields.Str(
         required=True,
-        metadata={"description": "Connection identifier"},
-        example="3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        metadata={
+            "description": "Connection identifier",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        },
     )
     error = fields.Str(
         required=False,
-        metadata={"description": "Error message"},
-        example="Invalid DID",
+        metadata={"description": "Error message", "example": "Invalid DID"},
     )
     new_did = fields.Str(
         required=False,
-        metadata={"description": "New DID"},
-        example="did:sov:WRfXPg8dantKVubE3HX8pw",
+        metadata={
+            "description": "New DID",
+            "example": "did:sov:WRfXPg8dantKVubE3HX8pw",
+        },
     )
