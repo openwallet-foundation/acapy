@@ -195,7 +195,8 @@ class DIDRotateManager:
             # Don't emit a connection event for this change
             # Controllers should listen for the rotate event instead
             await conn.save(session, reason="My DID rotated", event=False)
-            await record.save(session, reason="Received rotate ack")
+            # At this point the rotate is complete, so we can delete the record
+            await record.delete_record(session)
 
         # TODO it would be better if the cache key included DIDs so we don't
         # have to manually clear it. This is a bigger change than a first pass
