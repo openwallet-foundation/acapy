@@ -52,12 +52,15 @@ class ConnRecord(BaseRecord):
         @classmethod
         def get(cls, label: Union[str, "ConnRecord.Protocol"]):
             """Get aries protocol enum for label."""
-            if isinstance(label, str):
-                for proto in ConnRecord.Protocol:
-                    if label in proto.value:
-                        return proto
-            elif isinstance(label, ConnRecord.Protocol):
+            if isinstance(label, ConnRecord.Protocol):
                 return label
+
+            if isinstance(label, str):
+                try:
+                    return ConnRecord.Protocol(label)
+                except ValueError:
+                    pass
+
             return None
 
         @property
