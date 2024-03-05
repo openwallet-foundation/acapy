@@ -33,6 +33,14 @@ aries\_cloudagent.utils.dependencies module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.utils.endorsement\_setup module
+-------------------------------------------------
+
+.. automodule:: aries_cloudagent.utils.endorsement_setup
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.utils.env module
 ----------------------------------
 
