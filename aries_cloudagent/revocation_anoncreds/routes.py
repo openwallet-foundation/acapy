@@ -515,6 +515,7 @@ async def revoke(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
     is_not_anoncreds_profile_raise_web_exception(profile)
 
     body = await request.json()
@@ -951,7 +952,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
                     reason += ": missing wallet-type?"
                 raise web.HTTPInternalServerError(reason=reason)
 
-    rev_manager = RevocationManager(context.profile)
+    rev_manager = RevocationManager(profile)
     try:
         (
             rev_reg_delta,

@@ -698,13 +698,14 @@ async def clear_pending_revocations(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
 
-    is_anoncreds_profile_raise_web_exception(context.profile)
+    is_anoncreds_profile_raise_web_exception(profile)
 
     body = await request.json()
     purge = body.get("purge")
 
-    rev_manager = RevocationManager(context.profile)
+    rev_manager = RevocationManager(profile)
 
     try:
         results = await rev_manager.clear_pending_revocations(purge)
@@ -853,6 +854,7 @@ async def get_rev_reg(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
     is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
@@ -883,10 +885,13 @@ async def get_rev_reg_issued_count(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         try:
             await IssuerRevRegRecord.retrieve_by_revoc_reg_id(session, rev_reg_id)
         except StorageNotFoundError as err:
@@ -915,13 +920,14 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
 
-    is_anoncreds_profile_raise_web_exception(context.profile)
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
     recs = []
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         try:
             await IssuerRevRegRecord.retrieve_by_revoc_reg_id(session, rev_reg_id)
         except StorageNotFoundError as err:
@@ -951,12 +957,13 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
 
-    is_anoncreds_profile_raise_web_exception(context.profile)
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    revoc = IndyRevocation(context.profile)
+    revoc = IndyRevocation(profile)
     rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
 
     return web.json_response(
@@ -984,8 +991,9 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
 
-    is_anoncreds_profile_raise_web_exception(context.profile)
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
@@ -995,7 +1003,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 
     rev_reg_record = None
     genesis_transactions = None
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         try:
             rev_reg_record = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
                 session, rev_reg_id
@@ -1028,7 +1036,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
                     reason += ": missing wallet-type?"
                 raise web.HTTPInternalServerError(reason=reason)
 
-    rev_manager = RevocationManager(context.profile)
+    rev_manager = RevocationManager(profile)
     try:
         (
             rev_reg_delta,
@@ -1074,15 +1082,16 @@ async def get_cred_rev_record(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
 
-    is_anoncreds_profile_raise_web_exception(context.profile)
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.query.get("rev_reg_id")
     cred_rev_id = request.query.get("cred_rev_id")  # numeric string
     cred_ex_id = request.query.get("cred_ex_id")
 
     try:
-        async with context.profile.session() as session:
+        async with profile.session() as session:
             if rev_reg_id and cred_rev_id:
                 rec = await IssuerCredRevRecord.retrieve_by_ids(
                     session, rev_reg_id, cred_rev_id
@@ -1148,6 +1157,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
     is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]

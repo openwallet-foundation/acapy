@@ -380,15 +380,16 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
 
-    is_anoncreds_profile_raise_web_exception(context.profile)
+    is_anoncreds_profile_raise_web_exception(profile)
 
     schema_id = request.match_info["schema_id"]
 
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
@@ -429,8 +430,8 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
     profile = context.profile
+
     is_anoncreds_profile_raise_web_exception(profile)
 
     schema_id = request.match_info["schema_id"]
@@ -439,7 +440,7 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
         storage = session.inject(BaseStorage)
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
