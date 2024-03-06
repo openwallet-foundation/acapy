@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v0.12.0rc1",
+    "version" : "v0.12.0rc2",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -339,7 +339,7 @@
           "description" : "Connection state",
           "required" : false,
           "type" : "string",
-          "enum" : [ "abandoned", "invitation", "active", "response", "request", "start", "error", "completed", "init" ]
+          "enum" : [ "abandoned", "invitation", "response", "active", "start", "request", "error", "init", "completed" ]
         }, {
           "name" : "their_did",
           "in" : "query",
