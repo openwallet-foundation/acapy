@@ -2538,7 +2538,7 @@
 </ul>
 <h3 id="bonus-points">Bonus Points<a class="headerlink" href="#bonus-points" title="Permanent link">&para;</a></h3>
 <p>If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other <code>/issue-credential-2.0/</code> messages. Use the <strong><code>GET /issue-credential-2.0/records</code></strong> to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.</p>
-<p>The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to. See the <a href="../features/AdminAPI">detailed API docs</a>.</p>
+<p>The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to. See the <a href="../../features/AdminAPI/">detailed API docs</a>.</p>
 <table>
 <thead>
 <tr>
@@ -2692,7 +2692,7 @@
 <p>As with the issue credential process, the agents handled some of the presentation steps without bothering the controller. In this case, Alice's agent processed the presentation request automatically through its handler for the <code>present_proof_v2_0</code> event, and her wallet contained exactly one credential that satisfied the presentation-request from the Faber agent. Similarly, the Faber agent's handler for the event responds automatically and so on receipt of the presentation, it verified the presentation and updated the status accordingly.</p>
 <h3 id="bonus-points_1">Bonus Points<a class="headerlink" href="#bonus-points_1" title="Permanent link">&para;</a></h3>
 <p>If you would like to perform all of the proof request/response steps manually, you can call all of the individual <code>/present-proof-2.0</code> messages.</p>
-<p>The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that you need to respond to. See the <a href="../features/AdminAPI">detailed API docs</a>.</p>
+<p>The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that you need to respond to. See the <a href="../../features/AdminAPI/">detailed API docs</a>.</p>
 <table>
 <thead>
 <tr>
