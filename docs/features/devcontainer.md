@@ -5,7 +5,7 @@ We provide a [`devcontainer`](https://containers.dev) and will use [`VS Code`](h
 
 By no means is ACA-Py limited to these tools; they are merely examples.  
 
-**For information on running demos and tests using provided shell scripts, see [DevReadMe](./DevReadMe) readme.**
+**For information on running demos and tests using provided shell scripts, see [DevReadMe](./DevReadMe.md) readme.**
 
 ## Caveats
 

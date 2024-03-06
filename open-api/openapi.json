@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v0.12.0rc1"
+    "version" : "v0.12.0rc2"
   },
   "servers" : [ {
     "url" : "/"
@@ -376,7 +376,7 @@
           "in" : "query",
           "name" : "state",
           "schema" : {
-            "enum" : [ "abandoned", "invitation", "active", "response", "request", "start", "error", "completed", "init" ],
+            "enum" : [ "abandoned", "invitation", "response", "active", "start", "request", "error", "init", "completed" ],
             "type" : "string"
           }
         }, {
