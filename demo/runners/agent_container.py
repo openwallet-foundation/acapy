@@ -7,27 +7,25 @@ import random
 import sys
 import time
 from typing import List
+
 import yaml
-
-from qrcode import QRCode
-
 from aiohttp import ClientError
+from qrcode import QRCode
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from runners.support.agent import (  # noqa:E402
-    CRED_FORMAT_VC_DI,
-    DemoAgent,
-    default_genesis_txns,
-    start_mediator_agent,
-    connect_wallet_to_mediator,
-    start_endorser_agent,
-    connect_wallet_to_endorser,
-    WALLET_TYPE_INDY,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
     DID_METHOD_KEY,
     KEY_TYPE_BLS,
+    WALLET_TYPE_INDY,
+    DemoAgent,
+    connect_wallet_to_endorser,
+    connect_wallet_to_mediator,
+    default_genesis_txns,
+    start_endorser_agent,
+    start_mediator_agent,
 )
 from runners.support.utils import (  # noqa:E402
     check_requires,
@@ -36,7 +34,6 @@ from runners.support.utils import (  # noqa:E402
     log_status,
     log_timer,
 )
-
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
@@ -1188,7 +1185,9 @@ class AgentContainer:
         """
         return await self.agent.admin_GET(path, text=text, params=params)
 
-    async def admin_POST(self, path, data=None, text=False, params=None) -> dict:
+    async def admin_POST(
+        self, path, data=None, text=False, params=None, raise_error=True
+    ) -> dict:
         """Execute an admin POST request in the context of the current wallet.
 
         path = /path/of/request
@@ -1196,7 +1195,9 @@ class AgentContainer:
         text = True if the expected response is text, False if json data
         params = any additional parameters to pass with the request
         """
-        return await self.agent.admin_POST(path, data=data, text=text, params=params)
+        return await self.agent.admin_POST(
+            path, data=data, text=text, params=params, raise_error=raise_error
+        )
 
     async def admin_PATCH(self, path, data=None, text=False, params=None) -> dict:
         """Execute an admin PATCH request in the context of the current wallet.

@@ -32,7 +32,7 @@ def step_impl(context, agent_name, did_role):
     created_did = agent_container_POST(agent["agent"], "/wallet/did/create")
 
     # publish to the ledger with did_role
-    registered_did = agent_container_register_did(
+    agent_container_register_did(
         agent["agent"],
         created_did["result"]["did"],
         created_did["result"]["verkey"],
@@ -40,11 +40,17 @@ def step_impl(context, agent_name, did_role):
     )
 
     # make the new did the wallet's public did
-    published_did = agent_container_POST(
-        agent["agent"],
-        "/wallet/did/public",
-        params={"did": created_did["result"]["did"]},
-    )
+    retries = 3
+    for retry in range(retries):
+        published_did = agent_container_POST(
+            agent["agent"],
+            "/wallet/did/public",
+            params={"did": created_did["result"]["did"]},
+            raise_error=retries - 1 == retry,
+        )
+        if "result" in published_did or "txn" in published_did:
+            break
+
     if "result" in published_did:
         # published right away!
         pass
