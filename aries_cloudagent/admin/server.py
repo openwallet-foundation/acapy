@@ -299,7 +299,7 @@ class AdminServer(BaseAdminServer):
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        middlewares = [ready_middleware, debug_middleware, validation_middleware]
+        middlewares = [ready_middleware, debug_middleware]
 
         # admin-token and admin-token are mutually exclusive and required.
         # This should be enforced during parameter parsing but to be sure,
@@ -452,6 +452,9 @@ class AdminServer(BaseAdminServer):
             return await handler(request)
 
         middlewares.append(setup_context)
+
+        # Register validation_middleware last avoiding unauthorized validations
+        middlewares.append(validation_middleware)
 
         app = web.Application(
             middlewares=middlewares,

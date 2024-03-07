@@ -330,15 +330,15 @@ class IssuerRevRegRecord(BaseRecord):
                     #   Ledger rejected transaction request: client request invalid:
                     #   InvalidClientRequest(...)
                     # In this scenario we try to post a correction
-                    LOGGER.warn("Retry ledger update/fix due to error")
-                    LOGGER.warn(err)
+                    LOGGER.warning("Retry ledger update/fix due to error")
+                    LOGGER.warning(err)
                     (_, _, res) = await self.fix_ledger_entry(
                         profile,
                         True,
                         ledger.pool.genesis_txns,
                     )
                     rev_entry_res = {"result": res}
-                    LOGGER.warn("Ledger update/fix applied")
+                    LOGGER.warning("Ledger update/fix applied")
                 elif "InvalidClientTaaAcceptanceError" in err.roll_up:
                     # if no write access (with "InvalidClientTaaAcceptanceError")
                     # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aries_cloudagent"
-version = "0.12.0rc0"
+version = "0.12.0rc2"
 description = "Hyperledger Aries Cloud Agent Python (ACA-Py) is a foundation for building decentralized identity applications and services running in non-mobile environments. "
 authors = ["Hyperledger Aries <aries@lists.hyperledger.org>"]
 license = "Apache-2.0"
@@ -25,8 +25,8 @@ base58="~2.1.0"
 ConfigArgParse="~1.5.3"
 deepmerge="~0.3.0"
 ecdsa="~0.16.1"
-jsonpath_ng="1.5.2"
-Markdown="~3.1.1"
+jsonpath-ng="1.6.1"
+Markdown="~3.5.2"
 markupsafe="2.0.1"
 marshmallow="~3.20.1"
 nest_asyncio="~1.5.5"
@@ -43,7 +43,7 @@ pytz="~2021.1"
 pyyaml="~6.0.1"
 qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
 requests="~2.31.0"
-rlp="1.2.0"
+rlp="4.0.0"
 unflatten="~0.1"
 sd-jwt = "^0.10.3"
 did-peer-2 = "^0.1.2"
@@ -139,6 +139,9 @@ markers = [
 ]
 junit_family = "xunit1"
 asyncio_mode = "auto"
+filterwarnings = [
+    'ignore:distutils Version classes are deprecated. Use packaging.version instead.:DeprecationWarning', # Ignore specific DeprecationWarning for old packages using distutils version class
+]
 
 [tool.coverage.run]
 

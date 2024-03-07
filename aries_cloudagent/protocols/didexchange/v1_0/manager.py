@@ -6,6 +6,7 @@ from typing import Optional, Sequence, Union
 
 from did_peer_4 import LONG_PATTERN, long_to_short
 
+from ....admin.server import AdminResponder
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
@@ -150,7 +151,8 @@ class DIDXManager(BaseConnectionManager):
 
         if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
             request = await self.create_request(conn_rec, mediation_id=mediation_id)
-            responder = self.profile.inject_or(BaseResponder)
+            base_responder = self.profile.inject(BaseResponder)
+            responder = AdminResponder(self.profile, base_responder.send_fn)
             if responder:
                 await responder.send_reply(
                     request,

@@ -2,6 +2,7 @@
 
 from typing import Iterable, Optional, cast
 
+from ..askar.profile_anon import AskarAnoncredsProfile
 from ..askar.profile import AskarProfile
 from ..config.injection_context import InjectionContext
 from ..config.wallet import wallet_config
@@ -103,6 +104,14 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         ).extend(extra_settings)
 
         assert self._multitenant_profile.opened
+
+        # return anoncreds profile if explicitly set as wallet type
+        if profile_context.settings.get("wallet.type") == "askar-anoncreds":
+            return AskarAnoncredsProfile(
+                self._multitenant_profile.opened,
+                profile_context,
+                profile_id=wallet_record.wallet_id,
+            )
 
         return AskarProfile(
             self._multitenant_profile.opened,

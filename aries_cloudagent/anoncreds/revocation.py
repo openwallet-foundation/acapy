@@ -494,7 +494,9 @@ class AnonCredsRevocation:
 
             if result.revocation_list_state.state == STATE_FINISHED:
                 await self.notify(
-                    RevListFinishedEvent.with_payload(rev_list.rev_reg_def_id)
+                    RevListFinishedEvent.with_payload(
+                        rev_list.rev_reg_def_id, rev_list.revocation_list
+                    )
                 )
 
         except AskarError as err:
@@ -502,7 +504,9 @@ class AnonCredsRevocation:
                 "Error saving new revocation registry"
             ) from err
 
-    async def finish_revocation_list(self, job_id: str, rev_reg_def_id: str):
+    async def finish_revocation_list(
+        self, job_id: str, rev_reg_def_id: str, revoked: list
+    ):
         """Mark a revocation list as finished."""
         async with self.profile.transaction() as txn:
             # Finish the registration if the list is new, otherwise already updated
@@ -519,7 +523,10 @@ class AnonCredsRevocation:
                     state=STATE_FINISHED,
                 )
                 await txn.commit()
-                await self.notify(RevListFinishedEvent.with_payload(rev_reg_def_id))
+            # Notify about revoked creds on any list update
+            await self.notify(
+                RevListFinishedEvent.with_payload(rev_reg_def_id, revoked)
+            )
 
     async def update_revocation_list(
         self,
@@ -1209,7 +1216,7 @@ class AnonCredsRevocation:
                     )
                     failed_crids.add(rev_id)
                 elif rev_id >= rev_info["next_index"]:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s not yet issued",
                         revoc_reg_id,
@@ -1217,7 +1224,7 @@ class AnonCredsRevocation:
                     )
                     failed_crids.add(rev_id)
                 elif rev_list.revocation_list[rev_id] == 1:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s already revoked",
                         revoc_reg_id,
@@ -1259,7 +1266,7 @@ class AnonCredsRevocation:
                         CATEGORY_REV_LIST, revoc_reg_id, for_update=True
                     )
                     if not rev_info_upd:
-                        LOGGER.warn(
+                        LOGGER.warning(
                             "Revocation registry missing, skipping update: {}",
                             revoc_reg_id,
                         )

@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [Hyperledger Discord](https://discord.gg/hyperledger) or through an issue in this repo.
 
-**Last Update**: 2024-01-17, Release 0.12.0rc0
+**Last Update**: 2024-03-05, Release 0.12.0rc2
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.
@@ -128,6 +128,8 @@ are fully supported in ACA-Py **EXCEPT** as noted in the table below.
 | --- | :--: | -- |
 | [0587-encryption-envelope-v2](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0587-encryption-envelope-v2) | :construction: | Supporting the DIDComm v2 encryption envelope does not make sense until DIDComm v2 is to be supported. |
 | [0317-please-ack](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) |  :x: | An investigation was done into supporting `please-ack` and a number of complications were found. As a result, we expect that `please-ack` will be dropped from AIP 2.0. It has not been implemented by any Aries frameworks or deployments. |
+
+There is a [PR to the Aries RFCs repository](https://github.com/hyperledger/aries-rfcs/pull/814) to remove those RFCs from AIP 2.0. If that PR is removed, the RFCs will be removed from the table above.
 
 ### Other Supported RFCs
 
