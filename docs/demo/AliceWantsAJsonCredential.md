@@ -2,7 +2,7 @@
 
 ACA-Py has the capability to issue and verify both Indy and JSON-LD (W3C compliant) credentials.
 
-The JSON-LD support is documented [here](../JsonLdCredentials.md) - this document will provide some additional detail in how to use the demo and admin api to issue and prove JSON-LD credentials.
+The JSON-LD support is documented [here](../features/JsonLdCredentials.md) - this document will provide some additional detail in how to use the demo and admin api to issue and prove JSON-LD credentials.
 
 ## Setup Agents to Issue JSON-LD Credentials
 
