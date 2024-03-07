@@ -1,6 +1,4 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-import asyncpg
 import base64
 import functools
 import json
@@ -9,17 +7,18 @@ import os
 import random
 import subprocess
 import sys
-import yaml
-
+from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer
 
+import asyncpg
+import yaml
 from aiohttp import (
-    web,
-    ClientSession,
+    ClientError,
     ClientRequest,
     ClientResponse,
-    ClientError,
+    ClientSession,
     ClientTimeout,
+    web,
 )
 
 from .utils import flatten, log_json, log_msg, log_timer, output_reader
@@ -1045,17 +1044,17 @@ class DemoAgent:
         )
 
     async def handle_endorse_transaction(self, message):
-        self.log(f"Received endorse transaction ...\n", source="stderr")
+        self.log("Received endorse transaction ...\n", source="stderr")
 
     async def handle_revocation_registry(self, message):
         reg_id = message.get("revoc_reg_id", "(undetermined)")
         self.log(f"Revocation registry: {reg_id} state: {message['state']}")
 
     async def handle_mediation(self, message):
-        self.log(f"Received mediation message ...\n")
+        self.log("Received mediation message ...\n")
 
     async def handle_keylist(self, message):
-        self.log(f"Received handle_keylist message ...\n")
+        self.log("Received handle_keylist message ...\n")
         self.log(json.dumps(message))
 
     async def taa_accept(self):
@@ -1167,7 +1166,7 @@ class DemoAgent:
             raise
 
     async def admin_POST(
-        self, path, data=None, text=False, params=None, headers=None
+        self, path, data=None, text=False, params=None, headers=None, raise_error=True
     ) -> ClientResponse:
         try:
             EVENT_LOGGER.debug(
@@ -1192,6 +1191,8 @@ class DemoAgent:
             return response
         except ClientError as e:
             self.log(f"Error during POST {path}: {str(e)}")
+            if not raise_error:
+                return None
             raise
 
     async def admin_PATCH(
