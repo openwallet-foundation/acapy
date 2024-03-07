@@ -3,10 +3,6 @@
 import json
 import logging
 from typing import Mapping, Tuple
-from aries_cloudagent.protocols.issue_credential.v2_0.manager import (
-    V20CredManager,
-    V20CredManagerError,
-)
 from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import (
     V20CredExRecordVCDI,
 )
@@ -25,15 +21,12 @@ from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import (
     AnonCredsIssuer,
 )
-from ......indy.models.cred import IndyCredentialSchema
 from ......indy.models.cred_abstract import (
-    IndyCredAbstractSchema,
     VCDICredAbstract,
     VCDICredAbstractSchema,
 )
 from ......indy.models.cred_request import (
     BindingProof,
-    IndyCredRequestSchema,
     VCDICredRequest,
     VCDICredRequestSchema,
 )
@@ -42,10 +35,6 @@ from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
-)
-from ......messaging.credential_definitions.util import (
-    CRED_DEF_SENT_RECORD_TYPE,
-    CredDefQueryStringSchema,
 )
 from ......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ......messaging.credential_definitions.vcdi.util import VCDICredDefQueryStringSchema
