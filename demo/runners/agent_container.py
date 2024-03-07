@@ -159,7 +159,10 @@ class AriesAgent(DemoAgent):
             or self.multi_use_invitations
         ):
             # inviter or invitee:
-            if message["rfc23_state"] in ["completed", "response-sent"]:
+            if message["state"] == "deleted":
+                # connection reuse - invitation is getting deleted - ignore
+                pass
+            elif message["rfc23_state"] in ["completed", "response-sent"]:
                 if not self._connection_ready.done():
                     self.log("Connected")
                     self._connection_ready.set_result(True)
