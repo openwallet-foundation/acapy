@@ -47,6 +47,8 @@ from ......messaging.credential_definitions.util import (
     CRED_DEF_SENT_RECORD_TYPE,
     CredDefQueryStringSchema,
 )
+from ......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
+from ......messaging.credential_definitions.vcdi.util import VCDICredDefQueryStringSchema
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
@@ -94,7 +96,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
         """
         mapping = {
-            CRED_20_PROPOSAL: CredDefQueryStringSchema,
+            CRED_20_PROPOSAL: VCDICredDefQueryStringSchema,
             CRED_20_OFFER: VCDICredAbstractSchema,
             CRED_20_REQUEST: VCDICredRequestSchema,
             CRED_20_ISSUE: VerifiableCredentialSchema,

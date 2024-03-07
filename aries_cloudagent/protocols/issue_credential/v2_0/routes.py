@@ -34,6 +34,14 @@ from ....messaging.valid import (
     INDY_SCHEMA_ID_VALIDATE,
     INDY_VERSION_EXAMPLE,
     INDY_VERSION_VALIDATE,
+    VCDI_CRED_DEF_ID_EXAMPLE,
+    VCDI_CRED_DEF_ID_VALIDATE,
+    VCDI_DID_EXAMPLE,
+    VCDI_DID_VALIDATE,
+    VCDI_SCHEMA_ID_EXAMPLE,
+    VCDI_SCHEMA_ID_VALIDATE,
+    VCDI_VERSION_EXAMPLE,
+    VCDI_VERSION_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
@@ -168,6 +176,45 @@ class V20CredFilterIndySchema(OpenAPISchema):
         metadata={"description": "Credential issuer DID", "example": INDY_DID_EXAMPLE},
     )
 
+class V20CredFilterVCDISchema(OpenAPISchema):
+    """VCDI credential filtration criteria."""
+
+    cred_def_id = fields.Str(
+        required=False,
+        validate=VCDI_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": VCDI_CRED_DEF_ID_EXAMPLE,
+        },
+    )
+    schema_id = fields.Str(
+        required=False,
+        validate=VCDI_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": VCDI_SCHEMA_ID_EXAMPLE,
+        },
+    )
+    schema_issuer_did = fields.Str(
+        required=False,
+        validate=VCDI_DID_VALIDATE,
+        metadata={"description": "Schema issuer DID", "example": VCDI_DID_EXAMPLE},
+    )
+    schema_name = fields.Str(
+        required=False,
+        metadata={"description": "Schema name", "example": "preferences"},
+    )
+    schema_version = fields.Str(
+        required=False,
+        validate=VCDI_VERSION_VALIDATE,
+        metadata={"description": "Schema version", "example": VCDI_VERSION_EXAMPLE},
+    )
+    issuer_did = fields.Str(
+        required=False,
+        validate=VCDI_DID_VALIDATE,
+        metadata={"description": "Credential issuer DID", "example": VCDI_DID_EXAMPLE},
+    )
+
 
 class V20CredFilterSchema(OpenAPISchema):
     """Credential filtration criteria."""
@@ -179,6 +226,11 @@ class V20CredFilterSchema(OpenAPISchema):
     )
     ld_proof = fields.Nested(
         LDProofVCDetailSchema,
+        required=False,
+        metadata={"description": "Credential filter for linked data proof"},
+    )
+    ld_proof = fields.Nested(
+        V20CredFilterVCDISchema,
         required=False,
         metadata={"description": "Credential filter for linked data proof"},
     )
