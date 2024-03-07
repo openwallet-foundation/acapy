@@ -1472,11 +1472,13 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
 
     if "cred_type" in args and args.cred_type not in [
         CRED_FORMAT_INDY,
+        CRED_FORMAT_VC_DI,
     ]:
         public_did = None
         aip = 20
     elif "cred_type" in args and args.cred_type in [
         CRED_FORMAT_INDY,
+        CRED_FORMAT_VC_DI,
     ]:
         public_did = True
     else:

@@ -1,9 +1,9 @@
 """Test routes.py"""
 
-from aries_cloudagent.tests import mock
 import pytest
 
-from .. import routes as test_module
+from aries_cloudagent.tests import mock
+
 from .....config.settings import Settings
 from .....core.event_bus import Event, MockEventBus
 from .....core.in_memory import InMemoryProfile
@@ -15,6 +15,7 @@ from .....revocation.util import (
     REVOCATION_PUBLISHED_EVENT,
 )
 from .....storage.error import StorageError, StorageNotFoundError
+from .. import routes as test_module
 
 
 @pytest.fixture
@@ -52,12 +53,36 @@ async def test_on_revocation_published(profile: Profile, responder: MockResponde
 
     assert isinstance(profile.settings, Settings)
 
+    profile.settings.set_value("revocation.notify", True)
+
     with mock.patch.object(test_module, "RevNotificationRecord", MockRec):
         await test_module.on_revocation_published(profile, event)
 
     MockRec.query_by_rev_reg_id.assert_called_once()
     mock_rec.delete_record.assert_called_once()
     assert responder.messages
+
+    # Test with integer crids
+    mock_rec.cred_rev_id = "1"
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(return_value=[mock_rec])
+    event = Event(topic, {"rev_reg_id": "mock", "crids": [1]})
+
+    with mock.patch.object(test_module, "RevNotificationRecord", MockRec):
+        await test_module.on_revocation_published(profile, event)
+
+    MockRec.query_by_rev_reg_id.assert_called_once()
+    assert mock_rec.delete_record.call_count == 2
+
+    # Test with empty crids
+    mock_rec.cred_rev_id = "1"
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(return_value=[mock_rec])
+    event = Event(topic, {"rev_reg_id": "mock", "crids": []})
+
+    with mock.patch.object(test_module, "RevNotificationRecord", MockRec):
+        await test_module.on_revocation_published(profile, event)
+
+    MockRec.query_by_rev_reg_id.assert_called_once()
+    assert mock_rec.delete_record.call_count == 2
 
 
 @pytest.mark.asyncio

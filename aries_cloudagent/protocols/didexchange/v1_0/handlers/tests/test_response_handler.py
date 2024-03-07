@@ -77,7 +77,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
             did_doc_attach=self.did_doc_attach,
         )
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(scope="module")
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_didx_mgr):
         mock_didx_mgr.return_value.accept_response = mock.CoroutineMock()
@@ -91,7 +91,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         )
         assert not responder.messages
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(scope="module")
     @mock.patch.object(test_module, "DIDXManager")
     async def test_called_auto_ping(self, mock_didx_mgr):
         self.ctx.update_settings({"auto_ping_connection": True})
@@ -109,7 +109,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         result, target = messages[0]
         assert isinstance(result, Ping)
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(scope="module")
     @mock.patch.object(test_module, "DIDXManager")
     @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report(self, mock_conn_target, mock_didx_mgr):
@@ -146,7 +146,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         )
         assert target == {"target_list": [mock_conn_target]}
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(scope="module")
     @mock.patch.object(test_module, "DIDXManager")
     @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc(
@@ -193,7 +193,7 @@ class TestDIDXResponseHandler(IsolatedAsyncioTestCase):
         )
         assert target == {"target_list": [mock_conn_target]}
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(scope="module")
     @mock.patch.object(test_module, "DIDXManager")
     @mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(

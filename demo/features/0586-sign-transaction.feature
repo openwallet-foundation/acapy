@@ -36,12 +36,11 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       @WalletType_Askar_AnonCreds @GHA
       Examples:
          | Acme_capabilities         | Bob_capabilities          | Schema_name    |
-         | --wallet-type askar-anoncreds | --wallet-type askar-anoncreds   | anoncreds-testing |
          | --wallet-type askar-anoncreds |                                 | driverslicense |
          |                               | --wallet-type askar-anoncreds   | anoncreds-testing |
 
 
-   @T001.1-RFC0586 @GHA
+   @T001.1-RFC0586
    Scenario Outline: endorse a transaction and write to the ledger
       Given we have "2" agents
          | name  | role     | capabilities        |
@@ -120,7 +119,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | Acme_capabilities                                   | Bob_capabilities                                            | Schema_name    | Credential_data          |
          | --revocation --public-did --did-exchange            | --revocation --did-exchange --wallet-type askar-anoncreds   | anoncreds-testing | Data_AC_NormalizedValues | 
 
-   @T002.1-RFC0586 @GHA
+   @T002.1-RFC0586
    Scenario Outline: endorse a schema and cred def transaction, write to the ledger, issue and revoke a credential, manually invoking each endorsement endpoint
       Given we have "2" agents
          | name  | role     | capabilities        |
@@ -234,3 +233,4 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
       Examples:
          | Acme_capabilities                                   | Bob_capabilities                             | Schema_name       | Credential_data          |
          | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation --wallet-type askar-anoncreds   | anoncreds-testing | Data_AC_NormalizedValues |
+         | --endorser-role endorser --revocation --public-did  | --endorser-role author --revocation --multitenant --wallet-type askar-anoncreds   | anoncreds-testing | Data_AC_NormalizedValues |

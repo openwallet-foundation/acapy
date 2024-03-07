@@ -18,53 +18,62 @@ from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import UUID4_EXAMPLE, JSONWebToken
 from ...multitenant.base import BaseMultitenantManager
 from ...storage.error import StorageError, StorageNotFoundError
+from ...utils.endorsement_setup import attempt_auto_author_with_endorser_setup
 from ...wallet.error import WalletSettingsError
 from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ..error import WalletKeyMissingError
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
-    "ACAPY_LOG_LEVEL": "log.level",
-    "ACAPY_INVITE_PUBLIC": "debug.invite_public",
-    "ACAPY_PUBLIC_INVITES": "public_invites",
     "ACAPY_AUTO_ACCEPT_INVITES": "debug.auto_accept_invites",
     "ACAPY_AUTO_ACCEPT_REQUESTS": "debug.auto_accept_requests",
     "ACAPY_AUTO_PING_CONNECTION": "auto_ping_connection",
-    "ACAPY_MONITOR_PING": "debug.monitor_ping",
-    "ACAPY_AUTO_RESPOND_MESSAGES": "debug.auto_respond_messages",
+    "ACAPY_AUTO_PROMOTE_AUTHOR_DID": "endorser.auto_promote_author_did",
+    "ACAPY_AUTO_REQUEST_ENDORSEMENT": "endorser.auto_request",
     "ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER": "debug.auto_respond_credential_offer",
     "ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST": "debug.auto_respond_credential_request",
+    "ACAPY_AUTO_RESPOND_MESSAGES": "debug.auto_respond_messages",
     "ACAPY_AUTO_VERIFY_PRESENTATION": "debug.auto_verify_presentation",
-    "ACAPY_NOTIFY_REVOCATION": "revocation.notify",
-    "ACAPY_AUTO_REQUEST_ENDORSEMENT": "endorser.auto_request",
     "ACAPY_AUTO_WRITE_TRANSACTIONS": "endorser.auto_write",
     "ACAPY_CREATE_REVOCATION_TRANSACTIONS": "endorser.auto_create_rev_reg",
-    "ACAPY_ENDORSER_ROLE": "endorser.protocol_role",
     "ACAPY_EMIT_DID_PEER_2": "emit_did_peer_2",
     "ACAPY_EMIT_DID_PEER_4": "emit_did_peer_4",
+    "ACAPY_ENDORSER_ALIAS": "endorser.endorser_alias",
+    "ACAPY_ENDORSER_INVITATION": "endorser.endorser_invitation",
+    "ACAPY_ENDORSER_PUBLIC_DID": "endorser.endorser_public_did",
+    "ACAPY_ENDORSER_ROLE": "endorser.protocol_role",
+    "ACAPY_INVITE_PUBLIC": "debug.invite_public",
+    "ACAPY_LOG_LEVEL": "log.level",
+    "ACAPY_MONITOR_PING": "debug.monitor_ping",
+    "ACAPY_NOTIFY_REVOCATION": "revocation.notify",
     "ACAPY_PRESERVE_EXCHANGE_RECORDS": "preserve_exchange_records",
+    "ACAPY_PUBLIC_INVITES": "public_invites",
     "ACAPY_REQUESTS_THROUGH_PUBLIC_DID": "requests_through_public_did",
 }
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {
-    "log-level": "log.level",
-    "invite-public": "debug.invite_public",
-    "public-invites": "public_invites",
     "auto-accept-invites": "debug.auto_accept_invites",
     "auto-accept-requests": "debug.auto_accept_requests",
+    "auto-create-revocation-transactions": "endorser.auto_create_rev_reg",
     "auto-ping-connection": "auto_ping_connection",
-    "monitor-ping": "debug.monitor_ping",
-    "auto-respond-messages": "debug.auto_respond_messages",
+    "auto-promote-author-did": "endorser.auto_promote_author_did",
+    "auto-request-endorsement": "endorser.auto_request",
     "auto-respond-credential-offer": "debug.auto_respond_credential_offer",
     "auto-respond-credential-request": "debug.auto_respond_credential_request",
+    "auto-respond-messages": "debug.auto_respond_messages",
     "auto-verify-presentation": "debug.auto_verify_presentation",
-    "notify-revocation": "revocation.notify",
-    "auto-request-endorsement": "endorser.auto_request",
     "auto-write-transactions": "endorser.auto_write",
-    "auto-create-revocation-transactions": "endorser.auto_create_rev_reg",
-    "endorser-protocol-role": "endorser.protocol_role",
     "emit-did-peer-2": "emit_did_peer_2",
     "emit-did-peer-4": "emit_did_peer_4",
+    "endorser-alias": "endorser.endorser_alias",
+    "endorser-invitation": "endorser.endorser_invitation",
+    "endorser-protocol-role": "endorser.protocol_role",
+    "endorser-public-did": "endorser.endorser_public_did",
+    "invite-public": "debug.invite_public",
+    "log-level": "log.level",
+    "monitor-ping": "debug.monitor_ping",
+    "notify-revocation": "revocation.notify",
     "preserve-exchange-records": "preserve_exchange_records",
+    "public-invites": "public_invites",
     "requests-through-public-did": "requests_through_public_did",
 }
 
@@ -459,6 +468,11 @@ async def wallet_create(request: web.BaseRequest):
         )
 
         token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
+
+        wallet_profile = await multitenant_mgr.get_wallet_profile(
+            context, wallet_record, extra_settings=settings
+        )
+        await attempt_auto_author_with_endorser_setup(wallet_profile)
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

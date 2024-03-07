@@ -523,7 +523,7 @@ async def main(args):
             "birthdate_dateint",
             "timestamp",
         ]
-        if faber_agent.cred_type == CRED_FORMAT_INDY:
+        if faber_agent.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             faber_agent.public_did = True
             await faber_agent.initialize(
                 the_agent=agent,
@@ -535,7 +535,9 @@ async def main(args):
                     else False
                 ),
             )
-        elif faber_agent.cred_type in [CRED_FORMAT_JSON_LD, CRED_FORMAT_VC_DI]:
+        elif faber_agent.cred_type in [
+            CRED_FORMAT_JSON_LD,
+        ]:
             faber_agent.public_did = True
             await faber_agent.initialize(the_agent=agent)
         else:
