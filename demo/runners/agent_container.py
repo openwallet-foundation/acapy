@@ -951,7 +951,7 @@ class AgentContainer:
         log_status("#13 Issue credential offer to X")
 
         if self.cred_type in [
-            CRED_FORMAT_INDY,
+            CRED_FORMAT_INDY, CRED_FORMAT_VC_DI
         ]:
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
@@ -963,25 +963,6 @@ class AgentContainer:
                 "auto_remove": False,
                 "credential_preview": cred_preview,
                 "filter": {"indy": {"cred_def_id": cred_def_id}},
-                "trace": self.exchange_tracing,
-            }
-            cred_exchange = await self.agent.admin_POST(
-                "/issue-credential-2.0/send-offer", offer_request
-            )
-
-            return cred_exchange
-
-        elif self.cred_type == CRED_FORMAT_VC_DI:
-            cred_preview = {
-                "@type": CRED_PREVIEW_TYPE,
-                "attributes": cred_attrs,
-            }
-            offer_request = {
-                "connection_id": self.agent.connection_id,
-                "comment": f"Offer on cred def id {cred_def_id}",
-                "auto_remove": False,
-                "credential_preview": cred_preview,
-                "filter": {"vc_di": {"cred_def_id": cred_def_id}},
                 "trace": self.exchange_tracing,
             }
             cred_exchange = await self.agent.admin_POST(
