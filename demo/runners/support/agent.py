@@ -1,6 +1,4 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-import asyncpg
 import base64
 import functools
 import json
@@ -9,17 +7,18 @@ import os
 import random
 import subprocess
 import sys
-import yaml
-
+from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer
 
+import asyncpg
+import yaml
 from aiohttp import (
-    web,
-    ClientSession,
+    ClientError,
     ClientRequest,
     ClientResponse,
-    ClientError,
+    ClientSession,
     ClientTimeout,
+    web,
 )
 
 from .utils import flatten, log_json, log_msg, log_timer, output_reader
@@ -1183,7 +1182,7 @@ class DemoAgent:
             raise
 
     async def admin_POST(
-        self, path, data=None, text=False, params=None, headers=None
+        self, path, data=None, text=False, params=None, headers=None, raise_error=True
     ) -> ClientResponse:
         try:
             EVENT_LOGGER.debug(
@@ -1208,6 +1207,8 @@ class DemoAgent:
             return response
         except ClientError as e:
             self.log(f"Error during POST {path}: {str(e)}")
+            if not raise_error:
+                return None
             raise
 
     async def admin_PATCH(
