@@ -90,7 +90,11 @@ class PeerDID3Resolver(BaseDIDResolver):
             return
         dids = [
             *(did for did in (their_did, my_did) if did and PEER3_PATTERN.match(did)),
-            *(peer2to3(did) for did in (their_did, my_did) if did and PEER2_PATTERN.match(did)),
+            *(
+                peer2to3(did)
+                for did in (their_did, my_did)
+                if did and PEER2_PATTERN.match(did)
+            ),
         ]
         if dids:
             LOGGER.debug(

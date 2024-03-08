@@ -34,3 +34,15 @@ Feature: RFC 0160 Aries agent connection functions
          | --did-exchange --reuse-connections              | --emit-did-peer-2 | --reuse-connections                | --emit-did-peer-2 |
          | --did-exchange                                  | --emit-did-peer-4 |                                    | --emit-did-peer-4 |
          | --did-exchange --reuse-connections              | --emit-did-peer-4 | --reuse-connections                | --emit-did-peer-4 |
+
+      @GHA @MultiUseConnectionReuse
+      Examples:
+         | Acme_capabilities                                                       | Acme_extra        | Bob_capabilities                   | Bob_extra         |
+         | --did-exchange --multi-use-invitations                                  | --emit-did-peer-2 |                                    | --emit-did-peer-2 |
+         | --did-exchange --multi-use-invitations --reuse-connections              | --emit-did-peer-2 | --reuse-connections                | --emit-did-peer-2 |
+         | --did-exchange --multi-use-invitations                                  | --emit-did-peer-4 |                                    | --emit-did-peer-4 |
+         | --did-exchange --multi-use-invitations --reuse-connections              | --emit-did-peer-4 | --reuse-connections                | --emit-did-peer-4 |
+         | --public-did --did-exchange --multi-use-invitations                     | --emit-did-peer-2 | --did-exchange                     | --emit-did-peer-4 |
+         | --public-did --did-exchange --multi-use-invitations                     | --emit-did-peer-4 | --did-exchange                     | --emit-did-peer-2 |
+         | --public-did --did-exchange --multi-use-invitations --reuse-connections | --emit-did-peer-2 | --did-exchange --reuse-connections | --emit-did-peer-4 |
+         | --public-did --did-exchange --multi-use-invitations --reuse-connections | --emit-did-peer-4 | --did-exchange --reuse-connections | --emit-did-peer-2 |
