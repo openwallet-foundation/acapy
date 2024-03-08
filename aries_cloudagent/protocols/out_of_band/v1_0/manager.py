@@ -9,7 +9,6 @@ import uuid
 
 from ....messaging.decorators.service_decorator import ServiceDecorator
 from ....core.event_bus import EventBus
-from ....core.util import get_version_from_message
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
@@ -591,7 +590,7 @@ class OutOfBandManager(BaseConnectionManager):
         # Try to reuse the connection. If not accepted sets the conn_rec to None
         if conn_rec and not invitation.requests_attach:
             oob_record = await self._handle_hanshake_reuse(
-                oob_record, conn_rec, get_version_from_message(invitation)
+                oob_record, conn_rec, invitation._version
             )
 
             LOGGER.warning(
@@ -1108,9 +1107,7 @@ class OutOfBandManager(BaseConnectionManager):
         invi_msg_id = reuse_msg._thread.pthid
         reuse_msg_id = reuse_msg._thread_id
 
-        reuse_accept_msg = HandshakeReuseAccept(
-            version=get_version_from_message(reuse_msg)
-        )
+        reuse_accept_msg = HandshakeReuseAccept(version=reuse_msg._version)
         reuse_accept_msg.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
         connection_targets = await self.fetch_connection_targets(connection=conn_rec)
 
