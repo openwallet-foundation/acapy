@@ -1,9 +1,7 @@
 """An invitation content message."""
 
-from collections import namedtuple
 from enum import Enum
-from re import sub
-from typing import Optional, Sequence, Text, Union
+from typing import NamedTuple, Optional, Sequence, Set, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import EXCLUDE, ValidationError, fields, post_dump, validates_schema
@@ -21,7 +19,13 @@ from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from ..message_types import DEFAULT_VERSION, INVITATION
 from .service import Service
 
-HSProtoSpec = namedtuple("HSProtoSpec", "rfc name aka")
+
+class HSProtoSpec(NamedTuple):
+    """Handshake protocol specification."""
+
+    rfc: int
+    name: str
+    aka: Set[str]
 
 
 class HSProto(Enum):
@@ -48,14 +52,14 @@ class HSProto(Enum):
     )
 
     @classmethod
-    def get(cls, label: Union[str, "HSProto"]) -> "HSProto":
+    def get(cls, label: Union[str, "HSProto"]) -> Optional["HSProto"]:
         """Get handshake protocol enum for label."""
 
         if isinstance(label, str):
             for hsp in HSProto:
                 if (
                     DIDCommPrefix.unqualify(label) == hsp.name
-                    or sub("[^a-zA-Z0-9]+", "", label.lower()) in hsp.aka
+                    or label.lower() in hsp.aka
                 ):
                     return hsp
 
@@ -80,7 +84,7 @@ class HSProto(Enum):
         return self.value.name
 
     @property
-    def aka(self) -> int:
+    def aka(self) -> Set[str]:
         """Accessor for also-known-as."""
         return self.value.aka
 
