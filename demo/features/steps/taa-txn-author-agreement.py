@@ -1,13 +1,9 @@
 from behave import given, when, then
-import json
-from time import sleep
-import time
 
 from bdd_support.agent_backchannel_client import (
     agent_container_GET,
     agent_container_POST,
     agent_container_PUT,
-    async_sleep,
 )
 
 

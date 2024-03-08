@@ -105,6 +105,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                                 "cred_ex_record": mock_cx_rec.serialize.return_value,
                                 "indy": None,
                                 "ld_proof": None,
+                                "vc_di": None,
                             }
                         ]
                     }
@@ -1489,6 +1490,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
                     "indy": {"...": "..."},
                     "ld_proof": None,
+                    "vd_di": None,
                 }
             )
 

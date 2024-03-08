@@ -3,7 +3,6 @@
 from functools import wraps
 import logging
 import os
-import time
 
 import pytest
 import requests
