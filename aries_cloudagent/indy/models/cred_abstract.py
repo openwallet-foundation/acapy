@@ -308,5 +308,7 @@ class VCDICredAbstractSchema(BaseModelSchema):
         )
 
         credential = fields.Nested(
-            CredentialSchema(), required=True, metadata={"description": "", "example": ""}
+            CredentialSchema(),
+            required=True,
+            metadata={"description": "", "example": ""},
         )
