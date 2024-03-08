@@ -20,7 +20,7 @@ class V20CredExRecordVCDI(BaseRecord):
     """Credential exchange vc_di detail record."""
 
     class Meta:
-        """V20CredExRecordIndy metadata."""
+        """V20CredExRecordVCDI metadata."""
 
         schema_class = "V20CredExRecordVCDISchema"
 
@@ -40,7 +40,7 @@ class V20CredExRecordVCDI(BaseRecord):
         cred_rev_id: str = None,
         **kwargs,
     ):
-        """Initialize indy credential exchange record details."""
+        """Initialize vc_di credential exchange record details."""
         super().__init__(cred_ex_vc_di_id, **kwargs)
 
         self.cred_ex_id = cred_ex_id
@@ -73,7 +73,7 @@ class V20CredExRecordVCDI(BaseRecord):
         session: ProfileSession,
         cred_ex_id: str,
     ) -> Sequence["V20CredExRecordVCDI"]:
-        """Retrieve credential exchange indy detail record(s) by its cred ex id."""
+        """Retrieve credential exchange vc_di detail record(s) by its cred ex id."""
         return await cls.query(
             session=session,
             tag_filter={"cred_ex_id": cred_ex_id},
@@ -85,15 +85,15 @@ class V20CredExRecordVCDI(BaseRecord):
 
 
 class V20CredExRecordVCDISchema(BaseRecordSchema):
-    """Credential exchange indy detail record detail schema."""
+    """Credential exchange vc_di detail record detail schema."""
 
     class Meta:
-        """Credential exchange indy detail record schema metadata."""
+        """Credential exchange vc_di detail record schema metadata."""
 
         model_class = V20CredExRecordVCDI
         unknown = EXCLUDE
 
-    cred_ex_indy_id = fields.Str(
+    cred_ex_vc_di_id = fields.Str(
         required=False,
         metadata={"description": "Record identifier", "example": UUID4_EXAMPLE},
     )

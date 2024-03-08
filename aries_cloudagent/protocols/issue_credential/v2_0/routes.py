@@ -289,7 +289,7 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
 
     @validates_schema
     def validate(self, data, **kwargs):
-        """Make sure preview is present when indy format is present."""
+        """Make sure preview is present when indy/vc_di format is present."""
 
         if (
             data.get("filter", {}).get("indy") or data.get("filter", {}).get("vc_di")
