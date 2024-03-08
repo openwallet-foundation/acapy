@@ -3,6 +3,10 @@
 import json
 import logging
 from typing import Mapping, Tuple
+from aries_cloudagent.protocols.issue_credential.v2_0.manager import (
+    V20CredManager,
+    V20CredManagerError,
+)
 from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import (
     V20CredExRecordVCDI,
 )
@@ -15,17 +19,21 @@ from aries_cloudagent.vc.vc_ld.models.credential import (
 from marshmallow import RAISE
 
 from ......anoncreds.revocation import AnonCredsRevocation
+
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import (
     AnonCredsIssuer,
 )
+from ......indy.models.cred import IndyCredentialSchema
 from ......indy.models.cred_abstract import (
+    IndyCredAbstractSchema,
     VCDICredAbstract,
     VCDICredAbstractSchema,
 )
 from ......indy.models.cred_request import (
     BindingProof,
+    IndyCredRequestSchema,
     VCDICredRequest,
     VCDICredRequestSchema,
 )
@@ -35,8 +43,10 @@ from ......ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
 )
-from ......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ......messaging.credential_definitions.vcdi.util import VCDICredDefQueryStringSchema
+from ......messaging.credential_definitions.util import (
+    CRED_DEF_SENT_RECORD_TYPE,
+    CredDefQueryStringSchema,
+)
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
@@ -84,7 +94,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
         """
         mapping = {
-            CRED_20_PROPOSAL: VCDICredDefQueryStringSchema,
+            CRED_20_PROPOSAL: CredDefQueryStringSchema,
             CRED_20_OFFER: VCDICredAbstractSchema,
             CRED_20_REQUEST: VCDICredRequestSchema,
             CRED_20_ISSUE: VerifiableCredentialSchema,
