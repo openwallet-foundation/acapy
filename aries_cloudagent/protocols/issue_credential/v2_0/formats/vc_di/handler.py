@@ -19,6 +19,7 @@ from aries_cloudagent.vc.vc_ld.models.credential import (
 from marshmallow import RAISE
 
 from ......anoncreds.revocation import AnonCredsRevocation
+
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import (
