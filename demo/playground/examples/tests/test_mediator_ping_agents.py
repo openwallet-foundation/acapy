@@ -99,7 +99,7 @@ def initialize_mediation(agent: Agent, invitation):
 
 @pytest.fixture(scope="session")
 def faber_mediator(faber, mediation_invite):
-    logger.info(f"faber_mediator...")
+    logger.info("faber_mediator...")
     result = initialize_mediation(faber, mediation_invite)
     logger.info(f"...faber_mediator = {result}")
     yield result
@@ -107,7 +107,7 @@ def faber_mediator(faber, mediation_invite):
 
 @pytest.fixture(scope="session")
 def alice_mediator(alice, mediation_invite):
-    logger.info(f"alice_mediator...")
+    logger.info("alice_mediator...")
     result = initialize_mediation(alice, mediation_invite)
     logger.info(f"...alice_mediator = {result}")
     yield result
@@ -115,7 +115,7 @@ def alice_mediator(alice, mediation_invite):
 
 @pytest.fixture(scope="session")
 def multi_one_mediator(multi_one, mediation_invite):
-    logger.info(f"multi_one_mediator...")
+    logger.info("multi_one_mediator...")
     result = initialize_mediation(multi_one, mediation_invite)
     logger.info(f"...multi_one_mediator = {result}")
     yield result

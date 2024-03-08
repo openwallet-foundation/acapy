@@ -1,4 +1,4 @@
-from behave import given, when, then
+from behave import given, then
 import json
 import os
 
@@ -7,7 +7,6 @@ from bdd_support.agent_backchannel_client import (
     agent_container_POST,
     async_sleep,
 )
-from runners.agent_container import AgentContainer
 
 
 BDD_EXTRA_AGENT_ARGS = os.getenv("BDD_EXTRA_AGENT_ARGS")
@@ -30,18 +29,18 @@ def step_impl(context, issuer, count=None):
     agent = context.active_agents[issuer]
     async_sleep(5.0)
     created_response = agent_container_GET(
-        agent["agent"], f"/revocation/registries/created"
+        agent["agent"], "/revocation/registries/created"
     )
     full_response = agent_container_GET(
-        agent["agent"], f"/revocation/registries/created", params={"state": "full"}
+        agent["agent"], "/revocation/registries/created", params={"state": "full"}
     )
     decommissioned_response = agent_container_GET(
         agent["agent"],
-        f"/revocation/registries/created",
+        "/revocation/registries/created",
         params={"state": "decommissioned"},
     )
     finished_response = agent_container_GET(
-        agent["agent"], f"/revocation/registries/created", params={"state": "finished"}
+        agent["agent"], "/revocation/registries/created", params={"state": "finished"}
     )
     async_sleep(4.0)
     if count:
