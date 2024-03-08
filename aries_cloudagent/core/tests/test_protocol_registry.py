@@ -30,9 +30,6 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
 
         assert list(self.registry.message_types) == [self.test_message_type]
         assert list(self.registry.protocols) == [self.test_protocol]
-        assert self.registry.controllers == {
-            self.test_message_type: self.test_controller
-        }
 
     def test_message_type_query(self):
         self.registry.register_message_types(
