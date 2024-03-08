@@ -697,7 +697,7 @@ class AgentContainer:
         genesis_txns: str = None,
         genesis_txn_list: str = None,
         tails_server_base_url: str = None,
-        cred_type: str = CRED_FORMAT_INDY,
+        cred_type: str = CRED_FORMAT_INDY or CRED_FORMAT_VC_DI,
         show_timing: bool = False,
         multitenant: bool = False,
         mediation: bool = False,
