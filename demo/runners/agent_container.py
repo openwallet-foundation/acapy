@@ -17,6 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from runners.support.agent import (  # noqa:E402
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
+    CRED_FORMAT_VC_DI,
     DID_METHOD_KEY,
     KEY_TYPE_BLS,
     WALLET_TYPE_INDY,

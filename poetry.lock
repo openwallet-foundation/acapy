@@ -2020,13 +2020,13 @@ tests = ["hypothesis (>=3.27.0)", "pytest (>=3.2.1,!=3.3.0)"]
 
 [[package]]
 name = "pytest"
-version = "8.0.0"
+version = "8.0.1"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-8.0.0-py3-none-any.whl", hash = "sha256:50fb9cbe836c3f20f0dfa99c565201fb75dc54c8d76373cd1bde06b06657bdb6"},
-    {file = "pytest-8.0.0.tar.gz", hash = "sha256:249b1b0864530ba251b7438274c4d251c58d868edaaec8762893ad4a0d71c36c"},
+    {file = "pytest-8.0.1-py3-none-any.whl", hash = "sha256:3e4f16fe1c0a9dc9d9389161c127c3edc5d810c38d6793042fb81d9f48a59fca"},
+    {file = "pytest-8.0.1.tar.gz", hash = "sha256:267f6563751877d772019b13aacbe4e860d73fe8f651f28112e9ac37de7513ae"},
 ]
 
 [package.dependencies]
@@ -2316,13 +2316,13 @@ files = [
 
 [[package]]
 name = "sd-jwt"
-version = "0.10.3"
+version = "0.10.4"
 description = "The reference implementation of the IETF SD-JWT specification."
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "sd_jwt-0.10.3-py3-none-any.whl", hash = "sha256:de5d8296a977c758cefcc153a1bfab12de3087fbf4a38bf589165ab31c7a41f7"},
-    {file = "sd_jwt-0.10.3.tar.gz", hash = "sha256:c9307ed1cb9597c532f19d5eb3e040a77ff264214354b2ed0533db83c05a3a8e"},
+    {file = "sd_jwt-0.10.4-py3-none-any.whl", hash = "sha256:d7ae669eb5d51bceeb38e0df8ab2faddd12e3b21ab64d831b6d048fc1e00ce75"},
+    {file = "sd_jwt-0.10.4.tar.gz", hash = "sha256:82f93e2f570cfd31fab124e301febb81f3bcad70b10e38f5f9cff70ad659c2ce"},
 ]
 
 [package.dependencies]
@@ -2808,4 +2808,4 @@ indy = ["python3-indy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "e09d129a9c0ef3a42156af4a26400519bc9b66e69ceeb71334bfcf64d4a0bf25"
+content-hash = "0edb68b8723afe8a2feba6e0a855c1947826152c1b472d31906e630a16d0654f"
