@@ -115,7 +115,7 @@ def output_reader(handle, callback, *args, **kwargs):
             break
         try:
             run_in_terminal(functools.partial(callback, line, *args))
-        except AssertionError as e:
+        except AssertionError:
             # see comment in DemoAgent.handle_output
             # trace log and prompt_toolkit do not get along...
             pass

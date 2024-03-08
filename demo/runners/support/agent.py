@@ -1061,17 +1061,17 @@ class DemoAgent:
         )
 
     async def handle_endorse_transaction(self, message):
-        self.log(f"Received endorse transaction ...\n", source="stderr")
+        self.log("Received endorse transaction ...\n", source="stderr")
 
     async def handle_revocation_registry(self, message):
         reg_id = message.get("revoc_reg_id", "(undetermined)")
         self.log(f"Revocation registry: {reg_id} state: {message['state']}")
 
     async def handle_mediation(self, message):
-        self.log(f"Received mediation message ...\n")
+        self.log("Received mediation message ...\n")
 
     async def handle_keylist(self, message):
-        self.log(f"Received handle_keylist message ...\n")
+        self.log("Received handle_keylist message ...\n")
         self.log(json.dumps(message))
 
     async def taa_accept(self):

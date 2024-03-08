@@ -1,7 +1,5 @@
 from behave import given, when, then
 import json
-from time import sleep
-import time
 
 from bdd_support.agent_backchannel_client import (
     aries_container_create_schema_cred_def,
@@ -15,13 +13,8 @@ from bdd_support.agent_backchannel_client import (
     agent_container_POST,
     async_sleep,
 )
-from runners.agent_container import AgentContainer
 from runners.support.agent import (
-    CRED_FORMAT_INDY,
-    CRED_FORMAT_JSON_LD,
-    DID_METHOD_SOV,
     DID_METHOD_KEY,
-    KEY_TYPE_ED255,
     KEY_TYPE_BLS,
     SIG_TYPE_BLS,
 )
