@@ -1,9 +1,7 @@
 import asyncio
-import json
 import logging
 import os
 import sys
-from aiohttp import ClientError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
@@ -16,7 +14,6 @@ from runners.support.utils import (  # noqa:E402
     check_requires,
     log_msg,
     log_status,
-    log_timer,
     prompt,
     prompt_loop,
 )
