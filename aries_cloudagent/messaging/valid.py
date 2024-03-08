@@ -348,19 +348,6 @@ class IndyDID(Regexp):
             error="Value {input} is not an indy decentralized identifier (DID)",
         )
 
-class VcdiDID(Regexp):
-    """Validate value against vcdi DID."""
-
-    EXAMPLE = "WgWxqztrNooG92RXvxSTWv"
-    PATTERN = re.compile(rf"^(did:key:)?[{B58}]{{21,22}}$")
-
-    def __init__(self):
-        """Initialize the instance."""
-
-        super().__init__(
-            VcdiDID.PATTERN,
-            error="Value {input} is not an vcdi decentralized identifier (DID)",
-        )
 
 class DIDValidation(Regexp):
     """Validate value against any valid DID spec."""
@@ -457,25 +444,6 @@ class IndyCredDefId(Regexp):
             error="Value {input} is not an indy credential definition identifier",
         )
 
-class VcdiCredDefId(Regexp):
-    """Validate value against vcdi credential definition identifier specification."""
-
-    EXAMPLE = "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
-    PATTERN = (
-        rf"^([{B58}]{{21,22}})"  # issuer DID
-        f":3"  # cred def id marker
-        f":CL"  # sig alg
-        rf":(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))"  # schema txn / id
-        f":(.+)?$"  # tag
-    )
-
-    def __init__(self):
-        """Initialize the instance."""
-
-        super().__init__(
-            VcdiCredDefId.PATTERN,
-            error="Value {input} is not an vcdi credential definition identifier",
-        )
 
 class IndyVersion(Regexp):
     """Validate value against indy version specification."""
@@ -491,19 +459,6 @@ class IndyVersion(Regexp):
             error="Value {input} is not an indy version (use only digits and '.')",
         )
 
-class VcdiVersion(Regexp):
-    """Validate value against vcdi version specification."""
-
-    EXAMPLE = "0.1"
-    PATTERN = r"^[0-9.]+$"
-
-    def __init__(self):
-        """Initialize the instance."""
-
-        super().__init__(
-            VcdiVersion.PATTERN,
-            error="Value {input} is not an vcdi version (use only digits and '.')",
-        )
 
 class IndySchemaId(Regexp):
     """Validate value against indy schema identifier specification."""
@@ -519,19 +474,6 @@ class IndySchemaId(Regexp):
             error="Value {input} is not an indy schema identifier",
         )
 
-class VcdiSchemaId(Regexp):
-    """Validate value against vcdi schema identifier specification."""
-
-    EXAMPLE = "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0"
-    PATTERN = rf"^[{B58}]{{21,22}}:2:.+:[0-9.]+$"
-
-    def __init__(self):
-        """Initialize the instance."""
-
-        super().__init__(
-            VcdiSchemaId.PATTERN,
-            error="Value {input} is not an vcdi schema identifier",
-        )
 
 class IndyRevRegId(Regexp):
     """Validate value against indy revocation registry identifier specification."""
@@ -996,9 +938,6 @@ ROUTING_KEY_EXAMPLE = RoutingKey.EXAMPLE
 INDY_DID_VALIDATE = IndyDID()
 INDY_DID_EXAMPLE = IndyDID.EXAMPLE
 
-VCDI_DID_VALIDATE = VcdiDID()
-VCDI_DID_EXAMPLE = VcdiDID.EXAMPLE
-
 GENERIC_DID_VALIDATE = MaybeIndyDID()
 GENERIC_DID_EXAMPLE = MaybeIndyDID.EXAMPLE
 
@@ -1008,14 +947,8 @@ INDY_RAW_PUBLIC_KEY_EXAMPLE = IndyRawPublicKey.EXAMPLE
 INDY_SCHEMA_ID_VALIDATE = IndySchemaId()
 INDY_SCHEMA_ID_EXAMPLE = IndySchemaId.EXAMPLE
 
-VCDI_SCHEMA_ID_VALIDATE = VcdiSchemaId()
-VCDI_SCHEMA_ID_EXAMPLE = VcdiSchemaId.EXAMPLE
-
 INDY_CRED_DEF_ID_VALIDATE = IndyCredDefId()
 INDY_CRED_DEF_ID_EXAMPLE = IndyCredDefId.EXAMPLE
-
-VCDI_CRED_DEF_ID_VALIDATE = VcdiCredDefId()
-VCDI_CRED_DEF_ID_EXAMPLE = VcdiCredDefId.EXAMPLE
 
 INDY_REV_REG_ID_VALIDATE = IndyRevRegId()
 INDY_REV_REG_ID_EXAMPLE = IndyRevRegId.EXAMPLE
@@ -1025,9 +958,6 @@ INDY_CRED_REV_ID_EXAMPLE = IndyCredRevId.EXAMPLE
 
 INDY_VERSION_VALIDATE = IndyVersion()
 INDY_VERSION_EXAMPLE = IndyVersion.EXAMPLE
-
-VCDI_VERSION_VALIDATE = VcdiVersion()
-VCDI_VERSION_EXAMPLE = VcdiVersion.EXAMPLE
 
 INDY_PREDICATE_VALIDATE = IndyPredicate()
 INDY_PREDICATE_EXAMPLE = IndyPredicate.EXAMPLE
