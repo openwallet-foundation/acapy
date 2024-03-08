@@ -1,9 +1,9 @@
 """Agent message base class and schema."""
 
-import uuid
 from collections import OrderedDict
 from re import sub
 from typing import Mapping, Optional, Text, Union
+import uuid
 
 from marshmallow import (
     EXCLUDE,
@@ -21,7 +21,7 @@ from .base_message import BaseMessage, DIDCommVersion
 from .decorators.base import BaseDecoratorSet
 from .decorators.default import DecoratorSet
 from .decorators.service_decorator import ServiceDecorator
-from .decorators.signature_decorator import SignatureDecorator  # TODO deprecated
+from .decorators.signature_decorator import SignatureDecorator
 from .decorators.thread_decorator import ThreadDecorator
 from .decorators.trace_decorator import (
     TRACE_LOG_TARGET,
@@ -29,6 +29,7 @@ from .decorators.trace_decorator import (
     TraceDecorator,
     TraceReport,
 )
+from .message_type import MessageType
 from .models.base import (
     BaseModel,
     BaseModelError,
@@ -92,11 +93,9 @@ class AgentMessage(BaseModel, BaseMessage):
             self._message_type = self.get_updated_msg_type(_version)
         else:
             self._message_type = self.Meta.message_type
-        # Not required for now
-        # if not self.Meta.handler_class:
-        #    raise TypeError(
-        #        "Can't instantiate abstract class {} with no handler_class".format(
-        #            self.__class__.__name__))
+
+        # Lazily loaded by property
+        self._message_version = None
 
     @classmethod
     def _get_handler_class(cls):
@@ -152,6 +151,15 @@ class AgentMessage(BaseModel, BaseMessage):
     def _decorators(self) -> BaseDecoratorSet:
         """Fetch the message's decorator set."""
         return self._message_decorators
+
+    @property
+    def _version(self) -> str:
+        """Accessor for the message version."""
+        if self._message_version is None:
+            self._message_version = str(
+                MessageType.from_str(self._message_type).version
+            )
+        return self._message_version
 
     @_decorators.setter
     def _decorators(self, value: BaseDecoratorSet):
