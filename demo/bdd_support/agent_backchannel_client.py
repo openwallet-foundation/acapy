@@ -4,7 +4,6 @@ import uuid
 
 from runners.agent_container import AgentContainer, create_agent_with_args_list
 
-
 ######################################################################
 # coroutine utilities
 ######################################################################
@@ -246,6 +245,7 @@ def agent_container_POST(
     data: dict = None,
     text: bool = False,
     params: dict = None,
+    raise_error: bool = True,
 ) -> dict:
     return run_coroutine(
         the_container.admin_POST,
@@ -253,6 +253,7 @@ def agent_container_POST(
         data=data,
         text=text,
         params=params,
+        raise_error=raise_error,
     )
 
 
