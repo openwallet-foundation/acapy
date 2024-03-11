@@ -89,6 +89,12 @@ class BaseConnectionManager:
             multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
         )
 
+    def long_did_peer_to_short(self, long_did: str) -> DIDInfo:
+        """Convert did:peer:4 long format to short format and return."""
+
+        short_did_peer = long_to_short(long_did)
+        return short_did_peer
+
     async def long_did_peer_4_to_short(self, long_dp4: str) -> DIDInfo:
         """Convert did:peer:4 long format to short format and store in wallet."""
 
@@ -379,7 +385,10 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage: BaseStorage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
-        return record.tags["did"]
+        ret_did = record.tags["did"]
+        if ret_did.startswith("did:peer:4"):
+            ret_did = self.long_did_peer_to_short(ret_did)
+        return ret_did
 
     async def remove_keys_for_did(self, did: str):
         """Remove all keys associated with a DID.

@@ -571,9 +571,13 @@ class OutOfBandManager(BaseConnectionManager):
                 "Trying to find existing connection for oob invitation with "
                 f"did {public_did}"
             )
+            if public_did.startswith("did:peer:4"):
+                search_public_did = self.long_did_peer_to_short(public_did)
+            else:
+                search_public_did = public_did
             async with self._profile.session() as session:
                 conn_rec = await ConnRecord.find_existing_connection(
-                    session=session, their_public_did=public_did
+                    session=session, their_public_did=search_public_did
                 )
 
         oob_record = OobRecord(

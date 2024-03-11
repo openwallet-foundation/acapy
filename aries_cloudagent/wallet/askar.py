@@ -357,12 +357,21 @@ class AskarWallet(BaseWallet):
 
         try:
             dids = await self._session.handle.fetch_all(
-                CATEGORY_DID, {"verkey": verkey}, limit=1
+                CATEGORY_DID, {"verkey": verkey}
             )
         except AskarError as err:
             raise WalletError("Error when fetching local DID for verkey") from err
         if dids:
-            return self._load_did_entry(dids[0])
+            ret_did = dids[0]
+            ret_did_info = ret_did.value_json
+            if len(dids) > 1 and ret_did_info["did"].startswith("did:peer:4"):
+                # if it is a peer:did:4 make sure we are using the short version
+                other_did = dids[1]  # assume only 2
+                other_did_info = other_did.value_json
+                if len(other_did_info["did"]) < len(ret_did_info["did"]):
+                    ret_did = other_did
+                    ret_did_info = ret_did.value_json
+            return self._load_did_entry(ret_did)
         raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
