@@ -581,7 +581,7 @@ Those that know something about the Indy process for issuing a credential and th
 
 If you would like to perform all of the issuance steps manually on the Faber agent side, use a sequence of the other `/issue-credential-2.0/` messages. Use the **`GET /issue-credential-2.0/records`** to both check the credential exchange state as you progress through the protocol and to find some of the data you’ll need in executing the sequence of requests.
 
-The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to. See the [detailed API docs](../features/AdminAPI).
+The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to. See the [detailed API docs](../features/AdminAPI.md).
 
 | Protocol Step        | Faber (Issuer)         | Alice (Holder)     | Notes |
 | -------------------- | ---------------------- | ------------------ | ----- |
@@ -700,7 +700,7 @@ As with the issue credential process, the agents handled some of the presentatio
 
 If you would like to perform all of the proof request/response steps manually, you can call all of the individual `/present-proof-2.0` messages.
 
-The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that you need to respond to. See the [detailed API docs](../features/AdminAPI).
+The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that you need to respond to. See the [detailed API docs](../features/AdminAPI.md).
 
 | Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
 | -------------------- | ---------------------- | ------------------------- | ----- |
