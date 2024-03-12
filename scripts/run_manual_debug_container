@@ -3,19 +3,30 @@
 CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 
 # Skip the image build and use a host mounted volume to get up to date code
+FAST=${FAST:-0}
 
 cd "$(dirname "$0")" || exit
 
-IMAGE_EXISTS=$($CONTAINER_RUNTIME images -q aries-cloudagent-test-manual)
-
-if [[ -z "$IMAGE_EXISTS" ]]; then
-  echo "Image does not exist. Building..."
-  $CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-test-manual -f ../docker/Dockerfile.sleep .. || exit 1
+if [[ $FAST -eq 0 ]]; then
+  $CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-test -f ../docker/Dockerfile.sleep .. || exit 1
 fi
 
 DOCKER_ARGS=""
+PTVSD_PORT="5678"
 
-DOCKER_ARGS="${DOCKER_ARGS} -v $(pwd)/../aries_cloudagent:/usr/src/app/aries_cloudagent:z"
+for arg in "$@"; do
+  if [ "$arg" = "--debug" ]; then
+    ENABLE_PTVSD=1 # set ptvsd env
+    #shift # remove debug flag from pytest args.
+  fi
+done
+if [ -n "${ENABLE_PTVSD}" ]; then
+  DOCKER_ARGS="${DOCKER_ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
+fi
+
+if [[ $FAST -eq 1 ]]; then
+  DOCKER_ARGS="${DOCKER_ARGS} -v $(pwd)/../aries_cloudagent:/usr/src/app/aries_cloudagent:z"
+fi
 
 if [ ! -d ../test-reports ]; then mkdir ../test-reports; fi
 
@@ -28,10 +39,7 @@ if [ ! -z "$TEST_REDIS_CONFIG" ]; then
   DOCKER_ARGS="$DOCKER_ARGS -e TEST_REDIS_CONFIG=$TEST_REDIS_CONFIG"
 fi
 
-echo "connect to the container using `docker exec -it [containerid] /bin/bash`"
-echo 'run tests in the container with the command `ENV RUNPY="/root/.cache/pypoetry/virtualenvs/aries-cloudagent-VA82Wl8V-py3.9/bin/python /root/.cache/pypoetry/virtualenvs/aries-cloudagent-VA82Wl8V-py3.9/bin/pytest [test-name-or-path]"`'
-
 $CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
   --platform linux/amd64 \
-  -v "$(pwd)/../test-reports:/usr/src/app/test-reports:z" \
-  $DOCKER_ARGS aries-cloudagent-test-manual
+	-v "$(pwd)/../test-reports:/usr/src/app/test-reports:z" \
+	$DOCKER_ARGS aries-cloudagent-test "$@"
