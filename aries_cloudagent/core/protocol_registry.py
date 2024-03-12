@@ -121,35 +121,40 @@ class ProtocolRegistry:
         if version_definition is not None and isinstance(version_definition, dict):
             version_definition = VersionDefinition.from_dict(version_definition)
 
-        protocol = ProtocolIdentifier.from_message_type(next(iter(typeset.keys())))
-        if not version_definition:
-            version_definition = VersionDefinition(
-                min=protocol.version, current=protocol.version
-            )
-
-        protocol_definition = ProtocolDefinition(
-            ident=protocol,
-            min=version_definition.min,
-            current=version_definition.current,
-        )
-
+        definitions_to_add = {}
         type_to_message_cls_to_add = {}
+
         for message_type, message_cls in typeset.items():
-            if not message_type.startswith(protocol.stem):
-                # Require all messages to be registered to match the protocol of the first
-                raise ValueError(
-                    f"Message type {message_type} does not match protocol {protocol.stem}"
-                )
+            protocol = ProtocolIdentifier.from_str(message_type.rsplit("/", 1)[0])
+            if protocol.stem in definitions_to_add:
+                definition = definitions_to_add[protocol.stem]
+            elif protocol.stem in self._definitions:
+                definition = self._definitions[protocol.stem]
+            else:
+                if version_definition:
+                    definition = ProtocolDefinition(
+                        ident=protocol,
+                        min=version_definition.min,
+                        current=version_definition.current,
+                    )
+                else:
+                    definition = ProtocolDefinition(
+                        ident=protocol,
+                        min=protocol.version,
+                        current=protocol.version,
+                    )
+
+                definitions_to_add[protocol.stem] = definition
 
             if isinstance(message_cls, str):
                 message_cls = DeferLoad(message_cls)
 
             type_to_message_cls_to_add[message_type] = message_cls
 
-            if protocol_definition.minor_versions_supported:
+            if definition.minor_versions_supported:
                 base_type = MessageType.from_str(message_type)
                 for minor_version in range(
-                    version_definition.min.minor, version_definition.current.minor + 1
+                    definition.min.minor, definition.current.minor + 1
                 ):
                     updated_type = base_type.with_version(
                         (base_type.version.major, minor_version)
@@ -157,7 +162,7 @@ class ProtocolRegistry:
                     type_to_message_cls_to_add[str(updated_type)] = message_cls
 
         self._type_to_message_cls.update(type_to_message_cls_to_add)
-        self._definitions[protocol.stem] = protocol_definition
+        self._definitions.update(definitions_to_add)
 
     def register_controllers(self, *controller_sets):
         """Add new controllers.

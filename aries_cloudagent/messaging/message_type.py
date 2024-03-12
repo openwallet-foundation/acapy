@@ -15,8 +15,8 @@ class MessageVersion:
     major: int
     minor: int
 
-    @lru_cache
     @classmethod
+    @lru_cache
     def from_str(cls, value: str):
         """Parse a version string."""
         if match := cls.PATTERN.match(value):
@@ -75,6 +75,7 @@ class ProtocolIdentifier:
     version: MessageVersion
 
     @classmethod
+    @lru_cache
     def from_str(cls, value: str) -> "ProtocolIdentifier":
         """Parse a protocol identifier string."""
         if match := cls.PATTERN.match(value):
@@ -85,8 +86,8 @@ class ProtocolIdentifier:
             )
         raise ValueError(f"Invalid protocol identifier: {value}")
 
-    @lru_cache
     @classmethod
+    @lru_cache
     def from_message_type(
         cls, message_type: Union[str, "MessageType"]
     ) -> "ProtocolIdentifier":
@@ -130,8 +131,8 @@ class MessageType:
     version: MessageVersion
     name: str
 
-    @lru_cache
     @classmethod
+    @lru_cache
     def from_str(cls, value: str):
         """Parse a message type string."""
         if match := cls.PATTERN.match(value):
