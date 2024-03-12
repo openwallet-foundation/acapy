@@ -1,0 +1,21 @@
+ARG python_version=3.9.18
+FROM python:${python_version}-slim-bullseye
+
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    libsodium23 git curl vim procps && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+
+RUN pip install --no-cache-dir poetry
+
+ADD ./README.md pyproject.toml ./poetry.lock ./
+RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
+
+RUN poetry install --no-directory -E "askar bbs" --with=dev
+
+ADD . .
+
+ENTRYPOINT ["/bin/sleep", "86400"]
