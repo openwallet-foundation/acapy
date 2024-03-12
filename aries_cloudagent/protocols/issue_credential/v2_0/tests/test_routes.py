@@ -684,6 +684,10 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             await test_module.credential_exchange_send_free_offer(self.request)
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
 
+    async def test_credential_exchange_send_free_offer_vcdr(self):
+        # IC - TODO test offer with new VCDI format
+        assert False
+
     async def test_credential_exchange_send_free_offer_no_filter(self):
         self.request.json = mock.CoroutineMock(
             return_value={
@@ -981,6 +985,10 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
 
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
 
+    async def test_credential_exchange_send_request_vcdr(self):
+        # IC - TODO test request with new VCDI format
+        assert False
+
     async def test_credential_exchange_send_request_bad_cred_ex_id(self):
         self.request.json = mock.CoroutineMock()
         self.request.match_info = {"cred_ex_id": "dummy"}
@@ -1217,6 +1225,10 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                     "ld_proof": None,
                 }
             )
+
+    async def test_credential_exchange_issue_vcdr(self):
+        # IC - TODO test issue with new VCDI format
+        assert False
 
     async def test_credential_exchange_issue_bad_cred_ex_id(self):
         self.request.json = mock.CoroutineMock()
