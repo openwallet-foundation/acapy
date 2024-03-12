@@ -210,6 +210,11 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
         async def _create():
             # TODO - implement a separate create_credential_offer for vcdi
+            # IC - need to create a new "issuer.create_credential_offer_vc_di()"
+            #      method that creates the offer in the new format, and then
+            #      call it from here (instead of "issuer.create_credential_offer()")
+            #      (see the corresponding method in "formats/indy/handler.py", the new method
+            #       should work basically the same way, except using the new VCDI format)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
@@ -346,7 +351,13 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         )
         detail_proof = VCDICredRequest.deserialize(binding_proof)
         manager = self.profile.inject(VcLdpManager)
+
         # TODO - implement a separate create_credential for vcdi
+        # IC - I think this is the new "issuer.create_credential_vc_di()" method that
+        #      has been implemented already; it needs to be called from here somewhere
+        #      (see the corresponding method in "formats/indy/handler.py", the new method
+        #       should work basically the same way, except using the new VCDI format)
+
         assert detail_credential.credential and isinstance(
             detail_credential.credential, VerifiableCredential
         )
