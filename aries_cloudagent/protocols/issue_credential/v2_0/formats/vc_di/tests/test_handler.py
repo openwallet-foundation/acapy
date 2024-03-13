@@ -1,4 +1,5 @@
 from copy import deepcopy
+
 from time import time
 import json
 from unittest import IsolatedAsyncioTestCase
@@ -86,3 +87,8 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
     async def test_issue_credential_non_revocable(self):
         # any required tests, see "formats/indy/tests/test_handler.py"
         assert False
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 0e946fa9921c1ee1f612b74022cea505e4459641

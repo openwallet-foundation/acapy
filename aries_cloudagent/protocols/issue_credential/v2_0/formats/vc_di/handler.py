@@ -98,7 +98,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         Schema = mapping[message_type]
 
         # Validate, throw if not valid
-        print("Loading:", Schema, attachment_data)
         Schema(unknown=RAISE).load(attachment_data)
 
     async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordVCDI:
@@ -308,7 +307,8 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             and "nonce" not in cred_offer["binding_method"]["anoncreds_link_secret"]
         ):
             raise V20CredFormatError(
-                "Missing nonce in credential offer with anoncreds link secret binding method"
+                "Missing nonce in credential offer with anoncreds link secret "
+                "binding method"
             )
 
         nonce = cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"]

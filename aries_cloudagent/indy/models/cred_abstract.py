@@ -303,7 +303,7 @@ class VCDICredAbstract(BaseModel):
         self,
         data_model_versions_supported: Sequence[str] = None,
         binding_required: str = None,
-        binding_methods: str = None,
+        binding_method: str = None,
         credential: Union[dict, VerifiableCredential] = None,
         **kwargs,
     ):
@@ -318,7 +318,7 @@ class VCDICredAbstract(BaseModel):
         super().__init__(**kwargs)
         self.data_model_versions_supported = data_model_versions_supported
         self.binding_required = binding_required
-        self.binding_methods = binding_methods
+        self.binding_method = binding_method
         self.credential = credential
 
 
@@ -331,22 +331,22 @@ class VCDICredAbstractSchema(BaseModelSchema):
         model_class = VCDICredAbstract
         unknown = EXCLUDE
 
-        data_model_versions_supported = fields.List(
-            fields.Str(), required=True, metadata={"description": "", "example": ""}
-        )
+    data_model_versions_supported = fields.List(
+        fields.Str(), required=True, metadata={"description": "", "example": ""}
+    )
 
-        binding_required = fields.Bool(
-            required=False, metadata={"description": "", "example": ""}
-        )
+    binding_required = fields.Bool(
+        required=False, metadata={"description": "", "example": ""}
+    )
 
-        binding_method = fields.Nested(
-            BindingMethodSchema(),
-            required=binding_required,
-            metadata={"description": "", "example": ""},
-        )
+    binding_method = fields.Nested(
+        BindingMethodSchema(),
+        required=binding_required,
+        metadata={"description": "", "example": ""},
+    )
 
-        credential = fields.Nested(
-            CredentialSchema(),
-            required=True,
-            metadata={"description": "", "example": ""},
-        )
+    credential = fields.Nested(
+        CredentialSchema(),
+        required=True,
+        metadata={"description": "", "example": ""},
+    )
