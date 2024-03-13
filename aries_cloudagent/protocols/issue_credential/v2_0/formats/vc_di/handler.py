@@ -44,6 +44,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage
+from ......wallet.base import BaseWallet
 from ...message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -97,6 +98,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         Schema = mapping[message_type]
 
         # Validate, throw if not valid
+        print("Loading:", Schema, attachment_data)
         Schema(unknown=RAISE).load(attachment_data)
 
     async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordVCDI:
@@ -204,17 +206,16 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            public_did_info = await wallet.get_public_did()
+            public_did = public_did_info.did
+
         cred_def_id = await issuer.match_created_credential_definitions(
             **cred_proposal_message.attachment(VCDICredFormatHandler.format)
         )
 
         async def _create():
-            # TODO - implement a separate create_credential_offer for vcdi
-            # IC - need to create a new "issuer.create_credential_offer_vc_di()"
-            #      method that creates the offer in the new format, and then
-            #      call it from here (instead of "issuer.create_credential_offer()")
-            #      (see the corresponding method in "formats/indy/handler.py", the new method
-            #       should work basically the same way, except using the new VCDI format)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
@@ -253,7 +254,35 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         if not cred_offer:
             cred_offer = await _create()
 
-        return self.get_format_data(CRED_20_OFFER, cred_offer)
+        vcdi_cred_offer = {
+            "data_model_versions_supported": ["1.1"],
+            "binding_required": True,
+            "binding_method": {
+                "anoncreds_link_secret": {
+                    "cred_def_id": cred_offer["cred_def_id"],
+                    "key_correctness_proof": cred_offer["key_correctness_proof"],
+                    "nonce": cred_offer["nonce"],
+                },
+                "didcomm_signed_attachment": {
+                    "algs_supported": ["EdDSA"],
+                    "did_methods_supported": ["key"],
+                    "nonce": cred_offer["nonce"],
+                },
+            },
+            "credential": {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://w3id.org/security/data-integrity/v2",
+                    {"@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"},
+                ],
+                "type": ["VerifiableCredential"],
+                "issuer": public_did,
+                "credentialSubject": cred_proposal_message.credential_preview.attr_dict(),
+                "issuanceDate": "2024-01-10T04:44:29.563418Z",
+            },
+        }
+
+        return self.get_format_data(CRED_20_OFFER, vcdi_cred_offer)
 
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
