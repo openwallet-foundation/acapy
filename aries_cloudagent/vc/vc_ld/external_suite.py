@@ -28,7 +28,7 @@ class ExternalSuiteProvider(ABC):
     """Plugin hook for providing an external signature suite implementation."""
 
     @abstractmethod
-    async def get_suite(
+    def get_suite(
         self,
         profile: Profile,
         proof_type: str,
