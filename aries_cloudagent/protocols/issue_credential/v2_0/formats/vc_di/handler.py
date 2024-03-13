@@ -274,7 +274,8 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             and "nonce" not in cred_offer["binding_method"]["anoncreds_link_secret"]
         ):
             raise V20CredFormatError(
-                "Missing nonce in credential offer with anoncreds link secret binding method"
+                "Missing nonce in credential offer with anoncreds link secret "
+                "binding method"
             )
 
         nonce = cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"]
