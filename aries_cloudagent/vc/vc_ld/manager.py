@@ -185,7 +185,7 @@ class VcLdpManager:
         # Try to get suite from external provider first
         try:
             if (provider := self.profile.inject_or(ExternalSuiteProvider)) and (
-                suite := provider.get_suite(
+                suite := await provider.get_suite(
                     self.profile, proof_type, proof, verification_method, did_info
                 )
             ):
