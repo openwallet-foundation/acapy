@@ -1,0 +1,37 @@
+#!/bin/bash
+
+CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
+
+# Skip the image build and use a host mounted volume to get up to date code
+
+cd "$(dirname "$0")" || exit
+
+IMAGE_EXISTS=$($CONTAINER_RUNTIME images -q aries-cloudagent-test-manual)
+
+if [[ -z "$IMAGE_EXISTS" ]]; then
+  echo "Image does not exist. Building..."
+  $CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-test-manual -f ../docker/Dockerfile.sleep .. || exit 1
+fi
+
+DOCKER_ARGS=""
+
+DOCKER_ARGS="${DOCKER_ARGS} -v $(pwd)/../aries_cloudagent:/usr/src/app/aries_cloudagent:z"
+
+if [ ! -d ../test-reports ]; then mkdir ../test-reports; fi
+
+# on Windows, docker run needs to be prefixed by winpty
+if [ "$OSTYPE" == "msys" ]; then
+  CONTAINER_RUNTIME="winpty docker"
+fi
+
+if [ ! -z "$TEST_REDIS_CONFIG" ]; then
+  DOCKER_ARGS="$DOCKER_ARGS -e TEST_REDIS_CONFIG=$TEST_REDIS_CONFIG"
+fi
+
+echo "connect to the container using `docker exec -it [containerid] /bin/bash`"
+echo 'run tests in the container with the command `ENV RUNPY="/root/.cache/pypoetry/virtualenvs/aries-cloudagent-VA82Wl8V-py3.9/bin/python /root/.cache/pypoetry/virtualenvs/aries-cloudagent-VA82Wl8V-py3.9/bin/pytest [test-name-or-path]"`'
+
+$CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
+  --platform linux/amd64 \
+  -v "$(pwd)/../test-reports:/usr/src/app/test-reports:z" \
+  $DOCKER_ARGS aries-cloudagent-test-manual
