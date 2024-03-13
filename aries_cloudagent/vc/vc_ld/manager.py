@@ -179,15 +179,15 @@ class VcLdpManager:
         self,
         *,
         proof_type: str,
-        verification_method: Optional[str] = None,
-        proof: Optional[dict] = None,
-        did_info: Optional[DIDInfo] = None,
+        verification_method: str,
+        proof: dict,
+        did_info: DIDInfo,
     ):
         """Get signature suite for issuance of verification."""
         # Try to get suite from external provider first
         try:
             if (provider := self.profile.inject_or(ExternalSuiteProvider)) and (
-                suite := provider.get_suite(
+                suite := await provider.get_suite(
                     self.profile, proof_type, proof, verification_method, did_info
                 )
             ):
