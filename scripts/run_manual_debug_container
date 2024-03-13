@@ -3,7 +3,7 @@
 CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 
 # Skip the image build and use a host mounted volume to get up to date code
-FAST=${FAST:-0}
+FAST=1
 
 cd "$(dirname "$0")" || exit
 
@@ -38,6 +38,9 @@ fi
 if [ ! -z "$TEST_REDIS_CONFIG" ]; then
   DOCKER_ARGS="$DOCKER_ARGS -e TEST_REDIS_CONFIG=$TEST_REDIS_CONFIG"
 fi
+
+echo "connect to the container using `docker exec -it [containerid] /bin/bash`"
+echo 'run tests in the container with the command `ENV RUNPY="/root/.cache/pypoetry/virtualenvs/aries-cloudagent-VA82Wl8V-py3.9/bin/python /root/.cache/pypoetry/virtualenvs/aries-cloudagent-VA82Wl8V-py3.9/bin/pytest [test-name-or-path]"`'
 
 $CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
   --platform linux/amd64 \
