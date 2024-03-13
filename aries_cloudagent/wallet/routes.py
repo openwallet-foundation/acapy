@@ -604,7 +604,7 @@ async def wallet_create_did(request: web.BaseRequest):
                 mediation_id = options.get("mediation_id")
 
                 # FIXME:
-                # This logic is duplicated in BaseConnectionManager 
+                # This logic is duplicated in BaseConnectionManager
                 # It should be refactored into one method.
                 ###################################################
 
@@ -622,13 +622,11 @@ async def wallet_create_did(request: web.BaseRequest):
                 mediation_records = []
                 if connection_id:
                     conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
-                    mediation_records = (
-                        await base_conn_mgr._route_manager.mediation_records_for_connection(
-                            context.profile,
-                            conn_rec,
-                            mediation_id,
-                            or_default=True,
-                        )
+                    mediation_records = await base_conn_mgr._route_manager.mediation_records_for_connection(  # noqa: E501
+                        context.profile,
+                        conn_rec,
+                        mediation_id,
+                        or_default=True,
                     )
 
                 ###################################################
