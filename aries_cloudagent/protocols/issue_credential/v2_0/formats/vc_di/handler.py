@@ -217,12 +217,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         )
 
         async def _create():
-            # TODO - implement a separate create_credential_offer for vcdi
-            # IC - need to create a new "issuer.create_credential_offer_vc_di()"
-            #      method that creates the offer in the new format, and then
-            #      call it from here (instead of "issuer.create_credential_offer()")
-            #      (see the corresponding method in "formats/indy/handler.py", the new method
-            #       should work basically the same way, except using the new VCDI format)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
@@ -288,6 +282,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                 "issuanceDate": "2024-01-10T04:44:29.563418Z",
             },
         }
+
         return self.get_format_data(CRED_20_OFFER, vcdi_cred_offer)
 
     async def receive_offer(

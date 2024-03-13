@@ -44,6 +44,7 @@ from ..handler import LOGGER as INDY_LOGGER
 #      (see "formats/indy/tests/test_handler.py" for the unit tests for the
 #       existing Indy tests, these should work basically the same way)
 
+
 class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         # any required setup, see "formats/indy/tests/test_handler.py"
@@ -85,4 +86,3 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
     async def test_issue_credential_non_revocable(self):
         # any required tests, see "formats/indy/tests/test_handler.py"
         assert False
-
