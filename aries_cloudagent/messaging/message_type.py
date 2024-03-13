@@ -150,9 +150,12 @@ class MessageType:
         return f"{self.doc_uri}/{self.protocol}/{self.version}/{self.name}"
 
     def with_version(
-        self, version: Union[MessageVersion, Tuple[int, int]]
+        self, version: Union[str, MessageVersion, Tuple[int, int]]
     ) -> "MessageType":
         """Return a new message type with the specified version."""
+        if isinstance(version, str):
+            version = MessageVersion.from_str(version)
+
         if isinstance(version, tuple):
             version = MessageVersion(*version)
 
@@ -166,3 +169,48 @@ class MessageType:
     def __hash__(self) -> int:
         """Return a hash of the message type."""
         return hash((self.doc_uri, self.protocol, self.version, self.name))
+
+
+class MessageTypeStr(str):
+    """Message type string."""
+
+    def __init__(self, value: str):
+        """Initialize the message type string."""
+        super().__init__()
+        self._parsed = MessageType.from_str(value)
+
+    @property
+    def parsed(self) -> MessageType:
+        """Return the parsed message type."""
+        return self._parsed
+
+    @property
+    def doc_uri(self) -> str:
+        """Return the message type document URI."""
+        return self._parsed.doc_uri
+
+    @property
+    def protocol(self) -> str:
+        """Return the message type protocol."""
+        return self._parsed.protocol
+
+    @property
+    def version(self) -> MessageVersion:
+        """Return the message type version."""
+        return self._parsed.version
+
+    @property
+    def name(self) -> str:
+        """Return the message type name."""
+        return self._parsed.name
+
+    @property
+    def protocol_identifier(self) -> ProtocolIdentifier:
+        """Return the message type protocol identifier."""
+        return ProtocolIdentifier.from_message_type(self._parsed)
+
+    def with_version(
+        self, version: Union[str, MessageVersion, Tuple[int, int]]
+    ) -> "MessageTypeStr":
+        """Return a new message type string with the specified version."""
+        return MessageTypeStr(str(self._parsed.with_version(version)))

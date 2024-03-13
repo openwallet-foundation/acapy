@@ -1,7 +1,6 @@
 """Agent message base class and schema."""
 
 from collections import OrderedDict
-from re import sub
 from typing import Mapping, Optional, Text, Union
 import uuid
 
@@ -29,7 +28,7 @@ from .decorators.trace_decorator import (
     TraceDecorator,
     TraceReport,
 )
-from .message_type import MessageType
+from .message_type import MessageTypeStr
 from .models.base import (
     BaseModel,
     BaseModelError,
@@ -87,15 +86,13 @@ class AgentMessage(BaseModel, BaseMessage):
                     self.__class__.__name__
                 )
             )
-        if _type:
-            self._message_type = _type
-        elif _version:
-            self._message_type = self.get_updated_msg_type(_version)
-        else:
-            self._message_type = self.Meta.message_type
 
-        # Lazily loaded by property
-        self._message_version = None
+        self._message_type = MessageTypeStr(
+            DIDCommPrefix.qualify_current(_type or self.Meta.message_type)
+        )
+
+        if _version:
+            self.assign_version(_version)
 
     @classmethod
     def _get_handler_class(cls):
@@ -118,19 +115,14 @@ class AgentMessage(BaseModel, BaseMessage):
         return self._get_handler_class()
 
     @property
-    def _type(self) -> str:
+    def _type(self) -> MessageTypeStr:
         """Accessor for the message type identifier.
 
         Returns:
             Current DIDComm prefix, slash, message type defined on `Meta.message_type`
 
         """
-        return DIDCommPrefix.qualify_current(self._message_type)
-
-    @_type.setter
-    def _type(self, msg_type: str):
-        """Set the message type identifier."""
-        self._message_type = msg_type
+        return self._message_type
 
     @property
     def _id(self) -> str:
@@ -155,20 +147,31 @@ class AgentMessage(BaseModel, BaseMessage):
     @property
     def _version(self) -> str:
         """Accessor for the message version."""
-        if self._message_version is None:
-            self._message_version = str(
-                MessageType.from_str(self._message_type).version
-            )
-        return self._message_version
+        return str(self._type.version)
+
+    def assign_version_from(self, msg: "AgentMessage"):
+        """Copy version information from a previous message.
+
+        Args:
+            msg: The received message containing version information to copy
+
+        """
+        if msg:
+            self.assign_version(msg._version)
+
+    def assign_version(self, version: str):
+        """Assign a specific version.
+
+        Args:
+            version: The version to assign
+
+        """
+        self._message_type = self._message_type.with_version(version)
 
     @_decorators.setter
     def _decorators(self, value: BaseDecoratorSet):
         """Fetch the message's decorator set."""
         self._message_decorators = value
-
-    def get_updated_msg_type(self, version: str) -> str:
-        """Update version to Meta.message_type."""
-        return sub(r"(\d+\.)?(\*|\d+)", version, self.Meta.message_type)
 
     def get_signature(self, field_name: str) -> SignatureDecorator:
         """Get the signature for a named field.

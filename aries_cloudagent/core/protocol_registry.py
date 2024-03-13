@@ -125,7 +125,8 @@ class ProtocolRegistry:
         type_to_message_cls_to_add = {}
 
         for message_type, message_cls in typeset.items():
-            protocol = ProtocolIdentifier.from_str(message_type.rsplit("/", 1)[0])
+            parsed = MessageType.from_str(message_type)
+            protocol = ProtocolIdentifier.from_message_type(parsed)
             if protocol.stem in definitions_to_add:
                 definition = definitions_to_add[protocol.stem]
             elif protocol.stem in self._definitions:
