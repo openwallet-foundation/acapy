@@ -79,7 +79,8 @@ class DIDRotateManager:
 
         hangup = Hangup()
 
-        # TODO: Should the connection be terminated here?
+        async with self.profile.session() as session:
+            await conn.delete_record(session)
 
         responder = self.profile.inject(BaseResponder)
         await responder.send(hangup, connection_id=conn.connection_id)
@@ -204,9 +205,7 @@ class DIDRotateManager:
         conn_mgr = BaseConnectionManager(self.profile)
         await conn_mgr.clear_connection_targets_cache(conn.connection_id)
 
-    async def receive_problem_report(
-        self, conn: ConnRecord, problem_report: RotateProblemReport
-    ):
+    async def receive_problem_report(self, problem_report: RotateProblemReport):
         """Receive problem report message.
 
         Args:
@@ -225,14 +224,15 @@ class DIDRotateManager:
         async with self.profile.session() as session:
             await record.save(session, reason="Received problem report")
 
-    async def receive_hangup(self, conn: ConnRecord, hangup: Hangup):
+    async def receive_hangup(self, conn: ConnRecord):
         """Receive hangup message.
 
         Args:
             conn (ConnRecord): The connection to rotate the DID for.
             hangup (Hangup): The received hangup message.
         """
-        # TODO: Should the connection be terminated here?
+        async with self.profile.session() as session:
+            await conn.delete_record(session)
 
     async def _ensure_supported_did(self, did: str):
         """Check if the DID is supported."""

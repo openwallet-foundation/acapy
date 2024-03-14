@@ -33,5 +33,5 @@ class TestProblemReportHandler:
         await handler.handle(request_context, responder)
 
         MockDIDRotateManager.return_value.receive_problem_report.assert_called_once_with(
-            request_context.connection_record, request_context.message
+            request_context.message
         )

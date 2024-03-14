@@ -29,5 +29,5 @@ class TestHangupHandler:
         await handler.handle(request_context, responder)
 
         MockDIDRotateManager.return_value.receive_hangup.assert_called_once_with(
-            request_context.connection_record, request_context.message
+            request_context.connection_record
         )

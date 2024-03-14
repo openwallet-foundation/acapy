@@ -2,26 +2,16 @@ import unittest
 from unittest import IsolatedAsyncioTestCase
 
 from .....admin.request_context import AdminRequestContext
-from .....messaging.valid import UUID4_EXAMPLE
 from .....protocols.didcomm_prefix import DIDCommPrefix
 from .....storage.error import StorageNotFoundError
 from .....tests import mock
 from .. import message_types as test_message_types
 from .. import routes as test_module
+from ..tests import MockConnRecord, test_conn_id
 
-test_conn_id = UUID4_EXAMPLE
 test_valid_rotate_request = {
     "to_did": "did:example:newdid",
 }
-
-
-def generate_mock_rotate_message():
-    schema = test_module.RotateMesageSchema()
-    msg = schema.load(test_valid_rotate_request)
-
-    msg._id = "test-message-id"
-    msg._type = test_message_types.ROTATE
-    return msg
 
 
 def generate_mock_hangup_message():
@@ -33,10 +23,13 @@ def generate_mock_hangup_message():
     return msg
 
 
-class MockConnRecord:
-    def __init__(self, connection_id, is_ready) -> None:
-        self.connection_id = connection_id
-        self.is_ready = is_ready
+def generate_mock_rotate_message():
+    schema = test_module.RotateMesageSchema()
+    msg = schema.load(test_valid_rotate_request)
+
+    msg._id = "test-message-id"
+    msg._type = test_message_types.ROTATE
+    return msg
 
 
 class TestDIDRotateRoutes(IsolatedAsyncioTestCase):

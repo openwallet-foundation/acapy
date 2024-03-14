@@ -20,10 +20,9 @@ class ProblemReportHandler(BaseHandler):
         self._logger.debug("ProblemReportHandler called with context %s", context)
         assert isinstance(context.message, RotateProblemReport)
 
-        connection_record = context.connection_record
         problem_report = context.message
 
         profile = context.profile
         did_rotate_mgr = DIDRotateManager(profile)
 
-        await did_rotate_mgr.receive_problem_report(connection_record, problem_report)
+        await did_rotate_mgr.receive_problem_report(problem_report)

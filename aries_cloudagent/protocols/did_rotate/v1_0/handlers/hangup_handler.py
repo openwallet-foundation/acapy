@@ -21,9 +21,8 @@ class HangupHandler(BaseHandler):
         assert isinstance(context.message, Hangup)
 
         connection_record = context.connection_record
-        hangup = context.message
 
         profile = context.profile
         did_rotate_mgr = DIDRotateManager(profile)
 
-        await did_rotate_mgr.receive_hangup(connection_record, hangup)
+        await did_rotate_mgr.receive_hangup(connection_record)
