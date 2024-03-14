@@ -30,6 +30,7 @@ from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......indy.holder import IndyHolder
 from .......anoncreds.issuer import AnonCredsIssuer
 from ....models.cred_ex_record import V20CredExRecord
+from ....models.detail.vc_di import V20CredExRecordVCDI
 from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_format import V20CredFormat
 from ....messages.cred_issue import V20CredIssue
@@ -56,7 +57,7 @@ from ...handler import V20CredFormatError
 from .. import handler as test_module
 from ..handler import LOGGER
 from ..handler import VCDICredFormatHandler
-from ..handler import LOGGER as INDY_LOGGER
+from ..handler import LOGGER as VCDI_LOGGER
 
 # setup any required test data, see "formats/indy/tests/test_handler.py"
 # ...
@@ -157,102 +158,68 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
         assert self.handler.profile
 
-
     async def test_validate_fields(self):
-        # Test correct data
-        self.handler.validate_fields(CRED_20_PROPOSAL, LD_PROOF_VC_DETAIL)
-        self.handler.validate_fields(CRED_20_OFFER, LD_PROOF_VC_DETAIL)
-        self.handler.validate_fields(CRED_20_REQUEST, LD_PROOF_VC_DETAIL)
-        self.handler.validate_fields(CRED_20_ISSUE, LD_PROOF_VC)
+        # this does not touch the attachment format, so is identical to the indy test
 
-        incorrect_detail = {
-            **LD_PROOF_VC_DETAIL,
-            "credential": {**LD_PROOF_VC_DETAIL["credential"], "issuanceDate": None},
-        }
+        # this does not touch the attachment format, so is identical to the indy test
+
+        # Test correct data
+        self.handler.validate_fields(CRED_20_PROPOSAL, {"cred_def_id": CRED_DEF_ID})
+        self.handler.validate_fields(CRED_20_OFFER, INDY_OFFER)
+        self.handler.validate_fields(CRED_20_REQUEST, INDY_CRED_REQ)
+        self.handler.validate_fields(CRED_20_ISSUE, INDY_CRED)
 
         # test incorrect proposal
         with self.assertRaises(ValidationError):
-            self.handler.validate_fields(CRED_20_PROPOSAL, incorrect_detail)
+            self.handler.validate_fields(
+                CRED_20_PROPOSAL, {"some_random_key": "some_random_value"}
+            )
 
         # test incorrect offer
         with self.assertRaises(ValidationError):
-            self.handler.validate_fields(CRED_20_OFFER, incorrect_detail)
+            offer = INDY_OFFER.copy()
+            offer.pop("nonce")
+            self.handler.validate_fields(CRED_20_OFFER, offer)
 
         # test incorrect request
         with self.assertRaises(ValidationError):
-            self.handler.validate_fields(CRED_20_REQUEST, incorrect_detail)
+            req = INDY_CRED_REQ.copy()
+            req.pop("nonce")
+            self.handler.validate_fields(CRED_20_REQUEST, req)
 
         # test incorrect cred
         with self.assertRaises(ValidationError):
-            incorrect_cred = LD_PROOF_VC.copy()
-            incorrect_cred.pop("issuanceDate")
+            cred = INDY_CRED.copy()
+            cred.pop("schema_id")
+            self.handler.validate_fields(CRED_20_ISSUE, cred)
 
-            self.handler.validate_fields(CRED_20_ISSUE, incorrect_cred)
-
-    async def test_get_ld_proof_detail_record(self):
+    async def test_get_indy_detail_record(self):
         cred_ex_id = "dummy"
-        details_ld_proof = [
-            V20CredExRecordLDProof(
+        details_indy = [
+            V20CredExRecordVCDI(
                 cred_ex_id=cred_ex_id,
+                rev_reg_id="rr-id",
+                cred_rev_id="0",
             ),
-            V20CredExRecordLDProof(
+            V20CredExRecordVCDI(
                 cred_ex_id=cred_ex_id,
+                rev_reg_id="rr-id",
+                cred_rev_id="1",
             ),
         ]
-        await details_ld_proof[0].save(self.session)
-        await details_ld_proof[1].save(self.session)  # exercise logger warning on get()
+        await details_indy[0].save(self.session)
+        await details_indy[1].save(self.session)  # exercise logger warning on get()
 
         with mock.patch.object(
-            LOGGER, "warning", mock.MagicMock()
+            VCDI_LOGGER, "warning", mock.MagicMock()
         ) as mock_warning:
-            assert await self.handler.get_detail_record(cred_ex_id) in details_ld_proof
+            assert await self.handler.get_detail_record(cred_ex_id) in details_indy
             mock_warning.assert_called_once()
 
-    async def test_create_proposal(self):
-        cred_ex_record = mock.MagicMock()
 
-        (cred_format, attachment) = await self.handler.create_proposal(
-            cred_ex_record, deepcopy(LD_PROOF_VC_DETAIL)
-        )
-
-        # assert identifier match
-        assert cred_format.attach_id == self.handler.format.api == attachment.ident
-
-        # assert content of attachment is proposal data
-        assert attachment.content == LD_PROOF_VC_DETAIL
-
-        # assert data is encoded as base64
-        assert attachment.data.base64
-
-    async def test_create_proposal_adds_bbs_context(self):
-        cred_ex_record = mock.MagicMock()
-
-        (cred_format, attachment) = await self.handler.create_proposal(
-            cred_ex_record, deepcopy(LD_PROOF_VC_DETAIL_BBS)
-        )
-
-        # assert BBS url added to context
-        assert SECURITY_CONTEXT_BBS_URL in attachment.content["credential"]["@context"]
-
-    async def test_create_proposal_adds_ed25519_2020_context(self):
-        cred_ex_record = mock.MagicMock()
-
-        (cred_format, attachment) = await self.handler.create_proposal(
-            cred_ex_record, deepcopy(LD_PROOF_VC_DETAIL_ED25519_2020)
-        )
-
-        # assert ED25519-2020 url added to context
-        assert (
-            SECURITY_CONTEXT_ED25519_2020_URL
-            in attachment.content["credential"]["@context"]
-        )
-
-    async def test_receive_proposal(self):
-        cred_ex_record = mock.MagicMock()
-        cred_proposal_message = mock.MagicMock()
-
-        # Not much to assert. Receive proposal doesn't do anything
-        await self.handler.receive_proposal(cred_ex_record, cred_proposal_message)
+    async def test_check_uniqueness(self):
+        # any required tests, see "formats/indy/tests/test_handler.py"
+        assert False
 
     async def test_create_offer(self):
         age = 24
