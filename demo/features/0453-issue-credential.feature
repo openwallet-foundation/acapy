@@ -4,9 +4,9 @@ Feature: RFC 0453 Aries agent issue credential
   @T003-RFC0453
   Scenario Outline: Issue a credential with the Issuer beginning with an offer
     Given we have "2" agents
-      | name  | role    | capabilities        |
-      | Acme  | issuer  | <Acme_capabilities> |
-      | Bob   | holder  | <Bob_capabilities>  |
+      | name  | role    | capabilities        | extra        |
+      | Acme  | issuer  | <Acme_capabilities> | <Acme_extra> |
+      | Bob   | holder  | <Bob_capabilities>  | <Bob_extra>  |
     And "Acme" and "Bob" have an existing connection
     And "Acme" is ready to issue a credential for <Schema_name>
     When "Acme" offers a credential with data <Credential_data>
@@ -14,26 +14,38 @@ Feature: RFC 0453 Aries agent issue credential
 
     @GHA @WalletType_Askar @BasicTest
     Examples:
-       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
-       | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |
+       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
+       | --public-did --did-exchange            | --did-exchange            | driverslicense | Data_DL_NormalizedValues |            |           |
 
     @GHA @WalletType_Askar @AltTests
     Examples:
-       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
-       | --public-did                           |                           | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |
-       | --public-did --multitenant             | --multitenant --log-file  | driverslicense | Data_DL_NormalizedValues |
+       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
+       | --public-did                           |                           | driverslicense | Data_DL_NormalizedValues |            |           |
+       | --public-did --mediation               | --mediation               | driverslicense | Data_DL_NormalizedValues |            |           |
+       | --public-did --multitenant             | --multitenant --log-file  | driverslicense | Data_DL_NormalizedValues |            |           |
 
     @GHA @WalletType_Askar_AnonCreds @BasicTest
     Examples:
-       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
-       | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
+       | Acme_capabilities                          | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
+       | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           |
 
     @GHA @WalletType_Askar_AnonCreds @AltTests
     Examples:
-       | Acme_capabilities                      | Bob_capabilities          | Schema_name    | Credential_data          |
-       | --public-did --wallet-type askar-anoncreds |                               | driverslicense | Data_DL_NormalizedValues |
-       | --public-did                           | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |
+       | Acme_capabilities                          | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
+       | --public-did --wallet-type askar-anoncreds |                               | driverslicense | Data_DL_NormalizedValues |            |           |
+       | --public-did                               | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           |
+
+    @GHA @WalletType_Askar @ConnectionTests
+    Examples:
+       | Acme_capabilities                  | Bob_capabilities                   | Schema_name    | Credential_data          | Acme_extra        | Bob_extra         |
+       | --did-exchange                     | --did-exchange                     | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
+       | --did-exchange --reuse-connections | --did-exchange --reuse-connections | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
+
+    @GHA @WalletType_Askar_AnonCreds @ConnectionTests
+    Examples:
+       | Acme_capabilities                                                | Bob_capabilities                                                 | Schema_name    | Credential_data          | Acme_extra        | Bob_extra         |
+       | --did-exchange --wallet-type askar-anoncreds                     | --did-exchange --wallet-type askar-anoncreds                     | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
+       | --did-exchange --wallet-type askar-anoncreds --reuse-connections | --did-exchange --wallet-type askar-anoncreds --reuse-connections | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
 
   @T003-RFC0453
   Scenario Outline: Holder accepts a deleted credential offer
