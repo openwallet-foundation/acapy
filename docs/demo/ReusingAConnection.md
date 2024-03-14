@@ -100,9 +100,9 @@ instruction up to the point where you are about to start the Faber and Alice age
 [Alice Faber Demo]: ./README.md
 
 1. On a command line, run Faber with these parameters: `./run_demo faber
-   --reuse-connection --public-did-connections --events`.
+   --reuse-connections --public-did-connections --events`.
 2. On a second command line, run Alice as normal, perhaps with the `events`
-   option: `./run_demo alice --reuse-connection --events`
+   option: `./run_demo alice --reuse-connections --events`
 3. Copy the invitation from the Faber terminal and paste it into the Alice
    terminal at the prompt.
 4. Verify that the connection was established.
@@ -117,7 +117,7 @@ instruction up to the point where you are about to start the Faber and Alice age
    is received from Alice, and as a result, no new connection was created.
    1. Execute again the `GET Connections` endpoint on the Alice OpenAPI screen
       to confirm that there is still just one established connection.
-8. Try running the demo again **without** the `--reuse-connection` parameter and
+8. Try running the demo again **without** the `--reuse-connections` parameter and
    compare the `services` value in the new invitation vs. what was generated in
    Steps 3 and 7. It is not a DID, but rather a one time use, inline DIDDoc
    item.
@@ -131,17 +131,17 @@ always the same that tells the invitee that they can reuse an existing connectio
 For example, to run faber with connection reuse using a non-public DID:
 
 ```
-./run_demo faber --reuse-connection --events
+./run_demo faber --reuse-connections --events
 ```
 
 To run faber using a `did_peer` and reusable connections:
 
 ```
-DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connection --events
+DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connections --events
 ```
 
 To run this demo using a multi-use invitation (from Faber):
 
 ```
-DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connection --multi-use-invitations --events
+DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connections --multi-use-invitations --events
 ```
