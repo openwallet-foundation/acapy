@@ -29,6 +29,7 @@ from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......indy.holder import IndyHolder
 from .......anoncreds.issuer import AnonCredsIssuer
 from ....models.cred_ex_record import V20CredExRecord
+from ....models.detail.vc_di import V20CredExRecordVCDI
 from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_format import V20CredFormat
 from ....messages.cred_issue import V20CredIssue
@@ -48,7 +49,7 @@ from ....message_types import (
 from ...handler import V20CredFormatError
 
 from ..handler import VCDICredFormatHandler
-from ..handler import LOGGER as INDY_LOGGER
+from ..handler import LOGGER as VCDI_LOGGER
 
 # setup any required test data, see "formats/indy/tests/test_handler.py"
 # ...
@@ -171,15 +172,62 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
         assert self.handler.profile
 
-
     async def test_validate_fields(self):
+        # this does not touch the attachment format, so is identical to the indy test
+
         # Test correct data
-        # any required tests, see "formats/indy/tests/test_handler.py"
-        assert False
+        self.handler.validate_fields(CRED_20_PROPOSAL, {"cred_def_id": CRED_DEF_ID})
+        self.handler.validate_fields(CRED_20_OFFER, INDY_OFFER)
+        self.handler.validate_fields(CRED_20_REQUEST, INDY_CRED_REQ)
+        self.handler.validate_fields(CRED_20_ISSUE, INDY_CRED)
+
+        # test incorrect proposal
+        with self.assertRaises(ValidationError):
+            self.handler.validate_fields(
+                CRED_20_PROPOSAL, {"some_random_key": "some_random_value"}
+            )
+
+        # test incorrect offer
+        with self.assertRaises(ValidationError):
+            offer = INDY_OFFER.copy()
+            offer.pop("nonce")
+            self.handler.validate_fields(CRED_20_OFFER, offer)
+
+        # test incorrect request
+        with self.assertRaises(ValidationError):
+            req = INDY_CRED_REQ.copy()
+            req.pop("nonce")
+            self.handler.validate_fields(CRED_20_REQUEST, req)
+
+        # test incorrect cred
+        with self.assertRaises(ValidationError):
+            cred = INDY_CRED.copy()
+            cred.pop("schema_id")
+            self.handler.validate_fields(CRED_20_ISSUE, cred)
 
     async def test_get_indy_detail_record(self):
-        # any required tests, see "formats/indy/tests/test_handler.py"
-        assert False
+        cred_ex_id = "dummy"
+        details_indy = [
+            V20CredExRecordVCDI(
+                cred_ex_id=cred_ex_id,
+                rev_reg_id="rr-id",
+                cred_rev_id="0",
+            ),
+            V20CredExRecordVCDI(
+                cred_ex_id=cred_ex_id,
+                rev_reg_id="rr-id",
+                cred_rev_id="1",
+            ),
+        ]
+        await details_indy[0].save(self.session)
+        await details_indy[1].save(self.session)  # exercise logger warning on get()
+
+        with mock.patch.object(
+            VCDI_LOGGER, "warning", mock.MagicMock()
+        ) as mock_warning:
+            assert await self.handler.get_detail_record(cred_ex_id) in details_indy
+            mock_warning.assert_called_once()
+
 
     async def test_check_uniqueness(self):
         # any required tests, see "formats/indy/tests/test_handler.py"
