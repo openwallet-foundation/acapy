@@ -177,7 +177,9 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
         # Test correct data
         self.handler.validate_fields(CRED_20_PROPOSAL, {"cred_def_id": CRED_DEF_ID})
-        self.handler.validate_fields(CRED_20_OFFER, INDY_OFFER)
+        self.handler.validate_fields(CRED_20_OFFER, INDY_OFFER)  # ok we might have to modify INDY_OFFER
+        # getting 
+        # marshmallow.exceptions.ValidationError: {'cred_def_id': ['Unknown field.'], 'nonce': ['Unknown field.'], 'key_correctness_proof': ['Unknown field.'], 'schema_id': ['Unknown field.']}
         self.handler.validate_fields(CRED_20_REQUEST, INDY_CRED_REQ)
         self.handler.validate_fields(CRED_20_ISSUE, INDY_CRED)
 
@@ -205,9 +207,9 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             cred.pop("schema_id")
             self.handler.validate_fields(CRED_20_ISSUE, cred)
 
-    async def test_get_indy_detail_record(self):
+    async def test_get_vcdi_detail_record(self):
         cred_ex_id = "dummy"
-        details_indy = [
+        details_vcdi = [
             V20CredExRecordVCDI(
                 cred_ex_id=cred_ex_id,
                 rev_reg_id="rr-id",
@@ -219,13 +221,13 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                 cred_rev_id="1",
             ),
         ]
-        await details_indy[0].save(self.session)
-        await details_indy[1].save(self.session)  # exercise logger warning on get()
+        await details_vcdi[0].save(self.session)
+        await details_vcdi[1].save(self.session)  # exercise logger warning on get()
 
         with mock.patch.object(
             VCDI_LOGGER, "warning", mock.MagicMock()
         ) as mock_warning:
-            assert await self.handler.get_detail_record(cred_ex_id) in details_indy
+            assert await self.handler.get_detail_record(cred_ex_id) in details_vcdi
             mock_warning.assert_called_once()
 
 
