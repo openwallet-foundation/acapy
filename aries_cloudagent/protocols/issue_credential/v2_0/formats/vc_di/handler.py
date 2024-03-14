@@ -203,7 +203,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Create vcdi credential offer."""
 
-        issuer = self.profile.inject(AnonCredsIssuer)
+        issuer = AnonCredsIssuer(self.profile)
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
