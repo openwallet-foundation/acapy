@@ -122,7 +122,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         self.context = self.profile.context
         self.askar_profile = mock.create_autospec(AskarProfile, instance=True)
 
-
         setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
 
         # Wallet
@@ -166,13 +165,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         # Holder
         self.holder = mock.MagicMock(IndyHolder, autospec=True)
         self.context.injector.bind_instance(IndyHolder, self.holder)
-
-
-        
-# async with self.profile.session() as session:
-#            wallet = session.inject(BaseWallet)
-#            public_did_info = await wallet.get_public_did()
-#            public_did = public_did_info.did
 
         self.handler = VCDICredFormatHandler(self.profile)  # this is the only difference actually
                                                             # we could factor out base tests?
