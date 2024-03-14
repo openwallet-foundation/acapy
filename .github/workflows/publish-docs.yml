@@ -43,7 +43,7 @@ jobs:
           sed -e "s#\.\./\.\./#../#" docs/features/DevReadMe.md >tmp.md; mv tmp.md docs/features/DevReadMe.md
           # Populate overrides for the current version, and then remove to not apply if VERSION is main branch
           OVERRIDE=overrides/main.html
-          echo -e "{% extends \"base.html\" %}\n\n{% block outdated %}\n  You are viewing the documentation for ACA-Py Release $ALIAS.\n{% endblock %}" >$OVERRIDE
+          echo -e "{% extends \"base.html\" %}\n\n{% block outdated %}\n  You are viewing the documentation for ACA-Py Release $VERSION.\n{% endblock %}" >$OVERRIDE
           # If building from main, use latest as ALIAS and remove the override
           [ "$VERSION" == "main" ] && ALIAS=latest && rm $OVERRIDE
           echo $VERSION $ALIAS
