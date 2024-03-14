@@ -77,6 +77,36 @@ from ...indy.tests.test_handler import (
     INDY_CRED,
 )
 
+# corresponds to the test data imported above from indy test_handler
+VCDI_ATTACHMENT_DATA = {'binding_method': {'anoncreds_link_secret': {'cred_def_id': 'LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1',
+                                              'key_correctness_proof': {'c': '123467890',
+                                                                        'xr_cap': [['remainder',
+                                                                                    '1234567890'],
+                                                                                   ['number',
+                                                                                    '12345678901234'],
+                                                                                   ['master_secret',
+                                                                                    '12345678901234']],
+                                                                        'xz_cap': '12345678901234567890'},
+                                              'nonce': '1234567890'},
+                    'didcomm_signed_attachment': {'algs_supported': ['EdDSA'],
+                                                  'did_methods_supported': ['key'],
+                                                  'nonce': '1234567890'}},
+ 'binding_required': True,
+ 'credential': {'@context': ['https://www.w3.org/2018/credentials/v1',
+                             'https://w3id.org/security/data-integrity/v2',
+                             {'@vocab': 'https://www.w3.org/ns/credentials/issuer-dependent#'}],
+                'credentialSubject': {'incorporationDate': {'encoded': '121381685682968329568231',
+                                                            'raw': '2021-01-01'},
+                                      'jurisdictionId': {'encoded': '1',
+                                                         'raw': '1'},
+                                      'legalName': {'encoded': '108156129846915621348916581250742315326283968964',
+                                                    'raw': 'The Original House '
+                                                           'of Pies'}},
+                'issuanceDate': '2024-01-10T04:44:29.563418Z',
+                'issuer': 'mockedDID',
+                'type': ['VerifiableCredential']},
+ 'data_model_versions_supported': ['1.1']}
+
 # IC - these are the minimal unit tests required for the new VCDI format class
 #      they should verify that the formatter generates and receives/handles
 #      credential offers/requests/issues with the new VCDI format
@@ -197,26 +227,25 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             ],
         )
 
+        original_create_credential_offer = self.issuer.create_credential_offer
         self.issuer.create_credential_offer = mock.CoroutineMock(
             return_value=json.dumps(INDY_OFFER)
         )
 
         (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
-        from pprint import pprint
-        pprint(cred_format)
-        pprint(attachment.content)  # will NOT be INDY_OFFER in our case!
 
-#        offer_request = {
-#            "connection_id": connection_id,
-#            "comment": f"Offer on cred def id {cred_def_id}",
-#            "auto_remove": False,
-#            "credential_preview": cred_preview,
-#            "filter": {"vc_di": {"cred_def_id": cred_def_id}},
-#            "trace": exchange_tracing,
-#        }
-        # this normally is sent to  "/issue-credential-2.0/send-offer" with offer_request
-        # maybe this is a different unit test? 
-        # this data is from the faber vc_di
+        # this enforces the data format needed for alice-faber demo
+        assert attachment.content == VCDI_ATTACHMENT_DATA 
+
+        self.issuer.create_credential_offer.assert_called_once()
+
+        # assert identifier match
+        assert cred_format.attach_id == self.handler.format.api == attachment.ident
+
+        # assert data is encoded as base64
+        assert attachment.data.base64
+
+        self.issuer.create_credential_offer = original_create_credential_offer
 
 
     async def test_receive_offer(self):
