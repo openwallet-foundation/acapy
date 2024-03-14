@@ -1,5 +1,6 @@
 from copy import deepcopy
 from time import time
+from pprint import pprint
 import json
 import datetime
 from unittest import IsolatedAsyncioTestCase
@@ -13,11 +14,17 @@ from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from anoncreds import CredentialDefinition
+from aries_cloudagent.core.in_memory.profile import (
+    InMemoryProfile,
+    InMemoryProfileSession,
+)
+from aries_cloudagent.anoncreds.models.anoncreds_schema import AnonCredsSchema
 from aries_cloudagent.wallet.did_info import DIDInfo
 from aries_cloudagent.wallet.did_method import DIDMethod
 from aries_cloudagent.wallet.key_type import KeyType
 from aries_cloudagent.wallet.base import BaseWallet
-from aries_cloudagent.storage.askar import AskarProfile
+from aries_cloudagent.multitenant.askar_profile_manager import AskarAnoncredsProfile
 
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
@@ -118,12 +125,26 @@ VCDI_ATTACHMENT_DATA = {'binding_method': {'anoncreds_link_secret': {'cred_def_i
 class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         # any required setup, see "formats/indy/tests/test_handler.py"
-        self.session = InMemoryProfile.test_session()
+        self.session = InMemoryProfile.test_session(profile_class=AskarAnoncredsProfile)
         self.profile = self.session.profile
-        self.context = self.profile.context
-        self.askar_profile = mock.create_autospec(AskarProfile, instance=True)
+        self.context = self.session.profile.context
+
+#        self.profile = mock.MagicMock(spec=AskarAnoncredsProfile)
+#        self.profile.context = self.context
+#        self.session.profile = self.profile
 
         setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
+
+        # Issuer
+        self.patcher = mock.patch('aries_cloudagent.anoncreds.issuer.AnonCredsIssuer', autospec=True)
+        self.MockAnonCredsIssuer = self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+
+        self.issuer = mock.create_autospec(AnonCredsIssuer, instance=True)
+        self.MockAnonCredsIssuer.return_value = self.issuer
+
+        self.issuer.profile = self.profile
+
 
         # Wallet
         self.public_did_info = mock.MagicMock() 
@@ -158,10 +179,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         self.cache = InMemoryCache()
         self.context.injector.bind_instance(BaseCache, self.cache)
 
-        # Issuer
-        self.issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
-        self.issuer.profile = self.askar_profile
-        self.context.injector.bind_instance(AnonCredsIssuer, self.issuer) 
 
         # Holder
         self.holder = mock.MagicMock(IndyHolder, autospec=True)
@@ -235,7 +252,12 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         # any required tests, see "formats/indy/tests/test_handler.py"
         assert False
 
-    async def test_create_offer(self):
+    @mock.patch.object(InMemoryProfileSession, "handle")
+    async def test_create_offer(self, mock_session_handle):
+
+        mock_session_handle.fetch = mock.CoroutineMock(return_value=None)
+#mock.MagicMock(spec=CredentialDefinition))
+
         age = 24
         d = datetime.date.today()
         birth_date = datetime.date(d.year - age, d.month, d.day)
@@ -273,6 +295,14 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         self.issuer.create_credential_offer = mock.CoroutineMock(
             return_value=json.dumps(INDY_OFFER)
         )
+
+
+        self.session._handle = mock.MagicMock()
+        self.session._handle.fetch = mock.CoroutineMock(return_value="Your mock fetch result")
+        print("In the test, session is:")
+        pprint(self.session)
+        print("In the test, session handle is:")
+        pprint(self.session.handle)
 
         (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
