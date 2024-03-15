@@ -85,12 +85,10 @@ class ProblemReportSchema(AgentMessageSchema):
             values=fields.Str(metadata={"description": "Problem text/number/value"}),
             metadata={"description": "Problem item"},
         ),
-        data_key="problem-items",
         required=False,
         metadata={"description": "List of problem items"},
     )
     who_retries = fields.Str(
-        data_key="who-retries",
         required=False,
         validate=validate.OneOf(["you", "me", "both", "none"]),
         metadata={
@@ -129,8 +127,8 @@ class ProblemReportSchema(AgentMessageSchema):
             "example": "you - agency",
         },
     )
-    time_noticed = fields.Str(
-        data_key="time-noticed",
+    noticed_time = fields.Str(
+        data_key="noticed_time",
         required=False,
         validate=RFC3339_DATETIME_VALIDATE,
         metadata={
