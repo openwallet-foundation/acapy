@@ -99,7 +99,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         Schema = mapping[message_type]
 
         # Validate, throw if not valid
-        print("Loading:", Schema, attachment_data)
         Schema(unknown=RAISE).load(attachment_data)
 
     async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordVCDI:
@@ -355,7 +354,9 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         async with self.profile.session() as session:
             await detail_record.save(session, reason="create v2.0 credential request")
 
-        return self.get_format_data(CRED_20_REQUEST, cred_req_result["request"])
+        tmp = self.get_format_data(CRED_20_REQUEST, cred_req_result["request"])
+        print("returning cred request format:", tmp)
+        return tmp
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
