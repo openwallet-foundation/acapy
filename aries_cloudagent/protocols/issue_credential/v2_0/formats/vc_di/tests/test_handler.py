@@ -252,8 +252,23 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
 
     async def test_check_uniqueness(self):
-        # any required tests, see "formats/indy/tests/test_handler.py"
-        assert False
+        with mock.patch.object(
+            self.handler.format.detail,
+            "query_by_cred_ex_id",
+            mock.CoroutineMock(),
+        ) as mock_indy_query:
+            mock_indy_query.return_value = []
+            await self.handler._check_uniqueness("dummy-cx-id")
+
+        with mock.patch.object(
+            self.handler.format.detail,
+            "query_by_cred_ex_id",
+            mock.CoroutineMock(),
+        ) as mock_indy_query:
+            mock_indy_query.return_value = [mock.MagicMock()]
+            with self.assertRaises(V20CredFormatError) as context:
+                await self.handler._check_uniqueness("dummy-cx-id")
+            assert "detail record already exists" in str(context.exception)
 
     @mock.patch.object(InMemoryProfileSession, "handle")
     async def test_create_offer(self, mock_session_handle):
@@ -336,17 +351,268 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         await self.handler.receive_offer(cred_ex_record, cred_offer_message)
 
     async def test_create_request(self):
-        # any required tests, see "formats/indy/tests/test_handler.py"
-        assert False
+
+        holder_did = "did"
+
+        cred_offer = V20CredOffer(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.VC_DI.api
+                    ],
+                )
+            ],
+            # TODO here 
+            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+        )
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-id",
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            cred_offer=cred_offer.serialize(),
+        )
+
+        cred_def = {"cred": "def"}
+        self.ledger.get_credential_definition = mock.CoroutineMock(
+            return_value=cred_def
+        )
+
+        cred_req_meta = {}
+        self.holder.create_credential_request = mock.CoroutineMock(
+            return_value=(json.dumps(INDY_CRED_REQ), json.dumps(cred_req_meta))
+        )
+
+        (cred_format, attachment) = await self.handler.create_request(
+            cred_ex_record, {"holder_did": holder_did}
+        )
+
+        self.holder.create_credential_request.assert_called_once_with(
+            INDY_OFFER, cred_def, holder_did
+        )
+
+        # assert identifier match
+        assert cred_format.attach_id == self.handler.format.api == attachment.ident
+
+        # assert content of attachment is proposal data
+        assert attachment.content == INDY_CRED_REQ
+
+        # assert data is encoded as base64
+        assert attachment.data.base64
+
+        # cover case with cache (change ID to prevent already exists error)
+        cred_ex_record._id = "dummy-id2"
+        await self.handler.create_request(cred_ex_record, {"holder_did": holder_did})
+
+        # cover case with no cache in injection context
+        self.context.injector.clear_binding(BaseCache)
+        cred_ex_record._id = "dummy-id3"
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            mock.CoroutineMock(return_value=(None, self.ledger)),
+        ):
+            await self.handler.create_request(
+                cred_ex_record, {"holder_did": holder_did}
+            )
+
 
     async def test_receive_request(self):
-        # any required tests, see "formats/indy/tests/test_handler.py"
-        assert False
+        cred_ex_record = mock.MagicMock()
+        cred_request_message = mock.MagicMock()
 
+        # Not much to assert. Receive request doesn't do anything
+        await self.handler.receive_request(cred_ex_record, cred_request_message)
+
+    
     async def test_issue_credential_revocable(self):
-        # any required tests, see "formats/indy/tests/test_handler.py"
-        assert False
+        attr_values = {
+            "legalName": "value",
+            "jurisdictionId": "value",
+            "incorporationDate": "value",
+        }
+        cred_preview = V20CredPreview(
+            attributes=[
+                V20CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
+            ]
+        )
+        cred_offer = V20CredOffer(
+            credential_preview=cred_preview,
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.VC_DI.api
+                    ],
+                )
+            ],
+            # TODO here
+            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.VC_DI.api
+                    ],
+                )
+            ],
+            # TODO here
+            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+        )
+
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_offer=cred_offer.serialize(),
+            cred_request=cred_request.serialize(),
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+        )
+
+        cred_rev_id = "1000"
+        self.issuer.create_credential = mock.CoroutineMock(
+            return_value=(json.dumps(INDY_CRED), cred_rev_id)
+        )
+
+        with mock.patch.object(test_module, "IndyRevocation", autospec=True) as revoc:
+            revoc.return_value.get_or_create_active_registry = mock.CoroutineMock(
+                return_value=(
+                    mock.MagicMock(  # active_rev_reg_rec
+                        revoc_reg_id=REV_REG_ID,
+                    ),
+                    mock.MagicMock(  # rev_reg
+                        tails_local_path="dummy-path",
+                        get_or_fetch_local_tails_path=(mock.CoroutineMock()),
+                        max_creds=10,
+                    ),
+                )
+            )
+
+            (cred_format, attachment) = await self.handler.issue_credential(
+                cred_ex_record, retries=1
+            )
+
+            self.issuer.create_credential.assert_called_once_with(
+                SCHEMA,
+                INDY_OFFER,
+                INDY_CRED_REQ,
+                attr_values,
+                REV_REG_ID,
+                "dummy-path",
+            )
+
+            # assert identifier match
+            assert cred_format.attach_id == self.handler.format.api == attachment.ident
+
+            # assert content of attachment is proposal data
+            assert attachment.content == INDY_CRED
+
+            # assert data is encoded as base64
+            assert attachment.data.base64
 
     async def test_issue_credential_non_revocable(self):
-        # any required tests, see "formats/indy/tests/test_handler.py"
-        assert False
+        CRED_DEF_NR = deepcopy(CRED_DEF)
+        CRED_DEF_NR["value"]["revocation"] = None
+        attr_values = {
+            "legalName": "value",
+            "jurisdictionId": "value",
+            "incorporationDate": "value",
+        }
+        cred_preview = V20CredPreview(
+            attributes=[
+                V20CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
+            ]
+        )
+        cred_offer = V20CredOffer(
+            credential_preview=cred_preview,
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.VC_DI.api
+                    ],
+                )
+            ],
+            # TODO here
+            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.VC_DI.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+        )
+
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_offer=cred_offer.serialize(),
+            cred_request=cred_request.serialize(),
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+        )
+
+        self.issuer.create_credential = mock.CoroutineMock(
+            return_value=(json.dumps(INDY_CRED), None)
+        )
+        self.ledger.get_credential_definition = mock.CoroutineMock(
+            return_value=CRED_DEF_NR
+        )
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ):
+            (cred_format, attachment) = await self.handler.issue_credential(
+                cred_ex_record, retries=0
+            )
+
+            self.issuer.create_credential.assert_called_once_with(
+                SCHEMA,
+                INDY_OFFER,
+                INDY_CRED_REQ,
+                attr_values,
+                None,
+                None,
+            )
+
+        # assert identifier match
+        assert cred_format.attach_id == self.handler.format.api == attachment.ident
+
+        # assert content of attachment is proposal data
+        assert attachment.content == INDY_CRED
+
+        # assert data is encoded as base64
+        assert attachment.data.base64
+
+
+    async def test_create_proposal(self):
+        cred_ex_record = mock.MagicMock()
+        proposal_data = {"schema_id": SCHEMA_ID}
+
+        (cred_format, attachment) = await self.handler.create_proposal(
+            cred_ex_record, proposal_data
+        )
+
+        # assert identifier match
+        assert cred_format.attach_id == self.handler.format.api == attachment.ident
+
+        # assert content of attachment is proposal data
+        assert attachment.content == proposal_data
+
+        # assert data is encoded as base64
+        assert attachment.data.base64
