@@ -6,8 +6,9 @@ from typing import List, Optional, Tuple, Union
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
-
 from marshmallow import fields, validate
+
+from aries_cloudagent.connections.base_manager import BaseConnectionManager
 
 from ..admin.request_context import AdminRequestContext
 from ..config.injection_context import InjectionContext
@@ -36,10 +37,10 @@ from ..messaging.valid import (
     INDY_RAW_PUBLIC_KEY_VALIDATE,
     JWT_EXAMPLE,
     JWT_VALIDATE,
-    SD_JWT_EXAMPLE,
-    SD_JWT_VALIDATE,
     NON_SD_LIST_EXAMPLE,
     NON_SD_LIST_VALIDATE,
+    SD_JWT_EXAMPLE,
+    SD_JWT_VALIDATE,
     IndyDID,
     StrOrDictField,
     Uri,
@@ -59,7 +60,7 @@ from ..wallet.jwt import jwt_sign, jwt_verify
 from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import KEY, SOV, DIDMethod, DIDMethods, HolderDefinedDid
+from .did_method import KEY, PEER2, PEER4, SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyTypes
@@ -113,6 +114,10 @@ class DIDSchema(OpenAPISchema):
             "description": "Key type associated with the DID",
             "example": ED25519.key_type,
         },
+    )
+    metadata = fields.Dict(
+        required=False,
+        metadata={"description": "Additional metadata associated with the DID"},
     )
 
 
@@ -287,7 +292,9 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     method = fields.Str(
         required=False,
-        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
+        validate=validate.OneOf(
+            [KEY.method_name, SOV.method_name, PEER2.method_name, PEER4.method_name]
+        ),
         metadata={
             "example": KEY.method_name,
             "description": (
@@ -411,6 +418,7 @@ def format_did_info(info: DIDInfo):
             "posture": DIDPosture.get(info.metadata).moniker,
             "key_type": info.key_type.key_type,
             "method": info.method.method_name,
+            "metadata": info.metadata,
         }
 
 
@@ -584,9 +592,58 @@ async def wallet_create_did(request: web.BaseRequest):
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
         try:
-            info = await wallet.create_local_did(
-                method=method, key_type=key_type, seed=seed, did=did
-            )
+            is_did_peer_2 = method.method_name == PEER2.method_name
+            is_did_peer_4 = method.method_name == PEER4.method_name
+            if is_did_peer_2 or is_did_peer_4:
+                base_conn_mgr = BaseConnectionManager(context.profile)
+
+                options = body.get("options", {})
+
+                connection_id = options.get("conn_id")
+                my_endpoint = options.get("endpoint")
+                mediation_id = options.get("mediation_id")
+
+                # FIXME:
+                # This logic is duplicated in BaseConnectionManager
+                # It should be refactored into one method.
+                ###################################################
+
+                my_endpoints = []
+                if my_endpoint:
+                    my_endpoints = [my_endpoint]
+                else:
+                    default_endpoint = context.profile.settings.get("default_endpoint")
+                    if default_endpoint:
+                        my_endpoints.append(default_endpoint)
+                    my_endpoints.extend(
+                        context.profile.settings.get("additional_endpoints", [])
+                    )
+
+                mediation_records = []
+                if connection_id:
+                    conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
+                    mediation_records = await base_conn_mgr._route_manager.mediation_records_for_connection(  # noqa: E501
+                        context.profile,
+                        conn_rec,
+                        mediation_id,
+                        or_default=True,
+                    )
+
+                ###################################################
+
+                info = (
+                    await base_conn_mgr.create_did_peer_2(
+                        my_endpoints, mediation_records
+                    )
+                    if is_did_peer_2
+                    else await base_conn_mgr.create_did_peer_4(
+                        my_endpoints, mediation_records
+                    )
+                )
+            else:
+                info = await wallet.create_local_did(
+                    method=method, key_type=key_type, seed=seed, did=did
+                )
 
         except WalletError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
