@@ -331,8 +331,9 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
 
     async def test_receive_offer(self):
-        # any required tests, see "formats/indy/tests/test_handler.py"
-        assert False
+        cred_ex_record = mock.MagicMock()
+        cred_offer_message = mock.MagicMock()
+        await self.handler.receive_offer(cred_ex_record, cred_offer_message)
 
     async def test_create_request(self):
         # any required tests, see "formats/indy/tests/test_handler.py"
