@@ -91,6 +91,7 @@ nav:
     - Multitenant ACA-Py: features/Multitenancy.md
     - DID Methods: features/DIDMethods.md
     - DID Resolution: features/DIDResolution.md
+    - Publishing AnonCreds Objects To Other Ledgers/Verifiable Data Registries: features/AnonCredsMethods.md
     - Configuring Multiple Indy Ledgers: features/Multiledger.md
     - Automatically Endorsing Indy Transations: features/Endorser.md
     - Using W3C JSON-LD Signed Credentials: features/JsonLdCredentials.md
@@ -100,6 +101,7 @@ nav:
     - Code Generation with the Open API: features/UsingOpenAPI.md
     - ACA-Py as a DIDComm Mediator: features/Mediation.md
 - Demos:
+    - Hyperledger Aries / AnonCreds Workshop: demo/Aries-Workshop.md
     - The Alice-Faber Demo: demo/README.md
     - Open API Tutorial: demo/AriesOpenAPIDemo.md
     - Alice Gets a Phone: demo/AliceGetsAPhone.md

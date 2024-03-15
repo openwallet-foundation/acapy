@@ -1,4 +1,5 @@
-"""V2.0 issue-credential indy credential format handler."""
+"""V2.0 issue-credential vc_di credential format handler.
+   indy compatible, attachment is a valid verifiable credential"""
 
 import json
 import logging
@@ -280,7 +281,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                 "issuanceDate": "2024-01-10T04:44:29.563418Z",
             },
         }
-
         return self.get_format_data(CRED_20_OFFER, vcdi_cred_offer)
 
     async def receive_offer(
@@ -354,7 +354,9 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         async with self.profile.session() as session:
             await detail_record.save(session, reason="create v2.0 credential request")
 
-        return self.get_format_data(CRED_20_REQUEST, cred_req_result["request"])
+        tmp = self.get_format_data(CRED_20_REQUEST, cred_req_result["request"])
+        print("returning cred request format:", tmp)
+        return tmp
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest

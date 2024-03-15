@@ -397,7 +397,7 @@ class FaberAgent(AriesAgent):
                     vc_di_proof_request["non_revoked"] = {"to": int(time.time())}
 
                 proof_request_web_request = {
-                    "presentation_request": {"vc_di": vc_di_proof_request},
+                    "presentation_request": {"dif": vc_di_proof_request},
                     "trace": exchange_tracing,
                 }
                 if not connectionless:
