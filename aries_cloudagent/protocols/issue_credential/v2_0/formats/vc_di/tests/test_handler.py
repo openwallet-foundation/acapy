@@ -136,14 +136,10 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         self.profile = self.session.profile
         self.context = self.session.profile.context
 
-#        self.profile = mock.MagicMock(spec=AskarAnoncredsProfile)
-#        self.profile.context = self.context
-#        self.session.profile = self.profile
-
         setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
 
         # Issuer
-        self.patcher = mock.patch('aries_cloudagent.anoncreds.issuer.AnonCredsIssuer', autospec=True)
+        self.patcher = mock.patch('aries_cloudagent.protocols.issue_credential.v2_0.formats.vc_di.handler.AnonCredsIssuer', autospec=True)
         self.MockAnonCredsIssuer = self.patcher.start()
         self.addCleanup(self.patcher.stop)
 
@@ -262,30 +258,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
     @mock.patch.object(InMemoryProfileSession, "handle")
     async def test_create_offer(self, mock_session_handle):
 
-        #mock_entry = mock.MagicMock(spec=Entry)
-        #mock_entry.name = 'entry name'
-        #mock_entry.raw_value = CRED_DEF
-
-
-        schema = Schema.create(
-            name="MYCO Biomarker",
-            attr_names=["biomarker_id"],
-            issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
-            version="1.0",
-        )
-        (cred_def, _, _) = CredentialDefinition.create(
-            schema_id="CsQY9MGeD3CQP4EyuVFo5m:2:MYCO Biomarker:0.0.3",
-            schema=schema,
-            issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
-            tag="tag",
-            support_revocation=True,
-            signature_type="CL",
-        )
-        mock_session_handle.fetch = mock.CoroutineMock(
-            return_value=MockEntry(raw_value=cred_def.to_json_buffer())
-        )
-        #mock_session_handle.fetch = mock.CoroutineMock(return_value=MockCredDefEntry(name="name", epoch="1"))
-
         age = 24
         d = datetime.date.today()
         birth_date = datetime.date(d.year - age, d.month, d.day)
@@ -318,6 +290,23 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                 AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
             ],
         )
+
+        schema_id_parts = SCHEMA_ID.split(":")
+        cred_def_record = StorageRecord(
+            CRED_DEF_SENT_RECORD_TYPE,
+            CRED_DEF_ID,
+            {
+                "schema_id": SCHEMA_ID,
+                "schema_issuer_did": schema_id_parts[0],
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "issuer_did": TEST_DID,
+                "cred_def_id": CRED_DEF_ID,
+                "epoch": str(int(time())),
+            },
+        )
+        await self.session.storage.add_record(cred_def_record)
+
 
         original_create_credential_offer = self.issuer.create_credential_offer
         self.issuer.create_credential_offer = mock.CoroutineMock(
