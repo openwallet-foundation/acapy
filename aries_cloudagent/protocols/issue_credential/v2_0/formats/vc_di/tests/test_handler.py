@@ -10,10 +10,23 @@ from marshmallow import ValidationError
 from aries_cloudagent.tests import mock
 
 from .......core.in_memory import InMemoryProfile
+from aries_askar.store import Entry
 from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from anoncreds import (CredentialDefinition, Schema)
+from aries_cloudagent.core.in_memory.profile import (
+    InMemoryProfile,
+    InMemoryProfileSession,
+)
+from aries_cloudagent.anoncreds.tests.test_issuer import (
+    MockCredDefEntry
+)
+from aries_cloudagent.anoncreds.tests.test_revocation import (
+    MockEntry
+)
+from aries_cloudagent.anoncreds.models.anoncreds_schema import AnonCredsSchema
 from aries_cloudagent.wallet.did_info import DIDInfo
 from aries_cloudagent.wallet.did_method import DIDMethod
 from aries_cloudagent.wallet.key_type import KeyType
@@ -221,7 +234,33 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         # any required tests, see "formats/indy/tests/test_handler.py"
         assert False
 
-    async def test_create_offer(self):
+    @mock.patch.object(InMemoryProfileSession, "handle")
+    async def test_create_offer(self, mock_session_handle):
+
+        #mock_entry = mock.MagicMock(spec=Entry)
+        #mock_entry.name = 'entry name'
+        #mock_entry.raw_value = CRED_DEF
+
+
+        schema = Schema.create(
+            name="MYCO Biomarker",
+            attr_names=["biomarker_id"],
+            issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
+            version="1.0",
+        )
+        (cred_def, _, _) = CredentialDefinition.create(
+            schema_id="CsQY9MGeD3CQP4EyuVFo5m:2:MYCO Biomarker:0.0.3",
+            schema=schema,
+            issuer_id="did:indy:sovrin:SGrjRL82Y9ZZbzhUDXokvQ",
+            tag="tag",
+            support_revocation=True,
+            signature_type="CL",
+        )
+        mock_session_handle.fetch = mock.CoroutineMock(
+            return_value=MockEntry(raw_value=cred_def.to_json_buffer())
+        )
+        #mock_session_handle.fetch = mock.CoroutineMock(return_value=MockCredDefEntry(name="name", epoch="1"))
+
         age = 24
         d = datetime.date.today()
         birth_date = datetime.date(d.year - age, d.month, d.day)
@@ -258,6 +297,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         self.issuer.create_credential_offer = mock.CoroutineMock(
             return_value=json.dumps(INDY_OFFER)
         )
+
 
         (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
         from pprint import pprint
