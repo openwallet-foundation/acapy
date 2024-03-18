@@ -312,9 +312,24 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             )
 
         nonce = cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"]
-        cred_def_id = cred_offer["binding_method"]["anoncreds_link_secret"][
-            "cred_def_id"
-        ]
+        cred_def_id = cred_offer["binding_method"]["anoncreds_link_secret"]["cred_def_id"]
+
+        # workaround for getting schema_id
+        ledger = self.profile.inject(BaseLedger)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+        )[1]
+
+        async with ledger:
+            schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
 
         async def _create():
             anoncreds_registry = self.profile.inject(AnonCredsRegistry)
@@ -323,9 +338,18 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                 self.profile, cred_def_id
             )
 
+            legacy_offer = {
+                "schema_id": schema_id,
+                "cred_def_id": cred_def_id,
+                "key_correctness_proof": cred_offer["binding_method"][
+                    "anoncreds_link_secret"
+                ]["key_correctness_proof"],
+                "nonce": cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"],
+            }
+
             holder = AnonCredsHolder(self.profile)
             request_json, metadata_json = await holder.create_credential_request(
-                cred_offer, cred_def_result.credential_definition, holder_did
+                legacy_offer, cred_def_result.credential_definition, holder_did
             )
 
             return {
@@ -345,16 +369,30 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                     await entry.set_result(cred_req_result, 3600)
         if not cred_req_result:
             cred_req_result = await _create()
-
+        print("cred_def_result:::::::::::{}".format(cred_req_result))
         detail_record = V20CredExRecordVCDI(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
         )
 
+        vcdi_cred_request = {
+            "data_model_version": "2.0",
+            "binding_proof": {
+                "anoncreds_link_secret": {
+                    "entropy": cred_req_result["request"]["prover_did"],
+                    "cred_def_id": cred_req_result["request"]["cred_def_id"],
+                    "blinded_ms": cred_req_result["request"]["blinded_ms"],
+                    "blinded_ms_corectness_proof": cred_req_result["request"].blinded_ms_corectness_proof,
+                    "nonce": cred_req_result["request"]["nonce"],
+                },
+                "didcomm_signed_attachment": {"attachment_id": "test"},
+            },
+        }
+
         async with self.profile.session() as session:
             await detail_record.save(session, reason="create v2.0 credential request")
 
-        tmp = self.get_format_data(CRED_20_REQUEST, cred_req_result["request"])
+        tmp = self.get_format_data(CRED_20_REQUEST, vcdi_cred_request)
         print("returning cred request format:", tmp)
         return tmp
 

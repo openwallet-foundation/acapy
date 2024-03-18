@@ -551,9 +551,7 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
                 )
         except AskarError as err:
-            raise AnonCredsIssuerError(
-                "Error retrieving credential definition"
-            ) from err
+            raise AnonCredsIssuerError("Error retrieving credential definition") from err
         if not cred_def or not key_proof:
             raise AnonCredsIssuerError(
                 "Credential definition not found for credential offer"
@@ -594,9 +592,7 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
         except AskarError as err:
-            raise AnonCredsIssuerError(
-                "Error retrieving credential definition"
-            ) from err
+            raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:
             raise AnonCredsIssuerError(

@@ -90,10 +90,8 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         """Retrieve credential exchange detail record by cred_ex_id."""
 
         async with self.profile.session() as session:
-            records = (
-                await AnonCredsCredFormatHandler.format.detail.query_by_cred_ex_id(
-                    session, cred_ex_id
-                )
+            records = await AnonCredsCredFormatHandler.format.detail.query_by_cred_ex_id(
+                session, cred_ex_id
             )
 
         if len(records) > 1:
@@ -261,6 +259,13 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
             AnonCredsCredFormatHandler.format
         )
 
+        print(
+            "cred_ex_record.cred_offer in handler:::::{}".format(
+                cred_ex_record.cred_offer
+            )
+        )
+        print("cred_offer in handler:::::{}".format(cred_offer))
+
         if "nonce" not in cred_offer:
             raise V20CredFormatError("Missing nonce in credential offer")
 
@@ -328,9 +333,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         cred_request = cred_ex_record.cred_request.attachment(
             AnonCredsCredFormatHandler.format
         )
-        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
-            decode=False
-        )
+        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(decode=False)
 
         issuer = AnonCredsIssuer(self.profile)
         cred_def_id = cred_offer["cred_def_id"]

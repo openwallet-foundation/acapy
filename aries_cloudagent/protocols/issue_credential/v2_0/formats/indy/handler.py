@@ -320,6 +320,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             async with ledger:
                 cred_def = await ledger.get_credential_definition(cred_def_id)
 
+            print("cred_def in handler:::::{}".format(cred_def))
             holder = self.profile.inject(IndyHolder)
             request_json, metadata_json = await holder.create_credential_request(
                 cred_offer, cred_def, holder_did
@@ -375,9 +376,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Issue indy credential."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return await self.anoncreds_handler.issue_credential(
-                cred_ex_record, retries
-            )
+            return await self.anoncreds_handler.issue_credential(cred_ex_record, retries)
 
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
@@ -385,9 +384,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_request = cred_ex_record.cred_request.attachment(
             IndyCredFormatHandler.format
         )
-        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
-            decode=False
-        )
+        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(decode=False)
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
 
@@ -497,9 +494,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """Store indy credential."""
         # Temporary shim while the new anoncreds library integration is in progress
         if self.anoncreds_handler:
-            return await self.anoncreds_handler.store_credential(
-                cred_ex_record, cred_id
-            )
+            return await self.anoncreds_handler.store_credential(cred_ex_record, cred_id)
 
         cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 
