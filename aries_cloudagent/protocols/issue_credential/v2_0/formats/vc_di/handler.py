@@ -4,6 +4,9 @@
 import json
 import logging
 from typing import Mapping, Tuple
+from aries_cloudagent.protocols.issue_credential.v2_0.formats.anoncreds.handler import (
+    AnonCredsCredFormatHandler,
+)
 from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import (
     V20CredExRecordVCDI,
 )
@@ -318,6 +321,23 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             "cred_def_id"
         ]
 
+        # workaround for getting schema_id
+        ledger = self.profile.inject(BaseLedger)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+        )[1]
+
+        async with ledger:
+            schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
+
         async def _create():
             anoncreds_registry = self.profile.inject(AnonCredsRegistry)
 
@@ -325,9 +345,18 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                 self.profile, cred_def_id
             )
 
+            legacy_offer = {
+                "schema_id": schema_id,
+                "cred_def_id": cred_def_id,
+                "key_correctness_proof": cred_offer["binding_method"][
+                    "anoncreds_link_secret"
+                ]["key_correctness_proof"],
+                "nonce": cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"],
+            }
+
             holder = AnonCredsHolder(self.profile)
             request_json, metadata_json = await holder.create_credential_request(
-                cred_offer, cred_def_result.credential_definition, holder_did
+                legacy_offer, cred_def_result.credential_definition, holder_did
             )
 
             return {
@@ -347,16 +376,34 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                     await entry.set_result(cred_req_result, 3600)
         if not cred_req_result:
             cred_req_result = await _create()
-
+        print("cred_def_result:::::::::::{}".format(cred_req_result))
         detail_record = V20CredExRecordVCDI(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
         )
 
+        vcdi_cred_request = {
+            "data_model_version": "2.0",
+            "binding_proof": {
+                "anoncreds_link_secret": {
+                    "entropy": cred_req_result["request"]["prover_did"],
+                    "cred_def_id": cred_req_result["request"]["cred_def_id"],
+                    "blinded_ms": cred_req_result["request"]["blinded_ms"],
+                    "blinded_ms_correctness_proof": cred_req_result["request"][
+                        "blinded_ms_correctness_proof"
+                    ],
+                    "nonce": cred_req_result["request"]["nonce"],
+                },
+                "didcomm_signed_attachment": {"attachment_id": "test"},
+            },
+        }
+
         async with self.profile.session() as session:
             await detail_record.save(session, reason="create v2.0 credential request")
 
-        return self.get_format_data(CRED_20_REQUEST, cred_req_result["request"])
+        tmp = self.get_format_data(CRED_20_REQUEST, vcdi_cred_request)
+        print("returning cred request format:", tmp)
+        return tmp
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
@@ -373,36 +420,58 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         """Issue vcdi credential."""
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
-        attached_credential = cred_ex_record.cred_offer.attachment(
-            VCDICredFormatHandler.format
-        )
-        detail_credential = VCDICredAbstract.deserialize(attached_credential)
-        binding_proof = cred_ex_record.cred_request.attachment(
-            VCDICredFormatHandler.format
-        )
-        detail_proof = VCDICredRequest.deserialize(binding_proof)
-        manager = self.profile.inject(VcLdpManager)
+        # attached_credential = cred_ex_record.cred_offer.attachment(
+        #     VCDICredFormatHandler.format
+        # )
+        # detail_credential = VCDICredAbstract.deserialize(attached_credential)
+        # binding_proof = cred_ex_record.cred_request.attachment(
+        #     VCDICredFormatHandler.format
+        # )
+        # detail_proof = VCDICredRequest.deserialize(binding_proof)
+        # manager = self.profile.inject(VcLdpManager)
 
+        # I got this error for trying
+        # TypeError: Object of type ThreadDecorator is not JSON serializable
+        cred_offer_json = json.dumps(cred_ex_record.cred_offer.__dict__)
+        cred_request_json = json.dumps(cred_ex_record.cred_request.__dict__)
+
+        cred_offer = cred_offer_json["offers~attach"][0]
+        cred_request = cred_request_json["requests~attach"][0]
+        # cred_offer = cred_ex_record.cred_offer.attachment(
+        #     AnonCredsCredFormatHandler.format
+        # )
+        # cred_request = cred_ex_record.cred_request.attachment(
+        #     AnonCredsCredFormatHandler.format
+        # )
+        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
+            decode=False
+        )
+        print("cred_offer in HANDLER:::::::::{}".format(cred_offer))
+        print("cred_request in HANDLER:::::::::{}".format(cred_request))
+        print("cred_values in HANDLER:::::::::{}".format(cred_values))
+        issuer = AnonCredsIssuer(self.profile)
         # TODO - implement a separate create_credential for vcdi
         # IC - I think this is the new "issuer.create_credential_vc_di()" method that
         #      has been implemented already; it needs to be called from here somewhere
         #      (see the corresponding method in "formats/indy/handler.py", the new method
         #       should work basically the same way, except using the new VCDI format)
-
-        assert detail_credential.credential and isinstance(
-            detail_credential.credential, VerifiableCredential
+        cred_json = await issuer.create_credential_vc_di(
+            cred_offer, cred_request, cred_values
         )
-        assert detail_proof.binding_proof and isinstance(
-            detail_proof.binding_proof, BindingProof
-        )
-        try:
-            vc = await manager.issue(
-                detail_credential.credential, detail_proof.binding_proof
-            )
-        except VcLdpManagerError as err:
-            raise V20CredFormatError("Failed to issue credential") from err
+        # assert detail_credential.credential and isinstance(
+        #     detail_credential.credential, VerifiableCredential
+        # )
+        # assert detail_proof.binding_proof and isinstance(
+        #     detail_proof.binding_proof, BindingProof
+        # )
+        # try:
+        #     vc = await manager.issue(
+        #         detail_credential.credential, detail_proof.binding_proof
+        #     )
+        # except VcLdpManagerError as err:
+        #     raise V20CredFormatError("Failed to issue credential") from err
 
-        result = self.get_format_data(CRED_20_ISSUE, vc.serialize())
+        result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
 
         cred_rev_id = None
         rev_reg_def_id = None

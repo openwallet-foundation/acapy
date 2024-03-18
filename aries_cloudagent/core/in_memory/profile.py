@@ -100,7 +100,7 @@ class InMemoryProfile(Profile):
         cls,
         settings: Mapping[str, Any] = None,
         bind: Mapping[Type, Any] = None,
-        profile_class: Any = None
+        profile_class: Any = None,
     ) -> "InMemoryProfileSession":
         """Used in tests to quickly create InMemoryProfileSession."""
         if profile_class is not None:

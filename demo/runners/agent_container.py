@@ -950,9 +950,7 @@ class AgentContainer:
     ):
         log_status("#13 Issue credential offer to X")
 
-        if self.cred_type in [
-            CRED_FORMAT_INDY, CRED_FORMAT_VC_DI
-        ]:
+        if self.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
                 "attributes": cred_attrs,

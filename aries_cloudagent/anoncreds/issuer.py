@@ -15,6 +15,12 @@ from anoncreds import (
     Schema,
 )
 from aries_askar import AskarError
+from aries_cloudagent.ledger.base import BaseLedger
+from aries_cloudagent.ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    IndyLedgerRequestsExecutor,
+)
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 
 from ..askar.profile_anon import (
     AskarAnoncredsProfile,
@@ -583,6 +589,82 @@ class AnonCredsIssuer:
         """Create Credential."""
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         schema_id = credential_offer["schema_id"]
+        schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
+        cred_def_id = credential_offer["cred_def_id"]
+        schema_attributes = schema_result.schema_value.attr_names
+
+        try:
+            async with self.profile.session() as session:
+                cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
+                cred_def_private = await session.handle.fetch(
+                    CATEGORY_CRED_DEF_PRIVATE, cred_def_id
+                )
+        except AskarError as err:
+            raise AnonCredsIssuerError(
+                "Error retrieving credential definition"
+            ) from err
+
+        if not cred_def or not cred_def_private:
+            raise AnonCredsIssuerError(
+                "Credential definition not found for credential issuance"
+            )
+
+        raw_values = {}
+        for attribute in schema_attributes:
+            # Ensure every attribute present in schema to be set.
+            # Extraneous attribute names are ignored.
+            try:
+                credential_value = credential_values[attribute]
+            except KeyError:
+                raise AnonCredsIssuerError(
+                    "Provided credential values are missing a value "
+                    f"for the schema attribute '{attribute}'"
+                )
+
+            raw_values[attribute] = str(credential_value)
+
+        try:
+            credential = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: Credential.create(
+                    cred_def.raw_value,
+                    cred_def_private.raw_value,
+                    credential_offer,
+                    credential_request,
+                    raw_values,
+                ),
+            )
+        except AnoncredsError as err:
+            raise AnonCredsIssuerError("Error creating credential") from err
+
+        return credential.to_json()
+
+    async def create_credential_vc_di(
+        self,
+        credential_offer: dict,
+        credential_request: dict,
+        credential_values: dict,
+    ) -> str:
+        """Create Credential."""
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        cred_def_id = credential_offer["binding_method"]["anoncreds_link_secret"][
+            "cred_def_id"
+        ]
+        ledger = self.profile.inject(BaseLedger)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+        )[1]
+
+        async with ledger:
+            schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
         schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
         cred_def_id = credential_offer["cred_def_id"]
         schema_attributes = schema_result.schema_value.attr_names
