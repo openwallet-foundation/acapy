@@ -1,6 +1,8 @@
-from aries_cloudagent.tests import mock
-from aiohttp.web import HTTPForbidden
 from unittest import IsolatedAsyncioTestCase
+
+from aiohttp.web import HTTPForbidden
+
+from aries_cloudagent.tests import mock
 
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
@@ -138,7 +140,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "posture": DIDPosture.WALLET_ONLY.moniker,
                         "key_type": ED25519.key_type,
                         "method": SOV.method_name,
-                        "metadata": {"public": False, "posted": False},
+                        "metadata": {"posted": False, "public": False},
                     }
                 }
             )
@@ -239,7 +241,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "posture": DIDPosture.POSTED.moniker,
                             "key_type": ED25519.key_type,
                             "method": SOV.method_name,
-                            "metadata": {"public": False, "posted": True},
+                            "metadata": {"posted": True, "public": False},
                         },
                         {
                             "did": self.test_did,
@@ -247,7 +249,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "posture": DIDPosture.WALLET_ONLY.moniker,
                             "key_type": ED25519.key_type,
                             "method": SOV.method_name,
-                            "metadata": {"public": False, "posted": False},
+                            "metadata": {"posted": False, "public": False},
                         },
                     ]
                 }
@@ -286,7 +288,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "posture": DIDPosture.PUBLIC.moniker,
                             "key_type": ED25519.key_type,
                             "method": SOV.method_name,
-                            "metadata": {"public": True, "posted": True},
+                            "metadata": {"posted": True, "public": True},
                         }
                     ]
                 }
@@ -328,7 +330,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "posture": DIDPosture.POSTED.moniker,
                             "key_type": ED25519.key_type,
                             "method": SOV.method_name,
-                            "metadata": {"public": False, "posted": True},
+                            "metadata": {"posted": True, "public": False},
                         }
                     ]
                 }
@@ -358,7 +360,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "posture": DIDPosture.WALLET_ONLY.moniker,
                             "key_type": ED25519.key_type,
                             "method": SOV.method_name,
-                            "metadata": {"public": False, "posted": False},
+                            "metadata": {"posted": False, "public": False},
                         }
                     ]
                 }
@@ -399,7 +401,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "posture": DIDPosture.WALLET_ONLY.moniker,
                             "key_type": ED25519.key_type,
                             "method": SOV.method_name,
-                            "metadata": {"public": False, "posted": False},
+                            "metadata": {"posted": False, "public": False},
                         }
                     ]
                 }
@@ -438,7 +440,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "posture": DIDPosture.PUBLIC.moniker,
                         "key_type": ED25519.key_type,
                         "method": SOV.method_name,
-                        "metadata": {"public": True, "posted": True},
+                        "metadata": {"posted": True, "public": True},
                     }
                 }
             )
@@ -492,7 +494,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "posture": DIDPosture.PUBLIC.moniker,
                         "key_type": ED25519.key_type,
                         "method": SOV.method_name,
-                        "metadata": {"public": True, "posted": True},
+                        "metadata": {"posted": True, "public": True},
                     }
                 }
             )
@@ -674,9 +676,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "key_type": ED25519.key_type,
                         "method": SOV.method_name,
                         "metadata": {
-                            "public": True,
                             "posted": True,
-                            "endpoint": "http://mediator.example.com",
+                            "public": True,
+                            "endpoint": self.test_mediator_endpoint,
                         },
                     }
                 }
@@ -736,7 +738,10 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "posture": DIDPosture.PUBLIC.moniker,
                         "key_type": ED25519.key_type,
                         "method": SOV.method_name,
-                        "metadata": {"public": True, "posted": True},
+                        "metadata": {
+                            "posted": True,
+                            "public": True,
+                        },
                     }
                 }
             )
@@ -780,7 +785,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "posture": DIDPosture.PUBLIC.moniker,
                         "key_type": ED25519.key_type,
                         "method": WEB.method_name,
-                        "metadata": {"public": True, "posted": True},
+                        "metadata": {"posted": True, "public": True},
                     }
                 }
             )

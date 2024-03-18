@@ -110,10 +110,14 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings):
         if "endorser_did" in config:
             config_item["endorser_did"] = config.get("endorser_did")
         ledger_txns_list.append(config_item)
-    if not write_ledger_set and not (
-        settings.get("ledger.genesis_transactions")
-        or settings.get("ledger.genesis_file")
-        or settings.get("ledger.genesis_url")
+    if (
+        not write_ledger_set
+        and not settings.get("ledger.read_only")
+        and not (
+            settings.get("ledger.genesis_transactions")
+            or settings.get("ledger.genesis_file")
+            or settings.get("ledger.genesis_url")
+        )
     ):
         raise ConfigError(
             "No is_write ledger set and no genesis_url,"
