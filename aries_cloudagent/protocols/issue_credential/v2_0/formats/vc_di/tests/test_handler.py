@@ -15,17 +15,13 @@ from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
-from anoncreds import (CredentialDefinition, Schema)
+from anoncreds import CredentialDefinition, Schema
 from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfile,
     InMemoryProfileSession,
 )
-from aries_cloudagent.anoncreds.tests.test_issuer import (
-    MockCredDefEntry
-)
-from aries_cloudagent.anoncreds.tests.test_revocation import (
-    MockEntry
-)
+from aries_cloudagent.anoncreds.tests.test_issuer import MockCredDefEntry
+from aries_cloudagent.anoncreds.tests.test_revocation import MockEntry
 from aries_cloudagent.anoncreds.models.anoncreds_schema import AnonCredsSchema
 from aries_cloudagent.wallet.did_info import DIDInfo
 from aries_cloudagent.wallet.did_method import DIDMethod
@@ -99,6 +95,53 @@ from ...indy.tests.test_handler import (
     INDY_CRED,
 )
 
+# corresponds to the test data imported above from indy test_handler
+VCDI_ATTACHMENT_DATA = {
+    "binding_method": {
+        "anoncreds_link_secret": {
+            "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:12:tag1",
+            "key_correctness_proof": {
+                "c": "123467890",
+                "xr_cap": [
+                    ["remainder", "1234567890"],
+                    ["number", "12345678901234"],
+                    ["master_secret", "12345678901234"],
+                ],
+                "xz_cap": "12345678901234567890",
+            },
+            "nonce": "1234567890",
+        },
+        "didcomm_signed_attachment": {
+            "algs_supported": ["EdDSA"],
+            "did_methods_supported": ["key"],
+            "nonce": "1234567890",
+        },
+    },
+    "binding_required": True,
+    "credential": {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/security/data-integrity/v2",
+            {"@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"},
+        ],
+        "credentialSubject": {
+            "incorporationDate": {
+                "encoded": "121381685682968329568231",
+                "raw": "2021-01-01",
+            },
+            "jurisdictionId": {"encoded": "1", "raw": "1"},
+            "legalName": {
+                "encoded": "108156129846915621348916581250742315326283968964",
+                "raw": "The Original House " "of Pies",
+            },
+        },
+        "issuanceDate": "2024-01-10T04:44:29.563418Z",
+        "issuer": "mockedDID",
+        "type": ["VerifiableCredential"],
+    },
+    "data_model_versions_supported": ["1.1"],
+}
+
 # IC - these are the minimal unit tests required for the new VCDI format class
 #      they should verify that the formatter generates and receives/handles
 #      credential offers/requests/issues with the new VCDI format
@@ -117,13 +160,28 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
         setattr(self.profile, "session", mock.MagicMock(return_value=self.session))
 
+        # Issuer
+        self.patcher = mock.patch(
+            "aries_cloudagent.protocols.issue_credential.v2_0.formats.vc_di.handler.AnonCredsIssuer",
+            autospec=True,
+        )
+        self.MockAnonCredsIssuer = self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+
+        self.issuer = mock.create_autospec(AnonCredsIssuer, instance=True)
+        self.MockAnonCredsIssuer.return_value = self.issuer
+
+        self.issuer.profile = self.profile
+
         # Wallet
-        self.public_did_info = mock.MagicMock() 
-        self.public_did_info.did = 'mockedDID'
+        self.public_did_info = mock.MagicMock()
+        self.public_did_info.did = "mockedDID"
         self.wallet = mock.MagicMock(spec=BaseWallet)
-        self.wallet.get_public_did = mock.CoroutineMock(return_value=self.public_did_info)
+        self.wallet.get_public_did = mock.CoroutineMock(
+            return_value=self.public_did_info
+        )
         self.session.context.injector.bind_instance(BaseWallet, self.wallet)
-        
+
         # Ledger
         Ledger = mock.MagicMock()
         self.ledger = Ledger()
@@ -150,24 +208,14 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         self.cache = InMemoryCache()
         self.context.injector.bind_instance(BaseCache, self.cache)
 
-        # Issuer
-        self.issuer = mock.MagicMock(AnonCredsIssuer, autospec=True)
-        self.issuer.profile = self.askar_profile
-        self.context.injector.bind_instance(AnonCredsIssuer, self.issuer) 
-
         # Holder
         self.holder = mock.MagicMock(IndyHolder, autospec=True)
         self.context.injector.bind_instance(IndyHolder, self.holder)
 
-
-        
-# async with self.profile.session() as session:
-#            wallet = session.inject(BaseWallet)
-#            public_did_info = await wallet.get_public_did()
-#            public_did = public_did_info.did
-
-        self.handler = VCDICredFormatHandler(self.profile)  # this is the only difference actually
-                                                            # we could factor out base tests?
+        self.handler = VCDICredFormatHandler(
+            self.profile
+        )  # this is the only difference actually
+        # we could factor out base tests?
 
         assert self.handler.profile
 
@@ -178,7 +226,11 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
         # Test correct data
         self.handler.validate_fields(CRED_20_PROPOSAL, {"cred_def_id": CRED_DEF_ID})
-        self.handler.validate_fields(CRED_20_OFFER, INDY_OFFER)
+        self.handler.validate_fields(
+            CRED_20_OFFER, INDY_OFFER
+        )  # ok we might have to modify INDY_OFFER
+        # getting
+        # marshmallow.exceptions.ValidationError: {'cred_def_id': ['Unknown field.'], 'nonce': ['Unknown field.'], 'key_correctness_proof': ['Unknown field.'], 'schema_id': ['Unknown field.']}
         self.handler.validate_fields(CRED_20_REQUEST, INDY_CRED_REQ)
         self.handler.validate_fields(CRED_20_ISSUE, INDY_CRED)
 
@@ -228,7 +280,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         ) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_indy
             mock_warning.assert_called_once()
-
 
     async def test_check_uniqueness(self):
         with mock.patch.object(
@@ -283,14 +334,16 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
         cred_def_id = CRED_DEF_ID
         connection_id = "test_conn_id"
-        cred_attrs = {} 
+        cred_attrs = {}
         cred_attrs[cred_def_id] = {
             "legalName": INDY_CRED["values"]["legalName"],
             "incorporationDate": INDY_CRED["values"]["incorporationDate"],
             "jurisdictionId": INDY_CRED["values"]["jurisdictionId"],
         }
 
-        attributes = [V20CredAttrSpec(name=n, value=v) for n, v in cred_attrs[cred_def_id].items()]
+        attributes = [
+            V20CredAttrSpec(name=n, value=v) for n, v in cred_attrs[cred_def_id].items()
+        ]
 
         cred_preview = V20CredPreview(attributes=attributes)
 
@@ -309,28 +362,41 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             ],
         )
 
+        schema_id_parts = SCHEMA_ID.split(":")
+        cred_def_record = StorageRecord(
+            CRED_DEF_SENT_RECORD_TYPE,
+            CRED_DEF_ID,
+            {
+                "schema_id": SCHEMA_ID,
+                "schema_issuer_did": schema_id_parts[0],
+                "schema_name": schema_id_parts[-2],
+                "schema_version": schema_id_parts[-1],
+                "issuer_did": TEST_DID,
+                "cred_def_id": CRED_DEF_ID,
+                "epoch": str(int(time())),
+            },
+        )
+        await self.session.storage.add_record(cred_def_record)
+
+        original_create_credential_offer = self.issuer.create_credential_offer
         self.issuer.create_credential_offer = mock.CoroutineMock(
             return_value=json.dumps(INDY_OFFER)
         )
 
-
         (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
-        from pprint import pprint
-        pprint(cred_format)
-        pprint(attachment.content)  # will NOT be INDY_OFFER in our case!
 
-#        offer_request = {
-#            "connection_id": connection_id,
-#            "comment": f"Offer on cred def id {cred_def_id}",
-#            "auto_remove": False,
-#            "credential_preview": cred_preview,
-#            "filter": {"vc_di": {"cred_def_id": cred_def_id}},
-#            "trace": exchange_tracing,
-#        }
-        # this normally is sent to  "/issue-credential-2.0/send-offer" with offer_request
-        # maybe this is a different unit test? 
-        # this data is from the faber vc_di
+        # this enforces the data format needed for alice-faber demo
+        assert attachment.content == VCDI_ATTACHMENT_DATA
 
+        self.issuer.create_credential_offer.assert_called_once()
+
+        # assert identifier match
+        assert cred_format.attach_id == self.handler.format.api == attachment.ident
+
+        # assert data is encoded as base64
+        assert attachment.data.base64
+
+        self.issuer.create_credential_offer = original_create_credential_offer
 
     async def test_receive_offer(self):
         cred_ex_record = mock.MagicMock()
@@ -352,7 +418,7 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                     ],
                 )
             ],
-            # TODO here 
+            # TODO here
             offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
         )
         cred_ex_record = V20CredExRecord(
@@ -408,7 +474,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
                 cred_ex_record, {"holder_did": holder_did}
             )
 
-
     async def test_receive_request(self):
         cred_ex_record = mock.MagicMock()
         cred_request_message = mock.MagicMock()
@@ -416,7 +481,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
         # Not much to assert. Receive request doesn't do anything
         await self.handler.receive_request(cred_ex_record, cred_request_message)
 
-    
     async def test_issue_credential_revocable(self):
         attr_values = {
             "legalName": "value",
@@ -587,7 +651,6 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
 
         # assert data is encoded as base64
         assert attachment.data.base64
-
 
     async def test_create_proposal(self):
         cred_ex_record = mock.MagicMock()
