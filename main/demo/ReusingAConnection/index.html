@@ -2191,30 +2191,24 @@ running the <a href="../">Alice Faber Demo</a> (e.g. locally or in a browser). F
 instruction up to the point where you are about to start the Faber and Alice agents.</p>
 <ol>
 <li>On a command line, run Faber with these parameters: <code>./run_demo faber
-   --reuse-connection --events</code>.</li>
+   --reuse-connections --public-did-connections --events</code>.</li>
 <li>On a second command line, run Alice as normal, perhaps with the <code>events</code>
-   option: <code>./run_demo alice --events</code></li>
+   option: <code>./run_demo alice --reuse-connections --events</code></li>
 <li>Copy the invitation from the Faber terminal and paste it into the Alice
    terminal at the prompt.</li>
 <li>Verify that the connection was established.</li>
 <li>If you want, go to the Alice OpenAPI screen (port <code>8031</code>, path
       <code>api/docs</code>), and then use the <code>GET Connections</code> to see that Alice has one
       connection to Faber.</li>
+<li>In the Faber terminal, type <code>4</code> to get a prompt for a new connection. This
+   will generate a new invitation with the same public DID.</li>
 <li>In the Alice terminal, type <code>4</code> to get a prompt for a new connection, and
-   paste the same invitation as in Step 3 (above).</li>
+   paste the new invitation.</li>
 <li>Note from the webhook events in the Faber terminal that the <code>reuse</code> message
    is received from Alice, and as a result, no new connection was created.</li>
 <li>Execute again the <code>GET Connections</code> endpoint on the Alice OpenAPI screen
       to confirm that there is still just one established connection.</li>
-<li>In the Faber terminal, type <code>4</code> to get a new invitation, copy the invitation,
-   in the Alice terminal, type <code>4</code> to get prompted for an invitation, and paste
-   in the new invitation from Faber. Again, the <code>reuse</code> webhook event will be
-   visible in the Faber terminal.</li>
-<li>Execute again the <code>GET Connections</code> endpoint on the Alice OpenAPI screen
-      to confirm that there is still just one established connection.</li>
-<li>Notice that in the invitations in Step 3 and 7 both have the same DID in
-      the <code>services</code>.</li>
-<li>Try running the demo again <strong>without</strong> the <code>--reuse-connection</code> parameter and
+<li>Try running the demo again <strong>without</strong> the <code>--reuse-connections</code> parameter and
    compare the <code>services</code> value in the new invitation vs. what was generated in
    Steps 3 and 7. It is not a DID, but rather a one time use, inline DIDDoc
    item.</li>
@@ -2224,9 +2218,15 @@ issuer (and uses in creating the schema and Cred Def for the demo), Faber could
 use any <em>resolvable</em> (not inline) DID, including DID Peer types 2 or 4 DIDs, as
 long as the DID is the same in every invitation. It is the fact that the DID is
 always the same that tells the invitee that they can reuse an existing connection.</p>
-<p>Note that the invitation does <strong>NOT</strong> have to be a multi-use invitation for
-reuse to be useful, as long as the other requirements (at the top of this
-document) are met.</p>
+<p>For example, to run faber with connection reuse using a non-public DID:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./run_demo faber --reuse-connections --events
+</code></pre></div>
+<p>To run faber using a <code>did_peer</code> and reusable connections:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>DEMO_EXTRA_AGENT_ARGS=&quot;[\&quot;--emit-did-peer-2\&quot;]&quot; ./run_demo faber --reuse-connections --events
+</code></pre></div>
+<p>To run this demo using a multi-use invitation (from Faber):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>DEMO_EXTRA_AGENT_ARGS=&quot;[\&quot;--emit-did-peer-2\&quot;]&quot; ./run_demo faber --reuse-connections --multi-use-invitations --events
+</code></pre></div>
 
 
 
