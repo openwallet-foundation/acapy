@@ -59,6 +59,9 @@ class AriesAgent(DemoAgent):
         log_file: str = None,
         log_config: str = None,
         log_level: str = None,
+        reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
         extra_args: List[str] = [],
         **kwargs,
     ):
@@ -88,6 +91,9 @@ class AriesAgent(DemoAgent):
             log_file=log_file,
             log_config=log_config,
             log_level=log_level,
+            reuse_connections=reuse_connections,
+            multi_use_invitations=multi_use_invitations,
+            public_did_connections=public_did_connections,
             **kwargs,
         )
         self.connection_id = None
@@ -115,10 +121,13 @@ class AriesAgent(DemoAgent):
 
     async def handle_connection_reuse(self, message):
         # we are reusing an existing connection, set our status to the existing connection
-        if not self._connection_ready.done():
-            self.connection_id = message["connection_id"]
-            self.log("Connected")
-            self._connection_ready.set_result(True)
+        if self._connection_ready is not None:
+            if not self._connection_ready.done():
+                self.connection_id = message["connection_id"]
+                self.log("Connected")
+                self._connection_ready.set_result(True)
+        else:
+            self.log("Connected on existing connection")
 
     async def handle_connection_reuse_accepted(self, message):
         # we are reusing an existing connection, set our status to the existing connection
@@ -142,9 +151,16 @@ class AriesAgent(DemoAgent):
         if (not self.connection_id) and message["rfc23_state"] == "invitation-received":
             self.connection_id = conn_id
 
-        if conn_id == self.connection_id:
+        if (
+            conn_id == self.connection_id
+            or self.reuse_connections
+            or self.multi_use_invitations
+        ):
             # inviter or invitee:
-            if message["rfc23_state"] in ["completed", "response-sent"]:
+            if message["state"] == "deleted":
+                # connection reuse - invitation is getting deleted - ignore
+                pass
+            elif message["rfc23_state"] in ["completed", "response-sent"]:
                 if not self._connection_ready.done():
                     self.log("Connected")
                     self._connection_ready.set_result(True)
@@ -595,6 +611,8 @@ class AriesAgent(DemoAgent):
         auto_accept: bool = True,
         display_qr: bool = False,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
         wait: bool = False,
     ):
         self._connection_ready = asyncio.Future()
@@ -607,6 +625,8 @@ class AriesAgent(DemoAgent):
                 use_did_exchange,
                 auto_accept=auto_accept,
                 reuse_connections=reuse_connections,
+                multi_use_invitations=multi_use_invitations,
+                public_did_connections=public_did_connections,
             )
 
         if display_qr:
@@ -706,6 +726,8 @@ class AgentContainer:
         arg_file: str = None,
         endorser_role: str = None,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
         taa_accept: bool = False,
         anoncreds_legacy_revocation: str = None,
         log_file: str = None,
@@ -745,6 +767,8 @@ class AgentContainer:
                 self.cred_type = CRED_FORMAT_INDY
 
         self.reuse_connections = reuse_connections
+        self.multi_use_invitations = multi_use_invitations
+        self.public_did_connections = public_did_connections
         self.exchange_tracing = False
 
         # local agent(s)
@@ -1138,6 +1162,8 @@ class AgentContainer:
         auto_accept: bool = True,
         display_qr: bool = False,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
         wait: bool = False,
     ):
         return await self.agent.generate_invitation(
@@ -1145,6 +1171,8 @@ class AgentContainer:
             auto_accept=auto_accept,
             display_qr=display_qr,
             reuse_connections=reuse_connections,
+            multi_use_invitations=multi_use_invitations,
+            public_did_connections=public_did_connections,
             wait=wait,
         )
 
@@ -1344,12 +1372,28 @@ def arg_parser(ident: str = None, port: int = 8020):
             "directly."
         ),
     )
+    parser.add_argument(
+        "--reuse-connections",
+        action="store_true",
+        help=(
+            "Reuse connections by generating a reusable invitation. "
+            "Only applicable for AIP 2.0 (OOB) connections."
+        ),
+    )
     if (not ident) or (ident != "alice"):
         parser.add_argument(
-            "--reuse-connections",
+            "--public-did-connections",
             action="store_true",
             help=(
-                "Reuse connections by using Faber public key in the invite. "
+                "Use Faber public key in the invite. "
+                "Only applicable for AIP 2.0 (OOB) connections."
+            ),
+        )
+        parser.add_argument(
+            "--multi-use-invitations",
+            action="store_true",
+            help=(
+                "Create multi-use invitations. "
                 "Only applicable for AIP 2.0 (OOB) connections."
             ),
         )
@@ -1478,6 +1522,16 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     reuse_connections = "reuse_connections" in args and args.reuse_connections
     if reuse_connections and aip != 20:
         raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
+    multi_use_invitations = (
+        "multi_use_invitations" in args and args.multi_use_invitations
+    )
+    if multi_use_invitations and aip != 20:
+        raise Exception("Can only specify `--multi-use-invitations` with AIP 2.0")
+    public_did_connections = (
+        "public_did_connections" in args and args.public_did_connections
+    )
+    if public_did_connections and aip != 20:
+        raise Exception("Can only specify `--public-did-connections` with AIP 2.0")
 
     anoncreds_legacy_revocation = None
     if "anoncreds_legacy_revocation" in args and args.anoncreds_legacy_revocation:
@@ -1503,6 +1557,8 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
         aip=aip,
         endorser_role=args.endorser_role,
         reuse_connections=reuse_connections,
+        multi_use_invitations=multi_use_invitations,
+        public_did_connections=public_did_connections,
         taa_accept=args.taa_accept,
         anoncreds_legacy_revocation=anoncreds_legacy_revocation,
         log_file=log_file,

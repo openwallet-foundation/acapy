@@ -265,7 +265,11 @@ You can enable DID Exchange using the `--did-exchange` parameter for the `alice`
 
 This will use the new DID Exchange protocol when establishing connections between the agents, rather than the older Connection protocol.  There is no other affect on the operation of the agents.
 
-Note that you can't (currently) use the DID Exchange protocol to connect with any of the available mobile agents.
+With DID Exchange, you can also enable use of the inviter's public DID for invitations, multi-use invitations, and connection re-use:
+
+- `--public-did-connections` - use the inviter's public DID in invitations, and allow use of implicit invitations
+- `--reuse-connections` - support connection re-use (invitee will reuse an existing connection if it uses the same DID as in the new invitation)
+- `--multi-use-invitations` - inviter will issue multi-use invitations
 
 ### Endorser
 
