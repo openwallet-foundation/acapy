@@ -419,7 +419,7 @@ To pass extra arguements to the agent (for example):
 DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --did-exchange --reuse-connections
 ```
 
-Additionally, separating the build and run functionalities in the script allows for smoother development and debugging processes. With the mounting of volumes from the host into the Docker container, code changes can be automatically reloaded without the need to repeatedly restart the demo.
+Additionally, separating the build and run functionalities in the script allows for smoother development and debugging processes. With the mounting of volumes from the host into the Docker container, code changes can be automatically reloaded without the need to repeatedly build the demo.
 
 Build Command:
 ```bash
