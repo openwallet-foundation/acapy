@@ -5,7 +5,7 @@ For Connection, DIDExchange and OutOfBand Manager.
 
 import json
 import logging
-from typing import List, Optional, Sequence, Text, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Text, Tuple, Union
 
 import pydid
 from base58 import b58decode
@@ -52,7 +52,7 @@ from ..transport.inbound.receipt import MessageReceipt
 from ..utils.multiformats import multibase, multicodec
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import create_keypair, seed_to_did
-from ..wallet.did_info import DIDInfo, KeyInfo
+from ..wallet.did_info import DIDInfo, KeyInfo, INVITATION_REUSE_KEY
 from ..wallet.did_method import PEER2, PEER4, SOV
 from ..wallet.error import WalletNotFoundError
 from ..wallet.key_type import ED25519
@@ -89,6 +89,12 @@ class BaseConnectionManager:
             multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
         )
 
+    def long_did_peer_to_short(self, long_did: str) -> DIDInfo:
+        """Convert did:peer:4 long format to short format and return."""
+
+        short_did_peer = long_to_short(long_did)
+        return short_did_peer
+
     async def long_did_peer_4_to_short(self, long_dp4: str) -> DIDInfo:
         """Convert did:peer:4 long format to short format and store in wallet."""
 
@@ -113,6 +119,7 @@ class BaseConnectionManager:
         self,
         svc_endpoints: Optional[Sequence[str]] = None,
         mediation_records: Optional[List[MediationRecord]] = None,
+        metadata: Optional[Dict] = None,
     ) -> DIDInfo:
         """Create a did:peer:4 DID for a connection.
 
@@ -159,8 +166,13 @@ class BaseConnectionManager:
             )
             did = encode(input_doc)
 
+            did_metadata = metadata if metadata else {}
             did_info = DIDInfo(
-                did=did, method=PEER4, verkey=key.verkey, metadata={}, key_type=ED25519
+                did=did,
+                method=PEER4,
+                verkey=key.verkey,
+                metadata=did_metadata,
+                key_type=ED25519,
             )
             await wallet.store_did(did_info)
 
@@ -170,6 +182,7 @@ class BaseConnectionManager:
         self,
         svc_endpoints: Optional[Sequence[str]] = None,
         mediation_records: Optional[List[MediationRecord]] = None,
+        metadata: Optional[Dict] = None,
     ) -> DIDInfo:
         """Create a did:peer:2 DID for a connection.
 
@@ -215,11 +228,37 @@ class BaseConnectionManager:
                 [KeySpec.verification(self._key_info_to_multikey(key))], services
             )
 
+            did_metadata = metadata if metadata else {}
             did_info = DIDInfo(
-                did=did, method=PEER2, verkey=key.verkey, metadata={}, key_type=ED25519
+                did=did,
+                method=PEER2,
+                verkey=key.verkey,
+                metadata=did_metadata,
+                key_type=ED25519,
             )
             await wallet.store_did(did_info)
 
+        return did_info
+
+    async def fetch_invitation_reuse_did(
+        self,
+        did_method: str,
+    ) -> DIDDoc:
+        """Fetch a DID from the wallet to use across multiple invitations.
+
+        Args:
+            did_method: The DID method used (e.g. PEER2 or PEER4)
+
+        Returns:
+            The `DIDDoc` instance, or "None" if no DID is found
+        """
+        did_info = None
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_list = await wallet.get_local_dids()
+            for did in did_list:
+                if did.method == did_method and INVITATION_REUSE_KEY in did.metadata:
+                    return did
         return did_info
 
     async def create_did_document(
@@ -346,7 +385,10 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage: BaseStorage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
-        return record.tags["did"]
+        ret_did = record.tags["did"]
+        if ret_did.startswith("did:peer:4"):
+            ret_did = self.long_did_peer_to_short(ret_did)
+        return ret_did
 
     async def remove_keys_for_did(self, did: str):
         """Remove all keys associated with a DID.

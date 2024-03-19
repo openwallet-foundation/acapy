@@ -30,6 +30,7 @@ from .crypto import (
     validate_seed,
     verify_signed_message,
 )
+from .did_info import INVITATION_REUSE_KEY
 from .did_method import SOV, DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
@@ -230,21 +231,25 @@ class AskarWallet(BaseWallet):
                         CATEGORY_DID, did, value_json=did_info, tags=item.tags
                     )
             else:
+                value_json = {
+                    "did": did,
+                    "method": method.method_name,
+                    "verkey": verkey,
+                    "verkey_type": key_type.key_type,
+                    "metadata": metadata,
+                }
+                tags = {
+                    "method": method.method_name,
+                    "verkey": verkey,
+                    "verkey_type": key_type.key_type,
+                }
+                if INVITATION_REUSE_KEY in metadata:
+                    tags[INVITATION_REUSE_KEY] = "true"
                 await self._session.handle.insert(
                     CATEGORY_DID,
                     did,
-                    value_json={
-                        "did": did,
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                        "metadata": metadata,
-                    },
-                    tags={
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                    },
+                    value_json=value_json,
+                    tags=tags,
                 )
 
         except AskarError as err:
@@ -273,21 +278,25 @@ class AskarWallet(BaseWallet):
             if item:
                 raise WalletDuplicateError("DID already present in wallet")
             else:
+                value_json = {
+                    "did": did_info.did,
+                    "method": did_info.method.method_name,
+                    "verkey": did_info.verkey,
+                    "verkey_type": did_info.key_type.key_type,
+                    "metadata": did_info.metadata,
+                }
+                tags = {
+                    "method": did_info.method.method_name,
+                    "verkey": did_info.verkey,
+                    "verkey_type": did_info.key_type.key_type,
+                }
+                if INVITATION_REUSE_KEY in did_info.metadata:
+                    tags[INVITATION_REUSE_KEY] = "true"
                 await self._session.handle.insert(
                     CATEGORY_DID,
                     did_info.did,
-                    value_json={
-                        "did": did_info.did,
-                        "method": did_info.method.method_name,
-                        "verkey": did_info.verkey,
-                        "verkey_type": did_info.key_type.key_type,
-                        "metadata": did_info.metadata,
-                    },
-                    tags={
-                        "method": did_info.method.method_name,
-                        "verkey": did_info.verkey,
-                        "verkey_type": did_info.key_type.key_type,
-                    },
+                    value_json=value_json,
+                    tags=tags,
                 )
         except AskarError as err:
             raise WalletError("Error when storing DID") from err
@@ -348,12 +357,21 @@ class AskarWallet(BaseWallet):
 
         try:
             dids = await self._session.handle.fetch_all(
-                CATEGORY_DID, {"verkey": verkey}, limit=1
+                CATEGORY_DID, {"verkey": verkey}
             )
         except AskarError as err:
             raise WalletError("Error when fetching local DID for verkey") from err
         if dids:
-            return self._load_did_entry(dids[0])
+            ret_did = dids[0]
+            ret_did_info = ret_did.value_json
+            if len(dids) > 1 and ret_did_info["did"].startswith("did:peer:4"):
+                # if it is a peer:did:4 make sure we are using the short version
+                other_did = dids[1]  # assume only 2
+                other_did_info = other_did.value_json
+                if len(other_did_info["did"]) < len(ret_did_info["did"]):
+                    ret_did = other_did
+                    ret_did_info = other_did.value_json
+            return self._load_did_entry(ret_did)
         raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):

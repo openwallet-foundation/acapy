@@ -360,13 +360,16 @@ class ConnRecord(BaseRecord):
     async def find_existing_connection(
         cls, session: ProfileSession, their_public_did: str
     ) -> Optional["ConnRecord"]:
-        """Retrieve existing active connection records (public did).
+        """Retrieve existing active connection records (public did or did:peer).
 
         Args:
             session: The active profile session
-            their_public_did: Inviter public DID
+            their_public_did: Inviter public DID (or did:peer)
         """
-        tag_filter = {"their_public_did": their_public_did}
+        if their_public_did.startswith("did:peer"):
+            tag_filter = {"their_did": their_public_did}
+        else:
+            tag_filter = {"their_public_did": their_public_did}
         conn_records = await cls.query(
             session,
             tag_filter=tag_filter,
