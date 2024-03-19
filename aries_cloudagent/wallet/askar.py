@@ -370,7 +370,7 @@ class AskarWallet(BaseWallet):
                 other_did_info = other_did.value_json
                 if len(other_did_info["did"]) < len(ret_did_info["did"]):
                     ret_did = other_did
-                    ret_did_info = ret_did.value_json
+                    ret_did_info = other_did.value_json
             return self._load_did_entry(ret_did)
         raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
 
