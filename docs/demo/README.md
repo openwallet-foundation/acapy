@@ -419,6 +419,18 @@ To pass extra arguements to the agent (for example):
 DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --did-exchange --reuse-connections
 ```
 
+Additionally, separating the build and run functionalities in the script allows for smoother development and debugging processes. With the mounting of volumes from the host into the Docker container, code changes can be automatically reloaded without the need to repeatedly restart the demo.
+
+Build Command:
+```bash
+./demo/run_demo build alice --wallet-type askar-anoncreds --events
+```
+
+Run Command:
+```bash
+./demo/run_demo run alice --wallet-type askar-anoncreds --events
+```
+
 ## Learning about the Alice/Faber code
 
 These Alice and Faber scripts (in the `demo/runners` folder) implement the controller and run the agent as a sub-process (see the documentation for `aca-py`). The controller publishes a REST service to receive web hook callbacks from their agent. Note that this architecture, running the agent as a sub-process, is a variation on the documented architecture of running the controller and agent as separate processes/containers.
