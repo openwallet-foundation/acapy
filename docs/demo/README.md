@@ -63,7 +63,7 @@ Jump to the [Follow the Script](#follow-the-script) section below for further in
 Running the demo in docker requires having a `von-network` (a Hyperledger Indy public ledger sandbox) instance running in docker locally. See the [VON Network Tutorial](https://github.com/bcgov/von-network/blob/main/docs/UsingVONNetwork.md) for guidance
 on starting and stopping your own local Hyperledger Indy instance.
 
-Open three `bash` shells. For Windows users, `git-bash` is highly recommended. bash is the default shell in Linux and Mac terminal sessions.
+Open three `bash` shells. For Windows users, `git-bash` is highly recommended. bash is the default shell in Linux and Mac terminal sessions. For Mac users on the newer M1/2/3 Apple Silicon devices, make sure that you install Apple's Rosetta 2 software, using these [installation instructions from Apple](https://support.apple.com/en-us/102527), and this even more useful [guidance on how to install Rosetta 2 from the command line](https://osxdaily.com/2020/12/04/how-install-rosetta-2-apple-silicon-mac/) which amounts to running this MacOS command: `softwareupdate --install-rosetta`.
 
 In the first terminal window, start `von-network` by following the [Building and Starting](https://github.com/bcgov/von-network/blob/main/docs/UsingVONNetwork.md#building-and-starting) instructions.
 

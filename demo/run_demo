@@ -29,6 +29,15 @@ if [ -z "$DOCKER_NET" ]; then
 fi
 DOCKER_VOL=""
 
+# Set default platform to linux/amd64 when running on Arm based MAC since there are no arm based images available currently.
+# Must also use the Rosetta 2 software, which can be installed by running `softwareupdate --install-rosetta` from the Mac command line
+if [[ $OSTYPE == 'darwin'* ]]; then
+  architecture=$(uname -m)
+  if [[ "${architecture}" == 'arm'* ]] || [[ "${architecture}" == 'aarch'* ]]; then
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64
+  fi
+fi
+
 j=1
 for i in "$@"
 do
