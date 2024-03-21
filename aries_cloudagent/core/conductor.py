@@ -17,6 +17,11 @@ from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
+from ..commands.upgrade import (
+    add_version_record,
+    get_upgrade_version_list,
+    upgrade,
+)
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.ledger import (
@@ -27,11 +32,6 @@ from ..config.ledger import (
 from ..config.logging import LoggingConfigurator
 from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
-from ..commands.upgrade import (
-    get_upgrade_version_list,
-    add_version_record,
-    upgrade,
-)
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
@@ -62,6 +62,8 @@ from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
+from ..storage.record import StorageRecord
+from ..storage.type import RECORD_TYPE_ACAPY_STORAGE_TYPE
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -75,6 +77,7 @@ from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ..wallet.did_info import DIDInfo
 from .dispatcher import Dispatcher
+from .error import StartupError
 from .oob_processor import OobMessageProcessor
 from .util import SHUTDOWN_EVENT_TOPIC, STARTUP_EVENT_TOPIC
 
@@ -284,6 +287,7 @@ class Conductor:
         """Start the agent."""
 
         context = self.root_profile.context
+        await self.check_for_valid_wallet_type(self.root_profile)
 
         # Start up transports
         try:
@@ -770,3 +774,52 @@ class Conductor:
             LOGGER.warning(
                 "Cannot queue message webhook for delivery, no supported transport"
             )
+
+    async def check_for_valid_wallet_type(self, profile):
+        """Check wallet type and set it if not set. Raise an error if wallet type config doesn't match existing storage type."""  # noqa: E501
+        async with profile.session() as session:
+            storage_type_from_config = profile.settings.get("wallet.type")
+            storage = session.inject(BaseStorage)
+            try:
+                storage_type_record = await storage.find_record(
+                    type_filter=RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
+                )
+                storage_type_from_storage = storage_type_record.value
+            except StorageNotFoundError:
+                storage_type_record = None
+
+            if not storage_type_record:
+                LOGGER.warning("Wallet type record not found.")
+                try:
+                    acapy_version = await storage.find_record(
+                        type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
+                    )
+                except StorageNotFoundError:
+                    acapy_version = None
+                if acapy_version:
+                    storage_type_from_storage = "askar"
+                    LOGGER.info(
+                        f"Existing agent found. Setting wallet type to {storage_type_from_storage}."  # noqa: E501
+                    )
+                    await storage.add_record(
+                        StorageRecord(
+                            RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                            storage_type_from_storage,
+                        )
+                    )
+                else:
+                    storage_type_from_storage = storage_type_from_config
+                    LOGGER.info(
+                        f"New agent. Setting wallet type to {storage_type_from_config}."
+                    )
+                    await storage.add_record(
+                        StorageRecord(
+                            RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                            storage_type_from_config,
+                        )
+                    )
+
+            if storage_type_from_storage != storage_type_from_config:
+                raise StartupError(
+                    f"Wallet type config [{storage_type_from_config}] doesn't match with the wallet type in storage [{storage_type_record.value}]"  # noqa: E501
+                )
