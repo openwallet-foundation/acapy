@@ -41,7 +41,7 @@ from .mock_objects import (
 class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar-anoncreds"},
+            settings={"wallet.type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,
         )
         self.verifier = test_module.AnonCredsVerifier(self.profile)
