@@ -21,6 +21,7 @@ from aries_cloudagent.core.in_memory.profile import (
 )
 from aries_cloudagent.tests import mock
 
+from ...askar.profile import AskarProfile
 from .. import routes as test_module
 
 
@@ -53,10 +54,12 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.session_inject = {}
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar-anoncreds"},
+            settings={"wallet.type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,
         )
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.context = AdminRequestContext.test_context(
+            self.session_inject, self.profile
+        )
         self.request_dict = {
             "context": self.context,
         }
@@ -335,6 +338,188 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
 
         self.request.match_info = {}
         with self.assertRaises(KeyError):
+            await test_module.set_active_registry(self.request)
+
+    async def test_schema_endpoints_wrong_profile_403(self):
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet-type": "askar"},
+            profile_class=AskarProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            context=self.context,
+        )
+
+        # POST schema
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "schema": {
+                    "issuerId": "Q4TmbeGPoWeWob4Xf6KetA",
+                    "attrNames": ["score"],
+                    "name": "Example Schema",
+                    "version": "0.0.1",
+                }
+            }
+        )
+        with self.assertRaises(web.HTTPForbidden):
+            await test_module.schemas_post(self.request)
+
+        # GET schema
+        self.request.match_info = {"schema_id": "schema_id"}
+        with self.assertRaises(web.HTTPForbidden):
+            await test_module.schema_get(self.request)
+
+        # GET schemas
+        with self.assertRaises(web.HTTPForbidden):
+            await test_module.schemas_get(self.request)
+
+    async def test_cred_def_endpoints_wrong_profile_403(self):
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet-type": "askar"},
+            profile_class=AskarProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            context=self.context,
+        )
+
+        # POST cred def
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "credential_definition": {
+                    "issuerId": "issuerId",
+                    "schemaId": "schemaId",
+                    "tag": "tag",
+                },
+                "options": {
+                    "revocation_registry_size": 0,
+                    "support_revocation": True,
+                },
+            }
+        )
+        with self.assertRaises(web.HTTPForbidden):
+            await test_module.cred_def_post(self.request)
+
+        # GET cred def
+        self.request.match_info = {"cred_def_id": "cred_def_id"}
+        with self.assertRaises(web.HTTPForbidden):
+            await test_module.cred_def_get(self.request)
+
+        # GET cred defs
+        with self.assertRaises(web.HTTPForbidden):
+            await test_module.cred_defs_get(self.request)
+
+    async def test_rev_reg_wrong_profile_403(self):
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet-type": "askar"},
+            profile_class=AskarProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            context=self.context,
+        )
+
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "revocation_registry_definition": {
+                    "credDefId": "cred_def_id",
+                    "issuerId": "issuer_id",
+                    "maxCredNum": 100,
+                },
+                "options": {
+                    "tails_public_uri": "http://tails_public_uri",
+                    "tails_local_uri": "http://tails_local_uri",
+                },
+            }
+        )
+        with self.assertRaises(web.HTTPForbidden):
+            await test_module.rev_reg_def_post(self.request)
+
+    async def test_rev_list_wrong_profile_403(self):
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet-type": "askar"},
+            profile_class=AskarProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            context=self.context,
+        )
+
+        self.request.json = mock.CoroutineMock(
+            return_value={"revRegDefId": "rev_reg_def_id", "options": {}}
+        )
+        with self.assertRaises(web.HTTPForbidden):
+            await test_module.rev_list_post(self.request)
+
+    async def test_uploads_tails_wrong_profile_403(self):
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet-type": "askar"},
+            profile_class=AskarProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            context=self.context,
+        )
+
+        self.request.match_info = {"rev_reg_id": "rev_reg_id"}
+        with self.assertRaises(web.HTTPForbidden):
+            await test_module.upload_tails_file(self.request)
+
+    async def test_active_registry_wrong_profile_403(self):
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet-type": "askar"},
+            profile_class=AskarProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            context=self.context,
+        )
+
+        self.request.match_info = {"rev_reg_id": "rev_reg_id"}
+
+        with self.assertRaises(web.HTTPForbidden):
             await test_module.set_active_registry(self.request)
 
     @mock.patch.object(DefaultRevocationSetup, "register_events")
