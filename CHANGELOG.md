@@ -1306,7 +1306,7 @@ release and later, and "as-is" connections made using earlier releases of ACA-Py
 candidates. A new "Upgrade deployment" capability ([#1557](https://github.com/hyperledger/aries-cloudagent-python/pull/1557),
 described below) must be executed to update your deployment to add tags for all existing connections.
 
-The [Supported RFCs document](/SupportedRFCs.md) has been updated to reflect the addition of the
+The [Supported RFCs document](docs/features/SupportedRFCs.md) has been updated to reflect the addition of the
 AIP 2.0 RFCs for which support was added.
 
 The following is an annotated list of PRs in the release, including a link to each PR.
