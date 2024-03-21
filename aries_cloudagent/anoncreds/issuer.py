@@ -312,6 +312,15 @@ class AnonCredsIssuer:
         if not isinstance(max_cred_num, int):
             raise ValueError("max_cred_num must be an integer")
 
+        # Don't allow revocable cred def to be created without tails server base url
+        if (
+            not self.profile.settings.get("tails_server_base_url")
+            and support_revocation
+        ):
+            raise AnonCredsIssuerError(
+                "tails_server_base_url not configured. Can't create revocable credential definition."  # noqa: E501
+            )
+
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
 
