@@ -459,30 +459,22 @@ class DIDXManager(BaseConnectionManager):
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
 
+        save_reason = None
         if conn_rec:  # invitation was explicit
             connection_key = conn_rec.invitation_key
             if conn_rec.is_multiuse_invitation:
-                async with self.profile.session() as session:
-                    wallet = session.inject(BaseWallet)
-                    my_info = await wallet.create_local_did(
-                        method=SOV,
-                        key_type=ED25519,
-                    )
-
                 new_conn_rec = ConnRecord(
                     invitation_key=connection_key,
-                    my_did=my_info.did,
-                    state=ConnRecord.State.REQUEST.rfc160,
+                    state=ConnRecord.State.INIT.rfc160,
                     accept=conn_rec.accept,
                     their_role=conn_rec.their_role,
                     connection_protocol=DIDX_PROTO,
                 )
                 async with self.profile.session() as session:
+                    # TODO: Suppress the event that gets emitted here?
                     await new_conn_rec.save(
                         session,
-                        reason=(
-                            "Received connection request from multi-use invitation DID"
-                        ),
+                        reason="Created new connection record from multi-use invitation",
                     )
 
                 # Transfer metadata from multi-use to new connection
@@ -537,10 +529,7 @@ class DIDXManager(BaseConnectionManager):
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc160
             conn_rec.request_id = request._id
-            async with self.profile.session() as session:
-                await conn_rec.save(
-                    session, reason="Received connection request from invitation"
-                )
+            save_reason = "Received connection request from invitation"
         else:
             # request is against implicit invitation on public DID
             if not self.profile.settings.get("requests_through_public_did"):
@@ -571,14 +560,13 @@ class DIDXManager(BaseConnectionManager):
                 state=ConnRecord.State.REQUEST.rfc160,
                 connection_protocol=DIDX_PROTO,
             )
-            async with self.profile.session() as session:
-                await conn_rec.save(
-                    session, reason="Received connection request from public DID"
-                )
+            save_reason = "Received connection request from public DID"
 
-        async with self.profile.session() as session:
+        async with self.profile.transaction() as txn:
             # Attach the connection request so it can be found and responded to
-            await conn_rec.attach_request(session, request)
+            await conn_rec.save(txn, reason=save_reason)
+            await conn_rec.attach_request(txn, request)
+            await txn.commit()
 
         # Clean associated oob record if not needed anymore
         oob_processor = self.profile.inject(OobMessageProcessor)
@@ -677,7 +665,7 @@ class DIDXManager(BaseConnectionManager):
             self.profile, conn_rec, mediation_records
         )
 
-        if use_public_did or respond_with_did_peer_2 or respond_with_did_peer_4:
+        if did.startswith("did:"):  # It's a "real" resolvable did
             # Omit DID Doc attachment if we're using a public DID or peer did
             attach = AttachDecorator.data_base64_string(did)
             async with self.profile.session() as session:
