@@ -769,6 +769,13 @@ class DIDXManager(BaseConnectionManager):
             or (conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4"))
         )
 
+        if use_public_did:
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                public_info = await wallet.get_public_did()
+            if public_info:
+                conn_rec.my_did = public_info.did
+
         if conn_rec.connection_protocol == DIDEX_1_0:
             did, attach = await self._legacy_did_with_attached_doc(
                 conn_rec,

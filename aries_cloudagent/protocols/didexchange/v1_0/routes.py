@@ -231,7 +231,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
     try:
         async with profile.session() as session:
             conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
-        request = await didx_mgr.create_request(
+        didx_request = await didx_mgr.create_request(
             conn_rec=conn_rec,
             my_label=my_label,
             my_endpoint=my_endpoint,
@@ -243,7 +243,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
     except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    await outbound_handler(request, connection_id=conn_rec.connection_id)
+    await outbound_handler(didx_request, connection_id=conn_rec.connection_id)
 
     return web.json_response(result)
 
