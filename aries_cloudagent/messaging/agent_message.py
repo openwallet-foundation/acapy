@@ -305,7 +305,7 @@ class AgentMessage(BaseModel, BaseMessage):
         return self._decorators.get("thread")
 
     @_thread.setter
-    def _thread(self, val: Union[ThreadDecorator, dict]):
+    def _thread(self, val: Union[ThreadDecorator, dict, None]):
         """Setter for the message's thread decorator.
 
         Args:
@@ -335,7 +335,7 @@ class AgentMessage(BaseModel, BaseMessage):
             pthid = thread and thread.pthid
             self.assign_thread_id(thid, pthid)
 
-    def assign_thread_id(self, thid: str, pthid: str = None):
+    def assign_thread_id(self, thid: str, pthid: Optional[str] = None):
         """Assign a specific thread ID.
 
         Args:
