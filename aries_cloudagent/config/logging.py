@@ -342,9 +342,11 @@ class LoggingConfigurator:
             )
             banner.hr()
             banner.print(
-                "Using `did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` in protocols is deprecated "
-                "and support will be removed in a future version; use "
-                "https://didcomm.org/ instead."
+                "Receiving a core DIDComm protocol with the "
+                "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix is deprecated. All parties "
+                "sending this prefix should be notified that support for receiving such "
+                "messages will be removed in an upcoming ACA-Py release. "
+                "Use https://didcomm.org/ instead."
             )
         print()
 
