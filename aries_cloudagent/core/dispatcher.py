@@ -286,6 +286,20 @@ class Dispatcher:
 
         if not message_type:
             raise MessageParseError("Message does not contain '@type' parameter")
+
+        if message_type.startswith("did:sov"):
+            warnings.warn(
+                "Using `did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` in protocols is deprecated "
+                "and support will be removed in a future version; use "
+                "https://didcomm.org/ instead.",
+                DeprecationWarning,
+            )
+            self.logger.warning(
+                "Using `did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` in protocols is deprecated "
+                "and support will be removed in a future version; use "
+                "https://didcomm.org/ instead.",
+            )
+
         message_type_rec_version = get_version_from_message_type(message_type)
 
         registry: ProtocolRegistry = self.profile.inject(ProtocolRegistry)

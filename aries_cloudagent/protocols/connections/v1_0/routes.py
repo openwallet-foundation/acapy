@@ -594,6 +594,7 @@ async def connections_metadata_set(request: web.BaseRequest):
 @docs(
     tags=["connection"],
     summary="Create a new connection invitation",
+    deprecated=True,
 )
 @querystring_schema(CreateInvitationQueryStringSchema())
 @request_schema(CreateInvitationRequestSchema())
@@ -667,6 +668,7 @@ async def connections_create_invitation(request: web.BaseRequest):
 @docs(
     tags=["connection"],
     summary="Receive a new connection invitation",
+    deprecated=True,
 )
 @querystring_schema(ReceiveInvitationQueryStringSchema())
 @request_schema(ReceiveInvitationRequestSchema())
@@ -708,6 +710,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
 @docs(
     tags=["connection"],
     summary="Accept a stored connection invitation",
+    deprecated=True,
 )
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptInvitationQueryStringSchema())
@@ -758,6 +761,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
 @docs(
     tags=["connection"],
     summary="Accept a stored connection request",
+    deprecated=True,
 )
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptRequestQueryStringSchema())

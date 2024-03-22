@@ -327,15 +327,26 @@ class LoggingConfigurator:
     @classmethod
     def print_notices(cls, settings: Settings):
         """Print notices and warnings."""
-        if settings.get("wallet.type", "in_memory").lower() == "indy":
-            with Banner(border=":", length=80, file=sys.stderr) as banner:
-                banner.centered("⚠ DEPRECATION NOTICE: ⚠")
-                banner.hr()
+        with Banner(border=":", length=80, file=sys.stderr) as banner:
+            banner.centered("⚠ DEPRECATION NOTICE: ⚠")
+            banner.hr()
+            if settings.get("wallet.type", "in_memory").lower() == "indy":
                 banner.print(
                     "The Indy wallet type is deprecated, use Askar instead; see: "
                     "https://aca-py.org/main/deploying/IndySDKtoAskarMigration/",
                 )
-            print()
+                banner.hr()
+            banner.print(
+                "Aries RFC 0160: Connection Protocol is deprecated and support will be "
+                "removed in a future version; use RFC 0023: DID Exchange instead."
+            )
+            banner.hr()
+            banner.print(
+                "Using `did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` in protocols is deprecated "
+                "and support will be removed in a future version; use "
+                "https://didcomm.org/ instead."
+            )
+        print()
 
 
 ######################################################################
