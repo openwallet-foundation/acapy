@@ -322,7 +322,6 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
 
     body = await request.json()
     alias = request.query.get("alias")
-    my_endpoint = request.query.get("my_endpoint")
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
 
     profile = context.profile
@@ -333,7 +332,6 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
             request=didx_request,
             recipient_did=didx_request._thread.pthid.split(":")[-1],
             alias=alias,
-            my_endpoint=my_endpoint,
             auto_accept_implicit=auto_accept,
         )
         result = conn_rec.serialize()

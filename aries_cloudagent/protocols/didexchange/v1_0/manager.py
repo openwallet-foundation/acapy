@@ -450,7 +450,6 @@ class DIDXManager(BaseConnectionManager):
         request: DIDXRequest,
         recipient_did: str,
         recipient_verkey: Optional[str] = None,
-        my_endpoint: Optional[str] = None,
         alias: Optional[str] = None,
         auto_accept_implicit: Optional[bool] = None,
     ) -> ConnRecord:

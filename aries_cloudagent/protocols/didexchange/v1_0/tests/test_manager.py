@@ -716,7 +716,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     request=mock_request,
                     recipient_did=TestConfig.test_did,
                     recipient_verkey=None,
-                    my_endpoint=None,
                     alias=None,
                     auto_accept_implicit=None,
                 )
@@ -751,7 +750,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                         request=mock_request,
                         recipient_did=TestConfig.test_did,
                         recipient_verkey=TestConfig.test_verkey,
-                        my_endpoint=None,
                         alias=None,
                         auto_accept_implicit=None,
                     )
@@ -853,7 +851,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     request=mock_request,
                     recipient_did=TestConfig.test_did,
                     recipient_verkey=None,
-                    my_endpoint=None,
                     alias=None,
                     auto_accept_implicit=None,
                 )
@@ -916,7 +913,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                         request=mock_request,
                         recipient_did=TestConfig.test_did,
                         recipient_verkey=None,
-                        my_endpoint=None,
                         alias=None,
                         auto_accept_implicit=None,
                     )
@@ -958,7 +954,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                         request=mock_request,
                         recipient_did=TestConfig.test_did,
                         recipient_verkey=None,
-                        my_endpoint=TestConfig.test_endpoint,
                         alias="Alias",
                         auto_accept_implicit=False,
                     )
@@ -1022,7 +1017,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                         request=mock_request,
                         recipient_did=TestConfig.test_did,
                         recipient_verkey=None,
-                        my_endpoint=TestConfig.test_endpoint,
                         alias="Alias",
                         auto_accept_implicit=False,
                     )
@@ -1084,7 +1078,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                         request=mock_request,
                         recipient_did=TestConfig.test_did,
                         recipient_verkey=None,
-                        my_endpoint=TestConfig.test_endpoint,
                         alias="Alias",
                         auto_accept_implicit=False,
                     )
@@ -1126,7 +1119,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                         request=mock_request,
                         recipient_did=TestConfig.test_did,
                         recipient_verkey=None,
-                        my_endpoint=TestConfig.test_endpoint,
                         alias="Alias",
                         auto_accept_implicit=False,
                     )
@@ -1198,7 +1190,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     request=mock_request,
                     recipient_did=TestConfig.test_did,
                     recipient_verkey=None,
-                    my_endpoint=TestConfig.test_endpoint,
                     alias="Alias",
                     auto_accept_implicit=False,
                 )
@@ -1266,7 +1257,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     await self.manager.receive_request(
                         request=mock_request,
                         recipient_did=TestConfig.test_did,
-                        my_endpoint=None,
                         alias=None,
                         auto_accept_implicit=None,
                     )
@@ -1347,7 +1337,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     request=mock_request,
                     recipient_did=TestConfig.test_did,
                     recipient_verkey=None,
-                    my_endpoint=None,
                     alias=None,
                     auto_accept_implicit=None,
                 )
@@ -1434,7 +1423,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                     request=mock_request,
                     recipient_did=TestConfig.test_did,
                     recipient_verkey=TestConfig.test_verkey,
-                    my_endpoint=TestConfig.test_endpoint,
                     alias="Alias",
                     auto_accept_implicit=False,
                 )
@@ -1476,7 +1464,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                         request=mock_request,
                         recipient_did=TestConfig.test_did,
                         recipient_verkey=TestConfig.test_verkey,
-                        my_endpoint=TestConfig.test_endpoint,
                         alias="Alias",
                         auto_accept_implicit=False,
                     )
