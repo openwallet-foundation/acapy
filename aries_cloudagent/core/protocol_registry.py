@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 import logging
 
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 from ..config.injection_context import InjectionContext
 from ..utils.classloader import ClassLoader, DeferLoad
@@ -102,7 +102,7 @@ class ProtocolRegistry:
 
     def register_message_types(
         self,
-        typeset: Dict[str, Union[str, type]],
+        typeset: Mapping[str, Union[str, type]],
         version_definition: Optional[Union[dict[str, Any], VersionDefinition]] = None,
     ):
         """Add new supported message types.
@@ -147,12 +147,11 @@ class ProtocolRegistry:
             type_to_message_cls_to_add[message_type] = message_cls
 
             if definition.minor_versions_supported:
-                base_type = MessageType.from_str(message_type)
                 for minor_version in range(
                     definition.min.minor, definition.current.minor + 1
                 ):
-                    updated_type = base_type.with_version(
-                        (base_type.version.major, minor_version)
+                    updated_type = parsed.with_version(
+                        (parsed.version.major, minor_version)
                     )
                     type_to_message_cls_to_add[str(updated_type)] = message_cls
 
