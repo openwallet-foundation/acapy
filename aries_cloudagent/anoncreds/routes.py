@@ -338,6 +338,7 @@ class CredDefPostOptionsSchema(OpenAPISchema):
     revocation_registry_size = fields.Int(
         metadata={
             "description": "Maximum number of credential revocations per registry",
+            "example": 1000,
         },
         required=False,
     )

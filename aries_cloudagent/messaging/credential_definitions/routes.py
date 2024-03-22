@@ -214,6 +214,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
 
+    # Don't allow revocable cred def to be created without tails server base url
+    if not profile.settings.get("tails_server_base_url") and support_revocation:
+        raise web.HTTPBadRequest(
+            reason="tails_server_base_url not configured. Can't create revocable credential definition."  # noqa: E501
+        )
+
     tag_query = {"schema_id": schema_id}
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
