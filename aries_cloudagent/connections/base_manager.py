@@ -52,7 +52,7 @@ from ..transport.inbound.receipt import MessageReceipt
 from ..utils.multiformats import multibase, multicodec
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import create_keypair, seed_to_did
-from ..wallet.did_info import DIDInfo, KeyInfo, INVITATION_REUSE_KEY
+from ..wallet.did_info import INVITATION_REUSE_KEY, DIDInfo, KeyInfo
 from ..wallet.did_method import PEER2, PEER4, SOV
 from ..wallet.error import WalletNotFoundError
 from ..wallet.key_type import ED25519
@@ -967,14 +967,12 @@ class BaseConnectionManager:
 
         """
 
+        receipt.sender_did = None
         if receipt.sender_verkey:
             try:
                 receipt.sender_did = await self.find_did_for_key(receipt.sender_verkey)
             except StorageNotFoundError:
-                self._logger.warning(
-                    "No corresponding DID found for sender verkey: %s",
-                    receipt.sender_verkey,
-                )
+                pass
 
         if receipt.recipient_verkey:
             try:
@@ -993,7 +991,7 @@ class BaseConnectionManager:
                     receipt.recipient_verkey,
                 )
             except WalletNotFoundError:
-                self._logger.warning(
+                self._logger.debug(
                     "No corresponding DID found for recipient verkey: %s",
                     receipt.recipient_verkey,
                 )
