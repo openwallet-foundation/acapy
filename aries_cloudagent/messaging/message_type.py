@@ -117,6 +117,22 @@ class ProtocolIdentifier:
         """Return the protocol stem, including doc_uri, protocol, and major version."""
         return f"{self.doc_uri}/{self.protocol}/{self.version.major}"
 
+    def with_version(
+        self, version: Union[str, MessageVersion, Tuple[int, int]]
+    ) -> "ProtocolIdentifier":
+        """Return a new protocol identifier with the specified version."""
+        if isinstance(version, str):
+            version = MessageVersion.from_str(version)
+
+        if isinstance(version, tuple):
+            version = MessageVersion(*version)
+
+        return ProtocolIdentifier(
+            doc_uri=self.doc_uri,
+            protocol=self.protocol,
+            version=version,
+        )
+
 
 @dataclass
 class MessageType:

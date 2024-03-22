@@ -75,13 +75,7 @@ class ProtocolRegistry:
     def protocols(self) -> Sequence[str]:
         """Accessor for a list of all message protocols."""
         return [
-            str(
-                ProtocolIdentifier(
-                    definition.ident.doc_uri,
-                    definition.ident.protocol,
-                    MessageVersion(definition.min.major, minor),
-                )
-            )
+            str(definition.ident.with_version((definition.min.major, minor)))
             for definition in self._definitions.values()
             for minor in range(definition.min.minor, definition.current.minor + 1)
         ]
