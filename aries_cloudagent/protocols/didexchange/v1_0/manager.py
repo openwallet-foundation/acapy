@@ -472,79 +472,174 @@ class DIDXManager(BaseConnectionManager):
             settings=self.profile.settings,
         )
 
-        conn_rec = None
-        connection_key = None
-        my_info = None
-
-        # Determine what key will need to sign the response
-        if recipient_verkey:  # peer DID
-            connection_key = recipient_verkey
-            try:
-                async with self.profile.session() as session:
-                    conn_rec = await ConnRecord.retrieve_by_invitation_key(
-                        session=session,
-                        invitation_key=connection_key,
-                        their_role=ConnRecord.Role.REQUESTER.rfc23,
-                    )
-            except StorageNotFoundError:
-                if recipient_verkey:
-                    raise DIDXManagerError(
-                        "No explicit invitation found for pairwise connection "
-                        f"in state {ConnRecord.State.INVITATION.rfc23}: "
-                        "a prior connection request may have updated the connection state"
-                    )
+        if recipient_verkey:
+            return await self._receive_request_pairwise_did(
+                request, recipient_verkey, alias
+            )
         else:
-            if not self.profile.settings.get("public_invites"):
-                raise DIDXManagerError(
-                    "Public invitations are not enabled: connection request refused"
-                )
+            return await self._receive_request_public_did(
+                request, recipient_did, alias, auto_accept_implicit
+            )
 
+    async def _receive_request_pairwise_did(
+        self,
+        request: DIDXRequest,
+        recipient_verkey: str,
+        alias: Optional[str] = None,
+    ) -> ConnRecord:
+        """Receive a DID Exchange request against a pairwise (not public) DID."""
+        try:
             async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(recipient_did)
-            if DIDPosture.get(my_info.metadata) not in (
-                DIDPosture.PUBLIC,
-                DIDPosture.POSTED,
-            ):
-                raise DIDXManagerError(f"Request DID {recipient_did} is not public")
-            connection_key = my_info.verkey
+                conn_rec = await ConnRecord.retrieve_by_invitation_key(
+                    session=session,
+                    invitation_key=recipient_verkey,
+                    their_role=ConnRecord.Role.REQUESTER.rfc23,
+                )
+        except StorageNotFoundError:
+            raise DIDXManagerError(
+                "No explicit invitation found for pairwise connection "
+                f"in state {ConnRecord.State.INVITATION.rfc23}: "
+                "a prior connection request may have updated the connection state"
+            )
 
+        if conn_rec.is_multiuse_invitation:
+            conn_rec = await self._derive_new_conn_from_multiuse_invitation(conn_rec)
+
+        conn_rec.their_label = request.label
+        if alias:
+            conn_rec.alias = alias
+        conn_rec.their_did = request.did
+        conn_rec.state = ConnRecord.State.REQUEST.rfc160
+        conn_rec.request_id = request._id
+        conn_rec.connection_protocol = self._handshake_protocol_to_use(request)
+
+        await self._extract_and_record_did_doc_info(request)
+
+        async with self.profile.transaction() as txn:
+            # Attach the connection request so it can be found and responded to
+            await conn_rec.save(
+                txn, reason="Received connection request from invitation"
+            )
+            await conn_rec.attach_request(txn, request)
+            await txn.commit()
+
+        # Clean associated oob record if not needed anymore
+        oob_processor = self.profile.inject(OobMessageProcessor)
+        await oob_processor.clean_finished_oob_record(self.profile, request)
+
+        return conn_rec
+
+    def _handshake_protocol_to_use(self, request: DIDXRequest):
+        """Determine the connection protocol to use based on the request.
+
+        If we support it, we'll send it. If we don't, we'll try didexchage/1.1.
+        """
+        protocol = f"{request._type.protocol}/{request._type.version}"
+        if protocol in ConnRecord.SUPPORTED_PROTOCOLS:
+            return protocol
+
+        return DIDEX_1_1
+
+    async def _receive_request_public_did(
+        self,
+        request: DIDXRequest,
+        recipient_did: str,
+        alias: Optional[str] = None,
+        auto_accept_implicit: Optional[bool] = None,
+    ) -> ConnRecord:
+        """Receive a DID Exchange request against a public DID."""
+        if not self.profile.settings.get("public_invites"):
+            raise DIDXManagerError(
+                "Public invitations are not enabled: connection request refused"
+            )
+
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            public_did_info = await wallet.get_local_did(recipient_did)
+
+        if DIDPosture.get(public_did_info.metadata) not in (
+            DIDPosture.PUBLIC,
+            DIDPosture.POSTED,
+        ):
+            raise DIDXManagerError(f"Request DID {recipient_did} is not public")
+
+        if request._thread.pthid:
+            # Invitation was explicit
             async with self.profile.session() as session:
                 conn_rec = await ConnRecord.retrieve_by_invitation_msg_id(
                     session=session,
                     invitation_msg_id=request._thread.pthid,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
+        else:
+            # Invitation was implicit
+            conn_rec = None
+
+        if conn_rec and conn_rec.is_multiuse_invitation:
+            conn_rec = await self._derive_new_conn_from_multiuse_invitation(conn_rec)
 
         save_reason = None
-        if conn_rec:  # invitation was explicit
-            connection_key = conn_rec.invitation_key
-            if conn_rec.is_multiuse_invitation:
-                new_conn_rec = ConnRecord(
-                    invitation_key=connection_key,
-                    state=ConnRecord.State.INIT.rfc160,
-                    accept=conn_rec.accept,
-                    their_role=conn_rec.their_role,
-                    connection_protocol=DIDEX_1_1,
+        if conn_rec:
+            conn_rec.their_label = request.label
+            if alias:
+                conn_rec.alias = alias
+            conn_rec.their_did = request.did
+            conn_rec.state = ConnRecord.State.REQUEST.rfc160
+            conn_rec.request_id = request._id
+            save_reason = "Received connection request from invitation to public DID"
+        else:
+            # request is against implicit invitation on public DID
+            if not self.profile.settings.get("requests_through_public_did"):
+                raise DIDXManagerError(
+                    "Unsolicited connection requests to public DID is not enabled"
                 )
-                async with self.profile.session() as session:
-                    # TODO: Suppress the event that gets emitted here?
-                    await new_conn_rec.save(
-                        session,
-                        reason="Created new connection record from multi-use invitation",
-                    )
 
-                # Transfer metadata from multi-use to new connection
-                # Must come after save so there's an ID to associate with metadata
-                async with self.profile.session() as session:
-                    for key, value in (
-                        await conn_rec.metadata_get_all(session)
-                    ).items():
-                        await new_conn_rec.metadata_set(session, key, value)
+            auto_accept = bool(
+                auto_accept_implicit
+                or (
+                    auto_accept_implicit is None
+                    and self.profile.settings.get("debug.auto_accept_requests", False)
+                )
+            )
 
-                conn_rec = new_conn_rec
+            conn_rec = ConnRecord(
+                my_did=None,  # Defer DID creation until create_response
+                accept=(
+                    ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL
+                ),
+                their_did=request.did,
+                their_label=request.label,
+                alias=alias,
+                their_role=ConnRecord.Role.REQUESTER.rfc23,
+                invitation_key=public_did_info.verkey,
+                invitation_msg_id=None,
+                request_id=request._id,
+                state=ConnRecord.State.REQUEST.rfc160,
+            )
+            save_reason = "Received connection request from public DID"
 
-        # request DID doc describes requester DID
+        conn_rec.connection_protocol = self._handshake_protocol_to_use(request)
+
+        await self._extract_and_record_did_doc_info(request)
+
+        async with self.profile.transaction() as txn:
+            # Attach the connection request so it can be found and responded to
+            await conn_rec.save(txn, reason=save_reason)
+            await conn_rec.attach_request(txn, request)
+            await txn.commit()
+
+        # Clean associated oob record if not needed anymore
+        oob_processor = self.profile.inject(OobMessageProcessor)
+        await oob_processor.clean_finished_oob_record(self.profile, request)
+
+        return conn_rec
+
+    async def _extract_and_record_did_doc_info(self, request: DIDXRequest):
+        """Extract and record DID Document information from the DID Exchange request.
+
+        Extracting this info enables us to correlate messages from these keys back to a
+        connection when we later receive inbound messages.
+        """
         if request.did_doc_attach and request.did_doc_attach.data:
             self._logger.debug("Received DID Doc attachment in request")
             async with self.profile.session() as session:
@@ -575,61 +670,36 @@ class DIDXManager(BaseConnectionManager):
             )
             await self.record_keys_for_resolvable_did(request.did)
 
-        if conn_rec:  # request is against explicit invitation
-            auto_accept = (
-                conn_rec.accept == ConnRecord.ACCEPT_AUTO
-            )  # null=manual; oob-manager calculated at conn rec creation
+    async def _derive_new_conn_from_multiuse_invitation(
+        self, conn_rec: ConnRecord
+    ) -> ConnRecord:
+        """Derive a new connection record from a multi-use invitation.
 
-            conn_rec.their_label = request.label
-            if alias:
-                conn_rec.alias = alias
-            conn_rec.their_did = request.did
-            conn_rec.state = ConnRecord.State.REQUEST.rfc160
-            conn_rec.request_id = request._id
-            save_reason = "Received connection request from invitation"
-        else:
-            # request is against implicit invitation on public DID
-            if not self.profile.settings.get("requests_through_public_did"):
-                raise DIDXManagerError(
-                    "Unsolicited connection requests to public DID is not enabled"
-                )
-
-            auto_accept = bool(
-                auto_accept_implicit
-                or (
-                    auto_accept_implicit is None
-                    and self.profile.settings.get("debug.auto_accept_requests", False)
-                )
+        Multi-use invitations are tracked using a connection record. When a connection
+        is formed through a multi-use invitation conn rec, a new record for the resulting
+        connection is required. The original multi-use invitation record is retained
+        until deleted by the user.
+        """
+        new_conn_rec = ConnRecord(
+            invitation_key=conn_rec.invitation_key,
+            state=ConnRecord.State.INIT.rfc160,
+            accept=conn_rec.accept,
+            their_role=conn_rec.their_role,
+        )
+        async with self.profile.session() as session:
+            # TODO: Suppress the event that gets emitted here?
+            await new_conn_rec.save(
+                session,
+                reason="Created new connection record from multi-use invitation",
             )
 
-            conn_rec = ConnRecord(
-                my_did=None,  # Defer DID creation until create_response
-                accept=(
-                    ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL
-                ),
-                their_did=request.did,
-                their_label=request.label,
-                alias=alias,
-                their_role=ConnRecord.Role.REQUESTER.rfc23,
-                invitation_key=connection_key,
-                invitation_msg_id=None,
-                request_id=request._id,
-                state=ConnRecord.State.REQUEST.rfc160,
-                connection_protocol=DIDEX_1_1,
-            )
-            save_reason = "Received connection request from public DID"
+        # Transfer metadata from multi-use to new connection
+        # Must come after save so there's an ID to associate with metadata
+        async with self.profile.session() as session:
+            for key, value in (await conn_rec.metadata_get_all(session)).items():
+                await new_conn_rec.metadata_set(session, key, value)
 
-        async with self.profile.transaction() as txn:
-            # Attach the connection request so it can be found and responded to
-            await conn_rec.save(txn, reason=save_reason)
-            await conn_rec.attach_request(txn, request)
-            await txn.commit()
-
-        # Clean associated oob record if not needed anymore
-        oob_processor = self.profile.inject(OobMessageProcessor)
-        await oob_processor.clean_finished_oob_record(self.profile, request)
-
-        return conn_rec
+        return new_conn_rec
 
     async def create_response(
         self,
