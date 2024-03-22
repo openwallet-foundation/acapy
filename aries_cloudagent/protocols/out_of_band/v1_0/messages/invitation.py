@@ -23,7 +23,6 @@ from .service import Service
 class HSProtoSpec(NamedTuple):
     """Handshake protocol specification."""
 
-    rfc: int
     name: str
     aka: Set[str]
 
@@ -32,12 +31,10 @@ class HSProto(Enum):
     """Handshake protocol enum for invitation message."""
 
     RFC160 = HSProtoSpec(
-        160,
         CONN_PROTO,
         {"connection", "connections", "conn", "conns", "rfc160", "160", "old"},
     )
     RFC23 = HSProtoSpec(
-        23,
         "didexchange/1.0",
         {
             "https://didcomm.org/didexchange/1.0",
@@ -51,7 +48,6 @@ class HSProto(Enum):
         },
     )
     DIDEX_1_1 = HSProtoSpec(
-        23,
         DIDEX_1_1,
         {
             "https://didcomm.org/didexchange/1.1",
@@ -74,17 +70,7 @@ class HSProto(Enum):
         elif isinstance(label, HSProto):
             return label
 
-        elif isinstance(label, int):
-            for hsp in HSProto:
-                if hsp.rfc == label:
-                    return hsp
-
         return None
-
-    @property
-    def rfc(self) -> int:
-        """Accessor for RFC."""
-        return self.value.rfc
 
     @property
     def name(self) -> str:

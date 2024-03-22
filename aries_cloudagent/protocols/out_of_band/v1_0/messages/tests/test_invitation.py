@@ -26,7 +26,6 @@ class TestHSProto(TestCase):
 
     def test_get(self):
         assert HSProto.get(HSProto.RFC160) is HSProto.RFC160
-        assert HSProto.get(23) is HSProto.RFC23
         assert HSProto.get("Old") is HSProto.RFC160
         assert HSProto.get(DIDCommPrefix.qualify_current(CONN_PROTO)) is HSProto.RFC160
         assert HSProto.get(DIDEX_1_1) is HSProto.RFC23
@@ -36,7 +35,6 @@ class TestHSProto(TestCase):
         assert HSProto.get(None) is None
 
     def test_properties(self):
-        assert HSProto.RFC160.rfc == 160
         assert HSProto.RFC23.name == DIDEX_1_1
 
 
