@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List, Optional, Sequence, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 from did_peer_4 import LONG_PATTERN, long_to_short
 
@@ -39,6 +39,13 @@ from .messages.response import DIDXResponse
 
 class DIDXManagerError(BaseError):
     """Connection error."""
+
+
+class LegacyHandlingFallback(DIDXManagerError):
+    """Raised when a request cannot be completed using updated semantics.
+
+    Triggers falling back to legacy handling.
+    """
 
 
 class DIDXManager(BaseConnectionManager):
@@ -320,13 +327,32 @@ class DIDXManager(BaseConnectionManager):
         pthid = conn_rec.invitation_msg_id or did_url
 
         if conn_rec.connection_protocol == DIDEX_1_0:
-            request = await self._legacy_request_with_attached_doc(
-                conn_rec, my_label, my_endpoints, mediation_records, goal_code, goal
+            did, attach = await self._legacy_did_with_attached_doc(
+                conn_rec, my_endpoints, mediation_records
             )
         else:
-            request = await self._qualified_did_request_with_fallback(
-                conn_rec, my_label, my_endpoints, mediation_records, goal_code, goal
-            )
+            emit_did_peer_2 = bool(self.profile.settings.get("emit_did_peer_2"))
+            emit_did_peer_4 = bool(self.profile.settings.get("emit_did_peer_4"))
+            try:
+                did, attach = await self._qualified_did_with_fallback(
+                    conn_rec,
+                    my_endpoints,
+                    mediation_records,
+                    emit_did_peer_2,
+                    emit_did_peer_4,
+                )
+            except LegacyHandlingFallback:
+                did, attach = await self._legacy_did_with_attached_doc(
+                    conn_rec, my_endpoints, mediation_records
+                )
+
+        request = DIDXRequest(
+            label=my_label,
+            did=did,
+            did_doc_attach=attach,
+            goal=goal,
+            goal_code=goal_code,
+        )
 
         request.assign_thread_id(thid=request._id, pthid=pthid)
 
@@ -343,21 +369,19 @@ class DIDXManager(BaseConnectionManager):
 
         return request
 
-    async def _qualified_did_request_with_fallback(
+    async def _qualified_did_with_fallback(
         self,
         conn_rec: ConnRecord,
-        my_label: str,
         my_endpoints: Sequence[str],
         mediation_records: List[MediationRecord],
-        goal_code: Optional[str],
-        goal: Optional[str],
-    ) -> DIDXRequest:
+        emit_did_peer_2: bool,
+        emit_did_peer_4: bool,
+        signing_key: Optional[str] = None,
+    ) -> Tuple[str, Optional[AttachDecorator]]:
         """Create DID Exchange request using a qualified DID.
 
         Fall back to unqualified DID if settings don't cause did:peer emission.
         """
-        emit_did_peer_4 = self.profile.settings.get("emit_did_peer_4")
-        emit_did_peer_2 = self.profile.settings.get("emit_did_peer_2")
         if emit_did_peer_2 and emit_did_peer_4:
             self._logger.warning(
                 "emit_did_peer_2 and emit_did_peer_4 both set, \
@@ -374,10 +398,8 @@ class DIDXManager(BaseConnectionManager):
                 DIDPosture.PUBLIC,
                 DIDPosture.POSTED,
             ) and not my_info.did.startswith("did:"):
-                # The DID has been previously set and is not public or qualified...
-                # Must fallback
-                return await self._legacy_request_with_attached_doc(
-                    conn_rec, my_label, my_endpoints, mediation_records, goal_code, goal
+                raise LegacyHandlingFallback(
+                    "DID has been previously set and not public or qualified"
                 )
         elif emit_did_peer_4:
             my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
@@ -386,8 +408,8 @@ class DIDXManager(BaseConnectionManager):
             my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
             conn_rec.my_did = my_info.did
         else:
-            return await self._legacy_request_with_attached_doc(
-                conn_rec, my_label, my_endpoints, mediation_records, goal_code, goal
+            raise LegacyHandlingFallback(
+                "Use of qualified DIDs not set according to settings"
             )
 
         did = conn_rec.my_did
@@ -395,23 +417,22 @@ class DIDXManager(BaseConnectionManager):
         if not did.startswith("did:"):
             did = f"did:sov:{did}"
 
-        request = DIDXRequest(
-            label=my_label,
-            did=did,
-            goal_code=goal_code,
-            goal=goal,
-        )
-        return request
+        attach = None
+        if signing_key:
+            attach = AttachDecorator.data_base64_string(did)
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                await attach.data.sign(signing_key, wallet)
 
-    async def _legacy_request_with_attached_doc(
+        return did, attach
+
+    async def _legacy_did_with_attached_doc(
         self,
         conn_rec: ConnRecord,
-        my_label: str,
         my_endpoints: Sequence[str],
         mediation_records: List[MediationRecord],
-        goal_code: Optional[str],
-        goal: Optional[str],
-    ) -> DIDXRequest:
+        invitation_key: Optional[str] = None,
+    ) -> Tuple[str, AttachDecorator]:
         """Create a DID Exchange request using an unqualified DID."""
         if conn_rec.my_did:
             async with self.profile.session() as session:
@@ -434,16 +455,9 @@ class DIDXManager(BaseConnectionManager):
         attach = AttachDecorator.data_base64(did_doc.serialize())
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
-            await attach.data.sign(my_info.verkey, wallet)
+            await attach.data.sign(invitation_key or my_info.verkey, wallet)
 
-        request = DIDXRequest(
-            label=my_label,
-            did=my_info.did,
-            did_doc_attach=attach,
-            goal_code=goal_code,
-            goal=goal,
-        )
-        return request
+        return my_info.did, attach
 
     async def receive_request(
         self,
@@ -746,74 +760,44 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        respond_with_did_peer_2 = self.profile.settings.get("emit_did_peer_2") or (
-            conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2")
+        respond_with_did_peer_2 = bool(
+            self.profile.settings.get("emit_did_peer_2")
+            or (conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2"))
         )
-        respond_with_did_peer_4 = self.profile.settings.get("emit_did_peer_4") or (
-            conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4")
+        respond_with_did_peer_4 = bool(
+            self.profile.settings.get("emit_did_peer_4")
+            or (conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4"))
         )
 
-        if conn_rec.my_did:
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(conn_rec.my_did)
-            did = my_info.did
-        elif respond_with_did_peer_4:
-            my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
-            conn_rec.my_did = my_info.did
-            did = my_info.did
-        elif respond_with_did_peer_2:
-            my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
-            conn_rec.my_did = my_info.did
-            did = my_info.did
-        elif use_public_did:
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_public_did()
-            if not my_info:
-                raise DIDXManagerError("No public DID configured")
-            conn_rec.my_did = my_info.did
-            did = my_info.did
-            if not did.startswith("did:"):
-                did = f"did:sov:{did}"
-
+        if conn_rec.connection_protocol == DIDEX_1_0:
+            did, attach = await self._legacy_did_with_attached_doc(
+                conn_rec,
+                my_endpoints,
+                mediation_records,
+                invitation_key=conn_rec.invitation_key,
+            )
+            response = DIDXResponse(did=did, did_doc_attach=attach)
         else:
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(
-                    method=SOV,
-                    key_type=ED25519,
+            try:
+                did, attach = await self._qualified_did_with_fallback(
+                    conn_rec,
+                    my_endpoints,
+                    mediation_records,
+                    respond_with_did_peer_2,
+                    respond_with_did_peer_4,
+                    signing_key=conn_rec.invitation_key,
                 )
-            conn_rec.my_did = my_info.did
-            did = my_info.did
+                response = DIDXResponse(did=did, did_rotate_attach=attach)
+            except LegacyHandlingFallback:
+                did, attach = await self._legacy_did_with_attached_doc(
+                    conn_rec, my_endpoints, mediation_records, conn_rec.invitation_key
+                )
+                response = DIDXResponse(did=did, did_doc_attach=attach)
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
             self.profile, conn_rec, mediation_records
         )
-
-        if did.startswith("did:"):  # It's a "real" resolvable did
-            # Omit DID Doc attachment if we're using a public DID or peer did
-            attach = AttachDecorator.data_base64_string(did)
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                if conn_rec.invitation_key is not None:
-                    await attach.data.sign(conn_rec.invitation_key, wallet)
-                else:
-                    self._logger.warning("Invitation key was not set for connection")
-                    attach = None
-            response = DIDXResponse(did=did, did_rotate_attach=attach)
-        else:
-            did_doc = await self.create_did_document(
-                my_info,
-                my_endpoints,
-                mediation_records=mediation_records,
-            )
-            attach = AttachDecorator.data_base64(did_doc.serialize())
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                await attach.data.sign(conn_rec.invitation_key, wallet)
-            response = DIDXResponse(did=did, did_doc_attach=attach)
 
         # Assign thread information
         response.assign_thread_from(request)
@@ -834,7 +818,7 @@ class DIDXManager(BaseConnectionManager):
             )
         if send_mediation_request:
             temp_mediation_mgr = MediationManager(self.profile)
-            _record, request = await temp_mediation_mgr.prepare_request(
+            _, request = await temp_mediation_mgr.prepare_request(
                 conn_rec.connection_id
             )
             responder = self.profile.inject(BaseResponder)
