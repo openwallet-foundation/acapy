@@ -204,6 +204,7 @@ class OutOfBandManager(BaseConnectionManager):
         handshake_protocols = [
             DIDCommPrefix.qualify_current(hsp.name) for hsp in hs_protos or []
         ] or None
+        # Handshake protocol list should be ordered by preference by caller
         connection_protocol = (
             hs_protos[0].name if hs_protos and len(hs_protos) >= 1 else None
         )

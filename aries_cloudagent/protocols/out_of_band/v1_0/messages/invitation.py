@@ -38,7 +38,7 @@ class HSProto(Enum):
     )
     RFC23 = HSProtoSpec(
         23,
-        DIDX_PROTO,
+        "didexchange/1.0",
         {
             "https://didcomm.org/didexchange/1.0",
             "didexchange/1.0",
@@ -48,6 +48,14 @@ class HSProto(Enum):
             "rfc23",
             "23",
             "new",
+        },
+    )
+    DIDEX_1_1 = HSProtoSpec(
+        23,
+        DIDX_PROTO,
+        {
+            "https://didcomm.org/didexchange/1.1",
+            "didexchange/1.1",
         },
     )
 
