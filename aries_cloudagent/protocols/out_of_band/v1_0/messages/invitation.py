@@ -15,7 +15,7 @@ from .....messaging.valid import DIDValidation
 from .....wallet.util import b64_to_bytes, bytes_to_b64
 from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ....didcomm_prefix import DIDCommPrefix
-from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
 from ..message_types import DEFAULT_VERSION, INVITATION
 from .service import Service
 
@@ -52,7 +52,7 @@ class HSProto(Enum):
     )
     DIDEX_1_1 = HSProtoSpec(
         23,
-        DIDX_PROTO,
+        DIDEX_1_1,
         {
             "https://didcomm.org/didexchange/1.1",
             "didexchange/1.1",

@@ -29,7 +29,7 @@ from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
 from ...out_of_band.v1_0.messages.service import Service as OOBService
-from .message_types import ARIES_PROTOCOL as DIDX_PROTO
+from .message_types import ARIES_PROTOCOL as DIDEX_1_1
 from .messages.complete import DIDXComplete
 from .messages.problem_report import DIDXProblemReport, ProblemReportReason
 from .messages.request import DIDXRequest
@@ -70,6 +70,7 @@ class DIDXManager(BaseConnectionManager):
         auto_accept: Optional[bool] = None,
         alias: Optional[str] = None,
         mediation_id: Optional[str] = None,
+        protocol: Optional[str] = None,
     ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band
         """Create a new connection record to track a received invitation.
 
@@ -108,6 +109,7 @@ class DIDXManager(BaseConnectionManager):
             )
             else ConnRecord.ACCEPT_MANUAL
         )
+        protocol = protocol or "didexchange/1.0"
 
         service_item = invitation.services[0]
         # Create connection record
@@ -124,7 +126,7 @@ class DIDXManager(BaseConnectionManager):
             accept=accept,
             alias=alias,
             their_public_did=their_public_did,
-            connection_protocol=DIDX_PROTO,
+            connection_protocol=protocol,
         )
 
         async with self.profile.session() as session:
@@ -239,7 +241,7 @@ class DIDXManager(BaseConnectionManager):
             invitation_msg_id=None,
             alias=alias,
             their_public_did=their_public_did,
-            connection_protocol=DIDX_PROTO,
+            connection_protocol=DIDEX_1_1,
             accept=ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL,
         )
         request = await self.create_request(  # saves and updates conn_rec
@@ -468,7 +470,7 @@ class DIDXManager(BaseConnectionManager):
                     state=ConnRecord.State.INIT.rfc160,
                     accept=conn_rec.accept,
                     their_role=conn_rec.their_role,
-                    connection_protocol=DIDX_PROTO,
+                    connection_protocol=DIDEX_1_1,
                 )
                 async with self.profile.session() as session:
                     # TODO: Suppress the event that gets emitted here?
@@ -558,7 +560,7 @@ class DIDXManager(BaseConnectionManager):
                 invitation_msg_id=None,
                 request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc160,
-                connection_protocol=DIDX_PROTO,
+                connection_protocol=DIDEX_1_1,
             )
             save_reason = "Received connection request from public DID"
 

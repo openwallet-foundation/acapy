@@ -284,12 +284,10 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     )
     connection_protocol = fields.Str(
         required=False,
-        validate=validate.OneOf(
-            [proto.aries_protocol for proto in ConnRecord.Protocol]
-        ),
+        validate=validate.OneOf(ConnRecord.SUPPORTED_PROTOCOLS),
         metadata={
             "description": "Connection protocol used",
-            "example": ConnRecord.Protocol.RFC_0160.aries_protocol,
+            "example": "connections/1.0",
         },
     )
     invitation_msg_id = fields.Str(

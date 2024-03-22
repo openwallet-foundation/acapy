@@ -895,13 +895,8 @@ class OutOfBandManager(BaseConnectionManager):
         invitation = oob_record.invitation
 
         supported_handshake_protocols = [
-            HSProto.get(hsp)
-            for hsp in dict.fromkeys(
-                [
-                    DIDCommPrefix.unqualify(proto)
-                    for proto in invitation.handshake_protocols
-                ]
-            )
+            HSProto.get(DIDCommPrefix.unqualify(proto))
+            for proto in invitation.handshake_protocols
         ]
 
         # Get the single service item
@@ -947,7 +942,7 @@ class OutOfBandManager(BaseConnectionManager):
         conn_record = None
         for protocol in supported_handshake_protocols:
             # DIDExchange
-            if protocol is HSProto.RFC23:
+            if protocol is HSProto.RFC23 or protocol is HSProto.DIDEX_1_1:
                 didx_mgr = DIDXManager(self.profile)
                 conn_record = await didx_mgr.receive_invitation(
                     invitation=invitation,
@@ -955,6 +950,7 @@ class OutOfBandManager(BaseConnectionManager):
                     auto_accept=auto_accept,
                     alias=alias,
                     mediation_id=mediation_id,
+                    protocol=protocol.name,
                 )
                 break
             # 0160 Connection

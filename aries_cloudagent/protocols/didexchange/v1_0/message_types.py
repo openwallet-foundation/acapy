@@ -10,6 +10,7 @@ SPEC_URI = (
 )
 # Default Version
 DEFAULT_VERSION = get_proto_default_version(versions, 1)
+DIDEX_1_0 = "didexchange/1.0"
 ARIES_PROTOCOL = f"didexchange/{DEFAULT_VERSION}"
 
 # Message types
