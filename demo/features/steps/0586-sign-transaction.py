@@ -40,8 +40,9 @@ def step_impl(context, agent_name, did_role):
     )
 
     # make the new did the wallet's public did
-    retries = 3
+    retries = 5
     for retry in range(retries):
+        async_sleep(1.0)
         published_did = agent_container_POST(
             agent["agent"],
             "/wallet/did/public",
