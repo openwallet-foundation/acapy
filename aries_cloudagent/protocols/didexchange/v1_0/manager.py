@@ -175,14 +175,15 @@ class DIDXManager(BaseConnectionManager):
     async def create_request_implicit(
         self,
         their_public_did: str,
-        my_label: str = None,
-        my_endpoint: str = None,
-        mediation_id: str = None,
+        my_label: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        mediation_id: Optional[str] = None,
         use_public_did: bool = False,
-        alias: str = None,
-        goal_code: str = None,
-        goal: str = None,
+        alias: Optional[str] = None,
+        goal_code: Optional[str] = None,
+        goal: Optional[str] = None,
         auto_accept: bool = False,
+        protocol: Optional[str] = None,
     ) -> ConnRecord:
         """Create and send a request against a public DID only (no explicit invitation).
 
@@ -233,6 +234,7 @@ class DIDXManager(BaseConnectionManager):
                 and self.profile.settings.get("debug.auto_accept_requests")
             )
         )
+        protocol = protocol or DIDEX_1_0
         conn_rec = ConnRecord(
             my_did=(
                 my_public_info.did if my_public_info else None
@@ -244,7 +246,7 @@ class DIDXManager(BaseConnectionManager):
             invitation_msg_id=None,
             alias=alias,
             their_public_did=their_public_did,
-            connection_protocol=DIDEX_1_1,
+            connection_protocol=protocol,
             accept=ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL,
         )
         request = await self.create_request(  # saves and updates conn_rec
