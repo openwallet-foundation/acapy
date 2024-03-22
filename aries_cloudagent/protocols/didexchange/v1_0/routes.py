@@ -303,6 +303,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
 @docs(
     tags=["did-exchange"],
     summary="Receive request against public DID's implicit invitation",
+    deprecated=True,
 )
 @querystring_schema(DIDXReceiveRequestImplicitQueryStringSchema())
 @request_schema(DIDXRequestSchema())
@@ -323,19 +324,17 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
     alias = request.query.get("alias")
     my_endpoint = request.query.get("my_endpoint")
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    mediation_id = request.query.get("mediation_id") or None
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
     try:
-        request = DIDXRequest.deserialize(body)
+        didx_request = DIDXRequest.deserialize(body)
         conn_rec = await didx_mgr.receive_request(
-            request=request,
-            recipient_did=request._thread.pthid.split(":")[-1],
+            request=didx_request,
+            recipient_did=didx_request._thread.pthid.split(":")[-1],
             alias=alias,
             my_endpoint=my_endpoint,
             auto_accept_implicit=auto_accept,
-            mediation_id=mediation_id,
         )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
