@@ -354,6 +354,9 @@ class DIDXManager(BaseConnectionManager):
             goal_code=goal_code,
         )
 
+        if conn_rec.connection_protocol == DIDEX_1_0:
+            request.assign_version("1.0")
+
         request.assign_thread_id(thid=request._id, pthid=pthid)
 
         # Update connection state
@@ -784,6 +787,7 @@ class DIDXManager(BaseConnectionManager):
                 invitation_key=conn_rec.invitation_key,
             )
             response = DIDXResponse(did=did, did_doc_attach=attach)
+            response.assign_version("1.0")
         else:
             try:
                 did, attach = await self._qualified_did_with_fallback(
@@ -977,6 +981,9 @@ class DIDXManager(BaseConnectionManager):
         # create and send connection-complete message
         complete = DIDXComplete()
         complete.assign_thread_from(response)
+        if conn_rec.connection_protocol == DIDEX_1_0:
+            complete.assign_version("1.0")
+
         responder = self.profile.inject_or(BaseResponder)
         if responder:
             await responder.send_reply(complete, connection_id=conn_rec.connection_id)
@@ -1087,6 +1094,8 @@ class DIDXManager(BaseConnectionManager):
                 "en": reason or "DID exchange rejected",
             },
         )
+        if conn_rec.connection_protocol == DIDEX_1_0:
+            report.assign_version("1.0")
 
         # TODO Delete the record?
         return report
@@ -1161,6 +1170,7 @@ class DIDXManager(BaseConnectionManager):
                 description={"en": e.message, "code": e.error_code}
             )
             report.assign_thread_from(message)
+            report.assign_version_from(message)
             if message.did_doc_attach:
                 try:
                     # convert diddoc attachment to diddoc...
