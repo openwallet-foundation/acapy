@@ -435,7 +435,7 @@ class DIDXManager(BaseConnectionManager):
         my_endpoints: Sequence[str],
         mediation_records: List[MediationRecord],
         invitation_key: Optional[str] = None,
-    ) -> Tuple[str, AttachDecorator]:
+    ) -> Tuple[str, Optional[AttachDecorator]]:
         """Create a DID Exchange request using an unqualified DID."""
         if conn_rec.my_did:
             async with self.profile.session() as session:
@@ -450,12 +450,20 @@ class DIDXManager(BaseConnectionManager):
                 )
                 conn_rec.my_did = my_info.did
 
+        posture = DIDPosture.get(my_info.metadata)
+        if posture in (
+            DIDPosture.PUBLIC,
+            DIDPosture.POSTED,
+        ):
+            return my_info.did, None
+
         did_doc = await self.create_did_document(
             my_info,
             my_endpoints,
             mediation_records=mediation_records,
         )
         attach = AttachDecorator.data_base64(did_doc.serialize())
+
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             await attach.data.sign(invitation_key or my_info.verkey, wallet)
@@ -778,6 +786,8 @@ class DIDXManager(BaseConnectionManager):
                 public_info = await wallet.get_public_did()
             if public_info:
                 conn_rec.my_did = public_info.did
+            else:
+                raise DIDXManagerError("No public DID configured")
 
         if conn_rec.connection_protocol == DIDEX_1_0:
             did, attach = await self._legacy_did_with_attached_doc(
