@@ -414,7 +414,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -496,7 +496,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -574,7 +574,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -652,7 +652,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -730,7 +730,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -786,7 +786,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -849,7 +849,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -909,7 +909,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -972,7 +972,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -1033,7 +1033,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -1125,7 +1125,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [
@@ -1826,7 +1826,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             role="prover",
             pres_proposal=None,
             pres_request={
-                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@type": "https://didcomm.org/present-proof/2.0/request-presentation",
                 "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
                 "comment": "string",
                 "formats": [

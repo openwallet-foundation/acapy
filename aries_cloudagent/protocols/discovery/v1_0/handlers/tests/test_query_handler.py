@@ -75,7 +75,7 @@ class TestQueryHandler:
             mock_prepare_disclosed.return_value = [
                 {"test": "test"},
                 {
-                    "pid": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/action-menu/1.0",
+                    "pid": "https://didcomm.org/action-menu/1.0",
                     "roles": ["provider"],
                 },
             ]
@@ -85,9 +85,6 @@ class TestQueryHandler:
             result, target = messages[0]
             assert isinstance(result, Disclose) and result.protocols
             assert len(result.protocols) == 1
-            assert (
-                result.protocols[0]["pid"]
-                == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/action-menu/1.0"
-            )
+            assert result.protocols[0]["pid"] == "https://didcomm.org/action-menu/1.0"
             assert result.protocols[0]["roles"] == ["provider"]
             assert not target

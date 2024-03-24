@@ -66,7 +66,7 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "@id": "test-message-id",
-                    "@type": DIDCommPrefix.OLD.value + "/" + test_message_types.ROTATE,
+                    "@type": DIDCommPrefix.NEW.value + "/" + test_message_types.ROTATE,
                     **test_valid_rotate_request,
                 }
             )
@@ -94,7 +94,7 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "@id": "test-message-id",
-                    "@type": DIDCommPrefix.OLD.value + "/" + test_message_types.HANGUP,
+                    "@type": DIDCommPrefix.NEW.value + "/" + test_message_types.HANGUP,
                 }
             )
 

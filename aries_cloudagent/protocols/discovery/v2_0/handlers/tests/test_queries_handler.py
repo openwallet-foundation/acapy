@@ -139,7 +139,7 @@ class TestQueriesHandler:
             mock_exec_protocol_query.return_value = [
                 {"test": "test"},
                 {
-                    "pid": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/action-menu/1.0",
+                    "pid": "https://didcomm.org/action-menu/1.0",
                     "roles": ["provider"],
                 },
             ]
@@ -150,8 +150,7 @@ class TestQueriesHandler:
             result, target = messages[0]
             assert isinstance(result, Disclosures)
             assert (
-                result.disclosures[0].get("id")
-                == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/action-menu/1.0"
+                result.disclosures[0].get("id") == "https://didcomm.org/action-menu/1.0"
             )
             assert result.disclosures[0].get("feature-type") == "protocol"
             assert result.disclosures[1].get("id") == "aries.vc"
