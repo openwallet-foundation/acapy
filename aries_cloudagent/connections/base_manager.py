@@ -160,7 +160,10 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             key = await wallet.create_key(ED25519)
-            key_spec = KeySpec_DP4(multikey=self._key_info_to_multikey(key))
+            key_spec = KeySpec_DP4(
+                multikey=self._key_info_to_multikey(key),
+                relationships=["authentication", "keyAgreement"],
+            )
             input_doc = input_doc_from_keys_and_services(
                 keys=[key_spec], services=services
             )
