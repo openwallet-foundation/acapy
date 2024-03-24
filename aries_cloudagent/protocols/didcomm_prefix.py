@@ -46,7 +46,7 @@ class DIDCommPrefix(Enum):
     def qualify_current(slug: str = None) -> str:
         """Qualify input slug with prefix currently in effect and separator."""
 
-        return qualify(slug, environ.get("DIDCOMM_PREFIX", DIDCommPrefix.OLD.value))
+        return qualify(slug, environ.get("DIDCOMM_PREFIX", DIDCommPrefix.NEW.value))
 
     @staticmethod
     def unqualify(qual: str) -> str:
