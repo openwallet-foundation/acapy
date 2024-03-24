@@ -8,7 +8,7 @@ from ......wallet.key_type import ED25519
 
 from .....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from .....didcomm_prefix import DIDCommPrefix
-from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
+from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1, DIDEX_1_0
 from .....didexchange.v1_0.messages.request import DIDXRequest
 
 
@@ -28,14 +28,13 @@ class TestHSProto(TestCase):
         assert HSProto.get(HSProto.RFC160) is HSProto.RFC160
         assert HSProto.get("Old") is HSProto.RFC160
         assert HSProto.get(DIDCommPrefix.qualify_current(CONN_PROTO)) is HSProto.RFC160
-        assert HSProto.get(DIDEX_1_1) is HSProto.RFC23
+        assert HSProto.get(DIDEX_1_0) is HSProto.RFC23
         assert HSProto.get("did-exchange") is HSProto.RFC23
         assert HSProto.get("RFC-23") is HSProto.RFC23
+        assert HSProto.get(DIDEX_1_1) is HSProto.DIDEX_1_1
+        assert HSProto.get("didexchange/1.1") is HSProto.DIDEX_1_1
         assert HSProto.get("no such protocol") is None
         assert HSProto.get(None) is None
-
-    def test_properties(self):
-        assert HSProto.RFC23.name == DIDEX_1_1
 
 
 class TestInvitationMessage(TestCase):
@@ -149,7 +148,7 @@ class TestInvitationMessage(TestCase):
         assert "1.2" in test_msg._type
         assert "1.1" in InvitationMessage.Meta.message_type
         test_req = DIDXRequest()
-        assert "1.0" in test_req._type
+        assert "1.1" in test_req._type
         assert "1.2" in test_msg._type
         assert "1.1" in InvitationMessage.Meta.message_type
 
