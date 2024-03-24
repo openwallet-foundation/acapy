@@ -14,12 +14,12 @@ from ...messages.disclose import Disclose
 from ...messages.query import Query
 from ...models.discovery_record import V10DiscoveryExchangeRecord
 
-TEST_MESSAGE_FAMILY = "TEST_FAMILY"
-TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
+TEST_MESSAGE_FAMILY = "doc/proto/1.0"
+TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
+def request_context():
     ctx = RequestContext.test_context()
     ctx.connection_ready = True
     ctx.connection_record = mock.MagicMock(connection_id="test123")
@@ -28,7 +28,7 @@ def request_context() -> RequestContext:
 
 class TestDiscloseHandler:
     @pytest.mark.asyncio
-    async def test_disclose(self, request_context):
+    async def test_disclose(self, request_context: RequestContext):
         registry = ProtocolRegistry()
         registry.register_message_types({TEST_MESSAGE_TYPE: object()})
         request_context.injector.bind_instance(ProtocolRegistry, registry)
