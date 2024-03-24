@@ -1247,6 +1247,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                     auto_accept=None,
                     alias=None,
                     mediation_id=mediation_record._id,
+                    protocol="didexchange/1.0",
                 )
 
     async def test_receive_invitation_with_invalid_mediation(self):
@@ -1282,6 +1283,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                 auto_accept=None,
                 alias=None,
                 mediation_id=None,
+                protocol="didexchange/1.0",
             )
 
     async def test_receive_invitation_didx_services_with_service_block(self):
