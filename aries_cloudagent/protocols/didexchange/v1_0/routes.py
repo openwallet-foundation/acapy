@@ -109,7 +109,7 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
     protocol = fields.Str(
         required=False,
         validate=validate.OneOf([DIDEX_1_0, DIDEX_1_1]),
-        metadta={
+        metadata={
             "description": "Which DID Exchange Protocol version to use",
             "example": "didexchange/1.0",
         },
