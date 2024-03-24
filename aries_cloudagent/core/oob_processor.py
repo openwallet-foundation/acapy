@@ -63,9 +63,11 @@ class OobMessageProcessor:
                 oob_record.state = OobRecord.STATE_DONE
                 await oob_record.emit_event(session)
                 await oob_record.delete_record(session)
-        except Exception:
+        except StorageNotFoundError:
             # It is fine if no oob record is found, Only retrieved for cleanup
             pass
+        except Exception:
+            LOGGER.warning("Error cleaning up oob record", exc_info=True)
 
     async def find_oob_target_for_outbound_message(
         self, profile: Profile, outbound_message: OutboundMessage

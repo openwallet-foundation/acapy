@@ -498,13 +498,19 @@ class DIDXManager(BaseConnectionManager):
         )
 
         if recipient_verkey:
-            return await self._receive_request_pairwise_did(
+            conn_rec = await self._receive_request_pairwise_did(
                 request, recipient_verkey, alias
             )
         else:
-            return await self._receive_request_public_did(
+            conn_rec = await self._receive_request_public_did(
                 request, recipient_did, alias, auto_accept_implicit
             )
+
+        # Clean associated oob record if not needed anymore
+        oob_processor = self.profile.inject(OobMessageProcessor)
+        await oob_processor.clean_finished_oob_record(self.profile, request)
+
+        return conn_rec
 
     async def _receive_request_pairwise_did(
         self,
@@ -538,6 +544,7 @@ class DIDXManager(BaseConnectionManager):
         conn_rec.request_id = request._id
         conn_rec.connection_protocol = self._handshake_protocol_to_use(request)
 
+        # TODO move to common method or add to transaction?
         await self._extract_and_record_did_doc_info(request)
 
         async with self.profile.transaction() as txn:
@@ -547,10 +554,6 @@ class DIDXManager(BaseConnectionManager):
             )
             await conn_rec.attach_request(txn, request)
             await txn.commit()
-
-        # Clean associated oob record if not needed anymore
-        oob_processor = self.profile.inject(OobMessageProcessor)
-        await oob_processor.clean_finished_oob_record(self.profile, request)
 
         return conn_rec
 
@@ -645,6 +648,7 @@ class DIDXManager(BaseConnectionManager):
 
         conn_rec.connection_protocol = self._handshake_protocol_to_use(request)
 
+        # TODO move to common method or add to transaction?
         await self._extract_and_record_did_doc_info(request)
 
         async with self.profile.transaction() as txn:
@@ -652,10 +656,6 @@ class DIDXManager(BaseConnectionManager):
             await conn_rec.save(txn, reason=save_reason)
             await conn_rec.attach_request(txn, request)
             await txn.commit()
-
-        # Clean associated oob record if not needed anymore
-        oob_processor = self.profile.inject(OobMessageProcessor)
-        await oob_processor.clean_finished_oob_record(self.profile, request)
 
         return conn_rec
 
