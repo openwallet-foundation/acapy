@@ -358,7 +358,6 @@ class OutOfBandManager(BaseConnectionManager):
                     ),
                     alias=alias,
                     connection_protocol=connection_protocol,
-                    my_did=my_did,
                 )
 
                 async with self.profile.session() as session:
