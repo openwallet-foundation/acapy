@@ -8,8 +8,10 @@ from bdd_support.agent_backchannel_client import (
     async_sleep,
 )
 
+
 def is_anoncreds(agent):
     return agent["agent"].wallet_type == "askar-anoncreds"
+
 
 BDD_EXTRA_AGENT_ARGS = os.getenv("BDD_EXTRA_AGENT_ARGS")
 
