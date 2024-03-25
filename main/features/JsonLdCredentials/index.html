@@ -885,7 +885,7 @@
           <li class="md-nav__item">
   <a href="#did-method" class="md-nav__link">
     <span class="md-ellipsis">
-      Did Method
+      DID Method
     </span>
   </a>
   
@@ -927,6 +927,15 @@
   <a href="#vc-api" class="md-nav__link">
     <span class="md-ellipsis">
       VC-API
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#external-suite-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      External Suite Provider
     </span>
   </a>
   
@@ -2344,7 +2353,7 @@
           <li class="md-nav__item">
   <a href="#did-method" class="md-nav__link">
     <span class="md-ellipsis">
-      Did Method
+      DID Method
     </span>
   </a>
   
@@ -2386,6 +2395,15 @@
   <a href="#vc-api" class="md-nav__link">
     <span class="md-ellipsis">
       VC-API
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#external-suite-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      External Suite Provider
     </span>
   </a>
   
@@ -2470,14 +2488,15 @@
 <p>Verifiable credentials are not around that long, so there aren't that many vocabularies ready to use. If you can't use one of the existing vocabularies it is still beneficial to lean on already defined lower level contexts. <a href="http://schema.org">http://schema.org</a> has a large registry of definitions that can be used to build new contexts. The example vocabularies linked above all make use of types from <a href="http://schema.org">http://schema.org</a>.</p>
 <p>For the remainder of this guide, we will be using the example <code>UniversityDegreeCredential</code> type and <code>https://www.w3.org/2018/credentials/examples/v1</code> context from the Verifiable Credential Data Model. You should not use this for production use cases.</p>
 <h3 id="signature-suite">Signature Suite<a class="headerlink" href="#signature-suite" title="Permanent link">&para;</a></h3>
-<p>Before issuing a credential you must determine a signature suite to use. ACA-Py currently supports two signature suites for issuing credentials:</p>
+<p>Before issuing a credential you must determine a signature suite to use. ACA-Py currently supports three signature suites for issuing credentials:</p>
 <ul>
 <li><a href="https://w3c-ccg.github.io/lds-ed25519-2018/"><code>Ed25519Signature2018</code></a> - Very well supported. No zero knowledge proofs or selective disclosure.</li>
+<li><a href="https://w3c.github.io/vc-di-eddsa/#ed25519signature2020-0"><code>Ed25519Signature2020</code></a> - Updated version of 2018 suite.</li>
 <li><a href="https://w3c-ccg.github.io/ldp-bbs2020/"><code>BbsBlsSignature2020</code></a> - Newer, but supports zero knowledge proofs and selective disclosure.</li>
 </ul>
 <p>Generally you should always use <code>BbsBlsSignature2020</code> as it allows the holder to derive a new credential during the proving, meaning it doesn't have to disclose all fields and doesn't have to reveal the signature.</p>
-<h3 id="did-method">Did Method<a class="headerlink" href="#did-method" title="Permanent link">&para;</a></h3>
-<p>Besides the JSON-LD context, we need a did to use for issuing the credential. ACA-Py currently supports two did methods for issuing credentials:</p>
+<h3 id="did-method">DID Method<a class="headerlink" href="#did-method" title="Permanent link">&para;</a></h3>
+<p>Besides the JSON-LD context, we need a DID to use for issuing the credential. ACA-Py currently supports two did methods for issuing credentials:</p>
 <ul>
 <li><code>did:sov</code> - Can only be used for <code>Ed25519Signature2018</code> signature suite.</li>
 <li><code>did:key</code> - Can be used for both <code>Ed25519Signature2018</code> and <code>BbsBlsSignature2020</code> signature suites.</li>
@@ -2606,6 +2625,10 @@
 <li><code>POST /vc/presentations/verify</code> -&gt; verifies a presentation</li>
 </ul>
 <p>To learn more about using these endpoints, please refer to the available <a href="../../demo/AriesPostmanDemo/#experimenting-with-the-vc-api-endpoints">postman collection</a>.</p>
+<h2 id="external-suite-provider">External Suite Provider<a class="headerlink" href="#external-suite-provider" title="Permanent link">&para;</a></h2>
+<p>It is possible to extend the signature suite support, including outsourcing signing JSON-LD Credentials to some other component (KMS, HSM, etc.), using the <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/d3ee92b1b86aff076b52f31eaecea59c18005079/aries_cloudagent/vc/vc_ld/external_suite.py#L27"><code>ExternalSuiteProvider</code> interface</a>. This interface can be implemented and registered via plugin. The plugged in provider will be used by ACA-Py's LDP-VC subsystem to create a <code>LinkedDataProof</code> object, which is responsible for signing normalized credential values.</p>
+<p>This interface enables taking advantage of ACA-Py's JSON-LD processing to construct and format the credential while exposing a simple interface to a plugin to make it responsible for signatures. This can also be combined with plugged in DID Methods, <code>VerificationKeyStrategy</code>, and other pluggable components.</p>
+<p>See this example project here for more details on the interface and its usage: <a href="https://github.com/dbluhm/acapy-ld-signer">https://github.com/dbluhm/acapy-ld-signer</a></p>
 
 
 
