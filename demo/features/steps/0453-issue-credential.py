@@ -1,23 +1,27 @@
-from behave import given, when, then
 import json
 
 from bdd_support.agent_backchannel_client import (
-    aries_container_create_schema_cred_def,
-    aries_container_check_exists_cred_def,
-    aries_container_issue_credential,
-    aries_container_receive_credential,
-    read_schema_data,
-    read_credential_data,
     agent_container_DELETE,
     agent_container_GET,
     agent_container_POST,
+    aries_container_check_exists_cred_def,
+    aries_container_create_schema_cred_def,
+    aries_container_issue_credential,
+    aries_container_receive_credential,
     async_sleep,
+    read_credential_data,
+    read_schema_data,
 )
+from behave import given, then, when
 from runners.support.agent import (
     DID_METHOD_KEY,
     KEY_TYPE_BLS,
     SIG_TYPE_BLS,
 )
+
+
+def is_anoncreds(agent):
+    return agent["agent"].wallet_type == "askar-anoncreds"
 
 
 # This step is defined in another feature file
@@ -167,9 +171,14 @@ def step_impl(context, holder):
     print("connection_id:", cred_exchange["cred_ex_record"]["connection_id"])
 
     # revoke the credential
-    revoke_status = agent_container_POST(
+    if is_anoncreds(agent):
+        endpoint = "/anoncreds/revocation/revoke"
+    else:
+        endpoint = "/revocation/revoke"
+
+    agent_container_POST(
         agent["agent"],
-        "/revocation/revoke",
+        endpoint,
         data={
             "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
             "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],

@@ -31,7 +31,7 @@ in the [aries-acapy-plugins] repository. If you think that the AnonCreds method 
 be part of ACA-Py core, get your plugin complete and raise the question of adding it to ACA-Py. The
 Maintainers will be happy to discuss the merits of the idea. No promises though.
 
-[ACA-Py plugins]: ../Plugins.md
+[ACA-Py plugins]: ./PlugIns.md
 [aries-acapy-plugins]: https://github.com/hyperledger/aries-acapy-plugins
 
 Your AnonCreds plugin will have an [initialization routine] that will register your AnonCreds

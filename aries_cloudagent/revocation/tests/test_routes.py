@@ -1,14 +1,16 @@
 import os
-import pytest
 import shutil
-
-from aiohttp.web import HTTPBadRequest, HTTPNotFound
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
+
+import pytest
+from aiohttp.web import HTTPBadRequest, HTTPNotFound
 
 from aries_cloudagent.core.in_memory import InMemoryProfile
 from aries_cloudagent.revocation.error import RevocationError
+from aries_cloudagent.tests import mock
 
+from ...admin.request_context import AdminRequestContext
+from ...askar.profile_anon import AskarAnoncredsProfile
 from ...storage.in_memory import InMemoryStorage
 from .. import routes as test_module
 
@@ -1049,6 +1051,85 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             with self.assertRaises(HTTPNotFound):
                 result = await test_module.set_rev_reg_state(self.request)
             mock_json_response.assert_not_called()
+
+    async def test_wrong_profile_403(self):
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet.type": "askar"},
+            profile_class=AskarAnoncredsProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            context=self.context,
+        )
+
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+            }
+        )
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.revoke(self.request)
+
+        self.request.json = mock.CoroutineMock()
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.publish_revocations(self.request)
+
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.clear_pending_revocations(self.request)
+
+        CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "max_cred_num": "1000",
+                "credential_definition_id": CRED_DEF_ID,
+            }
+        )
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.create_rev_reg(self.request)
+
+        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
+            self.test_did, self.test_did
+        )
+        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_rev_reg(self.request)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_rev_reg_issued(self.request)
+
+        CRED_REV_ID = "1"
+        self.request.query = {
+            "rev_reg_id": REV_REG_ID,
+            "cred_rev_id": CRED_REV_ID,
+        }
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_cred_rev_record(self.request)
+
+        self.request.match_info = {"cred_def_id": CRED_DEF_ID}
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_active_rev_reg(self.request)
+
+        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_tails_file(self.request)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.upload_tails_file(self.request)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.send_rev_reg_def(self.request)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.send_rev_reg_entry(self.request)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.update_rev_reg(self.request)
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.set_rev_reg_state(self.request)
 
     async def test_register(self):
         mock_app = mock.MagicMock()

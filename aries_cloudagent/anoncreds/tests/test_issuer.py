@@ -129,7 +129,7 @@ def get_mock_schema_result(
 class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar-anoncreds"},
+            settings={"wallet.type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,
         )
         self.issuer = test_module.AnonCredsIssuer(self.profile)

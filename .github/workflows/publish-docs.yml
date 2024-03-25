@@ -41,6 +41,8 @@ jobs:
           for i in *.md; do sed -e "s#docs/#./#g" $i >docs/$i; done
           # Fix references in DevReadMe.md to moved files
           sed -e "s#\.\./\.\./#../#" docs/features/DevReadMe.md >tmp.md; mv tmp.md docs/features/DevReadMe.md
+          # Fix image references in demo documents so they work in GitHub and mkdocs
+          for i in docs/demo/AriesOpenAPIDemo.md docs/demo/AliceGetsAPhone.md; do sed -e "s#src=.collateral#src=\"../collateral#" $i >$i.tmp; mv $i.tmp $i; done
           # Populate overrides for the current version, and then remove to not apply if VERSION is main branch
           OVERRIDE=overrides/main.html
           echo -e "{% extends \"base.html\" %}\n\n{% block outdated %}\n  You are viewing the documentation for ACA-Py Release $VERSION.\n{% endblock %}" >$OVERRIDE

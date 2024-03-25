@@ -31,45 +31,45 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
 ```yaml
 - id: localVON
   is_production: false
-  genesis_url: 'http://host.docker.internal:9000/genesis'
+  genesis_url: "http://host.docker.internal:9000/genesis"
 - id: bcovrinTest
   is_production: true
   is_write: true
-  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+  genesis_url: "http://test.bcovrin.vonx.io/genesis"
 ```
 
 ```yaml
 - id: localVON
   is_production: false
-  genesis_url: 'http://host.docker.internal:9000/genesis'
+  genesis_url: "http://host.docker.internal:9000/genesis"
 - id: bcovrinTest
   is_production: true
   is_write: true
-  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
-  endorser_did: '9QPa6tHvBHttLg6U4xvviv'
-  endorser_alias: 'endorser_test'
+  genesis_url: "http://test.bcovrin.vonx.io/genesis"
+  endorser_did: "9QPa6tHvBHttLg6U4xvviv"
+  endorser_alias: "endorser_test"
 - id: greenlightDev
   is_production: true
   is_write: true
-  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+  genesis_url: "http://test.bcovrin.vonx.io/genesis"
 ```
 
 Note: `is_write` property means that the ledger is write configurable. With reference to the above config example, both `bcovrinTest` and (the no longer available -- in the above its pointing to BCovrin Test as well) `greenlightDev` ledgers are write configurable. By default, on startup `bcovrinTest` will be the write ledger as it is the topmost write configurable production ledger, [more details](#write-requests) regarding the selection rule. Using `PUT /ledger/{ledger_id}/set-write-ledger` endpoint, either `greenlightDev` and `bcovrinTest` can be set as the write ledger.
 
 > Note 2: The `greenlightDev` ledger is no longer available, so both ledger entries in the example above and below
-intentionally point to the same ledger URL.
+> intentionally point to the same ledger URL.
 
 ```yaml
 - id: localVON
   is_production: false
   is_write: true
-  genesis_url: 'http://host.docker.internal:9000/genesis'
+  genesis_url: "http://host.docker.internal:9000/genesis"
 - id: bcovrinTest
   is_production: true
-  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+  genesis_url: "http://test.bcovrin.vonx.io/genesis"
 - id: greenlightDev
   is_production: true
-  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+  genesis_url: "http://test.bcovrin.vonx.io/genesis"
 ```
 
 Note: For instance with regards to example config above, `localVON` will be the write ledger, as there are no production ledgers which are configurable it will choose the topmost write configurable non production ledger.
@@ -80,19 +80,19 @@ For each ledger, the required properties are as following:
 
 - `id`\*: The id (or name) of the ledger, can also be used as the pool name if none provided
 - `is_production`\*: Whether the ledger is a production ledger. This is used by the pool selector algorithm to know which ledger to use for certain interactions (i.e. prefer production ledgers over non-production ledgers)
-  
+
 For connecting to ledger, one of the following needs to be specified:
 
 - `genesis_file`: The path to the genesis file to use for connecting to an Indy ledger.
 - `genesis_transactions`: String of genesis transactions to use for connecting to an Indy ledger.
 - `genesis_url`: The url from which to download the genesis transactions to use for connecting to an Indy ledger.
+- `is_write`: Whether this ledger is writable. At least one write ledger must be specified, unless running in read-only mode. Multiple write ledgers can be specified in config.
 
 Optional properties:
 
 - `pool_name`: name of the indy pool to be opened
 - `keepalive`: how many seconds to keep the ledger open
 - `socks_proxy`
-- `is_write`: Whether this ledger is writable. It requires at least one write ledger specified. Multiple write ledgers can be specified in config.
 - `endorser_did`: Endorser public DID registered on the ledger, needed for supporting Endorser protocol at multi-ledger level.
 - `endorser_alias`: Endorser alias for this ledger, needed for supporting Endorser protocol at multi-ledger level.
 
@@ -103,13 +103,13 @@ Note: Both `endorser_did` and `endorser_alias` are part of the endorser info. Wh
 Multi-ledger related actions are grouped under the `ledger` topic in the SwaggerUI.
 
 - GET `/ledger/config`:
-Returns the multiple ledger configuration currently in use
+  Returns the multiple ledger configuration currently in use
 - GET `/ledger/get-write-ledger`:
-Returns the current active/set `write_ledger's` `ledger_id`
+  Returns the current active/set `write_ledger's` `ledger_id`
 - GET `/ledger/get-write-ledgers`:
-Returns list of available `write_ledger's` `ledger_id`
+  Returns list of available `write_ledger's` `ledger_id`
 - PUT `/ledger/{ledger_id}/set-write-ledger`:
-Set active `write_ledger's` `ledger_id`
+  Set active `write_ledger's` `ledger_id`
 
 ## Ledger Selection
 
@@ -162,11 +162,11 @@ When you run in multi-ledger mode, ACA-Py will use the `pool-name` (or `id`) spe
 If you are running against a ledger in `write` mode, and the ledger requires you to accept a Transaction Author Agreement (TAA), ACA-Py stores the TAA acceptance
 status in the wallet in a non-secrets record, using the ledger's `pool_name` as a key.
 
-This means that if you are upgrading from single-ledger to multi-ledger mode, you will need to *either*:
+This means that if you are upgrading from single-ledger to multi-ledger mode, you will need to _either_:
 
 - set the `id` for your writable ledger to `default` (in your `ledgers.yaml` file)
 
-*or*:
+_or_:
 
 - re-accept the TAA once you restart your ACA-Py in multi-ledger mode
 
@@ -209,7 +209,6 @@ These changes are made here:
 - `./aries_cloudagent/resolver/routes.py`
 - `./aries_cloudagent/revocation/routes.py`
 
-
 ## Known Issues
 
-* When in multi-ledger mode and switching ledgers (e.g.: the agent is registered on Ledger A and has published its DID there, and now wants to "move" to Ledger B) there is an [issue](https://github.com/hyperledger/aries-cloudagent-python/issues/2473) that will cause the registration to the new ledger to fail.
+- When in multi-ledger mode and switching ledgers (e.g.: the agent is registered on Ledger A and has published its DID there, and now wants to "move" to Ledger B) there is an [issue](https://github.com/hyperledger/aries-cloudagent-python/issues/2473) that will cause the registration to the new ledger to fail.

@@ -4,8 +4,16 @@ shopt -s nocasematch
 
 cd $(dirname $0)
 
-AGENT="$1"
-shift
+RESOLUTION="$1"
+# Check if RESOLUTION is not provided or not a valid option
+if [ -z "$RESOLUTION" ] || [ "$RESOLUTION" != "build" -a "$RESOLUTION" != "run" ]; then
+  echo "Resolution not specified or invalid."
+  AGENT="$1"  # If RESOLUTION is not provided or invalid, assume argument is AGENT
+else
+  shift  # Shift only if RESOLUTION is provided and valid
+  AGENT="$1"
+fi
+shift  # Shift again to remove AGENT from the arguments
 ARGS=""
 
 TRACE_ENABLED=""
@@ -20,6 +28,15 @@ if [ -z "$DOCKER_NET" ]; then
   DOCKER_NET="bridge"
 fi
 DOCKER_VOL=""
+
+# Set default platform to linux/amd64 when running on Arm based MAC since there are no arm based images available currently.
+# Must also use the Rosetta 2 software, which can be installed by running `softwareupdate --install-rosetta` from the Mac command line
+if [[ $OSTYPE == 'darwin'* ]]; then
+  architecture=$(uname -m)
+  if [[ "${architecture}" == 'arm'* ]] || [[ "${architecture}" == 'aarch'* ]]; then
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64
+  fi
+fi
 
 j=1
 for i in "$@"
@@ -107,8 +124,9 @@ do
     cat <<EOF
 
 Usage:
-   ./demo_run <agent> [OPTIONS]
+   ./demo_run <resolution> <agent> [OPTIONS]
 
+   - <resolution> is one of the docker option to build or run.
    - <agent> is one of alice, faber, acme, performance.
    - Options:
       --events - display on the terminal the webhook events from the ACA-Py agent.
@@ -127,6 +145,19 @@ EOF
   esac
   ARGS="${ARGS:+$ARGS }$i"
 done
+
+if [ -z "$RESOLUTION" ]; then
+  echo "Resolution not specified."
+elif [ "$RESOLUTION" = "build" ]; then
+  DOCKER_RESOLUTION="build"
+  echo "Agent will be build."
+elif [ "$RESOLUTION" = "run" ]; then
+  DOCKER_RESOLUTION="run"
+  echo "Agent will be run."
+else
+  echo "You can utilize the 'build' option to build the agent or the 'run' option to run the agent."
+fi
+
 
 if [ "$AGENT" = "faber" ]; then
   AGENT_MODULE="faber"
@@ -155,9 +186,18 @@ if [ ! -z "$AGENT_PORT_OVERRIDE" ]; then
   AGENT_PORT_RANGE="$AGENT_PORT-$AGENT_PORT_END"
 fi
 
-echo "Preparing agent image..."
-docker build -t acapy-base -f ../docker/Dockerfile .. || exit 1
-docker build -t faber-alice-demo -f ../docker/Dockerfile.demo --build-arg from_image=acapy-base .. || exit 1
+# 1. Build the agent image
+if [ -z "$DOCKER_RESOLUTION" ] || [ "$DOCKER_RESOLUTION" = "build" ]; then
+  echo "Preparing agent image..."
+  docker build -t acapy-base -f ../docker/Dockerfile .. || exit 1
+  docker build -t faber-alice-demo -f ../docker/Dockerfile.demo --build-arg from_image=acapy-base .. || exit 1
+fi
+
+if [ "$DOCKER_RESOLUTION" = "build" ]; then
+  exit 1
+else
+  echo "You can utilize the 'build' option to build the agent or the 'run' option to run the agent."
+fi
 
 if [ ! -z "$DOCKERHOST" ]; then
   # provided via APPLICATION_URL environment variable
@@ -263,8 +303,13 @@ fi
 DOCKER=${DOCKER:-docker}
 
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
-  --network=${DOCKER_NET} \
-  -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
-  ${DOCKER_VOL} \
-  $DOCKER_ENV \
-  faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $ARGS
+    --network=${DOCKER_NET} \
+    -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
+    ${DOCKER_VOL} \
+    $(if [ "$DOCKER_RESOLUTION" = "run" ]; then
+      echo "-v $(pwd)/../aries_cloudagent:/home/aries/aries_cloudagent \
+      -v $(pwd)/../scripts:/home/aries/scripts \
+      -v $(pwd)/../demo:/home/aries/demo"
+    fi) \
+    $DOCKER_ENV \
+    faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $ARGS

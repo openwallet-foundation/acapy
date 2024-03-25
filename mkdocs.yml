@@ -109,6 +109,7 @@ nav:
     - Using W3C JSON-LD Credentials: demo/AliceWantsAJsonCredential.md
     - DIY -- ACME Controller Workshop: demo/AcmeDemoWorkshop.md
     - Aries Using Postman Demo: demo/AriesPostmanDemo.md
+    - Reusing a Connection Between Agents: demo/ReusingAConnection.md
 - Getting Started:
     - Becoming an Indy/Aries Developer: gettingStarted/README.md
     - Hyperledger Indy Basics: gettingStarted/IndyBasics.md

@@ -1,3 +1,4 @@
+@RFC0160
 Feature: RFC 0160 Aries agent connection functions
 
    @T001-RFC0160
@@ -13,10 +14,52 @@ Feature: RFC 0160 Aries agent connection functions
 
       @GHA @UnqualifiedDids
       Examples:
-         | Acme_capabilities           | Acme_extra        | Bob_capabilities | Bob_extra        |
-         | --public-did --did-exchange | --emit-did-peer-2 | --did-exchange   |--emit-did-peer-2 |
-         | --public-did --did-exchange | --emit-did-peer-4 | --did-exchange   |--emit-did-peer-4 |
-         | --public-did --did-exchange | --emit-did-peer-2 | --did-exchange   |--emit-did-peer-4 |
-         | --public-did --did-exchange | --emit-did-peer-4 | --did-exchange   |--emit-did-peer-2 |
-         | --public-did --did-exchange --reuse-connections | --emit-did-peer-2 | --did-exchange   |--emit-did-peer-4 |
-         | --public-did --did-exchange --reuse-connections | --emit-did-peer-4 | --did-exchange   |--emit-did-peer-2 |
+         | Acme_capabilities                               | Acme_extra        | Bob_capabilities                   | Bob_extra         |
+         | --public-did --did-exchange                     | --emit-did-peer-2 | --did-exchange                     | --emit-did-peer-2 |
+         | --public-did --did-exchange                     | --emit-did-peer-4 | --did-exchange                     | --emit-did-peer-4 |
+         | --public-did --did-exchange --reuse-connections | --emit-did-peer-4 | --did-exchange --reuse-connections | --emit-did-peer-4 |
+
+      @UnqualifiedDids
+      Examples:
+         | Acme_capabilities                               | Acme_extra        | Bob_capabilities                   | Bob_extra         |
+         | --public-did --did-exchange                     | --emit-did-peer-2 | --did-exchange                     | --emit-did-peer-4 |
+         | --public-did --did-exchange --reuse-connections | --emit-did-peer-4 | --did-exchange --reuse-connections | --emit-did-peer-2 |
+         | --public-did --did-exchange                     | --emit-did-peer-4 | --did-exchange                     | --emit-did-peer-2 |
+
+      @PublicDidReuse
+      Examples:
+         | Acme_capabilities                               | Acme_extra        | Bob_capabilities                   | Bob_extra         |
+         | --public-did --did-exchange                     |                   | --did-exchange                     |                   |
+         | --public-did --did-exchange --reuse-connections |                   | --did-exchange --reuse-connections |                   |
+
+      @DidPeerConnectionReuse
+      Examples:
+         | Acme_capabilities                               | Acme_extra        | Bob_capabilities                   | Bob_extra         |
+         | --did-exchange                                  | --emit-did-peer-2 |                                    | --emit-did-peer-2 |
+         | --did-exchange --reuse-connections              | --emit-did-peer-2 | --reuse-connections                | --emit-did-peer-2 |
+         | --did-exchange                                  | --emit-did-peer-4 |                                    | --emit-did-peer-4 |
+         | --did-exchange --reuse-connections              | --emit-did-peer-4 | --reuse-connections                | --emit-did-peer-4 |
+
+      @GHA @MultiUseConnectionReuse
+      Examples:
+         | Acme_capabilities                                                       | Acme_extra        | Bob_capabilities                   | Bob_extra         |
+         | --did-exchange --multi-use-invitations                                  | --emit-did-peer-2 |                                    | --emit-did-peer-2 |
+         | --did-exchange --multi-use-invitations --reuse-connections              | --emit-did-peer-4 | --reuse-connections                | --emit-did-peer-4 |
+         | --public-did --did-exchange --multi-use-invitations                     | --emit-did-peer-2 | --did-exchange                     | --emit-did-peer-4 |
+         | --public-did --did-exchange --multi-use-invitations --reuse-connections | --emit-did-peer-4 | --did-exchange --reuse-connections | --emit-did-peer-2 |
+
+      @MultiUseConnectionReuse
+      Examples:
+         | Acme_capabilities                                                       | Acme_extra        | Bob_capabilities                   | Bob_extra         |
+         | --did-exchange --multi-use-invitations --reuse-connections              | --emit-did-peer-2 | --reuse-connections                | --emit-did-peer-2 |
+         | --did-exchange --multi-use-invitations                                  | --emit-did-peer-4 |                                    | --emit-did-peer-4 |
+         | --public-did --did-exchange --multi-use-invitations                     | --emit-did-peer-4 | --did-exchange                     | --emit-did-peer-2 |
+         | --public-did --did-exchange --multi-use-invitations --reuse-connections | --emit-did-peer-2 | --did-exchange --reuse-connections | --emit-did-peer-4 |
+
+      @GHA @WalletType_Askar_AnonCreds
+      Examples:
+         | Acme_capabilities                                                             | Acme_extra        | Bob_capabilities                                                 | Bob_extra         |
+         | --public-did --did-exchange --wallet-type askar-anoncreds                     | --emit-did-peer-2 | --did-exchange --wallet-type askar-anoncreds                     | --emit-did-peer-2 |
+         | --public-did --did-exchange --wallet-type askar-anoncreds --reuse-connections | --emit-did-peer-4 | --did-exchange --wallet-type askar-anoncreds --reuse-connections | --emit-did-peer-4 |
+         | --did-exchange --wallet-type askar-anoncreds                                  | --emit-did-peer-2 | --wallet-type askar-anoncreds                                    | --emit-did-peer-2 |
+         | --did-exchange --wallet-type askar-anoncreds --reuse-connections              | --emit-did-peer-4 | --wallet-type askar-anoncreds --reuse-connections                | --emit-did-peer-4 |
