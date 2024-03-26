@@ -1,5 +1,6 @@
 """Represents a feature discovery query message."""
 
+from typing import Optional
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
@@ -22,7 +23,9 @@ class Query(AgentMessage):
         message_type = QUERY
         schema_class = "QuerySchema"
 
-    def __init__(self, *, query: str = None, comment: str = None, **kwargs):
+    def __init__(
+        self, *, query: Optional[str] = None, comment: Optional[str] = None, **kwargs
+    ):
         """Initialize query message object.
 
         Args:
