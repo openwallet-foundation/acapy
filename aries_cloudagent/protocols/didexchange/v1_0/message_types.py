@@ -1,12 +1,18 @@
 """Message type identifiers for Connections."""
 
+from ....messaging.util import get_proto_default_version
 from ...didcomm_prefix import DIDCommPrefix
+from ..definition import versions
 
 SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/tree/"
     "25464a5c8f8a17b14edaa4310393df6094ace7b0/features/0023-did-exchange"
 )
-ARIES_PROTOCOL = "didexchange/1.0"
+# Default Version
+DEFAULT_VERSION = get_proto_default_version(versions, 1)
+DIDEX_1_0 = "didexchange/1.0"
+DIDEX_1_1 = "didexchange/1.1"
+ARIES_PROTOCOL = f"didexchange/{DEFAULT_VERSION}"
 
 # Message types
 DIDX_REQUEST = f"{ARIES_PROTOCOL}/request"

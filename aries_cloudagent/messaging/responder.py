@@ -19,6 +19,9 @@ from ..transport.outbound.status import OutboundSendStatus
 from .base_message import BaseMessage
 
 SKIP_ACTIVE_CONN_CHECK_MSG_TYPES = [
+    "didexchange/1.1/request",
+    "didexchange/1.1/response",
+    "didexchange/1.1/problem_report",
     "didexchange/1.0/request",
     "didexchange/1.0/response",
     "didexchange/1.0/problem_report",

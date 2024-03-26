@@ -1,9 +1,7 @@
 """An invitation content message."""
 
-from collections import namedtuple
 from enum import Enum
-from re import sub
-from typing import Optional, Sequence, Text, Union
+from typing import NamedTuple, Optional, Sequence, Set, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import EXCLUDE, ValidationError, fields, post_dump, validates_schema
@@ -17,53 +15,64 @@ from .....messaging.valid import DIDValidation
 from .....wallet.util import b64_to_bytes, bytes_to_b64
 from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ....didcomm_prefix import DIDCommPrefix
-from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1, DIDEX_1_0
 from ..message_types import DEFAULT_VERSION, INVITATION
 from .service import Service
 
-HSProtoSpec = namedtuple("HSProtoSpec", "rfc name aka")
+
+class HSProtoSpec(NamedTuple):
+    """Handshake protocol specification."""
+
+    name: str
+    aka: Set[str]
 
 
 class HSProto(Enum):
     """Handshake protocol enum for invitation message."""
 
     RFC160 = HSProtoSpec(
-        160,
         CONN_PROTO,
         {"connection", "connections", "conn", "conns", "rfc160", "160", "old"},
     )
     RFC23 = HSProtoSpec(
-        23,
-        DIDX_PROTO,
-        {"didexchange", "didx", "didex", "rfc23", "23", "new"},
+        DIDEX_1_0,
+        {
+            "https://didcomm.org/didexchange/1.0",
+            "didexchange/1.0",
+            "didexchange",
+            "did-exchange",
+            "didx",
+            "didex",
+            "rfc23",
+            "rfc-23",
+            "23",
+            "new",
+        },
+    )
+    DIDEX_1_1 = HSProtoSpec(
+        DIDEX_1_1,
+        {
+            "https://didcomm.org/didexchange/1.1",
+            "didexchange/1.1",
+        },
     )
 
     @classmethod
-    def get(cls, label: Union[str, "HSProto"]) -> "HSProto":
+    def get(cls, label: Union[str, "HSProto"]) -> Optional["HSProto"]:
         """Get handshake protocol enum for label."""
 
         if isinstance(label, str):
             for hsp in HSProto:
                 if (
                     DIDCommPrefix.unqualify(label) == hsp.name
-                    or sub("[^a-zA-Z0-9]+", "", label.lower()) in hsp.aka
+                    or label.lower() in hsp.aka
                 ):
                     return hsp
 
         elif isinstance(label, HSProto):
             return label
 
-        elif isinstance(label, int):
-            for hsp in HSProto:
-                if hsp.rfc == label:
-                    return hsp
-
         return None
-
-    @property
-    def rfc(self) -> int:
-        """Accessor for RFC."""
-        return self.value.rfc
 
     @property
     def name(self) -> str:
@@ -71,7 +80,7 @@ class HSProto(Enum):
         return self.value.name
 
     @property
-    def aka(self) -> int:
+    def aka(self) -> Set[str]:
         """Accessor for also-known-as."""
         return self.value.aka
 

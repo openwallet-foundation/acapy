@@ -1,8 +1,10 @@
 """Message and inner object type identifiers for Out of Band messages."""
 
-from ....core.util import get_proto_default_version
+from ....messaging.util import get_proto_default_version
 
 from ...didcomm_prefix import DIDCommPrefix
+
+from ..definition import versions
 
 SPEC_URI = (
     "https://github.com/hyperledger/aries-rfcs/tree/"
@@ -10,9 +12,7 @@ SPEC_URI = (
 )
 
 # Default Version
-DEFAULT_VERSION = get_proto_default_version(
-    "aries_cloudagent.protocols.out_of_band.definition", 1
-)
+DEFAULT_VERSION = get_proto_default_version(versions, 1)
 
 # Message types
 INVITATION = f"out-of-band/{DEFAULT_VERSION}/invitation"

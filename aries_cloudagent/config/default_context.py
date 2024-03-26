@@ -10,7 +10,6 @@ from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
-from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
 from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
 from ..resolver.did_resolver import DIDResolver
@@ -65,9 +64,6 @@ class DefaultContextBuilder(ContextBuilder):
 
         await self.bind_providers(context)
         await self.load_plugins(context)
-
-        # Set DIDComm prefix
-        DIDCommPrefix.set(context.settings)
 
         return context
 

@@ -4,7 +4,7 @@ A thread decorator identifies a message that may require additional
 context from previous messages.
 """
 
-from typing import Mapping
+from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, fields
 
@@ -23,10 +23,10 @@ class ThreadDecorator(BaseModel):
     def __init__(
         self,
         *,
-        thid: str = None,
-        pthid: str = None,
-        sender_order: int = None,
-        received_orders: Mapping = None,
+        thid: Optional[str] = None,
+        pthid: Optional[str] = None,
+        sender_order: Optional[int] = None,
+        received_orders: Optional[Mapping] = None,
     ):
         """Initialize a ThreadDecorator instance.
 

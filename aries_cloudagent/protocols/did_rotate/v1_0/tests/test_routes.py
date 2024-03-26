@@ -5,6 +5,7 @@ from .....admin.request_context import AdminRequestContext
 from .....protocols.didcomm_prefix import DIDCommPrefix
 from .....storage.error import StorageNotFoundError
 from .....tests import mock
+from ..messages import Hangup, Rotate
 from .. import message_types as test_message_types
 from .. import routes as test_module
 from ..tests import MockConnRecord, test_conn_id
@@ -15,20 +16,12 @@ test_valid_rotate_request = {
 
 
 def generate_mock_hangup_message():
-    schema = test_module.HangupMessageSchema()
-    msg = schema.load({})
-
-    msg._id = "test-message-id"
-    msg._type = test_message_types.HANGUP
+    msg = Hangup(_id="test-message-id")
     return msg
 
 
 def generate_mock_rotate_message():
-    schema = test_module.RotateMesageSchema()
-    msg = schema.load(test_valid_rotate_request)
-
-    msg._id = "test-message-id"
-    msg._type = test_message_types.ROTATE
+    msg = Rotate(_id="test-message-id", **test_valid_rotate_request)
     return msg
 
 
@@ -73,7 +66,7 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "@id": "test-message-id",
-                    "@type": DIDCommPrefix.OLD.value + "/" + test_message_types.ROTATE,
+                    "@type": DIDCommPrefix.NEW.value + "/" + test_message_types.ROTATE,
                     **test_valid_rotate_request,
                 }
             )
@@ -101,7 +94,7 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with(
                 {
                     "@id": "test-message-id",
-                    "@type": DIDCommPrefix.OLD.value + "/" + test_message_types.HANGUP,
+                    "@type": DIDCommPrefix.NEW.value + "/" + test_message_types.HANGUP,
                 }
             )
 

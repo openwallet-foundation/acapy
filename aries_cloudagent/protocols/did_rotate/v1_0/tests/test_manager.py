@@ -63,7 +63,7 @@ class TestDIDRotateManager(IsolatedAsyncioTestCase):
             mock_conn_record.delete_record.assert_called_once()
             mock_send.assert_called_once()
             assert (
-                msg._type == DIDCommPrefix.OLD.value + "/" + test_message_types.HANGUP
+                msg._type == DIDCommPrefix.NEW.value + "/" + test_message_types.HANGUP
             )
 
     async def test_receive_hangup(self):
@@ -83,7 +83,7 @@ class TestDIDRotateManager(IsolatedAsyncioTestCase):
             msg = await self.manager.rotate_my_did(mock_conn_record, test_to_did)
             mock_send.assert_called_once()
             assert (
-                msg._type == DIDCommPrefix.OLD.value + "/" + test_message_types.ROTATE
+                msg._type == DIDCommPrefix.NEW.value + "/" + test_message_types.ROTATE
             )
 
     async def test_receive_rotate(self):
