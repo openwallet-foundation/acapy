@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp_apispec import docs, json_schema, match_info_schema, response_schema
 from marshmallow import fields
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.openapi import OpenAPISchema
@@ -46,6 +47,7 @@ class DIDRotateRequestJSONSchema(OpenAPISchema):
 @response_schema(
     RotateMesageSchema(), 200, description="Rotate agent message for observer"
 )
+@tenant_authentication
 async def rotate(request: web.BaseRequest):
     """Request to rotate a DID."""
 
@@ -77,6 +79,7 @@ async def rotate(request: web.BaseRequest):
 @response_schema(
     HangupMessageSchema(), 200, description="Hangup agent message for observer"
 )
+@tenant_authentication
 async def hangup(request: web.BaseRequest):
     """Hangup a DID rotation."""
 
