@@ -6,7 +6,6 @@ import re
 import uuid
 import warnings
 import weakref
-from hmac import compare_digest
 from typing import Callable, Coroutine, Optional, Pattern, Sequence, cast
 
 import aiohttp_cors
@@ -18,7 +17,6 @@ from aiohttp_apispec import (
     setup_aiohttp_apispec,
     validation_middleware,
 )
-
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
@@ -29,12 +27,12 @@ from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
-from ..messaging.valid import UUIDFour
 from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.queue.basic import BasicMessageQueue
+from ..utils import general as general_utils
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
@@ -218,13 +216,6 @@ async def debug_middleware(request: web.BaseRequest, handler: Coroutine):
     return await handler(request)
 
 
-def const_compare(string1, string2):
-    """Compare two strings in constant time."""
-    if string1 is None or string2 is None:
-        return False
-    return compare_digest(string1.encode(), string2.encode())
-
-
 class AdminServer(BaseAdminServer):
     """Admin HTTP server class."""
 
@@ -318,74 +309,74 @@ class AdminServer(BaseAdminServer):
 
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
-        if self.admin_api_key:
+        # if self.admin_api_key:
 
-            @web.middleware
-            async def check_token(request: web.Request, handler):
-                header_admin_api_key = request.headers.get("x-api-key")
-                valid_key = const_compare(self.admin_api_key, header_admin_api_key)
+        #     @web.middleware
+        #     async def check_token(request: web.Request, handler):
+        #         header_admin_api_key = request.headers.get("x-api-key")
+        #         valid_key = const_compare(self.admin_api_key, header_admin_api_key)
 
-                # We have to allow OPTIONS method access to paths without a key since
-                # browsers performing CORS requests will never include the original
-                # x-api-key header from the method that triggered the preflight
-                # OPTIONS check.
-                if (
-                    valid_key
-                    or is_unprotected_path(request.path)
-                    or (request.method == "OPTIONS")
-                ):
-                    return await handler(request)
-                else:
-                    raise web.HTTPUnauthorized()
+        #         # We have to allow OPTIONS method access to paths without a key since
+        #         # browsers performing CORS requests will never include the original
+        #         # x-api-key header from the method that triggered the preflight
+        #         # OPTIONS check.
+        #         if (
+        #             valid_key
+        #             or is_unprotected_path(request.path)
+        #             or (request.method == "OPTIONS")
+        #         ):
+        #             return await handler(request)
+        #         else:
+        #             raise web.HTTPUnauthorized()
 
-            middlewares.append(check_token)
+        #     middlewares.append(check_token)
 
         collector = self.context.inject_or(Collector)
 
-        if self.multitenant_manager:
+        # if self.multitenant_manager:
 
-            @web.middleware
-            async def check_multitenant_authorization(request: web.Request, handler):
-                authorization_header = request.headers.get("Authorization")
-                path = request.path
+        #     @web.middleware
+        #     async def check_multitenant_authorization(request: web.Request, handler):
+        #         authorization_header = request.headers.get("Authorization")
+        #         path = request.path
 
-                is_multitenancy_path = path.startswith("/multitenancy")
-                is_server_path = path in self.server_paths or path == "/features"
+        #         is_multitenancy_path = path.startswith("/multitenancy")
+        #         is_server_path = path in self.server_paths or path == "/features"
 
-                # subwallets are not allowed to access multitenancy routes
-                if authorization_header and is_multitenancy_path:
-                    raise web.HTTPUnauthorized()
+        #         # subwallets are not allowed to access multitenancy routes
+        #         if authorization_header and is_multitenancy_path:
+        #             raise web.HTTPUnauthorized()
 
-                base_limited_access_path = (
-                    re.match(
-                        f"^/connections/(?:receive-invitation|{UUIDFour.PATTERN})", path
-                    )
-                    or path.startswith("/out-of-band/receive-invitation")
-                    or path.startswith("/mediation/requests/")
-                    or re.match(
-                        f"/mediation/(?:request/{UUIDFour.PATTERN}|"
-                        f"{UUIDFour.PATTERN}/default-mediator)",
-                        path,
-                    )
-                    or path.startswith("/mediation/default-mediator")
-                    or self._matches_additional_routes(path)
-                )
+        #         base_limited_access_path = (
+        #             re.match(
+        #                 f"^/connections/(?:receive-invitation|{UUIDFour.PATTERN})", path
+        #             )
+        #             or path.startswith("/out-of-band/receive-invitation")
+        #             or path.startswith("/mediation/requests/")
+        #             or re.match(
+        #                 f"/mediation/(?:request/{UUIDFour.PATTERN}|"
+        #                 f"{UUIDFour.PATTERN}/default-mediator)",
+        #                 path,
+        #             )
+        #             or path.startswith("/mediation/default-mediator")
+        #             or self._matches_additional_routes(path)
+        #         )
 
-                # base wallet is not allowed to perform ssi related actions.
-                # Only multitenancy and general server actions
-                if (
-                    not authorization_header
-                    and not is_multitenancy_path
-                    and not is_server_path
-                    and not is_unprotected_path(path)
-                    and not base_limited_access_path
-                    and not (request.method == "OPTIONS")  # CORS fix
-                ):
-                    raise web.HTTPUnauthorized()
+        #         # base wallet is not allowed to perform ssi related actions.
+        #         # Only multitenancy and general server actions
+        #         if (
+        #             not authorization_header
+        #             and not is_multitenancy_path
+        #             and not is_server_path
+        #             and not is_unprotected_path(path)
+        #             and not base_limited_access_path
+        #             and not (request.method == "OPTIONS")  # CORS fix
+        #         ):
+        #             raise web.HTTPUnauthorized()
 
-                return await handler(request)
+        #         return await handler(request)
 
-            middlewares.append(check_multitenant_authorization)
+        #     middlewares.append(check_multitenant_authorization)
 
         @web.middleware
         async def setup_context(request: web.Request, handler):
@@ -793,7 +784,7 @@ class AdminServer(BaseAdminServer):
         else:
             header_admin_api_key = request.headers.get("x-api-key")
             # authenticated via http header?
-            queue.authenticated = const_compare(
+            queue.authenticated = general_utils.const_compare(
                 header_admin_api_key, self.admin_api_key
             )
 
@@ -838,7 +829,7 @@ class AdminServer(BaseAdminServer):
                                 LOGGER.exception(
                                     "Exception in websocket receiving task:"
                                 )
-                            if self.admin_api_key and const_compare(
+                            if self.admin_api_key and general_utils.const_compare(
                                 self.admin_api_key, msg_api_key
                             ):
                                 # authenticated via websocket message
