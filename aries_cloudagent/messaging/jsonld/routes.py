@@ -2,10 +2,10 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
+from marshmallow import INCLUDE, Schema, fields
 from pydid.verification_method import Ed25519VerificationKey2018
 
-from marshmallow import INCLUDE, Schema, fields
-
+from ...admin.decorators.auth import tenant_authentication
 from ...admin.request_context import AdminRequestContext
 from ...config.base import InjectionError
 from ...resolver.base import ResolverError
@@ -66,6 +66,7 @@ class SignResponseSchema(OpenAPISchema):
 )
 @request_schema(SignRequestSchema())
 @response_schema(SignResponseSchema(), 200, description="")
+@tenant_authentication
 async def sign(request: web.BaseRequest):
     """Request handler for signing a jsonld doc.
 
@@ -130,6 +131,7 @@ class VerifyResponseSchema(OpenAPISchema):
 )
 @request_schema(VerifyRequestSchema())
 @response_schema(VerifyResponseSchema(), 200, description="")
+@tenant_authentication
 async def verify(request: web.BaseRequest):
     """Request handler for signing a jsonld doc.
 

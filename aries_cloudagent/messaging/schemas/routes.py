@@ -15,6 +15,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 from marshmallow.validate import Regexp
 
+from ...admin.decorators.auth import tenant_authentication
 from ...admin.request_context import AdminRequestContext
 from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import Event, EventBus
@@ -166,6 +167,7 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
 @querystring_schema(CreateSchemaTxnForEndorserOptionSchema())
 @querystring_schema(SchemaConnIdMatchInfoSchema())
 @response_schema(TxnOrSchemaSendResultSchema(), 200, description="")
+@tenant_authentication
 async def schemas_send_schema(request: web.BaseRequest):
     """Request handler for creating a schema.
 
@@ -340,6 +342,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 )
 @querystring_schema(SchemaQueryStringSchema())
 @response_schema(SchemasCreatedResultSchema(), 200, description="")
+@tenant_authentication
 async def schemas_created(request: web.BaseRequest):
     """Request handler for retrieving schemas that current agent created.
 
@@ -369,6 +372,7 @@ async def schemas_created(request: web.BaseRequest):
 @docs(tags=["schema"], summary="Gets a schema from the ledger")
 @match_info_schema(SchemaIdMatchInfoSchema())
 @response_schema(SchemaGetResultSchema(), 200, description="")
+@tenant_authentication
 async def schemas_get_schema(request: web.BaseRequest):
     """Request handler for sending a credential offer.
 
@@ -419,6 +423,7 @@ async def schemas_get_schema(request: web.BaseRequest):
 @docs(tags=["schema"], summary="Writes a schema non-secret record to the wallet")
 @match_info_schema(SchemaIdMatchInfoSchema())
 @response_schema(SchemaGetResultSchema(), 200, description="")
+@tenant_authentication
 async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
     """Request handler for fixing a schema's wallet non-secrets records.
 
