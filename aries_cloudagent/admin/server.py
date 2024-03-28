@@ -637,7 +637,6 @@ class AdminServer(BaseAdminServer):
 
     @docs(tags=["server"], summary="Liveliness check")
     @response_schema(AdminStatusLivelinessSchema(), 200, description="")
-    @admin_authentication
     async def liveliness_handler(self, request: web.BaseRequest):
         """Request handler for liveliness check.
 
@@ -656,7 +655,6 @@ class AdminServer(BaseAdminServer):
 
     @docs(tags=["server"], summary="Readiness check")
     @response_schema(AdminStatusReadinessSchema(), 200, description="")
-    @admin_authentication
     async def readiness_handler(self, request: web.BaseRequest):
         """Request handler for liveliness check.
 
