@@ -19,6 +19,7 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
+from ..admin.decorators.auth import admin_authentication
 from ..config.injection_context import InjectionContext
 from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus
@@ -615,6 +616,7 @@ class AdminServer(BaseAdminServer):
 
     @docs(tags=["server"], summary="Fetch the list of loaded plugins")
     @response_schema(AdminModulesSchema(), 200, description="")
+    @admin_authentication
     async def plugins_handler(self, request: web.BaseRequest):
         """Request handler for the loaded plugins list.
 
@@ -631,6 +633,7 @@ class AdminServer(BaseAdminServer):
 
     @docs(tags=["server"], summary="Fetch the server configuration")
     @response_schema(AdminConfigSchema(), 200, description="")
+    @admin_authentication
     async def config_handler(self, request: web.BaseRequest):
         """Request handler for the server configuration.
 
@@ -669,6 +672,7 @@ class AdminServer(BaseAdminServer):
 
     @docs(tags=["server"], summary="Fetch the server status")
     @response_schema(AdminStatusSchema(), 200, description="")
+    @admin_authentication
     async def status_handler(self, request: web.BaseRequest):
         """Request handler for the server status information.
 
@@ -690,6 +694,7 @@ class AdminServer(BaseAdminServer):
 
     @docs(tags=["server"], summary="Reset statistics")
     @response_schema(AdminResetSchema(), 200, description="")
+    @admin_authentication
     async def status_reset_handler(self, request: web.BaseRequest):
         """Request handler for resetting the timing statistics.
 
@@ -711,6 +716,7 @@ class AdminServer(BaseAdminServer):
 
     @docs(tags=["server"], summary="Liveliness check")
     @response_schema(AdminStatusLivelinessSchema(), 200, description="")
+    @admin_authentication
     async def liveliness_handler(self, request: web.BaseRequest):
         """Request handler for liveliness check.
 
@@ -729,6 +735,7 @@ class AdminServer(BaseAdminServer):
 
     @docs(tags=["server"], summary="Readiness check")
     @response_schema(AdminStatusReadinessSchema(), 200, description="")
+    @admin_authentication
     async def readiness_handler(self, request: web.BaseRequest):
         """Request handler for liveliness check.
 
@@ -747,6 +754,7 @@ class AdminServer(BaseAdminServer):
 
     @docs(tags=["server"], summary="Shut down server")
     @response_schema(AdminShutdownSchema(), description="")
+    @admin_authentication
     async def shutdown_handler(self, request: web.BaseRequest):
         """Request handler for server shutdown.
 
