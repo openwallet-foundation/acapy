@@ -17,6 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from runners.support.agent import (  # noqa:E402
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
+    CRED_FORMAT_VC_DI,
     DID_METHOD_KEY,
     KEY_TYPE_BLS,
     WALLET_TYPE_INDY,
@@ -295,6 +296,10 @@ class AriesAgent(DemoAgent):
                 await self.admin_POST(
                     f"/issue-credential-2.0/records/{cred_ex_id}/send-request", data
                 )
+            elif message["by_format"]["cred_offer"].get("vc_di"):
+                await self.admin_POST(
+                    f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
+                )
 
         elif state == "done":
             pass
@@ -323,6 +328,9 @@ class AriesAgent(DemoAgent):
         if rev_reg_id and cred_rev_id:
             self.log(f"Revocation registry ID: {rev_reg_id}")
             self.log(f"Credential revocation ID: {cred_rev_id}")
+
+    async def handle_issue_credential_v2_0_vc_di(self, message):
+        self.log(f"Handle VC_DI Credential: message = {message}")
 
     async def handle_issue_credential_v2_0_ld_proof(self, message):
         self.log(f"LD Credential: message = {message}")
@@ -929,6 +937,7 @@ class AgentContainer:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
         if self.cred_type in [
             CRED_FORMAT_INDY,
+            CRED_FORMAT_VC_DI
         ]:
             # need to redister schema and cred def on the ledger
             self.cred_def_id = await self.agent.create_schema_and_cred_def(
@@ -977,6 +986,7 @@ class AgentContainer:
 
         if self.cred_type in [
             CRED_FORMAT_INDY,
+            CRED_FORMAT_VC_DI
         ]:
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
@@ -1039,6 +1049,7 @@ class AgentContainer:
 
         if self.cred_type in [
             CRED_FORMAT_INDY,
+            CRED_FORMAT_VC_DI
         ]:
             indy_proof_request = {
                 "name": (
@@ -1124,6 +1135,7 @@ class AgentContainer:
 
         if self.cred_type in [
             CRED_FORMAT_INDY,
+            CRED_FORMAT_VC_DI
         ]:
             # return verified status
             return self.agent.last_proof_received["verified"]
@@ -1504,11 +1516,13 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
 
     if "cred_type" in args and args.cred_type not in [
         CRED_FORMAT_INDY,
+        CRED_FORMAT_VC_DI,
     ]:
         public_did = None
         aip = 20
     elif "cred_type" in args and args.cred_type in [
         CRED_FORMAT_INDY,
+        CRED_FORMAT_VC_DI,
     ]:
         public_did = True
     else:
