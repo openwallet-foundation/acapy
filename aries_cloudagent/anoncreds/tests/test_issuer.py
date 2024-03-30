@@ -744,6 +744,12 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert mock_create.called
         assert result is not None
 
+    async def test_create_credential_offer_create_vcdi(
+        self, mock_create, mock_load, mock_session_handle
+    ):
+        # IC - TODO create a unit test for the new VCDI create offer method
+        assert False
+
     @mock.patch.object(InMemoryProfileSession, "handle")
     @mock.patch.object(Credential, "create", return_value=MockCredential())
     async def test_create_credential(self, mock_create, mock_session_handle):
@@ -762,3 +768,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert result is not None
         assert mock_session_handle.fetch.called
         assert mock_create.called
+
+async def test_create_credential_vcdi(self, mock_create, mock_session_handle):
+        # IC - TODO create a unit test for the new VCDI create credential method
+        assert False

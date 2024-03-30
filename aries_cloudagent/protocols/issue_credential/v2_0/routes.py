@@ -13,6 +13,9 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import ValidationError, fields, validate, validates_schema
+from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import (
+    V20CredExRecordVCDISchema,
+)
 
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolderError
@@ -108,6 +111,7 @@ class V20CredExRecordDetailSchema(OpenAPISchema):
 
     indy = fields.Nested(V20CredExRecordIndySchema, required=False)
     ld_proof = fields.Nested(V20CredExRecordLDProofSchema, required=False)
+    vc_di = fields.Nested(V20CredExRecordVCDISchema, required=False)
 
 
 class V20CredExRecordListResultSchema(OpenAPISchema):
@@ -169,6 +173,46 @@ class V20CredFilterIndySchema(OpenAPISchema):
     )
 
 
+class V20CredFilterVCDISchema(OpenAPISchema):
+    """VCDI credential filtration criteria."""
+
+    cred_def_id = fields.Str(
+        required=False,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
+    )
+    schema_id = fields.Str(
+        required=False,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
+    )
+    schema_issuer_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Schema issuer DID", "example": INDY_DID_EXAMPLE},
+    )
+    schema_name = fields.Str(
+        required=False,
+        metadata={"description": "Schema name", "example": "preferences"},
+    )
+    schema_version = fields.Str(
+        required=False,
+        validate=INDY_VERSION_VALIDATE,
+        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
+    )
+    issuer_did = fields.Str(
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Credential issuer DID", "example": INDY_DID_EXAMPLE},
+    )
+
+
 class V20CredFilterSchema(OpenAPISchema):
     """Credential filtration criteria."""
 
@@ -182,12 +226,17 @@ class V20CredFilterSchema(OpenAPISchema):
         required=False,
         metadata={"description": "Credential filter for linked data proof"},
     )
+    vc_di = fields.Nested(
+        V20CredFilterVCDISchema,
+        required=False,
+        metadata={"description": "Credential filter for vc_di"},
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate schema fields.
 
-        Data must have indy, ld_proof, or both.
+        Data must have indy, ld_proof, vc_di, or all.
 
         Args:
             data: The data to validate
@@ -198,7 +247,7 @@ class V20CredFilterSchema(OpenAPISchema):
         """
         if not any(f.api in data for f in V20CredFormat.Format):
             raise ValidationError(
-                "V20CredFilterSchema requires indy, ld_proof, or both"
+                "V20CredFilterSchema requires indy, ld_proof, vc_di or all"
             )
 
 
@@ -239,11 +288,13 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
 
     @validates_schema
     def validate(self, data, **kwargs):
-        """Make sure preview is present when indy format is present."""
+        """Make sure preview is present when indy/vc_di format is present."""
 
-        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
+        if (
+            data.get("filter", {}).get("indy") or data.get("filter", {}).get("vc_di")
+        ) and not data.get("credential_preview"):
             raise ValidationError(
-                "Credential preview is required if indy filter is present"
+                "Credential preview is required if indy or vc_di filter is present"
             )
 
 
