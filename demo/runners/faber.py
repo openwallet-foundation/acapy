@@ -579,10 +579,7 @@ async def main(args):
             "birthdate_dateint",
             "timestamp",
         ]
-        if faber_agent.cred_type in [
-            CRED_FORMAT_INDY,
-            CRED_FORMAT_VC_DI
-        ]:
+        if faber_agent.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             faber_agent.public_did = True
             await faber_agent.initialize(
                 the_agent=agent,

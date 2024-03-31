@@ -1277,7 +1277,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
                     None,  # ld_proof
-                    None, # vc_di
+                    None,  # vc_di
                 ]
             )
 
@@ -1324,7 +1324,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                     None,  # ld_proof
                     mock.MagicMock(  # indy
                         serialize=mock.MagicMock(return_value={"...": "..."})
-                    ), # vc_di
+                    ),  # vc_di
                 ]
             )
 
@@ -1551,7 +1551,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
                     None,  # ld_proof
-                    None, # vc_di
+                    None,  # vc_di
                 ]
             )
 
@@ -1725,7 +1725,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
                         serialize=mock.MagicMock(return_value={"...": "..."})
                     ),
                     None,  # ld_proof
-                    None, # vc_di
+                    None,  # vc_di
                 ]
             )
 

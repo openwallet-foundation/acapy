@@ -214,7 +214,7 @@ class AnonCredsHolder:
             credential_id,
             rev_reg_def,
         )
-    
+
     async def _finish_store_credential(
         self,
         credential_definition: dict,

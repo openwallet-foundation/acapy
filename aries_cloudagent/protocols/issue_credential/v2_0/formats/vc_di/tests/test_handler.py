@@ -4,18 +4,37 @@ import json
 
 import pytest
 from aries_cloudagent.anoncreds.holder import AnonCredsHolder
-from aries_cloudagent.messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
+from aries_cloudagent.messaging.credential_definitions.util import (
+    CRED_DEF_SENT_RECORD_TYPE,
+)
 from aries_cloudagent.messaging.decorators.attach_decorator import AttachDecorator
 from aries_cloudagent.multitenant.base import BaseMultitenantManager
 from aries_cloudagent.multitenant.manager import MultitenantManager
-from aries_cloudagent.protocols.issue_credential.v2_0.formats.handler import V20CredFormatError
-from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_format import V20CredFormat
-from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_offer import V20CredOffer
-from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_proposal import V20CredProposal
-from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_request import V20CredRequest
-from aries_cloudagent.protocols.issue_credential.v2_0.messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
-from aries_cloudagent.protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import V20CredExRecordVCDI
+from aries_cloudagent.protocols.issue_credential.v2_0.formats.handler import (
+    V20CredFormatError,
+)
+from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_format import (
+    V20CredFormat,
+)
+from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_offer import (
+    V20CredOffer,
+)
+from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_proposal import (
+    V20CredProposal,
+)
+from aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_request import (
+    V20CredRequest,
+)
+from aries_cloudagent.protocols.issue_credential.v2_0.messages.inner.cred_preview import (
+    V20CredAttrSpec,
+    V20CredPreview,
+)
+from aries_cloudagent.protocols.issue_credential.v2_0.models.cred_ex_record import (
+    V20CredExRecord,
+)
+from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import (
+    V20CredExRecordVCDI,
+)
 from aries_cloudagent.storage.record import StorageRecord
 
 from unittest import IsolatedAsyncioTestCase
@@ -43,6 +62,7 @@ from ....message_types import (
 from ..handler import VCDICredFormatHandler
 from ..handler import LOGGER as VCDI_LOGGER
 from .. import handler as test_module
+
 # these are from faber
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 

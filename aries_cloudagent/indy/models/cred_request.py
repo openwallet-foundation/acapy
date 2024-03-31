@@ -82,6 +82,7 @@ class IndyCredRequestSchema(BaseModelSchema):
         },
     )
 
+
 class AnoncredsLinkSecret(BaseModel):
     """Binding proof model."""
 

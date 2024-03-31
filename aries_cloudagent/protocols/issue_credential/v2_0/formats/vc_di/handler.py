@@ -185,6 +185,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         cred_def_id = await issuer.match_created_credential_definitions(
             **cred_proposal_message.attachment(VCDICredFormatHandler.format)
         )
+
         async def _create():
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)

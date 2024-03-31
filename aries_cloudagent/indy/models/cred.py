@@ -156,6 +156,7 @@ class IndyCredentialSchema(BaseModelSchema):
         allow_none=True, metadata={"description": "Witness for revocation proof"}
     )
 
+
 class VCDIIndyCredential(BaseModel):
     """VCDI Indy credential."""
 
