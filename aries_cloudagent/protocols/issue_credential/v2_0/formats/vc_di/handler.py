@@ -62,7 +62,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping):
         """Validate attachment data for a specific message type.
-        
+
         Uses marshmallow schemas to validate if format specific attachment data
         is valid for the specified message type. Only does structural and type
         checks, does not validate if .e.g. the issuer value is valid.
@@ -129,7 +129,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
     def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
         """Get credential format and attachment objects for use in cred ex messages.
-        
+
         Returns a tuple of both credential format and attachment decorator for use
         in credential exchange messages. It looks up the correct format identifier and
         encodes the data as a base64 attachment.
@@ -176,7 +176,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
     ) -> None:
         """Receive vcdi credential proposal.
-        
+
         No custom handling is required for this step.
         """
 
@@ -514,7 +514,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
     ) -> None:
         """Receive vcdi credential.
-        
+
         Validation is done in the store credential step.
         """
 
