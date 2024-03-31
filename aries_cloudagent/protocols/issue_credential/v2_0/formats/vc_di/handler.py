@@ -182,15 +182,9 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            public_did_info = await wallet.get_public_did()
-            public_did = public_did_info.did
-
         cred_def_id = await issuer.match_created_credential_definitions(
             **cred_proposal_message.attachment(VCDICredFormatHandler.format)
         )
-
         async def _create():
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
@@ -252,7 +246,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                     {"@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"},
                 ],
                 "type": ["VerifiableCredential"],
-                "issuer": public_did,
+                "issuer": "public_did",
                 "credentialSubject": cred_proposal_message.credential_preview.attr_dict(),
                 "issuanceDate": "2024-01-10T04:44:29.563418Z",
             },

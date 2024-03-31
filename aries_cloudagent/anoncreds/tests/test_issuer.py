@@ -744,11 +744,20 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert mock_create.called
         assert result is not None
 
+    @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(CredentialDefinition, "load", return_value=MockCredDefEntry())
+    @mock.patch.object(CredentialOffer, "create", return_value=MockCredOffer())
     async def test_create_credential_offer_create_vcdi(
         self, mock_create, mock_load, mock_session_handle
     ):
-        # IC - TODO create a unit test for the new VCDI create offer method
-        assert False
+        mock_session_handle.fetch = mock.CoroutineMock(
+            side_effect=[MockCredDefEntry(), MockKeyProof()]
+        )
+        result = await self.issuer.create_credential_offer("cred-def-id")
+        assert mock_session_handle.fetch.called
+        assert mock_load.called
+        assert mock_create.called
+        assert result is not None
 
     @mock.patch.object(InMemoryProfileSession, "handle")
     @mock.patch.object(Credential, "create", return_value=MockCredential())
@@ -769,6 +778,26 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert mock_session_handle.fetch.called
         assert mock_create.called
 
-async def test_create_credential_vcdi(self, mock_create, mock_session_handle):
-        # IC - TODO create a unit test for the new VCDI create credential method
-        assert False
+    @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(Credential, "create", return_value=MockCredential())
+    async def test_create_credential_vcdi(self, mock_create, mock_session_handle):
+        self.profile.inject = mock.Mock(
+            return_value=mock.MagicMock(
+                get_schema=mock.CoroutineMock(return_value=MockSchemaResult()),
+            )
+        )
+
+        mock_session_handle.fetch = mock.CoroutineMock(return_value=MockCredDefEntry())
+
+        credential_offer = {"schema_id": "schema-id", "cred_def_id": "cred-def-id"}
+        credential_request = {}  # Adjust as necessary for your test
+        credential_values = {"attr1": "value1", "attr2": "value2"}
+
+        # Call to the new VCDI create_credential method, adjust with actual VCDI-specific parameters
+        result = await self.issuer.create_credential_w3c(
+            credential_offer, credential_request, credential_values
+        )
+
+        assert result is not None
+        assert mock_session_handle.fetch.called
+        assert mock_create.called
