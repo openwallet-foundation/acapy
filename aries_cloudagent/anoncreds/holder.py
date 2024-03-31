@@ -209,6 +209,7 @@ class AnonCredsHolder:
         return await self._finish_store_credential(
             credential_definition,
             cred_recvd,
+            credential_data,
             credential_request_metadata,
             credential_attr_mime_types,
             credential_id,
@@ -219,12 +220,12 @@ class AnonCredsHolder:
         self,
         credential_definition: dict,
         cred_recvd: Credential,
+        credential_data: dict,
         credential_request_metadata: dict,
         credential_attr_mime_types: dict = None,
         credential_id: str = None,
         rev_reg_def: dict = None,
     ) -> str:
-        credential_data = Credential.to_dict(cred_recvd)
         schema_id = cred_recvd.schema_id
         schema_id_parts = re.match(r"^(\w+):2:([^:]+):([^:]+)$", schema_id)
         if not schema_id_parts:
@@ -321,6 +322,7 @@ class AnonCredsHolder:
         return await self._finish_store_credential(
             credential_definition,
             cred_recvd,
+            credential_data,
             credential_request_metadata,
             credential_attr_mime_types,
             credential_id,

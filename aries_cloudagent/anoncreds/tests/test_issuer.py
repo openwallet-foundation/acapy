@@ -3,11 +3,7 @@ from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from anoncreds import (
-    Credential,
-    CredentialDefinition,
-    CredentialOffer,
-)
+from anoncreds import Credential, CredentialDefinition, CredentialOffer, W3cCredential
 from aries_askar import AskarError, AskarErrorCode
 
 from aries_cloudagent.anoncreds.base import (
@@ -779,7 +775,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert mock_create.called
 
     @mock.patch.object(InMemoryProfileSession, "handle")
-    @mock.patch.object(Credential, "create", return_value=MockCredential())
+    @mock.patch.object(W3cCredential, "create", return_value=MockCredential())
     async def test_create_credential_vcdi(self, mock_create, mock_session_handle):
         self.profile.inject = mock.Mock(
             return_value=mock.MagicMock(
@@ -788,14 +784,10 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         )
 
         mock_session_handle.fetch = mock.CoroutineMock(return_value=MockCredDefEntry())
-
-        credential_offer = {"schema_id": "schema-id", "cred_def_id": "cred-def-id"}
-        credential_request = {}  # Adjust as necessary for your test
-        credential_values = {"attr1": "value1", "attr2": "value2"}
-
-        # Call to the new VCDI create_credential method, adjust with actual VCDI-specific parameters
         result = await self.issuer.create_credential_w3c(
-            credential_offer, credential_request, credential_values
+            {"schema_id": "schema-id", "cred_def_id": "cred-def-id"},
+            {},
+            {"attr1": "value1", "attr2": "value2"},
         )
 
         assert result is not None
