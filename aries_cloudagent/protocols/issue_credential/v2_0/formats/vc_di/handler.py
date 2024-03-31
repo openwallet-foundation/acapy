@@ -1,5 +1,7 @@
 """V2.0 issue-credential vc_di credential format handler.
-   indy compatible, attachment is a valid verifiable credential"""
+
+indy compatible, attachment is a valid verifiable credential
+"""
 
 import json
 import logging
@@ -34,7 +36,6 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage
-from ......wallet.base import BaseWallet
 from ...message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -61,9 +62,11 @@ class VCDICredFormatHandler(V20CredFormatHandler):
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping):
         """Validate attachment data for a specific message type.
+        
         Uses marshmallow schemas to validate if format specific attachment data
         is valid for the specified message type. Only does structural and type
         checks, does not validate if .e.g. the issuer value is valid.
+
         Args:
             message_type (str): The message type to validate the attachment data for.
                 Should be one of the message types as defined in message_types.py
@@ -116,6 +119,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
     def get_format_identifier(self, message_type: str) -> str:
         """Get attachment format identifier for format and message combination.
+
         Args:
             message_type (str): Message type for which to return the format identifier
         Returns:
@@ -125,9 +129,11 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
     def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
         """Get credential format and attachment objects for use in cred ex messages.
+        
         Returns a tuple of both credential format and attachment decorator for use
         in credential exchange messages. It looks up the correct format identifier and
         encodes the data as a base64 attachment.
+
         Args:
             message_type (str): The message type for which to return the cred format.
                 Should be one of the message types defined in the message types file
@@ -170,6 +176,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
     ) -> None:
         """Receive vcdi credential proposal.
+        
         No custom handling is required for this step.
         """
 
@@ -507,6 +514,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
     ) -> None:
         """Receive vcdi credential.
+        
         Validation is done in the store credential step.
         """
 

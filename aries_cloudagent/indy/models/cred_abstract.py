@@ -308,6 +308,7 @@ class VCDICredAbstract(BaseModel):
         **kwargs,
     ):
         """Initialize vcdi cred abstract object.
+
         Args:
             data_model_versions_supported: supported versions for data model
             binding_required: boolean value

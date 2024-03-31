@@ -1,3 +1,5 @@
+"""VCDI-specific credential exchange information with non-secrets storage."""
+
 from typing import Any, Mapping, Sequence
 
 from marshmallow import EXCLUDE, fields
@@ -38,7 +40,16 @@ class V20CredExRecordVCDI(BaseRecord):
         cred_rev_id: str = None,
         **kwargs,
     ):
-        """Initialize vc_di credential exchange record details."""
+        """Initialize vc_di credential exchange record details.
+
+        Args:
+            cred_ex_vc_di_id: The ID associated with this exchange.
+            cred_ex_id: Corresponding v2.0 credential exchange record identifier.
+            cred_id_stored: Credential identifier stored in wallet.
+            cred_request_metadata: Credential request metadata for indy holder.
+            rev_reg_id: Revocation registry identifier.
+            cred_rev_id: Credential revocation identifier within revocation registry.
+        """
         super().__init__(cred_ex_vc_di_id, **kwargs)
 
         self.cred_ex_id = cred_ex_id
@@ -71,14 +82,29 @@ class V20CredExRecordVCDI(BaseRecord):
         session: ProfileSession,
         cred_ex_id: str,
     ) -> Sequence["V20CredExRecordVCDI"]:
-        """Retrieve credential exchange vc_di detail record(s) by its cred ex id."""
+        """Retrieve credential exchange vc_di detail record(s) by its cred ex id.
+
+        Args:
+            session: The profile session to use for the query.
+            cred_ex_id: The credential exchange ID.
+
+        Returns:
+            A sequence of V20CredExRecordVCDI objects matching the given cred ex id.
+        """
         return await cls.query(
             session=session,
             tag_filter={"cred_ex_id": cred_ex_id},
         )
 
     def __eq__(self, other: Any) -> bool:
-        """Comparison between records."""
+        """Comparison between records.
+
+        Args:
+            other: The other object to compare.
+
+        Returns:
+            True if the records are equal, False otherwise.
+        """
         return super().__eq__(other)
 
 
