@@ -342,61 +342,6 @@ class FaberAgent(AriesAgent):
                 return proof_request_web_request
 
             elif cred_type == CRED_FORMAT_VC_DI:
-                req_attrs = [
-                    {
-                        "name": "name",
-                        "restrictions": [{"schema_name": "degree schema"}],
-                    },
-                    {
-                        "name": "date",
-                        "restrictions": [{"schema_name": "degree schema"}],
-                    },
-                ]
-                if revocation:
-                    req_attrs.append(
-                        {
-                            "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
-                            "non_revoked": {"to": int(time.time() - 1)},
-                        },
-                    )
-                else:
-                    req_attrs.append(
-                        {
-                            "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
-                        }
-                    )
-                if SELF_ATTESTED:
-                    # test self-attested claims
-                    req_attrs.append(
-                        {"name": "self_attested_thing"},
-                    )
-                req_preds = [
-                    # test zero-knowledge proofs
-                    {
-                        "name": "birthdate_dateint",
-                        "p_type": "<=",
-                        "p_value": int(birth_date.strftime(birth_date_format)),
-                        "restrictions": [{"schema_name": "degree schema"}],
-                    }
-                ]
-
-                vc_di_proof_request = {
-                    "name": "Proof of Education",
-                    "version": "1.0",
-                    "requested_attributes": {
-                        f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
-                    },
-                    "requested_predicates": {
-                        f"0_{req_pred['name']}_GE_uuid": req_pred
-                        for req_pred in req_preds
-                    },
-                }
-
-                if revocation:
-                    vc_di_proof_request["non_revoked"] = {"to": int(time.time())}
-
                 proof_request_web_request = {
                     "comment": "test proof request for json-ld",
                     "presentation_request": {
@@ -407,50 +352,46 @@ class FaberAgent(AriesAgent):
                             },
                             "presentation_definition": {
                                 "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
-                                "format": {"ldp_vp": {"proof_type": [SIG_TYPE_BLS]}},
+                                "submission_requirements": [
+                                    {
+                                        "name": "Citizenship Information",
+                                        "rule": "pick",
+                                        "min": 1,
+                                        "from": "A",
+                                    }
+                                ],
                                 "input_descriptors": [
                                     {
                                         "id": "citizenship_input_1",
                                         "name": "EU Driver's License",
+                                        "group": ["A"],
                                         "schema": [
                                             {
                                                 "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
                                             },
                                             {
-                                                "uri": "https://w3id.org/citizenship#PermanentResident"
+                                                "uri": "https://w3id.org/citizenship#PermanentResidentCard"
                                             },
                                         ],
                                         "constraints": {
                                             "limit_disclosure": "required",
-                                            "is_holder": [
-                                                {
-                                                    "directive": "required",
-                                                    "field_id": [
-                                                        "1f44d55f-f161-4938-a659-f8026467f126"
-                                                    ],
-                                                }
-                                            ],
                                             "fields": [
-                                                {
-                                                    "id": "1f44d55f-f161-4938-a659-f8026467f126",
-                                                    "path": [
-                                                        "$.credentialSubject.familyName"
-                                                    ],
-                                                    "purpose": "The claim must be from one of the specified person",
-                                                    "filter": {"const": "SMITH"},
-                                                },
                                                 {
                                                     "path": [
                                                         "$.credentialSubject.givenName"
                                                     ],
-                                                    "purpose": "The claim must be from one of the specified person",
-                                                },
+                                                    "purpose": "The claim must be from one of the specified issuers",
+                                                    "filter": {
+                                                        "type": "string",
+                                                        "enum": ["JOHN", "CAI"],
+                                                    },
+                                                }
                                             ],
                                         },
                                     }
                                 ],
                             },
-                        }
+                        },
                     },
                 }
                 if not connectionless:

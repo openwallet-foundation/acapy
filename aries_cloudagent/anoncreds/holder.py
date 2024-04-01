@@ -209,7 +209,6 @@ class AnonCredsHolder:
         return await self._finish_store_credential(
             credential_definition,
             cred_recvd,
-            credential_data,
             credential_request_metadata,
             credential_attr_mime_types,
             credential_id,
@@ -220,12 +219,12 @@ class AnonCredsHolder:
         self,
         credential_definition: dict,
         cred_recvd: Credential,
-        credential_data: dict,
         credential_request_metadata: dict,
         credential_attr_mime_types: dict = None,
         credential_id: str = None,
         rev_reg_def: dict = None,
     ) -> str:
+        credential_data = cred_recvd.to_dict()
         schema_id = cred_recvd.schema_id
         schema_id_parts = re.match(r"^(\w+):2:([^:]+):([^:]+)$", schema_id)
         if not schema_id_parts:
@@ -300,21 +299,23 @@ class AnonCredsHolder:
                 MIME types to store as non-secret record, if specified
             credential_id: optionally override the stored credential id
             rev_reg_def: revocation registry definition in json
+
         Returns:
             the ID of the stored credential
+
         """
         try:
-            # secret = await self.get_master_secret()
+            secret = await self.get_master_secret()
             cred_w3c = W3cCredential.load(credential_data)
-            # cred_legacy = cred_w3c.to_legacy()
-            # cred_w3c_recvd = await asyncio.get_event_loop().run_in_executor(
-            #     None,
-            #     cred_w3c.process,
-            #     credential_request_metadata,
-            #     secret,
-            #     credential_definition,
-            #     rev_reg_def,
-            # )
+            cred_w3c.to_legacy()
+            await asyncio.get_event_loop().run_in_executor(
+                None,
+                cred_w3c.process,
+                credential_request_metadata,
+                secret,
+                credential_definition,
+                rev_reg_def,
+            )
             cred_recvd = Credential.from_w3c(cred_w3c)
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error processing received credential") from err
@@ -322,7 +323,6 @@ class AnonCredsHolder:
         return await self._finish_store_credential(
             credential_definition,
             cred_recvd,
-            credential_data,
             credential_request_metadata,
             credential_attr_mime_types,
             credential_id,

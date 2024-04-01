@@ -57,6 +57,9 @@ class MockCredReceived:
     def to_json_buffer(self):
         return b"credential"
 
+    def to_dict(self):
+        return MOCK_CRED
+
 
 class MockCredential:
     def __init__(self, bad_schema=False, bad_cred_def=False):
