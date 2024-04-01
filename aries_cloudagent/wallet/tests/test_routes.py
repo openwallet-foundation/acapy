@@ -27,7 +27,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
         self.wallet = mock.create_autospec(BaseWallet)
         self.session_inject = {BaseWallet: self.wallet}
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = InMemoryProfile.test_profile(
+            settings={"admin.admin_api_key": "secret-key"}
+        )
         self.context = AdminRequestContext.test_context(
             self.session_inject, self.profile
         )
@@ -41,6 +43,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
         self.test_did = "did"
