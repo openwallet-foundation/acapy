@@ -71,7 +71,7 @@ def tenant_authentication(handler):
         ):
             return await handler(request)
         else:
-            auth_mode = "Authorizzation token" if multitenant_enabled else "API key"
+            auth_mode = "Authorization token" if multitenant_enabled else "API key"
             raise web.HTTPUnauthorized(
                 reason=f"{auth_mode} missing or invalid",
                 text=f"{auth_mode} missing or invalid",
