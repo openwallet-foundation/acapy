@@ -2,12 +2,13 @@ import unittest
 from unittest import IsolatedAsyncioTestCase
 
 from .....admin.request_context import AdminRequestContext
+from .....core.in_memory import InMemoryProfile
 from .....protocols.didcomm_prefix import DIDCommPrefix
 from .....storage.error import StorageNotFoundError
 from .....tests import mock
-from ..messages import Hangup, Rotate
 from .. import message_types as test_message_types
 from .. import routes as test_module
+from ..messages import Hangup, Rotate
 from ..tests import MockConnRecord, test_conn_id
 
 test_valid_rotate_request = {
@@ -28,8 +29,12 @@ def generate_mock_rotate_message():
 class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.session_inject = {}
-
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        self.context = AdminRequestContext.test_context(self.session_inject, profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -39,6 +44,7 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
     @mock.patch.object(
