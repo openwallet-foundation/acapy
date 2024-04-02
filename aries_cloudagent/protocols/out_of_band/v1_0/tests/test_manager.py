@@ -15,7 +15,6 @@ from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.event_bus import EventBus
 from .....core.in_memory import InMemoryProfile
-from .....core.util import get_version_from_message
 from .....core.oob_processor import OobMessageProcessor
 from .....did.did_key import DIDKey
 from .....messaging.decorators.attach_decorator import AttachDecorator
@@ -935,7 +934,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
 
             oob_record = await self.manager._create_handshake_reuse_message(
-                oob_record, self.test_conn_rec, get_version_from_message(invitation)
+                oob_record, self.test_conn_rec, invitation._version
             )
 
             _, kwargs = self.responder.send.call_args
@@ -1248,6 +1247,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                     auto_accept=None,
                     alias=None,
                     mediation_id=mediation_record._id,
+                    protocol="didexchange/1.0",
                 )
 
     async def test_receive_invitation_with_invalid_mediation(self):
@@ -1283,6 +1283,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                 auto_accept=None,
                 alias=None,
                 mediation_id=None,
+                protocol="didexchange/1.0",
             )
 
     async def test_receive_invitation_didx_services_with_service_block(self):
@@ -1486,7 +1487,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
 
             perform_handshake.assert_not_called()
             handle_handshake_reuse.assert_called_once_with(
-                ANY, test_exist_conn, get_version_from_message(oob_invitation)
+                ANY, test_exist_conn, oob_invitation._version
             )
 
             assert result.state == OobRecord.STATE_ACCEPTED
@@ -1547,7 +1548,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
 
             handle_handshake_reuse.assert_called_once_with(
-                ANY, test_exist_conn, get_version_from_message(oob_invitation)
+                ANY, test_exist_conn, oob_invitation._version
             )
             perform_handshake.assert_called_once_with(
                 oob_record=ANY,

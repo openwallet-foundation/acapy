@@ -110,7 +110,7 @@ class MockMimeTypeRecord:
 class TestAnonCredsHolder(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar-anoncreds"},
+            settings={"wallet.type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,
         )
         self.holder = test_module.AnonCredsHolder(self.profile)

@@ -14,7 +14,6 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
@@ -44,6 +43,7 @@ from ...protocols.endorse_transaction.v1_0.util import (
 from ...revocation.indy import IndyRevocation
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError, StorageNotFoundError
+from ...utils.profiles import is_anoncreds_profile_raise_web_exception
 from ..models.base import BaseModelError
 from ..models.openapi import OpenAPISchema
 from ..valid import (
@@ -195,6 +195,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     outbound_handler = request["outbound_message_router"]
 
     create_transaction_for_endorser = json.loads(
@@ -210,6 +213,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     support_revocation = bool(body.get("support_revocation"))
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
+
+    # Don't allow revocable cred def to be created without tails server base url
+    if not profile.settings.get("tails_server_base_url") and support_revocation:
+        raise web.HTTPBadRequest(
+            reason="tails_server_base_url not configured. Can't create revocable credential definition."  # noqa: E501
+        )
 
     tag_query = {"schema_id": schema_id}
     async with profile.session() as session:
@@ -229,13 +238,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                     )
 
     # check if we need to endorse
-    if is_author_role(context.profile):
+    if is_author_role(profile):
         # authors cannot write to the ledger
         write_ledger = False
         create_transaction_for_endorser = True
         if not connection_id:
             # author has not provided a connection id, so determine which to use
-            connection_id = await get_endorser_connection_id(context.profile)
+            connection_id = await get_endorser_connection_id(profile)
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
 
@@ -314,7 +323,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     if not create_transaction_for_endorser:
         # Notify event
         meta_data["processing"]["auto_create_rev_reg"] = True
-        await notify_cred_def_event(context.profile, cred_def_id, meta_data)
+        await notify_cred_def_event(profile, cred_def_id, meta_data)
 
         return web.json_response(
             {
@@ -332,7 +341,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             "endorser.auto_create_rev_reg"
         )
 
-        transaction_mgr = TransactionManager(context.profile)
+        transaction_mgr = TransactionManager(profile)
         try:
             transaction = await transaction_mgr.create_record(
                 messages_attach=cred_def["signed_txn"],
@@ -381,6 +390,8 @@ async def credential_definitions_created(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
+    is_anoncreds_profile_raise_web_exception(context.profile)
+
     session = await context.session()
     storage = session.inject(BaseStorage)
     found = await storage.find_all_records(
@@ -412,12 +423,16 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     cred_def_id = request.match_info["cred_def_id"]
 
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
@@ -458,14 +473,17 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     cred_def_id = request.match_info["cred_def_id"]
 
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         storage = session.inject(BaseStorage)
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(

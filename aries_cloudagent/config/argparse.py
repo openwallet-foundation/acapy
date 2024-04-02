@@ -619,12 +619,6 @@ class GeneralGroup(ArgumentGroup):
             help="Specifies the profile endpoint for the (public) DID.",
         )
         parser.add_argument(
-            "--read-only-ledger",
-            action="store_true",
-            env_var="ACAPY_READ_ONLY_LEDGER",
-            help="Sets ledger to read-only to prevent updates. Default: false.",
-        )
-        parser.add_argument(
             "--universal-resolver",
             type=str,
             nargs="?",
@@ -690,9 +684,6 @@ class GeneralGroup(ArgumentGroup):
             raise ArgsParseError("-e/--endpoint is required")
         if args.profile_endpoint:
             settings["profile_endpoint"] = args.profile_endpoint
-
-        if args.read_only_ledger:
-            settings["read_only_ledger"] = True
 
         if args.universal_resolver_regex and not args.universal_resolver:
             raise ArgsParseError(
@@ -856,6 +847,12 @@ class LedgerGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--read-only-ledger",
+            action="store_true",
+            env_var="ACAPY_READ_ONLY_LEDGER",
+            help="Sets ledger to read-only to prevent updates. Default: false.",
+        )
+        parser.add_argument(
             "--ledger-keepalive",
             default=5,
             type=BoundedInt(min=5),
@@ -912,6 +909,9 @@ class LedgerGroup(ArgumentGroup):
             multi_configured = False
             update_pool_name = False
             write_ledger_specified = False
+
+            if args.read_only_ledger:
+                settings["read_only_ledger"] = True
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
                 single_configured = True
@@ -940,7 +940,7 @@ class LedgerGroup(ArgumentGroup):
                             txn_config["pool_name"] = txn_config["id"]
                         update_pool_name = True
                         ledger_config_list.append(txn_config)
-                    if not write_ledger_specified:
+                    if not write_ledger_specified and not args.read_only_ledger:
                         raise ArgsParseError(
                             "No write ledger genesis provided in multi-ledger config"
                         )

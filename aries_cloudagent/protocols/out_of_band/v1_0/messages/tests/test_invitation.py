@@ -8,7 +8,7 @@ from ......wallet.key_type import ED25519
 
 from .....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from .....didcomm_prefix import DIDCommPrefix
-from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1, DIDEX_1_0
 from .....didexchange.v1_0.messages.request import DIDXRequest
 
 
@@ -26,18 +26,15 @@ class TestHSProto(TestCase):
 
     def test_get(self):
         assert HSProto.get(HSProto.RFC160) is HSProto.RFC160
-        assert HSProto.get(23) is HSProto.RFC23
         assert HSProto.get("Old") is HSProto.RFC160
         assert HSProto.get(DIDCommPrefix.qualify_current(CONN_PROTO)) is HSProto.RFC160
-        assert HSProto.get(DIDX_PROTO) is HSProto.RFC23
+        assert HSProto.get(DIDEX_1_0) is HSProto.RFC23
         assert HSProto.get("did-exchange") is HSProto.RFC23
         assert HSProto.get("RFC-23") is HSProto.RFC23
+        assert HSProto.get(DIDEX_1_1) is HSProto.DIDEX_1_1
+        assert HSProto.get("didexchange/1.1") is HSProto.DIDEX_1_1
         assert HSProto.get("no such protocol") is None
         assert HSProto.get(None) is None
-
-    def test_properties(self):
-        assert HSProto.RFC160.rfc == 160
-        assert HSProto.RFC23.name == DIDX_PROTO
 
 
 class TestInvitationMessage(TestCase):
@@ -46,7 +43,7 @@ class TestInvitationMessage(TestCase):
         invi_msg = InvitationMessage(
             comment="Hello",
             label="A label",
-            handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
+            handshake_protocols=[DIDCommPrefix.qualify_current(DIDEX_1_1)],
             services=[TEST_DID],
         )
         assert invi_msg.services == [TEST_DID]
@@ -56,7 +53,7 @@ class TestInvitationMessage(TestCase):
         invi_msg = InvitationMessage(
             comment="Hello",
             label="A label",
-            handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
+            handshake_protocols=[DIDCommPrefix.qualify_current(DIDEX_1_1)],
             services=[service],
             version="1.0",
         )
@@ -117,7 +114,7 @@ class TestInvitationMessage(TestCase):
         invi_msg = InvitationMessage(
             comment="Hello",
             label="A label",
-            handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
+            handshake_protocols=[DIDCommPrefix.qualify_current(DIDEX_1_1)],
             services=[service],
         )
 
@@ -151,7 +148,7 @@ class TestInvitationMessage(TestCase):
         assert "1.2" in test_msg._type
         assert "1.1" in InvitationMessage.Meta.message_type
         test_req = DIDXRequest()
-        assert "1.0" in test_req._type
+        assert "1.1" in test_req._type
         assert "1.2" in test_msg._type
         assert "1.1" in InvitationMessage.Meta.message_type
 

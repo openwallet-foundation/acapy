@@ -364,7 +364,6 @@ class AttachDecoratorData(BaseModel):
                 json.dumps(
                     {
                         "alg": "EdDSA",
-                        "kid": did_key(verkey),
                         "jwk": {
                             "kty": "OKP",
                             "crv": "Ed25519",

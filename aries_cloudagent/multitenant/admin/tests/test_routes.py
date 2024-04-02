@@ -6,6 +6,8 @@ from marshmallow.exceptions import ValidationError
 from aries_cloudagent.tests import mock
 
 from ....admin.request_context import AdminRequestContext
+from ....askar.profile import AskarProfile
+from ....core.in_memory.profile import InMemoryProfile
 from ....messaging.models.base import BaseModelError
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.models.wallet_record import WalletRecord
@@ -21,8 +23,15 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
         self.mock_multitenant_mgr.__aenter__ = mock.CoroutineMock(
             return_value=self.mock_multitenant_mgr
         )
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet.type": "askar"},
+            profile_class=AskarProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
 
-        self.context = AdminRequestContext.test_context()
         self.context.profile.context.injector.bind_instance(
             BaseMultitenantManager, self.mock_multitenant_mgr
         )
@@ -146,7 +155,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
         body = {
             "wallet_name": "test",
             "default_label": "test_label",
-            "wallet_type": "indy",
+            "wallet_type": "askar",
             "wallet_key": "test",
             "key_management_mode": "managed",
             "wallet_webhook_urls": [],
@@ -206,11 +215,59 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             assert self.mock_multitenant_mgr.get_wallet_profile.called
             assert test_module.attempt_auto_author_with_endorser_setup.called
 
+    async def test_wallet_create_wallet_type_different_from_base_wallet_raises_403(
+        self,
+    ):
+        body = {
+            "wallet_name": "test",
+            "default_label": "test_label",
+            "wallet_type": "askar",
+            "wallet_key": "test",
+            "key_management_mode": "managed",
+            "wallet_webhook_urls": [],
+            "wallet_dispatch_type": "base",
+        }
+        wallet_mock = mock.MagicMock(
+            serialize=mock.MagicMock(
+                return_value={
+                    "wallet_id": "test",
+                    "settings": {},
+                    "key_management_mode": body["key_management_mode"],
+                }
+            )
+        )
+        # wallet_record
+        self.mock_multitenant_mgr.create_wallet = mock.CoroutineMock(
+            return_value=wallet_mock
+        )
+
+        self.mock_multitenant_mgr.create_auth_token = mock.CoroutineMock(
+            return_value="test_token"
+        )
+        self.mock_multitenant_mgr.get_wallet_profile = mock.CoroutineMock(
+            return_value=mock.MagicMock()
+        )
+        self.request.json = mock.CoroutineMock(return_value=body)
+
+        await test_module.wallet_create(self.request)
+
+        body["wallet_type"] = "askar-anoncreds"
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.wallet_create(self.request)
+
+        body["wallet_type"] = "indy"
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.wallet_create(self.request)
+
+        body["wallet_type"] = "in_memory"
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.wallet_create(self.request)
+
     async def test_wallet_create(self):
         body = {
             "wallet_name": "test",
             "default_label": "test_label",
-            "wallet_type": "indy",
+            "wallet_type": "askar",
             "wallet_key": "test",
             "key_management_mode": "managed",
             "wallet_webhook_urls": [],
@@ -304,7 +361,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             self.mock_multitenant_mgr.create_wallet.assert_called_once_with(
                 {
                     "wallet.name": body["wallet_name"],
-                    "wallet.type": "in_memory",
+                    "wallet.type": "askar",
                     "wallet.key": body["wallet_key"],
                     "default_label": body["label"],
                     "image_url": body["image_url"],
@@ -336,7 +393,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             await test_module.wallet_create(self.request)
             self.mock_multitenant_mgr.create_wallet.assert_called_once_with(
                 {
-                    "wallet.type": "in_memory",
+                    "wallet.type": "askar",
                     "wallet.name": body["wallet_name"],
                     "wallet.key": body["wallet_key"],
                     "wallet.key_derivation_method": body["wallet_key_derivation"],

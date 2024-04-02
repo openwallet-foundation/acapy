@@ -70,16 +70,17 @@ For the remainder of this guide, we will be using the example `UniversityDegreeC
 
 ### Signature Suite
 
-Before issuing a credential you must determine a signature suite to use. ACA-Py currently supports two signature suites for issuing credentials:
+Before issuing a credential you must determine a signature suite to use. ACA-Py currently supports three signature suites for issuing credentials:
 
 - [`Ed25519Signature2018`](https://w3c-ccg.github.io/lds-ed25519-2018/) - Very well supported. No zero knowledge proofs or selective disclosure.
+- [`Ed25519Signature2020`](https://w3c.github.io/vc-di-eddsa/#ed25519signature2020-0) - Updated version of 2018 suite.
 - [`BbsBlsSignature2020`](https://w3c-ccg.github.io/ldp-bbs2020/) - Newer, but supports zero knowledge proofs and selective disclosure.
 
 Generally you should always use `BbsBlsSignature2020` as it allows the holder to derive a new credential during the proving, meaning it doesn't have to disclose all fields and doesn't have to reveal the signature.
 
-### Did Method
+### DID Method
 
-Besides the JSON-LD context, we need a did to use for issuing the credential. ACA-Py currently supports two did methods for issuing credentials:
+Besides the JSON-LD context, we need a DID to use for issuing the credential. ACA-Py currently supports two did methods for issuing credentials:
 
 - `did:sov` - Can only be used for `Ed25519Signature2018` signature suite.
 - `did:key` - Can be used for both `Ed25519Signature2018` and `BbsBlsSignature2020` signature suites.
@@ -227,3 +228,11 @@ These endpoints include:
 - `POST /vc/presentations/verify` -> verifies a presentation
 
 To learn more about using these endpoints, please refer to the available [postman collection](../demo/AriesPostmanDemo.md#experimenting-with-the-vc-api-endpoints).
+
+## External Suite Provider
+
+It is possible to extend the signature suite support, including outsourcing signing JSON-LD Credentials to some other component (KMS, HSM, etc.), using the [`ExternalSuiteProvider` interface](https://github.com/hyperledger/aries-cloudagent-python/blob/d3ee92b1b86aff076b52f31eaecea59c18005079/aries_cloudagent/vc/vc_ld/external_suite.py#L27). This interface can be implemented and registered via plugin. The plugged in provider will be used by ACA-Py's LDP-VC subsystem to create a `LinkedDataProof` object, which is responsible for signing normalized credential values.
+
+This interface enables taking advantage of ACA-Py's JSON-LD processing to construct and format the credential while exposing a simple interface to a plugin to make it responsible for signatures. This can also be combined with plugged in DID Methods, `VerificationKeyStrategy`, and other pluggable components.
+
+See this example project here for more details on the interface and its usage: https://github.com/dbluhm/acapy-ld-signer

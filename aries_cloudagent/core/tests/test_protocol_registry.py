@@ -2,7 +2,7 @@ from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ...config.injection_context import InjectionContext
-from ...utils.classloader import ClassLoader
+from ...utils.classloader import ClassLoader, DeferLoad
 
 from ..protocol_registry import ProtocolRegistry
 
@@ -10,11 +10,11 @@ from ..protocol_registry import ProtocolRegistry
 class TestProtocolRegistry(IsolatedAsyncioTestCase):
     no_type_message = {"a": "b"}
     unknown_type_message = {"@type": 1}
-    test_message_type = "PROTOCOL/MESSAGE"
-    test_protocol = "PROTOCOL"
-    test_protocol_queries = ["*", "PROTOCOL", "PROTO*"]
+    test_message_type = "doc/protocol/1.0/message"
+    test_protocol = "doc/protocol/1.0"
+    test_protocol_queries = ["*", "doc/protocol/1.0", "doc/proto*"]
     test_protocol_queries_fail = ["", "nomatch", "nomatch*"]
-    test_message_handler = "fake_handler"
+    test_message_cls = "fake_msg_cls"
     test_controller = "fake_controller"
 
     def setUp(self):
@@ -22,7 +22,7 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
 
     def test_protocols(self):
         self.registry.register_message_types(
-            {self.test_message_type: self.test_message_handler}
+            {self.test_message_type: self.test_message_cls}
         )
         self.registry.register_controllers(
             {self.test_message_type: self.test_controller}
@@ -30,13 +30,10 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
 
         assert list(self.registry.message_types) == [self.test_message_type]
         assert list(self.registry.protocols) == [self.test_protocol]
-        assert self.registry.controllers == {
-            self.test_message_type: self.test_controller
-        }
 
     def test_message_type_query(self):
         self.registry.register_message_types(
-            {self.test_message_type: self.test_message_handler}
+            {self.test_message_type: self.test_message_cls}
         )
         for q in self.test_protocol_queries:
             matches = self.registry.protocols_matching_query(q)
@@ -45,165 +42,127 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
             matches = self.registry.protocols_matching_query(q)
             assert matches == ()
 
-    def test_create_msg_types_for_minor_version(self):
+    def test_registration_with_minor_version(self):
         MSG_PATH = "aries_cloudagent.protocols.introduction.v0_1.messages"
-        test_typesets = (
-            {
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-forward-invitation": f"{MSG_PATH}.forward_invitation.ForwardInvitation",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-invitation": f"{MSG_PATH}.invitation.Invitation",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
-                "https://didcom.org/introduction-service/1.0/fake-forward-invitation": f"{MSG_PATH}.forward_invitation.ForwardInvitation",
-                "https://didcom.org/introduction-service/1.0/fake-invitation": f"{MSG_PATH}.invitation.Invitation",
-                "https://didcom.org/introduction-service/1.0/fake-invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
-            },
-        )
+        test_typesets = {
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-forward-invitation": f"{MSG_PATH}.forward_invitation.ForwardInvitation",
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-invitation": f"{MSG_PATH}.invitation.Invitation",
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
+            "https://didcom.org/introduction-service/1.0/fake-forward-invitation": f"{MSG_PATH}.forward_invitation.ForwardInvitation",
+            "https://didcom.org/introduction-service/1.0/fake-invitation": f"{MSG_PATH}.invitation.Invitation",
+            "https://didcom.org/introduction-service/1.0/fake-invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
+        }
         test_version_def = {
             "current_minor_version": 0,
             "major_version": 1,
             "minimum_minor_version": 0,
             "path": "v0_1",
         }
-        updated_typesets = self.registry.create_msg_types_for_minor_version(
-            test_typesets, test_version_def
-        )
-        updated_typeset = updated_typesets[0]
+        self.registry.register_message_types(test_typesets, test_version_def)
         assert (
             "https://didcom.org/introduction-service/1.0/fake-forward-invitation"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "https://didcom.org/introduction-service/1.0/fake-invitation"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "https://didcom.org/introduction-service/1.0/fake-invitation-request"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-forward-invitation"
-            in updated_typeset
+            in self.registry.message_types
         )
 
-    def test_introduction_create_msg_types_for_minor_version(self):
-        MSG_PATH = "aries_cloudagent.protocols.introduction.v0_1.messages"
-        test_typesets = (
-            {
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/invitation": f"{MSG_PATH}.invitation.Invitation",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/forward-invitation": f"{MSG_PATH}.invitation_messages.forward_invitation.ForwardInvitation",
-                "https://didcom.org/introduction-service/0.1/invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
-                "https://didcom.org/introduction-service/0.1/invitation": f"{MSG_PATH}.invitation.Invitation",
-                "https://didcom.org/introduction-service/0.1/forward-invitation": f"{MSG_PATH}.forward_invitation.ForwardInvitation",
-            },
-        )
-        test_version_def = {
-            "current_minor_version": 1,
-            "major_version": 0,
-            "minimum_minor_version": 1,
-            "path": "v0_1",
-        }
-        updated_typesets = self.registry.create_msg_types_for_minor_version(
-            test_typesets, test_version_def
-        )
-        updated_typeset = updated_typesets[0]
-        assert (
-            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/invitation-request"
-            in updated_typeset
-        )
-        assert (
-            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/invitation"
-            in updated_typeset
-        )
-        assert (
-            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/forward-invitation"
-            in updated_typeset
-        )
-        assert (
-            "https://didcom.org/introduction-service/0.1/invitation-request"
-            in updated_typeset
-        )
-        assert (
-            "https://didcom.org/introduction-service/0.1/invitation" in updated_typeset
-        )
-        assert (
-            "https://didcom.org/introduction-service/0.1/forward-invitation"
-            in updated_typeset
-        )
-
-    def test_oob_create_msg_types_for_minor_version(self):
+    def test_register_msg_types_for_multiple_minor_versions(self):
         MSG_PATH = "aries_cloudagent.protocols.out_of_band.v1_0.messages"
-        test_typesets = (
-            {
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/invitation": f"{MSG_PATH}.invitation.Invitation",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse": f"{MSG_PATH}.reuse.HandshakeReuse",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse-accepted": f"{MSG_PATH}.reuse_accept.HandshakeReuseAccept",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/problem_report": f"{MSG_PATH}.problem_report.OOBProblemReport",
-                "https://didcom.org/out-of-band/1.1/invitation": f"{MSG_PATH}.invitation.Invitation",
-                "https://didcom.org/out-of-band/1.1/handshake-reuse": f"{MSG_PATH}.reuse.HandshakeReuse",
-                "https://didcom.org/out-of-band/1.1/handshake-reuse-accepted": f"{MSG_PATH}.reuse_accept.HandshakeReuseAccept",
-                "https://didcom.org/out-of-band/1.1/problem_report": f"{MSG_PATH}.problem_report.OOBProblemReport",
-            },
-        )
+        test_typesets = {
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/invitation": f"{MSG_PATH}.invitation.Invitation",
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse": f"{MSG_PATH}.reuse.HandshakeReuse",
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse-accepted": f"{MSG_PATH}.reuse_accept.HandshakeReuseAccept",
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/problem_report": f"{MSG_PATH}.problem_report.OOBProblemReport",
+            "https://didcom.org/out-of-band/1.1/invitation": f"{MSG_PATH}.invitation.Invitation",
+            "https://didcom.org/out-of-band/1.1/handshake-reuse": f"{MSG_PATH}.reuse.HandshakeReuse",
+            "https://didcom.org/out-of-band/1.1/handshake-reuse-accepted": f"{MSG_PATH}.reuse_accept.HandshakeReuseAccept",
+            "https://didcom.org/out-of-band/1.1/problem_report": f"{MSG_PATH}.problem_report.OOBProblemReport",
+        }
         test_version_def = {
             "current_minor_version": 1,
             "major_version": 1,
             "minimum_minor_version": 0,
             "path": "v0_1",
         }
-        updated_typesets = self.registry.create_msg_types_for_minor_version(
-            test_typesets, test_version_def
+        self.registry.register_message_types(test_typesets, test_version_def)
+        assert (
+            "https://didcom.org/out-of-band/1.0/invitation"
+            in self.registry.message_types
         )
-        updated_typeset = updated_typesets[0]
-        assert "https://didcom.org/out-of-band/1.0/invitation" in updated_typeset
-        assert "https://didcom.org/out-of-band/1.0/handshake-reuse" in updated_typeset
+        assert (
+            "https://didcom.org/out-of-band/1.0/handshake-reuse"
+            in self.registry.message_types
+        )
         assert (
             "https://didcom.org/out-of-band/1.0/handshake-reuse-accepted"
-            in updated_typeset
+            in self.registry.message_types
         )
-        assert "https://didcom.org/out-of-band/1.0/problem_report" in updated_typeset
-        assert "https://didcom.org/out-of-band/1.1/invitation" in updated_typeset
-        assert "https://didcom.org/out-of-band/1.1/handshake-reuse" in updated_typeset
+        assert (
+            "https://didcom.org/out-of-band/1.0/problem_report"
+            in self.registry.message_types
+        )
+        assert (
+            "https://didcom.org/out-of-band/1.1/invitation"
+            in self.registry.message_types
+        )
+        assert (
+            "https://didcom.org/out-of-band/1.1/handshake-reuse"
+            in self.registry.message_types
+        )
         assert (
             "https://didcom.org/out-of-band/1.1/handshake-reuse-accepted"
-            in updated_typeset
+            in self.registry.message_types
         )
-        assert "https://didcom.org/out-of-band/1.1/problem_report" in updated_typeset
+        assert (
+            "https://didcom.org/out-of-band/1.1/problem_report"
+            in self.registry.message_types
+        )
         assert (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.0/invitation"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.0/handshake-reuse"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.0/handshake-reuse-accepted"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.0/problem_report"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/invitation"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse-accepted"
-            in updated_typeset
+            in self.registry.message_types
         )
         assert (
             "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/problem_report"
-            in updated_typeset
+            in self.registry.message_types
         )
 
     async def test_disclosed(self):
         self.registry.register_message_types(
-            {self.test_message_type: self.test_message_handler}
+            {self.test_message_type: self.test_message_cls}
         )
         mocked = mock.MagicMock()
         mocked.return_value.check_access = mock.CoroutineMock()
@@ -222,7 +181,7 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
 
     async def test_disclosed_str(self):
         self.registry.register_message_types(
-            {self.test_message_type: self.test_message_handler}
+            {self.test_message_type: self.test_message_cls}
         )
         self.registry.register_controllers({self.test_protocol: "mock-class-name"})
         protocols = [self.test_protocol]
@@ -244,24 +203,20 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
 
     def test_resolve_message_class_str(self):
         self.registry.register_message_types(
-            {self.test_message_type: self.test_message_handler}
+            {self.test_message_type: self.test_message_cls}
         )
-        mock_class = mock.MagicMock()
-        with mock.patch.object(
-            ClassLoader, "load_class", mock.MagicMock()
-        ) as load_class:
-            load_class.return_value = mock_class
-            result = self.registry.resolve_message_class(self.test_message_type)
-            assert result == mock_class
+        result = self.registry.resolve_message_class(self.test_message_type)
+        assert isinstance(result, DeferLoad)
+        assert result._cls_path == self.test_message_cls
 
     def test_resolve_message_class_no_major_version_support(self):
-        result = self.registry.resolve_message_class("proto/1.2/hello")
+        result = self.registry.resolve_message_class("doc/proto/1.2/hello")
         assert result is None
 
     def test_resolve_message_load_class_str(self):
-        message_type_a = "proto/1.2/aaa"
+        message_type_a = "doc/proto/1.2/aaa"
         self.registry.register_message_types(
-            {message_type_a: self.test_message_handler},
+            {message_type_a: self.test_message_cls},
             version_definition={
                 "major_version": 1,
                 "minimum_minor_version": 0,
@@ -269,18 +224,14 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
                 "path": "v1_2",
             },
         )
-        mock_class = mock.MagicMock()
-        with mock.patch.object(
-            ClassLoader, "load_class", mock.MagicMock()
-        ) as load_class:
-            load_class.side_effect = [mock_class, mock_class]
-            result = self.registry.resolve_message_class("proto/1.1/aaa")
-            assert result == mock_class
+        result = self.registry.resolve_message_class("doc/proto/1.1/aaa")
+        assert isinstance(result, DeferLoad)
+        assert result._cls_path == self.test_message_cls
 
     def test_resolve_message_load_class_none(self):
-        message_type_a = "proto/1.2/aaa"
+        message_type_a = "doc/proto/1.2/aaa"
         self.registry.register_message_types(
-            {message_type_a: self.test_message_handler},
+            {message_type_a: self.test_message_cls},
             version_definition={
                 "major_version": 1,
                 "minimum_minor_version": 0,
@@ -288,13 +239,8 @@ class TestProtocolRegistry(IsolatedAsyncioTestCase):
                 "path": "v1_2",
             },
         )
-        mock_class = mock.MagicMock()
-        with mock.patch.object(
-            ClassLoader, "load_class", mock.MagicMock()
-        ) as load_class:
-            load_class.side_effect = [mock_class, mock_class]
-            result = self.registry.resolve_message_class("proto/1.2/bbb")
-            assert result is None
+        result = self.registry.resolve_message_class("doc/proto/1.2/bbb")
+        assert result is None
 
     def test_repr(self):
         assert isinstance(repr(self.registry), str)

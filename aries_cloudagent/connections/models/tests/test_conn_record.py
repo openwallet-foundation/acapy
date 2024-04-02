@@ -35,23 +35,6 @@ class TestConnRecord(IsolatedAsyncioTestCase):
         assert self.test_conn_record.state == ConnRecord.State.COMPLETED.rfc160
         assert self.test_conn_record.rfc23_state == ConnRecord.State.COMPLETED.rfc23
 
-    def test_get_protocol(self):
-        assert ConnRecord.Protocol.get("test") is None
-        assert (
-            ConnRecord.Protocol.get("didexchange/1.0") is ConnRecord.Protocol.RFC_0023
-        )
-        assert (
-            ConnRecord.Protocol.get(ConnRecord.Protocol.RFC_0023)
-            is ConnRecord.Protocol.RFC_0023
-        )
-        assert (
-            ConnRecord.Protocol.get("connections/1.0") is ConnRecord.Protocol.RFC_0160
-        )
-        assert (
-            ConnRecord.Protocol.get(ConnRecord.Protocol.RFC_0160)
-            is ConnRecord.Protocol.RFC_0160
-        )
-
     async def test_get_enums(self):
         assert ConnRecord.Role.get("Larry") is None
         assert ConnRecord.State.get("a suffusion of yellow") is None

@@ -327,15 +327,38 @@ class LoggingConfigurator:
     @classmethod
     def print_notices(cls, settings: Settings):
         """Print notices and warnings."""
-        if settings.get("wallet.type", "in_memory").lower() == "indy":
-            with Banner(border=":", length=80, file=sys.stderr) as banner:
-                banner.centered("⚠ DEPRECATION NOTICE: ⚠")
-                banner.hr()
+        with Banner(border=":", length=80, file=sys.stderr) as banner:
+            banner.centered("⚠ DEPRECATION NOTICE: ⚠")
+            banner.hr()
+            if settings.get("wallet.type", "in_memory").lower() == "indy":
                 banner.print(
                     "The Indy wallet type is deprecated, use Askar instead; see: "
                     "https://aca-py.org/main/deploying/IndySDKtoAskarMigration/",
                 )
-            print()
+                banner.hr()
+            banner.print(
+                "Receiving a core DIDComm protocol with the "
+                "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix is deprecated. All parties "
+                "sending this prefix should be notified that support for receiving such "
+                "messages will be removed in a future release. "
+                "Use https://didcomm.org/ instead."
+            )
+            banner.hr()
+            banner.print(
+                "Aries RFC 0160: Connection Protocol is deprecated and support will be "
+                "removed in a future release; use RFC 0023: DID Exchange instead."
+            )
+            banner.hr()
+            banner.print(
+                "Aries RFC 0036: Issue Credential 1.0 is deprecated and support will be "
+                "removed in a future release; use RFC 0453: Issue Credential 2.0 instead."
+            )
+            banner.hr()
+            banner.print(
+                "Aries RFC 0037: Present Proof 1.0 is deprecated and support will be "
+                "removed in a future release; use RFC 0454: Present Proof 2.0 instead."
+            )
+        print()
 
 
 ######################################################################

@@ -32,7 +32,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
         self.request.query = {
             "invitation_id": "dummy",  # exercise tag filter assignment
             "their_role": ConnRecord.Role.REQUESTER.rfc160,
-            "connection_protocol": ConnRecord.Protocol.RFC_0160.aries_protocol,
+            "connection_protocol": "connections/1.0",
             "invitation_key": "some-invitation-key",
             "their_public_did": "a_public_did",
             "invitation_msg_id": "dummy_msg",
@@ -99,7 +99,7 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                     },
                     post_filter_positive={
                         "their_role": list(ConnRecord.Role.REQUESTER.value),
-                        "connection_protocol": ConnRecord.Protocol.RFC_0160.aries_protocol,
+                        "connection_protocol": "connections/1.0",
                     },
                     alt=True,
                 )

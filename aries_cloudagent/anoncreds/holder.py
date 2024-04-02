@@ -24,6 +24,7 @@ from ..core.error import BaseError
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..wallet.error import WalletNotFoundError
+from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
 from .models.anoncreds_cred_def import CredDef
 
 LOGGER = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ class AnonCredsHolder:
     def profile(self) -> AskarAnoncredsProfile:
         """Accessor for the profile instance."""
         if not isinstance(self._profile, AskarAnoncredsProfile):
-            raise ValueError("AnonCreds interface requires AskarAnoncreds")
+            raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
 
         return self._profile
 

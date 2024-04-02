@@ -9,7 +9,6 @@ import uuid
 
 from ....messaging.decorators.service_decorator import ServiceDecorator
 from ....core.event_bus import EventBus
-from ....core.util import get_version_from_message
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
@@ -21,6 +20,8 @@ from ....messaging.valid import IndyDID
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
+from ....wallet.did_info import INVITATION_REUSE_KEY
+from ....wallet.did_method import PEER2, PEER4
 from ....wallet.key_type import ED25519
 from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
@@ -81,8 +82,11 @@ class OutOfBandManager(BaseConnectionManager):
         my_endpoint: str = None,
         auto_accept: bool = None,
         public: bool = False,
+        did_peer_2: bool = False,
+        did_peer_4: bool = False,
         hs_protos: Sequence[HSProto] = None,
         multi_use: bool = False,
+        create_unique_did: bool = False,
         alias: str = None,
         attachments: Sequence[Mapping] = None,
         metadata: dict = None,
@@ -200,6 +204,7 @@ class OutOfBandManager(BaseConnectionManager):
         handshake_protocols = [
             DIDCommPrefix.qualify_current(hsp.name) for hsp in hs_protos or []
         ] or None
+        # Handshake protocol list should be ordered by preference by caller
         connection_protocol = (
             hs_protos[0].name if hs_protos and len(hs_protos) >= 1 else None
         )
@@ -250,6 +255,98 @@ class OutOfBandManager(BaseConnectionManager):
                 )
                 conn_rec = ConnRecord(  # create connection record
                     invitation_key=public_did.verkey,
+                    invitation_msg_id=invi_msg._id,
+                    invitation_mode=invitation_mode,
+                    their_role=ConnRecord.Role.REQUESTER.rfc23,
+                    state=ConnRecord.State.INVITATION.rfc23,
+                    accept=(
+                        ConnRecord.ACCEPT_AUTO
+                        if auto_accept
+                        else ConnRecord.ACCEPT_MANUAL
+                    ),
+                    alias=alias,
+                    connection_protocol=connection_protocol,
+                )
+
+                async with self.profile.session() as session:
+                    await conn_rec.save(session, reason="Created new invitation")
+                    await conn_rec.attach_invitation(session, invi_msg)
+
+                    await conn_rec.attach_invitation(session, invi_msg)
+
+                    if metadata:
+                        for key, value in metadata.items():
+                            await conn_rec.metadata_set(session, key, value)
+            else:
+                our_service = ServiceDecorator(
+                    recipient_keys=[our_recipient_key],
+                    endpoint=endpoint,
+                    routing_keys=[],
+                ).serialize()
+
+        elif did_peer_4 or did_peer_2:
+            mediation_records = [mediation_record] if mediation_record else []
+
+            if my_endpoint:
+                my_endpoints = [my_endpoint]
+            else:
+                my_endpoints = []
+                default_endpoint = self.profile.settings.get("default_endpoint")
+                if default_endpoint:
+                    my_endpoints.append(default_endpoint)
+                my_endpoints.extend(
+                    self.profile.settings.get("additional_endpoints", [])
+                )
+
+            my_info = None
+            my_did = None
+            if not create_unique_did:
+                # check wallet to see if there is an existing "invitation" DID available
+                did_method = PEER4 if did_peer_4 else PEER2
+                my_info = await self.fetch_invitation_reuse_did(did_method)
+                if my_info:
+                    my_did = my_info.did
+                else:
+                    LOGGER.warn("No invitation DID found, creating new DID")
+
+            if not my_did:
+                did_metadata = (
+                    {INVITATION_REUSE_KEY: "true"} if not create_unique_did else {}
+                )
+                if did_peer_4:
+                    my_info = await self.create_did_peer_4(
+                        my_endpoints, mediation_records, did_metadata
+                    )
+                    my_did = my_info.did
+                else:
+                    my_info = await self.create_did_peer_2(
+                        my_endpoints, mediation_records, did_metadata
+                    )
+                    my_did = my_info.did
+
+            invi_msg = InvitationMessage(  # create invitation message
+                _id=invitation_message_id,
+                label=my_label or self.profile.settings.get("default_label"),
+                handshake_protocols=handshake_protocols,
+                requests_attach=message_attachments,
+                services=[my_did],
+                accept=service_accept if protocol_version != "1.0" else None,
+                version=protocol_version or DEFAULT_VERSION,
+                image_url=image_url,
+            )
+            invi_url = invi_msg.to_url()
+
+            our_recipient_key = my_info.verkey
+
+            # Only create connection record if hanshake_protocols is defined
+            if handshake_protocols:
+                invitation_mode = (
+                    ConnRecord.INVITATION_MODE_MULTI
+                    if multi_use
+                    else ConnRecord.INVITATION_MODE_ONCE
+                )
+                conn_rec = ConnRecord(  # create connection record
+                    invitation_key=our_recipient_key,
                     invitation_msg_id=invi_msg._id,
                     invitation_mode=invitation_mode,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
@@ -454,7 +551,7 @@ class OutOfBandManager(BaseConnectionManager):
         # service_accept
         service_accept = invitation.accept
 
-        # Get the DID public did, if any
+        # Get the DID public did, if any (might also be a did:peer)
         public_did = None
         if isinstance(oob_service_item, str):
             if bool(IndyDID.PATTERN.match(oob_service_item)):
@@ -465,7 +562,7 @@ class OutOfBandManager(BaseConnectionManager):
         conn_rec = None
 
         # Find existing connection - only if started by an invitation with Public DID
-        # and use_existing_connection is true
+        # (or did:peer) and use_existing_connection is true
         if (
             public_did is not None and use_existing_connection
         ):  # invite has public DID: seek existing connection
@@ -473,9 +570,13 @@ class OutOfBandManager(BaseConnectionManager):
                 "Trying to find existing connection for oob invitation with "
                 f"did {public_did}"
             )
+            if public_did.startswith("did:peer:4"):
+                search_public_did = self.long_did_peer_to_short(public_did)
+            else:
+                search_public_did = public_did
             async with self._profile.session() as session:
                 conn_rec = await ConnRecord.find_existing_connection(
-                    session=session, their_public_did=public_did
+                    session=session, their_public_did=search_public_did
                 )
 
         oob_record = OobRecord(
@@ -489,7 +590,7 @@ class OutOfBandManager(BaseConnectionManager):
         # Try to reuse the connection. If not accepted sets the conn_rec to None
         if conn_rec and not invitation.requests_attach:
             oob_record = await self._handle_hanshake_reuse(
-                oob_record, conn_rec, get_version_from_message(invitation)
+                oob_record, conn_rec, invitation._version
             )
 
             LOGGER.warning(
@@ -793,13 +894,8 @@ class OutOfBandManager(BaseConnectionManager):
         invitation = oob_record.invitation
 
         supported_handshake_protocols = [
-            HSProto.get(hsp)
-            for hsp in dict.fromkeys(
-                [
-                    DIDCommPrefix.unqualify(proto)
-                    for proto in invitation.handshake_protocols
-                ]
-            )
+            HSProto.get(DIDCommPrefix.unqualify(proto))
+            for proto in invitation.handshake_protocols
         ]
 
         # Get the single service item
@@ -809,8 +905,10 @@ class OutOfBandManager(BaseConnectionManager):
             # If it's in the did format, we need to convert to a full service block
             # An existing connection can only be reused based on a public DID
             # in an out-of-band message (RFC 0434).
+            # OR did:peer:2 or did:peer:4.
 
-            public_did = service.split(":")[-1]
+            if not service.startswith("did:peer"):
+                public_did = service.split(":")[-1]
 
             # TODO: resolve_invitation should resolve key_info objects
             # or something else that includes the key type. We now assume
@@ -835,12 +933,15 @@ class OutOfBandManager(BaseConnectionManager):
                 }
             )
 
-        LOGGER.debug(f"Creating connection with public did {public_did}")
+        if public_did:
+            LOGGER.debug(f"Creating connection with public did {public_did}")
+        else:
+            LOGGER.debug(f"Creating connection with service {service}")
 
         conn_record = None
         for protocol in supported_handshake_protocols:
             # DIDExchange
-            if protocol is HSProto.RFC23:
+            if protocol is HSProto.RFC23 or protocol is HSProto.DIDEX_1_1:
                 didx_mgr = DIDXManager(self.profile)
                 conn_record = await didx_mgr.receive_invitation(
                     invitation=invitation,
@@ -848,6 +949,7 @@ class OutOfBandManager(BaseConnectionManager):
                     auto_accept=auto_accept,
                     alias=alias,
                     mediation_id=mediation_id,
+                    protocol=protocol.name,
                 )
                 break
             # 0160 Connection
@@ -1001,9 +1103,7 @@ class OutOfBandManager(BaseConnectionManager):
         invi_msg_id = reuse_msg._thread.pthid
         reuse_msg_id = reuse_msg._thread_id
 
-        reuse_accept_msg = HandshakeReuseAccept(
-            version=get_version_from_message(reuse_msg)
-        )
+        reuse_accept_msg = HandshakeReuseAccept(version=reuse_msg._version)
         reuse_accept_msg.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
         connection_targets = await self.fetch_connection_targets(connection=conn_rec)
 

@@ -11,7 +11,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from marshmallow import fields
+from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
@@ -28,7 +28,7 @@ from ....messaging.valid import (
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 from .manager import DIDXManager, DIDXManagerError
-from .message_types import SPEC_URI
+from .message_types import DIDEX_1_0, DIDEX_1_1, SPEC_URI
 from .messages.request import DIDXRequest, DIDXRequestSchema
 
 
@@ -104,6 +104,14 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
                 " user about the context-specific goal of the out-of-band message"
             ),
             "example": "To issue a Faber College Graduate credential",
+        },
+    )
+    protocol = fields.Str(
+        required=False,
+        validate=validate.OneOf([DIDEX_1_0, DIDEX_1_1]),
+        metadata={
+            "description": "Which DID Exchange Protocol version to use",
+            "example": "didexchange/1.0",
         },
     )
 
@@ -223,7 +231,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
     try:
         async with profile.session() as session:
             conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
-        request = await didx_mgr.create_request(
+        didx_request = await didx_mgr.create_request(
             conn_rec=conn_rec,
             my_label=my_label,
             my_endpoint=my_endpoint,
@@ -235,7 +243,7 @@ async def didx_accept_invitation(request: web.BaseRequest):
     except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    await outbound_handler(request, connection_id=conn_rec.connection_id)
+    await outbound_handler(didx_request, connection_id=conn_rec.connection_id)
 
     return web.json_response(result)
 
@@ -258,7 +266,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
-    their_public_did = request.query.get("their_public_did")
+    their_public_did = request.query["their_public_did"]
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
@@ -267,11 +275,12 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     goal_code = request.query.get("goal_code") or None
     goal = request.query.get("goal") or None
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
+    protocol = request.query.get("protocol") or None
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
     try:
-        request = await didx_mgr.create_request_implicit(
+        didx_request = await didx_mgr.create_request_implicit(
             their_public_did=their_public_did,
             my_label=my_label,
             my_endpoint=my_endpoint,
@@ -281,18 +290,20 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             goal_code=goal_code,
             goal=goal,
             auto_accept=auto_accept,
+            protocol=protocol,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (StorageError, WalletError, DIDXManagerError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(request.serialize())
+    return web.json_response(didx_request.serialize())
 
 
 @docs(
     tags=["did-exchange"],
     summary="Receive request against public DID's implicit invitation",
+    deprecated=True,
 )
 @querystring_schema(DIDXReceiveRequestImplicitQueryStringSchema())
 @request_schema(DIDXRequestSchema())
@@ -311,21 +322,17 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
 
     body = await request.json()
     alias = request.query.get("alias")
-    my_endpoint = request.query.get("my_endpoint")
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    mediation_id = request.query.get("mediation_id") or None
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
     try:
-        request = DIDXRequest.deserialize(body)
+        didx_request = DIDXRequest.deserialize(body)
         conn_rec = await didx_mgr.receive_request(
-            request=request,
-            recipient_did=request._thread.pthid.split(":")[-1],
+            request=didx_request,
+            recipient_did=didx_request._thread.pthid.split(":")[-1],
             alias=alias,
-            my_endpoint=my_endpoint,
             auto_accept_implicit=auto_accept,
-            mediation_id=mediation_id,
         )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:

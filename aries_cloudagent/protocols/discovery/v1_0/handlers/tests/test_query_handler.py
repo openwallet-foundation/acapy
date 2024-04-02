@@ -10,12 +10,12 @@ from ...handlers.query_handler import QueryHandler
 from ...messages.disclose import Disclose
 from ...messages.query import Query
 
-TEST_MESSAGE_FAMILY = "TEST_FAMILY"
-TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
+TEST_MESSAGE_FAMILY = "doc/proto/1.0"
+TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
+def request_context():
     ctx = RequestContext.test_context()
     registry = ProtocolRegistry()
     registry.register_message_types({TEST_MESSAGE_TYPE: object()})
@@ -44,7 +44,7 @@ class TestQueryHandler:
     async def test_query_all_disclose_list_settings(self, request_context):
         profile = request_context.profile
         registry = profile.inject(ProtocolRegistry)
-        registry.register_message_types({"TEST_FAMILY_B/MESSAGE": object()})
+        registry.register_message_types({"doc/proto-b/1.0/message": object()})
         profile.context.injector.bind_instance(ProtocolRegistry, registry)
         profile.settings["disclose_protocol_list"] = [TEST_MESSAGE_FAMILY]
         query_msg = Query(query="*")
@@ -75,7 +75,7 @@ class TestQueryHandler:
             mock_prepare_disclosed.return_value = [
                 {"test": "test"},
                 {
-                    "pid": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/action-menu/1.0",
+                    "pid": "https://didcomm.org/action-menu/1.0",
                     "roles": ["provider"],
                 },
             ]
@@ -85,9 +85,6 @@ class TestQueryHandler:
             result, target = messages[0]
             assert isinstance(result, Disclose) and result.protocols
             assert len(result.protocols) == 1
-            assert (
-                result.protocols[0]["pid"]
-                == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/action-menu/1.0"
-            )
+            assert result.protocols[0]["pid"] == "https://didcomm.org/action-menu/1.0"
             assert result.protocols[0]["roles"] == ["provider"]
             assert not target

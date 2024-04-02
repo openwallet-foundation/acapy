@@ -1,6 +1,4 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-import asyncpg
 import base64
 import functools
 import json
@@ -9,17 +7,18 @@ import os
 import random
 import subprocess
 import sys
-import yaml
-
+from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer
 
+import asyncpg
+import yaml
 from aiohttp import (
-    web,
-    ClientSession,
+    ClientError,
     ClientRequest,
     ClientResponse,
-    ClientError,
+    ClientSession,
     ClientTimeout,
+    web,
 )
 
 from .utils import flatten, log_json, log_msg, log_timer, output_reader
@@ -145,6 +144,9 @@ class DemoAgent:
         log_file: str = None,
         log_config: str = None,
         log_level: str = None,
+        reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
         **params,
     ):
         self.ident = ident
@@ -179,6 +181,9 @@ class DemoAgent:
         self.log_file = log_file
         self.log_config = log_config
         self.log_level = log_level
+        self.reuse_connections = reuse_connections
+        self.multi_use_invitations = multi_use_invitations
+        self.public_did_connections = public_did_connections
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -1045,17 +1050,17 @@ class DemoAgent:
         )
 
     async def handle_endorse_transaction(self, message):
-        self.log(f"Received endorse transaction ...\n", source="stderr")
+        self.log("Received endorse transaction ...\n", source="stderr")
 
     async def handle_revocation_registry(self, message):
         reg_id = message.get("revoc_reg_id", "(undetermined)")
         self.log(f"Revocation registry: {reg_id} state: {message['state']}")
 
     async def handle_mediation(self, message):
-        self.log(f"Received mediation message ...\n")
+        self.log("Received mediation message ...\n")
 
     async def handle_keylist(self, message):
-        self.log(f"Received handle_keylist message ...\n")
+        self.log("Received handle_keylist message ...\n")
         self.log(json.dumps(message))
 
     async def taa_accept(self):
@@ -1167,7 +1172,7 @@ class DemoAgent:
             raise
 
     async def admin_POST(
-        self, path, data=None, text=False, params=None, headers=None
+        self, path, data=None, text=False, params=None, headers=None, raise_error=True
     ) -> ClientResponse:
         try:
             EVENT_LOGGER.debug(
@@ -1192,6 +1197,8 @@ class DemoAgent:
             return response
         except ClientError as e:
             self.log(f"Error during POST {path}: {str(e)}")
+            if not raise_error:
+                return None
             raise
 
     async def admin_PATCH(
@@ -1446,19 +1453,25 @@ class DemoAgent:
         use_did_exchange: bool,
         auto_accept: bool = True,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
     ):
         self.connection_id = None
         if use_did_exchange:
             # TODO can mediation be used with DID exchange connections?
+            create_unique_did = (not reuse_connections) and (not public_did_connections)
             invi_params = {
                 "auto_accept": json.dumps(auto_accept),
+                "multi_use": json.dumps(multi_use_invitations),
+                "create_unique_did": json.dumps(create_unique_did),
             }
             payload = {
                 "handshake_protocols": ["rfc23"],
-                "use_public_did": reuse_connections,
+                "use_public_did": public_did_connections,
             }
             if self.mediation:
                 payload["mediation_id"] = self.mediator_request_id
+            print("Calling /out-of-band/create-invitation with:", payload, invi_params)
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
                 payload,
@@ -1488,8 +1501,9 @@ class DemoAgent:
         if self.mediation:
             params["mediation_id"] = self.mediator_request_id
         if "/out-of-band/" in invite.get("@type", ""):
-            # always reuse connections if possible
-            params["use_existing_connection"] = "true"
+            # reuse connections if requested and possible
+            params["use_existing_connection"] = json.dumps(self.reuse_connections)
+            print("Receiving invitation with params:", params)
             connection = await self.admin_POST(
                 "/out-of-band/receive-invitation",
                 invite,

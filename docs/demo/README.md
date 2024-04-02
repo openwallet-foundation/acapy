@@ -63,7 +63,7 @@ Jump to the [Follow the Script](#follow-the-script) section below for further in
 Running the demo in docker requires having a `von-network` (a Hyperledger Indy public ledger sandbox) instance running in docker locally. See the [VON Network Tutorial](https://github.com/bcgov/von-network/blob/main/docs/UsingVONNetwork.md) for guidance
 on starting and stopping your own local Hyperledger Indy instance.
 
-Open three `bash` shells. For Windows users, `git-bash` is highly recommended. bash is the default shell in Linux and Mac terminal sessions.
+Open three `bash` shells. For Windows users, `git-bash` is highly recommended. bash is the default shell in Linux and Mac terminal sessions. For Mac users on the newer M1/2/3 Apple Silicon devices, make sure that you install Apple's Rosetta 2 software, using these [installation instructions from Apple](https://support.apple.com/en-us/102527), and this even more useful [guidance on how to install Rosetta 2 from the command line](https://osxdaily.com/2020/12/04/how-install-rosetta-2-apple-silicon-mac/) which amounts to running this MacOS command: `softwareupdate --install-rosetta`.
 
 In the first terminal window, start `von-network` by following the [Building and Starting](https://github.com/bcgov/von-network/blob/main/docs/UsingVONNetwork.md#building-and-starting) instructions.
 
@@ -265,7 +265,11 @@ You can enable DID Exchange using the `--did-exchange` parameter for the `alice`
 
 This will use the new DID Exchange protocol when establishing connections between the agents, rather than the older Connection protocol.  There is no other affect on the operation of the agents.
 
-Note that you can't (currently) use the DID Exchange protocol to connect with any of the available mobile agents.
+With DID Exchange, you can also enable use of the inviter's public DID for invitations, multi-use invitations, and connection re-use:
+
+- `--public-did-connections` - use the inviter's public DID in invitations, and allow use of implicit invitations
+- `--reuse-connections` - support connection re-use (invitee will reuse an existing connection if it uses the same DID as in the new invitation)
+- `--multi-use-invitations` - inviter will issue multi-use invitations
 
 ### Endorser
 
@@ -413,6 +417,18 @@ To pass extra arguements to the agent (for example):
 
 ```bash
 DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --did-exchange --reuse-connections
+```
+
+Additionally, separating the build and run functionalities in the script allows for smoother development and debugging processes. With the mounting of volumes from the host into the Docker container, code changes can be automatically reloaded without the need to repeatedly build the demo.
+
+Build Command:
+```bash
+./demo/run_demo build alice --wallet-type askar-anoncreds --events
+```
+
+Run Command:
+```bash
+./demo/run_demo run alice --wallet-type askar-anoncreds --events
 ```
 
 ## Learning about the Alice/Faber code

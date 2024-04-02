@@ -41,6 +41,7 @@ from ...protocols.endorse_transaction.v1_0.util import (
 )
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError, StorageNotFoundError
+from ...utils.profiles import is_anoncreds_profile_raise_web_exception
 from ..models.base import BaseModelError
 from ..models.openapi import OpenAPISchema
 from ..valid import (
@@ -177,6 +178,9 @@ async def schemas_send_schema(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     outbound_handler = request["outbound_message_router"]
 
     create_transaction_for_endorser = json.loads(
@@ -348,6 +352,8 @@ async def schemas_created(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
+    is_anoncreds_profile_raise_web_exception(context.profile)
+
     session = await context.session()
     storage = session.inject(BaseStorage)
     found = await storage.find_all_records(
@@ -374,12 +380,16 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     schema_id = request.match_info["schema_id"]
 
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
@@ -420,8 +430,9 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     schema_id = request.match_info["schema_id"]
 
@@ -429,7 +440,7 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
         storage = session.inject(BaseStorage)
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(

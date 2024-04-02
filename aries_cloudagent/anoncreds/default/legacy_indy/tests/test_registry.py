@@ -86,7 +86,7 @@ mock_schema = AnonCredsSchema(
 class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar-anoncreds"},
+            settings={"wallet.type": "askar-anoncreds"},
             profile_class=AskarAnoncredsProfile,
         )
         self.registry = test_module.LegacyIndyRegistry()

@@ -25,7 +25,10 @@ from ...protocols.connections.v1_0.messages.connection_invitation import (
 )
 from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
 from ...protocols.didcomm_prefix import DIDCommPrefix
-from ...protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from ...protocols.didexchange.v1_0.message_types import (
+    ARIES_PROTOCOL as DIDEX_1_1,
+    DIDEX_1_0,
+)
 from ...protocols.didexchange.v1_0.messages.request import DIDXRequest
 from ...protocols.out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitation,
@@ -43,27 +46,7 @@ class ConnRecord(BaseRecord):
 
         schema_class = "MaybeStoredConnRecordSchema"
 
-    class Protocol(Enum):
-        """Supported Protocols for Connection."""
-
-        RFC_0160 = CONN_PROTO
-        RFC_0023 = DIDX_PROTO
-
-        @classmethod
-        def get(cls, label: Union[str, "ConnRecord.Protocol"]):
-            """Get aries protocol enum for label."""
-            if isinstance(label, str):
-                for proto in ConnRecord.Protocol:
-                    if label in proto.value:
-                        return proto
-            elif isinstance(label, ConnRecord.Protocol):
-                return label
-            return None
-
-        @property
-        def aries_protocol(self):
-            """Return used connection protocol."""
-            return self.value
+    SUPPORTED_PROTOCOLS = (CONN_PROTO, DIDEX_1_0, DIDEX_1_1)
 
     class Role(Enum):
         """RFC 160 (inviter, invitee) = RFC 23 (responder, requester)."""
@@ -211,7 +194,7 @@ class ConnRecord(BaseRecord):
         invitation_mode: Optional[str] = None,
         alias: Optional[str] = None,
         their_public_did: Optional[str] = None,
-        connection_protocol: Union[str, "ConnRecord.Protocol", None] = None,
+        connection_protocol: Optional[str] = None,
         # from state: formalism for base_record.from_storage()
         rfc23_state: Optional[str] = None,
         # for backward compat with old records
@@ -244,13 +227,9 @@ class ConnRecord(BaseRecord):
         self.alias = alias
         self.their_public_did = their_public_did
         self.connection_protocol = (
-            ConnRecord.Protocol.get(connection_protocol).aries_protocol
-            if isinstance(connection_protocol, str)
-            else (
-                None
-                if connection_protocol is None
-                else connection_protocol.aries_protocol
-            )
+            connection_protocol
+            if connection_protocol in self.SUPPORTED_PROTOCOLS
+            else None
         )
 
     @property
@@ -360,13 +339,16 @@ class ConnRecord(BaseRecord):
     async def find_existing_connection(
         cls, session: ProfileSession, their_public_did: str
     ) -> Optional["ConnRecord"]:
-        """Retrieve existing active connection records (public did).
+        """Retrieve existing active connection records (public did or did:peer).
 
         Args:
             session: The active profile session
-            their_public_did: Inviter public DID
+            their_public_did: Inviter public DID (or did:peer)
         """
-        tag_filter = {"their_public_did": their_public_did}
+        if their_public_did.startswith("did:peer"):
+            tag_filter = {"their_did": their_public_did}
+        else:
+            tag_filter = {"their_public_did": their_public_did}
         conn_records = await cls.query(
             session,
             tag_filter=tag_filter,
@@ -681,10 +663,10 @@ class MaybeStoredConnRecordSchema(BaseRecordSchema):
     )
     connection_protocol = fields.Str(
         required=False,
-        validate=validate.OneOf([proto.value for proto in ConnRecord.Protocol]),
+        validate=validate.OneOf(ConnRecord.SUPPORTED_PROTOCOLS),
         metadata={
             "description": "Connection protocol used",
-            "example": ConnRecord.Protocol.RFC_0160.aries_protocol,
+            "example": "connections/1.0",
         },
     )
     rfc23_state = fields.Str(

@@ -20,7 +20,7 @@ class SignedAgentMessage(AgentMessage):
 
         handler_class = None
         schema_class = "SignedAgentMessageSchema"
-        message_type = "signed-agent-message"
+        message_type = "doc/protocol/1.0/signed-agent-message"
 
     def __init__(self, value: str = None, **kwargs):
         super().__init__(**kwargs)
@@ -45,7 +45,7 @@ class BasicAgentMessage(AgentMessage):
         """Meta data"""
 
         schema_class = AgentMessageSchema
-        message_type = "basic-message"
+        message_type = "doc/protocol/1.0/basic-message"
 
 
 class TestAgentMessage(IsolatedAsyncioTestCase):

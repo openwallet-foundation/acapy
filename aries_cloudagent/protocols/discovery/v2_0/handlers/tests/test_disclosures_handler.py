@@ -16,12 +16,12 @@ from ...messages.disclosures import Disclosures
 from ...messages.queries import Queries, QueryItem
 from ...models.discovery_record import V20DiscoveryExchangeRecord
 
-TEST_MESSAGE_FAMILY = "TEST_FAMILY"
-TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
+TEST_MESSAGE_FAMILY = "doc/proto/1.0"
+TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
+def request_context():
     ctx = RequestContext.test_context()
     ctx.connection_ready = True
     ctx.connection_record = mock.MagicMock(connection_id="test123")

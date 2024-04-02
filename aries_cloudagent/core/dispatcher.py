@@ -7,7 +7,7 @@ lifecycle hook callbacks storing state for message threads, etc.
 import asyncio
 import logging
 import os
-from typing import Callable, Coroutine, Optional, Tuple, Union
+from typing import Callable, Coroutine, Union
 import warnings
 import weakref
 
@@ -27,12 +27,12 @@ from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
+from ..utils.classloader import DeferLoad
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
 from ..utils.tracing import get_timer, trace_event
 from .error import ProtocolMinorVersionNotSupported
 from .protocol_registry import ProtocolRegistry
-from .util import get_version_from_message_type, validate_get_response_version
 
 
 class ProblemReportParseError(MessageParseError):
@@ -139,9 +139,7 @@ class Dispatcher:
         version_warning = None
         message = None
         try:
-            (message, warning) = await self.make_message(
-                profile, inbound_message.payload
-            )
+            message = await self.make_message(profile, inbound_message.payload)
         except ProblemReportParseError:
             pass  # avoid problem report recursion
         except MessageParseError as e:
@@ -156,47 +154,6 @@ class Dispatcher:
             )
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
-        # if warning:
-        #     warning_message_type = inbound_message.payload.get("@type")
-        #     if warning == WARNING_DEGRADED_FEATURES:
-        #         self.logger.error(
-        #             f"Sending {WARNING_DEGRADED_FEATURES} problem report, "
-        #             "message type received with a minor version at or higher"
-        #             " than protocol minimum supported and current minor version "
-        #             f"for message_type {warning_message_type}"
-        #         )
-        #         version_warning = ProblemReport(
-        #             description={
-        #                 "en": (
-        #                     "message type received with a minor version at or "
-        #                     "higher than protocol minimum supported and current"
-        #                     f" minor version for message_type {warning_message_type}"
-        #                 ),
-        #                 "code": WARNING_DEGRADED_FEATURES,
-        #             }
-        #         )
-        #     elif warning == WARNING_VERSION_MISMATCH:
-        #         self.logger.error(
-        #             f"Sending {WARNING_VERSION_MISMATCH} problem report, message "
-        #             "type received with a minor version higher than current minor "
-        #             f"version for message_type {warning_message_type}"
-        #         )
-        #         version_warning = ProblemReport(
-        #             description={
-        #                 "en": (
-        #                     "message type received with a minor version higher"
-        #                     " than current minor version for message_type"
-        #                     f" {warning_message_type}"
-        #                 ),
-        #                 "code": WARNING_VERSION_MISMATCH,
-        #             }
-        #         )
-        #     elif warning == WARNING_VERSION_NOT_SUPPORTED:
-        #         raise MessageParseError(
-        #             f"Message type version not supported for {warning_message_type}"
-        #         )
-        #     if version_warning and inbound_message.receipt.thread_id:
-        #         version_warning.assign_thread_id(inbound_message.receipt.thread_id)
 
         trace_event(
             self.profile.settings,
@@ -259,9 +216,7 @@ class Dispatcher:
             perf_counter=r_time,
         )
 
-    async def make_message(
-        self, profile: Profile, parsed_msg: dict
-    ) -> Tuple[BaseMessage, Optional[str]]:
+    async def make_message(self, profile: Profile, parsed_msg: dict) -> BaseMessage:
         """Deserialize a message dict into the appropriate message instance.
 
         Given a dict describing a message, this method
@@ -286,11 +241,27 @@ class Dispatcher:
 
         if not message_type:
             raise MessageParseError("Message does not contain '@type' parameter")
-        message_type_rec_version = get_version_from_message_type(message_type)
+
+        if message_type.startswith("did:sov"):
+            warnings.warn(
+                "Received a core DIDComm protocol with the deprecated "
+                "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix. The sending party should "
+                "be notified that support for receiving such messages will be removed in "
+                "a future release. Use https://didcomm.org/ instead.",
+                DeprecationWarning,
+            )
+            self.logger.warning(
+                "Received a core DIDComm protocol with the deprecated "
+                "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix. The sending party should "
+                "be notified that support for receiving such messages will be removed in "
+                "a future release. Use https://didcomm.org/ instead.",
+            )
 
         registry: ProtocolRegistry = self.profile.inject(ProtocolRegistry)
         try:
             message_cls = registry.resolve_message_class(message_type)
+            if isinstance(message_cls, DeferLoad):
+                message_cls = message_cls.resolved
         except ProtocolMinorVersionNotSupported as e:
             raise MessageParseError(f"Problem parsing message type. {e}")
 
@@ -303,10 +274,8 @@ class Dispatcher:
             if "/problem-report" in message_type:
                 raise ProblemReportParseError("Error parsing problem report message")
             raise MessageParseError(f"Error deserializing message: {e}") from e
-        _, warning = await validate_get_response_version(
-            profile, message_type_rec_version, message_cls
-        )
-        return (instance, warning)
+
+        return instance
 
     async def complete(self, timeout: float = 0.1):
         """Wait for pending tasks to complete."""
