@@ -335,7 +335,7 @@ class AgentMessage(BaseModel, BaseMessage):
             pthid = thread and thread.pthid
             self.assign_thread_id(thid, pthid)
 
-    def assign_thread_id(self, thid: str, pthid: Optional[str] = None):
+    def assign_thread_id(self, thid: Optional[str] = None, pthid: Optional[str] = None):
         """Assign a specific thread ID.
 
         Args:
