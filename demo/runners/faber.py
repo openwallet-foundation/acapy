@@ -343,7 +343,7 @@ class FaberAgent(AriesAgent):
 
             elif cred_type == CRED_FORMAT_VC_DI:
                 proof_request_web_request = {
-                    "comment": "test proof request for json-ld",
+                    "comment": "Test proof request for VC-DI format",
                     "presentation_request": {
                         "dif": {
                             "options": {
@@ -354,7 +354,7 @@ class FaberAgent(AriesAgent):
                                 "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
                                 "submission_requirements": [
                                     {
-                                        "name": "Citizenship Information",
+                                        "name": "Degree Verification",
                                         "rule": "pick",
                                         "min": 1,
                                         "from": "A",
@@ -362,8 +362,8 @@ class FaberAgent(AriesAgent):
                                 ],
                                 "input_descriptors": [
                                     {
-                                        "id": "citizenship_input_1",
-                                        "name": "EU Driver's License",
+                                        "id": "degree_input_1",
+                                        "name": "Degree Certificate",
                                         "group": ["A"],
                                         "schema": [
                                             {
@@ -378,14 +378,23 @@ class FaberAgent(AriesAgent):
                                             "fields": [
                                                 {
                                                     "path": [
-                                                        "$.credentialSubject.givenName"
+                                                        "$.credentialSubject.degree.name"
                                                     ],
-                                                    "purpose": "The claim must be from one of the specified issuers",
+                                                    "purpose": "We need to verify that you have the required degree.",
+                                                    "filter": {"type": "string"},
+                                                },
+                                                {
+                                                    "path": [
+                                                        "$.credentialSubject.birthDate"
+                                                    ],
+                                                    "purpose": "To ensure you meet the age requirement.",
                                                     "filter": {
                                                         "type": "string",
-                                                        "enum": ["JOHN", "CAI"],
+                                                        "pattern": birth_date.strftime(
+                                                            birth_date_format
+                                                        ),
                                                     },
-                                                }
+                                                },
                                             ],
                                         },
                                     }

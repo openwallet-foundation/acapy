@@ -3,6 +3,7 @@
 indy compatible, attachment is a valid verifiable credential
 """
 
+import datetime
 import json
 import logging
 from typing import Mapping, Tuple
@@ -36,6 +37,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
 from ......revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......storage.base import BaseStorage
+from ......wallet.base import BaseWallet
 from ...message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -189,13 +191,18 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            public_did_info = await wallet.get_public_did()
+            public_did = public_did_info.did
+
         cred_def_id = await issuer.match_created_credential_definitions(
             **cred_proposal_message.attachment(VCDICredFormatHandler.format)
         )
 
         async def _create():
-            offer_json = await issuer.create_credential_offer(cred_def_id)
-            return json.loads(offer_json)
+            offer_str = await issuer.create_credential_offer(cred_def_id)
+            return json.loads(offer_str)
 
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
@@ -254,12 +261,13 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                     {"@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"},
                 ],
                 "type": ["VerifiableCredential"],
-                "issuer": "public_did",
+                "issuer": public_did,
                 "credentialSubject": cred_proposal_message.credential_preview.attr_dict(),
-                "issuanceDate": "2024-01-10T04:44:29.563418Z",
+                "issuanceDate": datetime.datetime.now(
+                    datetime.timezone.utc
+                ).isoformat(),
             },
         }
-
         return self.get_format_data(CRED_20_OFFER, vcdi_cred_offer)
 
     async def receive_offer(
@@ -295,7 +303,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             "cred_def_id"
         ]
 
-        # workaround for getting schema_id
         ledger = self.profile.inject(BaseLedger)
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
@@ -404,7 +411,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             "cred_def_id"
         ]
 
-        # workaround for getting schema_id
         ledger = self.profile.inject(BaseLedger)
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
@@ -421,8 +427,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
 
-        # IC - the method in AnonCredsIssuer assumes all the data structures are
-        #      in the old "Indy" format ...
         legacy_offer = {
             "schema_id": schema_id,
             "cred_def_id": cred_def_id,
@@ -463,20 +467,6 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         vcdi_credential = {
             "credential": json.loads(credential),
         }
-
-        # not sure about these ...
-        # assert detail_credential.credential and isinstance(
-        #     detail_credential.credential, VerifiableCredential
-        # )
-        # assert detail_proof.binding_proof and isinstance(
-        #     detail_proof.binding_proof, BindingProof
-        # )
-        # try:
-        #     vc = await manager.issue(
-        #         detail_credential.credential, detail_proof.binding_proof
-        #     )
-        # except VcLdpManagerError as err:
-        #     raise V20CredFormatError("Failed to issue credential") from err
 
         result = self.get_format_data(CRED_20_ISSUE, vcdi_credential)
 
