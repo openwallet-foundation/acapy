@@ -26,7 +26,30 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             new_file_path=None,
         )
 
-    def test_configure_with_multitenant_config_file(self):
+    def test_configure_default_with_log_file_error_level(self):
+        log_file = NamedTemporaryFile()
+        with mock.patch.object(
+            test_module, "load_resource", mock.MagicMock()
+        ) as mock_load:
+            mock_load.return_value = None
+            test_module.LoggingConfigurator.configure(
+                log_level="ERROR", log_file=log_file.name
+            )
+
+    @mock.patch.object(test_module, "load_resource", autospec=True)
+    @mock.patch.object(test_module, "fileConfig", autospec=True)
+    def test_configure_default_with_path(self, mock_file_config, mock_load_resource):
+        path = "a path"
+        test_module.LoggingConfigurator.configure(path)
+
+        mock_load_resource.assert_called_once_with(path, "utf-8")
+        mock_file_config.assert_called_once_with(
+            mock_load_resource.return_value,
+            disable_existing_loggers=False,
+            new_file_path=None,
+        )
+
+    def test_configure_multitenant(self):
         with mock.patch.object(
             test_module,
             "logging",
@@ -44,7 +67,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
                 multitenant=True,
             )
 
-    def test_configure_with_multitenant_yml_file(self):
+    def test_configure_with_multitenant_with_yaml_file(self):
         with mock.patch.object(
             test_module,
             "logging",
@@ -62,54 +85,6 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
                 log_file="test.log",
                 multitenant=True,
             )
-
-    def test_configure_with_default_config(self):
-        with mock.patch.object(
-            test_module,
-            "logging",
-            mock.MagicMock(
-                basicConfig=mock.MagicMock(),
-                FileHandler=mock.MagicMock(),
-                root=mock.MagicMock(
-                    warning=mock.MagicMock(),
-                    handlers=[],
-                ),
-            ),
-        ):
-            test_module.LoggingConfigurator.configure(
-                log_file="test.log",
-                multitenant=True,
-            )
-
-    def test_configure_default_no_resource(self):
-        with mock.patch.object(
-            test_module, "load_resource", mock.MagicMock()
-        ) as mock_load:
-            mock_load.return_value = None
-            test_module.LoggingConfigurator.configure()
-
-    def test_configure_default_file(self):
-        log_file = NamedTemporaryFile()
-        with mock.patch.object(
-            test_module, "load_resource", mock.MagicMock()
-        ) as mock_load:
-            mock_load.return_value = None
-            test_module.LoggingConfigurator.configure(
-                log_level="ERROR", log_file=log_file.name
-            )
-
-    @mock.patch.object(test_module, "load_resource", autospec=True)
-    @mock.patch.object(test_module, "fileConfig", autospec=True)
-    def test_configure_path(self, mock_file_config, mock_load_resource):
-        path = "a path"
-        test_module.LoggingConfigurator.configure(path)
-
-        mock_load_resource.assert_called_once_with(path, "utf-8")
-        mock_file_config.assert_called_once_with(
-            mock_load_resource.return_value,
-            disable_existing_loggers=False,
-            new_file_path=None,
-        )
 
     def test_banner_did(self):
         stdout = StringIO()
