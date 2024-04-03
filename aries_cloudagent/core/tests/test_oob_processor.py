@@ -91,7 +91,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
                 self.profile, test_message
             )
 
-            mock_oob.emit_event.assert_not_called()
+            mock_oob.emit_event.assert_called_once()
             mock_oob.delete_record.assert_not_called()
 
             mock_retrieve_oob.assert_called_once_with(

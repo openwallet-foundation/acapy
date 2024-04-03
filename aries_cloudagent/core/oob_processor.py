@@ -57,14 +57,17 @@ class OobMessageProcessor:
                     {"role": OobRecord.ROLE_SENDER},
                 )
 
+                # emit the "done" event for OOB invitations
+                if not oob_record.invitation.requests_attach:
+                    oob_record.state = OobRecord.STATE_DONE
+                    await oob_record.emit_event(session)
+
                 # If the oob record is not multi use and it doesn't contain any
                 # attachments, we can now safely remove the oob record
                 if (
                     not oob_record.multi_use
                     and not oob_record.invitation.requests_attach
                 ):
-                    oob_record.state = OobRecord.STATE_DONE
-                    await oob_record.emit_event(session)
                     await oob_record.delete_record(session)
         except StorageNotFoundError:
             # It is fine if no oob record is found, Only retrieved for cleanup
