@@ -208,6 +208,8 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         """Create vcdi credential offer."""
 
         issuer = AnonCredsIssuer(self.profile)
+        # TODO use the ledger registry in the anoncreds module,
+        # or move the functionality into the ledger class.
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
@@ -224,7 +226,8 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             offer_str = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_str)
 
-        # TODO
+        # TODO use the ledger registry in the anoncreds module,
+        # or move the functionality into the ledger class.
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
@@ -236,6 +239,8 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                 txn_record_type=GET_CRED_DEF,
             )
         )[1]
+        # TODO use the ledger registry in the anoncreds module,
+        # or move the functionality into the ledger class.
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
@@ -328,7 +333,8 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         ]
 
         ledger = self.profile.inject(BaseLedger)
-        # TODO
+        # TODO use the ledger registry in the anoncreds module,
+        # or move the functionality into the ledger class.
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
@@ -438,7 +444,8 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         ]
 
         ledger = self.profile.inject(BaseLedger)
-        # TODO
+        # TODO use the ledger registry in the anoncreds module,
+        # or move the functionality into the ledger class.
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)

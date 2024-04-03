@@ -316,7 +316,8 @@ class AnonCredsHolder:
                 credential_definition,
                 rev_reg_def,
             )
-            # TODO
+            # TODO we want to store the credential in the W3C format in the wallet,
+            # This will require changes to other endpoints that fetch credentials
             cred_recvd = Credential.from_w3c(cred_w3c)
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error processing received credential") from err
