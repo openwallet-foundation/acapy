@@ -229,9 +229,9 @@ class LoggingConfigurator:
                     new_file_path=log_file,
                     disable_existing_loggers=False,
                 )
+
         # Set custom file handler(s)
         ############################
-
         # Step through each root handler and find any TimedRotatingFileMultiProcessHandler
         any_file_handlers_set = filter(
             lambda handler: isinstance(handler, TimedRotatingFileMultiProcessHandler),
