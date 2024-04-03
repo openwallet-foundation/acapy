@@ -10,7 +10,6 @@ from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
-from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
 from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
 from ..resolver.did_resolver import DIDResolver
@@ -19,8 +18,8 @@ from ..transport.wire_format import BaseWireFormat
 from ..utils.dependencies import is_indy_sdk_module_installed
 from ..utils.stats import Collector
 from ..wallet.default_verification_key_strategy import (
-    DefaultVerificationKeyStrategy,
     BaseVerificationKeyStrategy,
+    DefaultVerificationKeyStrategy,
 )
 from ..wallet.did_method import DIDMethods
 from ..wallet.key_type import KeyTypes
@@ -65,9 +64,6 @@ class DefaultContextBuilder(ContextBuilder):
 
         await self.bind_providers(context)
         await self.load_plugins(context)
-
-        # Set DIDComm prefix
-        DIDCommPrefix.set(context.settings)
 
         return context
 
@@ -143,27 +139,38 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.settings")
         plugin_registry.register_plugin("aries_cloudagent.vc")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
+
+        anoncreds_plugins = [
+            "aries_cloudagent.anoncreds",
+            "aries_cloudagent.anoncreds.default.did_indy",
+            "aries_cloudagent.anoncreds.default.did_web",
+            "aries_cloudagent.anoncreds.default.legacy_indy",
+            "aries_cloudagent.revocation_anoncreds",
+        ]
+
+        askar_plugins = [
+            "aries_cloudagent.messaging.credential_definitions",
+            "aries_cloudagent.messaging.schemas",
+            "aries_cloudagent.revocation",
+        ]
+
+        def register_askar_plugins():
+            for plugin in askar_plugins:
+                plugin_registry.register_plugin(plugin)
+
+        def register_anoncreds_plugins():
+            for plugin in anoncreds_plugins:
+                plugin_registry.register_plugin(plugin)
+
         if wallet_type == "askar-anoncreds":
-            plugin_registry.register_plugin("aries_cloudagent.anoncreds")
-            plugin_registry.register_plugin(
-                "aries_cloudagent.anoncreds.default.did_indy"
-            )
-            plugin_registry.register_plugin(
-                "aries_cloudagent.anoncreds.default.did_web"
-            )
-            plugin_registry.register_plugin(
-                "aries_cloudagent.anoncreds.default.legacy_indy"
-            )
-            plugin_registry.register_plugin("aries_cloudagent.revocation_anoncreds")
+            register_anoncreds_plugins()
         else:
-            plugin_registry.register_plugin(
-                "aries_cloudagent.messaging.credential_definitions"
-            )
-            plugin_registry.register_plugin("aries_cloudagent.messaging.schemas")
-            plugin_registry.register_plugin("aries_cloudagent.revocation")
+            register_askar_plugins()
 
         if context.settings.get("multitenant.admin_enabled"):
             plugin_registry.register_plugin("aries_cloudagent.multitenant.admin")
+            register_askar_plugins()
+            register_anoncreds_plugins()
 
         # Register external plugins
         for plugin_path in self.settings.get("external_plugins", []):

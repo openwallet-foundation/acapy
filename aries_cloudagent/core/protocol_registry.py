@@ -1,16 +1,62 @@
 """Handle registration and publication of supported protocols."""
 
+from dataclasses import dataclass
 import logging
-import re
 
-from typing import Mapping, Sequence
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 from ..config.injection_context import InjectionContext
-from ..utils.classloader import ClassLoader
+from ..utils.classloader import ClassLoader, DeferLoad
+from ..messaging.message_type import MessageType, MessageVersion, ProtocolIdentifier
 
 from .error import ProtocolMinorVersionNotSupported, ProtocolDefinitionValidationError
 
 LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class VersionDefinition:
+    """Version definition."""
+
+    min: MessageVersion
+    current: MessageVersion
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "VersionDefinition":
+        """Create a version definition from a dict."""
+        return cls(
+            min=MessageVersion(data["major_version"], data["minimum_minor_version"]),
+            current=MessageVersion(
+                data["major_version"], data["current_minor_version"]
+            ),
+        )
+
+
+@dataclass
+class ProtocolDefinition:
+    """Protocol metadata used to register and resolve message types."""
+
+    ident: ProtocolIdentifier
+    min: MessageVersion
+    current: MessageVersion
+    controller: Optional[str] = None
+
+    @property
+    def minor_versions_supported(self) -> bool:
+        """Accessor for whether minor versions are supported."""
+        return bool(self.current.minor >= 1 and self.current.minor >= self.min.minor)
+
+    def __post_init__(self):
+        """Post-init hook."""
+        if self.min.major != self.current.major:
+            raise ProtocolDefinitionValidationError(
+                f"Major version mismatch: {self.min.major} != {self.current.major}"
+            )
+        if self.min.minor > self.current.minor:
+            raise ProtocolDefinitionValidationError(
+                f"Minimum minor version greater than current minor version: "
+                f"{self.min.minor} > {self.current.minor}"
+            )
 
 
 class ProtocolRegistry:
@@ -18,30 +64,26 @@ class ProtocolRegistry:
 
     def __init__(self):
         """Initialize a `ProtocolRegistry` instance."""
+
+        self._definitions: Dict[str, ProtocolDefinition] = {}
+        self._type_to_message_cls: Dict[str, Union[DeferLoad, type]] = {}
+
+        # Mapping[protocol identifier, controller module path]
         self._controllers = {}
-        self._typemap = {}
-        self._versionmap = {}
 
     @property
     def protocols(self) -> Sequence[str]:
         """Accessor for a list of all message protocols."""
-        prots = set()
-        for message_type in self._typemap.keys():
-            pos = message_type.rfind("/")
-            if pos > 0:
-                family = message_type[:pos]
-                prots.add(family)
-        return prots
+        return [
+            str(definition.ident.with_version((definition.min.major, minor)))
+            for definition in self._definitions.values()
+            for minor in range(definition.min.minor, definition.current.minor + 1)
+        ]
 
     @property
     def message_types(self) -> Sequence[str]:
         """Accessor for a list of all message types."""
-        return tuple(self._typemap.keys())
-
-    @property
-    def controllers(self) -> Mapping[str, str]:
-        """Accessor for a list of all protocol controller functions."""
-        return self._controllers.copy()
+        return tuple(self._type_to_message_cls.keys())
 
     def protocols_matching_query(self, query: str) -> Sequence[str]:
         """Return a list of message protocols matching a query string."""
@@ -58,96 +100,11 @@ class ProtocolRegistry:
                 result = (query,)
         return result or ()
 
-    def parse_type_string(self, message_type):
-        """Parse message type string and return dict with info."""
-        tokens = message_type.split("/")
-        protocol_name = tokens[-3]
-        version_string = tokens[-2]
-        message_name = tokens[-1]
-
-        version_string_tokens = version_string.split(".")
-        assert len(version_string_tokens) == 2
-
-        return {
-            "protocol_name": protocol_name,
-            "message_name": message_name,
-            "major_version": int(version_string_tokens[0]),
-            "minor_version": int(version_string_tokens[1]),
-        }
-
-    def create_msg_types_for_minor_version(self, typesets, version_definition):
-        """Return mapping of message type to module path for minor versions.
-
-        Args:
-            typesets: Mappings of message types to register
-            version_definition: Optional version definition dict
-
-        Returns:
-            Typesets mapping
-
-        """
-        updated_typeset = {}
-        curr_minor_version = version_definition["current_minor_version"]
-        min_minor_version = version_definition["minimum_minor_version"]
-        major_version = version_definition["major_version"]
-        if curr_minor_version >= min_minor_version:
-            for version_index in range(min_minor_version, curr_minor_version + 1):
-                to_check = f"{str(major_version)}.{str(version_index)}"
-                updated_typeset.update(
-                    self._get_updated_typeset_dict(typesets, to_check, updated_typeset)
-                )
-        else:
-            raise ProtocolDefinitionValidationError(
-                "min_minor_version is greater than curr_minor_version for the"
-                f" following typeset: {str(typesets)}"
-            )
-        return (updated_typeset,)
-
-    def _get_updated_typeset_dict(self, typesets, to_check, updated_typeset) -> dict:
-        for typeset in typesets:
-            for msg_type_string, module_path in typeset.items():
-                updated_msg_type_string = re.sub(
-                    r"(\d+\.)?(\*|\d+)", to_check, msg_type_string
-                )
-                updated_typeset[updated_msg_type_string] = module_path
-        return updated_typeset
-
-    def _message_type_check_for_minor_verssion(self, version_definition) -> bool:
-        if not version_definition:
-            return False
-        curr_minor_version = version_definition["current_minor_version"]
-        min_minor_version = version_definition["minimum_minor_version"]
-        return bool(curr_minor_version >= 1 and curr_minor_version >= min_minor_version)
-
-    def _create_and_register_updated_typesets(self, typesets, version_definition):
-        updated_typesets = self.create_msg_types_for_minor_version(
-            typesets, version_definition
-        )
-        update_flag = False
-        for typeset in updated_typesets:
-            if typeset:
-                self._typemap.update(typeset)
-                update_flag = True
-        if update_flag:
-            return updated_typesets
-        else:
-            return None
-
-    def _update_version_map(self, message_type_string, module_path, version_definition):
-        parsed_type_string = self.parse_type_string(message_type_string)
-
-        if version_definition["major_version"] not in self._versionmap:
-            self._versionmap[version_definition["major_version"]] = []
-
-        self._versionmap[version_definition["major_version"]].append(
-            {
-                "parsed_type_string": parsed_type_string,
-                "version_definition": version_definition,
-                "message_module": module_path,
-            }
-        )
-
-    def register_message_types(self, *typesets, version_definition=None):
+    def register_message_types(
+        self,
+        typeset: Mapping[str, Union[str, type]],
+        version_definition: Optional[Union[dict[str, Any], VersionDefinition]] = None,
+    ):
         """Add new supported message types.
 
         Args:
@@ -155,32 +112,53 @@ class ProtocolRegistry:
             version_definition: Optional version definition dict
 
         """
+        if version_definition is not None and isinstance(version_definition, dict):
+            version_definition = VersionDefinition.from_dict(version_definition)
 
-        # Maintain support for versionless protocol modules
-        updated_typesets = None
-        minor_versions_supported = self._message_type_check_for_minor_verssion(
-            version_definition
-        )
-        if not minor_versions_supported:
-            for typeset in typesets:
-                self._typemap.update(typeset)
+        definitions_to_add = {}
+        type_to_message_cls_to_add = {}
 
-        # Track versioned modules for version routing
-        if version_definition:
-            # create updated typesets for minor versions and register them
-            if minor_versions_supported:
-                updated_typesets = self._create_and_register_updated_typesets(
-                    typesets, version_definition
-                )
-            if updated_typesets:
-                typesets = updated_typesets
-            for typeset in typesets:
-                for message_type_string, module_path in typeset.items():
-                    self._update_version_map(
-                        message_type_string, module_path, version_definition
+        for message_type, message_cls in typeset.items():
+            parsed = MessageType.from_str(message_type)
+            protocol = ProtocolIdentifier.from_message_type(parsed)
+            if protocol.stem in definitions_to_add:
+                definition = definitions_to_add[protocol.stem]
+            elif protocol.stem in self._definitions:
+                definition = self._definitions[protocol.stem]
+            else:
+                if version_definition:
+                    definition = ProtocolDefinition(
+                        ident=protocol,
+                        min=version_definition.min,
+                        current=version_definition.current,
+                    )
+                else:
+                    definition = ProtocolDefinition(
+                        ident=protocol,
+                        min=protocol.version,
+                        current=protocol.version,
                     )
 
-    def register_controllers(self, *controller_sets, version_definition=None):
+                definitions_to_add[protocol.stem] = definition
+
+            if isinstance(message_cls, str):
+                message_cls = DeferLoad(message_cls)
+
+            type_to_message_cls_to_add[message_type] = message_cls
+
+            if definition.minor_versions_supported:
+                for minor_version in range(
+                    definition.min.minor, definition.current.minor + 1
+                ):
+                    updated_type = parsed.with_version(
+                        (parsed.version.major, minor_version)
+                    )
+                    type_to_message_cls_to_add[str(updated_type)] = message_cls
+
+        self._type_to_message_cls.update(type_to_message_cls_to_add)
+        self._definitions.update(definitions_to_add)
+
+    def register_controllers(self, *controller_sets):
         """Add new controllers.
 
         Args:
@@ -190,7 +168,9 @@ class ProtocolRegistry:
         for controlset in controller_sets:
             self._controllers.update(controlset)
 
-    def resolve_message_class(self, message_type: str) -> type:
+    def resolve_message_class(
+        self, message_type: str
+    ) -> Optional[Union[DeferLoad, type]]:
         """Resolve a message_type to a message class.
 
         Given a message type identifier, this method
@@ -203,46 +183,25 @@ class ProtocolRegistry:
             The resolved message class
 
         """
+        if (message_cls := self._type_to_message_cls.get(message_type)) is not None:
+            return message_cls
 
-        # Try and retrieve from direct mapping
-        msg_cls = self._typemap.get(message_type)
-        if isinstance(msg_cls, str):
-            return ClassLoader.load_class(msg_cls)
+        parsed = MessageType.from_str(message_type)
+        protocol = ProtocolIdentifier.from_message_type(parsed)
+        if definition := self._definitions.get(protocol.stem):
+            if parsed.version.minor < definition.min.minor:
+                raise ProtocolMinorVersionNotSupported(
+                    f"Minimum supported minor version is {definition.min.minor}."
+                    f" Received {parsed.version.minor}."
+                )
 
-        # Support registered modules (not path as string)
-        elif msg_cls:
-            return msg_cls
+            # This code will only be reached if the received minor version is greater
+            # than our current supported version. All directly supported minor
+            # versions would be returned previously.
+            message_type = str(parsed.with_version(definition.current))
 
-        # Try and route via min/maj version matching
-        if not msg_cls:
-            parsed_type_string = self.parse_type_string(message_type)
-            major_version = parsed_type_string["major_version"]
-
-            version_supported_protos = self._versionmap.get(major_version)
-            if not version_supported_protos:
-                return None
-
-            for proto in version_supported_protos:
-                if (
-                    proto["parsed_type_string"]["protocol_name"]
-                    == parsed_type_string["protocol_name"]
-                    and proto["parsed_type_string"]["message_name"]
-                    == parsed_type_string["message_name"]
-                ):
-                    if (
-                        parsed_type_string["minor_version"]
-                        < proto["version_definition"]["minimum_minor_version"]
-                    ):
-                        raise ProtocolMinorVersionNotSupported(
-                            "Minimum supported minor version is "
-                            + f"{proto['version_definition']['minimum_minor_version']}."
-                            + f" Received {parsed_type_string['minor_version']}."
-                        )
-
-                    if isinstance(proto["message_module"], str):
-                        return ClassLoader.load_class(msg_cls)
-                    elif proto["message_module"]:
-                        return proto["message_module"]
+            if (message_cls := self._type_to_message_cls.get(message_type)) is not None:
+                return message_cls
 
         return None
 
@@ -252,7 +211,7 @@ class ProtocolRegistry:
         """Call controllers and return publicly supported message families and roles."""
         published = []
         for protocol in protocols:
-            result = {"pid": protocol}
+            result: Dict[str, Any] = {"pid": protocol}
             if protocol in self._controllers:
                 ctl_cls = self._controllers[protocol]
                 if isinstance(ctl_cls, str):

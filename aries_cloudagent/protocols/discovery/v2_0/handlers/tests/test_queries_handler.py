@@ -22,8 +22,8 @@ from ...manager import V20DiscoveryMgr
 from ...messages.disclosures import Disclosures
 from ...messages.queries import Queries, QueryItem
 
-TEST_MESSAGE_FAMILY = "TEST_FAMILY"
-TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
+TEST_MESSAGE_FAMILY = "doc/proto/1.0"
+TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
@@ -88,7 +88,7 @@ class TestQueriesHandler:
     ):
         profile = request_context.profile
         protocol_registry = profile.inject(ProtocolRegistry)
-        protocol_registry.register_message_types({"TEST_FAMILY_B/MESSAGE": object()})
+        protocol_registry.register_message_types({"doc/proto-b/1.0/message": object()})
         profile.context.injector.bind_instance(ProtocolRegistry, protocol_registry)
         goal_code_registry = profile.inject(GoalCodeRegistry)
         goal_code_registry.register_controllers(pres_proof_v1_controller)
@@ -139,7 +139,7 @@ class TestQueriesHandler:
             mock_exec_protocol_query.return_value = [
                 {"test": "test"},
                 {
-                    "pid": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/action-menu/1.0",
+                    "pid": "https://didcomm.org/action-menu/1.0",
                     "roles": ["provider"],
                 },
             ]
@@ -150,8 +150,7 @@ class TestQueriesHandler:
             result, target = messages[0]
             assert isinstance(result, Disclosures)
             assert (
-                result.disclosures[0].get("id")
-                == "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/action-menu/1.0"
+                result.disclosures[0].get("id") == "https://didcomm.org/action-menu/1.0"
             )
             assert result.disclosures[0].get("feature-type") == "protocol"
             assert result.disclosures[1].get("id") == "aries.vc"

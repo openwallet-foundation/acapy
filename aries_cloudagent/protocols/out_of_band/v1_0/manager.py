@@ -9,7 +9,6 @@ import uuid
 
 from ....messaging.decorators.service_decorator import ServiceDecorator
 from ....core.event_bus import EventBus
-from ....core.util import get_version_from_message
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
@@ -205,6 +204,7 @@ class OutOfBandManager(BaseConnectionManager):
         handshake_protocols = [
             DIDCommPrefix.qualify_current(hsp.name) for hsp in hs_protos or []
         ] or None
+        # Handshake protocol list should be ordered by preference by caller
         connection_protocol = (
             hs_protos[0].name if hs_protos and len(hs_protos) >= 1 else None
         )
@@ -358,7 +358,6 @@ class OutOfBandManager(BaseConnectionManager):
                     ),
                     alias=alias,
                     connection_protocol=connection_protocol,
-                    my_did=my_did,
                 )
 
                 async with self.profile.session() as session:
@@ -591,7 +590,7 @@ class OutOfBandManager(BaseConnectionManager):
         # Try to reuse the connection. If not accepted sets the conn_rec to None
         if conn_rec and not invitation.requests_attach:
             oob_record = await self._handle_hanshake_reuse(
-                oob_record, conn_rec, get_version_from_message(invitation)
+                oob_record, conn_rec, invitation._version
             )
 
             LOGGER.warning(
@@ -895,13 +894,8 @@ class OutOfBandManager(BaseConnectionManager):
         invitation = oob_record.invitation
 
         supported_handshake_protocols = [
-            HSProto.get(hsp)
-            for hsp in dict.fromkeys(
-                [
-                    DIDCommPrefix.unqualify(proto)
-                    for proto in invitation.handshake_protocols
-                ]
-            )
+            HSProto.get(DIDCommPrefix.unqualify(proto))
+            for proto in invitation.handshake_protocols
         ]
 
         # Get the single service item
@@ -947,7 +941,7 @@ class OutOfBandManager(BaseConnectionManager):
         conn_record = None
         for protocol in supported_handshake_protocols:
             # DIDExchange
-            if protocol is HSProto.RFC23:
+            if protocol is HSProto.RFC23 or protocol is HSProto.DIDEX_1_1:
                 didx_mgr = DIDXManager(self.profile)
                 conn_record = await didx_mgr.receive_invitation(
                     invitation=invitation,
@@ -955,6 +949,7 @@ class OutOfBandManager(BaseConnectionManager):
                     auto_accept=auto_accept,
                     alias=alias,
                     mediation_id=mediation_id,
+                    protocol=protocol.name,
                 )
                 break
             # 0160 Connection
@@ -1108,9 +1103,7 @@ class OutOfBandManager(BaseConnectionManager):
         invi_msg_id = reuse_msg._thread.pthid
         reuse_msg_id = reuse_msg._thread_id
 
-        reuse_accept_msg = HandshakeReuseAccept(
-            version=get_version_from_message(reuse_msg)
-        )
+        reuse_accept_msg = HandshakeReuseAccept(version=reuse_msg._version)
         reuse_accept_msg.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
         connection_targets = await self.fetch_connection_targets(connection=conn_rec)
 

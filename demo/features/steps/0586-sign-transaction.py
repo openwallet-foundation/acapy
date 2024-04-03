@@ -40,8 +40,9 @@ def step_impl(context, agent_name, did_role):
     )
 
     # make the new did the wallet's public did
-    retries = 3
+    retries = 5
     for retry in range(retries):
+        async_sleep(1.0)
         published_did = agent_container_POST(
             agent["agent"],
             "/wallet/did/public",
@@ -405,13 +406,18 @@ def step_impl(context, agent_name, schema_name):
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
+    if not is_anoncreds(agent):
+        endpoint = "/revocation/registries/created"
+    else:
+        endpoint = "/anoncreds/revocation/registries"
+
     rev_regs = {"rev_reg_ids": []}
     i = 5
     while 0 == len(rev_regs["rev_reg_ids"]) and i > 0:
         async_sleep(1.0)
         rev_regs = agent_container_GET(
             agent["agent"],
-            "/revocation/registries/created",
+            endpoint,
             params={
                 "cred_def_id": context.cred_def_id,
             },
@@ -483,6 +489,11 @@ def step_impl(context, agent_name):
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
+    if not is_anoncreds(agent):
+        endpoint = "/revocation/registry/"
+    else:
+        endpoint = "/anoncreds/revocation/registry/"
+
     # a registry is promoted to active when its initial entry is sent
     i = 5
 
@@ -493,7 +504,7 @@ def step_impl(context, agent_name):
         if context.rev_reg_id is not None:
             reg_info = agent_container_GET(
                 agent["agent"],
-                f"/revocation/registry/{context.rev_reg_id}",
+                f"{endpoint}{context.rev_reg_id}",
             )
             state = reg_info["result"]["state"]
             if state in ["active", "finished"]:
@@ -574,6 +585,11 @@ def step_impl(context, holder, schema_name, credential_data, issuer):
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
+    if not is_anoncreds(agent):
+        endpoint = "/revocation/revoke"
+    else:
+        endpoint = "/anoncreds/revocation/revoke"
+
     # get the required revocation info from the last credential exchange
     cred_exchange = context.cred_exchange
 
@@ -584,7 +600,7 @@ def step_impl(context, agent_name):
 
     agent_container_POST(
         agent["agent"],
-        "/revocation/revoke",
+        endpoint,
         data={
             "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
             "publish": False,
@@ -627,7 +643,7 @@ def step_impl(context, agent_name):
             "conn_id": connection_id,
             "create_transaction_for_endorser": "true",
         }
-
+        endpoint = "/revocation/revoke"
     else:
         data = {
             "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
@@ -640,10 +656,11 @@ def step_impl(context, agent_name):
             },
         }
         params = {}
+        endpoint = "/anoncreds/revocation/revoke"
 
     agent_container_POST(
         agent["agent"],
-        "/revocation/revoke",
+        endpoint,
         data=data,
         params=params,
     )
@@ -658,10 +675,15 @@ def step_impl(context, agent_name):
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
+    if not is_anoncreds(agent):
+        endpoint = "/revocation/publish-revocations"
+    else:
+        endpoint = "/anoncreds/revocation/publish-revocations"
+
     # create rev_reg entry transaction
     created_rev_reg = agent_container_POST(
         agent["agent"],
-        "/revocation/publish-revocations",
+        endpoint,
         data={
             "rrid2crid": {
                 context.cred_exchange["indy"]["rev_reg_id"]: [
@@ -699,6 +721,7 @@ def step_impl(context, agent_name):
             "conn_id": connection_id,
             "create_transaction_for_endorser": "true",
         }
+        endpoint = "/revocation/publish-revocations"
     else:
         data = {
             "rrid2crid": {
@@ -712,10 +735,11 @@ def step_impl(context, agent_name):
             },
         }
         params = {}
+        endpoint = "/anoncreds/revocation/publish-revocations"
 
     agent_container_POST(
         agent["agent"],
-        "/revocation/publish-revocations",
+        endpoint,
         data=data,
         params=params,
     )
@@ -764,16 +788,34 @@ def step_impl(context, agent_name, schema_name):
     schema_info = read_schema_data(schema_name)
     connection_id = agent["agent"].agent.connection_id
 
-    created_txn = agent_container_POST(
-        agent["agent"],
-        "/schemas",
-        data=schema_info["schema"],
-        params={"conn_id": connection_id, "create_transaction_for_endorser": "false"},
-    )
+    if not is_anoncreds(agent):
+        schema_id = agent_container_POST(
+            agent["agent"],
+            "/schemas",
+            data=schema_info["schema"],
+            params={
+                "conn_id": connection_id,
+                "create_transaction_for_endorser": "false",
+            },
+        )["schema_id"]
+    else:
+        schema_id = agent_container_POST(
+            agent["agent"],
+            "/anoncreds/schema",
+            data={
+                "schema": {
+                    "name": schema_info["schema"]["schema_name"],
+                    "version": schema_info["schema"]["schema_version"],
+                    "attrNames": schema_info["schema"]["attributes"],
+                    "issuerId": agent["agent"].agent.did,
+                },
+                "options": {},
+            },
+        )["schema_state"]["schema_id"]
 
     # assert goodness
-    assert created_txn["schema_id"]
-    context.schema_id = created_txn["schema_id"]
+    assert schema_id
+    context.schema_id = schema_id
 
 
 @given(
@@ -784,26 +826,48 @@ def step_impl(context, agent_name, schema_name):
 
     connection_id = agent["agent"].agent.connection_id
 
-    # TODO for now assume there is a single schema; should find the schema based on the supplied name
-    schemas = agent_container_GET(agent["agent"], "/schemas/created")
-    assert len(schemas["schema_ids"]) == 1
+    if not is_anoncreds(agent):
+        # TODO for now assume there is a single schema; should find the schema based on the supplied name
+        schemas = agent_container_GET(agent["agent"], "/schemas/created")
+        assert len(schemas["schema_ids"]) == 1
 
-    schema_id = schemas["schema_ids"][0]
-    created_txn = agent_container_POST(
-        agent["agent"],
-        "/credential-definitions",
-        data={
-            "schema_id": schema_id,
-            "tag": "test_cred_def_with_endorsement",
-            "support_revocation": True,
-            "revocation_registry_size": 1000,
-        },
-        params={"conn_id": connection_id, "create_transaction_for_endorser": "false"},
-    )
+        credential_definition_id = agent_container_POST(
+            agent["agent"],
+            "/credential-definitions",
+            data={
+                "schema_id": schemas["schema_ids"][0],
+                "tag": "test_cred_def_with_endorsement",
+                "support_revocation": True,
+                "revocation_registry_size": 1000,
+            },
+            params={
+                "conn_id": connection_id,
+                "create_transaction_for_endorser": "false",
+            },
+        )
+    else:
+        schemas = agent_container_GET(agent["agent"], "/anoncreds/schemas")
+        assert len(schemas["schema_ids"]) == 1
+
+        credential_definition_id = agent_container_POST(
+            agent["agent"],
+            "/anoncreds/credential-definition",
+            data={
+                "credential_definition": {
+                    "schemaId": schemas["schema_ids"][0],
+                    "issuerId": agent["agent"].agent.did,
+                    "tag": "test_cred_def_with_endorsement",
+                },
+                "options": {
+                    "support_revocation": True,
+                    "revocation_registry_size": 1000,
+                },
+            },
+        )["credential_definition_state"]["credential_definition_id"]
 
     # assert goodness
-    assert created_txn["credential_definition_id"]
-    context.cred_def_id = created_txn["credential_definition_id"]
+    assert credential_definition_id
+    context.cred_def_id = credential_definition_id
 
 
 @given(
@@ -814,37 +878,60 @@ def step_impl(context, agent_name, schema_name):
 
     connection_id = agent["agent"].agent.connection_id
 
-    # generate revocation registry transaction
-    rev_reg = agent_container_POST(
-        agent["agent"],
-        "/revocation/create-registry",
-        data={"credential_definition_id": context.cred_def_id, "max_cred_num": 1000},
-        params={},
-    )
-    rev_reg_id = rev_reg["result"]["revoc_reg_id"]
-    assert rev_reg_id is not None
+    if not is_anoncreds(agent):
+        # generate revocation registry transaction
+        rev_reg = agent_container_POST(
+            agent["agent"],
+            "/revocation/create-registry",
+            data={
+                "credential_definition_id": context.cred_def_id,
+                "max_cred_num": 1000,
+            },
+            params={},
+        )
+        rev_reg_id = rev_reg["result"]["revoc_reg_id"]
+        assert rev_reg_id is not None
 
-    # update revocation registry
-    agent_container_PATCH(
-        agent["agent"],
-        f"/revocation/registry/{rev_reg_id}",
-        data={
-            "tails_public_uri": f"http://host.docker.internal:6543/revocation/registry/{rev_reg_id}/tails-file"
-        },
-        params={},
-    )
+        # update revocation registry
+        agent_container_PATCH(
+            agent["agent"],
+            f"/revocation/registry/{rev_reg_id}",
+            data={
+                "tails_public_uri": f"http://host.docker.internal:6543/revocation/registry/{rev_reg_id}/tails-file"
+            },
+            params={},
+        )
 
-    # create rev_reg def
-    created_txn = agent_container_POST(
-        agent["agent"],
-        f"/revocation/registry/{rev_reg_id}/definition",
-        data={},
-        params={
-            "conn_id": connection_id,
-            "create_transaction_for_endorser": "false",
-        },
-    )
-    assert created_txn
+        # create rev_reg def
+        created_txn = agent_container_POST(
+            agent["agent"],
+            f"/revocation/registry/{rev_reg_id}/definition",
+            data={},
+            params={
+                "conn_id": connection_id,
+                "create_transaction_for_endorser": "false",
+            },
+        )
+        assert created_txn
+
+    else:
+        # generate revocation registry transaction
+        rev_reg_id = agent_container_POST(
+            agent["agent"],
+            "/anoncreds/revocation-registry-definition",
+            data={
+                "revocation_registry_definition": {
+                    "credDefId": context.cred_def_id,
+                    "issuerId": agent["agent"].agent.did,
+                    "maxCredNum": 1000,
+                    "tag": "default",
+                },
+                "options": {},
+            },
+            params={},
+        )["revocation_registry_definition_state"]["revocation_registry_definition_id"]
+        assert rev_reg_id is not None
+
     context.rev_reg_id = rev_reg_id
 
 
@@ -854,13 +941,18 @@ def step_impl(context, agent_name, schema_name):
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
+    if not is_anoncreds(agent):
+        endpoint = "/revocation/registries/created"
+    else:
+        endpoint = "/anoncreds/revocation/registries"
+
     rev_regs = {"rev_reg_ids": []}
     i = 5
     while 0 == len(rev_regs["rev_reg_ids"]) and i > 0:
         async_sleep(1.0)
         rev_regs = agent_container_GET(
             agent["agent"],
-            "/revocation/registries/created",
+            endpoint,
             params={
                 "cred_def_id": context.cred_def_id,
             },

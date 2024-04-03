@@ -3,8 +3,6 @@
 import re
 
 from enum import Enum
-from os import environ
-from typing import Mapping
 
 QUALIFIED = re.compile(r"^[a-zA-Z\-\+]+:.+")
 
@@ -21,17 +19,7 @@ class DIDCommPrefix(Enum):
     NEW = "https://didcomm.org"
     OLD = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"
 
-    @staticmethod
-    def set(settings: Mapping):
-        """Set current DIDComm prefix value in environment."""
-
-        environ["DIDCOMM_PREFIX"] = (
-            DIDCommPrefix.NEW.value
-            if settings.get("emit_new_didcomm_prefix")
-            else DIDCommPrefix.OLD.value
-        )
-
-    def qualify(self, msg_type: str = None) -> str:
+    def qualify(self, msg_type: str) -> str:
         """Qualify input message type with prefix and separator."""
 
         return qualify(msg_type, self.value)
@@ -43,10 +31,13 @@ class DIDCommPrefix(Enum):
         return {qualify(k, pfx.value): v for pfx in cls for k, v in messages.items()}
 
     @staticmethod
-    def qualify_current(slug: str = None) -> str:
-        """Qualify input slug with prefix currently in effect and separator."""
+    def qualify_current(slug: str) -> str:
+        """Qualify input slug with prefix currently in effect and separator.
 
-        return qualify(slug, environ.get("DIDCOMM_PREFIX", DIDCommPrefix.OLD.value))
+        This method now will always use the new prefix.
+        """
+
+        return qualify(slug, DIDCommPrefix.NEW.value)
 
     @staticmethod
     def unqualify(qual: str) -> str:

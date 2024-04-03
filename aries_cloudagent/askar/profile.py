@@ -224,9 +224,12 @@ class AskarProfileSession(ProfileSession):
     @property
     def is_transaction(self) -> bool:
         """Check if the session supports commit and rollback operations."""
-        if self._handle:
+        if self._handle:  # opened
             return self._handle.is_transaction
-        return self._opener.is_transaction
+        if self._opener:  # opening
+            return self._opener.is_transaction
+
+        raise ProfileError("Session not open")
 
     async def _setup(self):
         """Create the session or transaction connection, if needed."""

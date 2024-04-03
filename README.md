@@ -80,9 +80,11 @@ in the [Aries ACA-Py Plugins repository]. Check them out -- it might have the ve
 
 ### Installation and Usage
 
-Use the ["install and go" page for developers](docs/features/DevReadMe.md) if you are comfortable with Trust over IP and Aries concepts. ACA-Py can be run with Docker without installation (highly recommended), or can be installed [from PyPi](https://pypi.org/project/aries-cloudagent/). In the [/demo directory](./demo) there is a full set of demos for developers to use in getting started, and the [demo read me](docs/demo/README.md) is a great starting point for developers to use an "in-browser" approach to run a zero-install example. The [Read the Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) overview is also a way to understand the internal modules and APIs that make up an ACA-Py instance.
+Use the ["install and go" page for developers](docs/features/DevReadMe.md) if you are comfortable with Trust over IP and Aries concepts. ACA-Py can be run with Docker without installation (highly recommended), or can be installed [from PyPi](https://pypi.org/project/aries-cloudagent/). In the repository `/demo` folder there is a full set of demos for developers to use in getting up to speed quickly. Start with the [Traction Workshop] to go through a complete ACA-Py-based Issuer-Holder-Verifier flow in about 20 minutes. Next, the [Alice-Faber Demo](docs/demo/README.md) is a great way for developers try a zero-install example of how to use the ACA-Py API to operate a couple of Aries Agents. The [Read the Docs](https://aries-cloud-agent-python.readthedocs.io/en/latest/) overview is also a way to understand the internal modules and APIs that make up an ACA-Py instance.
 
 If you would like to develop on ACA-Py locally note that we use Poetry for dependency management and packaging, if you are unfamiliar with poetry please see our [cheat sheet](docs/deploying/Poetry.md)
+
+[Traction Workshop]: docs/demo/Aries-Workshop.md
 
 ## About the ACA-Py Admin API
 

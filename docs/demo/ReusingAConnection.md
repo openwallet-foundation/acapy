@@ -92,12 +92,12 @@ Example invitation:
 }
 ```
 
-The use of conenction reuse can be demonstrated with the Alice / Faber demos as
+The use of connection reuse can be demonstrated with the Alice / Faber demos as
 follows. We assume you have already somewhat familiar with your options for
 running the [Alice Faber Demo] (e.g. locally or in a browser). Follow those
 instruction up to the point where you are about to start the Faber and Alice agents.
 
-[Alice Faber Demo]: ./README.md
+[Alice Faber Demo]: ../demo/README.md
 
 1. On a command line, run Faber with these parameters: `./run_demo faber
    --reuse-connections --public-did-connections --events`.
@@ -130,18 +130,18 @@ always the same that tells the invitee that they can reuse an existing connectio
 
 For example, to run faber with connection reuse using a non-public DID:
 
-```
+``` bash
 ./run_demo faber --reuse-connections --events
 ```
 
 To run faber using a `did_peer` and reusable connections:
 
-```
+``` bash
 DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connections --events
 ```
 
 To run this demo using a multi-use invitation (from Faber):
 
-```
+``` bash
 DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connections --multi-use-invitations --events
 ```

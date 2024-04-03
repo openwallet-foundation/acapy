@@ -246,7 +246,7 @@ class BaseModel(ABC):
             ) from err
 
     @classmethod
-    def serde(cls, obj: Union["BaseModel", Mapping]) -> Optional[SerDe]:
+    def serde(cls, obj: Union["BaseModel", Mapping, None]) -> Optional[SerDe]:
         """Return serialized, deserialized representations of input object."""
         if obj is None:
             return None

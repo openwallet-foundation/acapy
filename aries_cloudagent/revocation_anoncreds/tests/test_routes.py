@@ -7,18 +7,20 @@ from aiohttp.web import HTTPNotFound
 
 from aries_cloudagent.tests import mock
 
+from ...admin.request_context import AdminRequestContext
 from ...anoncreds.models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefValue,
 )
 from ...askar.profile import AskarProfile
+from ...askar.profile_anon import AskarAnoncredsProfile
 from ...core.in_memory import InMemoryProfile
 from .. import routes as test_module
 
 
 class TestRevocationRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.profile = InMemoryProfile.test_profile(profile_class=AskarProfile)
+        self.profile = InMemoryProfile.test_profile(profile_class=AskarAnoncredsProfile)
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
         self.request_dict = {
@@ -37,7 +39,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
     async def test_validate_cred_rev_rec_qs_and_revoke_req(self):
         for req in (
             test_module.CredRevRecordQueryStringSchema(),
-            test_module.RevokeRequestSchema(),
+            test_module.RevokeRequestSchemaAnoncreds(),
         ):
             req.validate_fields(
                 {
@@ -182,7 +184,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         ) as mock_json_response:
             mock_query.return_value = ["dummy"]
 
-            result = await test_module.rev_regs_created(self.request)
+            result = await test_module.get_rev_regs(self.request)
             mock_json_response.assert_called_once_with({"rev_reg_ids": ["dummy"]})
             assert result is mock_json_response.return_value
 
@@ -519,6 +521,65 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             with self.assertRaises(HTTPNotFound):
                 result = await test_module.set_rev_reg_state(self.request)
             mock_json_response.assert_not_called()
+
+    async def test_wrong_profile_403(self):
+        self.profile = InMemoryProfile.test_profile(
+            settings={"wallet.type": "askar"},
+            profile_class=AskarProfile,
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        self.request = mock.MagicMock(
+            app={},
+            match_info={},
+            query={},
+            __getitem__=lambda _, k: self.request_dict[k],
+            context=self.context,
+        )
+
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "rev_reg_id": "rr_id",
+                "cred_rev_id": "23",
+                "publish": "false",
+            }
+        )
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.revoke(self.request)
+
+        self.request.json = mock.CoroutineMock()
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.publish_revocations(self.request)
+
+        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
+            self.test_did, self.test_did
+        )
+        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_rev_reg(self.request)
+
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_rev_reg_issued_count(self.request)
+
+        CRED_REV_ID = "1"
+        self.request.query = {
+            "rev_reg_id": REV_REG_ID,
+            "cred_rev_id": CRED_REV_ID,
+        }
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.get_cred_rev_record(self.request)
+
+        self.request.match_info = {"rev_reg_id": REV_REG_ID}
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            result = await test_module.get_tails_file(self.request)
+
+        self.request.query = {
+            "state": test_module.RevRegDefState.STATE_FINISHED,
+        }
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.set_rev_reg_state(self.request)
 
     async def test_register(self):
         mock_app = mock.MagicMock()

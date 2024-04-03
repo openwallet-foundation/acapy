@@ -2,6 +2,7 @@
 
 import logging
 from typing import Optional, Sequence, Tuple, Union, cast
+import warnings
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
@@ -51,6 +52,18 @@ class ConnectionManager(BaseConnectionManager):
 
         """
         return self._profile
+
+    def deprecation_warning(self):
+        """Log a deprecation warning."""
+        warnings.warn(
+            "Aries RFC 0160: Connection Protocol is deprecated and support will be "
+            "removed in a future version; use RFC 0023: DID Exchange instead.",
+            DeprecationWarning,
+        )
+        self._logger.warning(
+            "Aries RFC 0160: Connection Protocol is deprecated and support will be "
+            "removed in a future version; use RFC 0023: DID Exchange instead."
+        )
 
     async def create_invitation(
         self,
@@ -107,6 +120,7 @@ class ConnectionManager(BaseConnectionManager):
             A tuple of the new `ConnRecord` and `ConnectionInvitation` instances
 
         """
+        self.deprecation_warning()
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await self._route_manager.mediation_record_if_id(
@@ -257,6 +271,7 @@ class ConnectionManager(BaseConnectionManager):
             The new `ConnRecord` instance
 
         """
+        self.deprecation_warning()
         if not invitation.did:
             if not invitation.recipient_keys:
                 raise ConnectionManagerError(
@@ -338,6 +353,7 @@ class ConnectionManager(BaseConnectionManager):
             A new `ConnectionRequest` message to send to the other agent
 
         """
+        self.deprecation_warning()
 
         mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile,
@@ -411,6 +427,7 @@ class ConnectionManager(BaseConnectionManager):
             The new or updated `ConnRecord` instance
 
         """
+        self.deprecation_warning()
         ConnRecord.log_state(
             "Receiving connection request",
             {"request": request},
@@ -575,6 +592,7 @@ class ConnectionManager(BaseConnectionManager):
             A tuple of the updated `ConnRecord` new `ConnectionResponse` message
 
         """
+        self.deprecation_warning()
         ConnRecord.log_state(
             "Creating connection response",
             {"connection_id": connection.connection_id},
@@ -686,6 +704,7 @@ class ConnectionManager(BaseConnectionManager):
                 at the request or response stage
 
         """
+        self.deprecation_warning()
         connection = None
         if response._thread:
             # identify the request by the thread ID
@@ -765,6 +784,7 @@ class ConnectionManager(BaseConnectionManager):
         report: ConnectionProblemReport,
     ):
         """Receive problem report."""
+        self.deprecation_warning()
         if not report.description:
             raise ConnectionManagerError("Missing description in problem report")
 

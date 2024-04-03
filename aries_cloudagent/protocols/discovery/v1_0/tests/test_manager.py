@@ -1,5 +1,3 @@
-import asyncio
-import logging
 import pytest
 
 from aries_cloudagent.tests import mock
@@ -181,28 +179,6 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
             )
             assert received_ex_rec.query_msg == return_ex_rec.query_msg
             mock_send.assert_called_once()
-
-    async def test_create_and_send_query_with_connection_no_responder(self):
-        self.profile.context.injector.clear_binding(BaseResponder)
-        with mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "exists_for_connection_id",
-            mock.CoroutineMock(),
-        ) as mock_exists_for_connection_id, mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "save",
-            mock.CoroutineMock(),
-        ) as save_ex, mock.patch.object(
-            V10DiscoveryMgr, "check_if_disclosure_received", mock.CoroutineMock()
-        ) as mock_disclosure_received:
-            self._caplog.set_level(logging.WARNING)
-            mock_exists_for_connection_id.return_value = False
-            mock_disclosure_received.side_effect = asyncio.TimeoutError
-            received_ex_rec = await self.manager.create_and_send_query(
-                query="*", connection_id="test123"
-            )
-            assert received_ex_rec.query_msg.query == "*"
-            assert "Unable to send discover-features v1" in self._caplog.text
 
     async def test_create_and_send_query_with_no_connection(self):
         with mock.patch.object(

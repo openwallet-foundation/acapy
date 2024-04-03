@@ -17,7 +17,7 @@ class IssuerCredRevRecord(BaseRecord):
     class Meta:
         """IssuerCredRevRecord metadata."""
 
-        schema_class = "IssuerCredRevRecordSchema"
+        schema_class = "IssuerCredRevRecordSchemaAnoncreds"
 
     RECORD_TYPE = "issuer_cred_rev"
     RECORD_ID_NAME = "record_id"
@@ -123,7 +123,7 @@ class IssuerCredRevRecord(BaseRecord):
         return super().__eq__(other)
 
 
-class IssuerCredRevRecordSchema(BaseRecordSchema):
+class IssuerCredRevRecordSchemaAnoncreds(BaseRecordSchema):
     """Schema to allow de/serialization of credential revocation records."""
 
     class Meta:

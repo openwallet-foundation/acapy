@@ -1,9 +1,8 @@
 """Agent message base class and schema."""
 
-import uuid
 from collections import OrderedDict
-from re import sub
 from typing import Mapping, Optional, Text, Union
+import uuid
 
 from marshmallow import (
     EXCLUDE,
@@ -21,7 +20,7 @@ from .base_message import BaseMessage, DIDCommVersion
 from .decorators.base import BaseDecoratorSet
 from .decorators.default import DecoratorSet
 from .decorators.service_decorator import ServiceDecorator
-from .decorators.signature_decorator import SignatureDecorator  # TODO deprecated
+from .decorators.signature_decorator import SignatureDecorator
 from .decorators.thread_decorator import ThreadDecorator
 from .decorators.trace_decorator import (
     TRACE_LOG_TARGET,
@@ -29,6 +28,7 @@ from .decorators.trace_decorator import (
     TraceDecorator,
     TraceReport,
 )
+from .message_type import MessageTypeStr
 from .models.base import (
     BaseModel,
     BaseModelError,
@@ -86,17 +86,13 @@ class AgentMessage(BaseModel, BaseMessage):
                     self.__class__.__name__
                 )
             )
-        if _type:
-            self._message_type = _type
-        elif _version:
-            self._message_type = self.get_updated_msg_type(_version)
-        else:
-            self._message_type = self.Meta.message_type
-        # Not required for now
-        # if not self.Meta.handler_class:
-        #    raise TypeError(
-        #        "Can't instantiate abstract class {} with no handler_class".format(
-        #            self.__class__.__name__))
+
+        self._message_type = MessageTypeStr(
+            DIDCommPrefix.qualify_current(_type or self.Meta.message_type)
+        )
+
+        if _version:
+            self.assign_version(_version)
 
     @classmethod
     def _get_handler_class(cls):
@@ -119,19 +115,14 @@ class AgentMessage(BaseModel, BaseMessage):
         return self._get_handler_class()
 
     @property
-    def _type(self) -> str:
+    def _type(self) -> MessageTypeStr:
         """Accessor for the message type identifier.
 
         Returns:
             Current DIDComm prefix, slash, message type defined on `Meta.message_type`
 
         """
-        return DIDCommPrefix.qualify_current(self._message_type)
-
-    @_type.setter
-    def _type(self, msg_type: str):
-        """Set the message type identifier."""
-        self._message_type = msg_type
+        return self._message_type
 
     @property
     def _id(self) -> str:
@@ -153,14 +144,34 @@ class AgentMessage(BaseModel, BaseMessage):
         """Fetch the message's decorator set."""
         return self._message_decorators
 
+    @property
+    def _version(self) -> str:
+        """Accessor for the message version."""
+        return str(self._type.version)
+
+    def assign_version_from(self, msg: "AgentMessage"):
+        """Copy version information from a previous message.
+
+        Args:
+            msg: The received message containing version information to copy
+
+        """
+        if msg:
+            self.assign_version(msg._version)
+
+    def assign_version(self, version: str):
+        """Assign a specific version.
+
+        Args:
+            version: The version to assign
+
+        """
+        self._message_type = self._message_type.with_version(version)
+
     @_decorators.setter
     def _decorators(self, value: BaseDecoratorSet):
         """Fetch the message's decorator set."""
         self._message_decorators = value
-
-    def get_updated_msg_type(self, version: str) -> str:
-        """Update version to Meta.message_type."""
-        return sub(r"(\d+\.)?(\*|\d+)", version, self.Meta.message_type)
 
     def get_signature(self, field_name: str) -> SignatureDecorator:
         """Get the signature for a named field.
@@ -294,7 +305,7 @@ class AgentMessage(BaseModel, BaseMessage):
         return self._decorators.get("thread")
 
     @_thread.setter
-    def _thread(self, val: Union[ThreadDecorator, dict]):
+    def _thread(self, val: Union[ThreadDecorator, dict, None]):
         """Setter for the message's thread decorator.
 
         Args:
@@ -324,7 +335,7 @@ class AgentMessage(BaseModel, BaseMessage):
             pthid = thread and thread.pthid
             self.assign_thread_id(thid, pthid)
 
-    def assign_thread_id(self, thid: str, pthid: str = None):
+    def assign_thread_id(self, thid: str, pthid: Optional[str] = None):
         """Assign a specific thread ID.
 
         Args:

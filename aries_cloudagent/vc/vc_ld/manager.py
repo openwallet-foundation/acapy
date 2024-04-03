@@ -1,17 +1,18 @@
 """Manager for performing Linked Data Proof signatures over JSON-LD formatted W3C VCs."""
 
 from typing import Dict, List, Optional, Type, Union, cast
+
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
 from ...core.profile import Profile
+from ...storage.vc_holder.base import VCHolder
+from ...storage.vc_holder.vc_record import VCRecord
 from ...wallet.base import BaseWallet
 from ...wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
 from ...wallet.did_info import DIDInfo
 from ...wallet.error import WalletNotFoundError
 from ...wallet.key_type import BLS12381G2, ED25519, KeyType
-from ...storage.vc_holder.base import VCHolder
-from ...storage.vc_holder.vc_record import VCRecord
 from ..ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     SECURITY_CONTEXT_ED25519_2020_URL,
@@ -29,11 +30,12 @@ from ..ld_proofs.suites.linked_data_proof import LinkedDataProof
 from ..ld_proofs.validation_result import DocumentVerificationResult
 from ..vc_ld.models.presentation import VerifiablePresentation
 from ..vc_ld.validation_result import PresentationVerificationResult
+from .external_suite import ExternalSuiteNotFoundError, ExternalSuiteProvider
 from .issue import issue as ldp_issue
-from .prove import sign_presentation
 from .models.credential import VerifiableCredential
 from .models.linked_data_proof import LDProof
 from .models.options import LDProofVCOptions
+from .prove import sign_presentation
 from .verify import verify_credential, verify_presentation
 
 SignatureTypes = Union[
@@ -177,11 +179,25 @@ class VcLdpManager:
         self,
         *,
         proof_type: str,
-        verification_method: Optional[str] = None,
-        proof: Optional[dict] = None,
-        did_info: Optional[DIDInfo] = None,
+        verification_method: str,
+        proof: dict,
+        did_info: DIDInfo,
     ):
         """Get signature suite for issuance of verification."""
+        # Try to get suite from external provider first
+        try:
+            if (provider := self.profile.inject_or(ExternalSuiteProvider)) and (
+                suite := await provider.get_suite(
+                    self.profile, proof_type, proof, verification_method, did_info
+                )
+            ):
+                return suite
+        except ExternalSuiteNotFoundError as error:
+            raise VcLdpManagerError(
+                f"Unable to get signature suite for proof type {proof_type} "
+                "using external provider."
+            ) from error
+
         # Get signature class based on proof type
         SignatureClass = PROOF_TYPE_SIGNATURE_SUITE_MAPPING[proof_type]
 
