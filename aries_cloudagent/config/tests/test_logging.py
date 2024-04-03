@@ -1,10 +1,7 @@
 import contextlib
-
 from io import StringIO
-
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
 from tempfile import NamedTemporaryFile
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .. import logging as test_module
 
@@ -21,7 +18,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
         test_module.LoggingConfigurator.configure()
 
         mock_load_resource.assert_called_once_with(
-            test_module.DEFAULT_LOGGING_CONFIG_PATH, "utf-8"
+            test_module.DEFAULT_LOGGING_CONFIG_PATH_INI, "utf-8"
         )
         mock_file_config.assert_called_once_with(
             mock_load_resource.return_value,
@@ -61,7 +58,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             ),
         ):
             test_module.LoggingConfigurator.configure(
-                logging_config_path="aries_cloudagent/config/default_per_tenant_logging_config.yml",
+                log_config_path="aries_cloudagent/config/default_multitenant_logging_config.yml",
                 log_file="test.log",
                 multitenant=True,
             )
