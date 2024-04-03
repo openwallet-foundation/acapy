@@ -26,7 +26,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             new_file_path=None,
         )
 
-    def test_configure_with_per_tenant_config_file(self):
+    def test_configure_with_multitenant_config_file(self):
         with mock.patch.object(
             test_module,
             "logging",
@@ -44,7 +44,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
                 multitenant=True,
             )
 
-    def test_configure_with_per_tenant_yml_file(self):
+    def test_configure_with_multitenant_yml_file(self):
         with mock.patch.object(
             test_module,
             "logging",
