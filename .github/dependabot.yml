@@ -12,3 +12,9 @@ updates:
     groups:
       all-actions:
         patterns: [ "*" ]
+    
+  # Maintain dependencies for Python packages
+  - package-ecosystem: pip
+    directory: /server
+    schedule:
+      interval: daily
