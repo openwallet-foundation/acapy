@@ -316,6 +316,7 @@ class AnonCredsHolder:
                 credential_definition,
                 rev_reg_def,
             )
+            # TODO
             cred_recvd = Credential.from_w3c(cred_w3c)
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error processing received credential") from err

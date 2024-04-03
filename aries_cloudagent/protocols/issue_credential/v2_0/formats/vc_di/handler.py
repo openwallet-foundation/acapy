@@ -7,10 +7,31 @@ import datetime
 import json
 import logging
 from typing import Mapping, Tuple
-from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import (
-    V20CredExRecordVCDI,
+
+from ...models.cred_ex_record import V20CredExRecord
+from ...models.detail.indy import (
+    V20CredExRecordIndy,
+)
+from .models.cred import (
+    VCDIIndyCredentialSchema,
+)
+from .models.cred_request import (
+    AnoncredsLinkSecretRequest,
+    BindingProof,
+    DidcommSignedAttachmentRequest,
+    VCDICredRequest,
+    VCDICredRequestSchema,
 )
 
+from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
+
+from .models.cred_offer import (
+    AnoncredsLinkSecret,
+    BindingMethod,
+    DidcommSignedAttachment,
+    VCDICredAbstract,
+    VCDICredAbstractSchema,
+)
 from marshmallow import RAISE
 
 from ......anoncreds.revocation import AnonCredsRevocation
@@ -20,9 +41,6 @@ from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import (
     AnonCredsIssuer,
 )
-from ......indy.models.cred import VCDIIndyCredentialSchema
-from ......indy.models.cred_abstract import VCDICredAbstractSchema
-from ......indy.models.cred_request import VCDICredRequestSchema
 from ......cache.base import BaseCache
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
@@ -50,7 +68,7 @@ from ...messages.cred_issue import V20CredIssue
 from ...messages.cred_offer import V20CredOffer
 from ...messages.cred_proposal import V20CredProposal
 from ...messages.cred_request import V20CredRequest
-from ...models.cred_ex_record import V20CredExRecord
+
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 
 LOGGER = logging.getLogger(__name__)
@@ -90,7 +108,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         # Validate, throw if not valid
         Schema(unknown=RAISE).load(attachment_data)
 
-    async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordVCDI:
+    async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordIndy:
         """Retrieve credential exchange detail record by cred_ex_id."""
 
         async with self.profile.session() as session:
@@ -175,7 +193,9 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         return self.get_format_data(CRED_20_PROPOSAL, proposal_data)
 
     async def receive_proposal(
-        self, cred_ex_record: V20CredExRecord, cred_proposal_message: V20CredProposal
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_proposal_message: V20CredProposal,
     ) -> None:
         """Receive vcdi credential proposal.
 
@@ -204,6 +224,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             offer_str = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_str)
 
+        # TODO
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
@@ -239,36 +260,39 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         if not cred_offer:
             cred_offer = await _create()
 
-        vcdi_cred_offer = {
-            "data_model_versions_supported": ["1.1"],
-            "binding_required": True,
-            "binding_method": {
-                "anoncreds_link_secret": {
-                    "cred_def_id": cred_offer["cred_def_id"],
-                    "key_correctness_proof": cred_offer["key_correctness_proof"],
-                    "nonce": cred_offer["nonce"],
-                },
-                "didcomm_signed_attachment": {
-                    "algs_supported": ["EdDSA"],
-                    "did_methods_supported": ["key"],
-                    "nonce": cred_offer["nonce"],
-                },
-            },
-            "credential": {
-                "@context": [
-                    "https://www.w3.org/2018/credentials/v1",
-                    "https://w3id.org/security/data-integrity/v2",
-                    {"@vocab": "https://www.w3.org/ns/credentials/issuer-dependent#"},
-                ],
-                "type": ["VerifiableCredential"],
-                "issuer": public_did,
-                "credentialSubject": cred_proposal_message.credential_preview.attr_dict(),
-                "issuanceDate": datetime.datetime.now(
-                    datetime.timezone.utc
-                ).isoformat(),
-            },
-        }
-        return self.get_format_data(CRED_20_OFFER, vcdi_cred_offer)
+        credential = VerifiableCredential(
+            issuer=public_did,
+            credential_subject=cred_proposal_message.credential_preview.attr_dict(),
+            issuance_date=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        )
+
+        anoncreds_link_secret_instance = AnoncredsLinkSecret(
+            cred_def_id=cred_offer["cred_def_id"],
+            key_correctness_proof=cred_offer["key_correctness_proof"],
+            nonce=cred_offer["nonce"],
+        )
+
+        didcomm_signed_attachment_instance = DidcommSignedAttachment(
+            algs_supported=["EdDSA"],
+            did_methods_supported=["key"],
+            nonce=cred_offer["nonce"],
+        )
+
+        binding_method_instance = BindingMethod(
+            anoncreds_link_secret=anoncreds_link_secret_instance,
+            didcomm_signed_attachment=didcomm_signed_attachment_instance,
+        )
+
+        vcdi_cred_abstract = VCDICredAbstract(
+            data_model_versions_supported=["1.1"],
+            binding_required=True,
+            binding_method=binding_method_instance,
+            credential=credential,
+        )
+
+        return self.get_format_data(
+            CRED_20_OFFER, json.loads(vcdi_cred_abstract.to_json())
+        )
 
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
@@ -304,6 +328,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         ]
 
         ledger = self.profile.inject(BaseLedger)
+        # TODO
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
@@ -326,14 +351,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                 self.profile, cred_def_id
             )
 
-            legacy_offer = {
-                "schema_id": schema_id,
-                "cred_def_id": cred_def_id,
-                "key_correctness_proof": cred_offer["binding_method"][
-                    "anoncreds_link_secret"
-                ]["key_correctness_proof"],
-                "nonce": cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"],
-            }
+            legacy_offer = await self._prepare_legacy_offer(cred_offer, schema_id)
 
             holder = AnonCredsHolder(self.profile)
             request_json, metadata_json = await holder.create_credential_request(
@@ -357,32 +375,40 @@ class VCDICredFormatHandler(V20CredFormatHandler):
                     await entry.set_result(cred_req_result, 3600)
         if not cred_req_result:
             cred_req_result = await _create()
-        detail_record = V20CredExRecordVCDI(
+        detail_record = V20CredExRecordIndy(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
         )
 
-        vcdi_cred_request = {
-            "data_model_version": "2.0",
-            "binding_proof": {
-                "anoncreds_link_secret": {
-                    "entropy": cred_req_result["request"]["prover_did"],
-                    "cred_def_id": cred_req_result["request"]["cred_def_id"],
-                    "blinded_ms": cred_req_result["request"]["blinded_ms"],
-                    "blinded_ms_correctness_proof": cred_req_result["request"][
-                        "blinded_ms_correctness_proof"
-                    ],
-                    "nonce": cred_req_result["request"]["nonce"],
-                },
-                "didcomm_signed_attachment": {"attachment_id": "test"},
-            },
-        }
+        anoncreds_link_secret_instance = AnoncredsLinkSecretRequest(
+            entropy=cred_req_result["request"]["prover_did"],
+            cred_def_id=cred_req_result["request"]["cred_def_id"],
+            blinded_ms=cred_req_result["request"]["blinded_ms"],
+            blinded_ms_correctness_proof=cred_req_result["request"][
+                "blinded_ms_correctness_proof"
+            ],
+            nonce=cred_req_result["request"]["nonce"],
+        )
+
+        didcomm_signed_attachment_instance = DidcommSignedAttachmentRequest(
+            attachment_id="test"
+        )
+
+        binding_proof_instance = BindingProof(
+            anoncreds_link_secret=anoncreds_link_secret_instance,
+            didcomm_signed_attachment=didcomm_signed_attachment_instance,
+        )
+
+        vcdi_cred_request = VCDICredRequest(
+            data_model_version="2.0", binding_proof=binding_proof_instance
+        )
 
         async with self.profile.session() as session:
             await detail_record.save(session, reason="create v2.0 credential request")
 
-        tmp = self.get_format_data(CRED_20_REQUEST, vcdi_cred_request)
-        return tmp
+        return self.get_format_data(
+            CRED_20_REQUEST, json.loads(vcdi_cred_request.to_json())
+        )
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
@@ -412,6 +438,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         ]
 
         ledger = self.profile.inject(BaseLedger)
+        # TODO
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
@@ -427,42 +454,14 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
 
-        legacy_offer = {
-            "schema_id": schema_id,
-            "cred_def_id": cred_def_id,
-            "key_correctness_proof": cred_offer["binding_method"][
-                "anoncreds_link_secret"
-            ]["key_correctness_proof"],
-            "nonce": cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"],
-        }
-        legacy_request = {
-            "prover_did": cred_request["binding_proof"]["anoncreds_link_secret"][
-                "entropy"
-            ],
-            "cred_def_id": cred_def_id,
-            "blinded_ms": cred_request["binding_proof"]["anoncreds_link_secret"][
-                "blinded_ms"
-            ],
-            "blinded_ms_correctness_proof": cred_request["binding_proof"][
-                "anoncreds_link_secret"
-            ]["blinded_ms_correctness_proof"],
-            "nonce": cred_request["binding_proof"]["anoncreds_link_secret"]["nonce"],
-        }
+        legacy_offer = await self._prepare_legacy_offer(cred_offer, schema_id)
+        legacy_request = await self._prepare_legacy_request(cred_request, cred_def_id)
 
         issuer = AnonCredsIssuer(self.profile)
-        # IC - implement a separate create_credential for vcdi
+
         credential = await issuer.create_credential_w3c(
             legacy_offer, legacy_request, cred_values
         )
-
-        # IC: this needs to be re-formatted into a vc_di credential issue message
-        #     see test vectors here:  https://github.com/TimoGlastra/anoncreds-w3c-test-vectors
-        #     the relevant example is this one (I think):
-        #     https://github.com/TimoGlastra/anoncreds-w3c-test-vectors/
-        #             blob/main/test-vectors/aries-issue-credential-di-issue.json
-        # Note that we ALSO need a schema for this
-        #     (like was implemented for VCDICredAbstractSchema or VCDICredRequestSchema)
-        # ... in order to validate received messages ...
 
         vcdi_credential = {
             "credential": json.loads(credential),
@@ -474,7 +473,7 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         rev_reg_def_id = None
 
         async with self._profile.transaction() as txn:
-            detail_record = V20CredExRecordVCDI(
+            detail_record = V20CredExRecordIndy(
                 cred_ex_id=cred_ex_record.cred_ex_id,
                 rev_reg_id=rev_reg_def_id,
                 cred_rev_id=cred_rev_id,
@@ -499,6 +498,34 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             await txn.commit()
 
         return result
+
+    async def _prepare_legacy_offer(self, cred_offer: dict, schema_id: str) -> dict:
+        """Convert current offer to legacy offer format."""
+        return {
+            "schema_id": schema_id,
+            "cred_def_id": cred_offer["binding_method"]["anoncreds_link_secret"][
+                "cred_def_id"
+            ],
+            "key_correctness_proof": cred_offer["binding_method"][
+                "anoncreds_link_secret"
+            ]["key_correctness_proof"],
+            "nonce": cred_offer["binding_method"]["anoncreds_link_secret"]["nonce"],
+        }
+
+    async def _prepare_legacy_request(self, cred_request: dict, cred_def_id: str):
+        return {
+            "prover_did": cred_request["binding_proof"]["anoncreds_link_secret"][
+                "entropy"
+            ],
+            "cred_def_id": cred_def_id,
+            "blinded_ms": cred_request["binding_proof"]["anoncreds_link_secret"][
+                "blinded_ms"
+            ],
+            "blinded_ms_correctness_proof": cred_request["binding_proof"][
+                "anoncreds_link_secret"
+            ]["blinded_ms_correctness_proof"],
+            "nonce": cred_request["binding_proof"]["anoncreds_link_secret"]["nonce"],
+        }
 
     async def receive_credential(
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue

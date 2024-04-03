@@ -29,12 +29,10 @@ from aries_cloudagent.protocols.issue_credential.v2_0.messages.inner.cred_previe
     V20CredAttrSpec,
     V20CredPreview,
 )
-from aries_cloudagent.protocols.issue_credential.v2_0.models.cred_ex_record import (
-    V20CredExRecord,
+from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.indy import (
+    V20CredExRecordIndy,
 )
-from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import (
-    V20CredExRecordVCDI,
-)
+
 from aries_cloudagent.storage.record import StorageRecord
 
 from unittest import IsolatedAsyncioTestCase
@@ -309,12 +307,12 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
     async def test_get_vcdi_detail_record(self):
         cred_ex_id = "dummy"
         details_vcdi = [
-            V20CredExRecordVCDI(
+            V20CredExRecordIndy(
                 cred_ex_id=cred_ex_id,
                 rev_reg_id="rr-id",
                 cred_rev_id="0",
             ),
-            V20CredExRecordVCDI(
+            V20CredExRecordIndy(
                 cred_ex_id=cred_ex_id,
                 rev_reg_id="rr-id",
                 cred_rev_id="1",
@@ -471,9 +469,9 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             # TODO here
             offers_attach=[AttachDecorator.data_base64(VCDI_OFFER, ident="0")],
         )
-        cred_ex_record = V20CredExRecord(
+        cred_ex_record = V20CredExRecordIndy(
             cred_ex_id="dummy-id",
-            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            state=V20CredExRecordIndy.STATE_OFFER_RECEIVED,
             cred_offer=cred_offer.serialize(),
         )
 
@@ -570,13 +568,13 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             requests_attach=[AttachDecorator.data_base64(VCDI_CRED_REQ, ident="0")],
         )
 
-        cred_ex_record = V20CredExRecord(
+        cred_ex_record = V20CredExRecordIndy(
             cred_ex_id="dummy-cxid",
             cred_offer=cred_offer.serialize(),
             cred_request=cred_request.serialize(),
-            initiator=V20CredExRecord.INITIATOR_SELF,
-            role=V20CredExRecord.ROLE_ISSUER,
-            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+            initiator=V20CredExRecordIndy.INITIATOR_SELF,
+            role=V20CredExRecordIndy.ROLE_ISSUER,
+            state=V20CredExRecordIndy.STATE_REQUEST_RECEIVED,
         )
 
         cred_rev_id = "1000"
@@ -659,13 +657,13 @@ class TestV20VCDICredFormatHandler(IsolatedAsyncioTestCase):
             requests_attach=[AttachDecorator.data_base64(VCDI_CRED_REQ, ident="0")],
         )
 
-        cred_ex_record = V20CredExRecord(
+        cred_ex_record = V20CredExRecordIndy(
             cred_ex_id="dummy-cxid",
             cred_offer=cred_offer.serialize(),
             cred_request=cred_request.serialize(),
-            initiator=V20CredExRecord.INITIATOR_SELF,
-            role=V20CredExRecord.ROLE_ISSUER,
-            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+            initiator=V20CredExRecordIndy.INITIATOR_SELF,
+            role=V20CredExRecordIndy.ROLE_ISSUER,
+            state=V20CredExRecordIndy.STATE_REQUEST_RECEIVED,
         )
 
         self.issuer.create_credential = mock.CoroutineMock(

@@ -13,9 +13,6 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import ValidationError, fields, validate, validates_schema
-from aries_cloudagent.protocols.issue_credential.v2_0.models.detail.vc_di import (
-    V20CredExRecordVCDISchema,
-)
 
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolderError
@@ -111,7 +108,7 @@ class V20CredExRecordDetailSchema(OpenAPISchema):
 
     indy = fields.Nested(V20CredExRecordIndySchema, required=False)
     ld_proof = fields.Nested(V20CredExRecordLDProofSchema, required=False)
-    vc_di = fields.Nested(V20CredExRecordVCDISchema, required=False)
+    vc_di = fields.Nested(V20CredExRecordSchema, required=False)
 
 
 class V20CredExRecordListResultSchema(OpenAPISchema):

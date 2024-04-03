@@ -13,7 +13,6 @@ from .....messaging.valid import UUID4_EXAMPLE
 from .....utils.classloader import DeferLoad
 from ..models.detail.indy import V20CredExRecordIndy
 from ..models.detail.ld_proof import V20CredExRecordLDProof
-from ..models.detail.vc_di import V20CredExRecordVCDI
 
 if TYPE_CHECKING:
     from ..formats.handler import V20CredFormatHandler
@@ -64,7 +63,7 @@ class V20CredFormat(BaseModel):
 
         VC_DI = FormatSpec(
             "didcomm/",
-            V20CredExRecordVCDI,
+            V20CredExRecordIndy,
             DeferLoad(
                 "aries_cloudagent.protocols.issue_credential.v2_0"
                 ".formats.vc_di.handler.VCDICredFormatHandler"
