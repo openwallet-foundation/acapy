@@ -15,6 +15,17 @@ updates:
     
   # Maintain dependencies for Python packages
   - package-ecosystem: pip
-    directory: /server
+    directory: /aries_cloudagent
+      interval: weekly
+      day: monday
+      time: 04:00
+      timezone: Canada/Pacific
+
+  # Maintain dependencies for docker
+  - package-ecosystem: docker
+    directory: /docker
     schedule:
-      interval: daily
+      interval: weekly
+      day: monday
+      time: 04:00
+      timezone: Canada/Pacific
