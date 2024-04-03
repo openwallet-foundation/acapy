@@ -17,7 +17,7 @@ def admin_authentication(handler):
     """
 
     @functools.wraps(handler)
-    async def wrapper(request):
+    async def admin_auth(request):
         context: AdminRequestContext = request["context"]
         profile = context.profile
         header_admin_api_key = request.headers.get("x-api-key")
@@ -38,7 +38,7 @@ def admin_authentication(handler):
                 text="API Key invalid or missing",
             )
 
-    return wrapper
+    return admin_auth
 
 
 def tenant_authentication(handler):
@@ -51,7 +51,7 @@ def tenant_authentication(handler):
     """
 
     @functools.wraps(handler)
-    async def wrapper(request):
+    async def tenant_auth(request):
         context: AdminRequestContext = request["context"]
         profile = context.profile
         authorization_header = request.headers.get("Authorization")
@@ -77,4 +77,4 @@ def tenant_authentication(handler):
                 text=f"{auth_mode} missing or invalid",
             )
 
-    return wrapper
+    return tenant_auth
