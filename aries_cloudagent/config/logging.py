@@ -6,21 +6,21 @@ import logging
 import os
 import re
 import sys
-import yaml
 import time as mod_time
-from importlib import resources
-
 from contextvars import ContextVar
 from datetime import datetime, timedelta
+from importlib import resources
 from logging.config import (
-    dictConfigClass,
-    _create_formatters,
     _clearExistingHandlers,
+    _create_formatters,
     _install_handlers,
     _install_loggers,
+    dictConfigClass,
 )
 from logging.handlers import BaseRotatingHandler
 from random import randint
+
+import yaml
 from portalocker import LOCK_EX, lock, unlock
 from pythonjsonlogger import jsonlogger
 
@@ -28,9 +28,9 @@ from ..config.settings import Settings
 from ..version import __version__
 from .banner import Banner
 
-DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
-DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI = (
-    "aries_cloudagent.config:default_per_tenant_logging_config.ini"
+DEFAULT_LOGGING_CONFIG_PATH_INI = "aries_cloudagent.config:default_logging_config.ini"
+DEFAULT_MULTITENANT_LOGGING_CONFIG_PATH_INI = (
+    "aries_cloudagent.config:default_multitenant_logging_config.ini"
 )
 LOG_FORMAT_FILE_ALIAS_PATTERN = (
     "%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s"
@@ -136,10 +136,13 @@ def fileConfig(
 class LoggingConfigurator:
     """Utility class used to configure logging and print an informative start banner."""
 
+    default_config_path_ini = DEFAULT_LOGGING_CONFIG_PATH_INI
+    default_multitenant_config_path_ini = DEFAULT_MULTITENANT_LOGGING_CONFIG_PATH_INI
+
     @classmethod
     def configure(
         cls,
-        logging_config_path: str = None,
+        log_config_path: str = None,
         log_level: str = None,
         log_file: str = None,
         multitenant: bool = False,
@@ -150,92 +153,142 @@ class LoggingConfigurator:
             custom logging config
 
         :param log_level: str: (Default value = None)
+
+        :param log_file: str: (Default value = None) Optional file name to write logs to
+
+        :param multitenant: bool: (Default value = False) Optional flag if multitenant is
+            enabled
         """
-        is_dict_config = False
-        if log_file:
-            write_to_log_file = True
-        elif log_file == "":
-            log_file = None
-            write_to_log_file = True
-        else:
-            write_to_log_file = False
-        if logging_config_path is not None:
-            config_path = logging_config_path
-        else:
-            if multitenant and write_to_log_file:
-                config_path = DEFAULT_PER_TENANT_LOGGING_CONFIG_PATH_INI
-            else:
-                config_path = DEFAULT_LOGGING_CONFIG_PATH
-                if write_to_log_file and not log_file:
-                    raise ValueError(
-                        "log_file (--log-file) must be provided "
-                        "as config does not specify it."
-                    )
-        if ".yml" in config_path or ".yaml" in config_path:
-            is_dict_config = True
-            with open(config_path, "r") as stream:
-                log_config = yaml.safe_load(stream)
-        else:
-            log_config = load_resource(config_path, "utf-8")
-        if log_config:
-            if is_dict_config:
-                dictConfig(log_config, new_file_path=log_file)
-            else:
-                with log_config:
-                    fileConfig(
-                        log_config,
-                        new_file_path=log_file if multitenant else None,
-                        disable_existing_loggers=False,
-                    )
-        else:
-            logging.basicConfig(level=logging.WARNING)
-            logging.root.warning(f"Logging config file not found: {config_path}")
+
         if multitenant:
-            file_handler_set = False
-            handler_pattern = None
-            # Create context filter to adapt wallet_id in logger messages
-            _cf = ContextFilter()
-            for _handler in logging.root.handlers:
-                if isinstance(_handler, TimedRotatingFileMultiProcessHandler):
-                    file_handler_set = True
-                    handler_pattern = _handler.formatter._fmt
-                    # Set Json formatter for rotated file handler which
-                    # cannot be set with config file. By default this will
-                    # be set up.
-                    _handler.setFormatter(jsonlogger.JsonFormatter(handler_pattern))
-                # Add context filter to handlers
-                _handler.addFilter(_cf)
-                if log_level:
-                    _handler.setLevel(log_level.upper())
-            if not file_handler_set and log_file:
-                file_path = os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)).replace(
-                        "aries_cloudagent/config", ""
-                    ),
-                    log_file,
+            cls._configure_multitenant_logging(
+                log_config_path=log_config_path
+                or DEFAULT_MULTITENANT_LOGGING_CONFIG_PATH_INI,
+                log_level=log_level,
+                log_file=log_file,
+            )
+        else:
+            cls._configure_logging(
+                log_config_path=log_config_path or DEFAULT_LOGGING_CONFIG_PATH_INI,
+                log_level=log_level,
+                log_file=log_file,
+            )
+
+    @classmethod
+    def _configure_logging(cls, log_config_path, log_level, log_file):
+        if log_file is not None and log_file == "":
+            raise ValueError("log_file (--log-file) must be provided.")
+
+        # Load config
+        log_config, is_dict_config = cls._load_log_config(log_config_path)
+
+        # Setup config
+        if not log_config:
+            logging.basicConfig(level=logging.WARNING)
+            logging.root.warning(f"Logging config file not found: {log_config_path}")
+        elif is_dict_config:
+            dictConfig(log_config, new_file_path=log_file or None)
+        else:
+            with log_config:
+                fileConfig(
+                    log_config,
+                    new_file_path=log_file or None,
+                    disable_existing_loggers=False,
                 )
-                # If configuration is not provided within .ini or dict config file
-                # then by default the rotated file handler will have interval=7,
-                # when=d and backupCount=1 configuration
-                timed_file_handler = TimedRotatingFileMultiProcessHandler(
-                    filename=file_path,
-                    interval=7,
-                    when="d",
-                    backupCount=1,
-                )
-                timed_file_handler.addFilter(_cf)
-                # By default this will be set up.
-                timed_file_handler.setFormatter(
-                    jsonlogger.JsonFormatter(LOG_FORMAT_FILE_ALIAS_PATTERN)
-                )
-                logging.root.handlers.append(timed_file_handler)
-        elif log_file and not multitenant:
-            # Don't go with rotated file handler when not in multitenant mode.
+
+        # Set custom file handler
+        if log_file:
             logging.root.handlers.append(
                 logging.FileHandler(log_file, encoding="utf-8")
             )
+
+        # Set custom log level
         if log_level:
             logging.root.setLevel(log_level.upper())
+
+    @classmethod
+    def _configure_multitenant_logging(cls, log_config_path, log_level, log_file):
+        if not log_file:
+            raise ValueError(
+                "log_file (--log-file) must be provided in multitenant mode."
+            )
+
+        # Load config
+        log_config, is_dict_config = cls._load_log_config(log_config_path)
+
+        # Setup config
+        if not log_config:
+            logging.basicConfig(level=logging.WARNING)
+            logging.root.warning(f"Logging config file not found: {log_config_path}")
+        elif is_dict_config:
+            dictConfig(log_config, new_file_path=log_file)
+        else:
+            with log_config:
+                fileConfig(
+                    log_config,
+                    new_file_path=log_file,
+                    disable_existing_loggers=False,
+                )
+        # Set custom file handler(s)
+        ############################
+
+        # Step through each root handler and find any TimedRotatingFileMultiProcessHandler
+        any_file_handlers_set = filter(
+            lambda handler: isinstance(handler, TimedRotatingFileMultiProcessHandler),
+            logging.root.handlers,
+        )
+
+        # Default context filter adds wallet_id to log records
+        log_filter = ContextFilter()
+        if (not any_file_handlers_set) and log_file:
+            file_path = os.path.join(
+                os.path.dirname(os.path.realpath(__file__)).replace(
+                    "aries_cloudagent/config", ""
+                ),
+                log_file,
+            )
+            # By default the timed rotated file handler will have:
+            # interval=7, when=d and backupCount=1
+            timed_file_handler = TimedRotatingFileMultiProcessHandler(
+                filename=file_path,
+                interval=7,
+                when="d",
+                backupCount=1,
+            )
+            timed_file_handler.addFilter(log_filter)
+            # By default this will be set up.
+            timed_file_handler.setFormatter(
+                jsonlogger.JsonFormatter(LOG_FORMAT_FILE_ALIAS_PATTERN)
+            )
+            logging.root.handlers.append(timed_file_handler)
+
+        else:
+            # Setup context filters for multitenant mode
+            for handler in logging.root.handlers:
+                if isinstance(handler, TimedRotatingFileMultiProcessHandler):
+                    # file_handler_set = True
+                    log_formater = handler.formatter._fmt
+                    # Set Json formatter for rotated file handler which cannot be set with
+                    # config file.
+                    # By default this will be set up.
+                    handler.setFormatter(jsonlogger.JsonFormatter(log_formater))
+                # Add context filter to handlers
+                handler.addFilter(log_filter)
+
+                # Sets a custom log level
+                if log_level:
+                    handler.setLevel(log_level.upper())
+
+        # Set custom log level
+        if log_level:
+            logging.root.setLevel(log_level.upper())
+
+    @classmethod
+    def _load_log_config(cls, log_config_path):
+        if ".yml" in log_config_path or ".yaml" in log_config_path:
+            with open(log_config_path, "r") as stream:
+                return yaml.safe_load(stream), True
+        return load_resource(log_config_path, "utf-8"), False
 
     @classmethod
     def print_banner(

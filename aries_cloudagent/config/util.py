@@ -2,9 +2,9 @@
 
 import os
 import re
+from typing import Any, Mapping
 
 from configargparse import ArgumentTypeError
-from typing import Any, Mapping
 
 from .logging import LoggingConfigurator
 
@@ -18,9 +18,9 @@ def common_config(settings: Mapping[str, Any]):
     multitenant_enabled = settings.get("multitenant.enabled") or False
     LoggingConfigurator.configure(
         logging_config_path=log_config,
+        log_file_path=log_file,
         log_level=log_level,
-        log_file=log_file,
-        multitenant=multitenant_enabled,
+        multitenant_mode=multitenant_enabled,
     )
 
 
