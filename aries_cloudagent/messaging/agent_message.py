@@ -450,7 +450,6 @@ class AgentMessageSchema(BaseModelSchema):
     # Avoid clobbering keywords
     _type = fields.Str(
         data_key="@type",
-        dump_only=True,
         required=False,
         metadata={
             "description": "Message type",

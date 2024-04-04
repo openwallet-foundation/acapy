@@ -5,6 +5,7 @@ from pydid import DIDDocument
 
 from aries_cloudagent.tests import mock
 
+from .. import manager as test_module
 from .....admin.server import AdminResponder
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
@@ -23,7 +24,7 @@ from .....resolver.tests import DOC
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo
-from .....wallet.did_method import PEER2, PEER4, SOV, DIDMethods
+from .....wallet.did_method import DIDMethods, PEER2, PEER4, SOV
 from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
@@ -35,9 +36,10 @@ from ....discovery.v2_0.manager import V20DiscoveryMgr
 from ....out_of_band.v1_0.manager import OutOfBandManager
 from ....out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ....out_of_band.v1_0.messages.service import Service as OOBService
-from .. import manager as test_module
 from ..manager import DIDXManager, DIDXManagerError
+from ..message_types import DIDEX_1_0, DIDEX_1_1
 from ..messages.problem_report import DIDXProblemReport, ProblemReportReason
+from ..messages.request import DIDXRequest
 
 
 class TestConfig:
@@ -2265,3 +2267,37 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         with self.assertRaises(DIDXManagerError) as context:
             await self.manager.receive_problem_report(mock_conn, report)
         assert "unrecognized problem report" in str(context.exception)
+
+    def test_handshake_proto_to_use(self):
+        request = DIDXRequest(_version="1.0")
+        assert self.manager._handshake_protocol_to_use(request) == DIDEX_1_0
+        request = DIDXRequest(_version="1.1")
+        assert self.manager._handshake_protocol_to_use(request) == DIDEX_1_1
+
+        raw_request = {
+            "@type": "https://didcomm.org/didexchange/1.0/request",
+            "@id": "fe838693-d51d-4225-a52b-30c38c2ec396",
+            "~thread": {
+                "thid": "fe838693-d51d-4225-a52b-30c38c2ec396",
+                "pthid": "09dce45f-aeff-4101-bee1-5a577a11d30f",
+            },
+            "label": "Robert Sr",
+            "did": "BsXa64NdRhXhRM3uDWwT45",
+            "did_doc~attach": {
+                "@id": "8c0a141c-a394-4c1b-86a7-122fc0ce383e",
+                "mime-type": "application/json",
+                "data": {
+                    "base64": "eyJAY29udGV4dCI6ICJodHRwczovL3czaWQub3JnL2RpZC92MSIsICJpZCI6ICJkaWQ6c292OkJzWGE2NE5kUmhYaFJNM3VEV3dUNDUiLCAicHVibGljS2V5IjogW3siaWQiOiAiZGlkOnNvdjpCc1hhNjROZFJoWGhSTTN1RFd3VDQ1IzEiLCAidHlwZSI6ICJFZDI1NTE5VmVyaWZpY2F0aW9uS2V5MjAxOCIsICJjb250cm9sbGVyIjogImRpZDpzb3Y6QnNYYTY0TmRSaFhoUk0zdURXd1Q0NSIsICJwdWJsaWNLZXlCYXNlNTgiOiAiNnZmQ3B5dWF2dHdDS0xKSlFocjV4TmNhVGVaYUx5b3RjVWRlYlN3UWVzWTkifV0sICJhdXRoZW50aWNhdGlvbiI6IFt7InR5cGUiOiAiRWQyNTUxOVNpZ25hdHVyZUF1dGhlbnRpY2F0aW9uMjAxOCIsICJwdWJsaWNLZXkiOiAiZGlkOnNvdjpCc1hhNjROZFJoWGhSTTN1RFd3VDQ1IzEifV0sICJzZXJ2aWNlIjogW3siaWQiOiAiZGlkOnNvdjpCc1hhNjROZFJoWGhSTTN1RFd3VDQ1O2luZHkiLCAidHlwZSI6ICJJbmR5QWdlbnQiLCAicHJpb3JpdHkiOiAwLCAicmVjaXBpZW50S2V5cyI6IFsiNnZmQ3B5dWF2dHdDS0xKSlFocjV4TmNhVGVaYUx5b3RjVWRlYlN3UWVzWTkiXSwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vcm9iZXJ0OjMwMDAifV19",
+                    "jws": {
+                        "header": {
+                            "kid": "did:key:z6MkkNvFREA2GSRfRq916GovoUAaHDqRks4FJVYaRiuRa6KX"
+                        },
+                        "protected": "eyJhbGciOiAiRWREU0EiLCAia2lkIjogImRpZDprZXk6ejZNa2tOdkZSRUEyR1NSZlJxOTE2R292b1VBYUhEcVJrczRGSlZZYVJpdVJhNktYIiwgImp3ayI6IHsia3R5IjogIk9LUCIsICJjcnYiOiAiRWQyNTUxOSIsICJ4IjogIldBbHFNYk5lLUVsRk1jQU1NSm1uR3IwenhHUVR0TXlCU2lFcnhHT1NuazQiLCAia2lkIjogImRpZDprZXk6ejZNa2tOdkZSRUEyR1NSZlJxOTE2R292b1VBYUhEcVJrczRGSlZZYVJpdVJhNktYIn19",
+                        "signature": "JEROrpnqqHMWbxV8d3fl5MYVPVZuS2vT44esf0dbYnV5BYsv5U25qoeFUuPspq2DXdWb4xDV0J8mFhq8gpz1Ag",
+                    },
+                },
+            },
+        }
+        request = DIDXRequest.deserialize(raw_request)
+        assert request._version == "1.0"
+        assert self.manager._handshake_protocol_to_use(request) == DIDEX_1_0
