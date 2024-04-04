@@ -1466,7 +1466,7 @@ class DemoAgent:
             elif emit_did_peer_4:
                 use_did_method = "did:peer:4"
             else:
-                use_did_method = ""
+                use_did_method = None
 
             create_unique_did = (
                 use_did_method
