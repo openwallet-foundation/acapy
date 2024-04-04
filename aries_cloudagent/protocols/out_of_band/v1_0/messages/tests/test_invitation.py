@@ -41,7 +41,6 @@ class TestInvitationMessage(TestCase):
     def test_init(self):
         """Test initialization message."""
         invi_msg = InvitationMessage(
-            comment="Hello",
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDEX_1_1)],
             services=[TEST_DID],
@@ -51,7 +50,6 @@ class TestInvitationMessage(TestCase):
 
         service = Service(_id="#inline", _type=DID_COMM, did=TEST_DID)
         invi_msg = InvitationMessage(
-            comment="Hello",
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDEX_1_1)],
             services=[service],
@@ -112,7 +110,6 @@ class TestInvitationMessage(TestCase):
             service_endpoint="http://1.2.3.4:8080/service",
         )
         invi_msg = InvitationMessage(
-            comment="Hello",
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDEX_1_1)],
             services=[service],

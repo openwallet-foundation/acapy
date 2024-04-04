@@ -469,7 +469,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             await mediation_record.save(session)
 
             invi = InvitationMessage(
-                comment="test",
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
@@ -1487,7 +1486,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             await mediation_record.save(session)
 
             invi = InvitationMessage(
-                comment="test",
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
@@ -1540,7 +1538,6 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             await mediation_record.save(session)
 
             invi = InvitationMessage(
-                comment="test",
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
                 ],
