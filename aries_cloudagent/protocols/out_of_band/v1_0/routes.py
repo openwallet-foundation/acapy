@@ -251,11 +251,6 @@ async def invitation_create(request: web.BaseRequest):
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     create_unique_did = json.loads(request.query.get("create_unique_did", "false"))
 
-    if create_unique_did and use_public_did:
-        raise web.HTTPBadRequest(
-            reason="create_unique_did cannot be used with use_public_did"
-        )
-
     profile = context.profile
 
     oob_mgr = OutOfBandManager(profile)

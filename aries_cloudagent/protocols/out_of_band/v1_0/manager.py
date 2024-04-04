@@ -126,6 +126,11 @@ class InvitationCreator:
             )
 
         if create_unique_did and not use_did_method:
+            LOGGER.error(
+                "create_unique_did: `%s`, use_did_method: `%s`",
+                create_unique_did,
+                use_did_method,
+            )
             raise OutOfBandManagerError(
                 "create_unique_did can only be used with use_did_method"
             )
