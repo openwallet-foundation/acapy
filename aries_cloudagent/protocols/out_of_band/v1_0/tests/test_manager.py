@@ -591,9 +591,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             )
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
             mock_retrieve_cxid_v2.return_value = mock.MagicMock(
-                cred_offer=mock.MagicMock(
-                    serialize=mock.MagicMock(return_value={"cred": "offer"})
-                )
+                cred_offer=V20CredOffer()
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -606,10 +604,10 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             mock_retrieve_cxid_v2.assert_called_once_with(ANY, "dummy-id")
             assert isinstance(invi_rec, InvitationRecord)
             assert not invi_rec.invitation.handshake_protocols
-            assert invi_rec.invitation.requests_attach[0].content == {
-                "cred": "offer",
-                "~thread": {"pthid": invi_rec.invi_msg_id},
-            }
+            attach = invi_rec.invitation.requests_attach[0].content
+            assert isinstance(attach, dict)
+            assert "~thread" in attach and "pthid" in attach["~thread"]
+            assert attach["~thread"]["pthid"] == invi_rec.invi_msg_id
 
     async def test_create_invitation_attachment_present_proof_v1_0(self):
         self.profile.context.update_settings({"public_invites": True})
@@ -759,7 +757,15 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                     public=False,
                     hs_protos=[test_module.HSProto.RFC23],
                     multi_use=False,
-                    attachments=[{"having": "attachment", "is": "no", "good": "here"}],
+                    attachments=[
+                        {
+                            "type": "asdf",
+                            "id": "asdf",
+                            "having": "attachment",
+                            "is": "no",
+                            "good": "here",
+                        }
+                    ],
                 )
             assert "Unknown attachment type" in str(context.exception)
 
@@ -1613,7 +1619,9 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             mock.CoroutineMock(),
         ) as mock_service_decorator_from_service:
             mock_create_signing_key.return_value = KeyInfo(
-                verkey="a-verkey", metadata={}, key_type=ED25519
+                verkey="H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+                metadata={},
+                key_type=ED25519,
             )
             mock_service_decorator_from_service.return_value = mock_service_decorator
             oob_invitation = InvitationMessage(
@@ -1626,7 +1634,10 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                 oob_invitation, use_existing_connection=True
             )
 
-            assert oob_record.our_recipient_key == "a-verkey"
+            assert (
+                oob_record.our_recipient_key
+                == "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
+            )
             assert oob_record.our_service
             assert oob_record.state == OobRecord.STATE_PREPARE_RESPONSE
 

@@ -235,7 +235,7 @@ class InvitationCreator:
             else:
                 raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
 
-        message.assign_thread_id(thid=message._thread_id, pthid=pthid)
+        message.assign_thread_id(pthid=pthid)
         return InvitationMessage.wrap_message(message.serialize())
 
     async def create_attachments(
@@ -328,6 +328,16 @@ class InvitationCreator:
 
         return conn_rec
 
+    def did_key_to_key(self, did_key: str) -> str:
+        """Convert a DID key to a key."""
+        if did_key.startswith("did:key:"):
+            return DIDKey.from_did(did_key).public_key_b58
+        return did_key
+
+    def did_keys_to_keys(self, did_keys: Sequence[str]) -> List[str]:
+        """Convert DID keys to keys."""
+        return [self.did_key_to_key(did_key) for did_key in did_keys]
+
     async def handle_did(
         self,
         did_info: DIDInfo,
@@ -361,9 +371,9 @@ class InvitationCreator:
                 self.profile, did_info.verkey, mediation_record
             )
             our_service = ServiceDecorator(
-                recipient_keys=recipient_keys,
+                recipient_keys=self.did_keys_to_keys(recipient_keys),
                 endpoint=self.my_endpoint,
-                routing_keys=routing_keys,
+                routing_keys=self.did_keys_to_keys(routing_keys),
             )
 
         return self.CreateResult(
@@ -523,9 +533,9 @@ class InvitationCreator:
             )
             conn_rec = None
             our_service = ServiceDecorator(
-                recipient_keys=recipient_keys,
+                recipient_keys=self.did_keys_to_keys(recipient_keys),
                 endpoint=my_endpoint,
-                routing_keys=routing_keys,
+                routing_keys=self.did_keys_to_keys(routing_keys),
             )
 
         return self.CreateResult(
@@ -1082,10 +1092,11 @@ class OutOfBandManager(BaseConnectionManager):
                 service.routing_keys = [
                     DIDKey.from_did(key).public_key_b58 for key in service.routing_keys
                 ] or []
+                msg_type = DIDCommPrefix.qualify_current(protocol.name) + "/invitation"
                 connection_invitation = ConnectionInvitation.deserialize(
                     {
                         "@id": invitation._id,
-                        "@type": DIDCommPrefix.qualify_current(protocol.name),
+                        "@type": msg_type,
                         "label": invitation.label,
                         "recipientKeys": service.recipient_keys,
                         "serviceEndpoint": service.service_endpoint,
