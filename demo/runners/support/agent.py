@@ -1477,11 +1477,11 @@ class DemoAgent:
                 "auto_accept": json.dumps(auto_accept),
                 "multi_use": json.dumps(multi_use_invitations),
                 "create_unique_did": json.dumps(create_unique_did),
-                "use_did_method": use_did_method,
             }
             payload = {
                 "handshake_protocols": ["rfc23"],
                 "use_public_did": public_did_connections,
+                "use_did_method": use_did_method,
             }
             if self.mediation:
                 payload["mediation_id"] = self.mediator_request_id

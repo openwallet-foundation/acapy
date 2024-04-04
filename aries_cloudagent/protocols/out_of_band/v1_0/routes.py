@@ -114,7 +114,12 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         },
     )
     use_did_method = fields.Str(
-        required=False, validate=validate.OneOf(DIDXManager.SUPPORTED_USE_DID_METHODS)
+        required=False,
+        validate=validate.OneOf(DIDXManager.SUPPORTED_USE_DID_METHODS),
+        metadata={
+            "description": "DID method to use in invitation",
+            "example": "did:peer:2",
+        },
     )
     metadata = fields.Dict(
         required=False,
