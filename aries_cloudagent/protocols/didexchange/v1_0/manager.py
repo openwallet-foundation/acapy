@@ -360,6 +360,8 @@ class DIDXManager(BaseConnectionManager):
                 conn_rec, my_endpoints, mediation_records
             )
         else:
+            if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
+                use_did_method = "did:peer:4"
             try:
                 did, attach = await self._qualified_did_with_fallback(
                     conn_rec,
