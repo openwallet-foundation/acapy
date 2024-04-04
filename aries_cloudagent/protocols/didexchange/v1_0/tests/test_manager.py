@@ -551,15 +551,13 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             key_type=ED25519,
         )
 
-        self.profile.context.update_settings({"emit_did_peer_2": True})
-
         with mock.patch.object(
             self.manager,
             "create_did_peer_2",
             mock.AsyncMock(return_value=mock_did_info),
         ) as mock_create_did_peer_2:
             request = await self.manager.create_request(
-                mock_conn_rec,
+                mock_conn_rec, use_did_method="did:peer:2"
             )
             assert request.did_doc_attach is None
             mock_create_did_peer_2.assert_called_once()
@@ -583,15 +581,13 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             key_type=ED25519,
         )
 
-        self.profile.context.update_settings({"emit_did_peer_4": True})
-
         with mock.patch.object(
             self.manager,
             "create_did_peer_4",
             mock.AsyncMock(return_value=mock_did_info),
         ) as mock_create_did_peer_4:
             request = await self.manager.create_request(
-                mock_conn_rec,
+                mock_conn_rec, use_did_method="did:peer:4"
             )
             assert request.did_doc_attach is None
             mock_create_did_peer_4.assert_called_once()

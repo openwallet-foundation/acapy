@@ -41,12 +41,12 @@ Feature: RFC 0454 Aries agent present proof
       @WalletType_Askar
       Examples:
          | issuer | Acme_capabilities                      | Acme_extra        | Bob_capabilities   | Bob_extra         | Schema_name       | Credential_data   | Proof_request     |
-         | Faber  | --public-did --did-exchange            | --emit-did-peer-2 | --did-exchange     | --emit-did-peer-2 | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+         | Faber  | --public-did --did-exchange --emit-did-peer-2            | | --did-exchange --emit-did-peer-2     | | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
       @WalletType_Askar_AnonCreds
       Examples:
          | issuer | Acme_capabilities                          | Acme_extra        | Bob_capabilities              | Bob_extra         | Schema_name       | Credential_data   | Proof_request     |
-         | Faber  | --public-did --wallet-type askar-anoncreds | --emit-did-peer-2 | --wallet-type askar-anoncreds | --emit-did-peer-2 | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+         | Faber  | --public-did --wallet-type askar-anoncreds --emit-did-peer-2 | | --wallet-type askar-anoncreds --emit-did-peer-2 | | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
 
 
    @T001.1-RFC0454

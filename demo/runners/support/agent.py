@@ -1455,16 +1455,29 @@ class DemoAgent:
         reuse_connections: bool = False,
         multi_use_invitations: bool = False,
         public_did_connections: bool = False,
+        emit_did_peer_2: bool = False,
+        emit_did_peer_4: bool = False,
     ):
         self.connection_id = None
         if use_did_exchange:
             # TODO can mediation be used with DID exchange connections?
-            # TODO Test use_did_method with create_unique_did
-            # create_unique_did = (not reuse_connections) and (not public_did_connections)
+            if emit_did_peer_2:
+                use_did_method = "did:peer:2"
+            elif emit_did_peer_4:
+                use_did_method = "did:peer:4"
+            else:
+                use_did_method = ""
+
+            create_unique_did = (
+                use_did_method
+                and (not reuse_connections)
+                and (not public_did_connections)
+            )
             invi_params = {
                 "auto_accept": json.dumps(auto_accept),
                 "multi_use": json.dumps(multi_use_invitations),
-                # "create_unique_did": json.dumps(create_unique_did),
+                "create_unique_did": json.dumps(create_unique_did),
+                "use_did_method": use_did_method,
             }
             payload = {
                 "handshake_protocols": ["rfc23"],

@@ -1166,19 +1166,6 @@ class ProtocolGroup(ArgumentGroup):
                 "using unencrypted rather than encrypted tags"
             ),
         )
-        parser.add_argument(
-            "--emit-did-peer-2",
-            action="store_true",
-            env_var="ACAPY_EMIT_DID_PEER_2",
-            help=("Emit did:peer:2 DIDs in DID Exchange Protocol"),
-        )
-
-        parser.add_argument(
-            "--emit-did-peer-4",
-            action="store_true",
-            env_var="ACAPY_EMIT_DID_PEER_4",
-            help=("Emit did:peer:4 DIDs in DID Exchange Protocol"),
-        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
@@ -1245,11 +1232,6 @@ class ProtocolGroup(ArgumentGroup):
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
-
-        if args.emit_did_peer_2:
-            settings["emit_did_peer_2"] = True
-        if args.emit_did_peer_4:
-            settings["emit_did_peer_4"] = True
 
         return settings
 
