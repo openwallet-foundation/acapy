@@ -4,11 +4,11 @@ import functools
 import json
 import logging
 import os
-import random
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer
+from secrets import token_hex
 
 import asyncpg
 import yaml
@@ -207,12 +207,8 @@ class DemoAgent:
             seed = None
         elif self.endorser_role and not seed:
             seed = "random"
-        rand_name = str(random.randint(100_000, 999_999))
-        self.seed = (
-            ("my_seed_000000000000000000000000" + rand_name)[-32:]
-            if seed == "random"
-            else seed
-        )
+        rand_name = token_hex(4)
+        self.seed = token_hex(16) if seed == "random" else seed
         self.storage_type = params.get("storage_type")
         self.wallet_type = params.get("wallet_type") or "askar"
         self.wallet_name = (
