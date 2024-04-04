@@ -1481,10 +1481,11 @@ class DemoAgent:
             payload = {
                 "handshake_protocols": ["rfc23"],
                 "use_public_did": public_did_connections,
-                "use_did_method": use_did_method,
             }
             if self.mediation:
                 payload["mediation_id"] = self.mediator_request_id
+            if use_did_method:
+                payload["use_did_method"] = use_did_method
             print("Calling /out-of-band/create-invitation with:", payload, invi_params)
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
