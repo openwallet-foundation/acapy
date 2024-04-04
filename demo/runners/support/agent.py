@@ -1469,7 +1469,7 @@ class DemoAgent:
                 use_did_method = None
 
             create_unique_did = (
-                use_did_method
+                use_did_method is not None
                 and (not reuse_connections)
                 and (not public_did_connections)
             )
