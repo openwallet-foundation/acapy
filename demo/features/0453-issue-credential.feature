@@ -28,6 +28,7 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                          | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra |
        | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           |
+       | --public-did --wallet-type askar-anoncreds --cred-type vc_di | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |   |   |
 
     @GHA @WalletType_Askar_AnonCreds @AltTests
     Examples:
@@ -46,6 +47,26 @@ Feature: RFC 0453 Aries agent issue credential
        | Acme_capabilities                                                | Bob_capabilities                                                 | Schema_name    | Credential_data          | Acme_extra        | Bob_extra         |
        | --did-exchange --wallet-type askar-anoncreds                     | --did-exchange --wallet-type askar-anoncreds                     | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
        | --did-exchange --wallet-type askar-anoncreds --reuse-connections | --did-exchange --wallet-type askar-anoncreds --reuse-connections | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
+
+  @T003-RFC0453
+  Scenario Outline: Issue a credential with the Issuer beginning with an offer
+    Given we have "2" agents
+      | name  | role    | capabilities        | extra        |
+      | Acme  | issuer  | <Acme_capabilities> | <Acme_extra> |
+      | Bob   | holder  | <Bob_capabilities>  | <Bob_extra>  |
+    And "Acme" and "Bob" have an existing connection
+    And "Acme" is ready to issue a credential for <Schema_name>
+    When "Acme" offers a credential with data <Credential_data>
+    When "Bob" has the credential issued
+    When "Acme" sets the credential type to <New_Cred_Type>
+    When "Acme" offers a credential with data <Credential_data>
+    Then "Bob" has the credential issued
+
+    @WalletType_Askar_AnonCreds @SwitchCredTypeTest
+    Examples:
+       | Acme_capabilities                          | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra | New_Cred_Type |
+       | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           | vc_di         |
+       | --public-did --wallet-type askar-anoncreds --cred-type vc_di | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           | indy          |
 
   @T003-RFC0453
   Scenario Outline: Holder accepts a deleted credential offer

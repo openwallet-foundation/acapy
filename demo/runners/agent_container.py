@@ -710,6 +710,9 @@ class AriesAgent(DemoAgent):
 
         return result
 
+    def set_cred_type(self, new_cred_type: str):
+        self.cred_type = new_cred_type
+
 
 class AgentContainer:
     def __init__(
@@ -926,6 +929,10 @@ class AgentContainer:
             self.cred_def_id = await self.create_schema_and_cred_def(
                 schema_name, schema_attrs
             )
+
+    def set_cred_type(self, new_cred_type: str):
+        self.cred_type = new_cred_type
+        self.agent.set_cred_type(new_cred_type)
 
     async def create_schema_and_cred_def(
         self,

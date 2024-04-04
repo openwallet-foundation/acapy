@@ -21,3 +21,12 @@ and then use your new wallet to get and present credentials in some sample scena
 verifiable credential experience in 30 minutes or less.
 
 [BC Gov Showcase]: https://digital.gov.bc.ca/digital-trust/showcase/
+
+## Indicio Developer Demo
+
+Minimal Aca-Py demo that can be used by developers to isolat and test features:
+
+- Minimal Setup (everything runs in containers)
+- Quickly reproduce an issue or demonstrate a feature by writing one simple script or pytest tests.
+
+[Indicio Aca-Py Minimal Example](https://github.com/Indicio-tech/acapy-minimal-example)
