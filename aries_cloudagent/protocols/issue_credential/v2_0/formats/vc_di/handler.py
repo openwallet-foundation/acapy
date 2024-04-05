@@ -23,7 +23,7 @@ from .models.cred_request import (
     VCDICredRequestSchema,
 )
 
-from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
+from ......vc.vc_ld import VerifiableCredential
 
 from .models.cred_offer import (
     AnoncredsLinkSecret,

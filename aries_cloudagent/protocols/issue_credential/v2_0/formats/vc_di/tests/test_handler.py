@@ -3,7 +3,7 @@ from time import time
 import json
 
 import pytest
-from aries_cloudagent.anoncreds.holder import AnonCredsHolder
+from .......anoncreds.holder import AnonCredsHolder
 from aries_cloudagent.messaging.credential_definitions.util import (
     CRED_DEF_SENT_RECORD_TYPE,
 )

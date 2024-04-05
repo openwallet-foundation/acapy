@@ -1,6 +1,6 @@
 """Cred request artifacts to attach to RFC 453 messages."""
 
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
+from .......messaging.models.base import BaseModel, BaseModelSchema
 from marshmallow import EXCLUDE, fields
 
 

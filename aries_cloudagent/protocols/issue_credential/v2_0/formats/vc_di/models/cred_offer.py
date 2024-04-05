@@ -2,7 +2,7 @@
 
 from typing import Sequence, Union
 from aries_cloudagent.indy.models.cred_abstract import IndyKeyCorrectnessProofSchema
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
+from .......messaging.models.base import BaseModel, BaseModelSchema
 from aries_cloudagent.vc.vc_ld.models.credential import (
     CredentialSchema,
     VerifiableCredential,

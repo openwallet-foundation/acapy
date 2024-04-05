@@ -1,7 +1,7 @@
 """Cred request artifacts to attach to RFC 453 messages."""
 
 from typing import Mapping, Union
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
+from .......messaging.models.base import BaseModel, BaseModelSchema
 from aries_cloudagent.messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,

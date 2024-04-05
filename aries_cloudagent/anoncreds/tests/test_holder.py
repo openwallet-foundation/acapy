@@ -18,7 +18,7 @@ from anoncreds import (
 )
 from aries_askar import AskarError, AskarErrorCode
 
-from aries_cloudagent.anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ..holder import AnonCredsHolder, AnonCredsHolderError
 from aries_cloudagent.anoncreds.tests.mock_objects import (
     MOCK_CRED,
     MOCK_CRED_DEF,
