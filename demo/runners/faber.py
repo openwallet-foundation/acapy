@@ -561,6 +561,15 @@ async def main(args):
         exchange_tracing = False
         options = (
             "    (1) Issue Credential\n"
+        )
+        if faber_agent.cred_type in [
+            CRED_FORMAT_INDY,
+            CRED_FORMAT_VC_DI,
+        ]:
+            options += (
+                "    (1a) Set Credential Type (%CRED_TYPE%)\n"
+            )
+        options += (
             "    (2) Send Proof Request\n"
             "    (2a) Send *Connectionless* Proof Request (requires a Mobile client)\n"
             "    (3) Send Message\n"
@@ -582,7 +591,7 @@ async def main(args):
             "5/6/7/8/" if faber_agent.revocation else "",
             "W/" if faber_agent.multitenant else "",
         )
-        async for option in prompt_loop(options):
+        async for option in prompt_loop(options.replace("%CRED_TYPE%", faber_agent.cred_type)):
             if option is not None:
                 option = option.strip()
 
@@ -635,6 +644,21 @@ async def main(args):
                         "ON" if exchange_tracing else "OFF"
                     )
                 )
+
+            elif option == "1a":
+                new_cred_type = await prompt(
+                    "Enter credential type ({}, {}): ".format(
+                        CRED_FORMAT_INDY,
+                        CRED_FORMAT_VC_DI,
+                    )
+                )
+                if new_cred_type in [
+                    CRED_FORMAT_INDY,
+                    CRED_FORMAT_VC_DI,
+                ]:
+                    faber_agent.set_cred_type(new_cred_type)
+                else:
+                    log_msg("Not a valid credential type.")
 
             elif option == "1":
                 log_status("#13 Issue credential offer to X")
