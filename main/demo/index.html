@@ -2694,22 +2694,24 @@ Publish now? [Y/N]: y
 <a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>
 <a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>This will use the new DID Exchange protocol when establishing connections between the agents, rather than the older Connection protocol.  There is no other affect on the operation of the agents.
 <a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>
-<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>With DID Exchange, you can also enable use of the inviter&#39;s public DID for invitations, multi-use invitations, and connection re-use:
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>With DID Exchange, you can also enable use of the inviter&#39;s public DID for invitations, multi-use invitations, connection re-use, and use of qualified DIDs:
 <a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>
 <a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>- `--public-did-connections` - use the inviter&#39;s public DID in invitations, and allow use of implicit invitations
 <a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>- `--reuse-connections` - support connection re-use (invitee will reuse an existing connection if it uses the same DID as in the new invitation)
 <a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>- `--multi-use-invitations` - inviter will issue multi-use invitations
-<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>
-<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>### Endorser
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>- `--emit-did-peer-4` - participants will prefer use of did:peer:4 for their pairwise connection DIDs
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>- `--emit-did-peer-2` - participants will prefer use of did:peer:2 for their pairwise connection DIDs
 <a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>
-<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>This is described in [Endorser.md](Endorser.md)
+<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>### Endorser
 <a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>
-<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>### Run Indy-SDK Backend
+<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>This is described in [Endorser.md](Endorser.md)
 <a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>
-<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>This runs using the older (and not recommended) indy-sdk libraries instead of [Aries Askar](https://github.com/hyperledger/aries-ask):
+<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>### Run Indy-SDK Backend
 <a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a>
-<a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>```bash
-<a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a>./run_demo faber --wallet-type indy
+<a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>This runs using the older (and not recommended) indy-sdk libraries instead of [Aries Askar](https://github.com/hyperledger/aries-ask):
+<a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a>
+<a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a>```bash
+<a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a>./run_demo faber --wallet-type indy
 </code></pre></div></p>
 <h3 id="mediation">Mediation<a class="headerlink" href="#mediation" title="Permanent link">&para;</a></h3>
 <p>To enable mediation, run the <code>alice</code> or <code>faber</code> demo with the <code>--mediation</code> option:</p>
