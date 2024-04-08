@@ -1149,6 +1149,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
                 "debug.print_connections_invitation": True,
                 "invite_base_url": "http://localhost",
                 "wallet.type": "askar",
+                "default_endpoint": "http://localhost",
+                "default_label": "test",
             }
         )
         conductor = test_module.Conductor(builder)

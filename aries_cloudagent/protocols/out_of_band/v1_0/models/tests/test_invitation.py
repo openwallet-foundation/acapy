@@ -32,7 +32,6 @@ class TestInvitationRecordSchema(IsolatedAsyncioTestCase):
     def test_make_record(self):
         """Test making record."""
         invi = InvitationMessage(
-            comment="Hello",
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDEX_1_1)],
             services=[TEST_DID],
