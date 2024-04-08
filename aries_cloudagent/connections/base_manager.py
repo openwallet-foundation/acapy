@@ -53,7 +53,7 @@ from ..utils.multiformats import multibase, multicodec
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import create_keypair, seed_to_did
 from ..wallet.did_info import INVITATION_REUSE_KEY, DIDInfo, KeyInfo
-from ..wallet.did_method import PEER2, PEER4, SOV
+from ..wallet.did_method import PEER2, PEER4, SOV, DIDMethod
 from ..wallet.error import WalletNotFoundError
 from ..wallet.key_type import ED25519
 from ..wallet.util import b64_to_bytes, bytes_to_b58
@@ -245,19 +245,20 @@ class BaseConnectionManager:
 
     async def fetch_invitation_reuse_did(
         self,
-        did_method: str,
-    ) -> DIDDoc:
+        did_method: DIDMethod,
+    ) -> Optional[DIDInfo]:
         """Fetch a DID from the wallet to use across multiple invitations.
 
         Args:
             did_method: The DID method used (e.g. PEER2 or PEER4)
 
         Returns:
-            The `DIDDoc` instance, or "None" if no DID is found
+            The `DIDInfo` instance, or "None" if no DID is found
         """
         did_info = None
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
+            # TODO Iterating through all DIDs is problematic
             did_list = await wallet.get_local_dids()
             for did in did_list:
                 if did.method == did_method and INVITATION_REUSE_KEY in did.metadata:

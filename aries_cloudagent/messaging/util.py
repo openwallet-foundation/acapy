@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from math import floor
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 
 LOGGER = logging.getLogger(__name__)
@@ -151,7 +151,7 @@ def canon(raw_attr_name: str) -> str:
 
 def get_proto_default_version(
     versions: List[Dict[str, Any]], major_version: int = 1
-) -> Optional[str]:
+) -> str:
     """Return default protocol version from version definition list."""
 
     for version in versions:
@@ -160,4 +160,4 @@ def get_proto_default_version(
             default_minor_version = version["current_minor_version"]
             return f"{default_major_version}.{default_minor_version}"
 
-    return None
+    return "1.0"
