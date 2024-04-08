@@ -26,6 +26,14 @@ aries\_cloudagent.anoncreds.base module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.anoncreds.error\_messages module
+--------------------------------------------------
+
+.. automodule:: aries_cloudagent.anoncreds.error_messages
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.anoncreds.events module
 -----------------------------------------
 

@@ -81,6 +81,14 @@ aries\_cloudagent.utils.outofband module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.utils.profiles module
+---------------------------------------
+
+.. automodule:: aries_cloudagent.utils.profiles
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.utils.repeat module
 -------------------------------------
 
