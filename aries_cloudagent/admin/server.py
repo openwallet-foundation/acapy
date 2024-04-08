@@ -264,8 +264,6 @@ class AdminServer(BaseAdminServer):
         self.multitenant_manager = context.inject_or(BaseMultitenantManager)
         self._additional_route_pattern: Optional[Pattern] = None
 
-        self.server_paths = []
-
     @property
     def additional_routes_pattern(self) -> Optional[Pattern]:
         """Pattern for configured addtional routes to permit base wallet to access."""
@@ -389,9 +387,6 @@ class AdminServer(BaseAdminServer):
             web.get("/shutdown", self.shutdown_handler, allow_head=False),
             web.get("/ws", self.websocket_handler, allow_head=False),
         ]
-
-        # Store server_paths for multitenant authorization handling
-        self.server_paths = [route.path for route in server_routes]
         app.add_routes(server_routes)
 
         plugin_registry = self.context.inject_or(PluginRegistry)

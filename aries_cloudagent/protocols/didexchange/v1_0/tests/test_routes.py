@@ -11,7 +11,7 @@ from .. import routes as test_module
 
 class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session_inject = {}        
+        self.session_inject = {}
         profile = InMemoryProfile.test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
