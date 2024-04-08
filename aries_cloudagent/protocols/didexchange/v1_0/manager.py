@@ -360,7 +360,9 @@ class DIDXManager(BaseConnectionManager):
                 conn_rec, my_endpoints, mediation_records
             )
         else:
-            if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
+            if conn_rec.accept == ConnRecord.ACCEPT_AUTO or use_did_method is None:
+                # If we're auto accepting or engaging in 1.1 without setting a
+                # use_did_method, default to did:peer:4
                 use_did_method = "did:peer:4"
             try:
                 did, attach = await self._qualified_did_with_fallback(
@@ -432,6 +434,7 @@ class DIDXManager(BaseConnectionManager):
             my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
             conn_rec.my_did = my_info.did
         else:
+            # We shouldn't hit this condition in practice
             raise LegacyHandlingFallback(
                 "Use of qualified DIDs not set according to settings"
             )

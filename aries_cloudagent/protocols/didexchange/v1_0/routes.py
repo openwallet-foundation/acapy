@@ -269,9 +269,12 @@ async def didx_accept_invitation(request: web.Request):
         async with profile.session() as session:
             conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
             if use_did:
-                wallet = profile.inject(BaseWallet)
+                wallet = session.inject(BaseWallet)
                 did_info = await wallet.get_local_did(use_did)
                 conn_rec.my_did = did_info.did
+                await conn_rec.save(
+                    session, reason="Set my_did from use_did on invite accept"
+                )
 
         didx_request = await didx_mgr.create_request(
             conn_rec=conn_rec,
