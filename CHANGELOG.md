@@ -41,7 +41,7 @@ New deprecation notices were added to ACA-Py on startup and in the OpenAPI/Swagg
 
 <!-- Latest: 2872 -->
 
-#### 0.12.0rc2 Categorized List of Pull Requests
+#### 0.12.0rc3 Categorized List of Pull Requests
 
 - DID Handling and Connection Establishment Updates/Fixes
   - Emit the OOB done event even for multi-use invites [\#2872](https://github.com/hyperledger/aries-cloudagent-python/pull/2872) [ianco](https://github.com/ianco)
