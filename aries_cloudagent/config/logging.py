@@ -101,6 +101,7 @@ def fileConfig(
             raise FileNotFoundError(f"{fname} doesn't exist")
         elif not os.path.getsize(fname):
             raise RuntimeError(f"{fname} is an empty file")
+
     if isinstance(fname, configparser.RawConfigParser):
         cp = fname
     else:
@@ -113,6 +114,7 @@ def fileConfig(
                 cp.read(fname, encoding=encoding)
         except configparser.ParsingError as e:
             raise RuntimeError(f"{fname} is invalid: {e}")
+
     if new_file_path:
         cp.set(
             "handler_timed_file_handler",
@@ -126,6 +128,7 @@ def fileConfig(
                 )
             ),
         )
+
     formatters = _create_formatters(cp)
     with logging._lock:
         _clearExistingHandlers()
@@ -177,24 +180,12 @@ class LoggingConfigurator:
     @classmethod
     def _configure_logging(cls, log_config_path, log_level, log_file):
         if log_file is not None and log_file == "":
-            raise ValueError("log_file (--log-file) must be provided.")
+            raise ValueError(
+                "log_file (--log-file) must be provided in singletenant mode."
+            )
 
-        # Load config
-        log_config, is_dict_config = cls._load_log_config(log_config_path)
-
-        # Setup config
-        if not log_config:
-            logging.basicConfig(level=logging.WARNING)
-            logging.root.warning(f"Logging config file not found: {log_config_path}")
-        elif is_dict_config:
-            dictConfig(log_config, new_file_path=log_file or None)
-        else:
-            with log_config:
-                fileConfig(
-                    log_config,
-                    new_file_path=log_file or None,
-                    disable_existing_loggers=False,
-                )
+        # Setup log config and log file if provided
+        cls._setup_log_config_file(log_config_path, log_file)
 
         # Set custom file handler
         if log_file:
@@ -208,27 +199,12 @@ class LoggingConfigurator:
 
     @classmethod
     def _configure_multitenant_logging(cls, log_config_path, log_level, log_file):
-        if not log_file:
-            raise ValueError(
-                "log_file (--log-file) must be provided in multitenant mode."
-            )
+        # Unlike in singletenant mode, the defualt config for multitenant mode
+        # specifies a default log_file if one is not explicitly provided
+        # so we don't need the same check here
 
-        # Load config
-        log_config, is_dict_config = cls._load_log_config(log_config_path)
-
-        # Setup config
-        if not log_config:
-            logging.basicConfig(level=logging.WARNING)
-            logging.root.warning(f"Logging config file not found: {log_config_path}")
-        elif is_dict_config:
-            dictConfig(log_config, new_file_path=log_file)
-        else:
-            with log_config:
-                fileConfig(
-                    log_config,
-                    new_file_path=log_file,
-                    disable_existing_loggers=False,
-                )
+        # Setup log config and log file if provided
+        cls._setup_log_config_file(log_config_path, log_file)
 
         # Set custom file handler(s)
         ############################
@@ -282,6 +258,26 @@ class LoggingConfigurator:
         # Set custom log level
         if log_level:
             logging.root.setLevel(log_level.upper())
+
+    @classmethod
+    def _setup_log_config_file(cls, log_config_path, log_file):
+        log_config, is_dict_config = cls._load_log_config(log_config_path)
+
+        # Setup config
+        if not log_config:
+            logging.basicConfig(level=logging.WARNING)
+            logging.root.warning(f"Logging config file not found: {log_config_path}")
+        elif is_dict_config:
+            dictConfig(log_config, new_file_path=log_file or None)
+        else:
+            with log_config:
+                # The default log_file location is set here 
+                # if one is not provided in the startup params
+                fileConfig(
+                    log_config,
+                    new_file_path=log_file or None,
+                    disable_existing_loggers=False,
+                )
 
     @classmethod
     def _load_log_config(cls, log_config_path):
