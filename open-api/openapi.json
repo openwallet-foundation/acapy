@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v0.12.0rc2"
+    "version" : "v0.12.0rc3"
   },
   "servers" : [ {
     "url" : "/"
@@ -13,6 +13,27 @@
   "tags" : [ {
     "description" : "Menu interaction over connection",
     "name" : "action-menu"
+  }, {
+    "description" : "Anoncreds credential definition management",
+    "externalDocs" : {
+      "description" : "Specification",
+      "url" : "https://hyperledger.github.io/anoncreds-spec"
+    },
+    "name" : "anoncreds - credential definitions"
+  }, {
+    "description" : "Revocation registry management",
+    "externalDocs" : {
+      "description" : "Overview",
+      "url" : "https://github.com/hyperledger/indy-hipe/tree/master/text/0011-cred-revocation"
+    },
+    "name" : "anoncreds - revocation"
+  }, {
+    "description" : "Anoncreds schema management",
+    "externalDocs" : {
+      "description" : "Specification",
+      "url" : "https://hyperledger.github.io/anoncreds-spec"
+    },
+    "name" : "anoncreds - schemas"
   }, {
     "description" : "Simple messaging",
     "externalDocs" : {
@@ -48,6 +69,13 @@
       "url" : "https://github.com/hyperledger/aries-rfcs/tree/25464a5c8f8a17b14edaa4310393df6094ace7b0/features/0023-did-exchange"
     },
     "name" : "did-exchange"
+  }, {
+    "description" : "Rorate a DID",
+    "externalDocs" : {
+      "description" : "Specification",
+      "url" : "https://github.com/hyperledger/aries-rfcs/tree/main/features/0794-did-rotate"
+    },
+    "name" : "did-rotate"
   }, {
     "description" : "Feature discovery",
     "externalDocs" : {
@@ -331,6 +359,724 @@
         "x-codegen-request-body-name" : "body"
       }
     },
+    "/anoncreds/credential-definition" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CredDefPostRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CredDefResult"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Create a credential definition on the connected ledger",
+        "tags" : [ "anoncreds - credential definitions" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/anoncreds/credential-definition/{cred_def_id}" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Credential definition identifier",
+          "in" : "path",
+          "name" : "cred_def_id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GetCredDefResult"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Retrieve an individual credential definition details",
+        "tags" : [ "anoncreds - credential definitions" ]
+      }
+    },
+    "/anoncreds/credential-definitions" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Issuer Identifier of the credential definition",
+          "in" : "query",
+          "name" : "issuer_id",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Schema identifier",
+          "in" : "query",
+          "name" : "schema_id",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Schema name",
+          "in" : "query",
+          "name" : "schema_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Schema version",
+          "in" : "query",
+          "name" : "schema_version",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GetCredDefsResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Retrieve all credential definition ids",
+        "tags" : [ "anoncreds - credential definitions" ]
+      }
+    },
+    "/anoncreds/registry/{rev_reg_id}/active" : {
+      "put" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevocationModuleResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Update the active registry",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/registry/{rev_reg_id}/tails-file" : {
+      "put" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevocationModuleResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Upload local tails file to server",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation-list" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RevListCreateRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevListResult"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Create and publish a revocation status list on the connected ledger",
+        "tags" : [ "anoncreds - revocation" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/anoncreds/revocation-registry-definition" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RevRegCreateRequestSchemaAnoncreds"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevRegDefResult"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Create and publish a registration revocation on the connected ledger",
+        "tags" : [ "anoncreds - revocation" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/anoncreds/revocation/active-registry/{cred_def_id}" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Credential definition identifier",
+          "in" : "path",
+          "name" : "cred_def_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevRegResultSchemaAnoncreds"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Get current active revocation registry by credential definition id",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/active-registry/{cred_def_id}/rotate" : {
+      "post" : {
+        "parameters" : [ {
+          "description" : "Credential definition identifier",
+          "in" : "path",
+          "name" : "cred_def_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevRegsCreatedSchemaAnoncreds"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Rotate revocation registry",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/credential-record" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Credential exchange identifier",
+          "in" : "query",
+          "name" : "cred_ex_id",
+          "schema" : {
+            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Credential revocation identifier",
+          "in" : "query",
+          "name" : "cred_rev_id",
+          "schema" : {
+            "pattern" : "^[1-9][0-9]*$",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Revocation registry identifier",
+          "in" : "query",
+          "name" : "rev_reg_id",
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CredRevRecordResult"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Get credential revocation status",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/publish-revocations" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PublishRevocations"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublishRevocationsResult"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Publish pending revocations to ledger",
+        "tags" : [ "anoncreds - revocation" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/anoncreds/revocation/registries" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Credential definition identifier",
+          "in" : "query",
+          "name" : "cred_def_id",
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Revocation registry state",
+          "in" : "query",
+          "name" : "state",
+          "schema" : {
+            "enum" : [ "finished", "failed", "action", "wait", "decommissioned", "full" ],
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevRegsCreatedSchemaAnoncreds"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Search for matching revocation registries that current agent created",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/registry/{rev_reg_id}" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevRegResultSchemaAnoncreds"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Get revocation registry by revocation registry id",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/registry/{rev_reg_id}/fix-revocation-entry-state" : {
+      "put" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Apply updated accumulator transaction to ledger",
+          "in" : "query",
+          "name" : "apply_ledger_update",
+          "required" : true,
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevRegWalletUpdatedResultSchemaAnoncreds"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Fix revocation state in wallet and return number of updated entries",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/registry/{rev_reg_id}/issued" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevRegIssuedResultSchemaAnoncreds"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Get number of credentials issued against revocation registry",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/registry/{rev_reg_id}/issued/details" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CredRevRecordDetailsResultSchemaAnoncreds"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Get details of credentials issued against revocation registry",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/registry/{rev_reg_id}/issued/indy_recs" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CredRevIndyRecordsResultSchemaAnoncreds"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Get details of revoked credentials from ledger",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/registry/{rev_reg_id}/set-state" : {
+      "patch" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Revocation registry state to set",
+          "in" : "query",
+          "name" : "state",
+          "required" : true,
+          "schema" : {
+            "enum" : [ "finished", "failed", "action", "wait", "decommissioned", "full" ],
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevRegResultSchemaAnoncreds"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Set revocation registry state manually",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/registry/{rev_reg_id}/tails-file" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Revocation Registry identifier",
+          "in" : "path",
+          "name" : "rev_reg_id",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevocationAnoncredsModuleResponse"
+                }
+              }
+            },
+            "description" : "tails file"
+          }
+        },
+        "summary" : "Download tails file",
+        "tags" : [ "anoncreds - revocation" ]
+      }
+    },
+    "/anoncreds/revocation/revoke" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RevokeRequestSchemaAnoncreds"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevocationAnoncredsModuleResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Revoke an issued credential",
+        "tags" : [ "anoncreds - revocation" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/anoncreds/schema" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SchemaPostRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SchemaResult"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Create a schema on the connected ledger",
+        "tags" : [ "anoncreds - schemas" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/anoncreds/schema/{schema_id}" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Schema identifier",
+          "in" : "path",
+          "name" : "schema_id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GetSchemaResult"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Retrieve an individual schemas details",
+        "tags" : [ "anoncreds - schemas" ]
+      }
+    },
+    "/anoncreds/schemas" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Schema issuer identifier",
+          "in" : "query",
+          "name" : "schema_issuer_id",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Schema name",
+          "in" : "query",
+          "name" : "schema_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Schema version",
+          "in" : "query",
+          "name" : "schema_version",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GetSchemasResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Retrieve all schema ids",
+        "tags" : [ "anoncreds - schemas" ]
+      }
+    },
     "/connections" : {
       "get" : {
         "parameters" : [ {
@@ -345,7 +1091,7 @@
           "in" : "query",
           "name" : "connection_protocol",
           "schema" : {
-            "enum" : [ "connections/1.0", "didexchange/1.0" ],
+            "enum" : [ "connections/1.0", "didexchange/1.0", "didexchange/1.1" ],
             "type" : "string"
           }
         }, {
@@ -376,7 +1122,7 @@
           "in" : "query",
           "name" : "state",
           "schema" : {
-            "enum" : [ "abandoned", "invitation", "response", "active", "start", "request", "error", "init", "completed" ],
+            "enum" : [ "response", "active", "request", "init", "error", "invitation", "completed", "start", "abandoned" ],
             "type" : "string"
           }
         }, {
@@ -422,6 +1168,7 @@
     },
     "/connections/create-invitation" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Alias",
           "in" : "query",
@@ -509,6 +1256,7 @@
     },
     "/connections/receive-invitation" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Alias",
           "in" : "query",
@@ -613,6 +1361,7 @@
     },
     "/connections/{conn_id}/accept-invitation" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Connection identifier",
           "in" : "path",
@@ -663,6 +1412,7 @@
     },
     "/connections/{conn_id}/accept-request" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Connection identifier",
           "in" : "path",
@@ -1348,6 +2098,71 @@
         "x-codegen-request-body-name" : "body"
       }
     },
+    "/did-rotate/{conn_id}/hangup" : {
+      "post" : {
+        "parameters" : [ {
+          "description" : "Connection identifier",
+          "in" : "path",
+          "name" : "conn_id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Hangup"
+                }
+              }
+            },
+            "description" : "Hangup agent message for observer"
+          }
+        },
+        "summary" : "Send hangup of DID rotation as a rotator",
+        "tags" : [ "did-rotate" ]
+      }
+    },
+    "/did-rotate/{conn_id}/rotate" : {
+      "post" : {
+        "parameters" : [ {
+          "description" : "Connection identifier",
+          "in" : "path",
+          "name" : "conn_id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DIDRotateRequestJSON"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Rotate"
+                }
+              }
+            },
+            "description" : "Rotate agent message for observer"
+          }
+        },
+        "summary" : "Begin rotation of a DID as a rotator",
+        "tags" : [ "did-rotate" ],
+        "x-codegen-request-body-name" : "body"
+      }
+    },
     "/didexchange/create-request" : {
       "post" : {
         "parameters" : [ {
@@ -1411,6 +2226,29 @@
             "type" : "string"
           }
         }, {
+          "description" : "Which DID Exchange Protocol version to use",
+          "in" : "query",
+          "name" : "protocol",
+          "schema" : {
+            "enum" : [ "didexchange/1.0", "didexchange/1.1" ],
+            "type" : "string"
+          }
+        }, {
+          "description" : "The DID to use to for this connection",
+          "in" : "query",
+          "name" : "use_did",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The DID method to use to generate a DID for this connection",
+          "in" : "query",
+          "name" : "use_did_method",
+          "schema" : {
+            "enum" : [ "did:peer:2", "did:peer:4" ],
+            "type" : "string"
+          }
+        }, {
           "description" : "Use public DID for this connection",
           "in" : "query",
           "name" : "use_public_did",
@@ -1436,6 +2274,7 @@
     },
     "/didexchange/receive-request" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Alias for connection",
           "in" : "query",
@@ -1517,6 +2356,21 @@
           "in" : "query",
           "name" : "my_label",
           "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The DID to use to for this connection",
+          "in" : "query",
+          "name" : "use_did",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The DID method to use to generate a DID for this connection",
+          "in" : "query",
+          "name" : "use_did_method",
+          "schema" : {
+            "enum" : [ "did:peer:2", "did:peer:4" ],
             "type" : "string"
           }
         } ],
@@ -2230,6 +3084,7 @@
     },
     "/issue-credential/create" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -2259,6 +3114,7 @@
     },
     "/issue-credential/create-offer" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -2288,6 +3144,7 @@
     },
     "/issue-credential/records" : {
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Connection identifier",
           "in" : "query",
@@ -2337,6 +3194,7 @@
     },
     "/issue-credential/records/{cred_ex_id}" : {
       "delete" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Credential exchange identifier",
           "in" : "path",
@@ -2363,6 +3221,7 @@
         "tags" : [ "issue-credential v1.0" ]
       },
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Credential exchange identifier",
           "in" : "path",
@@ -2391,6 +3250,7 @@
     },
     "/issue-credential/records/{cred_ex_id}/issue" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Credential exchange identifier",
           "in" : "path",
@@ -2430,6 +3290,7 @@
     },
     "/issue-credential/records/{cred_ex_id}/problem-report" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Credential exchange identifier",
           "in" : "path",
@@ -2469,6 +3330,7 @@
     },
     "/issue-credential/records/{cred_ex_id}/send-offer" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Credential exchange identifier",
           "in" : "path",
@@ -2508,6 +3370,7 @@
     },
     "/issue-credential/records/{cred_ex_id}/send-request" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Credential exchange identifier",
           "in" : "path",
@@ -2547,6 +3410,7 @@
     },
     "/issue-credential/records/{cred_ex_id}/store" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Credential exchange identifier",
           "in" : "path",
@@ -2586,6 +3450,7 @@
     },
     "/issue-credential/send" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -2615,6 +3480,7 @@
     },
     "/issue-credential/send-offer" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -2644,6 +3510,7 @@
     },
     "/issue-credential/send-proposal" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -3654,6 +4521,13 @@
             "type" : "boolean"
           }
         }, {
+          "description" : "Create unique DID for this invitation (default false)",
+          "in" : "query",
+          "name" : "create_unique_did",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
           "description" : "Create invitation for multiple use (default false)",
           "in" : "query",
           "name" : "multi_use",
@@ -4192,6 +5066,7 @@
     },
     "/present-proof/create-request" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -4221,6 +5096,7 @@
     },
     "/present-proof/records" : {
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Connection identifier",
           "in" : "query",
@@ -4270,6 +5146,7 @@
     },
     "/present-proof/records/{pres_ex_id}" : {
       "delete" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Presentation exchange identifier",
           "in" : "path",
@@ -4296,6 +5173,7 @@
         "tags" : [ "present-proof v1.0" ]
       },
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Presentation exchange identifier",
           "in" : "path",
@@ -4324,6 +5202,7 @@
     },
     "/present-proof/records/{pres_ex_id}/credentials" : {
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Presentation exchange identifier",
           "in" : "path",
@@ -4386,6 +5265,7 @@
     },
     "/present-proof/records/{pres_ex_id}/problem-report" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Presentation exchange identifier",
           "in" : "path",
@@ -4425,6 +5305,7 @@
     },
     "/present-proof/records/{pres_ex_id}/send-presentation" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Presentation exchange identifier",
           "in" : "path",
@@ -4464,6 +5345,7 @@
     },
     "/present-proof/records/{pres_ex_id}/send-request" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Presentation exchange identifier",
           "in" : "path",
@@ -4503,6 +5385,7 @@
     },
     "/present-proof/records/{pres_ex_id}/verify-presentation" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Presentation exchange identifier",
           "in" : "path",
@@ -4531,6 +5414,7 @@
     },
     "/present-proof/send-proposal" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -4560,6 +5444,7 @@
     },
     "/present-proof/send-request" : {
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "*/*" : {
@@ -4688,7 +5573,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PublishRevocations"
+                  "$ref" : "#/components/schemas/PublishRevocationsSchemaAnoncreds"
                 }
               }
             },
@@ -4761,7 +5646,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/CredRevRecordResult"
+                  "$ref" : "#/components/schemas/CredRevRecordResultSchemaAnoncreds"
                 }
               }
             },
@@ -4793,7 +5678,7 @@
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/PublishRevocations"
+                "$ref" : "#/components/schemas/PublishRevocationsSchemaAnoncreds"
               }
             }
           },
@@ -6085,7 +6970,7 @@
           "in" : "query",
           "name" : "method",
           "schema" : {
-            "enum" : [ "key", "sov" ],
+            "enum" : [ "key", "sov", "did:peer:2", "did:peer:4" ],
             "type" : "string"
           }
         }, {
@@ -6539,6 +7424,35 @@
         },
         "type" : "object"
       },
+      "AnonCredsSchema" : {
+        "properties" : {
+          "attrNames" : {
+            "description" : "Schema attribute names",
+            "items" : {
+              "description" : "Attribute name",
+              "example" : "score",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "issuerId" : {
+            "description" : "Issuer Identifier of the credential definition or schema",
+            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "type" : "string"
+          },
+          "name" : {
+            "description" : "Schema name",
+            "example" : "Example schema",
+            "type" : "string"
+          },
+          "version" : {
+            "description" : "Schema version",
+            "example" : "1.0",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AttachDecorator" : {
         "properties" : {
           "@id" : {
@@ -6785,7 +7699,7 @@
           },
           "connection_protocol" : {
             "description" : "Connection protocol used",
-            "enum" : [ "connections/1.0", "didexchange/1.0" ],
+            "enum" : [ "connections/1.0", "didexchange/1.0", "didexchange/1.1" ],
             "example" : "connections/1.0",
             "type" : "string"
           },
@@ -6886,7 +7800,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "did" : {
@@ -7184,9 +8097,9 @@
             "type" : "string"
           },
           "wallet_type" : {
-            "description" : "Type of the wallet to create",
+            "description" : "Type of the wallet to create. Must be same as base wallet.",
             "enum" : [ "askar", "askar-anoncreds", "in_memory", "indy" ],
-            "example" : "indy",
+            "example" : "askar",
             "type" : "string"
           },
           "wallet_webhook_urls" : {
@@ -7286,6 +8199,106 @@
         "required" : [ "name", "value" ],
         "type" : "object"
       },
+      "CredDef" : {
+        "properties" : {
+          "issuerId" : {
+            "description" : "Issuer Identifier of the credential definition or schema",
+            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "type" : "string"
+          },
+          "schemaId" : {
+            "description" : "Schema identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "type" : "string"
+          },
+          "tag" : {
+            "description" : "The tag value passed in by the Issuer to\n         an AnonCred's Credential Definition create and store implementation.",
+            "example" : "default",
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "CL" ],
+            "type" : "string"
+          },
+          "value" : {
+            "$ref" : "#/components/schemas/CredDefValueSchemaAnoncreds"
+          }
+        },
+        "type" : "object"
+      },
+      "CredDefPostOptions" : {
+        "properties" : {
+          "create_transaction_for_endorser" : {
+            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "example" : false,
+            "type" : "boolean"
+          },
+          "endorser_connection_id" : {
+            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "revocation_registry_size" : {
+            "description" : "Maximum number of credential revocations per registry",
+            "example" : 1000,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "support_revocation" : {
+            "description" : "Support credential revocation",
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "CredDefPostRequest" : {
+        "properties" : {
+          "credential_definition" : {
+            "$ref" : "#/components/schemas/InnerCredDef"
+          },
+          "options" : {
+            "$ref" : "#/components/schemas/CredDefPostOptions"
+          }
+        },
+        "type" : "object"
+      },
+      "CredDefResult" : {
+        "properties" : {
+          "credential_definition_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "credential_definition_state" : {
+            "$ref" : "#/components/schemas/CredDefState"
+          },
+          "job_id" : {
+            "type" : "string"
+          },
+          "registration_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "CredDefState" : {
+        "properties" : {
+          "credential_definition" : {
+            "$ref" : "#/components/schemas/CredDefState_credential_definition"
+          },
+          "credential_definition_id" : {
+            "description" : "credential definition id",
+            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+            "nullable" : true,
+            "type" : "string"
+          },
+          "state" : {
+            "enum" : [ "finished", "failed", "action", "wait" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "CredDefValue" : {
         "properties" : {
           "primary" : {
@@ -7306,6 +8319,35 @@
           },
           "r" : {
             "$ref" : "#/components/schemas/Generated"
+          },
+          "rctxt" : {
+            "example" : "0",
+            "pattern" : "^[0-9]*$",
+            "type" : "string"
+          },
+          "s" : {
+            "example" : "0",
+            "pattern" : "^[0-9]*$",
+            "type" : "string"
+          },
+          "z" : {
+            "example" : "0",
+            "pattern" : "^[0-9]*$",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CredDefValuePrimarySchemaAnoncreds" : {
+        "properties" : {
+          "n" : {
+            "example" : "0",
+            "pattern" : "^[0-9]*$",
+            "type" : "string"
+          },
+          "r" : {
+            "properties" : { },
+            "type" : "object"
           },
           "rctxt" : {
             "example" : "0",
@@ -7374,6 +8416,66 @@
         },
         "type" : "object"
       },
+      "CredDefValueRevocationSchemaAnoncreds" : {
+        "properties" : {
+          "g" : {
+            "example" : "1 1F14F&ECB578F 2 095E45DDF417D",
+            "type" : "string"
+          },
+          "g_dash" : {
+            "example" : "1 1D64716fCDC00C 1 0C781960FA66E3D3 2 095E45DDF417D",
+            "type" : "string"
+          },
+          "h" : {
+            "example" : "1 16675DAE54BFAE8 2 095E45DD417D",
+            "type" : "string"
+          },
+          "h0" : {
+            "example" : "1 21E5EF9476EAF18 2 095E45DDF417D",
+            "type" : "string"
+          },
+          "h1" : {
+            "example" : "1 236D1D99236090 2 095E45DDF417D",
+            "type" : "string"
+          },
+          "h2" : {
+            "example" : "1 1C3AE8D1F1E277 2 095E45DDF417D",
+            "type" : "string"
+          },
+          "h_cap" : {
+            "example" : "1 1B2A32CF3167 1 2490FEBF6EE55 1 0000000000000000",
+            "type" : "string"
+          },
+          "htilde" : {
+            "example" : "1 1D8549E8C0F8 2 095E45DDF417D",
+            "type" : "string"
+          },
+          "pk" : {
+            "example" : "1 142CD5E5A7DC 1 153885BD903312 2 095E45DDF417D",
+            "type" : "string"
+          },
+          "u" : {
+            "example" : "1 0C430AAB2B4710 1 1CB3A0932EE7E 1 0000000000000000",
+            "type" : "string"
+          },
+          "y" : {
+            "example" : "1 153558BD903312 2 095E45DDF417D 1 0000000000000000",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CredDefValueSchemaAnoncreds" : {
+        "properties" : {
+          "primary" : {
+            "$ref" : "#/components/schemas/CredDefValueSchemaAnoncreds_primary"
+          },
+          "revocation" : {
+            "$ref" : "#/components/schemas/CredDefValueSchemaAnoncreds_revocation"
+          }
+        },
+        "type" : "object"
+      },
       "CredInfoList" : {
         "properties" : {
           "results" : {
@@ -7395,6 +8497,16 @@
         },
         "type" : "object"
       },
+      "CredRevIndyRecordsResultSchemaAnoncreds" : {
+        "properties" : {
+          "rev_reg_delta" : {
+            "description" : "Indy revocation registry delta",
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
       "CredRevRecordDetailsResult" : {
         "properties" : {
           "results" : {
@@ -7406,7 +8518,26 @@
         },
         "type" : "object"
       },
+      "CredRevRecordDetailsResultSchemaAnoncreds" : {
+        "properties" : {
+          "results" : {
+            "items" : {
+              "$ref" : "#/components/schemas/IssuerCredRevRecordSchemaAnoncreds"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "CredRevRecordResult" : {
+        "properties" : {
+          "result" : {
+            "$ref" : "#/components/schemas/IssuerCredRevRecordSchemaAnoncreds"
+          }
+        },
+        "type" : "object"
+      },
+      "CredRevRecordResultSchemaAnoncreds" : {
         "properties" : {
           "result" : {
             "$ref" : "#/components/schemas/IssuerCredRevRecord"
@@ -7585,7 +8716,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -7633,7 +8763,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -7699,6 +8828,11 @@
             "enum" : [ "ed25519", "bls12381g2" ],
             "example" : "ed25519",
             "type" : "string"
+          },
+          "metadata" : {
+            "description" : "Additional metadata associated with the DID",
+            "properties" : { },
+            "type" : "object"
           },
           "method" : {
             "description" : "Did method associated with the DID",
@@ -7819,6 +8953,17 @@
         },
         "type" : "object"
       },
+      "DIDRotateRequestJSON" : {
+        "properties" : {
+          "to_did" : {
+            "description" : "The DID the rotating party is rotating to",
+            "example" : "did:web:example.com",
+            "type" : "string"
+          }
+        },
+        "required" : [ "to_did" ],
+        "type" : "object"
+      },
       "DIDXRejectRequest" : {
         "properties" : {
           "reason" : {
@@ -7839,7 +8984,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "did" : {
@@ -8024,7 +9168,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "protocols" : {
@@ -8048,7 +9191,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "disclosures" : {
@@ -8221,6 +9363,40 @@
         },
         "type" : "object"
       },
+      "GetCredDefResult" : {
+        "properties" : {
+          "credential_definition" : {
+            "$ref" : "#/components/schemas/CredDefState_credential_definition"
+          },
+          "credential_definition_id" : {
+            "description" : "credential definition id",
+            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+            "type" : "string"
+          },
+          "credential_definitions_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "resolution_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "GetCredDefsResponse" : {
+        "properties" : {
+          "credential_definition_ids" : {
+            "items" : {
+              "description" : "credential definition identifiers",
+              "example" : "GvLGiRogTJubmj5B36qhYz:3:CL:8:faber.agent.degree_schema",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "GetDIDEndpointResponse" : {
         "properties" : {
           "endpoint" : {
@@ -8251,6 +9427,55 @@
             "description" : "Ledger role",
             "enum" : [ "STEWARD", "TRUSTEE", "ENDORSER", "NETWORK_MONITOR", "USER", "ROLE_REMOVE" ],
             "example" : "ENDORSER",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "GetSchemaResult" : {
+        "properties" : {
+          "resolution_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "schema" : {
+            "$ref" : "#/components/schemas/AnonCredsSchema"
+          },
+          "schema_id" : {
+            "description" : "Schema identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "type" : "string"
+          },
+          "schema_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "GetSchemasResponse" : {
+        "properties" : {
+          "schema_ids" : {
+            "items" : {
+              "description" : "Schema identifiers",
+              "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "Hangup" : {
+        "properties" : {
+          "@id" : {
+            "description" : "Message identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "@type" : {
+            "description" : "Message type",
+            "example" : "https://didcomm.org/my-family/1.0/my-message-type",
             "type" : "string"
           }
         },
@@ -8668,7 +9893,7 @@
         "properties" : {
           "@type" : {
             "description" : "Message type identifier",
-            "example" : "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/1.0/presentation-preview",
+            "example" : "https://didcomm.org/present-proof/1.0/presentation-preview",
             "type" : "string"
           },
           "attributes" : {
@@ -9245,6 +10470,53 @@
         },
         "type" : "object"
       },
+      "InnerCredDef" : {
+        "properties" : {
+          "issuerId" : {
+            "description" : "Issuer Identifier of the credential definition",
+            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "type" : "string"
+          },
+          "schemaId" : {
+            "description" : "Schema identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "type" : "string"
+          },
+          "tag" : {
+            "description" : "Credential definition tag",
+            "example" : "default",
+            "type" : "string"
+          }
+        },
+        "required" : [ "issuerId", "schemaId", "tag" ],
+        "type" : "object"
+      },
+      "InnerRevRegDef" : {
+        "properties" : {
+          "credDefId" : {
+            "description" : "Credential definition identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "type" : "string"
+          },
+          "issuerId" : {
+            "description" : "Issuer Identifier of the credential definition or schema",
+            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "type" : "string"
+          },
+          "maxCredNum" : {
+            "description" : "Maximum number of credential revocations per registry",
+            "example" : 777,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "tag" : {
+            "description" : "tag for revocation registry",
+            "example" : "default",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "InputDescriptors" : {
         "properties" : {
           "constraints" : {
@@ -9318,7 +10590,7 @@
           "handshake_protocols" : {
             "items" : {
               "description" : "Handshake protocol to specify in invitation",
-              "example" : "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/didexchange/1.0",
+              "example" : "https://didcomm.org/didexchange/1.0",
               "type" : "string"
             },
             "type" : "array"
@@ -9342,6 +10614,17 @@
           "protocol_version" : {
             "description" : "OOB protocol version",
             "example" : "1.1",
+            "type" : "string"
+          },
+          "use_did" : {
+            "description" : "DID to use in invitation",
+            "example" : "did:example:123",
+            "type" : "string"
+          },
+          "use_did_method" : {
+            "description" : "DID method to use in invitation",
+            "enum" : [ "did:peer:2", "did:peer:4" ],
+            "example" : "did:peer:2",
             "type" : "string"
           },
           "use_public_did" : {
@@ -9385,7 +10668,7 @@
           "handshake_protocols" : {
             "items" : {
               "description" : "Handshake protocol",
-              "example" : "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/didexchange/1.0",
+              "example" : "https://didcomm.org/didexchange/1.0",
               "type" : "string"
             },
             "type" : "array"
@@ -9498,27 +10781,6 @@
         "required" : [ "connection_id", "invitation", "invitation_url" ],
         "type" : "object"
       },
-      "IssuanceOptions" : {
-        "properties" : {
-          "challenge" : {
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "created" : {
-            "example" : "2010-01-01T19:23:24Z",
-            "type" : "string"
-          },
-          "domain" : {
-            "example" : "website.example",
-            "type" : "string"
-          },
-          "type" : {
-            "example" : "Ed25519Signature2020",
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
       "IssueCredentialModuleResponse" : {
         "type" : "object"
       },
@@ -9528,7 +10790,7 @@
             "$ref" : "#/components/schemas/Credential"
           },
           "options" : {
-            "$ref" : "#/components/schemas/IssuanceOptions"
+            "$ref" : "#/components/schemas/LDProofVCOptions"
           }
         },
         "type" : "object"
@@ -9579,6 +10841,54 @@
             "description" : "Revocation registry identifier",
             "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
             "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          },
+          "state" : {
+            "description" : "Issue credential revocation record state",
+            "example" : "issued",
+            "type" : "string"
+          },
+          "updated_at" : {
+            "description" : "Time of last record update",
+            "example" : "2021-12-31T23:59:59Z",
+            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "IssuerCredRevRecordSchemaAnoncreds" : {
+        "properties" : {
+          "created_at" : {
+            "description" : "Time of record creation",
+            "example" : "2021-12-31T23:59:59Z",
+            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
+            "type" : "string"
+          },
+          "cred_def_id" : {
+            "description" : "Credential definition identifier",
+            "type" : "string"
+          },
+          "cred_ex_id" : {
+            "description" : "Credential exchange record identifier at credential issue",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "cred_ex_version" : {
+            "description" : "Credential exchange version",
+            "type" : "string"
+          },
+          "cred_rev_id" : {
+            "description" : "Credential revocation identifier",
+            "type" : "string"
+          },
+          "record_id" : {
+            "description" : "Issuer credential revocation record identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "rev_reg_id" : {
+            "description" : "Revocation registry identifier",
             "type" : "string"
           },
           "state" : {
@@ -9774,7 +11084,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "filter" : {
@@ -9828,7 +11137,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "updates" : {
@@ -10031,7 +11339,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           }
         },
@@ -10047,7 +11354,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "endpoint" : {
@@ -10154,7 +11460,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "description" : {
@@ -10499,7 +11804,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -10524,7 +11828,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -10621,7 +11924,7 @@
       "ProvePresentationRequest" : {
         "properties" : {
           "options" : {
-            "$ref" : "#/components/schemas/IssuanceOptions"
+            "$ref" : "#/components/schemas/LDProofVCOptions"
           },
           "presentation" : {
             "$ref" : "#/components/schemas/Presentation"
@@ -10638,6 +11941,60 @@
         "type" : "object"
       },
       "PublishRevocations" : {
+        "properties" : {
+          "options" : {
+            "$ref" : "#/components/schemas/PublishRevocationsOptions"
+          },
+          "rrid2crid" : {
+            "additionalProperties" : {
+              "items" : {
+                "description" : "Credential revocation identifier",
+                "example" : "12345",
+                "pattern" : "^[1-9][0-9]*$",
+                "type" : "string"
+              },
+              "type" : "array"
+            },
+            "description" : "Credential revocation ids by revocation registry id",
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "PublishRevocationsOptions" : {
+        "properties" : {
+          "create_transaction_for_endorser" : {
+            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "example" : false,
+            "type" : "boolean"
+          },
+          "endorser_connection_id" : {
+            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PublishRevocationsResult" : {
+        "properties" : {
+          "rrid2crid" : {
+            "additionalProperties" : {
+              "items" : {
+                "description" : "Credential revocation identifier",
+                "example" : "12345",
+                "pattern" : "^[1-9][0-9]*$",
+                "type" : "string"
+              },
+              "type" : "array"
+            },
+            "description" : "Credential revocation ids by revocation registry id",
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "PublishRevocationsSchemaAnoncreds" : {
         "properties" : {
           "rrid2crid" : {
             "additionalProperties" : {
@@ -10680,7 +12037,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "queries" : {
@@ -10702,7 +12058,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -10756,7 +12111,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "did" : {
@@ -10831,6 +12185,99 @@
         "required" : [ "did_document", "metadata" ],
         "type" : "object"
       },
+      "RevList" : {
+        "properties" : {
+          "currentAccumulator" : {
+            "description" : "The current accumalator value",
+            "example" : "21 118...1FB",
+            "type" : "string"
+          },
+          "issuerId" : {
+            "description" : "Issuer Identifier of the credential definition or schema",
+            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "type" : "string"
+          },
+          "revRegDefId" : {
+            "description" : "The ID of the revocation registry definition",
+            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+            "type" : "string"
+          },
+          "revocationList" : {
+            "description" : "Bit list representing revoked credentials",
+            "example" : [ 0, 1, 1, 0 ],
+            "items" : {
+              "format" : "int32",
+              "type" : "integer"
+            },
+            "type" : "array"
+          },
+          "timestamp" : {
+            "description" : "Timestamp at which revocation list is applicable",
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "RevListCreateRequest" : {
+        "properties" : {
+          "options" : {
+            "$ref" : "#/components/schemas/RevListOptions"
+          },
+          "rev_reg_def_id" : {
+            "description" : "Revocation registry definition identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RevListOptions" : {
+        "properties" : {
+          "create_transaction_for_endorser" : {
+            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "example" : false,
+            "type" : "boolean"
+          },
+          "endorser_connection_id" : {
+            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RevListResult" : {
+        "properties" : {
+          "job_id" : {
+            "type" : "string"
+          },
+          "registration_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "revocation_list_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "revocation_list_state" : {
+            "$ref" : "#/components/schemas/RevListState"
+          }
+        },
+        "type" : "object"
+      },
+      "RevListState" : {
+        "properties" : {
+          "revocation_list" : {
+            "$ref" : "#/components/schemas/RevListState_revocation_list"
+          },
+          "state" : {
+            "enum" : [ "finished", "failed", "action", "wait" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "RevRegCreateRequest" : {
         "properties" : {
           "credential_definition_id" : {
@@ -10850,6 +12297,117 @@
         },
         "type" : "object"
       },
+      "RevRegCreateRequestSchemaAnoncreds" : {
+        "properties" : {
+          "options" : {
+            "$ref" : "#/components/schemas/RevRegDefOptions"
+          },
+          "revocation_registry_definition" : {
+            "$ref" : "#/components/schemas/InnerRevRegDef"
+          }
+        },
+        "type" : "object"
+      },
+      "RevRegDef" : {
+        "properties" : {
+          "credDefId" : {
+            "description" : "Credential definition identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+            "type" : "string"
+          },
+          "issuerId" : {
+            "description" : "Issuer Identifier of the credential definition or schema",
+            "example" : "WgWxqztrNooG92RXvxSTWv",
+            "type" : "string"
+          },
+          "revocDefType" : {
+            "type" : "string"
+          },
+          "tag" : {
+            "description" : "tag for the revocation registry definition",
+            "example" : "default",
+            "type" : "string"
+          },
+          "value" : {
+            "$ref" : "#/components/schemas/RevRegDefValue"
+          }
+        },
+        "type" : "object"
+      },
+      "RevRegDefOptions" : {
+        "properties" : {
+          "create_transaction_for_endorser" : {
+            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "example" : false,
+            "type" : "boolean"
+          },
+          "endorser_connection_id" : {
+            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RevRegDefResult" : {
+        "properties" : {
+          "job_id" : {
+            "type" : "string"
+          },
+          "registration_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "revocation_registry_definition_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "revocation_registry_definition_state" : {
+            "$ref" : "#/components/schemas/RevRegDefState"
+          }
+        },
+        "type" : "object"
+      },
+      "RevRegDefState" : {
+        "properties" : {
+          "revocation_registry_definition" : {
+            "$ref" : "#/components/schemas/RevRegDefState_revocation_registry_definition"
+          },
+          "revocation_registry_definition_id" : {
+            "description" : "revocation registry definition id",
+            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+            "type" : "string"
+          },
+          "state" : {
+            "enum" : [ "finished", "failed", "action", "wait", "decommissioned", "full" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RevRegDefValue" : {
+        "properties" : {
+          "maxCredNum" : {
+            "example" : 777,
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "publicKeys" : {
+            "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+            "properties" : { },
+            "type" : "object"
+          },
+          "tailsHash" : {
+            "example" : "7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P",
+            "type" : "string"
+          },
+          "tailsLocation" : {
+            "example" : "https://tails-server.com/hash/7Qen9RDyemMuV7xGQvp7NjwMSpyHieJyBakycxN7dX7P",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "RevRegIssuedResult" : {
         "properties" : {
           "result" : {
@@ -10862,7 +12420,27 @@
         },
         "type" : "object"
       },
+      "RevRegIssuedResultSchemaAnoncreds" : {
+        "properties" : {
+          "result" : {
+            "description" : "Number of credentials issued against revocation registry",
+            "example" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "RevRegResult" : {
+        "properties" : {
+          "result" : {
+            "$ref" : "#/components/schemas/IssuerRevRegRecord"
+          }
+        },
+        "type" : "object"
+      },
+      "RevRegResultSchemaAnoncreds" : {
         "properties" : {
           "result" : {
             "$ref" : "#/components/schemas/IssuerRevRegRecord"
@@ -10902,6 +12480,26 @@
         },
         "type" : "object"
       },
+      "RevRegWalletUpdatedResultSchemaAnoncreds" : {
+        "properties" : {
+          "accum_calculated" : {
+            "description" : "Calculated accumulator for phantom revocations",
+            "properties" : { },
+            "type" : "object"
+          },
+          "accum_fixed" : {
+            "description" : "Applied ledger transaction to fix revocations",
+            "properties" : { },
+            "type" : "object"
+          },
+          "rev_reg_delta" : {
+            "description" : "Indy revocation registry delta",
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
       "RevRegsCreated" : {
         "properties" : {
           "rev_reg_ids" : {
@@ -10914,6 +12512,23 @@
             "type" : "array"
           }
         },
+        "type" : "object"
+      },
+      "RevRegsCreatedSchemaAnoncreds" : {
+        "properties" : {
+          "rev_reg_ids" : {
+            "items" : {
+              "description" : "Revocation registry identifiers",
+              "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+              "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "RevocationAnoncredsModuleResponse" : {
         "type" : "object"
       },
       "RevocationModuleResponse" : {
@@ -10967,6 +12582,77 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "RevokeRequestSchemaAnoncreds" : {
+        "properties" : {
+          "comment" : {
+            "description" : "Optional comment to include in revocation notification",
+            "type" : "string"
+          },
+          "connection_id" : {
+            "description" : "Connection ID to which the revocation notification will be sent; required if notify is true",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
+            "type" : "string"
+          },
+          "cred_ex_id" : {
+            "description" : "Credential exchange identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
+            "type" : "string"
+          },
+          "cred_rev_id" : {
+            "description" : "Credential revocation identifier",
+            "example" : "12345",
+            "pattern" : "^[1-9][0-9]*$",
+            "type" : "string"
+          },
+          "notify" : {
+            "description" : "Send a notification to the credential recipient",
+            "type" : "boolean"
+          },
+          "notify_version" : {
+            "description" : "Specify which version of the revocation notification should be sent",
+            "enum" : [ "v1_0", "v2_0" ],
+            "type" : "string"
+          },
+          "publish" : {
+            "description" : "(True) publish revocation to ledger immediately, or (default, False) mark it pending",
+            "type" : "boolean"
+          },
+          "rev_reg_id" : {
+            "description" : "Revocation registry identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
+            "type" : "string"
+          },
+          "thread_id" : {
+            "description" : "Thread ID of the credential exchange message thread resulting in the credential now being revoked; required if notify is true",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Rotate" : {
+        "properties" : {
+          "@id" : {
+            "description" : "Message identifier",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          },
+          "@type" : {
+            "description" : "Message type",
+            "example" : "https://didcomm.org/my-family/1.0/my-message-type",
+            "type" : "string"
+          },
+          "to_did" : {
+            "description" : "The DID the rotating party is rotating to",
+            "example" : "did:example:newdid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "to_did" ],
         "type" : "object"
       },
       "RouteRecord" : {
@@ -11156,6 +12842,51 @@
         },
         "type" : "object"
       },
+      "SchemaPostOption" : {
+        "properties" : {
+          "create_transaction_for_endorser" : {
+            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "example" : false,
+            "type" : "boolean"
+          },
+          "endorser_connection_id" : {
+            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SchemaPostRequest" : {
+        "properties" : {
+          "options" : {
+            "$ref" : "#/components/schemas/SchemaPostOption"
+          },
+          "schema" : {
+            "$ref" : "#/components/schemas/AnonCredsSchema"
+          }
+        },
+        "type" : "object"
+      },
+      "SchemaResult" : {
+        "properties" : {
+          "job_id" : {
+            "type" : "string"
+          },
+          "registration_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "schema_metadata" : {
+            "properties" : { },
+            "type" : "object"
+          },
+          "schema_state" : {
+            "$ref" : "#/components/schemas/SchemaState"
+          }
+        },
+        "type" : "object"
+      },
       "SchemaSendRequest" : {
         "properties" : {
           "attributes" : {
@@ -11195,6 +12926,23 @@
           }
         },
         "required" : [ "schema_id" ],
+        "type" : "object"
+      },
+      "SchemaState" : {
+        "properties" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/AnonCredsSchema"
+          },
+          "schema_id" : {
+            "description" : "Schema identifier",
+            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+            "type" : "string"
+          },
+          "state" : {
+            "enum" : [ "finished", "failed", "action", "wait" ],
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "SchemasCreatedResult" : {
@@ -11625,7 +13373,7 @@
       "TxnOrPublishRevocationsResult" : {
         "properties" : {
           "sent" : {
-            "$ref" : "#/components/schemas/PublishRevocations"
+            "$ref" : "#/components/schemas/PublishRevocationsSchemaAnoncreds"
           },
           "txn" : {
             "$ref" : "#/components/schemas/TxnOrPublishRevocationsResult_txn"
@@ -12872,7 +14620,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -12932,7 +14679,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -13068,7 +14814,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -13107,7 +14852,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -13300,7 +15044,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -13513,7 +15256,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -13590,7 +15332,6 @@
           "@type" : {
             "description" : "Message type",
             "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "readOnly" : true,
             "type" : "string"
           },
           "comment" : {
@@ -14092,6 +15833,13 @@
         "description" : "Detached Java Web Signature",
         "type" : "object"
       },
+      "CredDefState_credential_definition" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/CredDef"
+        } ],
+        "description" : "credential definition",
+        "type" : "object"
+      },
       "CredDefValue_primary" : {
         "allOf" : [ {
           "$ref" : "#/components/schemas/CredDefValuePrimary"
@@ -14102,6 +15850,20 @@
       "CredDefValue_revocation" : {
         "allOf" : [ {
           "$ref" : "#/components/schemas/CredDefValueRevocation"
+        } ],
+        "description" : "Revocation value for credential definition",
+        "type" : "object"
+      },
+      "CredDefValueSchemaAnoncreds_primary" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/CredDefValuePrimarySchemaAnoncreds"
+        } ],
+        "description" : "Primary value for credential definition",
+        "type" : "object"
+      },
+      "CredDefValueSchemaAnoncreds_revocation" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/CredDefValueRevocationSchemaAnoncreds"
         } ],
         "description" : "Revocation value for credential definition",
         "type" : "object"
@@ -14354,6 +16116,20 @@
           "type" : "Ed25519Signature2018",
           "verificationMethod" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
         },
+        "type" : "object"
+      },
+      "RevListState_revocation_list" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/RevList"
+        } ],
+        "description" : "revocation list",
+        "type" : "object"
+      },
+      "RevRegDefState_revocation_registry_definition" : {
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/RevRegDef"
+        } ],
+        "description" : "revocation registry definition",
         "type" : "object"
       },
       "SchemaSendResult_schema" : {

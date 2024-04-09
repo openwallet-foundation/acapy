@@ -17,6 +17,14 @@ Subpackages
 Submodules
 ----------
 
+aries\_cloudagent.vc.vc\_ld.external\_suite module
+--------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.vc_ld.external_suite
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.vc.vc\_ld.issue module
 ----------------------------------------
 

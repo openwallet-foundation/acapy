@@ -53,6 +53,14 @@ aries\_cloudagent.messaging.error module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.messaging.message\_type module
+------------------------------------------------
+
+.. automodule:: aries_cloudagent.messaging.message_type
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.messaging.request\_context module
 ---------------------------------------------------
 
