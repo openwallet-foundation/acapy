@@ -1,0 +1,147 @@
+@startuml
+
+' Make the notes not look so awful
+
+actor  Alice     as Alice
+entity Mediator  as Med
+actor  Bob       as Bob
+autonumber
+
+== Arrange for Mediation with the Mediator ==
+
+Alice <--> Med : Establish connection (details omitted)
+
+loop until terms are acceptable
+    Alice -> Med : Mediation Request
+    note over Alice, Med: Establish terms of Mediation...
+    Med -> Alice : Mediation deny
+    note over Alice, Med: Mediation counter terms from Mediator
+end
+
+Alice <- Med : Mediation grant
+note over Alice, Med
+Mediator reports routing keys and endpoint to Alice.
+
+{
+    "@type": ".../coordinate-mediation/1.0/grant",
+    "routing_keys": ["<mediator routing key>"],
+    "endpoint": "<mediator's endpoint>"
+}
+end note
+
+... Some time later ...
+
+== Create a Mediated Connection ==
+group Invitation
+    Alice -> Alice : Create invitation
+
+    Alice -> Med : Keylist update
+    note over Alice, Bob
+    Alice sends invitation key to mediator with keylist update message.
+    
+    { 
+        "@type": ".../coordinate-mediation/1.0/keylist-update"
+        "updates": [
+            {
+                "recipient_key": "<invitation key>",
+                "action": "add"
+            }
+        ]
+    }
+    end note
+
+    Alice --> Bob : Transmit Invitation (Out of Band)
+    note over Alice, Bob
+    Mediator routing keys and endpoint used for invitation.
+
+    {
+       "@type": ".../connections/1.0/invite",
+       "routingKeys": ["<key sent to Alice in mediation grant>"],
+       "recipientKeys": ["<key created by Alice for invitation>"],
+       "serviceEndpoint": "<mediator's service endpoint>"
+    }
+    end note
+end
+
+group Connection Request
+    Bob -> Bob : Create connection request
+    Bob -> Bob : Prepare message for sending
+    note right of Bob
+    1. Encrypt request for Alice
+    2. Wrap message in Forward Message
+    3. Pop key from "routingKeys", Encrypt message for key
+    4. Repeat for each remaining key in "routingKeys"
+    end note
+
+    Bob -> Med : Forward {Connection Request}
+    note right
+    Bob's response will be sent 
+    to the mediator the mediator
+    will forward response to Alice
+    end note
+    Med -> Med : Process Forward
+    note right of Med
+    1. Unpack message
+    2. Inspect forward "to" field
+    3. Look up key in routing tables
+    end note
+    Alice <- Med : Connection Request
+end
+
+group Connection Response
+    Alice -> Alice : Create Response
+    Alice -> Med : Keylist Update
+    note over Alice, Bob
+    Alice sends updates to mediator, including adding
+    the new connection keys and removing invitation key.
+    
+    { 
+        "@type": ".../coordinate-mediation/1.0/keylist-update"
+        "updates": [
+            {
+                "recipient_key": "<new connection key>",
+                "action": "add"
+            },
+            {
+                "recipient_key": "<invitation key",
+                "action": "remove"
+            }
+        ]
+    }
+    end note
+    Alice -> Bob : Connection Response
+    note left
+    Connection response sent to
+    Bob as normal. Sent DID Doc
+    includes routing keys from
+    the mediator and the mediator
+    endpoint for the service
+    endpoint.
+    end note
+end
+
+== Mediation ==
+
+Bob -> Med : Forward {Message}
+note right
+Messages are encrypted 
+for Alice and then wrapped
+in a forward message for
+the Mediator.
+end note
+
+Alice <- Med : Message
+note left
+Mediator decrypts the forward 
+message, inspects the "to",
+and forwards to Alice.
+Alice decrypts final message.
+end note
+
+Alice -> Bob : Message
+note right
+Outbound messages to Bob are sent
+directly, not through Mediator.
+end note
+
+@enduml
