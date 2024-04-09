@@ -271,7 +271,7 @@ class LoggingConfigurator:
             dictConfig(log_config, new_file_path=log_file or None)
         else:
             with log_config:
-                # The default log_file location is set here 
+                # The default log_file location is set here
                 # if one is not provided in the startup params
                 fileConfig(
                     log_config,
