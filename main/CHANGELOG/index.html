@@ -523,28 +523,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0120rc2" class="md-nav__link">
+  <a href="#0120rc3" class="md-nav__link">
     <span class="md-ellipsis">
-      0.12.0rc2
+      0.12.0rc3
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.12.0rc2">
+    <nav class="md-nav" aria-label="0.12.0rc3">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#march-5-2024" class="md-nav__link">
+  <a href="#april-8-2024" class="md-nav__link">
     <span class="md-ellipsis">
-      March 5, 2024
+      April 8, 2024
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#0120rc2-breaking-changes" class="md-nav__link">
+  <a href="#0120rc3-breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      0.12.0rc2 Breaking Changes
+      0.12.0rc3 Breaking Changes
     </span>
   </a>
   
@@ -761,6 +761,27 @@
   
   <span class="md-ellipsis">
     Multitenant ACA-Py
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/QualifiedDIDs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qualified DIDs
   </span>
   
 
@@ -2236,28 +2257,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0120rc2" class="md-nav__link">
+  <a href="#0120rc3" class="md-nav__link">
     <span class="md-ellipsis">
-      0.12.0rc2
+      0.12.0rc3
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.12.0rc2">
+    <nav class="md-nav" aria-label="0.12.0rc3">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#march-5-2024" class="md-nav__link">
+  <a href="#april-8-2024" class="md-nav__link">
     <span class="md-ellipsis">
-      March 5, 2024
+      April 8, 2024
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#0120rc2-breaking-changes" class="md-nav__link">
+  <a href="#0120rc3-breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      0.12.0rc2 Breaking Changes
+      0.12.0rc3 Breaking Changes
     </span>
   </a>
   
@@ -2320,22 +2341,39 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="0120rc2">0.12.0rc2<a class="headerlink" href="#0120rc2" title="Permanent link">&para;</a></h2>
-<h3 id="march-5-2024">March 5, 2024<a class="headerlink" href="#march-5-2024" title="Permanent link">&para;</a></h3>
-<p>Release 0.12.0 is a relative large release but currently with no breaking changes. We expect there will be breaking changes (at least in the handling of endorsement) before the 0.12.0 release is finalized, hence the minor version update.</p>
-<p>The <code>rc0</code> release candidate introduced a regression via [PR #2705] that has been reverted in <code>rc1</code> and later via [PR #2789]. Further investigation is needed to determine how to accomplish the goal of [PR #2705] ("feat: inject profile") without the regression. The <code>rc2</code>
-and later releases address a regression related to the sending of a revocation notification from the issuer to the holder of a newly
-revoked credential, fixed in [PR #2814]</p>
-<p>Much progress has been made on <code>did:peer</code> support in this release, with the handling of inbound <a href="https://identity.foundation/peer-did-method-spec/">DID Peer</a> 1 added, and inbound and outbound support for DID Peer 2 and 4. The goal of that work is to eliminate the remaining places where "unqualified" DIDs remain, and to enable the "connection reuse" in the Out of Band protocol when using DID Peer 2 and 4 DIDs. Work continues in supporting ledger agnostic <a href="https://www.hyperledger.org/projects/anoncreds">AnonCreds</a>, and the new <a href="https://github.com/hyperledger/anoncreds-rs">Hyperledger AnonCreds Rust</a> library. Attention was also given in the release to the handling of JSON-LD <a href="https://www.w3.org/TR/vc-data-integrity/">Data Integrity Verifiable Credentials</a>, with more expected before the release is finalized. In addition to those updates, there were fixes and improvements across the codebase.</p>
-<p>The most visible change in this release is the re-organization of the ACA-Py documentation, moving the vast majority of the documents to the folders within the <code>docs</code> folder -- a long overdue change that will allow us to soon publish the documents on <a href="https://aca-py.org">https://aca-py.org</a> directly from the ACA-Py repository, rather than from the separate <a href="https://github.com/hyperledger/aries-acapy-docs">aries-acapy-docs</a> currently being used.</p>
+<h2 id="0120rc3">0.12.0rc3<a class="headerlink" href="#0120rc3" title="Permanent link">&para;</a></h2>
+<h3 id="april-8-2024">April 8, 2024<a class="headerlink" href="#april-8-2024" title="Permanent link">&para;</a></h3>
+<p>Release 0.12.0 is a relatively large release with many new capabilities, feature improvements, upgrades and bug fixes. Importantly, this release completes the ACA-Py implementation of [Aries Interop Profile v20], and enables the elimination of unqualified DIDs. While only deprecated for now, all deployments of ACA-Py to move to using only fully qualified DIDs.</p>
+<p>Much progress has been made on <code>did:peer</code> support in this release, with the handling of inbound <a href="https://identity.foundation/peer-did-method-spec/">DID Peer</a> 1 added, and inbound and outbound support for DID Peer 2 and 4. Much attention was also paid to making sure that the Peer DID and DID Exchange capabilities match those of <a href="https://github.com/openwallet-foundation/credo-ts">Credo-TS</a> (formerly Aries Framework JavaScript). The completion of that work eliminates the remaining places where "unqualified" DIDs are being used, and to enable the "connection reuse" in the Out of Band protocol when using DID Peer 2 and 4 DIDs. See the document <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/main/./features/QualifiedDIDs.md">Qualified DIDs</a> for details about how to control the use of DID Peer 2 or 4 in an ACA-Py deployment, and how to eliminate the use of unqualified DIDs. Support for DID Exchange v1.1 has been added to ACA-Py, with support for DID Exchange v1.0 retained, and we've added support for DID Rotation.</p>
+<p>Work continues towards supporting ledger agnostic <a href="https://www.hyperledger.org/projects/anoncreds">AnonCreds</a>, and the new <a href="https://github.com/hyperledger/anoncreds-rs">Hyperledger AnonCreds Rust</a> library. Some of that work is in this release, the rest will be in the next release.</p>
+<p>Attention was given in the release to simplifying the handling of JSON-LD <a href="https://www.w3.org/TR/vc-data-integrity/">Data Integrity Verifiable Credentials</a>.</p>
+<p>An important change in this release is the re-organization of the ACA-Py documentation, moving the vast majority of the documents to the folders within the <code>docs</code> folder -- a long overdue change that will allow us to soon publish the documents on <a href="https://aca-py.org">https://aca-py.org</a> directly from the ACA-Py repository, rather than from the separate <a href="https://github.com/hyperledger/aries-acapy-docs">aries-acapy-docs</a> currently being used.</p>
 <p>A big developer improvement is a revamping of the test handling to eliminate ~2500 warnings that were previously generated in the test suite.  Nice job <a href="https://github.com/ff137">@ff137</a>!</p>
-<h3 id="0120rc2-breaking-changes">0.12.0rc2 Breaking Changes<a class="headerlink" href="#0120rc2-breaking-changes" title="Permanent link">&para;</a></h3>
-<p>There are no breaking changes in 0.12.0rc2.</p>
-<!-- Latest: 2805 -->
+<h3 id="0120rc3-breaking-changes">0.12.0rc3 Breaking Changes<a class="headerlink" href="#0120rc3-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>A deployment of this release that proactively uses DID Peer 2 and 4 will encounter problems interacting with agents deployed using older Aries protocols. Led by the Aries Working Group, the Aries community is encouraging the upgrade of all ecosystem deployments to accept all commonly used qualified DIDs, including DID Peer 2 and 4. See the document <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/main/./features/QualifiedDIDs.md">Qualified DIDs</a> for more details about the transition to using only qualified DIDs.</p>
+<p>New deprecation notices were added to ACA-Py on startup and in the OpenAPI/Swagger interface. Those added are listed below. As well, we anticipate 0.12.0 being the <strong>last ACA-Py release</strong> to include support for the previously deprecated Indy SDK.</p>
+<ul>
+<li>RFC 0036 Issue Credential v1</li>
+<li>Migrate to use RFC 0453 Issue Credential v2</li>
+<li>RFC 0037 Present Proof v2</li>
+<li>Migrate to use RFC 0454 Present Proof v2</li>
+<li>RFC 0169 Connections</li>
+<li>Migrate to use RFC 0023 DID Exchange and 0434 Out-of-Band</li>
+<li>The use of <code>did:sov:...</code> as a Protocol Doc URI</li>
+<li>Migrate to use <code>https://didcomm.org/</code>.</li>
+</ul>
+<!-- Latest: 2872 -->
 
-<h4 id="0120rc2-categorized-list-of-pull-requests">0.12.0rc2 Categorized List of Pull Requests<a class="headerlink" href="#0120rc2-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
+<h4 id="0120rc3-categorized-list-of-pull-requests">0.12.0rc3 Categorized List of Pull Requests<a class="headerlink" href="#0120rc3-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
 <ul>
 <li>DID Handling and Connection Establishment Updates/Fixes</li>
+<li>Emit the OOB done event even for multi-use invites <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2872">#2872</a> <a href="https://github.com/ianco">ianco</a></li>
+<li>refactor: introduce use_did and use_did_method <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2862">#2862</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+<li>fix(credo-interop): various didexchange and did:peer related fixes  1.0.0 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2748">#2748</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+<li>Change did &harr; verkey logging on connections <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2853">#2853</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>fix: did exchange multiuse invites respond in kind <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2850">#2850</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+<li>Support connection re-use for did:peer:2/4 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2823">#2823</a> <a href="https://github.com/ianco">ianco</a></li>
+<li>feat: did-rotate <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2816">#2816</a> <a href="https://github.com/amanji">amanji</a></li>
 <li>Author subwallet setup automation <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2791">#2791</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>fix: save multi_use to the DB for OOB invitations <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2694">#2694</a> <a href="https://github.com/frostyfrog">frostyfrog</a></li>
 <li>
@@ -2354,8 +2392,10 @@ revoked credential, fixed in [PR #2814]</p>
 <p>feat: support resolving did:peer:1 received in did exchange <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2611">#2611</a> <a href="https://github.com/dbluhm">dbluhm</a></p>
 </li>
 <li>
-<p>Ledger Agnostic AnonCreds RS Changes</p>
+<p>AnonCreds and Ledger Agnostic AnonCreds RS Changes</p>
 </li>
+<li>Prevent revocable cred def being created without tails server <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2849">#2849</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Anoncreds - support for anoncreds and askar wallets concurrently <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2822">#2822</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Send revocation list instead of rev_list object - Anoncreds <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2821">#2821</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Fix anoncreds non-endorsement revocation <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2814">#2814</a> <a href="https://github.com/jamshale">jamshale</a>  - Get and create anoncreds profile when using anoncreds subwallet <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2803">#2803</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Add anoncreds multitenant endorsement integration tests <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2801">#2801</a> <a href="https://github.com/jamshale">jamshale</a></li>
@@ -2380,6 +2420,7 @@ revoked credential, fixed in [PR #2814]</p>
 <li>
 <p>Hyperledger Indy ledger related updates and fixes</p>
 </li>
+<li>Remove requirement for write ledger in read-only mode. <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2836">#2836</a> <a href="https://github.com/esune">esune</a></li>
 <li>Add known issues section to Multiledger.md documentation <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2788">#2788</a> <a href="https://github.com/esune">esune</a></li>
 <li>fix: update constants in TransactionRecord <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2698">#2698</a> <a href="https://github.com/amanji">amanji</a></li>
 <li>Cache TAA by wallet name <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2676">#2676</a> <a href="https://github.com/jamshale">jamshale</a></li>
@@ -2389,6 +2430,7 @@ revoked credential, fixed in [PR #2814]</p>
 <li>
 <p>JSON-LD Verifiable Credential/DIF Presentation Exchange updates</p>
 </li>
+<li>Add missing VC-DI/LD-Proof verification method option <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2867">#2867</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 <li>Revert profile injection for VcLdpManager on vc-api endpoints <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2794">#2794</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 <li>Add cached copy of BBS v1 context <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2749">#2749</a> <a href="https://github.com/andrewwhitehead">andrewwhitehead</a></li>
 <li>Update BBS+ context to bypass redirections <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2739">#2739</a> <a href="https://github.com/swcurran">swcurran</a></li>
@@ -2402,7 +2444,8 @@ revoked credential, fixed in [PR #2814]</p>
 <li>
 <p>Credential Exchange (Issue, Present) Updates</p>
 </li>
-<li>Allow for crids in event payload to be integers <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2819">#2819</a> <a href="https://github.com/jamshale">jamshale</a>  - Create revocation notification after list entry written to ledger <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2812">#2812</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Allow for crids in event payload to be integers <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2819">#2819</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Create revocation notification after list entry written to ledger <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2812">#2812</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Remove exception on connectionless presentation problem report handler <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2723">#2723</a> <a href="https://github.com/loneil">loneil</a></li>
 <li>Ensure "preserve_exchange_records" flags are set. <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2664">#2664</a> <a href="https://github.com/usingtechnology">usingtechnology</a></li>
 <li>Slight improvement to credx proof validation error message <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2655">#2655</a> <a href="https://github.com/ianco">ianco</a></li>
@@ -2419,6 +2462,14 @@ revoked credential, fixed in [PR #2814]</p>
 <li>
 <p>Other Fixes, Demo, DevContainer and Documentation Fixes</p>
 </li>
+<li>chore: propose official deprecations of a couple of features <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2856">#2856</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+<li>feat: external signature suite provider interface <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2835">#2835</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+<li>Update GHA so that broken image links work on docs site - without breaking them on GitHub <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2852">#2852</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Minor updates to the documentation - links <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2848">#2848</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Update to run_demo script to support Apple M1 CPUs <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2843">#2843</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Add functionality for building and running agents seprately <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2845">#2845</a> <a href="https://github.com/sarthakvijayvergiya">sarthakvijayvergiya</a></li>
+<li>Cleanup of docs <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2831">#2831</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Create AnonCredsMethods.md <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2832">#2832</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>FIX: GHA update for doc publishing, fix doc file that was blanked <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2820">#2820</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>More updates to get docs publishing <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2810">#2810</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>Eliminate the double workflow event <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2811">#2811</a> <a href="https://github.com/swcurran">swcurran</a></li>
@@ -2441,6 +2492,14 @@ revoked credential, fixed in [PR #2814]</p>
 <li>
 <p>Dependencies and Internal Updates</p>
 </li>
+<li>chore(deps): Bump pillow from 10.2.0 to 10.3.0  dependencies python <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2869">#2869</a> <a href="https://github.com/dependabot bot">dependabot bot</a></li>
+<li>Fix run_tests script <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2866">#2866</a> <a href="https://github.com/ianco">ianco</a></li>
+<li>fix: states for discovery record to emit webhook <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2858">#2858</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+<li>Increase promote did retries <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2854">#2854</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>chore(deps-dev): Bump black from 24.1.1 to 24.3.0  dependencies python <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2847">#2847</a> <a href="https://github.com/dependabot bot">dependabot bot</a></li>
+<li>chore(deps): Bump the all-actions group with 1 update  dependencies github_actions <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2844">#2844</a> <a href="https://github.com/dependabot bot">dependabot bot</a></li>
+<li>patch for <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/2781" title="GitHub Issue: squidfunk/mkdocs-material #2781">#2781</a>: User Agent header in doc loader <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2824">#2824</a> <a href="https://github.com/gmulhearn-anonyome">gmulhearn-anonyome</a></li>
+<li>chore(deps): Bump jwcrypto from 1.5.4 to 1.5.6  dependencies python <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2833">#2833</a> <a href="https://github.com/dependabot bot">dependabot bot</a></li>
 <li>bot    chore(deps): Bump cryptography from 42.0.3 to 42.0.4  dependencies python <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2805">#2805</a> <a href="https://github.com/dependabot">dependabot</a></li>
 <li>bot    chore(deps): Bump the all-actions group with 3 updates  dependencies github_actions <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2815">#2815</a> <a href="https://github.com/dependabot">dependabot</a></li>
 <li>Change middleware registration order <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2796">#2796</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
@@ -2481,6 +2540,7 @@ revoked credential, fixed in [PR #2814]</p>
 <li>
 <p>Release management pull requests</p>
 </li>
+<li>0.12.0rc3 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2878">#2878</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>0.12.0rc2 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2825">#2825</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>0.12.0rc1 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2800">#2800</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>0.12.0rc1 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2799">#2799</a> <a href="https://github.com/swcurran">swcurran</a></li>

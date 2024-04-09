@@ -668,6 +668,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../features/QualifiedDIDs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Qualified DIDs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../features/DIDMethods/" class="md-nav__link">
         
   
@@ -2252,7 +2273,7 @@ sure that ChatGPT isn't messing with you and you have the needed data.</p>
 <li>
 <p>Search across the repository for the previous version number and update it
    everywhere that makes sense. The CHANGELOG.md is a likely exception, and the
-   <code>pyproject.toml</code> in the root is <strong>MUST</strong>. You can skip (although it won't
+   <code>pyproject.toml</code> in the root <strong>MUST</strong> be updated. You can skip (although it won't
    hurt) to update the files in the <code>open-api</code> folder as they will be
    automagically updated by the next step in publishing. The incremented version
    number <strong>MUST</strong> adhere to the <a href="https://semver.org/#semantic-versioning-specification-semver">Semantic Versioning
@@ -2264,7 +2285,7 @@ sure that ChatGPT isn't messing with you and you have the needed data.</p>
 </li>
 <li>
 <p>Regenerate openapi.json and swagger.json by running
-   <code>./scripts/generate-open-api-spec</code>.</p>
+   <code>../scripts/generate-open-api-spec</code> from within the <code>aries_cloudagent</code> folder.</p>
 </li>
 <li>
 <p>Double check all of these steps above, and then submit a PR from the branch.
