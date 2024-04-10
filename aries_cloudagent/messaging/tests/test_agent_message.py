@@ -210,12 +210,12 @@ class TestAgentMessageSchema(IsolatedAsyncioTestCase):
     def test_extract_decorators_x(self):
         for serial in [
             {
-                "@type": "signed-agent-message",
+                "@type": "doc/proto/1.0/signed-agent-message",
                 "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
                 "value": "Test value",
             },
             {
-                "@type": "signed-agent-message",
+                "@type": "doc/proto/1.0/signed-agent-message",
                 "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
                 "value": "Test value",
                 "value~sig": {
@@ -231,7 +231,7 @@ class TestAgentMessageSchema(IsolatedAsyncioTestCase):
                 },
             },
             {
-                "@type": "signed-agent-message",
+                "@type": "doc/proto/1.0/signed-agent-message",
                 "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
                 "superfluous~sig": {
                     "@type": DIDCommPrefix.qualify_current(
@@ -251,7 +251,7 @@ class TestAgentMessageSchema(IsolatedAsyncioTestCase):
 
     def test_serde(self):
         serial = {
-            "@type": "signed-agent-message",
+            "@type": "doc/proto/1.0/signed-agent-message",
             "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
             "value~sig": {
                 "@type": DIDCommPrefix.qualify_current(

@@ -613,6 +613,8 @@ class AriesAgent(DemoAgent):
         reuse_connections: bool = False,
         multi_use_invitations: bool = False,
         public_did_connections: bool = False,
+        emit_did_peer_2: bool = False,
+        emit_did_peer_4: bool = False,
         wait: bool = False,
     ):
         self._connection_ready = asyncio.Future()
@@ -627,6 +629,8 @@ class AriesAgent(DemoAgent):
                 reuse_connections=reuse_connections,
                 multi_use_invitations=multi_use_invitations,
                 public_did_connections=public_did_connections,
+                emit_did_peer_2=emit_did_peer_2,
+                emit_did_peer_4=emit_did_peer_4,
             )
 
         if display_qr:
@@ -728,6 +732,8 @@ class AgentContainer:
         reuse_connections: bool = False,
         multi_use_invitations: bool = False,
         public_did_connections: bool = False,
+        emit_did_peer_2: bool = False,
+        emit_did_peer_4: bool = False,
         taa_accept: bool = False,
         anoncreds_legacy_revocation: str = None,
         log_file: str = None,
@@ -769,6 +775,8 @@ class AgentContainer:
         self.reuse_connections = reuse_connections
         self.multi_use_invitations = multi_use_invitations
         self.public_did_connections = public_did_connections
+        self.emit_did_peer_2 = emit_did_peer_2
+        self.emit_did_peer_4 = emit_did_peer_4
         self.exchange_tracing = False
 
         # local agent(s)
@@ -1173,6 +1181,8 @@ class AgentContainer:
             reuse_connections=reuse_connections,
             multi_use_invitations=multi_use_invitations,
             public_did_connections=public_did_connections,
+            emit_did_peer_2=self.emit_did_peer_2,
+            emit_did_peer_4=self.emit_did_peer_4,
             wait=wait,
         )
 
@@ -1432,6 +1442,16 @@ def arg_parser(ident: str = None, port: int = 8020):
             "('debug', 'info', 'warning', 'error', 'critical')"
         ),
     )
+    parser.add_argument(
+        "--emit-did-peer-2",
+        action="store_true",
+        help="Emit did:peer:2 DID in DID exchange",
+    )
+    parser.add_argument(
+        "--emit-did-peer-4",
+        action="store_true",
+        help="Emit did:peer:4 DID in DID exchange",
+    )
     return parser
 
 
@@ -1537,6 +1557,9 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     if "anoncreds_legacy_revocation" in args and args.anoncreds_legacy_revocation:
         anoncreds_legacy_revocation = args.anoncreds_legacy_revocation
 
+    emit_did_peer_2 = "emit_did_peer_2" in args and args.emit_did_peer_2
+    emit_did_peer_4 = "emit_did_peer_4" in args and args.emit_did_peer_4
+
     agent = AgentContainer(
         genesis_txns=genesis,
         genesis_txn_list=multi_ledger_config_path,
@@ -1559,6 +1582,8 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
         reuse_connections=reuse_connections,
         multi_use_invitations=multi_use_invitations,
         public_did_connections=public_did_connections,
+        emit_did_peer_2=emit_did_peer_2,
+        emit_did_peer_4=emit_did_peer_4,
         taa_accept=args.taa_accept,
         anoncreds_legacy_revocation=anoncreds_legacy_revocation,
         log_file=log_file,

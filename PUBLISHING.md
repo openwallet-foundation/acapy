@@ -103,7 +103,7 @@ Once you have the list of PRs:
 
 6. Search across the repository for the previous version number and update it
    everywhere that makes sense. The CHANGELOG.md is a likely exception, and the
-   `pyproject.toml` in the root is **MUST**. You can skip (although it won't
+   `pyproject.toml` in the root **MUST** be updated. You can skip (although it won't
    hurt) to update the files in the `open-api` folder as they will be
    automagically updated by the next step in publishing. The incremented version
    number **MUST** adhere to the [Semantic Versioning
@@ -114,7 +114,7 @@ Once you have the list of PRs:
    to better follow the semver rules.
 
 7. Regenerate openapi.json and swagger.json by running
-   `./scripts/generate-open-api-spec`.
+   `../scripts/generate-open-api-spec` from within the `aries_cloudagent` folder.
 
 8.  Double check all of these steps above, and then submit a PR from the branch.
    Add this new PR to CHANGELOG.md so that all the PRs are included.

@@ -432,7 +432,7 @@ async def test_route_public_did(profile: Profile, route_manager: RouteManager):
 async def test_route_verkey(profile: Profile, route_manager: RouteManager):
     await route_manager.route_verkey(profile, "test-verkey")
     route_manager._route_for_key.assert_called_once_with(
-        profile, "test-verkey", skip_if_exists=True
+        profile, "test-verkey", None, skip_if_exists=True
     )
 
 

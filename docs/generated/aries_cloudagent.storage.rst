@@ -64,3 +64,11 @@ aries\_cloudagent.storage.record module
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.storage.type module
+-------------------------------------
+
+.. automodule:: aries_cloudagent.storage.type
+   :members:
+   :undoc-members:
+   :show-inheritance:
