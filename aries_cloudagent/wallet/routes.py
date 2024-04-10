@@ -1268,14 +1268,7 @@ class UpgradeResultSchema(OpenAPISchema):
     tags=["anoncreds - wallet upgrade"],
     summary="""
         Upgrade the wallet from askar to anoncreds - Be very careful with this! You 
-        cannot go back! Trigger by entering the wallet name as a parameter. When the 
-        upgrade is in progress the api will return a 503. For a base wallet 
-        (either a non-multitenant wallet or the admin wallet in multitenant mode) 
-        the agent will shut down after the upgrade. It is up to you to restart it with a 
-        wallet-type in the configuration file of askar-anoncreds. For a subwallet 
-        in multitenant mode the agent will continue to run after the upgrade. 
-        All agents that have upgraded will need to use the new anoncreds endpoints. 
-        They will receive a 403 on the old enpoints.
+        cannot go back! See migration guide for more information.
     """,
 )
 @querystring_schema(UpgradeVerificationSchema())
