@@ -4,7 +4,6 @@ import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
-
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
@@ -56,6 +55,7 @@ def _get_filtered_settings_dict(wallet_settings: dict):
     filter_param_list = list(ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP.values())
     filter_param_list.append("endorser.author")
     filter_param_list.append("endorser.endorser")
+    filter_param_list.append("wallet.type")
     settings_dict = {}
     for param in filter_param_list:
         if param in wallet_settings:
