@@ -302,6 +302,13 @@ class InvitationCreator:
         no connection is created, representing a connectionless exchange.
         """
         assert self.handshake_protocols
+
+        if len(self.handshake_protocols) == 1:
+            connection_protocol = DIDCommPrefix.unqualify(self.handshake_protocols[0])
+        else:
+            # We don't know which protocol will be used until the request is received
+            connection_protocol = None
+
         conn_rec = ConnRecord(
             invitation_key=invitation_key,
             invitation_msg_id=self.msg_id,
@@ -310,6 +317,7 @@ class InvitationCreator:
             state=ConnRecord.State.INVITATION.rfc23,
             accept=self.auto_accept,
             alias=self.alias,
+            connection_protocol=connection_protocol,
         )
 
         async with self.profile.transaction() as session:
