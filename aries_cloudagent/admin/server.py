@@ -211,12 +211,13 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
     """Blocking middleware for upgrades."""
     context: AdminRequestContext = request["context"]
 
+    is_upgrading = []
     async with context.profile.session() as session:
         storage = session.inject(BaseStorage)
-        try:
-            await storage.find_record(RECORD_TYPE_ACAPY_UPGRADING, tag_query={})
-        except StorageNotFoundError:
-            return await handler(request)
+        is_upgrading = await storage.find_all_records(RECORD_TYPE_ACAPY_UPGRADING)
+
+    if not is_upgrading:
+        return await handler(request)
 
     raise web.HTTPServiceUnavailable(reason="Upgrade in progress")
 
