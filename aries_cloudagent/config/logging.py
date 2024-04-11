@@ -242,7 +242,6 @@ class LoggingConfigurator:
             # Setup context filters for multitenant mode
             for handler in logging.root.handlers:
                 if isinstance(handler, TimedRotatingFileMultiProcessHandler):
-                    # file_handler_set = True
                     log_formater = handler.formatter._fmt
                     # Set Json formatter for rotated file handler which cannot be set with
                     # config file.
