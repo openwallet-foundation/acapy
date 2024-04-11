@@ -15,7 +15,6 @@ from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 from ...storage.type import RECORD_TYPE_ACAPY_STORAGE_TYPE, RECORD_TYPE_ACAPY_UPGRADING
 from .. import anoncreds_upgrade
-from ..upgrade_singleton import UpgradeSingleton
 
 
 class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
@@ -128,12 +127,10 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
             await anoncreds_upgrade.retry_converting_records(
                 self.profile, upgrading_record, 0
             )
-            upgrade_singleton = UpgradeSingleton()
             assert mock_convert_records_to_anoncreds.called
             assert mock_convert_records_to_anoncreds.call_count == 3
             _, storage_type_record = next(iter(self.profile.records.items()))
             assert storage_type_record.value == "askar-anoncreds"
-            assert not upgrade_singleton.current_upgrades
 
     async def test_upgrade_wallet_to_anoncreds(self):
         # upgrading record not present
@@ -153,9 +150,6 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
             assert len(storage.profile.records) == 1
             _, storage_type_record = next(iter(self.profile.records.items()))
             assert storage_type_record.value == "askar-anoncreds"
-
-            upgrade_singleton = UpgradeSingleton()
-            assert not upgrade_singleton.current_upgrades
 
         # retry called on exception
         with mock.patch.object(
@@ -339,9 +333,6 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
                 )
                 # Storage type should not be updated
                 assert storage_type_record.value == "askar"
-                # Upgrade singleton should be empty
-                upgrade_singleton = UpgradeSingleton()
-                assert upgrade_singleton.current_upgrades.__len__() == 0
 
                 # Cred_defs fails to upgrade
                 anoncreds_upgrade.upgrade_and_delete_cred_def_records = (
@@ -369,6 +360,3 @@ class TestAnoncredsUpgrade(IsolatedAsyncioTestCase):
                 )
                 # Storage type should not be updated
                 assert storage_type_record.value == "askar"
-                # Upgrade singleton should be empty
-                upgrade_singleton = UpgradeSingleton()
-                assert upgrade_singleton.current_upgrades.__len__() == 0

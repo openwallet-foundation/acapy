@@ -14,9 +14,11 @@ from ...core.event_bus import Event
 from ...core.goal_code_registry import GoalCodeRegistry
 from ...core.in_memory import InMemoryProfile
 from ...core.protocol_registry import ProtocolRegistry
+from ...storage.base import BaseStorage
+from ...storage.record import StorageRecord
+from ...storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
-from ...wallet.upgrade_singleton import UpgradeSingleton
 from .. import server as test_module
 from ..request_context import AdminRequestContext
 from ..server import AdminServer, AdminSetupError
@@ -480,10 +482,8 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         await server.stop()
 
     async def test_upgrade_middleware(self):
-        upgrade_singleton = UpgradeSingleton()
-        self.context = AdminRequestContext.test_context(
-            {}, InMemoryProfile.test_profile()
-        )
+        profile = InMemoryProfile.test_profile()
+        self.context = AdminRequestContext.test_context({}, profile)
         self.request_dict = {
             "context": self.context,
         }
@@ -497,12 +497,19 @@ class TestAdminServer(IsolatedAsyncioTestCase):
 
         await test_module.upgrade_middleware(request, handler)
 
-        upgrade_singleton.set_wallet("test-profile")
-        with self.assertRaises(test_module.web.HTTPServiceUnavailable):
-            await test_module.upgrade_middleware(request, handler)
+        async with profile.session() as session:
+            storage = session.inject(BaseStorage)
+            upgrading_record = StorageRecord(
+                RECORD_TYPE_ACAPY_UPGRADING,
+                "true",
+            )
+            await storage.add_record(upgrading_record)
 
-        upgrade_singleton.remove_wallet("test-profile")
-        await test_module.upgrade_middleware(request, handler)
+            with self.assertRaises(test_module.web.HTTPServiceUnavailable):
+                await test_module.upgrade_middleware(request, handler)
+
+            await storage.delete_record(upgrading_record)
+            await test_module.upgrade_middleware(request, handler)
 
 
 @pytest.fixture

@@ -48,14 +48,11 @@ from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..storage.type import RECORD_TYPE_ACAPY_STORAGE_TYPE, RECORD_TYPE_ACAPY_UPGRADING
-from .upgrade_singleton import UpgradeSingleton
 
 LOGGER = logging.getLogger(__name__)
 
 # Number of times to retry upgrading records
 max_retries = 5
-
-upgrade_singleton = UpgradeSingleton()
 
 
 class SchemaUpgradeObj:
@@ -540,7 +537,6 @@ async def retry_converting_records(
     async def clear_upgrade():
         async with profile.session() as session:
             storage = session.inject(BaseStorage)
-            upgrade_singleton.remove_wallet(profile.name)
             await storage.delete_record(upgrading_record)
 
     try:
@@ -579,12 +575,10 @@ async def upgrade_wallet_to_anoncreds(profile: Profile, is_subwallet=False) -> N
 
         try:
             LOGGER.info("Upgrade in process for wallet: %s", profile.name)
-            upgrade_singleton.set_wallet(profile.name)
             await convert_records_to_anoncreds(profile)
             await set_storage_type_and_update_profile_if_subwallet(
                 profile, is_subwallet
             )
-            upgrade_singleton.remove_wallet(profile.name)
             await storage.delete_record(upgrading_record)
         except Exception as e:
             LOGGER.error(f"Error when upgrading wallet {profile.name} : {e} ")

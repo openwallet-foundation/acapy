@@ -30,14 +30,15 @@ from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..messaging.valid import UUIDFour
 from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
+from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
+from ..storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
-from ..wallet.upgrade_singleton import UpgradeSingleton
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -57,8 +58,6 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::actionmenu::perform-menu-action": "perform-menu-action",
     "acapy::keylist::updated": "keylist",
 }
-
-upgrade_singleton = UpgradeSingleton()
 
 
 class AdminModulesSchema(OpenAPISchema):
@@ -212,10 +211,14 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
     """Blocking middleware for upgrades."""
     context: AdminRequestContext = request["context"]
 
-    if context._profile.name in upgrade_singleton.current_upgrades:
-        raise web.HTTPServiceUnavailable(reason="Upgrade in progress")
+    async with context.profile.session() as session:
+        storage = session.inject(BaseStorage)
+        try:
+            await storage.find_record(RECORD_TYPE_ACAPY_UPGRADING, tag_query={})
+        except StorageNotFoundError:
+            return await handler(request)
 
-    return await handler(request)
+    raise web.HTTPServiceUnavailable(reason="Upgrade in progress")
 
 
 @web.middleware
