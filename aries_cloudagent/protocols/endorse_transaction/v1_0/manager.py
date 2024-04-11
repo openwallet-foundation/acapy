@@ -523,6 +523,14 @@ class TransactionManager:
                 jobs = await connection_record.metadata_get(session, "transaction_jobs")
         except StorageNotFoundError as err:
             raise TransactionManagerError(err.roll_up) from err
+
+        is_auto_endorser = self._profile.settings.get(
+            "endorser.endorser"
+        ) and self._profile.settings.get("endorser.auto_endorse")
+
+        if is_auto_endorser:
+            return transaction
+
         if not jobs:
             raise TransactionManagerError(
                 "The transaction related jobs are not set up in "
