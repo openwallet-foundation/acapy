@@ -757,8 +757,11 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     if not create_transaction_for_endorser:
         return web.json_response({"result": format_did_info(info)})
-
     else:
+        # DID is already posted to ledger
+        if not attrib_def:
+            return web.json_response({"result": format_did_info(info)})
+
         transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
