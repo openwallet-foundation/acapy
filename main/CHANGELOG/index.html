@@ -523,28 +523,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0120rc3" class="md-nav__link">
+  <a href="#0120" class="md-nav__link">
     <span class="md-ellipsis">
-      0.12.0rc3
+      0.12.0
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.12.0rc3">
+    <nav class="md-nav" aria-label="0.12.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#april-8-2024" class="md-nav__link">
+  <a href="#april-11-2024" class="md-nav__link">
     <span class="md-ellipsis">
-      April 8, 2024
+      April 11, 2024
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#0120rc3-breaking-changes" class="md-nav__link">
+  <a href="#0120-breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      0.12.0rc3 Breaking Changes
+      0.12.0 Breaking Changes
     </span>
   </a>
   
@@ -2257,28 +2257,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0120rc3" class="md-nav__link">
+  <a href="#0120" class="md-nav__link">
     <span class="md-ellipsis">
-      0.12.0rc3
+      0.12.0
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.12.0rc3">
+    <nav class="md-nav" aria-label="0.12.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#april-8-2024" class="md-nav__link">
+  <a href="#april-11-2024" class="md-nav__link">
     <span class="md-ellipsis">
-      April 8, 2024
+      April 11, 2024
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#0120rc3-breaking-changes" class="md-nav__link">
+  <a href="#0120-breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
-      0.12.0rc3 Breaking Changes
+      0.12.0 Breaking Changes
     </span>
   </a>
   
@@ -2341,17 +2341,18 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="0120rc3">0.12.0rc3<a class="headerlink" href="#0120rc3" title="Permanent link">&para;</a></h2>
-<h3 id="april-8-2024">April 8, 2024<a class="headerlink" href="#april-8-2024" title="Permanent link">&para;</a></h3>
-<p>Release 0.12.0 is a relatively large release with many new capabilities, feature improvements, upgrades and bug fixes. Importantly, this release completes the ACA-Py implementation of [Aries Interop Profile v20], and enables the elimination of unqualified DIDs. While only deprecated for now, all deployments of ACA-Py to move to using only fully qualified DIDs.</p>
-<p>Much progress has been made on <code>did:peer</code> support in this release, with the handling of inbound <a href="https://identity.foundation/peer-did-method-spec/">DID Peer</a> 1 added, and inbound and outbound support for DID Peer 2 and 4. Much attention was also paid to making sure that the Peer DID and DID Exchange capabilities match those of <a href="https://github.com/openwallet-foundation/credo-ts">Credo-TS</a> (formerly Aries Framework JavaScript). The completion of that work eliminates the remaining places where "unqualified" DIDs are being used, and to enable the "connection reuse" in the Out of Band protocol when using DID Peer 2 and 4 DIDs. See the document <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/main/./features/QualifiedDIDs.md">Qualified DIDs</a> for details about how to control the use of DID Peer 2 or 4 in an ACA-Py deployment, and how to eliminate the use of unqualified DIDs. Support for DID Exchange v1.1 has been added to ACA-Py, with support for DID Exchange v1.0 retained, and we've added support for DID Rotation.</p>
+<h2 id="0120">0.12.0<a class="headerlink" href="#0120" title="Permanent link">&para;</a></h2>
+<h3 id="april-11-2024">April 11, 2024<a class="headerlink" href="#april-11-2024" title="Permanent link">&para;</a></h3>
+<p>Release 0.12.0 is a large release with many new capabilities, feature improvements, upgrades, and bug fixes. Importantly, this release completes the ACA-Py implementation of <a href="https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20">Aries Interop Profile v2.0</a>, and enables the elimination of unqualified DIDs. While only deprecated for now, all deployments of ACA-Py <strong>SHOULD</strong> move to using only fully qualified DIDs as soon as possible.</p>
+<p>Much progress has been made on <code>did:peer</code> support in this release, with the handling of inbound <a href="https://identity.foundation/peer-did-method-spec/">DID Peer</a> 1 added, and inbound and outbound support for DID Peer 2 and 4. Much attention was also paid to making sure that the Peer DID and DID Exchange capabilities match those of <a href="https://github.com/openwallet-foundation/credo-ts">Credo-TS</a> (formerly Aries Framework JavaScript). The completion of that work eliminates the remaining places where "unqualified" DIDs were being used, and to enable the "connection reuse" feature in the Out of Band protocol when using DID Peer 2 and 4 DIDs in invitations. See the document <a href="https://aca-py.org/latest/features/QualifiedDIDs/">Qualified DIDs</a> for details about how to control the use of DID Peer 2 or 4 in an ACA-Py deployment, and how to eliminate the use of unqualified DIDs. Support for DID Exchange v1.1 has been added to ACA-Py, with support for DID Exchange v1.0 retained, and we've added support for DID Rotation.</p>
 <p>Work continues towards supporting ledger agnostic <a href="https://www.hyperledger.org/projects/anoncreds">AnonCreds</a>, and the new <a href="https://github.com/hyperledger/anoncreds-rs">Hyperledger AnonCreds Rust</a> library. Some of that work is in this release, the rest will be in the next release.</p>
 <p>Attention was given in the release to simplifying the handling of JSON-LD <a href="https://www.w3.org/TR/vc-data-integrity/">Data Integrity Verifiable Credentials</a>.</p>
 <p>An important change in this release is the re-organization of the ACA-Py documentation, moving the vast majority of the documents to the folders within the <code>docs</code> folder -- a long overdue change that will allow us to soon publish the documents on <a href="https://aca-py.org">https://aca-py.org</a> directly from the ACA-Py repository, rather than from the separate <a href="https://github.com/hyperledger/aries-acapy-docs">aries-acapy-docs</a> currently being used.</p>
 <p>A big developer improvement is a revamping of the test handling to eliminate ~2500 warnings that were previously generated in the test suite.  Nice job <a href="https://github.com/ff137">@ff137</a>!</p>
-<h3 id="0120rc3-breaking-changes">0.12.0rc3 Breaking Changes<a class="headerlink" href="#0120rc3-breaking-changes" title="Permanent link">&para;</a></h3>
-<p>A deployment of this release that proactively uses DID Peer 2 and 4 will encounter problems interacting with agents deployed using older Aries protocols. Led by the Aries Working Group, the Aries community is encouraging the upgrade of all ecosystem deployments to accept all commonly used qualified DIDs, including DID Peer 2 and 4. See the document <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/main/./features/QualifiedDIDs.md">Qualified DIDs</a> for more details about the transition to using only qualified DIDs.</p>
-<p>New deprecation notices were added to ACA-Py on startup and in the OpenAPI/Swagger interface. Those added are listed below. As well, we anticipate 0.12.0 being the <strong>last ACA-Py release</strong> to include support for the previously deprecated Indy SDK.</p>
+<h3 id="0120-breaking-changes">0.12.0 Breaking Changes<a class="headerlink" href="#0120-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>A deployment of this release that uses DID Peer 2 and 4 invitations may encounter problems interacting with agents deployed using older Aries protocols. Led by the Aries Working Group, the Aries community is encouraging the upgrade of all ecosystem deployments to accept all commonly used qualified DIDs, including DID Peer 2 and 4. See the document <a href="https://aca-py.org/latest/features/QualifiedDIDs/">Qualified DIDs</a> for more details about the transition to using only qualified DIDs. If deployments you interact with are still using unqualified DIDs, please encourage them to upgrade as soon as possible.</p>
+<p>Specifically for those upgrading their ACA-Py instance that create Out of Band invitations with more than one <code>handshake_protocol</code>, the protocol for the connection has been removed. See [Issue #2879] contains the details of this subtle breaking change.</p>
+<p>New deprecation notices were added to ACA-Py on startup and in the OpenAPI/Swagger interface. Those added are listed below. As well, we anticipate 0.12.0 being the <strong>last ACA-Py release to include support for the previously deprecated Indy SDK</strong>.</p>
 <ul>
 <li>RFC 0036 Issue Credential v1</li>
 <li>Migrate to use RFC 0453 Issue Credential v2</li>
@@ -2362,11 +2363,10 @@
 <li>The use of <code>did:sov:...</code> as a Protocol Doc URI</li>
 <li>Migrate to use <code>https://didcomm.org/</code>.</li>
 </ul>
-<!-- Latest: 2872 -->
-
-<h4 id="0120rc3-categorized-list-of-pull-requests">0.12.0rc3 Categorized List of Pull Requests<a class="headerlink" href="#0120rc3-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
+<h4 id="0120-categorized-list-of-pull-requests">0.12.0 Categorized List of Pull Requests<a class="headerlink" href="#0120-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
 <ul>
 <li>DID Handling and Connection Establishment Updates/Fixes</li>
+<li>fix: conn proto in invite webhook if known <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2880">#2880</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
 <li>Emit the OOB done event even for multi-use invites <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2872">#2872</a> <a href="https://github.com/ianco">ianco</a></li>
 <li>refactor: introduce use_did and use_did_method <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2862">#2862</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
 <li>fix(credo-interop): various didexchange and did:peer related fixes  1.0.0 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2748">#2748</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
@@ -2397,7 +2397,8 @@
 <li>Prevent revocable cred def being created without tails server <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2849">#2849</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Anoncreds - support for anoncreds and askar wallets concurrently <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2822">#2822</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Send revocation list instead of rev_list object - Anoncreds <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2821">#2821</a> <a href="https://github.com/jamshale">jamshale</a></li>
-<li>Fix anoncreds non-endorsement revocation <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2814">#2814</a> <a href="https://github.com/jamshale">jamshale</a>  - Get and create anoncreds profile when using anoncreds subwallet <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2803">#2803</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Fix anoncreds non-endorsement revocation <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2814">#2814</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Get and create anoncreds profile when using anoncreds subwallet <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2803">#2803</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Add anoncreds multitenant endorsement integration tests <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2801">#2801</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Anoncreds revoke and publish-revocations endorsement <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2782">#2782</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Upgrade anoncreds to version 0.2.0-dev11 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2763">#2763</a> <a href="https://github.com/jamshale">jamshale</a></li>
@@ -2492,6 +2493,7 @@
 <li>
 <p>Dependencies and Internal Updates</p>
 </li>
+<li>Add wallet.type config to /settings endpoint <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2877">#2877</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>chore(deps): Bump pillow from 10.2.0 to 10.3.0  dependencies python <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2869">#2869</a> <a href="https://github.com/dependabot bot">dependabot bot</a></li>
 <li>Fix run_tests script <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2866">#2866</a> <a href="https://github.com/ianco">ianco</a></li>
 <li>fix: states for discovery record to emit webhook <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2858">#2858</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
@@ -2540,6 +2542,7 @@
 <li>
 <p>Release management pull requests</p>
 </li>
+<li>0.12.0 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2882">#2882</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>0.12.0rc3 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2878">#2878</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>0.12.0rc2 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2825">#2825</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>0.12.0rc1 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2800">#2800</a> <a href="https://github.com/swcurran">swcurran</a></li>

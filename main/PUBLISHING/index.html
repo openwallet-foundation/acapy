@@ -2272,11 +2272,12 @@ sure that ChatGPT isn't messing with you and you have the needed data.</p>
 </li>
 <li>
 <p>Search across the repository for the previous version number and update it
-   everywhere that makes sense. The CHANGELOG.md is a likely exception, and the
-   <code>pyproject.toml</code> in the root <strong>MUST</strong> be updated. You can skip (although it won't
-   hurt) to update the files in the <code>open-api</code> folder as they will be
-   automagically updated by the next step in publishing. The incremented version
-   number <strong>MUST</strong> adhere to the <a href="https://semver.org/#semantic-versioning-specification-semver">Semantic Versioning
+   everywhere that makes sense. The CHANGELOG.md entry for the previous release
+   is a likely exception, and the <code>pyproject.toml</code> in the root <strong>MUST</strong> be
+   updated. You can skip (although it won't hurt) to update the files in the
+   <code>open-api</code> folder as they will be automagically updated by the next step in
+   publishing. The incremented version number <strong>MUST</strong> adhere to the <a href="https://semver.org/#semantic-versioning-specification-semver">Semantic
+   Versioning
    Specification</a>
    based on the changes since the last published release. For Release
    Candidates, the form of the tag is "0.11.0rc2". As of release <code>0.11.0</code> we
