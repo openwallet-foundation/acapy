@@ -102,11 +102,12 @@ Once you have the list of PRs:
    errors should be fixed in the code.
 
 6. Search across the repository for the previous version number and update it
-   everywhere that makes sense. The CHANGELOG.md is a likely exception, and the
-   `pyproject.toml` in the root **MUST** be updated. You can skip (although it won't
-   hurt) to update the files in the `open-api` folder as they will be
-   automagically updated by the next step in publishing. The incremented version
-   number **MUST** adhere to the [Semantic Versioning
+   everywhere that makes sense. The CHANGELOG.md entry for the previous release
+   is a likely exception, and the `pyproject.toml` in the root **MUST** be
+   updated. You can skip (although it won't hurt) to update the files in the
+   `open-api` folder as they will be automagically updated by the next step in
+   publishing. The incremented version number **MUST** adhere to the [Semantic
+   Versioning
    Specification](https://semver.org/#semantic-versioning-specification-semver)
    based on the changes since the last published release. For Release
    Candidates, the form of the tag is "0.11.0rc2". As of release `0.11.0` we
