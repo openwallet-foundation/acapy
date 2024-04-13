@@ -522,9 +522,7 @@ class DIDXManager(BaseConnectionManager):
         )
 
         if recipient_verkey:
-            conn_rec = await self._receive_request_pairwise_did(
-                request, recipient_verkey, alias
-            )
+            conn_rec = await self._receive_request_pairwise_did(request, alias)
         else:
             conn_rec = await self._receive_request_public_did(
                 request, recipient_did, alias, auto_accept_implicit
@@ -539,15 +537,17 @@ class DIDXManager(BaseConnectionManager):
     async def _receive_request_pairwise_did(
         self,
         request: DIDXRequest,
-        recipient_verkey: str,
         alias: Optional[str] = None,
     ) -> ConnRecord:
         """Receive a DID Exchange request against a pairwise (not public) DID."""
+        if not request._thread.pthid:
+            raise DIDXManagerError("DID Exchange request missing parent thread ID")
+
         try:
             async with self.profile.session() as session:
-                conn_rec = await ConnRecord.retrieve_by_invitation_key(
+                conn_rec = await ConnRecord.retrieve_by_invitation_msg_id(
                     session=session,
-                    invitation_key=recipient_verkey,
+                    invitation_msg_id=request._thread.pthid,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
         except StorageNotFoundError:
@@ -555,6 +555,12 @@ class DIDXManager(BaseConnectionManager):
                 "No explicit invitation found for pairwise connection "
                 f"in state {ConnRecord.State.INVITATION.rfc23}: "
                 "a prior connection request may have updated the connection state"
+            )
+
+        if not conn_rec:
+            raise DIDXManagerError(
+                "Pairwise requests must be against explicit invitations that have not "
+                "been previously consumed"
             )
 
         if conn_rec.is_multiuse_invitation:
