@@ -4,12 +4,14 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from unittest import TestCase
 
+from aries_askar import Store
 import pytest
 
-from ....indy.sdk.wallet_setup import IndyWalletConfig
+from ....askar.store import AskarStoreConfig
+from ....askar.profile import AskarProfile, AskarProfileSession
 from ....messaging.models.base import BaseModelError
 from ....wallet.did_method import SOV
-from ....wallet.indy import IndySdkWallet
+from ....wallet.askar import AskarWallet
 from ....wallet.key_type import ED25519
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 from ..attach_decorator import (
@@ -78,16 +80,19 @@ def seed():
 
 @pytest.fixture()
 async def wallet():
-    wallet = await IndyWalletConfig(
+    store = await AskarStoreConfig(
         {
             "auto_remove": True,
-            "key": await IndySdkWallet.generate_wallet_key(),
+            "key": Store.generate_raw_key(),
             "key_derivation_method": "RAW",
             "name": "test-wallet-sign-verify-attach-deco",
         }
-    ).create_wallet()
-    yield IndySdkWallet(wallet)
-    await wallet.close()
+    ).open_store()
+    profile = AskarProfile(store)
+    async with profile.session() as session:
+        assert isinstance(session, AskarProfileSession)
+        yield AskarWallet(session)
+    await store.close()
 
 
 class TestAttachDecorator(TestCase):
