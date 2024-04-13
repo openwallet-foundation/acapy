@@ -165,7 +165,6 @@ def pytest_sessionstart(session):
         {
             "anoncreds": stub_anoncreds(),
             "askar": stub_askar(),
-            "indy": stub_indy(),
             "indy_credx": stub_indy_credx(),
             "indy_vdr": stub_indy_vdr(),
             "ursa_bbs_signatures": stub_ursa_bbs_signatures(),
