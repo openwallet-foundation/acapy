@@ -543,18 +543,11 @@ class DIDXManager(BaseConnectionManager):
         if not request._thread.pthid:
             raise DIDXManagerError("DID Exchange request missing parent thread ID")
 
-        try:
-            async with self.profile.session() as session:
-                conn_rec = await ConnRecord.retrieve_by_invitation_msg_id(
-                    session=session,
-                    invitation_msg_id=request._thread.pthid,
-                    their_role=ConnRecord.Role.REQUESTER.rfc23,
-                )
-        except StorageNotFoundError:
-            raise DIDXManagerError(
-                "No explicit invitation found for pairwise connection "
-                f"in state {ConnRecord.State.INVITATION.rfc23}: "
-                "a prior connection request may have updated the connection state"
+        async with self.profile.session() as session:
+            conn_rec = await ConnRecord.retrieve_by_invitation_msg_id(
+                session=session,
+                invitation_msg_id=request._thread.pthid,
+                their_role=ConnRecord.Role.REQUESTER.rfc23,
             )
 
         if not conn_rec:
