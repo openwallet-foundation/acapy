@@ -350,7 +350,6 @@ class TestIndyPresPredSpec(TestCase):
         assert pred_spec_a != pred_spec_b
 
 
-@pytest.mark.indy
 class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
     """Presentation preview tests"""
 
@@ -503,7 +502,6 @@ class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
         assert not attr_spec.satisfies(pred_spec)
 
 
-@pytest.mark.indy
 class TestIndyPresPreview(TestCase):
     """Presentation preview tests"""
 

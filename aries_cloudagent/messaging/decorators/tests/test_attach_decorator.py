@@ -427,7 +427,6 @@ class TestAttachDecorator(TestCase):
         assert "key_one" not in data
 
 
-@pytest.mark.indy
 class TestAttachDecoratorSignature:
     @pytest.mark.asyncio
     async def test_did_raw_key(self, wallet, seed):
