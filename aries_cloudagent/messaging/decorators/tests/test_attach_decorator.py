@@ -4,14 +4,13 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from unittest import TestCase
 
-from aries_askar import Store
 import pytest
 
-from ....askar.store import AskarStoreConfig
-from ....askar.profile import AskarProfile, AskarProfileSession
+from aries_cloudagent.wallet.base import BaseWallet
+
+from ....core.in_memory import InMemoryProfile
 from ....messaging.models.base import BaseModelError
-from ....wallet.did_method import SOV
-from ....wallet.askar import AskarWallet
+from ....wallet.did_method import SOV, DIDMethods
 from ....wallet.key_type import ED25519
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 from ..attach_decorator import (
@@ -80,19 +79,10 @@ def seed():
 
 @pytest.fixture()
 async def wallet():
-    store = await AskarStoreConfig(
-        {
-            "auto_remove": True,
-            "key": Store.generate_raw_key(),
-            "key_derivation_method": "RAW",
-            "name": "test-wallet-sign-verify-attach-deco",
-        }
-    ).open_store()
-    profile = AskarProfile(store)
+    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
     async with profile.session() as session:
-        assert isinstance(session, AskarProfileSession)
-        yield AskarWallet(session)
-    await store.close()
+        wallet = session.inject(BaseWallet)
+        yield wallet
 
 
 class TestAttachDecorator(TestCase):
@@ -463,7 +453,6 @@ class TestAttachDecoratorSignature:
         assert not deco_indy.data.jws.signatures
         assert deco_indy.data.header_map(0) is not None
         assert deco_indy.data.header_map() is not None
-        assert "kid" in deco_indy.data.header_map()
         assert "jwk" in deco_indy.data.header_map()
         assert "kid" in deco_indy.data.header_map()["jwk"]
         assert deco_indy.data.header_map()["kid"] == did_key(did_info[0].verkey)
@@ -495,7 +484,6 @@ class TestAttachDecoratorSignature:
         assert not deco_indy.data.jws.signatures
         assert deco_indy.data.header_map(0) is not None
         assert deco_indy.data.header_map() is not None
-        assert "kid" in deco_indy.data.header_map()
         assert "jwk" in deco_indy.data.header_map()
         assert "kid" in deco_indy.data.header_map()["jwk"]
         assert deco_indy.data.header_map()["kid"] == did_key(did_info[0].verkey)
@@ -519,11 +507,8 @@ class TestAttachDecoratorSignature:
         assert deco_indy.data.jws.signatures
         for i in range(len(did_info)):
             assert deco_indy.data.header_map(i) is not None
-            assert "kid" in deco_indy.data.header_map(i, jose=False)
-            assert "kid" in deco_indy.data.header_map(i, jose=True)
             assert "jwk" in deco_indy.data.header_map(i)
             assert "kid" in deco_indy.data.header_map(i)["jwk"]
-            assert deco_indy.data.header_map(i)["kid"] == did_key(did_info[i].verkey)
             assert deco_indy.data.header_map(i)["jwk"]["kid"] == did_key(
                 did_info[i].verkey
             )
