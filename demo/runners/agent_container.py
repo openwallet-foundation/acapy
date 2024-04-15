@@ -1540,8 +1540,8 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     )
 
     reuse_connections = "reuse_connections" in args and args.reuse_connections
-    if reuse_connections and aip != 20:
-        raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
+    # if reuse_connections and aip != 20:
+    #     raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
     multi_use_invitations = (
         "multi_use_invitations" in args and args.multi_use_invitations
     )

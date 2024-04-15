@@ -1489,7 +1489,22 @@ class DemoAgent:
                 params=invi_params,
             )
         else:
-            if self.mediation:
+            if reuse_connections:
+                # use oob for connection reuse
+                invi_params = {
+                    "auto_accept": json.dumps(auto_accept),
+                    "create_unique_did": json.dumps(False),
+                }
+                payload = {
+                    "handshake_protocols": ["https://didcomm.org/connections/1.0"],
+                    "use_public_did": public_did_connections,
+                }
+                invi_rec = await self.admin_POST(
+                    '/out-of-band/create-invitation',
+                    payload,
+                    params=invi_params,
+                )
+            elif self.mediation:
                 invi_params = {
                     "auto_accept": json.dumps(auto_accept),
                 }
