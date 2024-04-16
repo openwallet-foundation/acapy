@@ -8161,6 +8161,22 @@
     "HolderModuleResponse" : {
       "type" : "object"
     },
+    "IndyAttrValue" : {
+      "type" : "object",
+      "required" : [ "encoded", "raw" ],
+      "properties" : {
+        "encoded" : {
+          "type" : "string",
+          "example" : "-1",
+          "description" : "Attribute encoded value",
+          "pattern" : "^-?[0-9]*$"
+        },
+        "raw" : {
+          "type" : "string",
+          "description" : "Attribute raw value"
+        }
+      }
+    },
     "IndyCredAbstract" : {
       "type" : "object",
       "required" : [ "cred_def_id", "key_correctness_proof", "nonce", "schema_id" ],
@@ -8327,7 +8343,13 @@
         "values" : {
           "type" : "object",
           "description" : "Credential attributes",
-          "properties" : { }
+          "additionalProperties" : {
+            "type" : "object",
+            "description" : "Attribute value",
+            "allOf" : [ {
+              "$ref" : "#/definitions/IndyAttrValue"
+            } ]
+          }
         },
         "witness" : {
           "type" : "object",

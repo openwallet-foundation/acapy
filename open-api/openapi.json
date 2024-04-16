@@ -9484,6 +9484,22 @@
       "HolderModuleResponse" : {
         "type" : "object"
       },
+      "IndyAttrValue" : {
+        "properties" : {
+          "encoded" : {
+            "description" : "Attribute encoded value",
+            "example" : "-1",
+            "pattern" : "^-?[0-9]*$",
+            "type" : "string"
+          },
+          "raw" : {
+            "description" : "Attribute raw value",
+            "type" : "string"
+          }
+        },
+        "required" : [ "encoded", "raw" ],
+        "type" : "object"
+      },
       "IndyCredAbstract" : {
         "properties" : {
           "cred_def_id" : {
@@ -9646,8 +9662,10 @@
             "type" : "object"
           },
           "values" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/IndyCredential_values_value"
+            },
             "description" : "Credential attributes",
-            "properties" : { },
             "type" : "object"
           },
           "witness" : {
@@ -15929,6 +15947,13 @@
           "$ref" : "#/components/schemas/IndyNonRevocationInterval"
         } ],
         "description" : "Non-revocation interval from presentation request",
+        "type" : "object"
+      },
+      "IndyCredential_values_value" : {
+        "allOf" : [ {
+          "$ref" : "#/definitions/IndyAttrValue"
+        } ],
+        "description" : "Attribute value",
         "type" : "object"
       },
       "IndyPrimaryProof_eq_proof" : {
