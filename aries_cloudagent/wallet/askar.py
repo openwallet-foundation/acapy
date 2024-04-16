@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union, cast
 
 from aries_askar import (
     AskarError,
@@ -87,6 +87,7 @@ class AskarWallet(BaseWallet):
         key_type: KeyType,
         seed: Optional[str] = None,
         metadata: Optional[dict] = None,
+        kid: Optional[str] = None,
     ) -> KeyInfo:
         """Create a new public/private keypair.
 
@@ -104,11 +105,20 @@ class AskarWallet(BaseWallet):
         """
         if metadata is None:
             metadata = {}
+
+        if kid:
+            tags = {"kid": kid}
+        else:
+            tags = None
+
         try:
             keypair = _create_keypair(key_type, seed)
             verkey = bytes_to_b58(keypair.get_public_bytes())
             await self._session.handle.insert_key(
-                verkey, keypair, metadata=json.dumps(metadata)
+                verkey,
+                keypair,
+                metadata=json.dumps(metadata),
+                tags=tags,
             )
         except AskarError as err:
             if err.code == AskarErrorCode.DUPLICATE:
@@ -116,6 +126,61 @@ class AskarWallet(BaseWallet):
                     "Verification key already present in wallet"
                 ) from None
             raise WalletError("Error creating signing key") from err
+
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type)
+
+    async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
+        """Assign a KID to a key.
+
+        This is separate from the create_key method because some DIDs are only
+        known after keys are created.
+
+        Args:
+            verkey: The verification key of the keypair
+            kid: The kid to assign to the keypair
+
+        Returns:
+            A `KeyInfo` representing the keypair
+
+        """
+        key_entry = await self._session.handle.fetch_key(name=verkey, for_update=True)
+        if not key_entry:
+            raise WalletNotFoundError(f"No key entry found for verkey {verkey}")
+
+        key = cast(Key, key_entry.key)
+        metadata = cast(dict, key_entry.metadata)
+        key_types = self.session.inject(KeyTypes)
+        key_type = key_types.from_key_type(key.algorithm.value)
+        if not key_type:
+            raise WalletError(f"Unknown key type {key.algorithm.value}")
+
+        await self._session.handle.update_key(name=verkey, tags={"kid": kid})
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type)
+
+    async def get_key_by_kid(self, kid: str) -> KeyInfo:
+        """Fetch a key by looking up its kid.
+
+        Args:
+            kid: the key identifier
+
+        Returns:
+            The key identified by kid
+
+        """
+        key_entries = await self._session.handle.fetch_all_keys(
+            tag_filter={"kid": kid}, limit=2
+        )
+        if len(key_entries) > 1:
+            raise WalletDuplicateError(f"More than one key found by kid {kid}")
+
+        entry = key_entries[0]
+        key = cast(Key, entry.key)
+        verkey = bytes_to_b58(key.get_public_bytes())
+        metadata = cast(dict, entry.metadata)
+        key_types = self.session.inject(KeyTypes)
+        key_type = key_types.from_key_type(key.algorithm.value)
+        if not key_type:
+            raise WalletError(f"Unknown key type {key.algorithm.value}")
 
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type)
 

@@ -2,10 +2,9 @@
 
 import json
 import logging
-from typing import Coroutine, List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union, cast
 
-from aries_askar import Key, KeyAlg
-import nacl.bindings
+from aries_askar import Key
 
 from aries_cloudagent.askar.profile import AskarProfileSession
 
@@ -17,7 +16,7 @@ from ..messaging.util import time_now
 from ..utils.task_queue import TaskQueue
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
-from ..wallet.util import b64_to_str, bytes_to_b58
+from ..wallet.util import b64_to_str
 
 from .error import WireFormatParseError, WireFormatEncodeError, RecipientKeysError
 from .inbound.receipt import MessageReceipt
@@ -26,13 +25,11 @@ from didcomm_messaging import DIDCommMessaging
 from didcomm_messaging.resolver import PrefixResolver, DIDResolver
 from didcomm_messaging.resolver.peer import Peer2, Peer4
 from didcomm_messaging.crypto.backend.basic import (
-    InMemorySecretsManager,
     SecretsManager,
 )
 from didcomm_messaging.crypto.backend.askar import AskarCryptoService, AskarSecretKey
 from didcomm_messaging.packaging import PackagingService
 from didcomm_messaging.routing import RoutingService
-from aries_cloudagent.utils.multiformats import multibase, multicodec
 
 
 LOGGER = logging.getLogger(__name__)
@@ -244,28 +241,18 @@ class AskarSecretsManager(SecretsManager[AskarSecretKey]):
         self.session = session
 
     async def get_secret_by_kid(self, kid: str) -> Optional[AskarSecretKey]:
+        """Retrieve secret by kid."""
         LOGGER.debug("GETTING SECRET BY KID: %s", kid)
-        vm = await self.resolver.resolve_and_dereference_verification_method(kid)
-        multi = vm.public_key_multibase
-        decoded = multibase.decode(multi)
-        _, unwrapped = multicodec.unwrap(decoded)
+        key_entries = await self.session.handle.fetch_all_keys(
+            tag_filter={"kid": kid}, limit=2
+        )
+        if len(key_entries) > 1:
+            raise RecipientKeysError(f"More than one key found with kid {kid}")
 
-        my_ek = nacl.bindings.crypto_sig(unwrapped)
-
-        verkey = bytes_to_b58(my_ek)
-
-        LOGGER.debug("GOT VERKEY: %s", verkey)
-
-        store = self.session.handle
-
-        key_entry = await store.fetch_key(verkey)
-
-        if key_entry:
-            key: Key = key_entry.key
-
-            my_vk = key.convert_key(KeyAlg.X25519)
-
-            return AskarSecretKey(key=my_vk, kid=kid)
+        entry = key_entries[0]
+        if entry:
+            key = cast(Key, entry.key)
+            return AskarSecretKey(key=key, kid=kid)
 
         LOGGER.debug("RETURNING NONE")
         return None

@@ -62,6 +62,7 @@ class InMemoryWallet(BaseWallet):
         key_type: KeyType,
         seed: Optional[str] = None,
         metadata: Optional[dict] = None,
+        kid: Optional[str] = None,
     ) -> KeyInfo:
         """Create a new public/private keypair.
 
@@ -88,12 +89,58 @@ class InMemoryWallet(BaseWallet):
             "verkey": verkey_enc,
             "metadata": metadata.copy() if metadata else {},
             "key_type": key_type,
+            "kid": kid,
         }
         return KeyInfo(
             verkey=verkey_enc,
             metadata=self.profile.keys[verkey_enc]["metadata"].copy(),
             key_type=key_type,
         )
+
+    async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
+        """Assign a KID to a key.
+
+        This is separate from the create_key method because some DIDs are only
+        known after keys are created.
+
+        Args:
+            verkey: The verification key of the keypair
+            kid: The kid to assign to the keypair
+
+        Returns:
+            A `KeyInfo` representing the keypair
+
+        """
+        if verkey not in self.profile.keys:
+            raise WalletNotFoundError("Key not found: {}".format(verkey))
+
+        key = self.profile.keys[verkey]
+        key["kid"] = kid
+        return KeyInfo(
+            verkey=key["verkey"],
+            metadata=key["metadata"].copy(),
+            key_type=key["key_type"],
+        )
+
+    async def get_key_by_kid(self, kid: str) -> KeyInfo:
+        """Fetch a key by looking up its kid.
+
+        Args:
+            kid: the key identifier
+
+        Returns:
+            The key identified by kid
+
+        """
+        for key in self.profile.keys.values():
+            if (item_kid := key.get("kid")) and kid == item_kid:
+                return KeyInfo(
+                    verkey=key["verkey"],
+                    metadata=key["metadata"].copy(),
+                    key_type=key["key_type"],
+                )
+
+        raise WalletNotFoundError(f"Key not found with kid {kid}")
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:
         """Fetch info for a signing keypair.

@@ -10,7 +10,6 @@ from typing import Dict, List, Optional, Sequence, Text, Tuple, Union
 import pydid
 from base58 import b58decode
 from did_peer_2 import KeySpec, generate
-from aries_askar import Key, KeyAlg
 from did_peer_4 import encode, long_to_short
 from did_peer_4.input_doc import KeySpec as KeySpec_DP4
 from did_peer_4.input_doc import input_doc_from_keys_and_services
@@ -56,7 +55,7 @@ from ..wallet.crypto import create_keypair, seed_to_did
 from ..wallet.did_info import INVITATION_REUSE_KEY, DIDInfo, KeyInfo
 from ..wallet.did_method import PEER2, PEER4, SOV, DIDMethod
 from ..wallet.error import WalletNotFoundError
-from ..wallet.key_type import ED25519
+from ..wallet.key_type import ED25519, X25519
 from ..wallet.util import b64_to_bytes, bytes_to_b58
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
@@ -238,21 +237,12 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             key = await wallet.create_key(ED25519)
-            verkey = key.verkey
-
-            my_xk = Key.from_public_bytes(
-                KeyAlg.ED25519, b58decode(verkey)
-            ).convert_key(KeyAlg.X25519)
+            xk = await wallet.create_key(X25519)
 
             did = generate(
                 [
                     KeySpec.verification(self._key_info_to_multikey(key)),
-                    KeySpec.key_agreement(
-                        multibase.encode(
-                            multicodec.wrap("x25519-pub", my_xk.get_public_bytes()),
-                            "base58btc",
-                        )
-                    ),
+                    KeySpec.key_agreement(self._key_info_to_multikey(xk)),
                 ],
                 services,
             )
@@ -266,6 +256,8 @@ class BaseConnectionManager:
                 key_type=ED25519,
             )
             await wallet.store_did(did_info)
+            await wallet.assign_kid_to_key(key.verkey, f"{did}#key-1")
+            await wallet.assign_kid_to_key(xk.verkey, f"{did}#key-2")
 
         return did_info
 
