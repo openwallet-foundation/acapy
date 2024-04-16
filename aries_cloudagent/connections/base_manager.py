@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Sequence, Text, Tuple, Union
 import pydid
 from base58 import b58decode
 from did_peer_2 import KeySpec, generate
+from aries_askar import Key, KeyAlg
 from did_peer_4 import encode, long_to_short
 from did_peer_4.input_doc import KeySpec as KeySpec_DP4
 from did_peer_4.input_doc import input_doc_from_keys_and_services
@@ -222,13 +223,38 @@ class BaseConnectionManager:
                     "serviceEndpoint": endpoint,
                 }
             )
+            services.append(
+                {
+                    "id": f"#service-{index}",
+                    "type": "DIDCommMessaging",
+                    "serviceEndpoint": {
+                        "uri": endpoint,
+                        "accept": ["didcomm/v2"],
+                        "routingKeys": routing_keys,
+                    },
+                }
+            )
 
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
             key = await wallet.create_key(ED25519)
+            verkey = key.verkey
+
+            my_xk = Key.from_public_bytes(
+                KeyAlg.ED25519, b58decode(verkey)
+            ).convert_key(KeyAlg.X25519)
 
             did = generate(
-                [KeySpec.verification(self._key_info_to_multikey(key))], services
+                [
+                    KeySpec.verification(self._key_info_to_multikey(key)),
+                    KeySpec.key_agreement(
+                        multibase.encode(
+                            multicodec.wrap("x25519-pub", my_xk.get_public_bytes()),
+                            "base58btc",
+                        )
+                    ),
+                ],
+                services,
             )
 
             did_metadata = metadata if metadata else {}
