@@ -258,7 +258,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     state = fields.Str(
         required=False,
         validate=validate.OneOf(
-            {label for state in ConnRecord.State for label in state.value}
+            sorted({label for state in ConnRecord.State for label in state.value})
         ),
         metadata={"description": "Connection state"},
     )
