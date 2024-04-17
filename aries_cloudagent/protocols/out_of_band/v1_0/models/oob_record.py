@@ -113,6 +113,11 @@ class OobRecord(BaseExchangeRecord):
         """Accessor; get deserialized view."""
         return None if self._their_service is None else self._their_service.de
 
+    @their_service.setter
+    def their_service(self, value: Union[ServiceDecorator, Mapping[str, Any]]):
+        """Setter; store de/serialized vies."""
+        self._their_service = ServiceDecorator.serde(value)
+
     @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this invitation."""
