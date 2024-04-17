@@ -779,8 +779,8 @@ class CredentialType(Validator):
 class PresentationType(Validator):
     """Presentation Type."""
 
-    PRESENTATIONL_TYPE = "VerifiablePresentation"
-    EXAMPLE = [PRESENTATIONL_TYPE]
+    PRESENTATION_TYPE = "VerifiablePresentation"
+    EXAMPLE = [PRESENTATION_TYPE]
 
     def __init__(self) -> None:
         """Initialize the instance."""
@@ -789,9 +789,9 @@ class PresentationType(Validator):
     def __call__(self, value):
         """Validate input value."""
         length = len(value)
-        if length < 1 or PresentationType.PRESENTATIONL_TYPE not in value:
+        if length < 1 or PresentationType.PRESENTATION_TYPE not in value:
             raise ValidationError(
-                f"type must include {PresentationType.PRESENTATIONL_TYPE}"
+                f"type must include {PresentationType.PRESENTATION_TYPE}"
             )
 
         return value

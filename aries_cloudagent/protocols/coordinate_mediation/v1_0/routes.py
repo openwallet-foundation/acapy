@@ -95,7 +95,7 @@ class MediationIdMatchInfoSchema(OpenAPISchema):
 
 
 class GetKeylistQuerySchema(OpenAPISchema):
-    """Get keylist query string paramaters."""
+    """Get keylist query string parameters."""
 
     conn_id = CONNECTION_ID_SCHEMA
     role = fields.Str(

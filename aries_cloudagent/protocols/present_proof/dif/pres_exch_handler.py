@@ -1157,7 +1157,7 @@ class DIFPresExchHandler:
                 except ValueError:
                     pass
         raise DIFPresExchError(
-            "Invalid type provided for comparision/numeric operation."
+            "Invalid type provided for comparison/numeric operation."
         )
 
     async def merge_nested_results(
@@ -1307,7 +1307,7 @@ class DIFPresExchHandler:
         return result_vp
 
     def check_if_cred_id_derived(self, id: str) -> bool:
-        """Check if credential or credentialSubjet id is derived."""
+        """Check if credential or credentialSubject id is derived."""
         if id.startswith("urn:bnid:_:c14n"):
             return True
         return False
@@ -1319,7 +1319,7 @@ class DIFPresExchHandler:
         """Return applicable credentials and descriptor_map for attachment.
 
         Used for generating the presentation_submission property with the
-        descriptor_map, mantaining the order in which applicable credential
+        descriptor_map, maintaining the order in which applicable credential
         list is returned.
 
         Args:
@@ -1381,17 +1381,19 @@ class DIFPresExchHandler:
     async def __verify_desc_map_list(
         self, descriptor_map_list, pres, input_descriptors
     ):
-        inp_desc_id_contraint_map = {}
+        inp_desc_id_constraint_map = {}
         inp_desc_id_schema_one_of_filter = set()
         inp_desc_id_schemas_map = {}
         for input_descriptor in input_descriptors:
-            inp_desc_id_contraint_map[input_descriptor.id] = input_descriptor.constraint
+            inp_desc_id_constraint_map[input_descriptor.id] = (
+                input_descriptor.constraint
+            )
             inp_desc_id_schemas_map[input_descriptor.id] = input_descriptor.schemas
             if input_descriptor.schemas.oneof_filter:
                 inp_desc_id_schema_one_of_filter.add(input_descriptor.id)
         for desc_map_item in descriptor_map_list:
             desc_map_item_id = desc_map_item.get("id")
-            constraint = inp_desc_id_contraint_map.get(desc_map_item_id)
+            constraint = inp_desc_id_constraint_map.get(desc_map_item_id)
             schema_filter = inp_desc_id_schemas_map.get(desc_map_item_id)
             desc_map_item_path = desc_map_item.get("path")
             jsonpath = parse(desc_map_item_path)

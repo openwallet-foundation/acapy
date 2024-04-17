@@ -953,7 +953,7 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        Detailes of revoked credentials from ledger
+        Details of revoked credentials from ledger
 
     """
     context: AdminRequestContext = request["context"]
@@ -1736,7 +1736,7 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
 
 
 class TailsDeleteResponseSchema(OpenAPISchema):
-    """Return schema for tails failes deletion."""
+    """Return schema for tails deletion."""
 
     message = fields.Str()
 

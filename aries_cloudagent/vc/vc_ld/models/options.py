@@ -42,7 +42,7 @@ class LDProofVCOptions(BaseModel):
         self.credential_status = credential_status
 
     def __eq__(self, o: object) -> bool:
-        """Check equalness."""
+        """Check equality."""
         if isinstance(o, LDProofVCOptions):
             return (
                 self.proof_type == o.proof_type

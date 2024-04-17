@@ -8607,6 +8607,7 @@
             "type" : "string"
           },
           "id" : {
+            "description" : "The ID of the credential",
             "example" : "http://example.edu/credentials/1872",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
@@ -11826,7 +11827,7 @@
             "type" : "object"
           },
           "multi_use" : {
-            "description" : "Allow for multiple uses of the oobinvitation",
+            "description" : "Allow for multiple uses of the oob invitation",
             "example" : true,
             "type" : "boolean"
           },
@@ -11922,6 +11923,7 @@
             "type" : "object"
           },
           "id" : {
+            "description" : "The ID of the presentation",
             "example" : "http://example.edu/presentations/1872",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
@@ -15666,6 +15668,7 @@
             "type" : "string"
           },
           "formats" : {
+            "description" : "Acceptable attachment formats",
             "items" : {
               "$ref" : "#/components/schemas/V20PresFormat"
             },
@@ -15750,6 +15753,7 @@
             "type" : "string"
           },
           "formats" : {
+            "description" : "Acceptable attachment formats",
             "items" : {
               "$ref" : "#/components/schemas/V20PresFormat"
             },
@@ -15979,6 +15983,7 @@
             "type" : "string"
           },
           "id" : {
+            "description" : "The ID of the credential",
             "example" : "http://example.edu/credentials/1872",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
@@ -16036,6 +16041,7 @@
             "type" : "object"
           },
           "id" : {
+            "description" : "The ID of the presentation",
             "example" : "http://example.edu/presentations/1872",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
