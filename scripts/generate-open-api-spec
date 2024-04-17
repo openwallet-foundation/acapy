@@ -6,7 +6,7 @@
 #
 ##########################################################################################
 
-SWAGGER_GEN_CONTAINER="docker.io/swaggerapi/swagger-codegen-cli:2.4.32"
+SWAGGER_GEN_CONTAINER="docker.io/swaggerapi/swagger-codegen-cli:2.4.39"
 OPENAPI_GEN_CONTAINER="docker.io/openapitools/openapi-generator-cli:v6.6.0"
 
 # Ensure the script is running from the directory containing this script
