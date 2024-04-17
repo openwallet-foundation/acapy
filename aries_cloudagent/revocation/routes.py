@@ -1316,7 +1316,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
                     transaction_request,
                 ) = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:
@@ -1436,7 +1436,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
                     transaction_request,
                 ) = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:
@@ -1596,7 +1596,7 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
                         revo_transaction_request,
                     ) = await transaction_manager.create_request(
                         transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
+                        # TODO see if we need to parametrize these params
                         # expires_time=expires_time,
                     )
                 except (StorageError, TransactionManagerError) as err:
@@ -1677,7 +1677,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
                     revo_transaction_request,
                 ) = await transaction_manager.create_request(
                     transaction=revo_transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:

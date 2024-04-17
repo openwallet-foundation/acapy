@@ -200,7 +200,7 @@ class CreateWalletRequestSchema(OpenAPISchema):
     label = fields.Str(
         metadata={
             "description": (
-                "Label for this wallet. This label is publicized        (self-attested)"
+                "Label for this wallet. This label is publicized (self-attested)"
                 " to other agents as part of forming a connection."
             ),
             "example": "Alice",
@@ -210,7 +210,7 @@ class CreateWalletRequestSchema(OpenAPISchema):
     image_url = fields.Str(
         metadata={
             "description": (
-                "Image url for this wallet. This image url is publicized       "
+                "Image url for this wallet. This image url is publicized"
                 " (self-attested) to other agents as part of forming a connection."
             ),
             "example": "https://aries.ca/images/sample.png",
@@ -276,7 +276,7 @@ class UpdateWalletRequestSchema(OpenAPISchema):
     label = fields.Str(
         metadata={
             "description": (
-                "Label for this wallet. This label is publicized        (self-attested)"
+                "Label for this wallet. This label is publicized (self-attested)"
                 " to other agents as part of forming a connection."
             ),
             "example": "Alice",
@@ -285,7 +285,7 @@ class UpdateWalletRequestSchema(OpenAPISchema):
     image_url = fields.Str(
         metadata={
             "description": (
-                "Image url for this wallet. This image url is publicized       "
+                "Image url for this wallet. This image url is publicized"
                 " (self-attested) to other agents as part of forming a connection."
             ),
             "example": "https://aries.ca/images/sample.png",
@@ -310,7 +310,7 @@ class RemoveWalletRequestSchema(OpenAPISchema):
     wallet_key = fields.Str(
         metadata={
             "description": (
-                "Master key used for key derivation. Only required for        "
+                "Master key used for key derivation. Only required for"
                 " unmanaged wallets."
             ),
             "example": "MySecretKey123",
@@ -324,8 +324,8 @@ class CreateWalletTokenRequestSchema(OpenAPISchema):
     wallet_key = fields.Str(
         metadata={
             "description": (
-                "Master key used for key derivation. Only required for        "
-                " unamanged wallets."
+                "Master key used for key derivation. Only required for"
+                " unmanaged wallets."
             ),
             "example": "MySecretKey123",
         }

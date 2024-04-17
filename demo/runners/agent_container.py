@@ -1376,9 +1376,9 @@ def arg_parser(ident: str = None, port: int = 8020):
             "Specify the role ('author' or 'endorser') which this agent will "
             "participate. Authors will request transaction endorement from an "
             "Endorser. Endorsers will endorse transactions from Authors, and "
-            "may write their own  transactions to the ledger. If no role "
+            "may write their own transactions to the ledger. If no role "
             "(or 'none') is specified then the endorsement protocol will not "
-            " be used and this agent will write transactions to the ledger "
+            "be used and this agent will write transactions to the ledger "
             "directly."
         ),
     )

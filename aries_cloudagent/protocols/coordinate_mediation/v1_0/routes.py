@@ -106,8 +106,8 @@ class GetKeylistQuerySchema(OpenAPISchema):
         required=False,
         metadata={
             "description": (
-                f"Filer on role, '{MediationRecord.ROLE_CLIENT}' for keys     mediated"
-                f" by other agents, '{MediationRecord.ROLE_SERVER}' for keys    "
+                f"Filer on role, '{MediationRecord.ROLE_CLIENT}' for keys mediated"
+                f" by other agents, '{MediationRecord.ROLE_SERVER}' for keys"
                 " mediated by this agent"
             )
         },
