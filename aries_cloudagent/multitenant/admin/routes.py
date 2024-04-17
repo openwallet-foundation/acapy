@@ -177,10 +177,10 @@ class CreateWalletRequestSchema(OpenAPISchema):
         validate=validate.OneOf(["default", "both", "base"]),
         metadata={
             "description": (
-                "Webhook target dispatch type for this wallet.         default -"
-                " Dispatch only to webhooks associated with this wallet.         base -"
-                " Dispatch only to webhooks associated with the base wallet.        "
-                " both - Dispatch to both webhook targets."
+                "Webhook target dispatch type for this wallet. "
+                "default: Dispatch only to webhooks associated with this wallet. "
+                "base: Dispatch only to webhooks associated with the base wallet. "
+                "both: Dispatch to both webhook targets."
             ),
             "example": "default",
         },
@@ -252,10 +252,10 @@ class UpdateWalletRequestSchema(OpenAPISchema):
         validate=validate.OneOf(["default", "both", "base"]),
         metadata={
             "description": (
-                "Webhook target dispatch type for this wallet.         default -"
-                " Dispatch only to webhooks associated with this wallet.         base -"
-                " Dispatch only to webhooks associated with the base wallet.        "
-                " both - Dispatch to both webhook targets."
+                "Webhook target dispatch type for this wallet. "
+                "default: Dispatch only to webhooks associated with this wallet. "
+                "base: Dispatch only to webhooks associated with the base wallet. "
+                "both: Dispatch to both webhook targets."
             ),
             "example": "default",
         },
