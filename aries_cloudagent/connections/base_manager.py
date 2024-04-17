@@ -89,13 +89,13 @@ class BaseConnectionManager:
             multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
         )
 
-    def long_did_peer_to_short(self, long_did: str) -> DIDInfo:
+    def long_did_peer_to_short(self, long_did: str) -> str:
         """Convert did:peer:4 long format to short format and return."""
 
         short_did_peer = long_to_short(long_did)
         return short_did_peer
 
-    async def long_did_peer_4_to_short(self, long_dp4: str) -> DIDInfo:
+    async def long_did_peer_4_to_short(self, long_dp4: str) -> str:
         """Convert did:peer:4 long format to short format and store in wallet."""
 
         async with self._profile.session() as session:
