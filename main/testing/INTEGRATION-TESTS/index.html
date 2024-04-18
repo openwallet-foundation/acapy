@@ -2401,7 +2401,7 @@ Aries Agent Test Harness tests before you submit your pull requests.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">BDD_EXTRA_AGENT_ARGS</span><span class="o">=</span><span class="s2">&quot;{\&quot;wallet-type\&quot;:\&quot;askar\&quot;}&quot;</span><span class="w"> </span>./run_bdd<span class="w"> </span>-t<span class="w"> </span>@taa_required
 </code></pre></div>
 <p>The agents run on a pre-defined set of ports, however occasionally your local system may already be using one of these ports.  (For example MacOS recently decided to use 8021 for the ftp proxy service.)</p>
-<p>To overriide the default port settings:</p>
+<p>To override the default port settings:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">AGENT_PORT_OVERRIDE</span><span class="o">=</span><span class="m">8030</span><span class="w"> </span>./run_bdd<span class="w"> </span>-t<span class="w"> </span>&lt;some<span class="w"> </span>tags&gt;
 </code></pre></div>
 <p>(Note that since the test run multiple agents you require up to 60 available ports.)</p>
@@ -2451,12 +2451,12 @@ Aries Agent Test Harness tests before you submit your pull requests.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nv">ACAPY_ARG_FILE</span><span class="o">=</span>askar-indy-args.yml<span class="w"> </span>./run_bdd
 </code></pre></div>
 <p>... will run all the tests against an askar wallet (the new shared components, which replace indy-sdk).</p>
-<p>Any aca-py arguement can be included in the yml file, and order-of-precidence applies (see <a href="https://pypi.org/project/ConfigArgParse/">https://pypi.org/project/ConfigArgParse/</a>).</p>
+<p>Any aca-py argument can be included in the yml file, and order-of-precedence applies (see <a href="https://pypi.org/project/ConfigArgParse/">https://pypi.org/project/ConfigArgParse/</a>).</p>
 <h2 id="specifying-environment-parameters-when-running-integration-tests">Specifying Environment Parameters when Running Integration Tests<a class="headerlink" href="#specifying-environment-parameters-when-running-integration-tests" title="Permanent link">&para;</a></h2>
 <p>Aca-py integration tests support the following environment-driven configuration:</p>
 <ul>
 <li><code>LEDGER_URL</code> - specify the ledger url</li>
-<li><code>TAILS_NETWORK</code> - specify the docker network the tailer server is running on</li>
+<li><code>TAILS_NETWORK</code> - specify the docker network the tails server is running on</li>
 <li><code>PUBLIC_TAILS_URL</code> - specify the public url of the tails server</li>
 <li><code>ACAPY_ARG_FILE</code> - specify global aca-py parameters (see above)</li>
 </ul>

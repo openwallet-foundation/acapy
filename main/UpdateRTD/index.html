@@ -2357,7 +2357,7 @@ and verify the installation on your system.</p>
 <p>To rebuild the project and settings from scratch (you'll need to move the generated index file up a level):</p>
 <p><code>rm -rf generated; sphinx-apidoc -f -M -o  ./generated ../aries_cloudagent/ $(find ../aries_cloudagent/ -name '*tests*')</code></p>
 <p>Note that the <code>find</code> command that is used to exclude any of the <code>test</code> python files from the RTD documentation.</p>
-<p>Check the  <code>git status</code> in your repo to see if the generator updates, adds or removes any existing RTD modules.</p>
+<p>Check the <code>git status</code> in your repo to see if the generator updates, adds or removes any existing RTD modules.</p>
 <h3 id="reviewing-the-files-locally">Reviewing the files locally<a class="headerlink" href="#reviewing-the-files-locally" title="Permanent link">&para;</a></h3>
 <p>To auto-generate the module documentation locally run:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>-a<span class="w"> </span>-E<span class="w"> </span>-c<span class="w"> </span>./<span class="w"> </span>./<span class="w"> </span>./_build
