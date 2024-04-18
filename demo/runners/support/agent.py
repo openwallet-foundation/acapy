@@ -1503,7 +1503,7 @@ class DemoAgent:
                 if use_did_method:
                     payload["use_did_method"] = use_did_method
                 invi_rec = await self.admin_POST(
-                    '/out-of-band/create-invitation',
+                    "/out-of-band/create-invitation",
                     payload,
                     params=invi_params,
                 )
