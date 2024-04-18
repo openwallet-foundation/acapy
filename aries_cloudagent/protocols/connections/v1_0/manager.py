@@ -668,7 +668,7 @@ class ConnectionManager(BaseConnectionManager):
 
         # TODO It's possible the mediation request sent here might arrive
         # before the connection response. This would result in an error condition
-        # difficult to accomodate for without modifying handlers for trust ping
+        # difficult to accommodate for without modifying handlers for trust ping
         # to ensure the connection is active.
         async with self.profile.session() as session:
             send_mediation_request = await connection.metadata_get(

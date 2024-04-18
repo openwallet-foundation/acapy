@@ -143,7 +143,7 @@ class TestAgentMessage(IsolatedAsyncioTestCase):
             timestamp="123456789.123456",
             str_time="2019-01-01 12:34:56.7",
             handler="function.START",
-            ellapsed_milli=27,
+            elapsed_milli=27,
             outcome="OK! ...",
         )
         msg.add_trace_report(trace_report)
@@ -154,7 +154,7 @@ class TestAgentMessage(IsolatedAsyncioTestCase):
         assert msg_trace_report.msg_id == msg._id
         assert msg_trace_report.thread_id == msg._thread_id
         assert msg_trace_report.handler == trace_report.handler
-        assert msg_trace_report.ellapsed_milli == trace_report.ellapsed_milli
+        assert msg_trace_report.elapsed_milli == trace_report.elapsed_milli
         assert msg_trace_report.traced_type == msg._type
         assert msg_trace_report.outcome == trace_report.outcome
 
@@ -172,7 +172,7 @@ class TestAgentMessage(IsolatedAsyncioTestCase):
             timestamp="123456789.123456",
             str_time="2019-01-01 12:34:56.7",
             handler="function.END",
-            ellapsed_milli=72,
+            elapsed_milli=72,
             outcome="A OK! ...",
         )
         msg2.add_trace_report(trace_report2)
@@ -183,7 +183,7 @@ class TestAgentMessage(IsolatedAsyncioTestCase):
         assert msg_trace_report.msg_id == msg2._id
         assert msg_trace_report.thread_id == msg2._thread_id
         assert msg_trace_report.handler == trace_report2.handler
-        assert msg_trace_report.ellapsed_milli == trace_report2.ellapsed_milli
+        assert msg_trace_report.elapsed_milli == trace_report2.elapsed_milli
         assert msg_trace_report.traced_type == msg2._type
         assert msg_trace_report.outcome == trace_report2.outcome
 

@@ -100,7 +100,7 @@ class V20PresRequestSchema(AgentMessageSchema):
         V20PresFormatSchema,
         many=True,
         required=True,
-        metadata={"descrption": "Acceptable attachment formats"},
+        metadata={"description": "Acceptable attachment formats"},
     )
     request_presentations_attach = fields.Nested(
         AttachDecoratorSchema,

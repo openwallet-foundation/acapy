@@ -276,7 +276,7 @@ class AdminServer(BaseAdminServer):
 
     @property
     def additional_routes_pattern(self) -> Optional[Pattern]:
-        """Pattern for configured addtional routes to permit base wallet to access."""
+        """Pattern for configured additional routes to permit base wallet to access."""
         if self._additional_route_pattern:
             return self._additional_route_pattern
 
@@ -607,7 +607,7 @@ class AdminServer(BaseAdminServer):
                 "type": "apiKey",
                 "in": "header",
                 "name": "Authorization",
-                "description": "Bearer token. Be sure to preprend token with 'Bearer '",
+                "description": "Bearer token. Be sure to prepend token with 'Bearer '",
             }
 
             # If multitenancy is enabled we need Authorization header
@@ -831,7 +831,7 @@ class AdminServer(BaseAdminServer):
                             msg_received = None
                             msg_api_key = None
                             try:
-                                # this call can re-raise exeptions from inside the task
+                                # this call can re-raise exceptions from inside the task
                                 msg_received = receive.result()
                                 msg_api_key = msg_received.get("x-api-key")
                             except Exception:

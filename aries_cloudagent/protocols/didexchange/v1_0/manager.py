@@ -583,7 +583,7 @@ class DIDXManager(BaseConnectionManager):
     def _handshake_protocol_to_use(self, request: DIDXRequest):
         """Determine the connection protocol to use based on the request.
 
-        If we support it, we'll send it. If we don't, we'll try didexchage/1.1.
+        If we support it, we'll send it. If we don't, we'll try didexchange/1.1.
         """
         protocol = f"{request._type.protocol}/{request._type.version}"
         if protocol in ConnRecord.SUPPORTED_PROTOCOLS:
@@ -986,7 +986,7 @@ class DIDXManager(BaseConnectionManager):
 
         conn_rec.their_did = their_did
 
-        # The long format I sent has been acknoledged, use short form now.
+        # The long format I sent has been acknowledged, use short form now.
         if LONG_PATTERN.match(conn_rec.my_did or ""):
             conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
         if LONG_PATTERN.match(conn_rec.their_did or ""):

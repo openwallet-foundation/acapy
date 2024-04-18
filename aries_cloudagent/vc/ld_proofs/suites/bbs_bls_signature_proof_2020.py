@@ -267,7 +267,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
                 total_message_count
             )
 
-            # verify dervied proof
+            # verify derived proof
             verify_request = VerifyProofRequest(
                 public_key=bbs_public_key,
                 proof=proof_bytes,
