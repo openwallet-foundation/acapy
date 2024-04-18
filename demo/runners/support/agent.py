@@ -1455,20 +1455,20 @@ class DemoAgent:
         emit_did_peer_4: bool = False,
     ):
         self.connection_id = None
+        if emit_did_peer_2:
+            use_did_method = "did:peer:2"
+        elif emit_did_peer_4:
+            use_did_method = "did:peer:4"
+        else:
+            use_did_method = None
+
+        create_unique_did = (
+            use_did_method is not None
+            and (not reuse_connections)
+            and (not public_did_connections)
+        )
         if use_did_exchange:
             # TODO can mediation be used with DID exchange connections?
-            if emit_did_peer_2:
-                use_did_method = "did:peer:2"
-            elif emit_did_peer_4:
-                use_did_method = "did:peer:4"
-            else:
-                use_did_method = None
-
-            create_unique_did = (
-                use_did_method is not None
-                and (not reuse_connections)
-                and (not public_did_connections)
-            )
             invi_params = {
                 "auto_accept": json.dumps(auto_accept),
                 "multi_use": json.dumps(multi_use_invitations),
@@ -1482,7 +1482,6 @@ class DemoAgent:
                 payload["mediation_id"] = self.mediator_request_id
             if use_did_method:
                 payload["use_did_method"] = use_did_method
-            print("Calling /out-of-band/create-invitation with:", payload, invi_params)
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
                 payload,
@@ -1493,12 +1492,16 @@ class DemoAgent:
                 # use oob for connection reuse
                 invi_params = {
                     "auto_accept": json.dumps(auto_accept),
-                    "create_unique_did": json.dumps(False),
+                    "create_unique_did": json.dumps(create_unique_did),
                 }
                 payload = {
                     "handshake_protocols": ["https://didcomm.org/connections/1.0"],
                     "use_public_did": public_did_connections,
                 }
+                if self.mediation:
+                    payload["mediation_id"] = self.mediator_request_id
+                if use_did_method:
+                    payload["use_did_method"] = use_did_method
                 invi_rec = await self.admin_POST(
                     '/out-of-band/create-invitation',
                     payload,
@@ -1529,7 +1532,6 @@ class DemoAgent:
         if "/out-of-band/" in invite.get("@type", ""):
             # reuse connections if requested and possible
             params["use_existing_connection"] = json.dumps(self.reuse_connections)
-            print("Receiving invitation with params:", params)
             connection = await self.admin_POST(
                 "/out-of-band/receive-invitation",
                 invite,

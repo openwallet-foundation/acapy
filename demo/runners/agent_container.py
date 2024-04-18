@@ -121,6 +121,7 @@ class AriesAgent(DemoAgent):
 
     async def handle_connection_reuse(self, message):
         # we are reusing an existing connection, set our status to the existing connection
+        print("handle_connection_reuse()")
         if self._connection_ready is not None:
             if not self._connection_ready.done():
                 self.connection_id = message["connection_id"]
@@ -131,6 +132,7 @@ class AriesAgent(DemoAgent):
 
     async def handle_connection_reuse_accepted(self, message):
         # we are reusing an existing connection, set our status to the existing connection
+        print("handle_connection_reuse_accepted()")
         if not self._connection_ready.done():
             self.connection_id = message["connection_id"]
             self.log("Connected")
