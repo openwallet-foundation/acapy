@@ -109,7 +109,7 @@ We strongly recommend you use Docker for the local Indy network until you really
 
 An Aries agent (or other client) connecting to an Indy ledger must know the contents of the `genesis` file for the ledger. The genesis file lets the agent/client know the IP addresses of the initial nodes of the ledger, and the agent/client sends ledger requests to those IP addresses. When using the `indy-sdk` ledger, look for the instructions in that repo for how to find/update the ledger genesis file, and note the path to that file on your local system.
 
-The envrionment variable `GENESIS_FILE` is used to let the Aries demo agents know the location of the genesis file. Use the path to that file as value of the `GENESIS_FILE` environment variable in the instructions below. You might want to copy that file to be local to the demo so the path is shorter.
+The environment variable `GENESIS_FILE` is used to let the Aries demo agents know the location of the genesis file. Use the path to that file as value of the `GENESIS_FILE` environment variable in the instructions below. You might want to copy that file to be local to the demo so the path is shorter.
 
 #### Run a local Postgres instance
 
@@ -201,7 +201,7 @@ Note there is an option "2a" to initiate a connectionless proof - you can execut
 
 ## Additional Options in the Alice/Faber demo
 
-You can enable support for various ACA-Py features by providing additional command-line arguements when starting up `alice` or `faber`.
+You can enable support for various ACA-Py features by providing additional command-line arguments when starting up `alice` or `faber`.
 
 Note that when the controller starts up the agent, it prints out the ACA-Py startup command with *all* parameters - you can inspect this command to see what parameters are provided in each case.  For more details on the parameters, just start ACA-Py with the `--help` parameter, for example:
 
@@ -407,7 +407,7 @@ This works exactly as the *vanilla* multi-tenancy, except that all connections a
 
 The agents run on a pre-defined set of ports, however occasionally your local system may already be using one of these ports.  (For example MacOS recently decided to use 8021 for the ftp proxy service.)
 
-To overriide the default port settings:
+To override the default port settings:
 
 ```bash
 AGENT_PORT_OVERRIDE=8010 ./run_demo faber
@@ -415,7 +415,7 @@ AGENT_PORT_OVERRIDE=8010 ./run_demo faber
 
 (The agent requires up to 10 available ports.)
 
-To pass extra arguements to the agent (for example):
+To pass extra arguments to the agent (for example):
 
 ```bash
 DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --did-exchange --reuse-connections
@@ -441,7 +441,7 @@ The controllers for this demo can be found in the [alice.py](https://github.com/
 
 ## OpenAPI (Swagger) Demo
 
-Developing an ACA-Py controller is much like developing a web app that uses a REST API. As you develop, you will want an easy way to test out the behaviour of the API. That's where the industry-standard OpenAPI (aka Swagger) UI comes in. ACA-Py (optionally) exposes an OpenAPI UI in ACA-Py that you can use to learn the ins and outs of the API. This [Aries OpenAPI demo](AriesOpenAPIDemo.md) shows how you can use the OpenAPI UI with an ACA-Py agent by walking through the connectiing, issuing a credential, and presenting a proof sequence.
+Developing an ACA-Py controller is much like developing a web app that uses a REST API. As you develop, you will want an easy way to test out the behaviour of the API. That's where the industry-standard OpenAPI (aka Swagger) UI comes in. ACA-Py (optionally) exposes an OpenAPI UI in ACA-Py that you can use to learn the ins and outs of the API. This [Aries OpenAPI demo](AriesOpenAPIDemo.md) shows how you can use the OpenAPI UI with an ACA-Py agent by walking through the connecting, issuing a credential, and presenting a proof sequence.
 
 ## Performance Demo
 
@@ -462,7 +462,7 @@ You can also run the demo against a postgres database using the following:
 ./run_demo performance --arg-file demo/postgres-indy-args.yml
 ```
 
-(Obvs you need to be running a postgres database - the command to start postgres is in the yml file provided above.)
+(Obviously you need to be running a postgres database - the command to start postgres is in the yml file provided above.)
 
 You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option (or run using indy-sdk using `--wallet-type indy`).
 

@@ -77,7 +77,7 @@ BDD_EXTRA_AGENT_ARGS="{\"wallet-type\":\"askar\"}" ./run_bdd -t @taa_required
 
 The agents run on a pre-defined set of ports, however occasionally your local system may already be using one of these ports.  (For example MacOS recently decided to use 8021 for the ftp proxy service.)
 
-To overriide the default port settings:
+To override the default port settings:
 
 ```bash
 AGENT_PORT_OVERRIDE=8030 ./run_bdd -t <some tags>
@@ -149,14 +149,14 @@ ACAPY_ARG_FILE=askar-indy-args.yml ./run_bdd
 
 ... will run all the tests against an askar wallet (the new shared components, which replace indy-sdk).
 
-Any aca-py arguement can be included in the yml file, and order-of-precidence applies (see [https://pypi.org/project/ConfigArgParse/](https://pypi.org/project/ConfigArgParse/)).
+Any aca-py argument can be included in the yml file, and order-of-precedence applies (see [https://pypi.org/project/ConfigArgParse/](https://pypi.org/project/ConfigArgParse/)).
 
 ## Specifying Environment Parameters when Running Integration Tests
 
 Aca-py integration tests support the following environment-driven configuration:
 
 - `LEDGER_URL` - specify the ledger url
-- `TAILS_NETWORK` - specify the docker network the tailer server is running on
+- `TAILS_NETWORK` - specify the docker network the tails server is running on
 - `PUBLIC_TAILS_URL` - specify the public url of the tails server
 - `ACAPY_ARG_FILE` - specify global aca-py parameters (see above)
 

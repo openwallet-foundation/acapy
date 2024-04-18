@@ -13,7 +13,7 @@ the minimum things necessary to the business rules around revocation, such as
 whose credentials should be revoked, and how close to real-time should
 revocations be published?
 
-Here is a  summary of all of the AnonCreds revocation activities performed
+Here is a summary of all of the AnonCreds revocation activities performed
 by issuers. After this, we'll provide a (much shorter) list of what an ACA-Py
 issuer controller has to do. For those interested, there is a more
 [complete overview of AnonCreds revocation], including all of the roles, and some details

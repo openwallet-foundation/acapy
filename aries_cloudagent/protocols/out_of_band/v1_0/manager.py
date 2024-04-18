@@ -730,7 +730,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         # Try to reuse the connection. If not accepted sets the conn_rec to None
         if conn_rec and not invitation.requests_attach:
-            oob_record = await self._handle_hanshake_reuse(
+            oob_record = await self._handle_handshake_reuse(
                 oob_record, conn_rec, invitation._version
             )
 
@@ -890,7 +890,7 @@ class OutOfBandManager(BaseConnectionManager):
         """Wait for reuse response.
 
         Wait for reuse response message state. Either by receiving a reuse accepted or
-        problem report. If no answer is received withing the timeout, the state will be
+        problem report. If no answer is received within the timeout, the state will be
         set to reuse_not_accepted
 
         Args:
@@ -924,7 +924,7 @@ class OutOfBandManager(BaseConnectionManager):
                     ]:
                         return oob_record
 
-                LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted mesage")
+                LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted message")
                 event = await await_event
                 LOGGER.debug("Received reuse response message")
                 return OobRecord.deserialize(event.payload)
@@ -982,7 +982,7 @@ class OutOfBandManager(BaseConnectionManager):
             LOGGER.warning(f"Connection for connection_id {connection_id} not ready")
             return None
 
-    async def _handle_hanshake_reuse(
+    async def _handle_handshake_reuse(
         self, oob_record: OobRecord, conn_record: ConnRecord, version: str
     ) -> OobRecord:
         # Send handshake reuse
@@ -1148,7 +1148,7 @@ class OutOfBandManager(BaseConnectionManager):
         """Create and Send a Handshake Reuse message under RFC 0434.
 
         Args:
-            oob_record: OOB  Record
+            oob_record: OOB Record
             conn_record: Connection record associated with the oob record
 
         Returns:

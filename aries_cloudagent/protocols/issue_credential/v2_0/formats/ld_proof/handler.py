@@ -54,7 +54,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             message_type (str): The message type to validate the attachment data for.
                 Should be one of the message types as defined in message_types.py
             attachment_data (Mapping): [description]
-                The attachment data to valide
+                The attachment data to validate
 
         Raises:
             Exception: When the data is not valid.
@@ -213,7 +213,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 LDProofCredFormatHandler.format
             )
         # API data is stored in proposal (when starting from request)
-        # It is a bit of a strage flow IMO.
+        # It is a bit of a strange flow IMO.
         elif cred_ex_record.cred_proposal:
             request_data = cred_ex_record.cred_proposal.attachment(
                 LDProofCredFormatHandler.format
@@ -323,7 +323,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 " match requested credential"
             )
 
-        # both credential and detail contain status. Check for equalness
+        # both credential and detail contain status. Check for equality
         if credential_status and detail_status:
             if credential_status.get("type") != detail_status.get("type"):
                 raise V20CredFormatError(

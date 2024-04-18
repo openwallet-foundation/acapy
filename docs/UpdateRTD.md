@@ -20,7 +20,7 @@ To rebuild the project and settings from scratch (you'll need to move the genera
 
 Note that the `find` command that is used to exclude any of the `test` python files from the RTD documentation.
 
-Check the  `git status` in your repo to see if the generator updates, adds or removes any existing RTD modules.
+Check the `git status` in your repo to see if the generator updates, adds or removes any existing RTD modules.
 
 ### Reviewing the files locally
 

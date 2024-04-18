@@ -220,7 +220,7 @@ class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
 
 
 class DIDXRejectRequestSchema(OpenAPISchema):
-    """Parameters and validators for reject-request request  string."""
+    """Parameters and validators for reject-request request string."""
 
     reason = fields.Str(
         metadata={

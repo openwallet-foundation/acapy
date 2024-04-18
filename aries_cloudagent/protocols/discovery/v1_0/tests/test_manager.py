@@ -65,7 +65,7 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
                 connection_id=test_conn_id,
             )
 
-    async def test_receive_disclosure_retreive_by_conn(self):
+    async def test_receive_disclosure_retrieve_by_conn(self):
         test_conn_id = "test123"
         self.disclose.assign_thread_id("test123")
         with mock.patch.object(
@@ -94,7 +94,7 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
                 connection_id=test_conn_id,
             )
 
-    async def test_receive_disclosure_retreive_by_conn_not_found(self):
+    async def test_receive_disclosure_retrieve_by_conn_not_found(self):
         test_conn_id = "test123"
         self.disclose.assign_thread_id("test123")
         with mock.patch.object(
@@ -118,7 +118,7 @@ class TestV10DiscoveryManager(IsolatedAsyncioTestCase):
                 connection_id=test_conn_id,
             )
 
-    async def test_receive_disclosure_retreive_new_ex_rec(self):
+    async def test_receive_disclosure_retrieve_new_ex_rec(self):
         test_conn_id = "test123"
         with mock.patch.object(
             V10DiscoveryExchangeRecord, "save", autospec=True

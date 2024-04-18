@@ -66,7 +66,7 @@ To open a WebSocket, connect to the `/ws` endpoint of the Admin API.
 * `content`: the contents of the agent message
 * `state`: `received`
 
-### Forward Message Received  (`/forward`)
+### Forward Message Received (`/forward`)
 
 Enable using `--monitor-forward`.
 

@@ -105,7 +105,7 @@ class BaseDIDResolver(ABC):
         matching on DIDs to determine if this resolver supports a given DID.
         """
         raise NotImplementedError(
-            "supported_did_regex must be overriden by subclasses of BaseResolver "
+            "supported_did_regex must be overridden by subclasses of BaseResolver "
             "to use default supports method"
         )
 
