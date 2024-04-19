@@ -172,7 +172,7 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
 
     @pre_load
     def validate_single_xor_multi_sig(self, data: Mapping, **kwargs):
-        """Ensure model is for either 1 or many sigatures, not mishmash of both."""
+        """Ensure model is for either 1 or many signatures, not mishmash of both."""
 
         if "signatures" in data:
             if any(k in data for k in ("header", "protected", "signature")):

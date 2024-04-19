@@ -226,7 +226,7 @@ class TransactionManager:
 
         if transaction.state not in (
             TransactionRecord.STATE_REQUEST_RECEIVED,
-            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
+            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED,
         ):
             raise TransactionManagerError(
                 f"Cannot endorse transaction for transaction record"
@@ -565,7 +565,7 @@ class TransactionManager:
 
         if transaction.state not in (
             TransactionRecord.STATE_REQUEST_RECEIVED,
-            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
+            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED,
         ):
             raise TransactionManagerError(
                 f"Cannot refuse transaction for transaction record"
@@ -700,7 +700,7 @@ class TransactionManager:
             await transaction.save(session, reason="Resends the transaction request")
 
         resend_transaction_response = TransactionResend(
-            state=TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
+            state=TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED,
             thread_id=transaction._id,
         )
 

@@ -196,7 +196,7 @@ def trace_event(
             "timestamp": ep_time,
             "str_time": str_time,
             "handler": str(handler),
-            "ellapsed_milli": int(1000 * (ret - perf_counter)) if perf_counter else 0,
+            "elapsed_milli": int(1000 * (ret - perf_counter)) if perf_counter else 0,
             "outcome": str(outcome),
         }
         event_str = json.dumps(event)
@@ -214,7 +214,7 @@ def trace_event(
                     timestamp=event["timestamp"],
                     str_time=event["str_time"],
                     handler=event["handler"],
-                    ellapsed_milli=event["ellapsed_milli"],
+                    elapsed_milli=event["elapsed_milli"],
                     outcome=event["outcome"],
                 )
                 message.add_trace_report(trace_report)

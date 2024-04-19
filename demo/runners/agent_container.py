@@ -112,11 +112,9 @@ class AriesAgent(DemoAgent):
         return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_oob_invitation(self, message):
-        print("handle_oob_invitation()")
         pass
 
     async def handle_out_of_band(self, message):
-        print("handle_out_of_band()")
         pass
 
     async def handle_connection_reuse(self, message):
@@ -1376,9 +1374,9 @@ def arg_parser(ident: str = None, port: int = 8020):
             "Specify the role ('author' or 'endorser') which this agent will "
             "participate. Authors will request transaction endorement from an "
             "Endorser. Endorsers will endorse transactions from Authors, and "
-            "may write their own  transactions to the ledger. If no role "
+            "may write their own transactions to the ledger. If no role "
             "(or 'none') is specified then the endorsement protocol will not "
-            " be used and this agent will write transactions to the ledger "
+            "be used and this agent will write transactions to the ledger "
             "directly."
         ),
     )
@@ -1540,8 +1538,8 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     )
 
     reuse_connections = "reuse_connections" in args and args.reuse_connections
-    if reuse_connections and aip != 20:
-        raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
+    # if reuse_connections and aip != 20:
+    #     raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
     multi_use_invitations = (
         "multi_use_invitations" in args and args.multi_use_invitations
     )

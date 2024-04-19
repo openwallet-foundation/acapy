@@ -572,7 +572,7 @@ async def update_existing_records(profile: Profile):
 
 ##########################################################
 # Fix for ACA-Py Issue #2485
-# issuance_type attribue in IssuerRevRegRecord was removed
+# issuance_type attribute in IssuerRevRegRecord was removed
 # in 0.5.3 version. IssuerRevRegRecord created previously
 # will need
 ##########################################################

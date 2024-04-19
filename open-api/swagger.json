@@ -65,7 +65,7 @@
     }
   }, {
     "name" : "did-rotate",
-    "description" : "Rorate a DID",
+    "description" : "Rotate a DID",
     "externalDocs" : {
       "description" : "Specification",
       "url" : "https://github.com/hyperledger/aries-rfcs/tree/main/features/0794-did-rotate"
@@ -940,7 +940,7 @@
         }, {
           "name" : "invitation_msg_id",
           "in" : "query",
-          "description" : "Identifier of the associated Invitation Mesage",
+          "description" : "Identifier of the associated Invitation Message",
           "required" : false,
           "type" : "string"
         }, {
@@ -3258,7 +3258,7 @@
         }, {
           "name" : "role",
           "in" : "query",
-          "description" : "Filer on role, 'client' for keys     mediated by other agents, 'server' for keys     mediated by this agent",
+          "description" : "Filer on role, 'client' for keys mediated by other agents, 'server' for keys mediated by this agent",
           "required" : false,
           "type" : "string",
           "default" : "server",
@@ -6004,7 +6004,7 @@
   },
   "securityDefinitions" : {
     "AuthorizationHeader" : {
-      "description" : "Bearer token. Be sure to preprend token with 'Bearer '",
+      "description" : "Bearer token. Be sure to prepend token with 'Bearer '",
       "type" : "apiKey",
       "name" : "Authorization",
       "in" : "header"
@@ -6753,7 +6753,7 @@
         "image_url" : {
           "type" : "string",
           "example" : "https://aries.ca/images/sample.png",
-          "description" : "Image url for this wallet. This image url is publicized        (self-attested) to other agents as part of forming a connection."
+          "description" : "Image url for this wallet. This image url is publicized (self-attested) to other agents as part of forming a connection."
         },
         "key_management_mode" : {
           "type" : "string",
@@ -6764,12 +6764,12 @@
         "label" : {
           "type" : "string",
           "example" : "Alice",
-          "description" : "Label for this wallet. This label is publicized        (self-attested) to other agents as part of forming a connection."
+          "description" : "Label for this wallet. This label is publicized (self-attested) to other agents as part of forming a connection."
         },
         "wallet_dispatch_type" : {
           "type" : "string",
           "example" : "default",
-          "description" : "Webhook target dispatch type for this wallet.         default - Dispatch only to webhooks associated with this wallet.         base - Dispatch only to webhooks associated with the base wallet.         both - Dispatch to both webhook targets.",
+          "description" : "Webhook target dispatch type for this wallet. default: Dispatch only to webhooks associated with this wallet. base: Dispatch only to webhooks associated with the base wallet. both: Dispatch to both webhook targets.",
           "enum" : [ "default", "both", "base" ]
         },
         "wallet_key" : {
@@ -6854,7 +6854,7 @@
         "wallet_key" : {
           "type" : "string",
           "example" : "MySecretKey123",
-          "description" : "Master key used for key derivation. Only required for         unamanged wallets."
+          "description" : "Master key used for key derivation. Only required for unmanaged wallets."
         }
       }
     },
@@ -6906,7 +6906,7 @@
         "tag" : {
           "type" : "string",
           "example" : "default",
-          "description" : "The tag value passed in by the Issuer to\n         an AnonCred's Credential Definition create and store implementation."
+          "description" : "The tag value passed in by the Issuer to an AnonCred's Credential Definition create and store implementation."
         },
         "type" : {
           "type" : "string",
@@ -6923,12 +6923,12 @@
         "create_transaction_for_endorser" : {
           "type" : "boolean",
           "example" : false,
-          "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign."
+          "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign."
         },
         "endorser_connection_id" : {
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection."
+          "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection."
         },
         "revocation_registry_size" : {
           "type" : "integer",
@@ -7270,6 +7270,7 @@
         "id" : {
           "type" : "string",
           "example" : "http://example.edu/credentials/1872",
+          "description" : "The ID of the credential",
           "pattern" : "\\w+:(\\/?\\/?)[^\\s]+"
         },
         "issuanceDate" : {
@@ -7554,7 +7555,7 @@
         "seed" : {
           "type" : "string",
           "example" : "000000000000000000000000Trustee1",
-          "description" : "Optional seed to use for DID, Must beenabled in configuration before use."
+          "description" : "Optional seed to use for DID, Must be enabled in configuration before use."
         }
       }
     },
@@ -10340,7 +10341,7 @@
         "multi_use" : {
           "type" : "boolean",
           "example" : true,
-          "description" : "Allow for multiple uses of the oobinvitation"
+          "description" : "Allow for multiple uses of the oob invitation"
         },
         "oob_id" : {
           "type" : "string",
@@ -10433,6 +10434,7 @@
         "id" : {
           "type" : "string",
           "example" : "http://example.edu/presentations/1872",
+          "description" : "The ID of the presentation",
           "pattern" : "\\w+:(\\/?\\/?)[^\\s]+"
         },
         "proof" : {
@@ -10662,12 +10664,12 @@
         "create_transaction_for_endorser" : {
           "type" : "boolean",
           "example" : false,
-          "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign."
+          "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign."
         },
         "endorser_connection_id" : {
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection."
+          "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection."
         }
       }
     },
@@ -10860,7 +10862,7 @@
         "wallet_key" : {
           "type" : "string",
           "example" : "MySecretKey123",
-          "description" : "Master key used for key derivation. Only required for         unmanaged wallets."
+          "description" : "Master key used for key derivation. Only required for unmanaged wallets."
         }
       }
     },
@@ -10886,7 +10888,7 @@
         "currentAccumulator" : {
           "type" : "string",
           "example" : "21 118...1FB",
-          "description" : "The current accumalator value"
+          "description" : "The current accumulator value"
         },
         "issuerId" : {
           "type" : "string",
@@ -10934,12 +10936,12 @@
         "create_transaction_for_endorser" : {
           "type" : "boolean",
           "example" : false,
-          "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign."
+          "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign."
         },
         "endorser_connection_id" : {
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection."
+          "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection."
         }
       }
     },
@@ -11036,12 +11038,12 @@
         "create_transaction_for_endorser" : {
           "type" : "boolean",
           "example" : false,
-          "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign."
+          "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign."
         },
         "endorser_connection_id" : {
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection."
+          "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection."
         }
       }
     },
@@ -11542,12 +11544,12 @@
         "create_transaction_for_endorser" : {
           "type" : "boolean",
           "example" : false,
-          "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign."
+          "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign."
         },
         "endorser_connection_id" : {
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection."
+          "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection."
         }
       }
     },
@@ -11938,7 +11940,7 @@
         "connection_id" : {
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "description" : "The connection identifier for thie particular transaction record"
+          "description" : "The connection identifier for this particular transaction record"
         },
         "created_at" : {
           "type" : "string",
@@ -12136,17 +12138,17 @@
         "image_url" : {
           "type" : "string",
           "example" : "https://aries.ca/images/sample.png",
-          "description" : "Image url for this wallet. This image url is publicized        (self-attested) to other agents as part of forming a connection."
+          "description" : "Image url for this wallet. This image url is publicized (self-attested) to other agents as part of forming a connection."
         },
         "label" : {
           "type" : "string",
           "example" : "Alice",
-          "description" : "Label for this wallet. This label is publicized        (self-attested) to other agents as part of forming a connection."
+          "description" : "Label for this wallet. This label is publicized (self-attested) to other agents as part of forming a connection."
         },
         "wallet_dispatch_type" : {
           "type" : "string",
           "example" : "default",
-          "description" : "Webhook target dispatch type for this wallet.         default - Dispatch only to webhooks associated with this wallet.         base - Dispatch only to webhooks associated with the base wallet.         both - Dispatch to both webhook targets.",
+          "description" : "Webhook target dispatch type for this wallet. default: Dispatch only to webhooks associated with this wallet. base: Dispatch only to webhooks associated with the base wallet. both: Dispatch to both webhook targets.",
           "enum" : [ "default", "both", "base" ]
         },
         "wallet_webhook_urls" : {
@@ -13968,6 +13970,7 @@
         },
         "formats" : {
           "type" : "array",
+          "description" : "Acceptable attachment formats",
           "items" : {
             "$ref" : "#/definitions/V20PresFormat"
           }
@@ -14044,6 +14047,7 @@
         },
         "formats" : {
           "type" : "array",
+          "description" : "Acceptable attachment formats",
           "items" : {
             "$ref" : "#/definitions/V20PresFormat"
           }
@@ -14254,6 +14258,7 @@
         "id" : {
           "type" : "string",
           "example" : "http://example.edu/credentials/1872",
+          "description" : "The ID of the credential",
           "pattern" : "\\w+:(\\/?\\/?)[^\\s]+"
         },
         "issuanceDate" : {
@@ -14296,6 +14301,7 @@
         "id" : {
           "type" : "string",
           "example" : "http://example.edu/presentations/1872",
+          "description" : "The ID of the presentation",
           "pattern" : "\\w+:(\\/?\\/?)[^\\s]+"
         },
         "proof" : {
@@ -14822,7 +14828,7 @@
     },
     "V20PresSpecByFormatRequest_dif" : {
       "type" : "object",
-      "description" : "Optional Presentation specification for DIF, overrides the PresentionExchange record's PresRequest"
+      "description" : "Optional Presentation specification for DIF, overrides the PresentationExchange record's PresRequest"
     },
     "V20PresSpecByFormatRequest_indy" : {
       "type" : "object",

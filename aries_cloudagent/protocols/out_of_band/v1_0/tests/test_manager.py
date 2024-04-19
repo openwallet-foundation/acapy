@@ -1464,7 +1464,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
 
         with mock.patch.object(
             test_module.OutOfBandManager,
-            "_handle_hanshake_reuse",
+            "_handle_handshake_reuse",
             mock.CoroutineMock(),
         ) as handle_handshake_reuse, mock.patch.object(
             test_module.OutOfBandManager,
@@ -1512,7 +1512,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
 
         with mock.patch.object(
             test_module.OutOfBandManager,
-            "_handle_hanshake_reuse",
+            "_handle_handshake_reuse",
             mock.CoroutineMock(),
         ) as handle_handshake_reuse, mock.patch.object(
             test_module.OutOfBandManager,
