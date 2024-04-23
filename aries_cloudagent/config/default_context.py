@@ -1,12 +1,29 @@
 """Classes for configuring the default injection context."""
 
+from didcomm_messaging import (
+    CryptoService,
+    DIDCommMessaging,
+    PackagingService,
+    RoutingService,
+    SecretsManager,
+)
+from didcomm_messaging.crypto.backend.askar import AskarCryptoService
+from didcomm_messaging.resolver import DIDResolver as DMPResolver
+
+from aries_cloudagent.didcomm_v2.adapters import ResolverAdapter, SecretsAdapter
+
 from ..anoncreds.registry import AnonCredsRegistry
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
 from ..core.event_bus import EventBus
 from ..core.goal_code_registry import GoalCodeRegistry
 from ..core.plugin_registry import PluginRegistry
-from ..core.profile import ProfileManager, ProfileManagerProvider
+from ..core.profile import (
+    Profile,
+    ProfileManager,
+    ProfileManagerProvider,
+    ProfileSession,
+)
 from ..core.protocol_registry import ProtocolRegistry
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
@@ -53,13 +70,18 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_instance(EventBus, EventBus())
 
         # Global did resolver
-        context.injector.bind_instance(DIDResolver, DIDResolver([]))
+        context.injector.bind_instance(DIDResolver, DIDResolver())
         context.injector.bind_instance(AnonCredsRegistry, AnonCredsRegistry())
         context.injector.bind_instance(DIDMethods, DIDMethods())
         context.injector.bind_instance(KeyTypes, KeyTypes())
         context.injector.bind_instance(
             BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
         )
+
+        # DIDComm Messaging
+        context.injector.bind_instance(CryptoService, AskarCryptoService())
+        context.injector.bind_instance(PackagingService, PackagingService())
+        context.injector.bind_instance(RoutingService, RoutingService())
 
         await self.bind_providers(context)
         await self.load_plugins(context)
@@ -70,6 +92,32 @@ class DefaultContextBuilder(ContextBuilder):
         """Bind various class providers."""
 
         context.injector.bind_provider(ProfileManager, ProfileManagerProvider())
+        context.injector.bind_provider(
+            DMPResolver,
+            ClassProvider(
+                ResolverAdapter,
+                ClassProvider.Inject(Profile),
+                ClassProvider.Inject(DIDResolver),
+            ),
+        )
+        context.injector.bind_provider(
+            SecretsManager,
+            ClassProvider(
+                SecretsAdapter,
+                ClassProvider.Inject(ProfileSession),
+            ),
+        )
+        context.injector.bind_provider(
+            DIDCommMessaging,
+            ClassProvider(
+                DIDCommMessaging,
+                ClassProvider.Inject(CryptoService),
+                ClassProvider.Inject(SecretsManager),
+                ClassProvider.Inject(DMPResolver),
+                ClassProvider.Inject(PackagingService),
+                ClassProvider.Inject(RoutingService),
+            ),
+        )
 
         wallet_type = self.settings.get("wallet.type")
         if wallet_type == "askar-anoncreds":
@@ -92,7 +140,9 @@ class DefaultContextBuilder(ContextBuilder):
             BaseWireFormat,
             CachedProvider(
                 # StatsProvider(
-                ClassProvider("aries_cloudagent.transport.pack_format.V2PackWireFormat"),
+                ClassProvider(
+                    "aries_cloudagent.transport.pack_format.V2PackWireFormat"
+                ),
                 #    (
                 #        "encode_message", "parse_message"
                 #    ),

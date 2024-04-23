@@ -842,13 +842,13 @@ base58 = ">=2.1.1"
 
 [[package]]
 name = "didcomm-messaging"
-version = "0.1.0"
+version = "0.1.1a2"
 description = "DIDComm Messaging implemented with swappable backends."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "didcomm_messaging-0.1.0-py3-none-any.whl", hash = "sha256:bb23a6c95cfeaaa2ec808b220cef4a9ab6d846d8daa874d1099b84b031745cce"},
-    {file = "didcomm_messaging-0.1.0.tar.gz", hash = "sha256:bd5e3d7808155a1b43a0ebfa64f75e6f7fa9b7ee0c5bbfeace98fd6d1f4d7b84"},
+    {file = "didcomm_messaging-0.1.1a2-py3-none-any.whl", hash = "sha256:d56acb0bcfaf71985863e862eafe71707816a8a305f4f02d3d5177b30a2467d3"},
+    {file = "didcomm_messaging-0.1.1a2.tar.gz", hash = "sha256:4da211e973dd7f473e1dd5bd8ca8a915881227aff7809570a5f8039600c7033a"},
 ]
 
 [package.dependencies]
@@ -2960,4 +2960,4 @@ bbs = ["ursa-bbs-signatures"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "bb943d8c6d1f0dba2c8a44d10009b8793919a590629b98390cb671e9b1028763"
+content-hash = "1872e9f13a2185db6f41a570161f3b614322341e8b4b6f51193fc8cd4c7eb315"

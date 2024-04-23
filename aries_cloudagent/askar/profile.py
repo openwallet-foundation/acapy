@@ -242,6 +242,7 @@ class AskarProfileSession(ProfileSession):
         self._opener = None
 
         injector = self._context.injector
+        injector.bind_instance(ProfileSession, ref(self))
         injector.bind_provider(
             BaseWallet,
             ClassProvider("aries_cloudagent.wallet.askar.AskarWallet", ref(self)),

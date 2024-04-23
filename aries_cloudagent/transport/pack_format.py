@@ -2,11 +2,8 @@
 
 import json
 import logging
-from typing import List, Optional, Sequence, Tuple, Union, cast
+from typing import List, Sequence, Tuple, Union
 
-from aries_askar import Key
-
-from aries_cloudagent.askar.profile import AskarProfileSession
 
 from ..core.profile import ProfileSession
 
@@ -22,14 +19,6 @@ from .error import WireFormatParseError, WireFormatEncodeError, RecipientKeysErr
 from .inbound.receipt import MessageReceipt
 from .wire_format import BaseWireFormat
 from didcomm_messaging import DIDCommMessaging
-from didcomm_messaging.resolver import PrefixResolver, DIDResolver
-from didcomm_messaging.resolver.peer import Peer2, Peer4
-from didcomm_messaging.crypto.backend.basic import (
-    SecretsManager,
-)
-from didcomm_messaging.crypto.backend.askar import AskarCryptoService, AskarSecretKey
-from didcomm_messaging.packaging import PackagingService
-from didcomm_messaging.routing import RoutingService
 
 
 LOGGER = logging.getLogger(__name__)
@@ -234,30 +223,6 @@ class PackWireFormat(BaseWireFormat):
         return recipient_keys
 
 
-class AskarSecretsManager(SecretsManager[AskarSecretKey]):
-
-    def __init__(self, resolver: DIDResolver, session: AskarProfileSession) -> None:
-        self.resolver = resolver
-        self.session = session
-
-    async def get_secret_by_kid(self, kid: str) -> Optional[AskarSecretKey]:
-        """Retrieve secret by kid."""
-        LOGGER.debug("GETTING SECRET BY KID: %s", kid)
-        key_entries = await self.session.handle.fetch_all_keys(
-            tag_filter={"kid": kid}, limit=2
-        )
-        if len(key_entries) > 1:
-            raise RecipientKeysError(f"More than one key found with kid {kid}")
-
-        entry = key_entries[0]
-        if entry:
-            key = cast(Key, entry.key)
-            return AskarSecretKey(key=key, kid=kid)
-
-        LOGGER.debug("RETURNING NONE")
-        return None
-
-
 class V2PackWireFormat(BaseWireFormat):
     """DIDComm V2 message parser and serializer."""
 
@@ -270,31 +235,9 @@ class V2PackWireFormat(BaseWireFormat):
         session: ProfileSession,
         message_body: Union[str, bytes],
     ) -> Tuple[dict, MessageReceipt]:
+        """Parse message."""
 
-        resolver = PrefixResolver(
-            resolvers={"did:peer:2": Peer2(), "did:peer:4": Peer4()}
-        )
-
-        self.secrets_manager = AskarSecretsManager(
-            session=session,
-            resolver=resolver,
-        )
-
-        self.did_resolver = resolver
-        self.crypto = AskarCryptoService()
-
-        self.packer = PackagingService(
-            self.did_resolver, self.crypto, self.secrets_manager
-        )
-        self.routing = RoutingService(self.packer, self.did_resolver)
-
-        self.messaging = DIDCommMessaging(
-            crypto=self.crypto,
-            secrets=self.secrets_manager,
-            resolver=self.did_resolver,
-            packaging=self.packer,
-            routing=self.routing,
-        )
+        messaging = session.inject(DIDCommMessaging)
 
         LOGGER.debug("HIT V2 PACK FORMAT .parse_message()")
         LOGGER.debug(message_body)
@@ -318,7 +261,7 @@ class V2PackWireFormat(BaseWireFormat):
         if not message_json:
             raise WireFormatParseError("Message body is empty")
 
-        message_json = await self.messaging.unpack(message_json)
+        message_json = await messaging.unpack(message_json)
 
         # try:
         #     message_dict = json.loads(message_json)

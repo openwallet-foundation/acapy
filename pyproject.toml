@@ -60,7 +60,7 @@ ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
 # indy
 python3-indy= { version = "^1.11.1", optional = true }
-didcomm-messaging = "^0.1.0"
+didcomm-messaging = "^0.1.1a0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.7.0"
