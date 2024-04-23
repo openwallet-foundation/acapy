@@ -376,7 +376,7 @@ class DIDCreateSchema(OpenAPISchema):
         required=False,
         metadata={
             "description": (
-                "Optional seed to use for DID, Must beenabled in configuration before"
+                "Optional seed to use for DID, Must be enabled in configuration before"
                 " use."
             ),
             "example": "000000000000000000000000Trustee1",
@@ -757,8 +757,11 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     if not create_transaction_for_endorser:
         return web.json_response({"result": format_did_info(info)})
-
     else:
+        # DID is already posted to ledger
+        if not attrib_def:
+            return web.json_response({"result": format_did_info(info)})
+
         transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
@@ -772,7 +775,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
             try:
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:
@@ -1029,7 +1032,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
             try:
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:
@@ -1286,7 +1289,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
             try:
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:

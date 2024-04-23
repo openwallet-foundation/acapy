@@ -73,7 +73,7 @@ class TestV20DiscoveryManager(IsolatedAsyncioTestCase):
                 connection_id=test_conn_id,
             )
 
-    async def test_receive_disclosure_retreive_by_conn(self):
+    async def test_receive_disclosure_retrieve_by_conn(self):
         test_conn_id = "test123"
         self.queries.assign_thread_id("test123")
         with mock.patch.object(
@@ -102,7 +102,7 @@ class TestV20DiscoveryManager(IsolatedAsyncioTestCase):
                 connection_id=test_conn_id,
             )
 
-    async def test_receive_disclosure_retreive_by_conn_not_found(self):
+    async def test_receive_disclosure_retrieve_by_conn_not_found(self):
         test_conn_id = "test123"
         self.queries.assign_thread_id("test123")
         with mock.patch.object(
@@ -126,7 +126,7 @@ class TestV20DiscoveryManager(IsolatedAsyncioTestCase):
                 connection_id=test_conn_id,
             )
 
-    async def test_receive_disclosure_retreive_new_ex_rec(self):
+    async def test_receive_disclosure_retrieve_new_ex_rec(self):
         test_conn_id = "test123"
         with mock.patch.object(
             V20DiscoveryExchangeRecord, "save", autospec=True
@@ -191,7 +191,7 @@ class TestV20DiscoveryManager(IsolatedAsyncioTestCase):
     async def test_create_and_send_query_x(self):
         with self.assertRaises(V20DiscoveryMgrError) as cm:
             await self.manager.create_and_send_query()
-        assert "Atleast one protocol or goal-code" in str(cm.exception)
+        assert "At least one protocol or goal-code" in str(cm.exception)
 
     async def test_create_and_send_query_with_connection(self):
         return_ex_rec = V20DiscoveryExchangeRecord(

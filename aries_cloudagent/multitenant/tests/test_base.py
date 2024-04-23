@@ -62,12 +62,12 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         with mock.patch.object(
             MediationManager, "get_default_mediator"
         ) as get_default_mediator:
-            mediaton_record = MediationRecord()
+            mediation_record = MediationRecord()
 
             # has default mediator
-            get_default_mediator.return_value = mediaton_record
+            get_default_mediator.return_value = mediation_record
             default_mediator = await self.manager.get_default_mediator()
-            assert default_mediator is mediaton_record
+            assert default_mediator is mediation_record
 
             # Doesn't have default mediator
             get_default_mediator.return_value = None
@@ -653,7 +653,7 @@ class TestBaseMultitenantManager(IsolatedAsyncioTestCase):
         recipient_keys = ["1", "2", "3", "4"]
 
         mock_wire_format = mock.MagicMock(
-            get_recipient_keys=lambda mesage_body: recipient_keys
+            get_recipient_keys=lambda message_body: recipient_keys
         )
 
         return_wallets = [

@@ -46,7 +46,7 @@ from ..protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ..resolver.base import ResolverError
 from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
-from ..storage.error import StorageDuplicateError, StorageError, StorageNotFoundError
+from ..storage.error import StorageDuplicateError, StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..transport.inbound.receipt import MessageReceipt
 from ..utils.multiformats import multibase, multicodec
@@ -89,13 +89,13 @@ class BaseConnectionManager:
             multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
         )
 
-    def long_did_peer_to_short(self, long_did: str) -> DIDInfo:
+    def long_did_peer_to_short(self, long_did: str) -> str:
         """Convert did:peer:4 long format to short format and return."""
 
         short_did_peer = long_to_short(long_did)
         return short_did_peer
 
-    async def long_did_peer_4_to_short(self, long_dp4: str) -> DIDInfo:
+    async def long_did_peer_4_to_short(self, long_dp4: str) -> str:
         """Convert did:peer:4 long format to short format and store in wallet."""
 
         async with self._profile.session() as session:
@@ -854,9 +854,9 @@ class BaseConnectionManager:
 
     async def find_connection(
         self,
-        their_did: str,
+        their_did: Optional[str],
         my_did: Optional[str] = None,
-        my_verkey: Optional[str] = None,
+        parent_thread_id: Optional[str] = None,
         auto_complete=False,
     ) -> Optional[ConnRecord]:
         """Look up existing connection information for a sender verkey.
@@ -864,7 +864,7 @@ class BaseConnectionManager:
         Args:
             their_did: Their DID
             my_did: My DID
-            my_verkey: My verkey
+            parent_thread_id: Parent thread ID
             auto_complete: Should this connection automatically be promoted to active
 
         Returns:
@@ -895,16 +895,13 @@ class BaseConnectionManager:
                         connection_id=connection.connection_id
                     )
 
-        if not connection and my_verkey:
-            try:
-                async with self._profile.session() as session:
-                    connection = await ConnRecord.retrieve_by_invitation_key(
-                        session,
-                        my_verkey,
-                        their_role=ConnRecord.Role.REQUESTER.rfc160,
-                    )
-            except StorageError:
-                pass
+        if not connection and parent_thread_id:
+            async with self._profile.session() as session:
+                connection = await ConnRecord.retrieve_by_invitation_msg_id(
+                    session,
+                    parent_thread_id,
+                    their_role=ConnRecord.Role.REQUESTER.rfc160,
+                )
 
         return connection
 
@@ -1001,7 +998,7 @@ class BaseConnectionManager:
                 )
 
         return await self.find_connection(
-            receipt.sender_did, receipt.recipient_did, receipt.recipient_verkey, True
+            receipt.sender_did, receipt.recipient_did, receipt.parent_thread_id, True
         )
 
     async def get_endpoints(self, conn_id: str) -> Tuple[Optional[str], Optional[str]]:

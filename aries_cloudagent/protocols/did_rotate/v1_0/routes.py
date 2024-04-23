@@ -14,7 +14,7 @@ from ....storage.error import StorageNotFoundError
 from .manager import DIDRotateManager
 from .message_types import SPEC_URI
 from .messages.hangup import HangupSchema as HangupMessageSchema
-from .messages.rotate import RotateSchema as RotateMesageSchema
+from .messages.rotate import RotateSchema as RotateMessageSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class DIDRotateRequestJSONSchema(OpenAPISchema):
 @match_info_schema(DIDRotateConnIdMatchInfoSchema())
 @json_schema(DIDRotateRequestJSONSchema())
 @response_schema(
-    RotateMesageSchema(), 200, description="Rotate agent message for observer"
+    RotateMessageSchema(), 200, description="Rotate agent message for observer"
 )
 async def rotate(request: web.BaseRequest):
     """Request to rotate a DID."""
@@ -115,7 +115,7 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "did-rotate",
-            "description": "Rorate a DID",
+            "description": "Rotate a DID",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )

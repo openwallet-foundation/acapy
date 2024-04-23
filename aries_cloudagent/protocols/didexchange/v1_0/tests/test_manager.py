@@ -721,8 +721,8 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             with mock.patch.object(
                 test_module, "ConnRecord", mock.MagicMock()
             ) as mock_conn_rec_cls:
-                mock_conn_rec_cls.retrieve_by_invitation_key = mock.CoroutineMock(
-                    side_effect=StorageNotFoundError()
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = mock.CoroutineMock(
+                    return_value=None
                 )
                 with self.assertRaises(DIDXManagerError) as context:
                     await self.manager.receive_request(
@@ -732,7 +732,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                         alias=None,
                         auto_accept_implicit=None,
                     )
-                assert "No explicit invitation found" in str(context.exception)
+                assert "explicit invitations" in str(context.exception)
 
     async def test_receive_request_public_did_no_did_doc_attachment(self):
         async with self.profile.session() as session:
@@ -1376,7 +1376,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             ), mock.patch.object(
                 self.manager, "store_did_document", mock.CoroutineMock()
             ):
-                mock_conn_rec_cls.retrieve_by_invitation_key = mock.CoroutineMock(
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = mock.CoroutineMock(
                     return_value=mock_conn
                 )
                 mock_conn_rec_cls.return_value = mock.MagicMock(
@@ -1435,8 +1435,8 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
             with mock.patch.object(
                 test_module, "ConnRecord", mock.MagicMock()
             ) as mock_conn_rec_cls:
-                mock_conn_rec_cls.retrieve_by_invitation_key = mock.CoroutineMock(
-                    side_effect=StorageNotFoundError()
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = mock.CoroutineMock(
+                    return_value=None
                 )
                 with self.assertRaises(DIDXManagerError):
                     await self.manager.receive_request(

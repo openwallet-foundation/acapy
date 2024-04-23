@@ -1043,7 +1043,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """
     #
     # there is no equivalent of this in anoncreds.
-    # do we need it there or is this only for tranisition.
+    # do we need it there or is this only for transitions.
     #
     context: AdminRequestContext = request["context"]
     profile = context.profile
@@ -1101,7 +1101,7 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
 
 class TailsDeleteResponseSchema(OpenAPISchema):
-    """Return schema for tails failes deletion."""
+    """Return schema for tails deletion."""
 
     message = fields.Str()
 

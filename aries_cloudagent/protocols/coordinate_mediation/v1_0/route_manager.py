@@ -33,7 +33,7 @@ class RouteManagerError(Exception):
 
 
 class RoutingInfo(NamedTuple):
-    """Routing info tuple contiaing routing keys and endpoint."""
+    """Routing info tuple containing routing keys and endpoint."""
 
     routing_keys: Optional[List[str]]
     endpoint: Optional[str]
@@ -50,7 +50,7 @@ class RouteManager(ABC):
     async def get_or_create_my_did(
         self, profile: Profile, conn_record: ConnRecord
     ) -> DIDInfo:
-        """Create or retrieve DID info for a conneciton."""
+        """Create or retrieve DID info for a connection."""
         if not conn_record.my_did:
             async with profile.session() as session:
                 wallet = session.inject(BaseWallet)

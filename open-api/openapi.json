@@ -70,7 +70,7 @@
     },
     "name" : "did-exchange"
   }, {
-    "description" : "Rorate a DID",
+    "description" : "Rotate a DID",
     "externalDocs" : {
       "description" : "Specification",
       "url" : "https://github.com/hyperledger/aries-rfcs/tree/main/features/0794-did-rotate"
@@ -1103,7 +1103,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "Identifier of the associated Invitation Mesage",
+          "description" : "Identifier of the associated Invitation Message",
           "in" : "query",
           "name" : "invitation_msg_id",
           "schema" : {
@@ -1122,7 +1122,7 @@
           "in" : "query",
           "name" : "state",
           "schema" : {
-            "enum" : [ "abandoned", "init", "active", "start", "invitation", "completed", "request", "response", "error" ],
+            "enum" : [ "abandoned", "active", "completed", "error", "init", "invitation", "request", "response", "start" ],
             "type" : "string"
           }
         }, {
@@ -3945,7 +3945,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "Filer on role, 'client' for keys     mediated by other agents, 'server' for keys     mediated by this agent",
+          "description" : "Filer on role, 'client' for keys mediated by other agents, 'server' for keys mediated by this agent",
           "in" : "query",
           "name" : "role",
           "schema" : {
@@ -7339,7 +7339,11 @@
       "ActionMenuFetchResult" : {
         "properties" : {
           "result" : {
-            "$ref" : "#/components/schemas/ActionMenuFetchResult_result"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/Menu"
+            } ],
+            "description" : "Action menu",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -7508,7 +7512,11 @@
             "type" : "object"
           },
           "jws" : {
-            "$ref" : "#/components/schemas/AttachDecoratorData_jws"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/AttachDecoratorDataJWS"
+            } ],
+            "description" : "Detached Java Web Signature",
+            "type" : "object"
           },
           "links" : {
             "description" : "List of hypertext links to data",
@@ -8059,7 +8067,7 @@
             "type" : "object"
           },
           "image_url" : {
-            "description" : "Image url for this wallet. This image url is publicized        (self-attested) to other agents as part of forming a connection.",
+            "description" : "Image url for this wallet. This image url is publicized (self-attested) to other agents as part of forming a connection.",
             "example" : "https://aries.ca/images/sample.png",
             "type" : "string"
           },
@@ -8070,12 +8078,12 @@
             "type" : "string"
           },
           "label" : {
-            "description" : "Label for this wallet. This label is publicized        (self-attested) to other agents as part of forming a connection.",
+            "description" : "Label for this wallet. This label is publicized (self-attested) to other agents as part of forming a connection.",
             "example" : "Alice",
             "type" : "string"
           },
           "wallet_dispatch_type" : {
-            "description" : "Webhook target dispatch type for this wallet.         default - Dispatch only to webhooks associated with this wallet.         base - Dispatch only to webhooks associated with the base wallet.         both - Dispatch to both webhook targets.",
+            "description" : "Webhook target dispatch type for this wallet. default: Dispatch only to webhooks associated with this wallet. base: Dispatch only to webhooks associated with the base wallet. both: Dispatch to both webhook targets.",
             "enum" : [ "default", "both", "base" ],
             "example" : "default",
             "type" : "string"
@@ -8160,7 +8168,7 @@
       "CreateWalletTokenRequest" : {
         "properties" : {
           "wallet_key" : {
-            "description" : "Master key used for key derivation. Only required for         unamanged wallets.",
+            "description" : "Master key used for key derivation. Only required for unmanaged wallets.",
             "example" : "MySecretKey123",
             "type" : "string"
           }
@@ -8212,7 +8220,7 @@
             "type" : "string"
           },
           "tag" : {
-            "description" : "The tag value passed in by the Issuer to\n         an AnonCred's Credential Definition create and store implementation.",
+            "description" : "The tag value passed in by the Issuer to an AnonCred's Credential Definition create and store implementation.",
             "example" : "default",
             "type" : "string"
           },
@@ -8229,12 +8237,12 @@
       "CredDefPostOptions" : {
         "properties" : {
           "create_transaction_for_endorser" : {
-            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign.",
             "example" : false,
             "type" : "boolean"
           },
           "endorser_connection_id" : {
-            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection.",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "type" : "string"
           },
@@ -8284,7 +8292,11 @@
       "CredDefState" : {
         "properties" : {
           "credential_definition" : {
-            "$ref" : "#/components/schemas/CredDefState_credential_definition"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredDef"
+            } ],
+            "description" : "credential definition",
+            "type" : "object"
           },
           "credential_definition_id" : {
             "description" : "credential definition id",
@@ -8302,10 +8314,18 @@
       "CredDefValue" : {
         "properties" : {
           "primary" : {
-            "$ref" : "#/components/schemas/CredDefValue_primary"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredDefValuePrimary"
+            } ],
+            "description" : "Primary value for credential definition",
+            "type" : "object"
           },
           "revocation" : {
-            "$ref" : "#/components/schemas/CredDefValue_revocation"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredDefValueRevocation"
+            } ],
+            "description" : "Revocation value for credential definition",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -8468,10 +8488,18 @@
       "CredDefValueSchemaAnoncreds" : {
         "properties" : {
           "primary" : {
-            "$ref" : "#/components/schemas/CredDefValueSchemaAnoncreds_primary"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredDefValuePrimarySchemaAnoncreds"
+            } ],
+            "description" : "Primary value for credential definition",
+            "type" : "object"
           },
           "revocation" : {
-            "$ref" : "#/components/schemas/CredDefValueSchemaAnoncreds_revocation"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredDefValueRevocationSchemaAnoncreds"
+            } ],
+            "description" : "Revocation value for credential definition",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -8579,6 +8607,7 @@
             "type" : "string"
           },
           "id" : {
+            "description" : "The ID of the credential",
             "example" : "http://example.edu/credentials/1872",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
@@ -8595,7 +8624,18 @@
             "type" : "object"
           },
           "proof" : {
-            "$ref" : "#/components/schemas/Credential_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/LinkedDataProof"
+            } ],
+            "description" : "The proof of the credential",
+            "example" : {
+              "created" : "2019-12-11T03:50:55",
+              "jws" : "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ",
+              "proofPurpose" : "assertionMethod",
+              "type" : "Ed25519Signature2018",
+              "verificationMethod" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            },
+            "type" : "object"
           },
           "type" : {
             "description" : "The JSON-LD type of the credential",
@@ -8633,7 +8673,11 @@
             "type" : "object"
           },
           "value" : {
-            "$ref" : "#/components/schemas/CredentialDefinition_value"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredDefValue"
+            } ],
+            "description" : "Credential definition primary and revocation values",
+            "type" : "object"
           },
           "ver" : {
             "description" : "Node protocol version",
@@ -8863,10 +8907,14 @@
             "type" : "string"
           },
           "options" : {
-            "$ref" : "#/components/schemas/DIDCreate_options"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/DIDCreateOptions"
+            } ],
+            "description" : "To define a key type and/or a did depending on chosen DID method.",
+            "type" : "object"
           },
           "seed" : {
-            "description" : "Optional seed to use for DID, Must beenabled in configuration before use.",
+            "description" : "Optional seed to use for DID, Must be enabled in configuration before use.",
             "example" : "000000000000000000000000Trustee1",
             "type" : "string"
           }
@@ -8993,7 +9041,11 @@
             "type" : "string"
           },
           "did_doc~attach" : {
-            "$ref" : "#/components/schemas/DIDXRequest_did_doc_attach"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/AttachDecorator"
+            } ],
+            "description" : "As signed attachment, DID Doc associated with DID",
+            "type" : "object"
           },
           "goal" : {
             "description" : "A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message",
@@ -9212,7 +9264,11 @@
             "type" : "object"
           },
           "options" : {
-            "$ref" : "#/components/schemas/Doc_options"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/SignatureOptions"
+            } ],
+            "description" : "Signature options",
+            "type" : "object"
           }
         },
         "required" : [ "credential", "options" ],
@@ -9366,7 +9422,11 @@
       "GetCredDefResult" : {
         "properties" : {
           "credential_definition" : {
-            "$ref" : "#/components/schemas/CredDefState_credential_definition"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredDef"
+            } ],
+            "description" : "credential definition",
+            "type" : "object"
           },
           "credential_definition_id" : {
             "description" : "credential definition id",
@@ -9484,6 +9544,22 @@
       "HolderModuleResponse" : {
         "type" : "object"
       },
+      "IndyAttrValue" : {
+        "properties" : {
+          "encoded" : {
+            "description" : "Attribute encoded value",
+            "example" : "-1",
+            "pattern" : "^-?[0-9]*$",
+            "type" : "string"
+          },
+          "raw" : {
+            "description" : "Attribute raw value",
+            "type" : "string"
+          }
+        },
+        "required" : [ "encoded", "raw" ],
+        "type" : "object"
+      },
       "IndyCredAbstract" : {
         "properties" : {
           "cred_def_id" : {
@@ -9493,7 +9569,11 @@
             "type" : "string"
           },
           "key_correctness_proof" : {
-            "$ref" : "#/components/schemas/IndyCredAbstract_key_correctness_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyKeyCorrectnessProof"
+            } ],
+            "description" : "Key correctness proof",
+            "type" : "object"
           },
           "nonce" : {
             "description" : "Nonce in credential abstract",
@@ -9558,10 +9638,18 @@
       "IndyCredPrecis" : {
         "properties" : {
           "cred_info" : {
-            "$ref" : "#/components/schemas/IndyCredPrecis_cred_info"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyCredInfo"
+            } ],
+            "description" : "Credential info",
+            "type" : "object"
           },
           "interval" : {
-            "$ref" : "#/components/schemas/IndyCredPrecis_interval"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyNonRevocationInterval"
+            } ],
+            "description" : "Non-revocation interval from presentation request",
+            "type" : "object"
           },
           "presentation_referents" : {
             "items" : {
@@ -9646,8 +9734,14 @@
             "type" : "object"
           },
           "values" : {
+            "additionalProperties" : {
+              "allOf" : [ {
+                "$ref" : "#/definitions/IndyAttrValue"
+              } ],
+              "description" : "Attribute value",
+              "type" : "object"
+            },
             "description" : "Credential attributes",
-            "properties" : { },
             "type" : "object"
           },
           "witness" : {
@@ -9972,10 +10066,18 @@
             "type" : "array"
           },
           "proof" : {
-            "$ref" : "#/components/schemas/IndyProof_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyProofProof"
+            } ],
+            "description" : "Indy proof.proof content",
+            "type" : "object"
           },
           "requested_proof" : {
-            "$ref" : "#/components/schemas/IndyProof_requested_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyProofRequestedProof"
+            } ],
+            "description" : "Indy proof.requested_proof content",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -10016,7 +10118,11 @@
       "IndyProofProof" : {
         "properties" : {
           "aggregated_proof" : {
-            "$ref" : "#/components/schemas/IndyProofProof_aggregated_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyProofProofAggregatedProof"
+            } ],
+            "description" : "Indy proof aggregated proof",
+            "type" : "object"
           },
           "proofs" : {
             "description" : "Indy proof proofs",
@@ -10054,7 +10160,11 @@
             "$ref" : "#/components/schemas/IndyProofProofProofsProof_non_revoc_proof"
           },
           "primary_proof" : {
-            "$ref" : "#/components/schemas/IndyProofProofProofsProof_primary_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyPrimaryProof"
+            } ],
+            "description" : "Indy primary proof",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -10374,7 +10484,11 @@
             "type" : "string"
           },
           "value" : {
-            "$ref" : "#/components/schemas/IndyRevRegDef_value"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyRevRegDefValue"
+            } ],
+            "description" : "Revocation registry definition value",
+            "type" : "object"
           },
           "ver" : {
             "description" : "Version of revocation registry definition",
@@ -10400,7 +10514,11 @@
             "type" : "integer"
           },
           "publicKeys" : {
-            "$ref" : "#/components/schemas/IndyRevRegDefValue_publicKeys"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyRevRegDefValuePublicKeys"
+            } ],
+            "description" : "Public keys",
+            "type" : "object"
           },
           "tailsHash" : {
             "description" : "Tails hash value",
@@ -10436,7 +10554,11 @@
       "IndyRevRegEntry" : {
         "properties" : {
           "value" : {
-            "$ref" : "#/components/schemas/IndyRevRegEntry_value"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyRevRegEntryValue"
+            } ],
+            "description" : "Revocation registry entry value",
+            "type" : "object"
           },
           "ver" : {
             "description" : "Version of revocation registry entry",
@@ -10547,7 +10669,24 @@
             "type" : "string"
           },
           "schema" : {
-            "$ref" : "#/components/schemas/InputDescriptors_schema"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/SchemasInputDescriptorFilter"
+            } ],
+            "description" : "Accepts a list of schema or a dict containing filters like oneof_filter.",
+            "example" : {
+              "oneof_filter" : [ [ {
+                "uri" : "https://www.w3.org/Test1#Test1"
+              }, {
+                "uri" : "https://www.w3.org/Test2#Test2"
+              } ], {
+                "oneof_filter" : [ [ {
+                  "uri" : "https://www.w3.org/Test1#Test1"
+                } ], [ {
+                  "uri" : "https://www.w3.org/Test2#Test2"
+                } ] ]
+              } ]
+            },
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -10724,7 +10863,11 @@
             "type" : "string"
           },
           "invitation" : {
-            "$ref" : "#/components/schemas/InvitationRecord_invitation"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/InvitationMessage"
+            } ],
+            "description" : "Out of band invitation message",
+            "type" : "object"
           },
           "invitation_id" : {
             "description" : "Invitation record identifier",
@@ -10956,10 +11099,18 @@
             "type" : "string"
           },
           "revoc_reg_def" : {
-            "$ref" : "#/components/schemas/IssuerRevRegRecord_revoc_reg_def"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyRevRegDef"
+            } ],
+            "description" : "Revocation registry definition",
+            "type" : "object"
           },
           "revoc_reg_entry" : {
-            "$ref" : "#/components/schemas/IssuerRevRegRecord_revoc_reg_entry"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyRevRegEntry"
+            } ],
+            "description" : "Revocation registry entry",
+            "type" : "object"
           },
           "revoc_reg_id" : {
             "description" : "Revocation registry identifier",
@@ -11095,7 +11246,11 @@
             "type" : "object"
           },
           "paginate" : {
-            "$ref" : "#/components/schemas/KeylistQuery_paginate"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/KeylistQueryPaginate"
+            } ],
+            "description" : "Pagination info",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -11181,10 +11336,36 @@
       "LDProofVCDetail" : {
         "properties" : {
           "credential" : {
-            "$ref" : "#/components/schemas/LDProofVCDetail_credential"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/Credential"
+            } ],
+            "description" : "Detail of the JSON-LD Credential to be issued",
+            "example" : {
+              "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://w3id.org/citizenship/v1" ],
+              "credentialSubject" : {
+                "familyName" : "SMITH",
+                "gender" : "Male",
+                "givenName" : "JOHN",
+                "type" : [ "PermanentResident", "Person" ]
+              },
+              "description" : "Government of Example Permanent Resident Card.",
+              "identifier" : "83627465",
+              "issuanceDate" : "2019-12-03T12:19:52Z",
+              "issuer" : "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th",
+              "name" : "Permanent Resident Card",
+              "type" : [ "VerifiableCredential", "PermanentResidentCard" ]
+            },
+            "type" : "object"
           },
           "options" : {
-            "$ref" : "#/components/schemas/LDProofVCDetail_options"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/LDProofVCOptions"
+            } ],
+            "description" : "Options for specifying how the linked data proof is created.",
+            "example" : {
+              "proofType" : "Ed25519Signature2018"
+            },
+            "type" : "object"
           }
         },
         "required" : [ "credential", "options" ],
@@ -11204,7 +11385,11 @@
             "type" : "string"
           },
           "credentialStatus" : {
-            "$ref" : "#/components/schemas/LDProofVCOptions_credentialStatus"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredentialStatusOptions"
+            } ],
+            "description" : "The credential status mechanism to use for the credential. Omitting the property indicates the issued credential will not include a credential status",
+            "type" : "object"
           },
           "domain" : {
             "description" : "The intended domain of validity for the proof",
@@ -11635,10 +11820,14 @@
             "type" : "string"
           },
           "invitation" : {
-            "$ref" : "#/components/schemas/InvitationRecord_invitation"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/InvitationMessage"
+            } ],
+            "description" : "Out of band invitation message",
+            "type" : "object"
           },
           "multi_use" : {
-            "description" : "Allow for multiple uses of the oobinvitation",
+            "description" : "Allow for multiple uses of the oob invitation",
             "example" : true,
             "type" : "boolean"
           },
@@ -11734,12 +11923,24 @@
             "type" : "object"
           },
           "id" : {
+            "description" : "The ID of the presentation",
             "example" : "http://example.edu/presentations/1872",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
           },
           "proof" : {
-            "$ref" : "#/components/schemas/Presentation_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/LinkedDataProof"
+            } ],
+            "description" : "The proof of the presentation",
+            "example" : {
+              "created" : "2019-12-11T03:50:55",
+              "jws" : "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ",
+              "proofPurpose" : "assertionMethod",
+              "type" : "Ed25519Signature2018",
+              "verificationMethod" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            },
+            "type" : "object"
           },
           "type" : {
             "description" : "The JSON-LD type of the presentation",
@@ -11964,12 +12165,12 @@
       "PublishRevocationsOptions" : {
         "properties" : {
           "create_transaction_for_endorser" : {
-            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign.",
             "example" : false,
             "type" : "boolean"
           },
           "endorser_connection_id" : {
-            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection.",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "type" : "string"
           }
@@ -12162,7 +12363,7 @@
       "RemoveWalletRequest" : {
         "properties" : {
           "wallet_key" : {
-            "description" : "Master key used for key derivation. Only required for         unmanaged wallets.",
+            "description" : "Master key used for key derivation. Only required for unmanaged wallets.",
             "example" : "MySecretKey123",
             "type" : "string"
           }
@@ -12188,7 +12389,7 @@
       "RevList" : {
         "properties" : {
           "currentAccumulator" : {
-            "description" : "The current accumalator value",
+            "description" : "The current accumulator value",
             "example" : "21 118...1FB",
             "type" : "string"
           },
@@ -12235,12 +12436,12 @@
       "RevListOptions" : {
         "properties" : {
           "create_transaction_for_endorser" : {
-            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign.",
             "example" : false,
             "type" : "boolean"
           },
           "endorser_connection_id" : {
-            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection.",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "type" : "string"
           }
@@ -12269,7 +12470,11 @@
       "RevListState" : {
         "properties" : {
           "revocation_list" : {
-            "$ref" : "#/components/schemas/RevListState_revocation_list"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/RevList"
+            } ],
+            "description" : "revocation list",
+            "type" : "object"
           },
           "state" : {
             "enum" : [ "finished", "failed", "action", "wait" ],
@@ -12337,12 +12542,12 @@
       "RevRegDefOptions" : {
         "properties" : {
           "create_transaction_for_endorser" : {
-            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign.",
             "example" : false,
             "type" : "boolean"
           },
           "endorser_connection_id" : {
-            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection.",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "type" : "string"
           }
@@ -12371,7 +12576,11 @@
       "RevRegDefState" : {
         "properties" : {
           "revocation_registry_definition" : {
-            "$ref" : "#/components/schemas/RevRegDefState_revocation_registry_definition"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/RevRegDef"
+            } ],
+            "description" : "revocation registry definition",
+            "type" : "object"
           },
           "revocation_registry_definition_id" : {
             "description" : "revocation registry definition id",
@@ -12845,12 +13054,12 @@
       "SchemaPostOption" : {
         "properties" : {
           "create_transaction_for_endorser" : {
-            "description" : "\n    Create transaction for endorser (optional, default false). \n    Use this for agents who don't specify an author role but want to \n    create a transaction for an endorser to sign.",
+            "description" : "Create transaction for endorser (optional, default false). Use this for agents who don't specify an author role but want to create a transaction for an endorser to sign.",
             "example" : false,
             "type" : "boolean"
           },
           "endorser_connection_id" : {
-            "description" : "\n    Connection identifier (optional) (this is an example)\n    You can set this is you know the endorsers connection id you want to use.\n    If not specified then the agent will attempt to find an endorser connection.",
+            "description" : "Connection identifier (optional) (this is an example). You can set this if you know the endorser's connection id you want to use. If not specified then the agent will attempt to find an endorser connection.",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "type" : "string"
           }
@@ -12916,7 +13125,11 @@
       "SchemaSendResult" : {
         "properties" : {
           "schema" : {
-            "$ref" : "#/components/schemas/SchemaSendResult_schema"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/Schema"
+            } ],
+            "description" : "Schema definition",
+            "type" : "object"
           },
           "schema_id" : {
             "description" : "Schema identifier",
@@ -12980,7 +13193,11 @@
       "SendMenu" : {
         "properties" : {
           "menu" : {
-            "$ref" : "#/components/schemas/SendMenu_menu"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/MenuJson"
+            } ],
+            "description" : "Menu to send to connection",
+            "type" : "object"
           }
         },
         "required" : [ "menu" ],
@@ -13078,7 +13295,11 @@
       "SignedDoc" : {
         "properties" : {
           "proof" : {
-            "$ref" : "#/components/schemas/SignedDoc_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/SignatureOptions"
+            } ],
+            "description" : "Linked data proof",
+            "type" : "object"
           }
         },
         "required" : [ "proof" ],
@@ -13241,7 +13462,7 @@
             "type" : "string"
           },
           "connection_id" : {
-            "description" : "The connection identifier for thie particular transaction record",
+            "description" : "The connection identifier for this particular transaction record",
             "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "type" : "string"
           },
@@ -13365,7 +13586,11 @@
             "$ref" : "#/components/schemas/CredentialDefinitionSendResult"
           },
           "txn" : {
-            "$ref" : "#/components/schemas/TxnOrCredentialDefinitionSendResult_txn"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/TransactionRecord"
+            } ],
+            "description" : "Credential definition transaction to endorse",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -13376,7 +13601,11 @@
             "$ref" : "#/components/schemas/PublishRevocationsSchemaAnoncreds"
           },
           "txn" : {
-            "$ref" : "#/components/schemas/TxnOrPublishRevocationsResult_txn"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/TransactionRecord"
+            } ],
+            "description" : "Revocation registry revocations transaction to endorse",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -13389,7 +13618,11 @@
             "type" : "boolean"
           },
           "txn" : {
-            "$ref" : "#/components/schemas/TxnOrRegisterLedgerNymResponse_txn"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/TransactionRecord"
+            } ],
+            "description" : "DID transaction to endorse",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -13400,7 +13633,11 @@
             "$ref" : "#/components/schemas/RevRegResult"
           },
           "txn" : {
-            "$ref" : "#/components/schemas/TxnOrRevRegResult_txn"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/TransactionRecord"
+            } ],
+            "description" : "Revocation registry definition transaction to endorse",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -13408,10 +13645,18 @@
       "TxnOrSchemaSendResult" : {
         "properties" : {
           "sent" : {
-            "$ref" : "#/components/schemas/TxnOrSchemaSendResult_sent"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/SchemaSendResult"
+            } ],
+            "description" : "Content sent",
+            "type" : "object"
           },
           "txn" : {
-            "$ref" : "#/components/schemas/TxnOrSchemaSendResult_txn"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/TransactionRecord"
+            } ],
+            "description" : "Schema transaction to endorse",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -13439,17 +13684,17 @@
             "type" : "object"
           },
           "image_url" : {
-            "description" : "Image url for this wallet. This image url is publicized        (self-attested) to other agents as part of forming a connection.",
+            "description" : "Image url for this wallet. This image url is publicized (self-attested) to other agents as part of forming a connection.",
             "example" : "https://aries.ca/images/sample.png",
             "type" : "string"
           },
           "label" : {
-            "description" : "Label for this wallet. This label is publicized        (self-attested) to other agents as part of forming a connection.",
+            "description" : "Label for this wallet. This label is publicized (self-attested) to other agents as part of forming a connection.",
             "example" : "Alice",
             "type" : "string"
           },
           "wallet_dispatch_type" : {
-            "description" : "Webhook target dispatch type for this wallet.         default - Dispatch only to webhooks associated with this wallet.         base - Dispatch only to webhooks associated with the base wallet.         both - Dispatch to both webhook targets.",
+            "description" : "Webhook target dispatch type for this wallet. default: Dispatch only to webhooks associated with this wallet. base: Dispatch only to webhooks associated with the base wallet. both: Dispatch to both webhook targets.",
             "enum" : [ "default", "both", "base" ],
             "example" : "default",
             "type" : "string"
@@ -13469,7 +13714,11 @@
       "V10CredentialBoundOfferRequest" : {
         "properties" : {
           "counter_proposal" : {
-            "$ref" : "#/components/schemas/V10CredentialBoundOfferRequest_counter_proposal"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredentialProposal"
+            } ],
+            "description" : "Optional counter-proposal",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -13592,7 +13841,11 @@
             "type" : "string"
           },
           "credential" : {
-            "$ref" : "#/components/schemas/V10CredentialExchange_credential"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyCredInfo"
+            } ],
+            "description" : "Credential as stored",
+            "type" : "object"
           },
           "credential_definition_id" : {
             "description" : "Credential definition identifier",
@@ -13611,16 +13864,32 @@
             "type" : "string"
           },
           "credential_offer" : {
-            "$ref" : "#/components/schemas/V10CredentialExchange_credential_offer"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyCredAbstract"
+            } ],
+            "description" : "(Indy) credential offer",
+            "type" : "object"
           },
           "credential_offer_dict" : {
-            "$ref" : "#/components/schemas/V10CredentialExchange_credential_offer_dict"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredentialOffer"
+            } ],
+            "description" : "Credential offer message",
+            "type" : "object"
           },
           "credential_proposal_dict" : {
-            "$ref" : "#/components/schemas/V10CredentialExchange_credential_proposal_dict"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/CredentialProposal"
+            } ],
+            "description" : "Credential proposal message",
+            "type" : "object"
           },
           "credential_request" : {
-            "$ref" : "#/components/schemas/V10CredentialExchange_credential_request"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyCredRequest"
+            } ],
+            "description" : "(Indy) credential request",
+            "type" : "object"
           },
           "credential_request_metadata" : {
             "description" : "(Indy) credential request metadata",
@@ -13644,7 +13913,11 @@
             "type" : "string"
           },
           "raw_credential" : {
-            "$ref" : "#/components/schemas/V10CredentialExchange_raw_credential"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyCredential"
+            } ],
+            "description" : "Credential as received, prior to storage in holder wallet",
+            "type" : "object"
           },
           "revoc_reg_id" : {
             "description" : "Revocation registry identifier",
@@ -13902,7 +14175,11 @@
         "properties" : {
           "results" : {
             "items" : {
-              "$ref" : "#/components/schemas/V10DiscoveryExchangeListResult_results_inner"
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/V10DiscoveryRecord"
+              } ],
+              "description" : "Discover Features v1.0 exchange record",
+              "type" : "object"
             },
             "type" : "array"
           }
@@ -13923,7 +14200,11 @@
             "type" : "string"
           },
           "disclose" : {
-            "$ref" : "#/components/schemas/V10DiscoveryRecord_disclose"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/Disclose"
+            } ],
+            "description" : "Disclose message",
+            "type" : "object"
           },
           "discovery_exchange_id" : {
             "description" : "Credential exchange identifier",
@@ -13931,7 +14212,11 @@
             "type" : "string"
           },
           "query_msg" : {
-            "$ref" : "#/components/schemas/V10DiscoveryRecord_query_msg"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/Query"
+            } ],
+            "description" : "Query message",
+            "type" : "object"
           },
           "state" : {
             "description" : "Current record state",
@@ -14025,7 +14310,11 @@
             "type" : "string"
           },
           "presentation" : {
-            "$ref" : "#/components/schemas/V10PresentationExchange_presentation"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyProof"
+            } ],
+            "description" : "(Indy) presentation (also known as proof)",
+            "type" : "object"
           },
           "presentation_exchange_id" : {
             "description" : "Presentation exchange identifier",
@@ -14033,13 +14322,25 @@
             "type" : "string"
           },
           "presentation_proposal_dict" : {
-            "$ref" : "#/components/schemas/V10PresentationExchange_presentation_proposal_dict"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/PresentationProposal"
+            } ],
+            "description" : "Presentation proposal message",
+            "type" : "object"
           },
           "presentation_request" : {
-            "$ref" : "#/components/schemas/V10PresentationExchange_presentation_request"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyProofRequest"
+            } ],
+            "description" : "(Indy) presentation request (also known as proof request)",
+            "type" : "object"
           },
           "presentation_request_dict" : {
-            "$ref" : "#/components/schemas/V10PresentationExchange_presentation_request_dict"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/PresentationRequest"
+            } ],
+            "description" : "Presentation request message",
+            "type" : "object"
           },
           "role" : {
             "description" : "Present-proof exchange role: prover or verifier",
@@ -14250,10 +14551,18 @@
       "V20CredBoundOfferRequest" : {
         "properties" : {
           "counter_preview" : {
-            "$ref" : "#/components/schemas/V20CredBoundOfferRequest_counter_preview"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredPreview"
+            } ],
+            "description" : "Optional content for counter-proposal",
+            "type" : "object"
           },
           "filter" : {
-            "$ref" : "#/components/schemas/V20CredBoundOfferRequest_filter"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredFilter"
+            } ],
+            "description" : "Credential specification criteria by format",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -14278,7 +14587,11 @@
             "$ref" : "#/components/schemas/V20CredPreview"
           },
           "filter" : {
-            "$ref" : "#/components/schemas/V20CredBoundOfferRequest_filter"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredFilter"
+            } ],
+            "description" : "Credential specification criteria by format",
+            "type" : "object"
           },
           "replacement_id" : {
             "description" : "Optional identifier used to manage credential replacement",
@@ -14317,7 +14630,11 @@
             "type" : "boolean"
           },
           "by_format" : {
-            "$ref" : "#/components/schemas/V20CredExRecord_by_format"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredExRecordByFormat"
+            } ],
+            "description" : "Attachment content by format for proposal, offer, request, and issue",
+            "type" : "object"
           },
           "connection_id" : {
             "description" : "Connection identifier",
@@ -14336,19 +14653,39 @@
             "type" : "string"
           },
           "cred_issue" : {
-            "$ref" : "#/components/schemas/V20CredExRecord_cred_issue"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredIssue"
+            } ],
+            "description" : "Serialized credential issue message",
+            "type" : "object"
           },
           "cred_offer" : {
-            "$ref" : "#/components/schemas/V20CredExRecord_cred_offer"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredOffer"
+            } ],
+            "description" : "Credential offer message",
+            "type" : "object"
           },
           "cred_preview" : {
-            "$ref" : "#/components/schemas/V20CredExRecord_cred_preview"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredPreview"
+            } ],
+            "description" : "Credential preview from credential proposal",
+            "type" : "object"
           },
           "cred_proposal" : {
-            "$ref" : "#/components/schemas/V20CredExRecord_cred_proposal"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredProposal"
+            } ],
+            "description" : "Credential proposal message",
+            "type" : "object"
           },
           "cred_request" : {
-            "$ref" : "#/components/schemas/V20CredExRecord_cred_request"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredRequest"
+            } ],
+            "description" : "Serialized credential request message",
+            "type" : "object"
           },
           "error_msg" : {
             "description" : "Error message",
@@ -14420,7 +14757,11 @@
       "V20CredExRecordDetail" : {
         "properties" : {
           "cred_ex_record" : {
-            "$ref" : "#/components/schemas/V20CredExRecordDetail_cred_ex_record"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredExRecord"
+            } ],
+            "description" : "Credential exchange record",
+            "type" : "object"
           },
           "indy" : {
             "$ref" : "#/components/schemas/V20CredExRecordIndy"
@@ -14537,10 +14878,18 @@
       "V20CredFilter" : {
         "properties" : {
           "indy" : {
-            "$ref" : "#/components/schemas/V20CredFilter_indy"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredFilterIndy"
+            } ],
+            "description" : "Credential filter for indy",
+            "type" : "object"
           },
           "ld_proof" : {
-            "$ref" : "#/components/schemas/V20CredFilter_ld_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/LDProofVCDetail"
+            } ],
+            "description" : "Credential filter for linked data proof",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -14588,7 +14937,11 @@
       "V20CredFilterLDProof" : {
         "properties" : {
           "ld_proof" : {
-            "$ref" : "#/components/schemas/V20CredFilter_ld_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/LDProofVCDetail"
+            } ],
+            "description" : "Credential filter for linked data proof",
+            "type" : "object"
           }
         },
         "required" : [ "ld_proof" ],
@@ -14731,7 +15084,11 @@
             "$ref" : "#/components/schemas/V20CredPreview"
           },
           "filter" : {
-            "$ref" : "#/components/schemas/V20CredBoundOfferRequest_filter"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredFilter"
+            } ],
+            "description" : "Credential specification criteria by format",
+            "type" : "object"
           },
           "replacement_id" : {
             "description" : "Optional identifier used to manage credential replacement",
@@ -14771,7 +15128,11 @@
             "$ref" : "#/components/schemas/V20CredPreview"
           },
           "filter" : {
-            "$ref" : "#/components/schemas/V20CredBoundOfferRequest_filter"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredFilter"
+            } ],
+            "description" : "Credential specification criteria by format",
+            "type" : "object"
           },
           "replacement_id" : {
             "description" : "Optional identifier used to manage credential replacement",
@@ -14822,7 +15183,11 @@
             "type" : "string"
           },
           "credential_preview" : {
-            "$ref" : "#/components/schemas/V20CredProposal_credential_preview"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredPreview"
+            } ],
+            "description" : "Credential preview",
+            "type" : "object"
           },
           "filters~attach" : {
             "description" : "Credential filter per acceptable format on corresponding identifier",
@@ -14894,7 +15259,11 @@
             "type" : "string"
           },
           "filter" : {
-            "$ref" : "#/components/schemas/V20CredRequestFree_filter"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredFilterLDProof"
+            } ],
+            "description" : "Credential specification criteria by format",
+            "type" : "object"
           },
           "holder_did" : {
             "description" : "Holder DID to substitute for the credentialSubject.id",
@@ -14938,7 +15307,11 @@
         "properties" : {
           "results" : {
             "items" : {
-              "$ref" : "#/components/schemas/V20DiscoveryExchangeListResult_results_inner"
+              "allOf" : [ {
+                "$ref" : "#/components/schemas/V20DiscoveryRecord"
+              } ],
+              "description" : "Discover Features v2.0 exchange record",
+              "type" : "object"
             },
             "type" : "array"
           }
@@ -14948,7 +15321,11 @@
       "V20DiscoveryExchangeResult" : {
         "properties" : {
           "results" : {
-            "$ref" : "#/components/schemas/V20DiscoveryExchangeListResult_results_inner"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20DiscoveryRecord"
+            } ],
+            "description" : "Discover Features v2.0 exchange record",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -14967,7 +15344,11 @@
             "type" : "string"
           },
           "disclosures" : {
-            "$ref" : "#/components/schemas/V20DiscoveryRecord_disclosures"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/Disclosures"
+            } ],
+            "description" : "Disclosures message",
+            "type" : "object"
           },
           "discovery_exchange_id" : {
             "description" : "Credential exchange identifier",
@@ -14975,7 +15356,11 @@
             "type" : "string"
           },
           "queries_msg" : {
-            "$ref" : "#/components/schemas/V20DiscoveryRecord_queries_msg"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/Queries"
+            } ],
+            "description" : "Queries message",
+            "type" : "object"
           },
           "state" : {
             "description" : "Current record state",
@@ -15015,7 +15400,11 @@
             "$ref" : "#/components/schemas/V20CredPreview"
           },
           "filter" : {
-            "$ref" : "#/components/schemas/V20CredBoundOfferRequest_filter"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20CredFilter"
+            } ],
+            "description" : "Credential specification criteria by format",
+            "type" : "object"
           },
           "replacement_id" : {
             "description" : "Optional identifier used to manage credential replacement",
@@ -15112,7 +15501,11 @@
             "type" : "boolean"
           },
           "by_format" : {
-            "$ref" : "#/components/schemas/V20PresExRecord_by_format"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20PresExRecordByFormat"
+            } ],
+            "description" : "Attachment content by format for proposal, request, and presentation",
+            "type" : "object"
           },
           "connection_id" : {
             "description" : "Connection identifier",
@@ -15137,7 +15530,11 @@
             "type" : "string"
           },
           "pres" : {
-            "$ref" : "#/components/schemas/V20PresExRecord_pres"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20Pres"
+            } ],
+            "description" : "Presentation message",
+            "type" : "object"
           },
           "pres_ex_id" : {
             "description" : "Presentation exchange identifier",
@@ -15145,10 +15542,18 @@
             "type" : "string"
           },
           "pres_proposal" : {
-            "$ref" : "#/components/schemas/V20PresExRecord_pres_proposal"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20PresProposal"
+            } ],
+            "description" : "Presentation proposal message",
+            "type" : "object"
           },
           "pres_request" : {
-            "$ref" : "#/components/schemas/V20PresExRecord_pres_request"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/V20PresRequest"
+            } ],
+            "description" : "Presentation request message",
+            "type" : "object"
           },
           "role" : {
             "description" : "Present-proof exchange role: prover or verifier",
@@ -15263,6 +15668,7 @@
             "type" : "string"
           },
           "formats" : {
+            "description" : "Acceptable attachment formats",
             "items" : {
               "$ref" : "#/components/schemas/V20PresFormat"
             },
@@ -15282,10 +15688,18 @@
       "V20PresProposalByFormat" : {
         "properties" : {
           "dif" : {
-            "$ref" : "#/components/schemas/V20PresProposalByFormat_dif"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/DIFProofProposal"
+            } ],
+            "description" : "Presentation proposal for DIF",
+            "type" : "object"
           },
           "indy" : {
-            "$ref" : "#/components/schemas/V20PresProposalByFormat_indy"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyProofRequest"
+            } ],
+            "description" : "Presentation proposal for indy",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -15339,6 +15753,7 @@
             "type" : "string"
           },
           "formats" : {
+            "description" : "Acceptable attachment formats",
             "items" : {
               "$ref" : "#/components/schemas/V20PresFormat"
             },
@@ -15362,10 +15777,18 @@
       "V20PresRequestByFormat" : {
         "properties" : {
           "dif" : {
-            "$ref" : "#/components/schemas/V20PresRequestByFormat_dif"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/DIFProofRequest"
+            } ],
+            "description" : "Presentation request for DIF",
+            "type" : "object"
           },
           "indy" : {
-            "$ref" : "#/components/schemas/V20PresRequestByFormat_indy"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyProofRequest"
+            } ],
+            "description" : "Presentation request for indy",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -15409,10 +15832,18 @@
             "type" : "boolean"
           },
           "dif" : {
-            "$ref" : "#/components/schemas/V20PresSpecByFormatRequest_dif"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/DIFPresSpec"
+            } ],
+            "description" : "Optional Presentation specification for DIF, overrides the PresentationExchange record's PresRequest",
+            "type" : "object"
           },
           "indy" : {
-            "$ref" : "#/components/schemas/V20PresSpecByFormatRequest_indy"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/IndyPresSpec"
+            } ],
+            "description" : "Presentation specification for indy",
+            "type" : "object"
           },
           "trace" : {
             "description" : "Record trace information, based on agent configuration",
@@ -15552,6 +15983,7 @@
             "type" : "string"
           },
           "id" : {
+            "description" : "The ID of the credential",
             "example" : "http://example.edu/credentials/1872",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
@@ -15568,7 +16000,18 @@
             "type" : "object"
           },
           "proof" : {
-            "$ref" : "#/components/schemas/Credential_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/LinkedDataProof"
+            } ],
+            "description" : "The proof of the credential",
+            "example" : {
+              "created" : "2019-12-11T03:50:55",
+              "jws" : "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ",
+              "proofPurpose" : "assertionMethod",
+              "type" : "Ed25519Signature2018",
+              "verificationMethod" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            },
+            "type" : "object"
           },
           "type" : {
             "description" : "The JSON-LD type of the credential",
@@ -15598,12 +16041,24 @@
             "type" : "object"
           },
           "id" : {
+            "description" : "The ID of the presentation",
             "example" : "http://example.edu/presentations/1872",
             "pattern" : "\\w+:(\\/?\\/?)[^\\s]+",
             "type" : "string"
           },
           "proof" : {
-            "$ref" : "#/components/schemas/Presentation_proof"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/LinkedDataProof"
+            } ],
+            "description" : "The proof of the presentation",
+            "example" : {
+              "created" : "2019-12-11T03:50:55",
+              "jws" : "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ",
+              "proofPurpose" : "assertionMethod",
+              "type" : "Ed25519Signature2018",
+              "verificationMethod" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+            },
+            "type" : "object"
           },
           "type" : {
             "description" : "The JSON-LD type of the presentation",
@@ -15665,7 +16120,11 @@
       "VerifyRequest" : {
         "properties" : {
           "doc" : {
-            "$ref" : "#/components/schemas/VerifyRequest_doc"
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/SignedDoc"
+            } ],
+            "description" : "Signed document",
+            "type" : "object"
           },
           "verkey" : {
             "description" : "Verkey to use for doc verification",
@@ -15819,118 +16278,6 @@
         },
         "type" : "object"
       },
-      "ActionMenuFetchResult_result" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/Menu"
-        } ],
-        "description" : "Action menu",
-        "type" : "object"
-      },
-      "AttachDecoratorData_jws" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/AttachDecoratorDataJWS"
-        } ],
-        "description" : "Detached Java Web Signature",
-        "type" : "object"
-      },
-      "CredDefState_credential_definition" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredDef"
-        } ],
-        "description" : "credential definition",
-        "type" : "object"
-      },
-      "CredDefValue_primary" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredDefValuePrimary"
-        } ],
-        "description" : "Primary value for credential definition",
-        "type" : "object"
-      },
-      "CredDefValue_revocation" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredDefValueRevocation"
-        } ],
-        "description" : "Revocation value for credential definition",
-        "type" : "object"
-      },
-      "CredDefValueSchemaAnoncreds_primary" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredDefValuePrimarySchemaAnoncreds"
-        } ],
-        "description" : "Primary value for credential definition",
-        "type" : "object"
-      },
-      "CredDefValueSchemaAnoncreds_revocation" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredDefValueRevocationSchemaAnoncreds"
-        } ],
-        "description" : "Revocation value for credential definition",
-        "type" : "object"
-      },
-      "Credential_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/LinkedDataProof"
-        } ],
-        "description" : "The proof of the credential",
-        "example" : {
-          "created" : "2019-12-11T03:50:55",
-          "jws" : "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ",
-          "proofPurpose" : "assertionMethod",
-          "type" : "Ed25519Signature2018",
-          "verificationMethod" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-        },
-        "type" : "object"
-      },
-      "CredentialDefinition_value" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredDefValue"
-        } ],
-        "description" : "Credential definition primary and revocation values",
-        "type" : "object"
-      },
-      "DIDCreate_options" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/DIDCreateOptions"
-        } ],
-        "description" : "To define a key type and/or a did depending on chosen DID method.",
-        "type" : "object"
-      },
-      "DIDXRequest_did_doc_attach" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/AttachDecorator"
-        } ],
-        "description" : "As signed attachment, DID Doc associated with DID",
-        "type" : "object"
-      },
-      "Doc_options" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/SignatureOptions"
-        } ],
-        "description" : "Signature options",
-        "type" : "object"
-      },
-      "IndyCredAbstract_key_correctness_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyKeyCorrectnessProof"
-        } ],
-        "description" : "Key correctness proof",
-        "type" : "object"
-      },
-      "IndyCredPrecis_cred_info" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyCredInfo"
-        } ],
-        "description" : "Credential info",
-        "type" : "object"
-      },
-      "IndyCredPrecis_interval" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyNonRevocationInterval"
-        } ],
-        "description" : "Non-revocation interval from presentation request",
-        "type" : "object"
-      },
       "IndyPrimaryProof_eq_proof" : {
         "allOf" : [ {
           "$ref" : "#/components/schemas/IndyEQProof"
@@ -15939,40 +16286,12 @@
         "nullable" : true,
         "type" : "object"
       },
-      "IndyProof_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProofProof"
-        } ],
-        "description" : "Indy proof.proof content",
-        "type" : "object"
-      },
-      "IndyProof_requested_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProofRequestedProof"
-        } ],
-        "description" : "Indy proof.requested_proof content",
-        "type" : "object"
-      },
-      "IndyProofProof_aggregated_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProofProofAggregatedProof"
-        } ],
-        "description" : "Indy proof aggregated proof",
-        "type" : "object"
-      },
       "IndyProofProofProofsProof_non_revoc_proof" : {
         "allOf" : [ {
           "$ref" : "#/components/schemas/IndyNonRevocProof"
         } ],
         "description" : "Indy non-revocation proof",
         "nullable" : true,
-        "type" : "object"
-      },
-      "IndyProofProofProofsProof_primary_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyPrimaryProof"
-        } ],
-        "description" : "Indy primary proof",
         "type" : "object"
       },
       "IndyProofReqAttrSpec_non_revoked" : {
@@ -15995,497 +16314,11 @@
         } ],
         "nullable" : true,
         "type" : "object"
-      },
-      "IndyRevRegDef_value" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyRevRegDefValue"
-        } ],
-        "description" : "Revocation registry definition value",
-        "type" : "object"
-      },
-      "IndyRevRegDefValue_publicKeys" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyRevRegDefValuePublicKeys"
-        } ],
-        "description" : "Public keys",
-        "type" : "object"
-      },
-      "IndyRevRegEntry_value" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyRevRegEntryValue"
-        } ],
-        "description" : "Revocation registry entry value",
-        "type" : "object"
-      },
-      "InputDescriptors_schema" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/SchemasInputDescriptorFilter"
-        } ],
-        "description" : "Accepts a list of schema or a dict containing filters like oneof_filter.",
-        "example" : {
-          "oneof_filter" : [ [ {
-            "uri" : "https://www.w3.org/Test1#Test1"
-          }, {
-            "uri" : "https://www.w3.org/Test2#Test2"
-          } ], {
-            "oneof_filter" : [ [ {
-              "uri" : "https://www.w3.org/Test1#Test1"
-            } ], [ {
-              "uri" : "https://www.w3.org/Test2#Test2"
-            } ] ]
-          } ]
-        },
-        "type" : "object"
-      },
-      "InvitationRecord_invitation" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/InvitationMessage"
-        } ],
-        "description" : "Out of band invitation message",
-        "type" : "object"
-      },
-      "IssuerRevRegRecord_revoc_reg_def" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyRevRegDef"
-        } ],
-        "description" : "Revocation registry definition",
-        "type" : "object"
-      },
-      "IssuerRevRegRecord_revoc_reg_entry" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyRevRegEntry"
-        } ],
-        "description" : "Revocation registry entry",
-        "type" : "object"
-      },
-      "KeylistQuery_paginate" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/KeylistQueryPaginate"
-        } ],
-        "description" : "Pagination info",
-        "type" : "object"
-      },
-      "LDProofVCDetail_credential" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/Credential"
-        } ],
-        "description" : "Detail of the JSON-LD Credential to be issued",
-        "example" : {
-          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://w3id.org/citizenship/v1" ],
-          "credentialSubject" : {
-            "familyName" : "SMITH",
-            "gender" : "Male",
-            "givenName" : "JOHN",
-            "type" : [ "PermanentResident", "Person" ]
-          },
-          "description" : "Government of Example Permanent Resident Card.",
-          "identifier" : "83627465",
-          "issuanceDate" : "2019-12-03T12:19:52Z",
-          "issuer" : "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th",
-          "name" : "Permanent Resident Card",
-          "type" : [ "VerifiableCredential", "PermanentResidentCard" ]
-        },
-        "type" : "object"
-      },
-      "LDProofVCDetail_options" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/LDProofVCOptions"
-        } ],
-        "description" : "Options for specifying how the linked data proof is created.",
-        "example" : {
-          "proofType" : "Ed25519Signature2018"
-        },
-        "type" : "object"
-      },
-      "LDProofVCOptions_credentialStatus" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredentialStatusOptions"
-        } ],
-        "description" : "The credential status mechanism to use for the credential. Omitting the property indicates the issued credential will not include a credential status",
-        "type" : "object"
-      },
-      "Presentation_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/LinkedDataProof"
-        } ],
-        "description" : "The proof of the presentation",
-        "example" : {
-          "created" : "2019-12-11T03:50:55",
-          "jws" : "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0JiNjQiXX0..lKJU0Df_keblRKhZAS9Qq6zybm-HqUXNVZ8vgEPNTAjQKBhQDxvXNo7nvtUBb_Eq1Ch6YBKY5qBQ",
-          "proofPurpose" : "assertionMethod",
-          "type" : "Ed25519Signature2018",
-          "verificationMethod" : "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-        },
-        "type" : "object"
-      },
-      "RevListState_revocation_list" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/RevList"
-        } ],
-        "description" : "revocation list",
-        "type" : "object"
-      },
-      "RevRegDefState_revocation_registry_definition" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/RevRegDef"
-        } ],
-        "description" : "revocation registry definition",
-        "type" : "object"
-      },
-      "SchemaSendResult_schema" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/Schema"
-        } ],
-        "description" : "Schema definition",
-        "type" : "object"
-      },
-      "SendMenu_menu" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/MenuJson"
-        } ],
-        "description" : "Menu to send to connection",
-        "type" : "object"
-      },
-      "SignedDoc_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/SignatureOptions"
-        } ],
-        "description" : "Linked data proof",
-        "type" : "object"
-      },
-      "TxnOrCredentialDefinitionSendResult_txn" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/TransactionRecord"
-        } ],
-        "description" : "Credential definition transaction to endorse",
-        "type" : "object"
-      },
-      "TxnOrPublishRevocationsResult_txn" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/TransactionRecord"
-        } ],
-        "description" : "Revocation registry revocations transaction to endorse",
-        "type" : "object"
-      },
-      "TxnOrRegisterLedgerNymResponse_txn" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/TransactionRecord"
-        } ],
-        "description" : "DID transaction to endorse",
-        "type" : "object"
-      },
-      "TxnOrRevRegResult_txn" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/TransactionRecord"
-        } ],
-        "description" : "Revocation registry definition transaction to endorse",
-        "type" : "object"
-      },
-      "TxnOrSchemaSendResult_sent" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/SchemaSendResult"
-        } ],
-        "description" : "Content sent",
-        "type" : "object"
-      },
-      "TxnOrSchemaSendResult_txn" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/TransactionRecord"
-        } ],
-        "description" : "Schema transaction to endorse",
-        "type" : "object"
-      },
-      "V10CredentialBoundOfferRequest_counter_proposal" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredentialProposal"
-        } ],
-        "description" : "Optional counter-proposal",
-        "type" : "object"
-      },
-      "V10CredentialExchange_credential" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyCredInfo"
-        } ],
-        "description" : "Credential as stored",
-        "type" : "object"
-      },
-      "V10CredentialExchange_credential_offer" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyCredAbstract"
-        } ],
-        "description" : "(Indy) credential offer",
-        "type" : "object"
-      },
-      "V10CredentialExchange_credential_offer_dict" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredentialOffer"
-        } ],
-        "description" : "Credential offer message",
-        "type" : "object"
-      },
-      "V10CredentialExchange_credential_proposal_dict" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/CredentialProposal"
-        } ],
-        "description" : "Credential proposal message",
-        "type" : "object"
-      },
-      "V10CredentialExchange_credential_request" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyCredRequest"
-        } ],
-        "description" : "(Indy) credential request",
-        "type" : "object"
-      },
-      "V10CredentialExchange_raw_credential" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyCredential"
-        } ],
-        "description" : "Credential as received, prior to storage in holder wallet",
-        "type" : "object"
-      },
-      "V10DiscoveryExchangeListResult_results_inner" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V10DiscoveryRecord"
-        } ],
-        "description" : "Discover Features v1.0 exchange record",
-        "type" : "object"
-      },
-      "V10DiscoveryRecord_disclose" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/Disclose"
-        } ],
-        "description" : "Disclose message",
-        "type" : "object"
-      },
-      "V10DiscoveryRecord_query_msg" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/Query"
-        } ],
-        "description" : "Query message",
-        "type" : "object"
-      },
-      "V10PresentationExchange_presentation" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProof"
-        } ],
-        "description" : "(Indy) presentation (also known as proof)",
-        "type" : "object"
-      },
-      "V10PresentationExchange_presentation_proposal_dict" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/PresentationProposal"
-        } ],
-        "description" : "Presentation proposal message",
-        "type" : "object"
-      },
-      "V10PresentationExchange_presentation_request" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProofRequest"
-        } ],
-        "description" : "(Indy) presentation request (also known as proof request)",
-        "type" : "object"
-      },
-      "V10PresentationExchange_presentation_request_dict" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/PresentationRequest"
-        } ],
-        "description" : "Presentation request message",
-        "type" : "object"
-      },
-      "V20CredBoundOfferRequest_counter_preview" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredPreview"
-        } ],
-        "description" : "Optional content for counter-proposal",
-        "type" : "object"
-      },
-      "V20CredBoundOfferRequest_filter" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredFilter"
-        } ],
-        "description" : "Credential specification criteria by format",
-        "type" : "object"
-      },
-      "V20CredExRecord_by_format" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredExRecordByFormat"
-        } ],
-        "description" : "Attachment content by format for proposal, offer, request, and issue",
-        "type" : "object"
-      },
-      "V20CredExRecord_cred_issue" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredIssue"
-        } ],
-        "description" : "Serialized credential issue message",
-        "type" : "object"
-      },
-      "V20CredExRecord_cred_offer" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredOffer"
-        } ],
-        "description" : "Credential offer message",
-        "type" : "object"
-      },
-      "V20CredExRecord_cred_preview" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredPreview"
-        } ],
-        "description" : "Credential preview from credential proposal",
-        "type" : "object"
-      },
-      "V20CredExRecord_cred_proposal" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredProposal"
-        } ],
-        "description" : "Credential proposal message",
-        "type" : "object"
-      },
-      "V20CredExRecord_cred_request" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredRequest"
-        } ],
-        "description" : "Serialized credential request message",
-        "type" : "object"
-      },
-      "V20CredExRecordDetail_cred_ex_record" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredExRecord"
-        } ],
-        "description" : "Credential exchange record",
-        "type" : "object"
-      },
-      "V20CredFilter_indy" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredFilterIndy"
-        } ],
-        "description" : "Credential filter for indy",
-        "type" : "object"
-      },
-      "V20CredFilter_ld_proof" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/LDProofVCDetail"
-        } ],
-        "description" : "Credential filter for linked data proof",
-        "type" : "object"
-      },
-      "V20CredProposal_credential_preview" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredPreview"
-        } ],
-        "description" : "Credential preview",
-        "type" : "object"
-      },
-      "V20CredRequestFree_filter" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20CredFilterLDProof"
-        } ],
-        "description" : "Credential specification criteria by format",
-        "type" : "object"
-      },
-      "V20DiscoveryExchangeListResult_results_inner" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20DiscoveryRecord"
-        } ],
-        "description" : "Discover Features v2.0 exchange record",
-        "type" : "object"
-      },
-      "V20DiscoveryRecord_disclosures" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/Disclosures"
-        } ],
-        "description" : "Disclosures message",
-        "type" : "object"
-      },
-      "V20DiscoveryRecord_queries_msg" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/Queries"
-        } ],
-        "description" : "Queries message",
-        "type" : "object"
-      },
-      "V20PresExRecord_by_format" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20PresExRecordByFormat"
-        } ],
-        "description" : "Attachment content by format for proposal, request, and presentation",
-        "type" : "object"
-      },
-      "V20PresExRecord_pres" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20Pres"
-        } ],
-        "description" : "Presentation message",
-        "type" : "object"
-      },
-      "V20PresExRecord_pres_proposal" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20PresProposal"
-        } ],
-        "description" : "Presentation proposal message",
-        "type" : "object"
-      },
-      "V20PresExRecord_pres_request" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/V20PresRequest"
-        } ],
-        "description" : "Presentation request message",
-        "type" : "object"
-      },
-      "V20PresProposalByFormat_dif" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/DIFProofProposal"
-        } ],
-        "description" : "Presentation proposal for DIF",
-        "type" : "object"
-      },
-      "V20PresProposalByFormat_indy" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProofRequest"
-        } ],
-        "description" : "Presentation proposal for indy",
-        "type" : "object"
-      },
-      "V20PresRequestByFormat_dif" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/DIFProofRequest"
-        } ],
-        "description" : "Presentation request for DIF",
-        "type" : "object"
-      },
-      "V20PresRequestByFormat_indy" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyProofRequest"
-        } ],
-        "description" : "Presentation request for indy",
-        "type" : "object"
-      },
-      "V20PresSpecByFormatRequest_dif" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/DIFPresSpec"
-        } ],
-        "description" : "Optional Presentation specification for DIF, overrides the PresentionExchange record's PresRequest",
-        "type" : "object"
-      },
-      "V20PresSpecByFormatRequest_indy" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/IndyPresSpec"
-        } ],
-        "description" : "Presentation specification for indy",
-        "type" : "object"
-      },
-      "VerifyRequest_doc" : {
-        "allOf" : [ {
-          "$ref" : "#/components/schemas/SignedDoc"
-        } ],
-        "description" : "Signed document",
-        "type" : "object"
       }
     },
     "securitySchemes" : {
       "AuthorizationHeader" : {
-        "description" : "Bearer token. Be sure to preprend token with 'Bearer '",
+        "description" : "Bearer token. Be sure to prepend token with 'Bearer '",
         "in" : "header",
         "name" : "Authorization",
         "type" : "apiKey"

@@ -384,7 +384,7 @@ class AgentMessage(BaseModel, BaseMessage):
         """Copy trace from a json structure.
 
         Args:
-            trace: string containing trace json stucture
+            trace: string containing trace json structure
         """
         if trace:
             self.add_trace_decorator(

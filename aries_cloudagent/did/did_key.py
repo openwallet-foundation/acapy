@@ -70,7 +70,7 @@ class DIDKey:
     def from_did(cls, did: str) -> "DIDKey":
         """Initialize a new DIDKey instance from a fully qualified did:key string.
 
-        Extracts the fingerprint from the did:key and uses that to constrcut the did:key.
+        Extracts the fingerprint from the did:key and uses that to construct the did:key.
         """
         did_parts = did.split("#")
         _, fingerprint = did_parts[0].split("did:key:")
