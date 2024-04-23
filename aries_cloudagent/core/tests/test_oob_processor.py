@@ -728,7 +728,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
         )
 
         assert oob_record.attach_thread_id == "4a580490-a9d8-44f5-a3f6-14e0b8a219b0"
-        assert oob_record.their_service == {
+        assert oob_record.their_service.serialize() == {
             "serviceEndpoint": "http://their-service-endpoint.com",
             "recipientKeys": ["9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"],
             "routingKeys": ["6QSduYdf8Bi6t8PfNm5vNomGWDtXhmMmTRzaciudBXYJ"],
