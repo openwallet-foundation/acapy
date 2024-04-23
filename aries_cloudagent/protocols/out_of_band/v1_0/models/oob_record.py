@@ -321,7 +321,7 @@ class OobRecordSchema(BaseExchangeSchema):
     multi_use = fields.Boolean(
         required=False,
         metadata={
-            "description": "Allow for multiple uses of the oobinvitation",
+            "description": "Allow for multiple uses of the oob invitation",
             "example": True,
         },
     )

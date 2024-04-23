@@ -59,7 +59,7 @@ class DIDRotateManager:
     DID Rotation is a pre-rotate operation. We send notification of rotation
     to the observing party before we rotate the DID. This allows the observing
     party to update their DID for the rotating party and notify the rotating
-    party of any issues with the recieved DID.
+    party of any issues with the received DID.
 
     DID Rotation has two roles: the rotating party and the observing party.
 

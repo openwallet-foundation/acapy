@@ -55,7 +55,7 @@ class TransactionRecord(BaseExchangeRecord):
     STATE_TRANSACTION_ENDORSED = "transaction_endorsed"
     STATE_TRANSACTION_REFUSED = "transaction_refused"
     STATE_TRANSACTION_RESENT = "transaction_resent"
-    STATE_TRANSACTION_RESENT_RECEIEVED = "transaction_resent_received"
+    STATE_TRANSACTION_RESENT_RECEIVED = "transaction_resent_received"
     STATE_TRANSACTION_CANCELLED = "transaction_cancelled"
     STATE_TRANSACTION_ACKED = "transaction_acked"
 
@@ -237,7 +237,7 @@ class TransactionRecordSchema(BaseExchangeSchema):
         required=False,
         metadata={
             "description": (
-                "The connection identifier for thie particular transaction record"
+                "The connection identifier for this particular transaction record"
             ),
             "example": UUID4_EXAMPLE,
         },

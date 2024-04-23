@@ -399,7 +399,7 @@ class IssuerRevRegRecord(BaseRecord):
         )
         LOGGER.debug('>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value"))
 
-        # if we had any revocation discrepencies, check the accumulator value
+        # if we had any revocation discrepancies, check the accumulator value
         if rec_count > 0:
             if (self.revoc_reg_entry.value and rev_reg_delta.get("value")) and not (
                 self.revoc_reg_entry.value.accum == rev_reg_delta["value"]["accum"]

@@ -119,7 +119,7 @@ async def _verify_presentation(
                 credential=credential,
                 suites=suites,
                 document_loader=document_loader,
-                # FIXME: we don't want to interhit the authentication purpose
+                # FIXME: we don't want to inherit the authentication purpose
                 # from the presentation. However we do want to have subject
                 # authentication I guess
                 # purpose=purpose,

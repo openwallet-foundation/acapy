@@ -209,7 +209,7 @@ class PluginRegistry:
             else:
                 await self.load_protocols(context, plugin)
 
-        # register event handlers for each protocol, if providedf
+        # register event handlers for each protocol, if provided
         self.register_protocol_events(context)
 
     async def load_protocol_version(

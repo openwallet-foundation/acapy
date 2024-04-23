@@ -416,7 +416,7 @@ class RevListSchema(BaseModelSchema):
     )
     current_accumulator = fields.Str(
         metadata={
-            "description": "The current accumalator value",
+            "description": "The current accumulator value",
             "example": "21 118...1FB",
         },
         data_key="currentAccumulator",

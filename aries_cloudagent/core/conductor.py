@@ -522,12 +522,12 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Error accepting mediation invitation")
 
-        # notify protcols of startup status
+        # notify protocols of startup status
         await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
 
     async def stop(self, timeout=1.0):
         """Stop the agent."""
-        # notify protcols that we are shutting down
+        # notify protocols that we are shutting down
         if self.root_profile:
             await self.root_profile.notify(SHUTDOWN_EVENT_TOPIC, {})
 

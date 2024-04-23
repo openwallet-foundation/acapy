@@ -20,7 +20,7 @@ async def issue(
 ) -> dict:
     """Issue a verifiable credential.
 
-    Takes the base credentail document, verifies it, and adds
+    Takes the base credential document, verifies it, and adds
     a digital signature to it.
 
     Args:

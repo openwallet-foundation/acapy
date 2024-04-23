@@ -10,7 +10,7 @@ from ..messages.revoke import Revoke
 class RevokeHandler(BaseHandler):
     """Handler for revoke message."""
 
-    RECIEVED_TOPIC = "acapy::revocation-notification-v2::received"
+    RECEIVED_TOPIC = "acapy::revocation-notification-v2::received"
     WEBHOOK_TOPIC = "acapy::webhook::revocation-notification-v2"
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
@@ -35,7 +35,7 @@ class RevokeHandler(BaseHandler):
 
         # Emit an event
         await context.profile.notify(
-            self.RECIEVED_TOPIC,
+            self.RECEIVED_TOPIC,
             {
                 "revocation_format": context.message.revocation_format,
                 "credential_id": context.message.credential_id,
