@@ -85,9 +85,18 @@ class BaseConnectionManager:
     @staticmethod
     def _key_info_to_multikey(key_info: KeyInfo) -> str:
         """Convert a KeyInfo to a multikey."""
-        return multibase.encode(
-            multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
-        )
+        if key_info.key_type == ED25519:
+            return multibase.encode(
+                multicodec.wrap("ed25519-pub", b58decode(key_info.verkey)), "base58btc"
+            )
+        elif key_info.key_type == X25519:
+            return multibase.encode(
+                multicodec.wrap("x25519-pub", b58decode(key_info.verkey)), "base58btc"
+            )
+        else:
+            raise BaseConnectionManagerError(
+                "Unsupported key type. Could not convert to multikey."
+            )
 
     def long_did_peer_to_short(self, long_did: str) -> str:
         """Convert did:peer:4 long format to short format and return."""

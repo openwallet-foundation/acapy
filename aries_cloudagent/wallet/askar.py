@@ -33,7 +33,7 @@ from .crypto import (
 from .did_info import INVITATION_REUSE_KEY
 from .did_method import SOV, DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
-from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
+from .key_type import BLS12381G2, ED25519, X25519, KeyType, KeyTypes
 from .util import b58_to_bytes, bytes_to_b58
 
 CATEGORY_DID = "did"
@@ -865,6 +865,9 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> 
         method = None
     # elif key_type == BLS12381G1:
     #     alg = KeyAlg.BLS12_381_G1
+    elif key_type == X25519:
+        alg = KeyAlg.X25519
+        method = None
     elif key_type == BLS12381G2:
         alg = KeyAlg.BLS12_381_G2
         method = SeedMethod.BlsKeyGen
