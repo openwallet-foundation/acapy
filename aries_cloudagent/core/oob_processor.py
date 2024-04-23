@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional
 
 from ..messaging.agent_message import AgentMessage
 from ..connections.models.conn_record import ConnRecord
