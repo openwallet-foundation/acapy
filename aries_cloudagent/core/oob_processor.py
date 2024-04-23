@@ -92,10 +92,12 @@ class OobMessageProcessor:
                 )
 
                 their_service = oob_record.their_service
+                if not their_service:
+                    raise OobMessageProcessorError("Could not determine their service")
 
                 # Attach ~service decorator so other message can respond
                 message = json.loads(outbound_message.payload)
-                if not message.get("~service"):
+                if not message.get("~service") and oob_record.our_service:
                     LOGGER.debug(
                         "Setting our service on the message ~service %s",
                         oob_record.our_service,
@@ -256,17 +258,15 @@ class OobMessageProcessor:
             )
             return None
 
-        their_service = oob_record.their_service
-
         # Verify the sender key is present in their service in our record
         # If we don't have the sender verkey stored yet we can allow any key
-        if their_service and (
+        if oob_record.their_service and (
             (
                 context.message_receipt.recipient_verkey
                 and (
                     not context.message_receipt.sender_verkey
                     or context.message_receipt.sender_verkey
-                    not in their_service.recipient_keys
+                    not in oob_record.their_service.recipient_keys
                 )
             )
         ):
@@ -350,7 +350,7 @@ class OobMessageProcessor:
                     LOGGER.debug(
                         "Storing their service in oob record %s", their_service
                     )
-                    oob_record.their_service = their_service.serialize()
+                    oob_record.their_service = their_service
 
                 await oob_record.save(session)
 
