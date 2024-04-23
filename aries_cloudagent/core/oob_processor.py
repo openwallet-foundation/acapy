@@ -91,7 +91,7 @@ class OobMessageProcessor:
                     oob_record.their_service,
                 )
 
-                their_service = ServiceDecorator.deserialize(oob_record.their_service)
+                their_service = oob_record.their_service
 
                 # Attach ~service decorator so other message can respond
                 message = json.loads(outbound_message.payload)
@@ -100,7 +100,7 @@ class OobMessageProcessor:
                         "Setting our service on the message ~service %s",
                         oob_record.our_service,
                     )
-                    message["~service"] = oob_record.our_service
+                    message["~service"] = oob_record.our_service.serialize()
 
                 message["~thread"] = {
                     **message.get("~thread", {}),
@@ -256,14 +256,7 @@ class OobMessageProcessor:
             )
             return None
 
-        their_service = (
-            cast(
-                ServiceDecorator,
-                ServiceDecorator.deserialize(oob_record.their_service),
-            )
-            if oob_record.their_service
-            else None
-        )
+        their_service = oob_record.their_service
 
         # Verify the sender key is present in their service in our record
         # If we don't have the sender verkey stored yet we can allow any key
