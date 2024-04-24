@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v0.12.0"
+    "version" : "v0.12.1rc0"
   },
   "servers" : [ {
     "url" : "/"
@@ -664,7 +664,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/CredRevRecordResult"
+                  "$ref" : "#/components/schemas/CredRevRecordResultSchemaAnoncreds"
                 }
               }
             },
@@ -681,7 +681,7 @@
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/PublishRevocations"
+                "$ref" : "#/components/schemas/PublishRevocationsSchemaAnoncreds"
               }
             }
           },
@@ -692,7 +692,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PublishRevocationsResult"
+                  "$ref" : "#/components/schemas/PublishRevocationsResultSchemaAnoncreds"
                 }
               }
             },
@@ -5573,7 +5573,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PublishRevocationsSchemaAnoncreds"
+                  "$ref" : "#/components/schemas/PublishRevocations"
                 }
               }
             },
@@ -5646,7 +5646,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/CredRevRecordResultSchemaAnoncreds"
+                  "$ref" : "#/components/schemas/CredRevRecordResult"
                 }
               }
             },
@@ -5678,7 +5678,7 @@
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/PublishRevocationsSchemaAnoncreds"
+                "$ref" : "#/components/schemas/PublishRevocations"
               }
             }
           },
@@ -8560,7 +8560,7 @@
       "CredRevRecordResult" : {
         "properties" : {
           "result" : {
-            "$ref" : "#/components/schemas/IssuerCredRevRecordSchemaAnoncreds"
+            "$ref" : "#/components/schemas/IssuerCredRevRecord"
           }
         },
         "type" : "object"
@@ -8568,7 +8568,7 @@
       "CredRevRecordResultSchemaAnoncreds" : {
         "properties" : {
           "result" : {
-            "$ref" : "#/components/schemas/IssuerCredRevRecord"
+            "$ref" : "#/components/schemas/IssuerCredRevRecordSchemaAnoncreds"
           }
         },
         "type" : "object"
@@ -12143,9 +12143,6 @@
       },
       "PublishRevocations" : {
         "properties" : {
-          "options" : {
-            "$ref" : "#/components/schemas/PublishRevocationsOptions"
-          },
           "rrid2crid" : {
             "additionalProperties" : {
               "items" : {
@@ -12177,7 +12174,7 @@
         },
         "type" : "object"
       },
-      "PublishRevocationsResult" : {
+      "PublishRevocationsResultSchemaAnoncreds" : {
         "properties" : {
           "rrid2crid" : {
             "additionalProperties" : {
@@ -12197,6 +12194,9 @@
       },
       "PublishRevocationsSchemaAnoncreds" : {
         "properties" : {
+          "options" : {
+            "$ref" : "#/components/schemas/PublishRevocationsOptions"
+          },
           "rrid2crid" : {
             "additionalProperties" : {
               "items" : {
@@ -13598,7 +13598,7 @@
       "TxnOrPublishRevocationsResult" : {
         "properties" : {
           "sent" : {
-            "$ref" : "#/components/schemas/PublishRevocationsSchemaAnoncreds"
+            "$ref" : "#/components/schemas/PublishRevocations"
           },
           "txn" : {
             "allOf" : [ {

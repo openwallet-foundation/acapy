@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v0.12.0",
+    "version" : "v0.12.1rc0",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -577,7 +577,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/CredRevRecordResult"
+              "$ref" : "#/definitions/CredRevRecordResultSchemaAnoncreds"
             }
           }
         }
@@ -593,14 +593,14 @@
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/PublishRevocations"
+            "$ref" : "#/definitions/PublishRevocationsSchemaAnoncreds"
           }
         } ],
         "responses" : {
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/PublishRevocationsResult"
+              "$ref" : "#/definitions/PublishRevocationsResultSchemaAnoncreds"
             }
           }
         }
@@ -4568,7 +4568,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/PublishRevocationsSchemaAnoncreds"
+              "$ref" : "#/definitions/PublishRevocations"
             }
           }
         }
@@ -4628,7 +4628,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/CredRevRecordResultSchemaAnoncreds"
+              "$ref" : "#/definitions/CredRevRecordResult"
             }
           }
         }
@@ -4644,7 +4644,7 @@
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/PublishRevocationsSchemaAnoncreds"
+            "$ref" : "#/definitions/PublishRevocations"
           }
         }, {
           "name" : "conn_id",
@@ -7224,7 +7224,7 @@
       "type" : "object",
       "properties" : {
         "result" : {
-          "$ref" : "#/definitions/IssuerCredRevRecordSchemaAnoncreds"
+          "$ref" : "#/definitions/IssuerCredRevRecord"
         }
       }
     },
@@ -7232,7 +7232,7 @@
       "type" : "object",
       "properties" : {
         "result" : {
-          "$ref" : "#/definitions/IssuerCredRevRecord"
+          "$ref" : "#/definitions/IssuerCredRevRecordSchemaAnoncreds"
         }
       }
     },
@@ -10640,9 +10640,6 @@
     "PublishRevocations" : {
       "type" : "object",
       "properties" : {
-        "options" : {
-          "$ref" : "#/definitions/PublishRevocationsOptions"
-        },
         "rrid2crid" : {
           "type" : "object",
           "description" : "Credential revocation ids by revocation registry id",
@@ -10673,7 +10670,7 @@
         }
       }
     },
-    "PublishRevocationsResult" : {
+    "PublishRevocationsResultSchemaAnoncreds" : {
       "type" : "object",
       "properties" : {
         "rrid2crid" : {
@@ -10694,6 +10691,9 @@
     "PublishRevocationsSchemaAnoncreds" : {
       "type" : "object",
       "properties" : {
+        "options" : {
+          "$ref" : "#/definitions/PublishRevocationsOptions"
+        },
         "rrid2crid" : {
           "type" : "object",
           "description" : "Credential revocation ids by revocation registry id",
@@ -12070,7 +12070,7 @@
       "type" : "object",
       "properties" : {
         "sent" : {
-          "$ref" : "#/definitions/PublishRevocationsSchemaAnoncreds"
+          "$ref" : "#/definitions/PublishRevocations"
         },
         "txn" : {
           "$ref" : "#/definitions/TxnOrPublishRevocationsResult_txn"

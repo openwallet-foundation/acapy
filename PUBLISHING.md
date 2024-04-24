@@ -94,7 +94,7 @@ Once you have the list of PRs:
 4. Check to see if there are any other PRs that should be included in the release.
 
 5. Update the ReadTheDocs in the `/docs` folder by following the instructions in
-   the `docs/README.md` file. That will likely add a number of new and modified
+   the `docs/UpdateRTD.md` file. That will likely add a number of new and modified
    files to the PR. Eliminate all of the errors in the generation process,
    either by mocking external dependencies or by fixing ACA-Py code. If
    necessary, create an issue with the errors and assign it to the appropriate
@@ -116,6 +116,8 @@ Once you have the list of PRs:
 
 7. Regenerate openapi.json and swagger.json by running
    `../scripts/generate-open-api-spec` from within the `aries_cloudagent` folder.
+
+   Command: `cd aries_cloudagent;../scripts/generate-open-api-spec;cd ..`
 
 8.  Double check all of these steps above, and then submit a PR from the branch.
    Add this new PR to CHANGELOG.md so that all the PRs are included.

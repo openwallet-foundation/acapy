@@ -32,7 +32,7 @@ When receiving an OOB invitation or creating a DID Exchange request to a known P
 
 With these changes, an existing ACA-Py installation using unqualified DIDs can upgrade to use qualified DIDs:
 
-- Reactively in 0.12.0, by using like DIDs from the other agent.
+- Reactively in 0.12.0 and later, by using like DIDs from the other agent.
 - Proactively, by adding the `use_did` or `use_did_method` parameter on the `POST /out-of-band/create-invitation`, `POST /didexchange/create-request`. and `POST /didexchange/{conn_id}/accept_invitation` endpoints and specifying `did:peer:2` or `did_peer:4`.
   - The other agent must be able to process the selected DID Method.
 - Proactively, by updating to use DID Exchange v1.1 and having the other side `auto-accept` the connection.
