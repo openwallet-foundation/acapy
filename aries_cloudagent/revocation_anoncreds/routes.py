@@ -49,9 +49,6 @@ from ..messaging.valid import (
     WHOLE_NUM_VALIDATE,
     UUIDFour,
 )
-from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
-    TransactionRecordSchema,
-)
 from ..revocation.error import RevocationError
 from ..revocation.models.issuer_rev_reg_record import (
     IssuerRevRegRecord,
@@ -78,23 +75,6 @@ class RevRegResultSchemaAnoncreds(OpenAPISchema):
     """Result schema for revocation registry creation request."""
 
     result = fields.Nested(IssuerRevRegRecordSchema())
-
-
-class TxnOrRevRegResultSchema(OpenAPISchema):
-    """Result schema for credential definition send request."""
-
-    sent = fields.Nested(
-        RevRegResultSchemaAnoncreds(),
-        required=False,
-        metadata={"definition": "Content sent"},
-    )
-    txn = fields.Nested(
-        TransactionRecordSchema(),
-        required=False,
-        metadata={
-            "description": "Revocation registry definition transaction to endorse"
-        },
-    )
 
 
 class CredRevRecordQueryStringSchema(OpenAPISchema):
@@ -173,31 +153,7 @@ class RevRegId(OpenAPISchema):
     )
 
 
-class ClearPendingRevocationsRequestSchema(OpenAPISchema):
-    """Request schema for clear pending revocations API call."""
-
-    purge = fields.Dict(
-        required=False,
-        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
-        values=fields.List(
-            fields.Str(
-                validate=INDY_CRED_REV_ID_VALIDATE,
-                metadata={
-                    "description": "Credential revocation identifier",
-                    "example": INDY_CRED_REV_ID_EXAMPLE,
-                },
-            )
-        ),
-        metadata={
-            "description": (
-                "Credential revocation ids by revocation registry id: omit for all,"
-                " specify null or empty list for all pending per revocation registry"
-            )
-        },
-    )
-
-
-class CredRevRecordResultSchema(OpenAPISchema):
+class CredRevRecordResultSchemaAnoncreds(OpenAPISchema):
     """Result schema for credential revocation record request."""
 
     result = fields.Nested(IssuerCredRevRecordSchemaAnoncreds())
@@ -386,7 +342,7 @@ class PublishRevocationsOptions(OpenAPISchema):
     )
 
 
-class PublishRevocationsSchema(OpenAPISchema):
+class PublishRevocationsSchemaAnoncreds(OpenAPISchema):
     """Request and result schema for revocation publication API call."""
 
     rrid2crid = fields.Dict(
@@ -406,7 +362,7 @@ class PublishRevocationsSchema(OpenAPISchema):
     options = fields.Nested(PublishRevocationsOptions())
 
 
-class PublishRevocationsResultSchema(OpenAPISchema):
+class PublishRevocationsResultSchemaAnoncreds(OpenAPISchema):
     """Result schema for credential definition send request."""
 
     rrid2crid = fields.Dict(
@@ -554,8 +510,8 @@ async def revoke(request: web.BaseRequest):
 
 
 @docs(tags=[TAG_TITLE], summary="Publish pending revocations to ledger")
-@request_schema(PublishRevocationsSchema())
-@response_schema(PublishRevocationsResultSchema(), 200, description="")
+@request_schema(PublishRevocationsSchemaAnoncreds())
+@response_schema(PublishRevocationsResultSchemaAnoncreds(), 200, description="")
 async def publish_revocations(request: web.BaseRequest):
     """Request handler for publishing pending revocations to the ledger.
 
@@ -988,7 +944,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     summary="Get credential revocation status",
 )
 @querystring_schema(CredRevRecordQueryStringSchema())
-@response_schema(CredRevRecordResultSchema(), 200, description="")
+@response_schema(CredRevRecordResultSchemaAnoncreds(), 200, description="")
 async def get_cred_rev_record(request: web.BaseRequest):
     """Request handler to get credential revocation record.
 
