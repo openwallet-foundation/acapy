@@ -2889,4 +2889,4 @@ indy = ["python3-indy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "8fa32f9406ba4e85c92edc91146c7364b1b9b20ad79929c45cb52cde48780de0"
+content-hash = "6aef813877ebf9ed3259ae2dbe0efbe2a0b7f0192a2f3881f52336c4c05c8c8b"
