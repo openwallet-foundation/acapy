@@ -2263,7 +2263,7 @@ sure that ChatGPT isn't messing with you and you have the needed data.</p>
 </li>
 <li>
 <p>Update the ReadTheDocs in the <code>/docs</code> folder by following the instructions in
-   the <code>./README.md</code> file. That will likely add a number of new and modified
+   the <code>./UpdateRTD.md</code> file. That will likely add a number of new and modified
    files to the PR. Eliminate all of the errors in the generation process,
    either by mocking external dependencies or by fixing ACA-Py code. If
    necessary, create an issue with the errors and assign it to the appropriate
@@ -2288,6 +2288,9 @@ sure that ChatGPT isn't messing with you and you have the needed data.</p>
 <p>Regenerate openapi.json and swagger.json by running
    <code>../scripts/generate-open-api-spec</code> from within the <code>aries_cloudagent</code> folder.</p>
 </li>
+</ul>
+<p>Command: <code>cd aries_cloudagent;../scripts/generate-open-api-spec;cd ..</code></p>
+<ol>
 <li>
 <p>Double check all of these steps above, and then submit a PR from the branch.
    Add this new PR to CHANGELOG.md so that all the PRs are included.
@@ -2313,7 +2316,7 @@ sure that ChatGPT isn't messing with you and you have the needed data.</p>
    and a link to the packages added to the repositories main page (under
    "Packages").</p>
 </li>
-</ul>
+</ol>
 <p>Additional information about the container image publication process can be
    found in the document <a href="../deploying/ContainerImagesAndGithubActions/">Container Images and Github Actions</a>.</p>
 <ol>

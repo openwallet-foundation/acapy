@@ -523,6 +523,39 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0121rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.12.1rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.12.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#april-24-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      April 24, 2024
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#0121rc0-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.12.1rc0 Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0120" class="md-nav__link">
     <span class="md-ellipsis">
       0.12.0
@@ -2257,6 +2290,39 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0121rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.12.1rc0
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.12.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#april-24-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      April 24, 2024
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#0121rc0-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.12.1rc0 Breaking Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0120" class="md-nav__link">
     <span class="md-ellipsis">
       0.12.0
@@ -2341,6 +2407,69 @@
 
 
 <h1 id="aries-cloud-agent-python-changelog">Aries Cloud Agent Python Changelog<a class="headerlink" href="#aries-cloud-agent-python-changelog" title="Permanent link">&para;</a></h1>
+<h2 id="0121rc0">0.12.1rc0<a class="headerlink" href="#0121rc0" title="Permanent link">&para;</a></h2>
+<h3 id="april-24-2024">April 24, 2024<a class="headerlink" href="#april-24-2024" title="Permanent link">&para;</a></h3>
+<p>Release 0.12.1rc0 is a small patch to cleanup some edge case issues in the handling of Out of Band invitations, and connection querying uncovered after the 0.12.0 release. Fixes and improvements were also made to the generation of ACA-Py's OpenAPI specifications.</p>
+<h3 id="0121rc0-breaking-changes">0.12.1rc0 Breaking Changes<a class="headerlink" href="#0121rc0-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>There are no breaking changes in this release.</p>
+<h4 id="0121rc0-categorized-list-of-pull-requests">0.12.1rc0 Categorized List of Pull Requests<a class="headerlink" href="#0121rc0-categorized-list-of-pull-requests" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p>Out of Band Invitations and Connection Establishment updates/fixes:</p>
+<ul>
+<li>🐛 Fix ServiceDecorator parsing in oob record handling <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2910">#2910</a> <a href="https://github.com/ff137">ff137</a></li>
+<li>fix: consider all resolvable dids in invites "public" <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2900">#2900</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+<li>fix: oob record their_service should be updatable <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2897">#2897</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+<li>fix: look up conn record by invite msg id instead of key <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2891">#2891</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+</ul>
+</li>
+<li>
+<p>OpenAPI/Swagger updates, fixes and cleanups:</p>
+<ul>
+<li>Fix api schema mixup in revocation routes <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2909">#2909</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>🎨 fix typos <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2898">#2898</a> <a href="https://github.com/ff137">ff137</a></li>
+<li>⬆️ Upgrade codegen tools used in generate-open-api-specols <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2899">#2899</a> <a href="https://github.com/ff137">ff137</a></li>
+<li>🐛 Fix IndyAttrValue model that was dropped from openapi spec <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2894">#2894</a> <a href="https://github.com/ff137">ff137</a></li>
+</ul>
+</li>
+<li>
+<p>Test and Demo updates:</p>
+<ul>
+<li>fix Faber demo to use oob with aip10 to support connection reuse <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2903">#2903</a> <a href="https://github.com/ianco">ianco</a></li>
+<li>fix: integration tests should use didex 1.1 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2889">#2889</a> <a href="https://github.com/dbluhm">dbluhm</a></li>
+</ul>
+</li>
+<li>
+<p>Endorsement of Indy Transactions fixes:</p>
+<ul>
+<li>Prevent 500 error when re-promoting DID with endorsement <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2885">#2885</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>Fix ack during for auto endorsement <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2883">#2883</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li>
+<p>Documentation publishing process updates:</p>
+<ul>
+<li>Some updates to the mkdocs publishing process <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2888">#2888</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Update GHA so that broken image links work on docs site - without breaking them on GitHub <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2852">#2852</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+<li>
+<p>Dependencies and Internal Updates:</p>
+<ul>
+<li>chore(deps): Bump aiohttp from 3.9.3 to 3.9.4  dependencies python <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2902">#2902</a> <a href="https://github.com/dependabot bot">dependabot bot</a></li>
+<li>chore(deps): Bump idna from 3.4 to 3.7 in /demo/playground/examples  dependencies python <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2886">#2886</a> <a href="https://github.com/dependabot bot">dependabot bot</a></li>
+<li>chore(deps): Bump psf/black from 24.3.0 to 24.4.0 in the all-actions group  dependencies github_actions <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2893">#2893</a> <a href="https://github.com/dependabot bot">dependabot bot</a></li>
+<li>chore(deps): Bump idna from 3.6 to 3.7  dependencies python <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2887">#2887</a> <a href="https://github.com/dependabot bot">dependabot bot</a></li>
+<li>refactor: logging configs setup <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2870">#2870</a> <a href="https://github.com/amanji">amanji</a></li>
+</ul>
+</li>
+<li>
+<p>Release management pull requests:</p>
+<ul>
+<li>0.12.1rc0 <a href="https://github.com/hyperledger/aries-cloudagent-python/pull/2912">#2912</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+</ul>
 <h2 id="0120">0.12.0<a class="headerlink" href="#0120" title="Permanent link">&para;</a></h2>
 <h3 id="april-11-2024">April 11, 2024<a class="headerlink" href="#april-11-2024" title="Permanent link">&para;</a></h3>
 <p>Release 0.12.0 is a large release with many new capabilities, feature improvements, upgrades, and bug fixes. Importantly, this release completes the ACA-Py implementation of <a href="https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20">Aries Interop Profile v2.0</a>, and enables the elimination of unqualified DIDs. While only deprecated for now, all deployments of ACA-Py <strong>SHOULD</strong> move to using only fully qualified DIDs as soon as possible.</p>
