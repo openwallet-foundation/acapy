@@ -163,27 +163,37 @@ class LoggingConfigurator:
             enabled
         """
 
+        write_to_log_file = log_file is not None or log_file == ""
+
         if multitenant:
+            # The default logging config for multi-tenant mode specifies a log file
+            # location if --log-file is specified on startup and a config file is not.
+            if not log_config_path and write_to_log_file:
+                log_config_path = cls.default_multitenant_config_path_ini
+  
             cls._configure_multitenant_logging(
-                log_config_path=log_config_path
-                or DEFAULT_MULTITENANT_LOGGING_CONFIG_PATH_INI,
+                log_config_path=log_config_path,
                 log_level=log_level,
-                log_file=log_file,
+                log_file=log_file, 
             )
         else:
+            # The default config for single-tenant mode does not specify a log file
+            # location. This is a check that requires a log file path to be provided if 
+            # --log-file is specified on startup and a config file is not.
+            if not log_config_path and write_to_log_file and not log_file:
+                raise ValueError(
+                    "log_file (--log-file) must be provided in single-tenant mode "
+                    "using the default config since a log file path is not set."
+                )
+
             cls._configure_logging(
-                log_config_path=log_config_path or DEFAULT_LOGGING_CONFIG_PATH_INI,
+                log_config_path=log_config_path or cls.default_config_path_ini,
                 log_level=log_level,
                 log_file=log_file,
             )
 
     @classmethod
     def _configure_logging(cls, log_config_path, log_level, log_file):
-        if log_file is not None and log_file == "":
-            raise ValueError(
-                "log_file (--log-file) must be provided in singletenant mode."
-            )
-
         # Setup log config and log file if provided
         cls._setup_log_config_file(log_config_path, log_file)
 
@@ -199,10 +209,6 @@ class LoggingConfigurator:
 
     @classmethod
     def _configure_multitenant_logging(cls, log_config_path, log_level, log_file):
-        # Unlike in singletenant mode, the defualt config for multitenant mode
-        # specifies a default log_file if one is not explicitly provided
-        # so we don't need the same check here
-
         # Setup log config and log file if provided
         cls._setup_log_config_file(log_config_path, log_file)
 
