@@ -170,15 +170,15 @@ class LoggingConfigurator:
             # location if --log-file is specified on startup and a config file is not.
             if not log_config_path and write_to_log_file:
                 log_config_path = cls.default_multitenant_config_path_ini
-  
+
             cls._configure_multitenant_logging(
                 log_config_path=log_config_path,
                 log_level=log_level,
-                log_file=log_file, 
+                log_file=log_file,
             )
         else:
             # The default config for single-tenant mode does not specify a log file
-            # location. This is a check that requires a log file path to be provided if 
+            # location. This is a check that requires a log file path to be provided if
             # --log-file is specified on startup and a config file is not.
             if not log_config_path and write_to_log_file and not log_file:
                 raise ValueError(
