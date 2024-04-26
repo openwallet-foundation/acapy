@@ -16,7 +16,7 @@ from .. import routes as test_module
 
 
 class TestProofRoutes(IsolatedAsyncioTestCase):
-    def setUp(self):        
+    def setUp(self):
         profile = InMemoryProfile.test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",

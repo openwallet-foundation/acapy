@@ -218,13 +218,13 @@ class AnonCredsPresExchHandler:
             if "timestamp" not in precis:
                 continue
             if referent in requested_credentials["requested_attributes"]:
-                requested_credentials["requested_attributes"][referent]["timestamp"] = (
-                    precis["timestamp"]
-                )
+                requested_credentials["requested_attributes"][referent][
+                    "timestamp"
+                ] = precis["timestamp"]
             if referent in requested_credentials["requested_predicates"]:
-                requested_credentials["requested_predicates"][referent]["timestamp"] = (
-                    precis["timestamp"]
-                )
+                requested_credentials["requested_predicates"][referent][
+                    "timestamp"
+                ] = precis["timestamp"]
 
     async def return_presentation(
         self,

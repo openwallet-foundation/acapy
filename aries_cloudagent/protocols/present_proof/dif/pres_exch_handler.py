@@ -1385,9 +1385,9 @@ class DIFPresExchHandler:
         inp_desc_id_schema_one_of_filter = set()
         inp_desc_id_schemas_map = {}
         for input_descriptor in input_descriptors:
-            inp_desc_id_constraint_map[input_descriptor.id] = (
-                input_descriptor.constraint
-            )
+            inp_desc_id_constraint_map[
+                input_descriptor.id
+            ] = input_descriptor.constraint
             inp_desc_id_schemas_map[input_descriptor.id] = input_descriptor.schemas
             if input_descriptor.schemas.oneof_filter:
                 inp_desc_id_schema_one_of_filter.add(input_descriptor.id)

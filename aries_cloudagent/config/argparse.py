@@ -774,13 +774,13 @@ class RevocationGroup(ArgumentGroup):
         if args.notify_revocation:
             settings["revocation.notify"] = args.notify_revocation
         if args.monitor_revocation_notification:
-            settings["revocation.monitor_notification"] = (
-                args.monitor_revocation_notification
-            )
+            settings[
+                "revocation.monitor_notification"
+            ] = args.monitor_revocation_notification
         if args.anoncreds_legacy_revocation:
-            settings["revocation.anoncreds_legacy_support"] = (
-                args.anoncreds_legacy_revocation
-            )
+            settings[
+                "revocation.anoncreds_legacy_support"
+            ] = args.anoncreds_legacy_revocation
         return settings
 
 
@@ -1800,9 +1800,9 @@ class MultitenantGroup(ArgumentGroup):
                         )
 
                     if multitenancy_config.get("key_derivation_method"):
-                        settings["multitenant.key_derivation_method"] = (
-                            multitenancy_config.get("key_derivation_method")
-                        )
+                        settings[
+                            "multitenant.key_derivation_method"
+                        ] = multitenancy_config.get("key_derivation_method")
 
                 else:
                     for value_str in args.multitenancy_config:
@@ -1950,9 +1950,9 @@ class EndorsementGroup(ArgumentGroup):
 
         if args.endorser_endorse_with_did:
             if settings["endorser.endorser"]:
-                settings["endorser.endorser_endorse_with_did"] = (
-                    args.endorser_endorse_with_did
-                )
+                settings[
+                    "endorser.endorser_endorse_with_did"
+                ] = args.endorser_endorse_with_did
             else:
                 raise ArgsParseError(
                     "Parameter --endorser-endorse-with-did should only be set for "

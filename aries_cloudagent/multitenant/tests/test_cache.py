@@ -4,9 +4,11 @@ from ..cache import ProfileCache
 
 
 class MockProfile(Profile):
-    def session(self, context=None): ...
+    def session(self, context=None):
+        ...
 
-    def transaction(self, context=None): ...
+    def transaction(self, context=None):
+        ...
 
 
 def test_get_not_in_cache():

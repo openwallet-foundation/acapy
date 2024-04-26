@@ -127,7 +127,7 @@ DIF_PRES_PROPOSAL = {
 
 
 class TestPresentProofRoutesAnonCreds(IsolatedAsyncioTestCase):
-    def setUp(self):        
+    def setUp(self):
         profile = InMemoryProfile.test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",

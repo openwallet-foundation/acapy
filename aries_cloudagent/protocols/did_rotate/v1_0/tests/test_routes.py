@@ -113,7 +113,6 @@ class TestDIDRotateRoutes(IsolatedAsyncioTestCase):
             "retrieve_by_id",
             mock.CoroutineMock(side_effect=StorageNotFoundError()),
         ) as mock_retrieve_by_id:
-
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.rotate(self.request)
 

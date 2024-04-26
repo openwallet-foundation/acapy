@@ -17,7 +17,7 @@ from . import (
 
 class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.session_inject = {}        
+        self.session_inject = {}
         profile = InMemoryProfile.test_profile(
             settings={
                 "admin.admin_api_key": "secret-key",
