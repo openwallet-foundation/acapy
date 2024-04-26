@@ -89,7 +89,7 @@ class V20PresProposalSchema(AgentMessageSchema):
         V20PresFormatSchema,
         many=True,
         required=True,
-        metadata={"descrption": "Acceptable attachment formats"},
+        metadata={"description": "Acceptable attachment formats"},
     )
     proposals_attach = fields.Nested(
         AttachDecoratorSchema,

@@ -94,7 +94,7 @@ Once you have the list of PRs:
 4. Check to see if there are any other PRs that should be included in the release.
 
 5. Update the ReadTheDocs in the `/docs` folder by following the instructions in
-   the `docs/README.md` file. That will likely add a number of new and modified
+   the `docs/UpdateRTD.md` file. That will likely add a number of new and modified
    files to the PR. Eliminate all of the errors in the generation process,
    either by mocking external dependencies or by fixing ACA-Py code. If
    necessary, create an issue with the errors and assign it to the appropriate
@@ -102,11 +102,12 @@ Once you have the list of PRs:
    errors should be fixed in the code.
 
 6. Search across the repository for the previous version number and update it
-   everywhere that makes sense. The CHANGELOG.md is a likely exception, and the
-   `pyproject.toml` in the root is **MUST**. You can skip (although it won't
-   hurt) to update the files in the `open-api` folder as they will be
-   automagically updated by the next step in publishing. The incremented version
-   number **MUST** adhere to the [Semantic Versioning
+   everywhere that makes sense. The CHANGELOG.md entry for the previous release
+   is a likely exception, and the `pyproject.toml` in the root **MUST** be
+   updated. You can skip (although it won't hurt) to update the files in the
+   `open-api` folder as they will be automagically updated by the next step in
+   publishing. The incremented version number **MUST** adhere to the [Semantic
+   Versioning
    Specification](https://semver.org/#semantic-versioning-specification-semver)
    based on the changes since the last published release. For Release
    Candidates, the form of the tag is "0.11.0rc2". As of release `0.11.0` we
@@ -114,7 +115,9 @@ Once you have the list of PRs:
    to better follow the semver rules.
 
 7. Regenerate openapi.json and swagger.json by running
-   `./scripts/generate-open-api-spec`.
+   `../scripts/generate-open-api-spec` from within the `aries_cloudagent` folder.
+
+   Command: `cd aries_cloudagent;../scripts/generate-open-api-spec;cd ..`
 
 8.  Double check all of these steps above, and then submit a PR from the branch.
    Add this new PR to CHANGELOG.md so that all the PRs are included.

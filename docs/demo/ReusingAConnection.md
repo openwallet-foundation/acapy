@@ -134,14 +134,14 @@ For example, to run faber with connection reuse using a non-public DID:
 ./run_demo faber --reuse-connections --events
 ```
 
-To run faber using a `did_peer` and reusable connections:
+To run faber using a `did:peer` and reusable connections:
 
 ``` bash
-DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connections --events
+./run_demo faber --reuse-connections --emit-did-peer-2 --events
 ```
 
 To run this demo using a multi-use invitation (from Faber):
 
 ``` bash
-DEMO_EXTRA_AGENT_ARGS="[\"--emit-did-peer-2\"]" ./run_demo faber --reuse-connections --multi-use-invitations --events
+./run_demo faber --reuse-connections --emit-did-peer-2 --multi-use-invitations --events
 ```

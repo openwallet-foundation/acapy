@@ -32,7 +32,7 @@ class TraceReport(BaseModel):
         timestamp: str = None,
         str_time: str = None,
         handler: str = None,
-        ellapsed_milli: int = None,
+        elapsed_milli: int = None,
         outcome: str = None,
     ):
         """Initialize a TraceReport instance.
@@ -44,7 +44,7 @@ class TraceReport(BaseModel):
             timestamp: ...
             str_time: ...
             handler: ...
-            ellapsed_milli: ...
+            elapsed_milli: ...
             outcome: ...
         """
         super().__init__()
@@ -54,7 +54,7 @@ class TraceReport(BaseModel):
         self._timestamp = timestamp
         self._str_time = str_time
         self._handler = handler
-        self._ellapsed_milli = ellapsed_milli
+        self._elapsed_milli = elapsed_milli
         self._outcome = outcome
 
     @property
@@ -118,14 +118,14 @@ class TraceReport(BaseModel):
         return self._handler
 
     @property
-    def ellapsed_milli(self):
-        """Accessor for ellapsed_milli.
+    def elapsed_milli(self):
+        """Accessor for elapsed_milli.
 
         Returns:
-            The sender ellapsed_milli
+            The sender elapsed_milli
 
         """
-        return self._ellapsed_milli
+        return self._elapsed_milli
 
     @property
     def outcome(self):
@@ -260,7 +260,7 @@ class TraceReportSchema(BaseModelSchema):
             "example": "TODO",
         },
     )
-    ellapsed_milli = fields.Int(
+    elapsed_milli = fields.Int(
         required=False,
         allow_none=True,
         metadata={

@@ -1,4 +1,4 @@
-"""The classloader provides utilties to dynamically load classes and modules."""
+"""The classloader provides utilities to dynamically load classes and modules."""
 
 import inspect
 from importlib import resources

@@ -444,7 +444,7 @@ class DIFFieldSchema(BaseModelSchema):
 
 
 class Constraints(BaseModel):
-    """Single Constraints which describes InputDescriptor's Contraint field."""
+    """Single Constraints which describes InputDescriptor's Constraint field."""
 
     class Meta:
         """Constraints metadata."""
@@ -890,7 +890,7 @@ class DIFOptions(BaseModel):
 
 
 class DIFOptionsSchema(BaseModelSchema):
-    """Schema for options required for the Prover to fulfill the Verifier's request."""
+    """Schema for options required for the Prover to fulfil the Verifier's request."""
 
     class Meta:
         """DIFOptionsSchema metadata."""

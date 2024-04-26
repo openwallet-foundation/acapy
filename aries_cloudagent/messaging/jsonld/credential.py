@@ -63,7 +63,7 @@ def verify_jws_header(header):
 
 
 async def jws_verify(session, verify_data, signature, public_key):
-    """Detatched jws verify handling."""
+    """Detached jws verify handling."""
 
     encoded_header, _, encoded_signature = signature.partition("..")
     decoded_header = json.loads(b64decode(encoded_header))

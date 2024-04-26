@@ -587,7 +587,7 @@ class GeneralGroup(ArgumentGroup):
             help=(
                 "Specifies the type of storage provider to use for the internal "
                 "storage engine. This storage interface is used to store internal "
-                "state  Supported internal storage types are 'basic' (memory) "
+                "state. Supported internal storage types are 'basic' (memory) "
                 "and 'indy'.  The default (if not specified) is 'indy' if the "
                 "wallet type is set to 'indy', otherwise 'basic'."
             ),
@@ -1166,19 +1166,6 @@ class ProtocolGroup(ArgumentGroup):
                 "using unencrypted rather than encrypted tags"
             ),
         )
-        parser.add_argument(
-            "--emit-did-peer-2",
-            action="store_true",
-            env_var="ACAPY_EMIT_DID_PEER_2",
-            help=("Emit did:peer:2 DIDs in DID Exchange Protocol"),
-        )
-
-        parser.add_argument(
-            "--emit-did-peer-4",
-            action="store_true",
-            env_var="ACAPY_EMIT_DID_PEER_4",
-            help=("Emit did:peer:4 DIDs in DID Exchange Protocol"),
-        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
@@ -1245,11 +1232,6 @@ class ProtocolGroup(ArgumentGroup):
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
-
-        if args.emit_did_peer_2:
-            settings["emit_did_peer_2"] = True
-        if args.emit_did_peer_4:
-            settings["emit_did_peer_4"] = True
 
         return settings
 
@@ -1852,9 +1834,9 @@ class EndorsementGroup(ArgumentGroup):
                 "Specify the role ('author' or 'endorser') which this agent will "
                 "participate. Authors will request transaction endorement from an "
                 "Endorser. Endorsers will endorse transactions from Authors, and "
-                "may write their own  transactions to the ledger. If no role "
+                "may write their own transactions to the ledger. If no role "
                 "(or 'none') is specified then the endorsement protocol will not "
-                " be used and this agent will write transactions to the ledger "
+                "be used and this agent will write transactions to the ledger "
                 "directly."
             ),
         )
@@ -1885,7 +1867,7 @@ class EndorsementGroup(ArgumentGroup):
             metavar="<endorser-endorse-with-did>",
             env_var="ACAPY_ENDORSER_ENDORSE_WITH_DID",
             help=(
-                "For transaction Endorsers, specify the  DID to use to endorse "
+                "For transaction Endorsers, specify the DID to use to endorse "
                 "transactions.  The default (if not specified) is to use the "
                 "Endorser's Public DID."
             ),

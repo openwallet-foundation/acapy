@@ -25,7 +25,7 @@ async def create_presentation(
     not sign the presentation yet. Call sing_presentation to do this.
 
     Args:
-        credentials (List[dict]): Credentails to add to the presentation
+        credentials (List[dict]): Credentials to add to the presentation
         presentation_id (str, optional): Id of the presentation. Defaults to None.
 
     Raises:

@@ -262,7 +262,7 @@ class TaskQueue:
         Args:
             task: The asyncio task instance
             task_complete: An optional callback to run on completion
-            ident: A string identifer for the task
+            ident: A string identifier for the task
             timing: An optional dictionary of timing information
         """
         self.active_tasks.append(task)

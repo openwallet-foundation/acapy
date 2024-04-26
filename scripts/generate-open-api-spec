@@ -6,8 +6,8 @@
 #
 ##########################################################################################
 
-SWAGGER_GEN_CONTAINER="docker.io/swaggerapi/swagger-codegen-cli:2.4.32"
-OPENAPI_GEN_CONTAINER="docker.io/openapitools/openapi-generator-cli:v6.6.0"
+SWAGGER_GEN_CONTAINER="docker.io/swaggerapi/swagger-codegen-cli:2.4.39"
+OPENAPI_GEN_CONTAINER="docker.io/openapitools/openapi-generator-cli:v7.5.0"
 
 # Ensure the script is running from the directory containing this script
 cd $(dirname $0)
@@ -104,7 +104,7 @@ function buildACAPyDockerImage() {
 # needed to run without tty or interactive.
 # $1: The ACA-py docker image to use (i.e either from a repo or local)
 # $2: The port mapping from docker to local host in format "docker1:local1 docker2:local2"
-# $3: The ACA-py command line arguements
+# $3: The ACA-py command line arguments
 # $4: The name of a variable to return the continer ID to
 function runACAPy() {
   local acaPyImage="${1}"

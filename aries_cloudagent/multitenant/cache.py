@@ -99,7 +99,7 @@ class ProfileCache:
         LOGGER.debug(f"Setting profile with id {key} in profile cache")
         self._cache[key] = value
 
-        # Refresh profile livliness
+        # Refresh profile liveliness
         self._cache.move_to_end(key)
         self._cleanup()
 

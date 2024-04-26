@@ -13,9 +13,7 @@ class TestOutOfBand(TestCase):
     test_did_info = DIDInfo(test_did, test_verkey, None, method=SOV, key_type=ED25519)
 
     def test_serialize_oob(self):
-        invi = InvitationMessage(
-            comment="my sister", label="ma sœur", services=[TestOutOfBand.test_did]
-        )
+        invi = InvitationMessage(label="ma sœur", services=[TestOutOfBand.test_did])
 
         result = test_module.serialize_outofband(
             invi, TestOutOfBand.test_did_info, "http://1.2.3.4:8081"

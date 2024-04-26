@@ -38,15 +38,15 @@ Feature: RFC 0453 Aries agent issue credential
 
     @GHA @WalletType_Askar @ConnectionTests
     Examples:
-       | Acme_capabilities                  | Bob_capabilities                   | Schema_name    | Credential_data          | Acme_extra        | Bob_extra         |
-       | --did-exchange                     | --did-exchange                     | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
-       | --did-exchange --reuse-connections | --did-exchange --reuse-connections | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
+       | Acme_capabilities                  | Bob_capabilities                                     | Schema_name    | Credential_data          | Acme_extra        | Bob_extra         |
+       | --did-exchange --emit-did-peer-4 | --did-exchange --emit-did-peer-4                     | driverslicense | Data_DL_NormalizedValues | | |
+       | --did-exchange --reuse-connections --emit-did-peer-4 | --did-exchange --reuse-connections --emit-did-peer-4 | driverslicense | Data_DL_NormalizedValues | | |
 
     @GHA @WalletType_Askar_AnonCreds @ConnectionTests
     Examples:
        | Acme_capabilities                                                | Bob_capabilities                                                 | Schema_name    | Credential_data          | Acme_extra        | Bob_extra         |
-       | --did-exchange --wallet-type askar-anoncreds                     | --did-exchange --wallet-type askar-anoncreds                     | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
-       | --did-exchange --wallet-type askar-anoncreds --reuse-connections | --did-exchange --wallet-type askar-anoncreds --reuse-connections | driverslicense | Data_DL_NormalizedValues | --emit-did-peer-4 | --emit-did-peer-4 |
+       | --did-exchange --wallet-type askar-anoncreds --emit-did-peer-4                    | --did-exchange --wallet-type askar-anoncreds --emit-did-peer-4                    | driverslicense | Data_DL_NormalizedValues | | |
+       | --did-exchange --wallet-type askar-anoncreds --reuse-connections --emit-did-peer-4| --did-exchange --wallet-type askar-anoncreds --reuse-connections --emit-did-peer-4| driverslicense | Data_DL_NormalizedValues | | |
 
   @T003-RFC0453
   Scenario Outline: Issue a credential with the Issuer beginning with an offer

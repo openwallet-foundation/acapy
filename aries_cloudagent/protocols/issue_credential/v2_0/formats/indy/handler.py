@@ -81,7 +81,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             message_type (str): The message type to validate the attachment data for.
                 Should be one of the message types as defined in message_types.py
             attachment_data (Mapping): [description]
-                The attachment data to valide
+                The attachment data to validate
 
         Raises:
             Exception: When the data is not valid.

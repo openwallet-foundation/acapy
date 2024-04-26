@@ -89,6 +89,7 @@ nav:
     - The Admin API: features/AdminAPI.md
     - ACA-Py Plugins: features/PlugIns.md
     - Multitenant ACA-Py: features/Multitenancy.md
+    - Qualified DIDs: features/QualifiedDIDs.md
     - DID Methods: features/DIDMethods.md
     - DID Resolution: features/DIDResolution.md
     - Publishing AnonCreds Objects To Other Ledgers/Verifiable Data Registries: features/AnonCredsMethods.md

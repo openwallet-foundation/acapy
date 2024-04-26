@@ -51,6 +51,8 @@ class LegacyHandlingFallback(DIDXManagerError):
 class DIDXManager(BaseConnectionManager):
     """Class for managing connections under RFC 23 (DID exchange)."""
 
+    SUPPORTED_USE_DID_METHODS = ("did:peer:2", "did:peer:4")
+
     def __init__(self, profile: Profile):
         """Initialize a DIDXManager.
 
@@ -191,6 +193,8 @@ class DIDXManager(BaseConnectionManager):
         goal: Optional[str] = None,
         auto_accept: bool = False,
         protocol: Optional[str] = None,
+        use_did: Optional[str] = None,
+        use_did_method: Optional[str] = None,
     ) -> ConnRecord:
         """Create and send a request against a public DID only (no explicit invitation).
 
@@ -208,32 +212,49 @@ class DIDXManager(BaseConnectionManager):
             The new `ConnRecord` instance
 
         """
-        my_public_info = None
-        if use_public_did:
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_public_info = await wallet.get_public_did()
-                if not my_public_info:
+
+        if use_did and use_did_method:
+            raise DIDXManagerError("Cannot specify both use_did and use_did_method")
+
+        if use_public_did and use_did:
+            raise DIDXManagerError("Cannot specify both use_public_did and use_did")
+
+        if use_public_did and use_did_method:
+            raise DIDXManagerError(
+                "Cannot specify both use_public_did and use_did_method"
+            )
+
+        my_info = None
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            if use_public_did:
+                my_info = await wallet.get_public_did()
+                if not my_info:
                     raise WalletError("No public DID configured")
                 if (
-                    my_public_info.did == their_public_did
-                    or f"did:sov:{my_public_info.did}" == their_public_did
+                    my_info.did == their_public_did
+                    or f"did:sov:{my_info.did}" == their_public_did
                 ):
                     raise DIDXManagerError(
                         "Cannot connect to yourself through public DID"
                     )
+            elif use_did:
+                my_info = await wallet.get_local_did(use_did)
+
+            if my_info:
                 try:
                     await ConnRecord.retrieve_by_did(
                         session,
                         their_did=their_public_did,
-                        my_did=my_public_info.did,
+                        my_did=my_info.did,
                     )
                     raise DIDXManagerError(
                         "Connection already exists for their_did "
-                        f"{their_public_did} and my_did {my_public_info.did}"
+                        f"{their_public_did} and my_did {my_info.did}"
                     )
                 except StorageNotFoundError:
                     pass
+
         auto_accept = bool(
             auto_accept
             or (
@@ -244,7 +265,7 @@ class DIDXManager(BaseConnectionManager):
         protocol = protocol or DIDEX_1_0
         conn_rec = ConnRecord(
             my_did=(
-                my_public_info.did if my_public_info else None
+                my_info.did if my_info else None
             ),  # create-request will fill in on local DID creation
             their_did=their_public_did,
             their_label=None,
@@ -263,6 +284,7 @@ class DIDXManager(BaseConnectionManager):
             mediation_id=mediation_id,
             goal_code=goal_code,
             goal=goal,
+            use_did_method=use_did_method,
         )
         conn_rec.request_id = request._id
         conn_rec.state = ConnRecord.State.REQUEST.rfc160
@@ -282,6 +304,7 @@ class DIDXManager(BaseConnectionManager):
         mediation_id: Optional[str] = None,
         goal_code: Optional[str] = None,
         goal: Optional[str] = None,
+        use_did_method: Optional[str] = None,
     ) -> DIDXRequest:
         """Create a new connection request for a previously-received invitation.
 
@@ -297,6 +320,12 @@ class DIDXManager(BaseConnectionManager):
             A new `DIDXRequest` message to send to the other agent
 
         """
+        if use_did_method and use_did_method not in self.SUPPORTED_USE_DID_METHODS:
+            raise DIDXManagerError(
+                f"Unsupported use_did_method: {use_did_method}. Supported methods: "
+                f"{self.SUPPORTED_USE_DID_METHODS}"
+            )
+
         # Mediation Support
         mediation_records = await self._route_manager.mediation_records_for_connection(
             self.profile,
@@ -331,15 +360,16 @@ class DIDXManager(BaseConnectionManager):
                 conn_rec, my_endpoints, mediation_records
             )
         else:
-            emit_did_peer_2 = bool(self.profile.settings.get("emit_did_peer_2"))
-            emit_did_peer_4 = bool(self.profile.settings.get("emit_did_peer_4"))
+            if conn_rec.accept == ConnRecord.ACCEPT_AUTO or use_did_method is None:
+                # If we're auto accepting or engaging in 1.1 without setting a
+                # use_did_method, default to did:peer:4
+                use_did_method = "did:peer:4"
             try:
                 did, attach = await self._qualified_did_with_fallback(
                     conn_rec,
                     my_endpoints,
                     mediation_records,
-                    emit_did_peer_2,
-                    emit_did_peer_4,
+                    use_did_method,
                 )
             except LegacyHandlingFallback:
                 did, attach = await self._legacy_did_with_attached_doc(
@@ -377,20 +407,13 @@ class DIDXManager(BaseConnectionManager):
         conn_rec: ConnRecord,
         my_endpoints: Sequence[str],
         mediation_records: List[MediationRecord],
-        emit_did_peer_2: bool,
-        emit_did_peer_4: bool,
+        use_did_method: Optional[str] = None,
         signing_key: Optional[str] = None,
     ) -> Tuple[str, Optional[AttachDecorator]]:
         """Create DID Exchange request using a qualified DID.
 
         Fall back to unqualified DID if settings don't cause did:peer emission.
         """
-        if emit_did_peer_2 and emit_did_peer_4:
-            self._logger.warning(
-                "emit_did_peer_2 and emit_did_peer_4 both set, \
-                 using did:peer:4"
-            )
-
         if conn_rec.my_did:  # DID should be public or qualified
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -404,13 +427,14 @@ class DIDXManager(BaseConnectionManager):
                 raise LegacyHandlingFallback(
                     "DID has been previously set and not public or qualified"
                 )
-        elif emit_did_peer_4:
+        elif use_did_method == "did:peer:4":
             my_info = await self.create_did_peer_4(my_endpoints, mediation_records)
             conn_rec.my_did = my_info.did
-        elif emit_did_peer_2:
+        elif use_did_method == "did:peer:2":
             my_info = await self.create_did_peer_2(my_endpoints, mediation_records)
             conn_rec.my_did = my_info.did
         else:
+            # We shouldn't hit this condition in practice
             raise LegacyHandlingFallback(
                 "Use of qualified DIDs not set according to settings"
             )
@@ -498,9 +522,7 @@ class DIDXManager(BaseConnectionManager):
         )
 
         if recipient_verkey:
-            conn_rec = await self._receive_request_pairwise_did(
-                request, recipient_verkey, alias
-            )
+            conn_rec = await self._receive_request_pairwise_did(request, alias)
         else:
             conn_rec = await self._receive_request_public_did(
                 request, recipient_did, alias, auto_accept_implicit
@@ -515,22 +537,23 @@ class DIDXManager(BaseConnectionManager):
     async def _receive_request_pairwise_did(
         self,
         request: DIDXRequest,
-        recipient_verkey: str,
         alias: Optional[str] = None,
     ) -> ConnRecord:
         """Receive a DID Exchange request against a pairwise (not public) DID."""
-        try:
-            async with self.profile.session() as session:
-                conn_rec = await ConnRecord.retrieve_by_invitation_key(
-                    session=session,
-                    invitation_key=recipient_verkey,
-                    their_role=ConnRecord.Role.REQUESTER.rfc23,
-                )
-        except StorageNotFoundError:
+        if not request._thread.pthid:
+            raise DIDXManagerError("DID Exchange request missing parent thread ID")
+
+        async with self.profile.session() as session:
+            conn_rec = await ConnRecord.retrieve_by_invitation_msg_id(
+                session=session,
+                invitation_msg_id=request._thread.pthid,
+                their_role=ConnRecord.Role.REQUESTER.rfc23,
+            )
+
+        if not conn_rec:
             raise DIDXManagerError(
-                "No explicit invitation found for pairwise connection "
-                f"in state {ConnRecord.State.INVITATION.rfc23}: "
-                "a prior connection request may have updated the connection state"
+                "Pairwise requests must be against explicit invitations that have not "
+                "been previously consumed"
             )
 
         if conn_rec.is_multiuse_invitation:
@@ -560,7 +583,7 @@ class DIDXManager(BaseConnectionManager):
     def _handshake_protocol_to_use(self, request: DIDXRequest):
         """Determine the connection protocol to use based on the request.
 
-        If we support it, we'll send it. If we don't, we'll try didexchage/1.1.
+        If we support it, we'll send it. If we don't, we'll try didexchange/1.1.
         """
         protocol = f"{request._type.protocol}/{request._type.version}"
         if protocol in ConnRecord.SUPPORTED_PROTOCOLS:
@@ -771,14 +794,12 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        respond_with_did_peer_2 = bool(
-            self.profile.settings.get("emit_did_peer_2")
-            or (conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2"))
-        )
-        respond_with_did_peer_4 = bool(
-            self.profile.settings.get("emit_did_peer_4")
-            or (conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4"))
-        )
+        if conn_rec.their_did and conn_rec.their_did.startswith("did:peer:2"):
+            use_did_method = "did:peer:2"
+        elif conn_rec.their_did and conn_rec.their_did.startswith("did:peer:4"):
+            use_did_method = "did:peer:4"
+        else:
+            use_did_method = None
 
         if use_public_did:
             async with self.profile.session() as session:
@@ -804,8 +825,7 @@ class DIDXManager(BaseConnectionManager):
                     conn_rec,
                     my_endpoints,
                     mediation_records,
-                    respond_with_did_peer_2,
-                    respond_with_did_peer_4,
+                    use_did_method=use_did_method,
                     signing_key=conn_rec.invitation_key,
                 )
                 response = DIDXResponse(did=did, did_rotate_attach=attach)
@@ -966,7 +986,7 @@ class DIDXManager(BaseConnectionManager):
 
         conn_rec.their_did = their_did
 
-        # The long format I sent has been acknoledged, use short form now.
+        # The long format I sent has been acknowledged, use short form now.
         if LONG_PATTERN.match(conn_rec.my_did or ""):
             conn_rec.my_did = await self.long_did_peer_4_to_short(conn_rec.my_did)
         if LONG_PATTERN.match(conn_rec.their_did or ""):

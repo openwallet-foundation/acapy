@@ -226,7 +226,7 @@ class TransactionManager:
 
         if transaction.state not in (
             TransactionRecord.STATE_REQUEST_RECEIVED,
-            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
+            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED,
         ):
             raise TransactionManagerError(
                 f"Cannot endorse transaction for transaction record"
@@ -523,6 +523,14 @@ class TransactionManager:
                 jobs = await connection_record.metadata_get(session, "transaction_jobs")
         except StorageNotFoundError as err:
             raise TransactionManagerError(err.roll_up) from err
+
+        is_auto_endorser = self._profile.settings.get(
+            "endorser.endorser"
+        ) and self._profile.settings.get("endorser.auto_endorse")
+
+        if is_auto_endorser:
+            return transaction
+
         if not jobs:
             raise TransactionManagerError(
                 "The transaction related jobs are not set up in "
@@ -557,7 +565,7 @@ class TransactionManager:
 
         if transaction.state not in (
             TransactionRecord.STATE_REQUEST_RECEIVED,
-            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
+            TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED,
         ):
             raise TransactionManagerError(
                 f"Cannot refuse transaction for transaction record"
@@ -692,7 +700,7 @@ class TransactionManager:
             await transaction.save(session, reason="Resends the transaction request")
 
         resend_transaction_response = TransactionResend(
-            state=TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED,
+            state=TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED,
             thread_id=transaction._id,
         )
 

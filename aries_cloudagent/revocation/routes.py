@@ -270,7 +270,7 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
     )
 
 
-class PublishRevocationsSchemaAnoncreds(OpenAPISchema):
+class PublishRevocationsSchema(OpenAPISchema):
     """Request and result schema for revocation publication API call."""
 
     rrid2crid = fields.Dict(
@@ -293,7 +293,7 @@ class TxnOrPublishRevocationsResultSchema(OpenAPISchema):
     """Result schema for credential definition send request."""
 
     sent = fields.Nested(
-        PublishRevocationsSchemaAnoncreds(),
+        PublishRevocationsSchema(),
         required=False,
         metadata={"definition": "Content sent"},
     )
@@ -330,7 +330,7 @@ class ClearPendingRevocationsRequestSchema(OpenAPISchema):
     )
 
 
-class CredRevRecordResultSchemaAnoncreds(OpenAPISchema):
+class CredRevRecordResultSchema(OpenAPISchema):
     """Result schema for credential revocation record request."""
 
     result = fields.Nested(IssuerCredRevRecordSchema())
@@ -613,7 +613,7 @@ async def revoke(request: web.BaseRequest):
 
 
 @docs(tags=["revocation"], summary="Publish pending revocations to ledger")
-@request_schema(PublishRevocationsSchemaAnoncreds())
+@request_schema(PublishRevocationsSchema())
 @querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
 @querystring_schema(RevRegConnIdMatchInfoSchema())
 @response_schema(TxnOrPublishRevocationsResultSchema(), 200, description="")
@@ -686,7 +686,7 @@ async def publish_revocations(request: web.BaseRequest):
 
 @docs(tags=["revocation"], summary="Clear pending revocations")
 @request_schema(ClearPendingRevocationsRequestSchema())
-@response_schema(PublishRevocationsSchemaAnoncreds(), 200, description="")
+@response_schema(PublishRevocationsSchema(), 200, description="")
 async def clear_pending_revocations(request: web.BaseRequest):
     """Request handler for clearing pending revocations.
 
@@ -953,7 +953,7 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
         request: aiohttp request object
 
     Returns:
-        Detailes of revoked credentials from ledger
+        Details of revoked credentials from ledger
 
     """
     context: AdminRequestContext = request["context"]
@@ -1070,7 +1070,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     summary="Get credential revocation status",
 )
 @querystring_schema(CredRevRecordQueryStringSchema())
-@response_schema(CredRevRecordResultSchemaAnoncreds(), 200, description="")
+@response_schema(CredRevRecordResultSchema(), 200, description="")
 async def get_cred_rev_record(request: web.BaseRequest):
     """Request handler to get credential revocation record.
 
@@ -1316,7 +1316,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
                     transaction_request,
                 ) = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:
@@ -1436,7 +1436,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
                     transaction_request,
                 ) = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:
@@ -1596,7 +1596,7 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
                         revo_transaction_request,
                     ) = await transaction_manager.create_request(
                         transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
+                        # TODO see if we need to parametrize these params
                         # expires_time=expires_time,
                     )
                 except (StorageError, TransactionManagerError) as err:
@@ -1677,7 +1677,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
                     revo_transaction_request,
                 ) = await transaction_manager.create_request(
                     transaction=revo_transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:
@@ -1736,7 +1736,7 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
 
 
 class TailsDeleteResponseSchema(OpenAPISchema):
-    """Return schema for tails failes deletion."""
+    """Return schema for tails deletion."""
 
     message = fields.Str()
 
