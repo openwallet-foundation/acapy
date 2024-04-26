@@ -142,7 +142,7 @@ async def resolve_public_key_by_kid_for_verify(profile: Profile, kid: str) -> st
 
     if not isinstance(vmethod, VerificationMethod):
         raise InvalidVerificationMethod(
-            "Dereferenced resource is not a verificaiton method"
+            "Dereferenced resource is not a verification method"
         )
 
     if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):

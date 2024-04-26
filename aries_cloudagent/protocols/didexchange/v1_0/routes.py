@@ -26,6 +26,7 @@ from ....messaging.valid import (
     UUID4_VALIDATE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
+from ....wallet.base import BaseWallet
 from ....wallet.error import WalletError
 from .manager import DIDXManager, DIDXManagerError
 from .message_types import DIDEX_1_0, DIDEX_1_1, SPEC_URI
@@ -43,6 +44,21 @@ class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     my_label = fields.Str(
         required=False,
         metadata={"description": "Label for connection request", "example": "Broker"},
+    )
+    use_did = fields.Str(
+        required=False,
+        metadata={
+            "description": "The DID to use to for this connection",
+            "example": "did:example:1234",
+        },
+    )
+    use_did_method = fields.Str(
+        required=False,
+        validate=validate.OneOf(DIDXManager.SUPPORTED_USE_DID_METHODS),
+        metadata={
+            "description": "The DID method to use to generate a DID for this connection",
+            "example": "did:peer:4",
+        },
     )
 
 
@@ -85,6 +101,21 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
     )
     use_public_did = fields.Boolean(
         required=False, metadata={"description": "Use public DID for this connection"}
+    )
+    use_did = fields.Str(
+        required=False,
+        metadata={
+            "description": "The DID to use to for this connection",
+            "example": "did:example:1234",
+        },
+    )
+    use_did_method = fields.Str(
+        required=False,
+        validate=validate.OneOf(DIDXManager.SUPPORTED_USE_DID_METHODS),
+        metadata={
+            "description": "The DID method to use to generate a DID for this connection",
+            "example": "did:peer:4",
+        },
     )
     goal_code = fields.Str(
         required=False,
@@ -190,7 +221,7 @@ class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
 
 
 class DIDXRejectRequestSchema(OpenAPISchema):
-    """Parameters and validators for reject-request request  string."""
+    """Parameters and validators for reject-request request string."""
 
     reason = fields.Str(
         metadata={
@@ -226,17 +257,33 @@ async def didx_accept_invitation(request: web.BaseRequest):
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
+    use_did = request.query.get("use_did") or None
+    use_did_method = request.query.get("use_did_method") or None
+
+    if use_did and use_did_method:
+        raise web.HTTPBadRequest(
+            reason="use_did and use_did_method are mutually exclusive"
+        )
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
     try:
         async with profile.session() as session:
             conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
+            if use_did:
+                wallet = session.inject(BaseWallet)
+                did_info = await wallet.get_local_did(use_did)
+                conn_rec.my_did = did_info.did
+                await conn_rec.save(
+                    session, reason="Set my_did from use_did on invite accept"
+                )
+
         didx_request = await didx_mgr.create_request(
             conn_rec=conn_rec,
             my_label=my_label,
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
+            use_did_method=use_did_method,
         )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
@@ -274,6 +321,8 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     mediation_id = request.query.get("mediation_id") or None
     alias = request.query.get("alias") or None
     use_public_did = json.loads(request.query.get("use_public_did", "null"))
+    use_did = request.query.get("use_did") or None
+    use_did_method = request.query.get("use_did_method") or None
     goal_code = request.query.get("goal_code") or None
     goal = request.query.get("goal") or None
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
@@ -288,6 +337,8 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
             use_public_did=use_public_did,
+            use_did=use_did,
+            use_did_method=use_did_method,
             alias=alias,
             goal_code=goal_code,
             goal=goal,

@@ -258,7 +258,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     state = fields.Str(
         required=False,
         validate=validate.OneOf(
-            {label for state in ConnRecord.State for label in state.value}
+            sorted({label for state in ConnRecord.State for label in state.value})
         ),
         metadata={"description": "Connection state"},
     )
@@ -293,7 +293,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     invitation_msg_id = fields.Str(
         required=False,
         metadata={
-            "description": "Identifier of the associated Invitation Mesage",
+            "description": "Identifier of the associated Invitation Message",
             "example": UUID4_EXAMPLE,
         },
     )

@@ -272,8 +272,10 @@ class CredDefSchema(BaseModelSchema):
     type = fields.Str(validate=OneOf(["CL"]))
     tag = fields.Str(
         metadata={
-            "description": """The tag value passed in by the Issuer to
-         an AnonCred's Credential Definition create and store implementation.""",
+            "description": (
+                "The tag value passed in by the Issuer to "
+                "an AnonCred's Credential Definition create and store implementation."
+            ),
             "example": "default",
         }
     )

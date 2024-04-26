@@ -267,7 +267,7 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
             transaction_request.messages_attach == transaction_record.messages_attach[0]
         )
 
-    async def test_recieve_request(self):
+    async def test_receive_request(self):
         mock_request = mock.MagicMock()
         mock_request.transaction_id = self.test_author_transaction_id
         mock_request.signature_request = {
@@ -761,7 +761,7 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
         assert resend_transaction_response.thread_id == self.test_author_transaction_id
         assert (
             resend_transaction_response.state
-            == TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED
+            == TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED
         )
 
     async def test_receive_transaction_resend(self):
@@ -779,7 +779,7 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
         )
 
         mock_response = mock.MagicMock()
-        mock_response.state = TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED
+        mock_response.state = TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED
         mock_response.thread_id = author_transaction_record._id
 
         with mock.patch.object(TransactionRecord, "save", autospec=True) as save_record:
@@ -790,7 +790,7 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
 
         assert (
             endorser_transaction_record.state
-            == TransactionRecord.STATE_TRANSACTION_RESENT_RECEIEVED
+            == TransactionRecord.STATE_TRANSACTION_RESENT_RECEIVED
         )
 
     async def test_set_transaction_my_job(self):

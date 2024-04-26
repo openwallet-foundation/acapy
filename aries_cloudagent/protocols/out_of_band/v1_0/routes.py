@@ -21,7 +21,7 @@ from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE, UUID4_VALIDATE
 from ....storage.error import StorageError, StorageNotFoundError
 from ...didcomm_prefix import DIDCommPrefix
-from ...didexchange.v1_0.manager import DIDXManagerError
+from ...didexchange.v1_0.manager import DIDXManager, DIDXManagerError
 from .manager import OutOfBandManager, OutOfBandManagerError
 from .message_types import SPEC_URI
 from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
@@ -105,6 +105,21 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         metadata={
             "description": "Whether to use public DID in invitation",
             "example": False,
+        },
+    )
+    use_did = fields.Str(
+        required=False,
+        metadata={
+            "description": "DID to use in invitation",
+            "example": "did:example:123",
+        },
+    )
+    use_did_method = fields.Str(
+        required=False,
+        validate=validate.OneOf(DIDXManager.SUPPORTED_USE_DID_METHODS),
+        metadata={
+            "description": "DID method to use in invitation",
+            "example": "did:peer:2",
         },
     )
     metadata = fields.Dict(
@@ -229,6 +244,8 @@ async def invitation_create(request: web.BaseRequest):
     handshake_protocols = body.get("handshake_protocols", [])
     service_accept = body.get("accept")
     use_public_did = body.get("use_public_did", False)
+    use_did = body.get("use_did")
+    use_did_method = body.get("use_did_method")
     metadata = body.get("metadata")
     my_label = body.get("my_label")
     alias = body.get("alias")
@@ -241,20 +258,7 @@ async def invitation_create(request: web.BaseRequest):
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     create_unique_did = json.loads(request.query.get("create_unique_did", "false"))
 
-    if create_unique_did and use_public_did:
-        raise web.HTTPBadRequest(
-            reason="create_unique_did cannot be used with use_public_did"
-        )
-
     profile = context.profile
-
-    emit_did_peer_4 = profile.settings.get("emit_did_peer_4", False)
-    emit_did_peer_2 = profile.settings.get("emit_did_peer_2", False)
-    if emit_did_peer_2 and emit_did_peer_4:
-        LOGGER.warning(
-            "emit_did_peer_2 and emit_did_peer_4 both set, \
-             using did:peer:4"
-        )
 
     oob_mgr = OutOfBandManager(profile)
     try:
@@ -262,8 +266,8 @@ async def invitation_create(request: web.BaseRequest):
             my_label=my_label,
             auto_accept=auto_accept,
             public=use_public_did,
-            did_peer_2=emit_did_peer_2,
-            did_peer_4=emit_did_peer_4,
+            use_did=use_did,
+            use_did_method=use_did_method,
             hs_protos=[
                 h for h in [HSProto.get(hsp) for hsp in handshake_protocols] if h
             ],

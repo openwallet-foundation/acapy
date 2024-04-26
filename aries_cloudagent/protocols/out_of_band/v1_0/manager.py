@@ -3,43 +3,49 @@
 import asyncio
 import logging
 import re
-from typing import Mapping, Optional, Sequence, Union, Text
+from typing import List, Mapping, NamedTuple, Optional, Sequence, Text, Union
 import uuid
 
+from aries_cloudagent.protocols.coordinate_mediation.v1_0.route_manager import (
+    RouteManager,
+)
+from aries_cloudagent.wallet.error import WalletNotFoundError
 
-from ....messaging.decorators.service_decorator import ServiceDecorator
-from ....core.event_bus import EventBus
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
+from ....core.event_bus import EventBus
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
+from ....messaging.decorators.attach_decorator import AttachDecorator
+from ....messaging.decorators.service_decorator import ServiceDecorator
 from ....messaging.responder import BaseResponder
 from ....messaging.valid import IndyDID
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_info import INVITATION_REUSE_KEY
+from ....wallet.did_info import INVITATION_REUSE_KEY, DIDInfo
 from ....wallet.did_method import PEER2, PEER4
 from ....wallet.key_type import ED25519
 from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
+from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManager
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
 from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 from ...present_proof.v2_0.models.pres_exchange import V20PresExRecord
+from .message_types import DEFAULT_VERSION
 from .messages.invitation import HSProto, InvitationMessage
 from .messages.problem_report import OOBProblemReport
 from .messages.reuse import HandshakeReuse
 from .messages.reuse_accept import HandshakeReuseAccept
 from .messages.service import Service as ServiceMessage
+from .messages.service import Service
 from .models.invitation import InvitationRecord
 from .models.oob_record import OobRecord
-from .messages.service import Service
-from .message_types import DEFAULT_VERSION
 
 LOGGER = logging.getLogger(__name__)
 REUSE_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse"
@@ -52,6 +58,501 @@ class OutOfBandManagerError(BaseError):
 
 class OutOfBandManagerNotImplementedError(BaseError):
     """Out of band error for unimplemented functionality."""
+
+
+class InvitationCreator:
+    """Class for creating an out of band invitation."""
+
+    class CreateResult(NamedTuple):
+        """Result from creating an invitation."""
+
+        invitation_url: str
+        invitation: InvitationMessage
+        our_recipient_key: str
+        connection: Optional[ConnRecord]
+        service: Optional[ServiceDecorator]
+
+    def __init__(
+        self,
+        profile: Profile,
+        route_manager: RouteManager,
+        oob: "OutOfBandManager",
+        my_label: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        auto_accept: Optional[bool] = None,
+        public: bool = False,
+        use_did: Optional[str] = None,
+        use_did_method: Optional[str] = None,
+        hs_protos: Optional[Sequence[HSProto]] = None,
+        multi_use: bool = False,
+        create_unique_did: bool = False,
+        alias: Optional[str] = None,
+        attachments: Optional[Sequence[Mapping]] = None,
+        metadata: Optional[dict] = None,
+        mediation_id: Optional[str] = None,
+        service_accept: Optional[Sequence[Text]] = None,
+        protocol_version: Optional[Text] = None,
+        goal_code: Optional[Text] = None,
+        goal: Optional[Text] = None,
+    ):
+        """Initialize the invitation creator."""
+        if not (hs_protos or attachments):
+            raise OutOfBandManagerError(
+                "Invitation must include handshake protocols, "
+                "request attachments, or both"
+            )
+
+        if not hs_protos and metadata:
+            raise OutOfBandManagerError(
+                "Cannot store metadata without handshake protocols"
+            )
+
+        if attachments and multi_use:
+            raise OutOfBandManagerError(
+                "Cannot create multi use invitation with attachments"
+            )
+
+        if public and use_did:
+            raise OutOfBandManagerError("use_did and public are mutually exclusive")
+
+        if public and use_did_method:
+            raise OutOfBandManagerError(
+                "use_did_method and public are mutually exclusive"
+            )
+
+        if use_did and use_did_method:
+            raise OutOfBandManagerError(
+                "use_did and use_did_method are mutually exclusive"
+            )
+
+        if create_unique_did and not use_did_method:
+            LOGGER.error(
+                "create_unique_did: `%s`, use_did_method: `%s`",
+                create_unique_did,
+                use_did_method,
+            )
+            raise OutOfBandManagerError(
+                "create_unique_did can only be used with use_did_method"
+            )
+
+        if (
+            use_did_method
+            and use_did_method not in DIDXManager.SUPPORTED_USE_DID_METHODS
+        ):
+            raise OutOfBandManagerError(f"Unsupported use_did_method: {use_did_method}")
+
+        self.profile = profile
+        self.route_manager = route_manager
+        self.oob = oob
+
+        self.msg_id = str(uuid.uuid4())
+        self.attachments = attachments
+
+        self.handshake_protocols = [
+            DIDCommPrefix.qualify_current(hsp.name) for hsp in hs_protos or []
+        ] or None
+
+        if not my_endpoint:
+            my_endpoint = self.profile.settings.get("default_endpoint")
+            assert my_endpoint
+        self.my_endpoint = my_endpoint
+
+        self.version = protocol_version or DEFAULT_VERSION
+
+        if not my_label:
+            my_label = self.profile.settings.get("default_label")
+            assert my_label
+        self.my_label = my_label
+
+        self.accept = service_accept if protocol_version != "1.0" else None
+        self.invitation_mode = (
+            ConnRecord.INVITATION_MODE_MULTI
+            if multi_use
+            else ConnRecord.INVITATION_MODE_ONCE
+        )
+        self.alias = alias
+
+        auto_accept = bool(
+            auto_accept
+            or (
+                auto_accept is None
+                and self.profile.settings.get("debug.auto_accept_requests")
+            )
+        )
+        self.auto_accept = (
+            ConnRecord.ACCEPT_AUTO if auto_accept else ConnRecord.ACCEPT_MANUAL
+        )
+        self.goal = goal
+        self.goal_code = goal_code
+        self.public = public
+        self.use_did = use_did
+        self.use_did_method = use_did_method
+        self.multi_use = multi_use
+        self.create_unique_did = create_unique_did
+        self.image_url = self.profile.context.settings.get("image_url")
+
+        self.mediation_id = mediation_id
+        self.metadata = metadata
+
+    async def create_attachment(
+        self, attachment: Mapping, pthid: str
+    ) -> AttachDecorator:
+        """Create attachment for OOB invitation."""
+        a_type = attachment.get("type")
+        a_id = attachment.get("id")
+
+        if not a_type or not a_id:
+            raise OutOfBandManagerError("Attachment must include type and id")
+
+        async with self.profile.session() as session:
+            if a_type == "credential-offer":
+                try:
+                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
+                        session,
+                        a_id,
+                    )
+                    message = cred_ex_rec.credential_offer_dict
+
+                except StorageNotFoundError:
+                    cred_ex_rec = await V20CredExRecord.retrieve_by_id(
+                        session,
+                        a_id,
+                    )
+                    message = cred_ex_rec.cred_offer
+            elif a_type == "present-proof":
+                try:
+                    pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
+                        session,
+                        a_id,
+                    )
+                    message = pres_ex_rec.presentation_request_dict
+                except StorageNotFoundError:
+                    pres_ex_rec = await V20PresExRecord.retrieve_by_id(
+                        session,
+                        a_id,
+                    )
+                    message = pres_ex_rec.pres_request
+            else:
+                raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
+
+        message.assign_thread_id(pthid=pthid)
+        return InvitationMessage.wrap_message(message.serialize())
+
+    async def create_attachments(
+        self,
+        invitation_msg_id: str,
+        attachments: Optional[Sequence[Mapping]] = None,
+    ) -> List[AttachDecorator]:
+        """Create attachments for OOB invitation."""
+        return [
+            await self.create_attachment(attachment, invitation_msg_id)
+            for attachment in attachments or []
+        ]
+
+    async def create(self) -> InvitationRecord:
+        """Create the invitation, returning the result as an InvitationRecord."""
+        attachments = await self.create_attachments(self.msg_id, self.attachments)
+        mediation_record = await self.oob._route_manager.mediation_record_if_id(
+            self.profile, self.mediation_id, or_default=True
+        )
+
+        if self.public:
+            result = await self.handle_public(attachments, mediation_record)
+        elif self.use_did:
+            result = await self.handle_use_did(attachments, mediation_record)
+        elif self.use_did_method:
+            result = await self.handle_use_did_method(attachments, mediation_record)
+        else:
+            result = await self.handle_legacy_invite_key(attachments, mediation_record)
+
+        oob_record = OobRecord(
+            role=OobRecord.ROLE_SENDER,
+            state=OobRecord.STATE_AWAIT_RESPONSE,
+            connection_id=(
+                result.connection.connection_id if result.connection else None
+            ),
+            invi_msg_id=self.msg_id,
+            invitation=result.invitation,
+            our_recipient_key=result.our_recipient_key,
+            our_service=result.service,
+            multi_use=self.multi_use,
+        )
+
+        async with self.profile.session() as session:
+            await oob_record.save(session, reason="Created new oob invitation")
+
+        return InvitationRecord(
+            oob_id=oob_record.oob_id,
+            state=InvitationRecord.STATE_INITIAL,
+            invi_msg_id=self.msg_id,
+            invitation=result.invitation,
+            invitation_url=result.invitation_url,
+        )
+
+    async def handle_handshake_protos(
+        self,
+        invitation_key: str,
+        msg: InvitationMessage,
+        mediation_record: Optional[MediationRecord],
+    ) -> ConnRecord:
+        """Handle handshake protocol options, creating a ConnRecord.
+
+        When handshake protocols are included in the create request, that means
+        we intend to create a connection for the invitation. When absent,
+        no connection is created, representing a connectionless exchange.
+        """
+        assert self.handshake_protocols
+
+        if len(self.handshake_protocols) == 1:
+            connection_protocol = DIDCommPrefix.unqualify(self.handshake_protocols[0])
+        else:
+            # We don't know which protocol will be used until the request is received
+            connection_protocol = None
+
+        conn_rec = ConnRecord(
+            invitation_key=invitation_key,
+            invitation_msg_id=self.msg_id,
+            invitation_mode=self.invitation_mode,
+            their_role=ConnRecord.Role.REQUESTER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+            accept=self.auto_accept,
+            alias=self.alias,
+            connection_protocol=connection_protocol,
+        )
+
+        async with self.profile.transaction() as session:
+            await conn_rec.save(session, reason="Created new invitation")
+            await conn_rec.attach_invitation(session, msg)
+
+            if self.metadata:
+                for key, value in self.metadata.items():
+                    await conn_rec.metadata_set(session, key, value)
+
+            await session.commit()
+
+        await self.route_manager.route_invitation(
+            self.profile, conn_rec, mediation_record
+        )
+
+        return conn_rec
+
+    def did_key_to_key(self, did_key: str) -> str:
+        """Convert a DID key to a key."""
+        if did_key.startswith("did:key:"):
+            return DIDKey.from_did(did_key).public_key_b58
+        return did_key
+
+    def did_keys_to_keys(self, did_keys: Sequence[str]) -> List[str]:
+        """Convert DID keys to keys."""
+        return [self.did_key_to_key(did_key) for did_key in did_keys]
+
+    async def handle_did(
+        self,
+        did_info: DIDInfo,
+        attachments: Sequence[AttachDecorator],
+        mediation_record: Optional[MediationRecord],
+    ) -> CreateResult:
+        """Handle use_did invitation creation."""
+        invi_msg = InvitationMessage(
+            _id=self.msg_id,
+            label=self.my_label,
+            handshake_protocols=self.handshake_protocols,
+            requests_attach=attachments or None,
+            services=[did_info.did],
+            accept=self.accept,
+            version=self.version,
+            image_url=self.image_url,
+        )
+        endpoint, recipient_keys, routing_keys = await self.oob.resolve_invitation(
+            did_info.did
+        )
+        invi_url = invi_msg.to_url(endpoint)
+
+        if self.handshake_protocols:
+            conn_rec = await self.handle_handshake_protos(
+                did_info.verkey, invi_msg, mediation_record
+            )
+            our_service = None
+        else:
+            conn_rec = None
+            await self.route_manager.route_verkey(
+                self.profile, did_info.verkey, mediation_record
+            )
+            our_service = ServiceDecorator(
+                recipient_keys=self.did_keys_to_keys(recipient_keys),
+                endpoint=self.my_endpoint,
+                routing_keys=self.did_keys_to_keys(routing_keys),
+            )
+
+        return self.CreateResult(
+            invitation_url=invi_url,
+            invitation=invi_msg,
+            our_recipient_key=did_info.verkey,
+            connection=conn_rec,
+            service=our_service,
+        )
+
+    async def handle_public(
+        self,
+        attachments: Sequence[AttachDecorator],
+        mediation_record: Optional[MediationRecord] = None,
+    ) -> CreateResult:
+        """Handle public invitation creation."""
+        assert self.public
+        if not self.profile.settings.get("public_invites"):
+            raise OutOfBandManagerError("Public invitations are not enabled")
+
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            public_did = await wallet.get_public_did()
+
+        if not public_did:
+            raise OutOfBandManagerError(
+                "Cannot create public invitation with no public DID"
+            )
+
+        if bool(IndyDID.PATTERN.match(public_did.did)):
+            public_did = DIDInfo(
+                did=f"did:sov:{public_did.did}",
+                verkey=public_did.verkey,
+                metadata=public_did.metadata,
+                method=public_did.method,
+                key_type=public_did.key_type,
+            )
+
+        return await self.handle_did(public_did, attachments, mediation_record)
+
+    async def handle_use_did(
+        self,
+        attachments: Sequence[AttachDecorator],
+        mediation_record: Optional[MediationRecord],
+    ) -> CreateResult:
+        """Handle use_did invitation creation."""
+        assert self.use_did
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            try:
+                did_info = await wallet.get_local_did(self.use_did)
+            except WalletNotFoundError:
+                raise OutOfBandManagerError(
+                    f"Cannot find DID for invitation reuse: {self.use_did}"
+                )
+        return await self.handle_did(did_info, attachments, mediation_record)
+
+    async def handle_use_did_method(
+        self,
+        attachments: Sequence[AttachDecorator],
+        mediation_record: Optional[MediationRecord],
+    ) -> CreateResult:
+        """Create an invitation using a DID method, optionally reusing one."""
+        assert self.use_did_method
+        mediation_records = [mediation_record] if mediation_record else []
+
+        if self.my_endpoint:
+            my_endpoints = [self.my_endpoint]
+        else:
+            my_endpoints = []
+            default_endpoint = self.profile.settings.get("default_endpoint")
+            if default_endpoint:
+                my_endpoints.append(default_endpoint)
+            my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
+
+        did_peer_4 = self.use_did_method == "did:peer:4"
+
+        my_info = None
+        if not self.create_unique_did:
+            # check wallet to see if there is an existing "invitation" DID available
+            did_method = PEER4 if did_peer_4 else PEER2
+            my_info = await self.oob.fetch_invitation_reuse_did(did_method)
+            if not my_info:
+                LOGGER.warn("No invitation DID found, creating new DID")
+
+        if not my_info:
+            did_metadata = (
+                {INVITATION_REUSE_KEY: "true"} if not self.create_unique_did else {}
+            )
+            if did_peer_4:
+                my_info = await self.oob.create_did_peer_4(
+                    my_endpoints, mediation_records, did_metadata
+                )
+            else:
+                my_info = await self.oob.create_did_peer_2(
+                    my_endpoints, mediation_records, did_metadata
+                )
+
+        return await self.handle_did(my_info, attachments, mediation_record)
+
+    async def handle_legacy_invite_key(
+        self,
+        attachments: Sequence[AttachDecorator],
+        mediation_record: Optional[MediationRecord],
+    ) -> CreateResult:
+        """Create an invitation using legacy bare public key and inline service."""
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            connection_key = await wallet.create_signing_key(ED25519)
+
+        routing_keys, routing_endpoint = await self.route_manager.routing_info(
+            self.profile, mediation_record
+        )
+        routing_keys = [
+            (
+                key
+                if len(key.split(":")) == 3
+                else DIDKey.from_public_key_b58(key, ED25519).key_id
+            )
+            for key in routing_keys or []
+        ]
+        recipient_keys = [
+            DIDKey.from_public_key_b58(connection_key.verkey, ED25519).key_id
+        ]
+
+        my_endpoint = routing_endpoint or self.my_endpoint
+
+        invi_msg = InvitationMessage(
+            _id=self.msg_id,
+            label=self.my_label,
+            handshake_protocols=self.handshake_protocols,
+            requests_attach=attachments,
+            accept=self.accept,
+            image_url=self.image_url,
+            version=self.version,
+            services=[
+                ServiceMessage(
+                    _id="#inline",
+                    _type="did-communication",
+                    recipient_keys=recipient_keys,
+                    service_endpoint=my_endpoint,
+                    routing_keys=routing_keys,
+                )
+            ],
+            goal=self.goal,
+            goal_code=self.goal_code,
+        )
+
+        if self.handshake_protocols:
+            conn_rec = await self.handle_handshake_protos(
+                connection_key.verkey, invi_msg, mediation_record
+            )
+            our_service = None
+        else:
+            await self.route_manager.route_verkey(
+                self.profile, connection_key.verkey, mediation_record
+            )
+            conn_rec = None
+            our_service = ServiceDecorator(
+                recipient_keys=self.did_keys_to_keys(recipient_keys),
+                endpoint=my_endpoint,
+                routing_keys=self.did_keys_to_keys(routing_keys),
+            )
+
+        return self.CreateResult(
+            invitation_url=invi_msg.to_url(),
+            invitation=invi_msg,
+            our_recipient_key=connection_key.verkey,
+            connection=conn_rec,
+            service=our_service,
+        )
 
 
 class OutOfBandManager(BaseConnectionManager):
@@ -78,19 +579,19 @@ class OutOfBandManager(BaseConnectionManager):
 
     async def create_invitation(
         self,
-        my_label: str = None,
-        my_endpoint: str = None,
-        auto_accept: bool = None,
+        my_label: Optional[str] = None,
+        my_endpoint: Optional[str] = None,
+        auto_accept: Optional[bool] = None,
         public: bool = False,
-        did_peer_2: bool = False,
-        did_peer_4: bool = False,
-        hs_protos: Sequence[HSProto] = None,
+        use_did: Optional[str] = None,
+        use_did_method: Optional[str] = None,
+        hs_protos: Optional[Sequence[HSProto]] = None,
         multi_use: bool = False,
         create_unique_did: bool = False,
-        alias: str = None,
-        attachments: Sequence[Mapping] = None,
-        metadata: dict = None,
-        mediation_id: str = None,
+        alias: Optional[str] = None,
+        attachments: Optional[Sequence[Mapping]] = None,
+        metadata: Optional[dict] = None,
+        mediation_id: Optional[str] = None,
         service_accept: Optional[Sequence[Text]] = None,
         protocol_version: Optional[Text] = None,
         goal_code: Optional[Text] = None,
@@ -121,391 +622,29 @@ class OutOfBandManager(BaseConnectionManager):
             Invitation record
 
         """
-        mediation_record = await self._route_manager.mediation_record_if_id(
+        creator = InvitationCreator(
             self.profile,
+            self._route_manager,
+            self,
+            my_label,
+            my_endpoint,
+            auto_accept,
+            public,
+            use_did,
+            use_did_method,
+            hs_protos,
+            multi_use,
+            create_unique_did,
+            alias,
+            attachments,
+            metadata,
             mediation_id,
-            or_default=True,
+            service_accept,
+            protocol_version,
+            goal_code,
+            goal,
         )
-        image_url = self.profile.context.settings.get("image_url")
-
-        if not (hs_protos or attachments):
-            raise OutOfBandManagerError(
-                "Invitation must include handshake protocols, "
-                "request attachments, or both"
-            )
-
-        auto_accept = bool(
-            auto_accept
-            or (
-                auto_accept is None
-                and self.profile.settings.get("debug.auto_accept_requests")
-            )
-        )
-        if not hs_protos and metadata:
-            raise OutOfBandManagerError(
-                "Cannot store metadata without handshake protocols"
-            )
-
-        if attachments and multi_use:
-            raise OutOfBandManagerError(
-                "Cannot create multi use invitation with attachments"
-            )
-
-        invitation_message_id = str(uuid.uuid4())
-
-        message_attachments = []
-        for atch in attachments or []:
-            a_type = atch.get("type")
-            a_id = atch.get("id")
-
-            message = None
-
-            if a_type == "credential-offer":
-                try:
-                    async with self.profile.session() as session:
-                        cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                            session,
-                            a_id,
-                        )
-                        message = cred_ex_rec.credential_offer_dict.serialize()
-
-                except StorageNotFoundError:
-                    async with self.profile.session() as session:
-                        cred_ex_rec = await V20CredExRecord.retrieve_by_id(
-                            session,
-                            a_id,
-                        )
-                        message = cred_ex_rec.cred_offer.serialize()
-            elif a_type == "present-proof":
-                try:
-                    async with self.profile.session() as session:
-                        pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
-                            session,
-                            a_id,
-                        )
-                        message = pres_ex_rec.presentation_request_dict.serialize()
-                except StorageNotFoundError:
-                    async with self.profile.session() as session:
-                        pres_ex_rec = await V20PresExRecord.retrieve_by_id(
-                            session,
-                            a_id,
-                        )
-                        message = pres_ex_rec.pres_request.serialize()
-            else:
-                raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
-
-            # Assign pthid to the attached message
-            message["~thread"] = {
-                **message.get("~thread", {}),
-                "pthid": invitation_message_id,
-            }
-            message_attachments.append(InvitationMessage.wrap_message(message))
-
-        handshake_protocols = [
-            DIDCommPrefix.qualify_current(hsp.name) for hsp in hs_protos or []
-        ] or None
-        # Handshake protocol list should be ordered by preference by caller
-        connection_protocol = (
-            hs_protos[0].name if hs_protos and len(hs_protos) >= 1 else None
-        )
-
-        our_recipient_key = None
-        our_service = None
-        conn_rec = None
-
-        if public:
-            if not self.profile.settings.get("public_invites"):
-                raise OutOfBandManagerError("Public invitations are not enabled")
-
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                public_did = await wallet.get_public_did()
-
-            if not public_did:
-                raise OutOfBandManagerError(
-                    "Cannot create public invitation with no public DID"
-                )
-
-            public_did_did = public_did.did
-            if bool(IndyDID.PATTERN.match(public_did.did)):
-                public_did_did = f"did:sov:{public_did.did}"
-
-            invi_msg = InvitationMessage(  # create invitation message
-                _id=invitation_message_id,
-                label=my_label or self.profile.settings.get("default_label"),
-                handshake_protocols=handshake_protocols,
-                requests_attach=message_attachments,
-                services=[public_did_did],
-                accept=service_accept if protocol_version != "1.0" else None,
-                version=protocol_version or DEFAULT_VERSION,
-                image_url=image_url,
-            )
-
-            our_recipient_key = public_did.verkey
-
-            endpoint, *_ = await self.resolve_invitation(public_did.did)
-            invi_url = invi_msg.to_url(endpoint)
-
-            # Only create connection record if hanshake_protocols is defined
-            if handshake_protocols:
-                invitation_mode = (
-                    ConnRecord.INVITATION_MODE_MULTI
-                    if multi_use
-                    else ConnRecord.INVITATION_MODE_ONCE
-                )
-                conn_rec = ConnRecord(  # create connection record
-                    invitation_key=public_did.verkey,
-                    invitation_msg_id=invi_msg._id,
-                    invitation_mode=invitation_mode,
-                    their_role=ConnRecord.Role.REQUESTER.rfc23,
-                    state=ConnRecord.State.INVITATION.rfc23,
-                    accept=(
-                        ConnRecord.ACCEPT_AUTO
-                        if auto_accept
-                        else ConnRecord.ACCEPT_MANUAL
-                    ),
-                    alias=alias,
-                    connection_protocol=connection_protocol,
-                )
-
-                async with self.profile.session() as session:
-                    await conn_rec.save(session, reason="Created new invitation")
-                    await conn_rec.attach_invitation(session, invi_msg)
-
-                    await conn_rec.attach_invitation(session, invi_msg)
-
-                    if metadata:
-                        for key, value in metadata.items():
-                            await conn_rec.metadata_set(session, key, value)
-            else:
-                our_service = ServiceDecorator(
-                    recipient_keys=[our_recipient_key],
-                    endpoint=endpoint,
-                    routing_keys=[],
-                ).serialize()
-
-        elif did_peer_4 or did_peer_2:
-            mediation_records = [mediation_record] if mediation_record else []
-
-            if my_endpoint:
-                my_endpoints = [my_endpoint]
-            else:
-                my_endpoints = []
-                default_endpoint = self.profile.settings.get("default_endpoint")
-                if default_endpoint:
-                    my_endpoints.append(default_endpoint)
-                my_endpoints.extend(
-                    self.profile.settings.get("additional_endpoints", [])
-                )
-
-            my_info = None
-            my_did = None
-            if not create_unique_did:
-                # check wallet to see if there is an existing "invitation" DID available
-                did_method = PEER4 if did_peer_4 else PEER2
-                my_info = await self.fetch_invitation_reuse_did(did_method)
-                if my_info:
-                    my_did = my_info.did
-                else:
-                    LOGGER.warn("No invitation DID found, creating new DID")
-
-            if not my_did:
-                did_metadata = (
-                    {INVITATION_REUSE_KEY: "true"} if not create_unique_did else {}
-                )
-                if did_peer_4:
-                    my_info = await self.create_did_peer_4(
-                        my_endpoints, mediation_records, did_metadata
-                    )
-                    my_did = my_info.did
-                else:
-                    my_info = await self.create_did_peer_2(
-                        my_endpoints, mediation_records, did_metadata
-                    )
-                    my_did = my_info.did
-
-            invi_msg = InvitationMessage(  # create invitation message
-                _id=invitation_message_id,
-                label=my_label or self.profile.settings.get("default_label"),
-                handshake_protocols=handshake_protocols,
-                requests_attach=message_attachments,
-                services=[my_did],
-                accept=service_accept if protocol_version != "1.0" else None,
-                version=protocol_version or DEFAULT_VERSION,
-                image_url=image_url,
-            )
-            invi_url = invi_msg.to_url()
-
-            our_recipient_key = my_info.verkey
-
-            # Only create connection record if hanshake_protocols is defined
-            if handshake_protocols:
-                invitation_mode = (
-                    ConnRecord.INVITATION_MODE_MULTI
-                    if multi_use
-                    else ConnRecord.INVITATION_MODE_ONCE
-                )
-                conn_rec = ConnRecord(  # create connection record
-                    invitation_key=our_recipient_key,
-                    invitation_msg_id=invi_msg._id,
-                    invitation_mode=invitation_mode,
-                    their_role=ConnRecord.Role.REQUESTER.rfc23,
-                    state=ConnRecord.State.INVITATION.rfc23,
-                    accept=(
-                        ConnRecord.ACCEPT_AUTO
-                        if auto_accept
-                        else ConnRecord.ACCEPT_MANUAL
-                    ),
-                    alias=alias,
-                    connection_protocol=connection_protocol,
-                )
-
-                async with self.profile.session() as session:
-                    await conn_rec.save(session, reason="Created new invitation")
-                    await conn_rec.attach_invitation(session, invi_msg)
-
-                    await conn_rec.attach_invitation(session, invi_msg)
-
-                    if metadata:
-                        for key, value in metadata.items():
-                            await conn_rec.metadata_set(session, key, value)
-            else:
-                our_service = ServiceDecorator(
-                    recipient_keys=[our_recipient_key],
-                    endpoint=endpoint,
-                    routing_keys=[],
-                ).serialize()
-
-        else:
-            if not my_endpoint:
-                my_endpoint = self.profile.settings.get("default_endpoint")
-
-            # Create and store new key for exchange
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                connection_key = await wallet.create_signing_key(ED25519)
-
-            our_recipient_key = connection_key.verkey
-
-            # Initializing  InvitationMessage here to include
-            # invitation_msg_id in webhook poyload
-            invi_msg = InvitationMessage(
-                _id=invitation_message_id, version=protocol_version or DEFAULT_VERSION
-            )
-
-            if handshake_protocols:
-                invitation_mode = (
-                    ConnRecord.INVITATION_MODE_MULTI
-                    if multi_use
-                    else ConnRecord.INVITATION_MODE_ONCE
-                )
-                # Create connection record
-                conn_rec = ConnRecord(
-                    invitation_key=connection_key.verkey,
-                    their_role=ConnRecord.Role.REQUESTER.rfc23,
-                    state=ConnRecord.State.INVITATION.rfc23,
-                    accept=(
-                        ConnRecord.ACCEPT_AUTO
-                        if auto_accept
-                        else ConnRecord.ACCEPT_MANUAL
-                    ),
-                    invitation_mode=invitation_mode,
-                    alias=alias,
-                    connection_protocol=connection_protocol,
-                    invitation_msg_id=invi_msg._id,
-                )
-
-                async with self.profile.session() as session:
-                    await conn_rec.save(session, reason="Created new connection")
-
-            routing_keys, routing_endpoint = await self._route_manager.routing_info(
-                self.profile, mediation_record
-            )
-            my_endpoint = routing_endpoint or my_endpoint
-
-            if not conn_rec:
-                our_service = ServiceDecorator(
-                    recipient_keys=[our_recipient_key],
-                    endpoint=my_endpoint,
-                    routing_keys=routing_keys,
-                ).serialize()
-                # Need to make sure the created key is routed by the base wallet
-                await self._route_manager.route_verkey(
-                    self.profile, connection_key.verkey
-                )
-
-            routing_keys = [
-                (
-                    key
-                    if len(key.split(":")) == 3
-                    else DIDKey.from_public_key_b58(key, ED25519).key_id
-                )
-                for key in routing_keys or []
-            ]
-
-            # Create connection invitation message
-            # Note: Need to split this into two stages to support inbound routing
-            # of invitations
-            # Would want to reuse create_did_document and convert the result
-            invi_msg.label = my_label or self.profile.settings.get("default_label")
-            invi_msg.handshake_protocols = handshake_protocols
-            invi_msg.requests_attach = message_attachments
-            invi_msg.accept = service_accept if protocol_version != "1.0" else None
-            invi_msg.image_url = image_url
-            invi_msg.services = [
-                ServiceMessage(
-                    _id="#inline",
-                    _type="did-communication",
-                    recipient_keys=[
-                        DIDKey.from_public_key_b58(
-                            connection_key.verkey, ED25519
-                        ).key_id
-                    ],
-                    service_endpoint=my_endpoint,
-                    routing_keys=routing_keys,
-                )
-            ]
-            if goal and goal_code:
-                invi_msg.goal_code = goal_code
-                invi_msg.goal = goal
-
-            invi_url = invi_msg.to_url()
-
-            # Update connection record
-            if conn_rec:
-                async with self.profile.session() as session:
-                    await conn_rec.attach_invitation(session, invi_msg)
-
-                    if metadata:
-                        for key, value in metadata.items():
-                            await conn_rec.metadata_set(session, key, value)
-
-        oob_record = OobRecord(
-            role=OobRecord.ROLE_SENDER,
-            state=OobRecord.STATE_AWAIT_RESPONSE,
-            connection_id=conn_rec.connection_id if conn_rec else None,
-            invi_msg_id=invi_msg._id,
-            invitation=invi_msg,
-            our_recipient_key=our_recipient_key,
-            our_service=our_service,
-            multi_use=multi_use,
-        )
-
-        async with self.profile.session() as session:
-            await oob_record.save(session, reason="Created new oob invitation")
-
-        if conn_rec:
-            await self._route_manager.route_invitation(
-                self.profile, conn_rec, mediation_record
-            )
-
-        return InvitationRecord(  # for return via admin API, not storage
-            oob_id=oob_record.oob_id,
-            state=InvitationRecord.STATE_INITIAL,
-            invi_msg_id=invi_msg._id,
-            invitation=invi_msg,
-            invitation_url=invi_url,
-        )
+        return await creator.create()
 
     async def receive_invitation(
         self,
@@ -566,14 +705,16 @@ class OutOfBandManager(BaseConnectionManager):
         if (
             public_did is not None and use_existing_connection
         ):  # invite has public DID: seek existing connection
-            LOGGER.debug(
-                "Trying to find existing connection for oob invitation with "
-                f"did {public_did}"
-            )
             if public_did.startswith("did:peer:4"):
                 search_public_did = self.long_did_peer_to_short(public_did)
             else:
                 search_public_did = public_did
+
+            LOGGER.debug(
+                "Trying to find existing connection for oob invitation with "
+                f"did {search_public_did}"
+            )
+
             async with self._profile.session() as session:
                 conn_rec = await ConnRecord.find_existing_connection(
                     session=session, their_public_did=search_public_did
@@ -589,7 +730,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         # Try to reuse the connection. If not accepted sets the conn_rec to None
         if conn_rec and not invitation.requests_attach:
-            oob_record = await self._handle_hanshake_reuse(
+            oob_record = await self._handle_handshake_reuse(
                 oob_record, conn_rec, invitation._version
             )
 
@@ -749,7 +890,7 @@ class OutOfBandManager(BaseConnectionManager):
         """Wait for reuse response.
 
         Wait for reuse response message state. Either by receiving a reuse accepted or
-        problem report. If no answer is received withing the timeout, the state will be
+        problem report. If no answer is received within the timeout, the state will be
         set to reuse_not_accepted
 
         Args:
@@ -783,7 +924,7 @@ class OutOfBandManager(BaseConnectionManager):
                     ]:
                         return oob_record
 
-                LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted mesage")
+                LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted message")
                 event = await await_event
                 LOGGER.debug("Received reuse response message")
                 return OobRecord.deserialize(event.payload)
@@ -841,7 +982,7 @@ class OutOfBandManager(BaseConnectionManager):
             LOGGER.warning(f"Connection for connection_id {connection_id} not ready")
             return None
 
-    async def _handle_hanshake_reuse(
+    async def _handle_handshake_reuse(
         self, oob_record: OobRecord, conn_record: ConnRecord, version: str
     ) -> OobRecord:
         # Send handshake reuse
@@ -907,7 +1048,11 @@ class OutOfBandManager(BaseConnectionManager):
             # in an out-of-band message (RFC 0434).
             # OR did:peer:2 or did:peer:4.
 
-            if not service.startswith("did:peer"):
+            if service.startswith("did:peer"):
+                public_did = service
+                if public_did.startswith("did:peer:4"):
+                    public_did = self.long_did_peer_to_short(public_did)
+            else:
                 public_did = service.split(":")[-1]
 
             # TODO: resolve_invitation should resolve key_info objects
@@ -961,10 +1106,11 @@ class OutOfBandManager(BaseConnectionManager):
                 service.routing_keys = [
                     DIDKey.from_did(key).public_key_b58 for key in service.routing_keys
                 ] or []
+                msg_type = DIDCommPrefix.qualify_current(protocol.name) + "/invitation"
                 connection_invitation = ConnectionInvitation.deserialize(
                     {
                         "@id": invitation._id,
-                        "@type": DIDCommPrefix.qualify_current(protocol.name),
+                        "@type": msg_type,
                         "label": invitation.label,
                         "recipientKeys": service.recipient_keys,
                         "serviceEndpoint": service.service_endpoint,
@@ -1002,7 +1148,7 @@ class OutOfBandManager(BaseConnectionManager):
         """Create and Send a Handshake Reuse message under RFC 0434.
 
         Args:
-            oob_record: OOB  Record
+            oob_record: OOB Record
             conn_record: Connection record associated with the oob record
 
         Returns:

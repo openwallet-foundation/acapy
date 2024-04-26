@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [Hyperledger Discord](https://discord.gg/hyperledger) or through an issue in this repo.
 
-**Last Update**: 2024-03-05, Release 0.12.0rc2
+**Last Update**: 2024-04-24, Release 0.12.1rc0
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.
@@ -64,7 +64,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 
 | Method | Supported | Notes |
 | --- | :--: | -- |
-| "unqualified" | :white_check_mark: | Pre-DID standard identifiers. Used either in a peer-to-peer context, or as an alternate form of a `did:sov` DID published on an Indy network. |
+| "unqualified" | :warning: Deprecated | Pre-DID standard identifiers. Used either in a peer-to-peer context, or as an alternate form of a `did:sov` DID published on an Indy network. |
 | `did:sov` | :white_check_mark: |  |
 | `did:web` | :white_check_mark: | Resolution only |
 | `did:key` | :white_check_mark: | |
@@ -77,7 +77,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | --- | :--: | -- |
 | [Aries Askar] | :white_check_mark: | Recommended - Aries Askar provides equivalent/evolved secure storage and cryptography support to the "indy-wallet" part of the Indy SDK. When using Askar (via the `--wallet-type askar` startup parameter), other functionality is handled by [CredX](https://github.com/hyperledger/indy-shared-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions). |
 | [Aries Askar]-AnonCreds | :white_check_mark: | Recommended - When using Askar/AnonCreds (via the `--wallet-type askar-anoncreds` startup parameter), other functionality is handled by [AnonCreds RS](https://github.com/hyperledger/anoncreds-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions).<br><br>This `wallet-type` will eventually be the same as `askar` when we have fully integrated the AnonCreds RS library into ACA-Py. |
-| [Indy SDK](https://github.com/hyperledger/indy-sdk/tree/master/docs/design/003-wallet-storage) | :warning: Deprecated | Full support for the features of the "indy-wallet" secure storage capabilities found in the Indy SDK. |
+| [Indy SDK](https://github.com/hyperledger/indy-sdk/tree/master/docs/design/003-wallet-storage) | :warning: Deprecated | **To be removed in the next Major/Minor release of ACA-Py** Full support for the features of the "indy-wallet" secure storage capabilities found in the Indy SDK. |
 
 > New installations of ACA-Py should **NOT** use the [Indy SDK]. Existing deployments using the [Indy SDK] should transition to [Aries Askar] and related components as soon as possible.
 
@@ -91,6 +91,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | ACA-Py Plugins | :white_check_mark:  | The [ACA-Py Plugins] repository contains a growing set of plugins that are maintained and (mostly) tested against new releases of ACA-Py. |
 | Multi use invitations            | :white_check_mark:  |         |
 | Invitations using public did     | :white_check_mark:        |         |
+| Invitations using peer dids supporting connection reuse     | :white_check_mark:        |         |
 | Implicit pickup of messages in role of mediator | :white_check_mark:        |         |
 | [Revocable AnonCreds Credentials](https://github.com/hyperledger/indy-hipe/tree/main/text/0011-cred-revocation) | :white_check_mark:        |         |
 | Multi-Tenancy      | :white_check_mark:        | [Documentation](https://github.com/hyperledger/aries-cloudagent-python/blob/main/Multitenancy.md) |
@@ -126,10 +127,7 @@ are fully supported in ACA-Py **EXCEPT** as noted in the table below.
 
 | RFC | Supported | Notes |
 | --- | :--: | -- |
-| [0587-encryption-envelope-v2](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0587-encryption-envelope-v2) | :construction: | Supporting the DIDComm v2 encryption envelope does not make sense until DIDComm v2 is to be supported. |
-| [0317-please-ack](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) |  :x: | An investigation was done into supporting `please-ack` and a number of complications were found. As a result, we expect that `please-ack` will be dropped from AIP 2.0. It has not been implemented by any Aries frameworks or deployments. |
-
-There is a [PR to the Aries RFCs repository](https://github.com/hyperledger/aries-rfcs/pull/814) to remove those RFCs from AIP 2.0. If that PR is removed, the RFCs will be removed from the table above.
+| Fully Supported |  |  |
 
 ### Other Supported RFCs
 

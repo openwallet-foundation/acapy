@@ -4,11 +4,11 @@ import functools
 import json
 import logging
 import os
-import random
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer
+from secrets import token_hex
 
 import asyncpg
 import yaml
@@ -207,12 +207,8 @@ class DemoAgent:
             seed = None
         elif self.endorser_role and not seed:
             seed = "random"
-        rand_name = str(random.randint(100_000, 999_999))
-        self.seed = (
-            ("my_seed_000000000000000000000000" + rand_name)[-32:]
-            if seed == "random"
-            else seed
-        )
+        rand_name = token_hex(4)
+        self.seed = token_hex(16) if seed == "random" else seed
         self.storage_type = params.get("storage_type")
         self.wallet_type = params.get("wallet_type") or "askar"
         self.wallet_name = (
@@ -1455,30 +1451,63 @@ class DemoAgent:
         reuse_connections: bool = False,
         multi_use_invitations: bool = False,
         public_did_connections: bool = False,
+        emit_did_peer_2: bool = False,
+        emit_did_peer_4: bool = False,
     ):
         self.connection_id = None
+        if emit_did_peer_2:
+            use_did_method = "did:peer:2"
+        elif emit_did_peer_4:
+            use_did_method = "did:peer:4"
+        else:
+            use_did_method = None
+
+        create_unique_did = (
+            use_did_method is not None
+            and (not reuse_connections)
+            and (not public_did_connections)
+        )
         if use_did_exchange:
             # TODO can mediation be used with DID exchange connections?
-            create_unique_did = (not reuse_connections) and (not public_did_connections)
             invi_params = {
                 "auto_accept": json.dumps(auto_accept),
                 "multi_use": json.dumps(multi_use_invitations),
                 "create_unique_did": json.dumps(create_unique_did),
             }
             payload = {
-                "handshake_protocols": ["rfc23"],
+                "handshake_protocols": ["didexchange/1.1"],
                 "use_public_did": public_did_connections,
             }
             if self.mediation:
                 payload["mediation_id"] = self.mediator_request_id
-            print("Calling /out-of-band/create-invitation with:", payload, invi_params)
+            if use_did_method:
+                payload["use_did_method"] = use_did_method
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
                 payload,
                 params=invi_params,
             )
         else:
-            if self.mediation:
+            if reuse_connections:
+                # use oob for connection reuse
+                invi_params = {
+                    "auto_accept": json.dumps(auto_accept),
+                    "create_unique_did": json.dumps(create_unique_did),
+                }
+                payload = {
+                    "handshake_protocols": ["https://didcomm.org/connections/1.0"],
+                    "use_public_did": public_did_connections,
+                }
+                if self.mediation:
+                    payload["mediation_id"] = self.mediator_request_id
+                if use_did_method:
+                    payload["use_did_method"] = use_did_method
+                invi_rec = await self.admin_POST(
+                    "/out-of-band/create-invitation",
+                    payload,
+                    params=invi_params,
+                )
+            elif self.mediation:
                 invi_params = {
                     "auto_accept": json.dumps(auto_accept),
                 }
@@ -1503,7 +1532,6 @@ class DemoAgent:
         if "/out-of-band/" in invite.get("@type", ""):
             # reuse connections if requested and possible
             params["use_existing_connection"] = json.dumps(self.reuse_connections)
-            print("Receiving invitation with params:", params)
             connection = await self.admin_POST(
                 "/out-of-band/receive-invitation",
                 invite,

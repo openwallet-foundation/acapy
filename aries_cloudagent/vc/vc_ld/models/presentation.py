@@ -168,7 +168,7 @@ class VerifiablePresentation(BaseModel):
         self._proof = proof
 
     def __eq__(self, o: object) -> bool:
-        """Check equalness."""
+        """Check equality."""
         if isinstance(o, VerifiablePresentation):
             return (
                 self.context == o.context
@@ -211,7 +211,7 @@ class PresentationSchema(BaseModelSchema):
         required=False,
         validate=Uri(),
         metadata={
-            "desscription": "The ID of the presentation",
+            "description": "The ID of the presentation",
             "example": "http://example.edu/presentations/1872",
         },
     )

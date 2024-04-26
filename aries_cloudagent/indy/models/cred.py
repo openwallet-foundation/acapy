@@ -55,6 +55,16 @@ class IndyAttrValueSchema(BaseModelSchema):
 class DictWithIndyAttrValueSchema(fields.Dict):
     """Dict with indy attribute value schema."""
 
+    def __init__(self, **kwargs):
+        """Initialize the custom schema for a dictionary with IndyAttrValue."""
+        super().__init__(
+            keys=fields.Str(metadata={"description": "Attribute name"}),
+            values=fields.Nested(
+                IndyAttrValueSchema(), metadata={"description": "Attribute value"}
+            ),
+            **kwargs,
+        )
+
     def _deserialize(self, value, attr, data, **kwargs):
         """Deserialize dict with indy attribute value."""
         if not isinstance(value, dict):

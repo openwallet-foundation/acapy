@@ -303,7 +303,7 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
         metadata={
             "description": (
                 "Optional Presentation specification for DIF, overrides the"
-                " PresentionExchange record's PresRequest"
+                " PresentationExchange record's PresRequest"
             )
         },
     )

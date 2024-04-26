@@ -1,10 +1,7 @@
 import contextlib
-
 from io import StringIO
-
-from unittest import mock
-from unittest import IsolatedAsyncioTestCase
 from tempfile import NamedTemporaryFile
+from unittest import IsolatedAsyncioTestCase, mock
 
 from .. import logging as test_module
 
@@ -21,7 +18,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
         test_module.LoggingConfigurator.configure()
 
         mock_load_resource.assert_called_once_with(
-            test_module.DEFAULT_LOGGING_CONFIG_PATH, "utf-8"
+            test_module.DEFAULT_LOGGING_CONFIG_PATH_INI, "utf-8"
         )
         mock_file_config.assert_called_once_with(
             mock_load_resource.return_value,
@@ -29,69 +26,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             new_file_path=None,
         )
 
-    def test_configure_with_per_tenant_config_file(self):
-        with mock.patch.object(
-            test_module,
-            "logging",
-            mock.MagicMock(
-                basicConfig=mock.MagicMock(),
-                FileHandler=mock.MagicMock(),
-                root=mock.MagicMock(
-                    warning=mock.MagicMock(),
-                    handlers=[],
-                ),
-            ),
-        ):
-            test_module.LoggingConfigurator.configure(
-                log_file="test.log",
-                multitenant=True,
-            )
-
-    def test_configure_with_per_tenant_yml_file(self):
-        with mock.patch.object(
-            test_module,
-            "logging",
-            mock.MagicMock(
-                basicConfig=mock.MagicMock(),
-                FileHandler=mock.MagicMock(),
-                root=mock.MagicMock(
-                    warning=mock.MagicMock(),
-                    handlers=[],
-                ),
-            ),
-        ):
-            test_module.LoggingConfigurator.configure(
-                logging_config_path="aries_cloudagent/config/default_per_tenant_logging_config.yml",
-                log_file="test.log",
-                multitenant=True,
-            )
-
-    def test_configure_with_default_config(self):
-        with mock.patch.object(
-            test_module,
-            "logging",
-            mock.MagicMock(
-                basicConfig=mock.MagicMock(),
-                FileHandler=mock.MagicMock(),
-                root=mock.MagicMock(
-                    warning=mock.MagicMock(),
-                    handlers=[],
-                ),
-            ),
-        ):
-            test_module.LoggingConfigurator.configure(
-                log_file="test.log",
-                multitenant=True,
-            )
-
-    def test_configure_default_no_resource(self):
-        with mock.patch.object(
-            test_module, "load_resource", mock.MagicMock()
-        ) as mock_load:
-            mock_load.return_value = None
-            test_module.LoggingConfigurator.configure()
-
-    def test_configure_default_file(self):
+    def test_configure_default_with_log_file_error_level(self):
         log_file = NamedTemporaryFile()
         with mock.patch.object(
             test_module, "load_resource", mock.MagicMock()
@@ -103,7 +38,7 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
 
     @mock.patch.object(test_module, "load_resource", autospec=True)
     @mock.patch.object(test_module, "fileConfig", autospec=True)
-    def test_configure_path(self, mock_file_config, mock_load_resource):
+    def test_configure_default_with_path(self, mock_file_config, mock_load_resource):
         path = "a path"
         test_module.LoggingConfigurator.configure(path)
 
@@ -113,6 +48,43 @@ class TestLoggingConfigurator(IsolatedAsyncioTestCase):
             disable_existing_loggers=False,
             new_file_path=None,
         )
+
+    def test_configure_multitenant(self):
+        with mock.patch.object(
+            test_module,
+            "logging",
+            mock.MagicMock(
+                basicConfig=mock.MagicMock(),
+                FileHandler=mock.MagicMock(),
+                root=mock.MagicMock(
+                    warning=mock.MagicMock(),
+                    handlers=[],
+                ),
+            ),
+        ):
+            test_module.LoggingConfigurator.configure(
+                log_file="test.log",
+                multitenant=True,
+            )
+
+    def test_configure_with_multitenant_with_yaml_file(self):
+        with mock.patch.object(
+            test_module,
+            "logging",
+            mock.MagicMock(
+                basicConfig=mock.MagicMock(),
+                FileHandler=mock.MagicMock(),
+                root=mock.MagicMock(
+                    warning=mock.MagicMock(),
+                    handlers=[],
+                ),
+            ),
+        ):
+            test_module.LoggingConfigurator.configure(
+                log_config_path="aries_cloudagent/config/default_multitenant_logging_config.yml",
+                log_file="test.log",
+                multitenant=True,
+            )
 
     def test_banner_did(self):
         stdout = StringIO()

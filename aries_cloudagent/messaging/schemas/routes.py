@@ -320,7 +320,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             try:
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:

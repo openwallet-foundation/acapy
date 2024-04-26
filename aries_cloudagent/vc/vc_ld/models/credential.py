@@ -252,7 +252,7 @@ class VerifiableCredential(BaseModel):
         self._proof = proof
 
     def __eq__(self, o: object) -> bool:
-        """Check equalness."""
+        """Check equality."""
         if isinstance(o, VerifiableCredential):
             return (
                 self.context == o.context
@@ -298,7 +298,7 @@ class CredentialSchema(BaseModelSchema):
         required=False,
         validate=Uri(),
         metadata={
-            "desscription": "The ID of the credential",
+            "description": "The ID of the credential",
             "example": "http://example.edu/credentials/1872",
         },
     )

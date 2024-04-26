@@ -345,10 +345,7 @@ class ConnRecord(BaseRecord):
             session: The active profile session
             their_public_did: Inviter public DID (or did:peer)
         """
-        if their_public_did.startswith("did:peer"):
-            tag_filter = {"their_did": their_public_did}
-        else:
-            tag_filter = {"their_public_did": their_public_did}
+        tag_filter = {"their_public_did": their_public_did}
         conn_records = await cls.query(
             session,
             tag_filter=tag_filter,
