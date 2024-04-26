@@ -168,8 +168,13 @@ class LoggingConfigurator:
         if multitenant:
             # The default logging config for multi-tenant mode specifies a log file
             # location if --log-file is specified on startup and a config file is not.
-            if not log_config_path and write_to_log_file:
-                log_config_path = cls.default_multitenant_config_path_ini
+            # When all else fails, the default single-tenant config file is used.
+            if not log_config_path:
+                log_config_path = (
+                    cls.default_multitenant_config_path_ini
+                    if write_to_log_file
+                    else cls.default_config_path_ini
+                )
 
             cls._configure_multitenant_logging(
                 log_config_path=log_config_path,
