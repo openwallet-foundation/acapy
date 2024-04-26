@@ -119,7 +119,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         collector = Collector()
         context.injector.bind_instance(test_module.Collector, collector)
 
-        profile = InMemoryProfile.test_profile()
+        profile = InMemoryProfile.test_profile(settings=settings)
 
         self.port = unused_port()
         return AdminServer(

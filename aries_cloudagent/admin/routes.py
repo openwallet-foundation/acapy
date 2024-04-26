@@ -169,7 +169,7 @@ async def status_reset_handler(request: web.BaseRequest):
     return web.json_response({})
 
 
-async def redirect_handler(self, request: web.BaseRequest):
+async def redirect_handler(request: web.BaseRequest):
     """Perform redirect to documentation."""
     raise web.HTTPFound("/api/doc")
 
@@ -186,7 +186,7 @@ async def liveliness_handler(request: web.BaseRequest):
         The web response, always indicating True
 
     """
-    app_live = request.app["_state"]["alive"]
+    app_live = request.app._state["alive"]
     if app_live:
         return web.json_response({"alive": app_live})
     else:
@@ -205,7 +205,7 @@ async def readiness_handler(request: web.BaseRequest):
         The web response, indicating readiness for further calls
 
     """
-    app_ready = request.app["_state"]["ready"] and request.app["_state"]["alive"]
+    app_ready = request.app._state["ready"] and request.app._state["alive"]
     if app_ready:
         return web.json_response({"ready": app_ready})
     else:
@@ -225,7 +225,7 @@ async def shutdown_handler(request: web.BaseRequest):
         The web response (empty production)
 
     """
-    request.app["_state"]["ready"] = False
+    request.app._state["ready"] = False
     loop = asyncio.get_event_loop()
     asyncio.ensure_future(request.app["conductor_stop"](), loop=loop)
 
