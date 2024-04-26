@@ -12,21 +12,16 @@ import aiohttp_cors
 import jwt
 from aiohttp import web
 from aiohttp_apispec import (
-    docs,
-    response_schema,
     setup_aiohttp_apispec,
     validation_middleware,
 )
-from marshmallow import fields
 
-from ..admin.decorators.auth import admin_authentication
 from ..config.injection_context import InjectionContext
 from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
-from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
 from ..storage.error import StorageNotFoundError
@@ -40,6 +35,16 @@ from ..version import __version__
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
+from .routes import (
+    config_handler,
+    liveliness_handler,
+    plugins_handler,
+    readiness_handler,
+    redirect_handler,
+    shutdown_handler,
+    status_handler,
+    status_reset_handler,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -56,58 +61,6 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::actionmenu::perform-menu-action": "perform-menu-action",
     "acapy::keylist::updated": "keylist",
 }
-
-
-class AdminModulesSchema(OpenAPISchema):
-    """Schema for the modules endpoint."""
-
-    result = fields.List(
-        fields.Str(metadata={"description": "admin module"}),
-        metadata={"description": "List of admin modules"},
-    )
-
-
-class AdminConfigSchema(OpenAPISchema):
-    """Schema for the config endpoint."""
-
-    config = fields.Dict(
-        required=True, metadata={"description": "Configuration settings"}
-    )
-
-
-class AdminStatusSchema(OpenAPISchema):
-    """Schema for the status endpoint."""
-
-    version = fields.Str(metadata={"description": "Version code"})
-    label = fields.Str(allow_none=True, metadata={"description": "Default label"})
-    timing = fields.Dict(required=False, metadata={"description": "Timing results"})
-    conductor = fields.Dict(
-        required=False, metadata={"description": "Conductor statistics"}
-    )
-
-
-class AdminResetSchema(OpenAPISchema):
-    """Schema for the reset endpoint."""
-
-
-class AdminStatusLivelinessSchema(OpenAPISchema):
-    """Schema for the liveliness endpoint."""
-
-    alive = fields.Boolean(
-        metadata={"description": "Liveliness status", "example": True}
-    )
-
-
-class AdminStatusReadinessSchema(OpenAPISchema):
-    """Schema for the readiness endpoint."""
-
-    ready = fields.Boolean(
-        metadata={"description": "Readiness status", "example": True}
-    )
-
-
-class AdminShutdownSchema(OpenAPISchema):
-    """Response schema for admin Module."""
 
 
 class AdminResponder(BaseResponder):
@@ -377,14 +330,14 @@ class AdminServer(BaseAdminServer):
         )
 
         server_routes = [
-            web.get("/", self.redirect_handler, allow_head=True),
-            web.get("/plugins", self.plugins_handler, allow_head=False),
-            web.get("/status", self.status_handler, allow_head=False),
-            web.get("/status/config", self.config_handler, allow_head=False),
-            web.post("/status/reset", self.status_reset_handler),
-            web.get("/status/live", self.liveliness_handler, allow_head=False),
-            web.get("/status/ready", self.readiness_handler, allow_head=False),
-            web.get("/shutdown", self.shutdown_handler, allow_head=False),
+            web.get("/", redirect_handler, allow_head=True),
+            web.get("/plugins", plugins_handler, allow_head=False),
+            web.get("/status", status_handler, allow_head=False),
+            web.get("/status/config", config_handler, allow_head=False),
+            web.post("/status/reset", status_reset_handler),
+            web.get("/status/live", liveliness_handler, allow_head=False),
+            web.get("/status/ready", readiness_handler, allow_head=False),
+            web.get("/shutdown", shutdown_handler, allow_head=False),
             web.get("/ws", self.websocket_handler, allow_head=False),
         ]
         app.add_routes(server_routes)
@@ -418,6 +371,11 @@ class AdminServer(BaseAdminServer):
         # ensure we always have status values
         app._state["ready"] = False
         app._state["alive"] = False
+
+        # set global-like variables
+        app["context"] = self.context
+        app["conductor_stats"] = self.conductor_stats
+        app["conductor_stop"] = self.conductor_stop
 
         return app
 
@@ -529,161 +487,6 @@ class AdminServer(BaseAdminServer):
             swagger = app["swagger_dict"]
             swagger["securityDefinitions"] = security_definitions
             swagger["security"] = security
-
-    @docs(tags=["server"], summary="Fetch the list of loaded plugins")
-    @response_schema(AdminModulesSchema(), 200, description="")
-    @admin_authentication
-    async def plugins_handler(self, request: web.BaseRequest):
-        """Request handler for the loaded plugins list.
-
-        Args:
-            request: aiohttp request object
-
-        Returns:
-            The module list response
-
-        """
-        registry = self.context.inject_or(PluginRegistry)
-        plugins = registry and sorted(registry.plugin_names) or []
-        return web.json_response({"result": plugins})
-
-    @docs(tags=["server"], summary="Fetch the server configuration")
-    @response_schema(AdminConfigSchema(), 200, description="")
-    @admin_authentication
-    async def config_handler(self, request: web.BaseRequest):
-        """Request handler for the server configuration.
-
-        Args:
-            request: aiohttp request object
-
-        Returns:
-            The web response
-
-        """
-        config = {
-            k: (
-                self.context.settings[k]
-                if (isinstance(self.context.settings[k], (str, int)))
-                else self.context.settings[k].copy()
-            )
-            for k in self.context.settings
-            if k
-            not in [
-                "admin.admin_api_key",
-                "multitenant.jwt_secret",
-                "wallet.key",
-                "wallet.rekey",
-                "wallet.seed",
-                "wallet.storage_creds",
-            ]
-        }
-        for index in range(len(config.get("admin.webhook_urls", []))):
-            config["admin.webhook_urls"][index] = re.sub(
-                r"#.*",
-                "",
-                config["admin.webhook_urls"][index],
-            )
-
-        return web.json_response({"config": config})
-
-    @docs(tags=["server"], summary="Fetch the server status")
-    @response_schema(AdminStatusSchema(), 200, description="")
-    @admin_authentication
-    async def status_handler(self, request: web.BaseRequest):
-        """Request handler for the server status information.
-
-        Args:
-            request: aiohttp request object
-
-        Returns:
-            The web response
-
-        """
-        status = {"version": __version__}
-        status["label"] = self.context.settings.get("default_label")
-        collector = self.context.inject_or(Collector)
-        if collector:
-            status["timing"] = collector.results
-        if self.conductor_stats:
-            status["conductor"] = await self.conductor_stats()
-        return web.json_response(status)
-
-    @docs(tags=["server"], summary="Reset statistics")
-    @response_schema(AdminResetSchema(), 200, description="")
-    @admin_authentication
-    async def status_reset_handler(self, request: web.BaseRequest):
-        """Request handler for resetting the timing statistics.
-
-        Args:
-            request: aiohttp request object
-
-        Returns:
-            The web response
-
-        """
-        collector = self.context.inject_or(Collector)
-        if collector:
-            collector.reset()
-        return web.json_response({})
-
-    async def redirect_handler(self, request: web.BaseRequest):
-        """Perform redirect to documentation."""
-        raise web.HTTPFound("/api/doc")
-
-    @docs(tags=["server"], summary="Liveliness check")
-    @response_schema(AdminStatusLivelinessSchema(), 200, description="")
-    async def liveliness_handler(self, request: web.BaseRequest):
-        """Request handler for liveliness check.
-
-        Args:
-            request: aiohttp request object
-
-        Returns:
-            The web response, always indicating True
-
-        """
-        app_live = self.app._state["alive"]
-        if app_live:
-            return web.json_response({"alive": app_live})
-        else:
-            raise web.HTTPServiceUnavailable(reason="Service not available")
-
-    @docs(tags=["server"], summary="Readiness check")
-    @response_schema(AdminStatusReadinessSchema(), 200, description="")
-    async def readiness_handler(self, request: web.BaseRequest):
-        """Request handler for liveliness check.
-
-        Args:
-            request: aiohttp request object
-
-        Returns:
-            The web response, indicating readiness for further calls
-
-        """
-        app_ready = self.app._state["ready"] and self.app._state["alive"]
-        if app_ready:
-            return web.json_response({"ready": app_ready})
-        else:
-            raise web.HTTPServiceUnavailable(reason="Service not ready")
-
-    @docs(tags=["server"], summary="Shut down server")
-    @response_schema(AdminShutdownSchema(), description="")
-    @admin_authentication
-    async def shutdown_handler(self, request: web.BaseRequest):
-        """Request handler for server shutdown.
-
-        Args:
-            request: aiohttp request object
-
-        Returns:
-            The web response (empty production)
-
-        """
-        self.app._state["ready"] = False
-        loop = asyncio.get_event_loop()
-        asyncio.ensure_future(self.conductor_stop(), loop=loop)
-
-        return web.json_response({})
 
     def notify_fatal_error(self):
         """Set our readiness flags to force a restart (openshift)."""
