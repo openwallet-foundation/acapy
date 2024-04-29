@@ -653,16 +653,23 @@ to
 
 The upgrade endpoint is at **POST /anoncreds/wallet/upgrade**.
 
-You need to be careful doing this, as there is no way to downgrade the wallet. Once the wallet is upgraded it will not be able to interact with agents that have not been upgraded. It is recommended to test the upgrade in a development environment before upgrading a production wallet.
+You need to be careful doing this, as there is no way to downgrade the wallet. It is recommended highly recommended to back-up any wallets and to test the upgrade in a development environment before upgrading a production wallet.
 
 Params: `wallet_name` is the name of the wallet to upgrade. Used to prevent accidental upgrades.
 
-The behavior for a base wallet (standalone) or admin wallet in multitenant mode is different from the behavior of a subwallet (or tenant) in multitenancy mode.
+The behavior for a base wallet (standalone) or admin wallet in multitenant mode is slightly different from the behavior of a subwallet (or tenant) in multitenancy mode. However, the upgrade process is the same.
+
+1. Backup the wallet
+2. Scale down any controller instances on old endpoints
+3. Call the upgrade endpoint
+4. Scale up the controller instances to handle new endpoints
 
 ### Base wallet (standalone) or admin wallet in multitenant mode:
 
-After starting the upgrade the agent will return a 503 error from the api when the upgrade is occuring. After completion the agent will shut down and be unavailable. It is up to the agent operator to restart the agent with a new config of `wallet-type: askar-anoncreds`. Restarting the agent with `wallet-type: askar` will now result in a startup error. After the agent is restarted the controller will need to use the new anoncreds endpoints. The old endpoints will no longer be available and result in a 403 error.
+The agent will get a 503 error during the upgrade process. Any agent instance will shut down when the upgrade is complete. It is up to the aca-py agent to start up again. After the upgrade is complete the old endpoints will no longer be available and result in a 400 error.
+
+The aca-py agent will work after the restart. However, it will receive a warning for having the wrong wallet type configured. It is recommended to change the `wallet-type` to `askar-anoncreds` in the agent configuration file or start-up command.
 
 ### Subwallet (tenant) in multitenancy mode:
 
-The tenant will also get a 503 error during the upgrade process. However the agent will not shut down. The agent will be available after the upgrade is complete. The `wallet-type` will be upgraded automatically. The controller will need to use the new anoncreds endpoints. The old endpoints will no longer be available and result in a 403 error.
+The sub-tenant which is in the process of being upgraded will get a 503 error during the upgrade process. All other sub-tenants will continue to operate normally. After the upgrade is complete the sub-tenant will be able to use the new endpoints. The old endpoints will no longer be available and result in a 403 error. Any aca-py agents will remain running after the upgrade and it's not required that the aca-py agent restarts. 
