@@ -307,7 +307,6 @@ class AnonCredsHolder:
         try:
             secret = await self.get_master_secret()
             cred_w3c = W3cCredential.load(credential_data)
-            cred_w3c.to_legacy()
             await asyncio.get_event_loop().run_in_executor(
                 None,
                 cred_w3c.process,

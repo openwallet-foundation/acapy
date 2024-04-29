@@ -2,7 +2,7 @@
 
 from typing import Mapping, Union
 from .......messaging.models.base import BaseModel, BaseModelSchema
-from aries_cloudagent.messaging.valid import (
+from .......messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
     INDY_DID_EXAMPLE,

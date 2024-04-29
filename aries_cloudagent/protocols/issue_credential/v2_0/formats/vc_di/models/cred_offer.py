@@ -1,13 +1,13 @@
 """Cred request artifacts to attach to RFC 453 messages."""
 
 from typing import Sequence, Union
-from aries_cloudagent.indy.models.cred_abstract import IndyKeyCorrectnessProofSchema
+from .......indy.models.cred_abstract import IndyKeyCorrectnessProofSchema
 from .......messaging.models.base import BaseModel, BaseModelSchema
-from aries_cloudagent.vc.vc_ld.models.credential import (
+from .......vc.vc_ld.models.credential import (
     CredentialSchema,
     VerifiableCredential,
 )
-from aries_cloudagent.messaging.valid import (
+from .......messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
