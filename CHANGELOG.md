@@ -50,7 +50,7 @@ There are no breaking changes in this release.
   - refactor: logging configs setup [\#2870](https://github.com/hyperledger/aries-cloudagent-python/pull/2870) [amanji](https://github.com/amanji)
 
 - Release management pull requests:
-  - 0.12.1 [\#2925](https://github.com/hyperledger/aries-cloudagent-python/pull/2925) [swcurran](https://github.com/swcurran)
+  - 0.12.1 [\#2926](https://github.com/hyperledger/aries-cloudagent-python/pull/2926) [swcurran](https://github.com/swcurran)
   - 0.12.1rc1 [\#2921](https://github.com/hyperledger/aries-cloudagent-python/pull/2921) [swcurran](https://github.com/swcurran)
   - 0.12.1rc0 [\#2912](https://github.com/hyperledger/aries-cloudagent-python/pull/2912) [swcurran](https://github.com/swcurran)
 
