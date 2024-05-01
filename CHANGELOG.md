@@ -1,16 +1,16 @@
 # Aries Cloud Agent Python Changelog
 
-## 0.12.1rc1
+## 0.12.1
 
 ### April 26, 2024
 
-Release 0.12.1rc1 is a small patch to cleanup some edge case issues in the handling of Out of Band invitations, revocation notification webhooks, and connection querying uncovered after the 0.12.0 release. Fixes and improvements were also made to the generation of ACA-Py's OpenAPI specifications.
+Release 0.12.1 is a small patch to cleanup some edge case issues in the handling of Out of Band invitations, revocation notification webhooks, and connection querying uncovered after the 0.12.0 release. Fixes and improvements were also made to the generation of ACA-Py's OpenAPI specifications.
 
-### 0.12.1rc1 Breaking Changes
+### 0.12.1 Breaking Changes
 
 There are no breaking changes in this release.
 
-#### 0.12.1rc1 Categorized List of Pull Requests
+#### 0.12.1 Categorized List of Pull Requests
 
 - Out of Band Invitations and Connection Establishment updates/fixes:
   - 🐛 Fix ServiceDecorator parsing in oob record handling [\#2910](https://github.com/hyperledger/aries-cloudagent-python/pull/2910) [ff137](https://github.com/ff137)
@@ -40,6 +40,7 @@ There are no breaking changes in this release.
   - Update GHA so that broken image links work on docs site - without breaking them on GitHub [\#2852](https://github.com/hyperledger/aries-cloudagent-python/pull/2852) [swcurran](https://github.com/swcurran)
 
 - Dependencies and Internal Updates:
+  - chore(deps): Bump psf/black from 24.4.0 to 24.4.2 in the all-actions group [\#2924](https://github.com/hyperledger/aries-cloudagent-python/pull/2924) [dependabot bot](https://github.com/dependabot bot)
   - fix: fixes a regression that requires a log file in multi-tenant mode [\#2918](https://github.com/hyperledger/aries-cloudagent-python/pull/2918) [amanji](https://github.com/amanji)
   - Update AnonCreds to 0.2.2 [\#2917](https://github.com/hyperledger/aries-cloudagent-python/pull/2917) [swcurran](https://github.com/swcurran)
   - chore(deps): Bump aiohttp from 3.9.3 to 3.9.4  dependencies python [\#2902](https://github.com/hyperledger/aries-cloudagent-python/pull/2902) [dependabot bot](https://github.com/dependabot bot)
@@ -49,6 +50,7 @@ There are no breaking changes in this release.
   - refactor: logging configs setup [\#2870](https://github.com/hyperledger/aries-cloudagent-python/pull/2870) [amanji](https://github.com/amanji)
 
 - Release management pull requests:
+  - 0.12.1 [\#2925](https://github.com/hyperledger/aries-cloudagent-python/pull/2925) [swcurran](https://github.com/swcurran)
   - 0.12.1rc1 [\#2921](https://github.com/hyperledger/aries-cloudagent-python/pull/2921) [swcurran](https://github.com/swcurran)
   - 0.12.1rc0 [\#2912](https://github.com/hyperledger/aries-cloudagent-python/pull/2912) [swcurran](https://github.com/swcurran)
 
