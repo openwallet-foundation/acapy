@@ -1,7 +1,7 @@
-"""The classloader provides utilties to dynamically load classes and modules."""
+"""The classloader provides utilities to dynamically load classes and modules."""
 
 import inspect
-import pkg_resources
+from importlib import resources
 import sys
 
 from importlib import import_module
@@ -25,8 +25,7 @@ class ClassLoader:
 
     @classmethod
     def load_module(cls, mod_path: str, package: str = None) -> ModuleType:
-        """
-        Load a module by its absolute path.
+        """Load a module by its absolute path.
 
         Args:
             mod_path: the absolute or relative module path
@@ -80,8 +79,7 @@ class ClassLoader:
         default_module: Optional[str] = None,
         package: Optional[str] = None,
     ):
-        """
-        Resolve a complete class path (ie. typing.Dict) to the class itself.
+        """Resolve a complete class path (ie. typing.Dict) to the class itself.
 
         Args:
             class_name: the class name
@@ -124,8 +122,7 @@ class ClassLoader:
 
     @classmethod
     def load_subclass_of(cls, base_class: Type, mod_path: str, package: str = None):
-        """
-        Resolve an implementation of a base path within a module.
+        """Resolve an implementation of a base path within a module.
 
         Args:
             base_class: the base class being implemented
@@ -161,20 +158,25 @@ class ClassLoader:
     @classmethod
     def scan_subpackages(cls, package: str) -> Sequence[str]:
         """Return a list of sub-packages defined under a named package."""
-        # FIXME use importlib.resources in python 3.7
         if "." in package:
             package, sub_pkg = package.split(".", 1)
         else:
             sub_pkg = "."
-        if not pkg_resources.resource_isdir(package, sub_pkg):
+
+        try:
+            package_path = resources.files(package)
+        except FileNotFoundError:
             raise ModuleLoadError(f"Undefined package {package}")
+
+        if not (package_path / sub_pkg).is_dir():
+            raise ModuleLoadError(f"Undefined package {package}")
+
         found = []
         joiner = "" if sub_pkg == "." else f"{sub_pkg}."
-        for sub_path in pkg_resources.resource_listdir(package, sub_pkg):
-            if pkg_resources.resource_exists(
-                package, f"{sub_pkg}/{sub_path}/__init__.py"
-            ):
-                found.append(f"{package}.{joiner}{sub_path}")
+        sub_path = package_path / sub_pkg
+        for item in sub_path.iterdir():
+            if (item / "__init__.py").exists():
+                found.append(f"{package}.{joiner}{item.name}")
         return found
 
 

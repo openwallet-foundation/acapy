@@ -2,7 +2,7 @@ from binascii import unhexlify
 
 from .....wallet.util import b64_to_bytes
 
-from ..derive_1pu import *
+from ..derive_1pu import derive_receiver_1pu, derive_sender_1pu
 
 
 def test_1pu_hex_example():

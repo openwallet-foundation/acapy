@@ -1,0 +1,8 @@
+tunnels:
+    faber:
+        proto: http
+        addr: faber-agent:9001
+    alice:
+        proto: http
+        addr: alice-agent:9002
+version: "2"

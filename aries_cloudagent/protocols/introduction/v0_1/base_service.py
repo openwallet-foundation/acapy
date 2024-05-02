@@ -37,8 +37,7 @@ class BaseIntroductionService(ABC):
         session: ProfileSession,
         message: str = None,
     ):
-        """
-        Start the introduction process between two connections.
+        """Start the introduction process between two connections.
 
         Args:
             init_connection_id: The connection initiating the request
@@ -56,8 +55,7 @@ class BaseIntroductionService(ABC):
         session: ProfileSession,
         outbound_handler,
     ):
-        """
-        Handle the forwarding of an invitation to the responder.
+        """Handle the forwarding of an invitation to the responder.
 
         Args:
             target_connection_id: The ID of the connection sending the Invitation

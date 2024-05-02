@@ -11,9 +11,8 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUIDFour
+from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
-
 from .messages.menu import Menu, MenuSchema
 from .messages.menu_request import MenuRequest
 from .messages.perform import Perform
@@ -30,12 +29,12 @@ class ActionMenuModulesResultSchema(OpenAPISchema):
 class PerformRequestSchema(OpenAPISchema):
     """Request schema for performing a menu action."""
 
-    name = fields.Str(description="Menu option name", example="Query")
+    name = fields.Str(metadata={"description": "Menu option name", "example": "Query"})
     params = fields.Dict(
-        description=("Input parameter values"),
         required=False,
-        keys=fields.Str(example="parameter"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Str(example=UUIDFour.EXAMPLE),
+        keys=fields.Str(metadata={"example": "parameter"}),
+        values=fields.Str(metadata={"example": UUID4_EXAMPLE}),
+        metadata={"description": "Input parameter values"},
     )
 
 
@@ -43,24 +42,26 @@ class MenuJsonSchema(OpenAPISchema):
     """Matches MenuSchema but without the inherited AgentMessage properties."""
 
     title = fields.Str(
-        required=False,
-        description="Menu title",
-        example="My Menu",
+        required=False, metadata={"description": "Menu title", "example": "My Menu"}
     )
     description = fields.Str(
         required=False,
-        description="Introductory text for the menu",
-        example="User preferences for window settings",
+        metadata={
+            "description": "Introductory text for the menu",
+            "example": "User preferences for window settings",
+        },
     )
     errormsg = fields.Str(
         required=False,
-        description="Optional error message to display in menu header",
-        example="Error: item not present",
+        metadata={
+            "description": "Optional error message to display in menu header",
+            "example": "Error: item not present",
+        },
     )
     options = fields.List(
         fields.Nested(MenuOptionSchema),
         required=True,
-        description="List of menu options",
+        metadata={"description": "List of menu options"},
     )
 
 
@@ -70,7 +71,7 @@ class SendMenuSchema(OpenAPISchema):
     menu = fields.Nested(
         MenuJsonSchema(),
         required=True,
-        description="Menu to send to connection",
+        metadata={"description": "Menu to send to connection"},
     )
 
 
@@ -78,14 +79,15 @@ class MenuConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
 class ActionMenuFetchResultSchema(OpenAPISchema):
     """Result schema for action-menu fetch."""
 
-    result = fields.Nested(MenuSchema, description="Action menu")
+    result = fields.Nested(MenuSchema, metadata={"description": "Action menu"})
 
 
 @docs(
@@ -94,8 +96,7 @@ class ActionMenuFetchResultSchema(OpenAPISchema):
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_close(request: web.BaseRequest):
-    """
-    Request handler for closing the menu associated with a connection.
+    """Request handler for closing the menu associated with a connection.
 
     Args:
         request: aiohttp request object
@@ -122,8 +123,7 @@ async def actionmenu_close(request: web.BaseRequest):
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuFetchResultSchema(), 200, description="")
 async def actionmenu_fetch(request: web.BaseRequest):
-    """
-    Request handler for fetching the previously-received menu for a connection.
+    """Request handler for fetching the previously-received menu for a connection.
 
     Args:
         request: aiohttp request object
@@ -142,8 +142,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 @request_schema(PerformRequestSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_perform(request: web.BaseRequest):
-    """
-    Request handler for performing a menu action.
+    """Request handler for performing a menu action.
 
     Args:
         request: aiohttp request object
@@ -172,8 +171,7 @@ async def actionmenu_perform(request: web.BaseRequest):
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_request(request: web.BaseRequest):
-    """
-    Request handler for requesting a menu from the connection target.
+    """Request handler for requesting a menu from the connection target.
 
     Args:
         request: aiohttp request object
@@ -203,8 +201,7 @@ async def actionmenu_request(request: web.BaseRequest):
 @request_schema(SendMenuSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
 async def actionmenu_send(request: web.BaseRequest):
-    """
-    Request handler for requesting a menu from the connection target.
+    """Request handler for requesting a menu from the connection target.
 
     Args:
         request: aiohttp request object

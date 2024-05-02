@@ -14,8 +14,7 @@ class TransactionJobToSendHandler(BaseHandler):
     """Handler class for sending transaction jobs."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle transaction jobs.
+        """Handle transaction jobs.
 
         Args:
             context: Request context

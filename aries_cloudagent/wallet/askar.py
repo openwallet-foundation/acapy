@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 from aries_askar import (
     AskarError,
@@ -30,6 +30,7 @@ from .crypto import (
     validate_seed,
     verify_signed_message,
 )
+from .did_info import INVITATION_REUSE_KEY
 from .did_method import SOV, DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
@@ -46,8 +47,7 @@ class AskarWallet(BaseWallet):
     """Aries-Askar wallet implementation."""
 
     def __init__(self, session: AskarProfileSession):
-        """
-        Initialize a new `AskarWallet` instance.
+        """Initialize a new `AskarWallet` instance.
 
         Args:
             session: The Askar profile session instance to use
@@ -60,7 +60,10 @@ class AskarWallet(BaseWallet):
         return self._session
 
     async def create_signing_key(
-        self, key_type: KeyType, seed: str = None, metadata: dict = None
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> KeyInfo:
         """Create a new public/private signing keypair.
 
@@ -77,7 +80,28 @@ class AskarWallet(BaseWallet):
             WalletError: If there is another backend error
 
         """
+        return await self.create_key(key_type, seed, metadata)
 
+    async def create_key(
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> KeyInfo:
+        """Create a new public/private keypair.
+
+        Args:
+            key_type: Key type to create
+            seed: Seed for key
+            metadata: Optional metadata to store with the keypair
+
+        Returns:
+            A `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateError: If the resulting verkey already exists in the wallet
+            WalletError: If there is another backend error
+        """
         if metadata is None:
             metadata = {}
         try:
@@ -96,8 +120,7 @@ class AskarWallet(BaseWallet):
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type)
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:
-        """
-        Fetch info for a signing keypair.
+        """Fetch info for a signing keypair.
 
         Args:
             verkey: The verification key of the keypair
@@ -121,8 +144,7 @@ class AskarWallet(BaseWallet):
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
-        """
-        Replace the metadata associated with a signing keypair.
+        """Replace the metadata associated with a signing keypair.
 
         Args:
             verkey: The verification key of the keypair
@@ -149,12 +171,11 @@ class AskarWallet(BaseWallet):
         self,
         method: DIDMethod,
         key_type: KeyType,
-        seed: str = None,
-        did: str = None,
-        metadata: dict = None,
+        seed: Optional[str] = None,
+        did: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> DIDInfo:
-        """
-        Create and store a new local DID.
+        """Create and store a new local DID.
 
         Args:
             method: The method to use for the DID
@@ -210,21 +231,25 @@ class AskarWallet(BaseWallet):
                         CATEGORY_DID, did, value_json=did_info, tags=item.tags
                     )
             else:
+                value_json = {
+                    "did": did,
+                    "method": method.method_name,
+                    "verkey": verkey,
+                    "verkey_type": key_type.key_type,
+                    "metadata": metadata,
+                }
+                tags = {
+                    "method": method.method_name,
+                    "verkey": verkey,
+                    "verkey_type": key_type.key_type,
+                }
+                if INVITATION_REUSE_KEY in metadata:
+                    tags[INVITATION_REUSE_KEY] = "true"
                 await self._session.handle.insert(
                     CATEGORY_DID,
                     did,
-                    value_json={
-                        "did": did,
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                        "metadata": metadata,
-                    },
-                    tags={
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                    },
+                    value_json=value_json,
+                    tags=tags,
                 )
 
         except AskarError as err:
@@ -234,9 +259,52 @@ class AskarWallet(BaseWallet):
             did=did, verkey=verkey, metadata=metadata, method=method, key_type=key_type
         )
 
-    async def get_local_dids(self) -> Sequence[DIDInfo]:
+    async def store_did(self, did_info: DIDInfo) -> DIDInfo:
+        """Store a DID in the wallet.
+
+        This enables components external to the wallet to define how a DID
+        is created and then store it in the wallet for later use.
+
+        Args:
+            did_info: The DID to store
+
+        Returns:
+            The stored `DIDInfo`
         """
-        Get list of defined local DIDs.
+        try:
+            item = await self._session.handle.fetch(
+                CATEGORY_DID, did_info.did, for_update=True
+            )
+            if item:
+                raise WalletDuplicateError("DID already present in wallet")
+            else:
+                value_json = {
+                    "did": did_info.did,
+                    "method": did_info.method.method_name,
+                    "verkey": did_info.verkey,
+                    "verkey_type": did_info.key_type.key_type,
+                    "metadata": did_info.metadata,
+                }
+                tags = {
+                    "method": did_info.method.method_name,
+                    "verkey": did_info.verkey,
+                    "verkey_type": did_info.key_type.key_type,
+                }
+                if INVITATION_REUSE_KEY in did_info.metadata:
+                    tags[INVITATION_REUSE_KEY] = "true"
+                await self._session.handle.insert(
+                    CATEGORY_DID,
+                    did_info.did,
+                    value_json=value_json,
+                    tags=tags,
+                )
+        except AskarError as err:
+            raise WalletError("Error when storing DID") from err
+
+        return did_info
+
+    async def get_local_dids(self) -> Sequence[DIDInfo]:
+        """Get list of defined local DIDs.
 
         Returns:
             A list of locally stored DIDs as `DIDInfo` instances
@@ -249,8 +317,7 @@ class AskarWallet(BaseWallet):
         return ret
 
     async def get_local_did(self, did: str) -> DIDInfo:
-        """
-        Find info for a local DID.
+        """Find info for a local DID.
 
         Args:
             did: The DID for which to get info
@@ -275,8 +342,7 @@ class AskarWallet(BaseWallet):
         return self._load_did_entry(did_entry)
 
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
-        """
-        Resolve a local DID from a verkey.
+        """Resolve a local DID from a verkey.
 
         Args:
             verkey: The verkey for which to get the local DID
@@ -291,17 +357,25 @@ class AskarWallet(BaseWallet):
 
         try:
             dids = await self._session.handle.fetch_all(
-                CATEGORY_DID, {"verkey": verkey}, limit=1
+                CATEGORY_DID, {"verkey": verkey}
             )
         except AskarError as err:
             raise WalletError("Error when fetching local DID for verkey") from err
         if dids:
-            return self._load_did_entry(dids[0])
+            ret_did = dids[0]
+            ret_did_info = ret_did.value_json
+            if len(dids) > 1 and ret_did_info["did"].startswith("did:peer:4"):
+                # if it is a peer:did:4 make sure we are using the short version
+                other_did = dids[1]  # assume only 2
+                other_did_info = other_did.value_json
+                if len(other_did_info["did"]) < len(ret_did_info["did"]):
+                    ret_did = other_did
+                    ret_did_info = other_did.value_json
+            return self._load_did_entry(ret_did)
         raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
-        """
-        Replace metadata for a local DID.
+        """Replace metadata for a local DID.
 
         Args:
             did: The DID for which to replace metadata
@@ -323,8 +397,7 @@ class AskarWallet(BaseWallet):
             raise WalletError("Error updating DID metadata") from err
 
     async def get_public_did(self) -> DIDInfo:
-        """
-        Retrieve the public DID.
+        """Retrieve the public DID.
 
         Returns:
             The currently public `DIDInfo`, if any
@@ -374,8 +447,7 @@ class AskarWallet(BaseWallet):
         return public_info
 
     async def set_public_did(self, did: Union[str, DIDInfo]) -> DIDInfo:
-        """
-        Assign the public DID.
+        """Assign the public DID.
 
         Returns:
             The updated `DIDInfo`
@@ -435,8 +507,7 @@ class AskarWallet(BaseWallet):
         endorser_did: str = None,
         routing_keys: List[str] = None,
     ):
-        """
-        Update the endpoint for a DID in the wallet, send to ledger if public or posted.
+        """Update the endpoint for a DID in the wallet, send to ledger if posted.
 
         Args:
             did: DID for which to set endpoint
@@ -480,8 +551,7 @@ class AskarWallet(BaseWallet):
         await self.replace_local_did_metadata(did, metadata)
 
     async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
-        """
-        Begin key rotation for DID that wallet owns: generate new keypair.
+        """Begin key rotation for DID that wallet owns: generate new keypair.
 
         Args:
             did: signing DID
@@ -532,8 +602,7 @@ class AskarWallet(BaseWallet):
         return verkey
 
     async def rotate_did_keypair_apply(self, did: str) -> DIDInfo:
-        """
-        Apply temporary keypair as main for DID that wallet owns.
+        """Apply temporary keypair as main for DID that wallet owns.
 
         Args:
             did: signing DID
@@ -563,8 +632,7 @@ class AskarWallet(BaseWallet):
     async def sign_message(
         self, message: Union[List[bytes], bytes], from_verkey: str
     ) -> bytes:
-        """
-        Sign message(s) using the private key associated with a given verkey.
+        """Sign message(s) using the private key associated with a given verkey.
 
         Args:
             message: The message(s) to sign
@@ -608,8 +676,7 @@ class AskarWallet(BaseWallet):
         from_verkey: str,
         key_type: KeyType,
     ) -> bool:
-        """
-        Verify a signature against the public key of the signer.
+        """Verify a signature against the public key of the signer.
 
         Args:
             message: The message to verify
@@ -654,8 +721,7 @@ class AskarWallet(BaseWallet):
     async def pack_message(
         self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
     ) -> bytes:
-        """
-        Pack a message for one or more recipients.
+        """Pack a message for one or more recipients.
 
         Args:
             message: The message to pack
@@ -687,8 +753,7 @@ class AskarWallet(BaseWallet):
             raise WalletError("Exception when packing message") from err
 
     async def unpack_message(self, enc_message: bytes) -> Tuple[str, str, str]:
-        """
-        Unpack a message.
+        """Unpack a message.
 
         Args:
             enc_message: The packed message bytes
@@ -728,7 +793,7 @@ class AskarWallet(BaseWallet):
         )
 
 
-def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
+def _create_keypair(key_type: KeyType, seed: Union[str, bytes, None] = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
     if key_type == ED25519:
         alg = KeyAlg.ED25519

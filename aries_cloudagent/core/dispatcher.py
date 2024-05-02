@@ -1,5 +1,4 @@
-"""
-The Dispatcher.
+"""The Dispatcher.
 
 The dispatcher is responsible for coordinating data flow between handlers, providing
 lifecycle hook callbacks storing state for message threads, etc.
@@ -8,13 +7,13 @@ lifecycle hook callbacks storing state for message threads, etc.
 import asyncio
 import logging
 import os
+from typing import Callable, Coroutine, Union
 import warnings
-
-from typing import Callable, Coroutine, Optional, Union, Tuple
 import weakref
 
 from aiohttp.web import HTTPException
 
+from ..connections.base_manager import BaseConnectionManager
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
@@ -24,26 +23,16 @@ from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
 from ..messaging.responder import BaseResponder, SKIP_ACTIVE_CONN_CHECK_MSG_TYPES
 from ..messaging.util import datetime_now
-from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
+from ..utils.classloader import DeferLoad
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, PendingTask, TaskQueue
 from ..utils.tracing import get_timer, trace_event
-
 from .error import ProtocolMinorVersionNotSupported
 from .protocol_registry import ProtocolRegistry
-from .util import (
-    get_version_from_message_type,
-    validate_get_response_version,
-    # WARNING_DEGRADED_FEATURES,
-    # WARNING_VERSION_MISMATCH,
-    # WARNING_VERSION_NOT_SUPPORTED,
-)
-
-LOGGER = logging.getLogger(__name__)
 
 
 class ProblemReportParseError(MessageParseError):
@@ -51,8 +40,7 @@ class ProblemReportParseError(MessageParseError):
 
 
 class Dispatcher:
-    """
-    Dispatcher class.
+    """Dispatcher class.
 
     Class responsible for dispatching messages to message handlers and responding
     to other agents.
@@ -63,6 +51,7 @@ class Dispatcher:
         self.collector: Collector = None
         self.profile = profile
         self.task_queue: TaskQueue = None
+        self.logger: logging.Logger = logging.getLogger(__name__)
 
     async def setup(self):
         """Perform async instance setup."""
@@ -88,7 +77,7 @@ class Dispatcher:
         """Log a completed task using the stats collector."""
         if task.exc_info and not issubclass(task.exc_info[0], HTTPException):
             # skip errors intentionally returned to HTTP clients
-            LOGGER.exception(
+            self.logger.exception(
                 "Handler error: %s", task.ident or "", exc_info=task.exc_info
             )
         if self.collector:
@@ -107,8 +96,7 @@ class Dispatcher:
         send_outbound: Coroutine,
         complete: Callable = None,
     ) -> PendingTask:
-        """
-        Add a message to the processing queue for handling.
+        """Add a message to the processing queue for handling.
 
         Args:
             profile: The profile associated with the inbound message
@@ -131,8 +119,7 @@ class Dispatcher:
         inbound_message: InboundMessage,
         send_outbound: Coroutine,
     ):
-        """
-        Configure responder and message context and invoke the message handler.
+        """Configure responder and message context and invoke the message handler.
 
         Args:
             profile: The profile associated with the inbound message
@@ -152,13 +139,13 @@ class Dispatcher:
         version_warning = None
         message = None
         try:
-            (message, warning) = await self.make_message(
-                profile, inbound_message.payload
-            )
+            message = await self.make_message(profile, inbound_message.payload)
         except ProblemReportParseError:
             pass  # avoid problem report recursion
         except MessageParseError as e:
-            LOGGER.error(f"Message parsing failed: {str(e)}, sending problem report")
+            self.logger.error(
+                f"Message parsing failed: {str(e)}, sending problem report"
+            )
             error_result = ProblemReport(
                 description={
                     "en": str(e),
@@ -167,47 +154,6 @@ class Dispatcher:
             )
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
-        # if warning:
-        #     warning_message_type = inbound_message.payload.get("@type")
-        #     if warning == WARNING_DEGRADED_FEATURES:
-        #         LOGGER.error(
-        #             f"Sending {WARNING_DEGRADED_FEATURES} problem report, "
-        #             "message type received with a minor version at or higher"
-        #             " than protocol minimum supported and current minor version "
-        #             f"for message_type {warning_message_type}"
-        #         )
-        #         version_warning = ProblemReport(
-        #             description={
-        #                 "en": (
-        #                     "message type received with a minor version at or "
-        #                     "higher than protocol minimum supported and current"
-        #                     f" minor version for message_type {warning_message_type}"
-        #                 ),
-        #                 "code": WARNING_DEGRADED_FEATURES,
-        #             }
-        #         )
-        #     elif warning == WARNING_VERSION_MISMATCH:
-        #         LOGGER.error(
-        #             f"Sending {WARNING_VERSION_MISMATCH} problem report, message "
-        #             "type received with a minor version higher than current minor "
-        #             f"version for message_type {warning_message_type}"
-        #         )
-        #         version_warning = ProblemReport(
-        #             description={
-        #                 "en": (
-        #                     "message type received with a minor version higher"
-        #                     " than current minor version for message_type"
-        #                     f" {warning_message_type}"
-        #                 ),
-        #                 "code": WARNING_VERSION_MISMATCH,
-        #             }
-        #         )
-        #     elif warning == WARNING_VERSION_NOT_SUPPORTED:
-        #         raise MessageParseError(
-        #             f"Message type version not supported for {warning_message_type}"
-        #         )
-        #     if version_warning and inbound_message.receipt.thread_id:
-        #         version_warning.assign_thread_id(inbound_message.receipt.thread_id)
 
         trace_event(
             self.profile.settings,
@@ -237,7 +183,7 @@ class Dispatcher:
                     session, inbound_message.connection_id
                 )
         else:
-            connection_mgr = ConnectionManager(profile)
+            connection_mgr = BaseConnectionManager(profile)
             connection = await connection_mgr.find_inbound_connection(
                 inbound_message.receipt
             )
@@ -270,11 +216,8 @@ class Dispatcher:
             perf_counter=r_time,
         )
 
-    async def make_message(
-        self, profile: Profile, parsed_msg: dict
-    ) -> Tuple[BaseMessage, Optional[str]]:
-        """
-        Deserialize a message dict into the appropriate message instance.
+    async def make_message(self, profile: Profile, parsed_msg: dict) -> BaseMessage:
+        """Deserialize a message dict into the appropriate message instance.
 
         Given a dict describing a message, this method
         returns an instance of the related message class.
@@ -298,11 +241,27 @@ class Dispatcher:
 
         if not message_type:
             raise MessageParseError("Message does not contain '@type' parameter")
-        message_type_rec_version = get_version_from_message_type(message_type)
+
+        if message_type.startswith("did:sov"):
+            warnings.warn(
+                "Received a core DIDComm protocol with the deprecated "
+                "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix. The sending party should "
+                "be notified that support for receiving such messages will be removed in "
+                "a future release. Use https://didcomm.org/ instead.",
+                DeprecationWarning,
+            )
+            self.logger.warning(
+                "Received a core DIDComm protocol with the deprecated "
+                "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix. The sending party should "
+                "be notified that support for receiving such messages will be removed in "
+                "a future release. Use https://didcomm.org/ instead.",
+            )
 
         registry: ProtocolRegistry = self.profile.inject(ProtocolRegistry)
         try:
             message_cls = registry.resolve_message_class(message_type)
+            if isinstance(message_cls, DeferLoad):
+                message_cls = message_cls.resolved
         except ProtocolMinorVersionNotSupported as e:
             raise MessageParseError(f"Problem parsing message type. {e}")
 
@@ -315,10 +274,8 @@ class Dispatcher:
             if "/problem-report" in message_type:
                 raise ProblemReportParseError("Error parsing problem report message")
             raise MessageParseError(f"Error deserializing message: {e}") from e
-        _, warning = await validate_get_response_version(
-            profile, message_type_rec_version, message_cls
-        )
-        return (instance, warning)
+
+        return instance
 
     async def complete(self, timeout: float = 0.1):
         """Wait for pending tasks to complete."""
@@ -335,8 +292,7 @@ class DispatcherResponder(BaseResponder):
         send_outbound: Coroutine,
         **kwargs,
     ):
-        """
-        Initialize an instance of `DispatcherResponder`.
+        """Initialize an instance of `DispatcherResponder`.
 
         Args:
             context: The request context of the incoming message
@@ -355,8 +311,7 @@ class DispatcherResponder(BaseResponder):
     async def create_outbound(
         self, message: Union[AgentMessage, BaseMessage, str, bytes], **kwargs
     ) -> OutboundMessage:
-        """
-        Create an OutboundMessage from a message body.
+        """Create an OutboundMessage from a message body.
 
         Args:
             message: The message payload
@@ -379,8 +334,7 @@ class DispatcherResponder(BaseResponder):
     async def send_outbound(
         self, message: OutboundMessage, **kwargs
     ) -> OutboundSendStatus:
-        """
-        Send outbound message.
+        """Send outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
@@ -409,8 +363,7 @@ class DispatcherResponder(BaseResponder):
         return await self._send(context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
-        """
-        Dispatch a webhook. DEPRECATED: use the event bus instead.
+        """Dispatch a webhook. DEPRECATED: use the event bus instead.
 
         Args:
             topic: the webhook topic identifier

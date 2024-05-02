@@ -1,20 +1,18 @@
 """Handle transaction information interface."""
 
+from typing import Optional
+
 from marshmallow import fields
 
 from .....core.profile import ProfileSession
-from .....messaging.models.base_record import (
-    BaseExchangeRecord,
-    BaseExchangeSchema,
-)
-from .....messaging.valid import UUIDFour
-
+from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
+from .....messaging.valid import UUID4_EXAMPLE
 from ..controller import (
     ENDORSE_TRANSACTION,
     REFUSE_TRANSACTION,
-    WRITE_TRANSACTION,
-    WRITE_DID_TRANSACTION,
     REGISTER_PUBLIC_DID,
+    WRITE_DID_TRANSACTION,
+    WRITE_TRANSACTION,
 )
 
 
@@ -33,11 +31,11 @@ class TransactionRecord(BaseExchangeRecord):
     STATE_INIT = "init"
     RECORD_TOPIC = "endorse_transaction"
 
-    SIGNATURE_REQUEST = "http://didcomm.org/sign-attachment/%VER/signature-request"
+    SIGNATURE_REQUEST = "https://didcomm.org/sign-attachment/1.0/signature-request"
 
-    SIGNATURE_RESPONSE = "http://didcomm.org/sign-attachment/%VER/signature-response"
+    SIGNATURE_RESPONSE = "https://didcomm.org/sign-attachment/1.0/signature-response"
 
-    SIGNATURE_TYPE = "<requested signature type>"
+    SIGNATURE_TYPE = "default"
 
     SIGNATURE_CONTEXT = "did:sov"
 
@@ -57,7 +55,7 @@ class TransactionRecord(BaseExchangeRecord):
     STATE_TRANSACTION_ENDORSED = "transaction_endorsed"
     STATE_TRANSACTION_REFUSED = "transaction_refused"
     STATE_TRANSACTION_RESENT = "transaction_resent"
-    STATE_TRANSACTION_RESENT_RECEIEVED = "transaction_resent_received"
+    STATE_TRANSACTION_RESENT_RECEIVED = "transaction_resent_received"
     STATE_TRANSACTION_CANCELLED = "transaction_cancelled"
     STATE_TRANSACTION_ACKED = "transaction_acked"
 
@@ -76,7 +74,7 @@ class TransactionRecord(BaseExchangeRecord):
         connection_id: str = None,
         state: str = None,
         endorser_write_txn: bool = None,
-        meta_data: dict = {"context": {}, "processing": {}},
+        meta_data: Optional[dict] = None,
         **kwargs,
     ):
         """Initialize a new TransactionRecord."""
@@ -92,7 +90,7 @@ class TransactionRecord(BaseExchangeRecord):
         self.thread_id = thread_id
         self.connection_id = connection_id
         self.endorser_write_txn = endorser_write_txn
-        self.meta_data = meta_data
+        self.meta_data = meta_data or {"context": {}, "processing": {}}
 
     @property
     def transaction_id(self) -> str:
@@ -147,100 +145,110 @@ class TransactionRecordSchema(BaseExchangeSchema):
         model_class = "TransactionRecord"
 
     transaction_id = fields.Str(
-        required=False, description="Transaction identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Transaction identifier", "example": UUID4_EXAMPLE},
     )
     _type = fields.Str(
-        required=False,
-        description="Transaction type",
-        example="101",
+        required=False, metadata={"description": "Transaction type", "example": "101"}
     )
     signature_request = fields.List(
         fields.Dict(
-            example={
-                "context": TransactionRecord.SIGNATURE_CONTEXT,
-                "method": TransactionRecord.ADD_SIGNATURE,
-                "signature_type": TransactionRecord.SIGNATURE_TYPE,
-                "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
-                "author_goal_code": TransactionRecord.WRITE_TRANSACTION,
+            metadata={
+                "example": {
+                    "context": TransactionRecord.SIGNATURE_CONTEXT,
+                    "method": TransactionRecord.ADD_SIGNATURE,
+                    "signature_type": TransactionRecord.SIGNATURE_TYPE,
+                    "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
+                    "author_goal_code": TransactionRecord.WRITE_TRANSACTION,
+                }
             }
         ),
         required=False,
     )
     signature_response = fields.List(
         fields.Dict(
-            example={
-                "message_id": UUIDFour.EXAMPLE,
-                "context": TransactionRecord.SIGNATURE_CONTEXT,
-                "method": TransactionRecord.ADD_SIGNATURE,
-                "signer_goal_code": TransactionRecord.REFUSE_TRANSACTION,
+            metadata={
+                "example": {
+                    "message_id": UUID4_EXAMPLE,
+                    "context": TransactionRecord.SIGNATURE_CONTEXT,
+                    "method": TransactionRecord.ADD_SIGNATURE,
+                    "signer_goal_code": TransactionRecord.REFUSE_TRANSACTION,
+                }
             }
         ),
         required=False,
     )
     timing = fields.Dict(
-        example={"expires_time": "2020-12-13T17:29:06+0000"}, required=False
+        required=False,
+        metadata={"example": {"expires_time": "2020-12-13T17:29:06+0000"}},
     )
     formats = fields.List(
         fields.Dict(
             keys=fields.Str(),
             values=fields.Str(),
-            example={
-                "attach_id": UUIDFour.EXAMPLE,
-                "format": TransactionRecord.FORMAT_VERSION,
+            metadata={
+                "example": {
+                    "attach_id": UUID4_EXAMPLE,
+                    "format": TransactionRecord.FORMAT_VERSION,
+                }
             },
         ),
         required=False,
     )
     messages_attach = fields.List(
         fields.Dict(
-            example={
-                "@id": "143c458d-1b1c-40c7-ab85-4d16808ddf0a",
-                "mime-type": "application/json",
-                "data": {
-                    "json": "{"
-                    '"endorser": "V4SGRU86Z58d6TV7PBUe6f",'
-                    '"identifier": "LjgpST2rjsoxYegQDRm7EL",'
-                    '"operation": {'
-                    '"data": {'
-                    '"attr_names": ["first_name", "last_name"],'
-                    '"name": "test_schema",'
-                    '"version": "2.1",'
-                    "},"
-                    '"type": "101",'
-                    "},"
-                    '"protocolVersion": 2,'
-                    '"reqId": 1597766666168851000,'
-                    '"signatures": {'
-                    '"LjgpST2rjsox": "4ATKMn6Y9sTgwqaGTm7py2c2M8x1EVDTWKZArwyuPgjU"'
-                    "},"
-                    '"taaAcceptance": {'
-                    '"mechanism": "manual",'
-                    '"taaDigest": "f50fe2c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62",'
-                    '"time": 1597708800,'
-                    "}"
-                    "}"
-                },
+            metadata={
+                "example": {
+                    "@id": "143c458d-1b1c-40c7-ab85-4d16808ddf0a",
+                    "mime-type": "application/json",
+                    "data": {
+                        "json": (
+                            '{"endorser": "V4SGRU86Z58d6TV7PBUe6f","identifier":'
+                            ' "LjgpST2rjsoxYegQDRm7EL","operation": {"data":'
+                            ' {"attr_names": ["first_name", "last_name"],"name":'
+                            ' "test_schema","version": "2.1",},"type":'
+                            ' "101",},"protocolVersion": 2,"reqId":'
+                            ' 1597766666168851000,"signatures": {"LjgpST2rjsox":'
+                            ' "4ATKMn6Y9sTgwqaGTm7py2c2M8x1EVDTWKZArwyuPgjU"},'
+                            ' "taaAcceptance": {"mechanism": "manual","taaDigest":'
+                            ' "f50fe2c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62","time":'
+                            " 1597708800,}}"
+                        )
+                    },
+                }
             }
         ),
         required=False,
     )
     meta_data = fields.Dict(
-        example={
-            "context": {"param1": "param1_value", "param2": "param2_value"},
-            "post_process": [{"topic": "topic_value", "other": "other_value"}],
-        },
         required=False,
+        metadata={
+            "example": {
+                "context": {"param1": "param1_value", "param2": "param2_value"},
+                "post_process": [{"topic": "topic_value", "other": "other_value"}],
+            }
+        },
     )
     thread_id = fields.Str(
-        required=False, description="Thread Identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Thread Identifier", "example": UUID4_EXAMPLE},
     )
     connection_id = fields.Str(
         required=False,
-        description="The connection identifier for thie particular transaction record",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": (
+                "The connection identifier for this particular transaction record"
+            ),
+            "example": UUID4_EXAMPLE,
+        },
     )
     endorser_write_txn = fields.Boolean(
-        description="If True, Endorser will write the transaction after endorsing it",
         required=False,
-        example=True,
+        metadata={
+            "description": (
+                "Request Endorser to write the ledger transaction, "
+                "this parameter is deprecated and no longer supported."
+            ),
+            "example": False,
+        },
     )

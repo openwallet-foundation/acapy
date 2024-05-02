@@ -3,6 +3,8 @@
 import json
 import logging
 
+from typing import Tuple
+
 import indy.anoncreds
 from indy.error import IndyError
 
@@ -17,8 +19,7 @@ class IndySdkVerifier(IndyVerifier):
     """Indy-SDK verifier implementation."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize an IndyVerifier instance.
+        """Initialize an IndyVerifier instance.
 
         Args:
             profile: Active Profile instance
@@ -34,9 +35,8 @@ class IndySdkVerifier(IndyVerifier):
         credential_definitions,
         rev_reg_defs,
         rev_reg_entries,
-    ) -> (bool, list):
-        """
-        Verify a presentation.
+    ) -> Tuple[bool, list]:
+        """Verify a presentation.
 
         Args:
             pres_req: Presentation request data

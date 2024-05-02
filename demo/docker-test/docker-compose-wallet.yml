@@ -1,0 +1,21 @@
+version: "3"
+services:
+  wallet-db:
+    build: ./db
+    environment:
+      - POSTGRES_USER=DB_USER
+      - POSTGRES_PASSWORD=DB_PASSWORD
+      - POSTGRES_ADMIN_USER=postgres
+      - POSTGRES_ADMIN_PASSWORD=mysecretpassword
+    networks:
+      - wallet-net
+    ports:
+      - 5432:5432
+    volumes:
+      - wallet-db-data:/var/lib/pgsql/data
+
+volumes:
+  wallet-db-data:
+
+networks:
+  wallet-net:

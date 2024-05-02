@@ -8,6 +8,7 @@ from typing import Mapping, Tuple
 import asyncio
 
 from ......cache.base import BaseCache
+from ......core.profile import Profile
 from ......indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ......indy.holder import IndyHolder, IndyHolderError
 from ......indy.models.cred import IndyCredentialSchema
@@ -46,6 +47,8 @@ from ...models.cred_ex_record import V20CredExRecord
 from ...models.detail.indy import V20CredExRecordIndy
 
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
+from ..anoncreds.handler import AnonCredsCredFormatHandler
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -54,6 +57,16 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     """Indy credential format handler."""
 
     format = V20CredFormat.Format.INDY
+    anoncreds_handler = None
+
+    def __init__(self, profile: Profile):
+        """Shim initialization to check for new AnonCreds library."""
+        super().__init__(profile)
+
+        # Temporary shim while the new anoncreds library integration is in progress
+        wallet_type = profile.settings.get_value("wallet.type")
+        if wallet_type == "askar-anoncreds":
+            self.anoncreds_handler = AnonCredsCredFormatHandler(profile)
 
     @classmethod
     def validate_fields(cls, message_type: str, attachment_data: Mapping):
@@ -68,7 +81,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             message_type (str): The message type to validate the attachment data for.
                 Should be one of the message types as defined in message_types.py
             attachment_data (Mapping): [description]
-                The attachment data to valide
+                The attachment data to validate
 
         Raises:
             Exception: When the data is not valid.
@@ -94,6 +107,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             records = await IndyCredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id
             )
+
+        # Temporary shim while the new anoncreds library integration is in progress
+        if self.anoncreds_handler:
+            return await self.anoncreds_handler.get_detail_record(cred_ex_id)
 
         if len(records) > 1:
             LOGGER.warning(
@@ -126,6 +143,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             str: Issue credential attachment format identifier
 
         """
+        # Temporary shim while the new anoncreds library integration is in progress
+        if self.anoncreds_handler:
+            return self.anoncreds_handler.get_format_identifier(message_type)
+
         return ATTACHMENT_FORMAT[message_type][IndyCredFormatHandler.format.api]
 
     def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
@@ -144,6 +165,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             CredFormatAttachment: Credential format and attachment data objects
 
         """
+        # Temporary shim while the new anoncreds library integration is in progress
+        if self.anoncreds_handler:
+            return self.anoncreds_handler.get_format_data(message_type, data)
+
         return (
             V20CredFormat(
                 attach_id=IndyCredFormatHandler.format.api,
@@ -170,6 +195,13 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
         """Create indy credential proposal."""
+        # Temporary shim while the new anoncreds library integration is in progress
+        if self.anoncreds_handler:
+            return await self.anoncreds_handler.create_proposal(
+                cred_ex_record,
+                proposal_data,
+            )
+
         if proposal_data is None:
             proposal_data = {}
 
@@ -187,6 +219,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
+
+        # Temporary shim while the new anoncreds library integration is in progress
+        if self.anoncreds_handler:
+            return await self.anoncreds_handler.create_offer(cred_proposal_message)
 
         issuer = self.profile.inject(IndyIssuer)
         ledger = self.profile.inject(BaseLedger)
@@ -214,10 +250,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
-        schema_attrs = {attr for attr in schema["attrNames"]}
-        preview_attrs = {
-            attr for attr in cred_proposal_message.credential_preview.attr_dict()
-        }
+        schema_attrs = set(schema["attrNames"])
+        preview_attrs = set(cred_proposal_message.credential_preview.attr_dict())
         if preview_attrs != schema_attrs:
             raise V20CredFormatError(
                 f"Preview attributes {preview_attrs} "
@@ -248,6 +282,13 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
     ) -> CredFormatAttachment:
         """Create indy credential request."""
+        # Temporary shim while the new anoncreds library integration is in progress
+        if self.anoncreds_handler:
+            return await self.anoncreds_handler.create_request(
+                cred_ex_record,
+                request_data,
+            )
+
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
             raise V20CredFormatError(
                 "Indy issue credential format cannot start from credential request"
@@ -316,6 +357,13 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
         """Receive indy credential request."""
+        # Temporary shim while the new anoncreds library integration is in progress
+        if self.anoncreds_handler:
+            return await self.anoncreds_handler.receive_request(
+                cred_ex_record,
+                cred_request_message,
+            )
+
         if not cred_ex_record.cred_offer:
             raise V20CredFormatError(
                 "Indy issue credential format cannot start from credential request"
@@ -325,6 +373,12 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
         """Issue indy credential."""
+        # Temporary shim while the new anoncreds library integration is in progress
+        if self.anoncreds_handler:
+            return await self.anoncreds_handler.issue_credential(
+                cred_ex_record, retries
+            )
+
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
         cred_offer = cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
@@ -441,6 +495,12 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_id: str = None
     ) -> None:
         """Store indy credential."""
+        # Temporary shim while the new anoncreds library integration is in progress
+        if self.anoncreds_handler:
+            return await self.anoncreds_handler.store_credential(
+                cred_ex_record, cred_id
+            )
+
         cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 
         rev_reg_def = None

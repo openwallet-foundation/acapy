@@ -181,8 +181,7 @@ class Collector:
         return wrapped
 
     def __call__(self, fn, groups: Sequence[str] = None):
-        """
-        Decorate a function or class method.
+        """Decorate a function or class method.
 
         Returns: a wrapped function or coroutine with automatic stats collection
         """

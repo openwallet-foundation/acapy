@@ -13,8 +13,7 @@ class CredProblemReportHandler(BaseHandler):
     """Message handler class for problem reports."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for problem reports.
+        """Message handler logic for problem reports.
 
         Args:
             context: request context

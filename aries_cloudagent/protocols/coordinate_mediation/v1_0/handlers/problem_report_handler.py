@@ -8,15 +8,13 @@ from ..messages.problem_report import CMProblemReport
 
 
 class CMProblemReportHandler(BaseHandler):
-    """
-    Handler class for Coordinate Mediation Problem Report Message.
+    """Handler class for Coordinate Mediation Problem Report Message.
 
     Updates the ConnRecord Metadata state.
     """
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Coordinate mediation problem report message handler.
+        """Coordinate mediation problem report message handler.
 
         Args:
             context: Request context

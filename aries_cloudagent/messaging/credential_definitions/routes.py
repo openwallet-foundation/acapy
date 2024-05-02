@@ -1,10 +1,10 @@
 """Credential definition admin routes."""
 
 import json
-from time import time
 
 # from asyncio import ensure_future, shield
 from asyncio import shield
+from time import time
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -14,10 +14,10 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
+from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
 from ...indy.issuer import IndyIssuer, IndyIssuerError
@@ -37,51 +37,62 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 from ...protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
-
 from ...revocation.indy import IndyRevocation
 from ...storage.base import BaseStorage, StorageRecord
-from ...storage.error import StorageError
-
+from ...storage.error import StorageError, StorageNotFoundError
+from ...utils.profiles import is_anoncreds_profile_raise_web_exception
+from ..models.base import BaseModelError
 from ..models.openapi import OpenAPISchema
-from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID
-
-
+from ..valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_REV_REG_SIZE_EXAMPLE,
+    INDY_REV_REG_SIZE_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    UUID4_EXAMPLE,
+)
 from .util import (
-    CredDefQueryStringSchema,
-    CRED_DEF_TAGS,
     CRED_DEF_SENT_RECORD_TYPE,
+    CRED_DEF_TAGS,
     EVENT_LISTENER_PATTERN,
+    CredDefQueryStringSchema,
     notify_cred_def_event,
 )
-
-
-from ..valid import UUIDFour
-from ...connections.models.conn_record import ConnRecord
-from ...storage.error import StorageNotFoundError
-from ..models.base import BaseModelError
 
 
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
-    schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
+    schema_id = fields.Str(
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
+    )
     support_revocation = fields.Boolean(
-        required=False, description="Revocation supported flag"
+        required=False, metadata={"description": "Revocation supported flag"}
     )
     revocation_registry_size = fields.Int(
-        description="Revocation registry size",
         required=False,
-        strict=True,
-        **INDY_REV_REG_SIZE,
+        validate=INDY_REV_REG_SIZE_VALIDATE,
+        metadata={
+            "description": "Revocation registry size",
+            "strict": True,
+            "example": INDY_REV_REG_SIZE_EXAMPLE,
+        },
     )
     tag = fields.Str(
         required=False,
-        description="Credential definition identifier tag",
-        default="default",
-        example="default",
+        dump_default="default",
+        metadata={
+            "description": "Credential definition identifier tag",
+            "example": "default",
+        },
     )
 
 
@@ -89,7 +100,12 @@ class CredentialDefinitionSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     credential_definition_id = fields.Str(
-        description="Credential definition identifier", **INDY_CRED_DEF_ID
+        required=True,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
 
 
@@ -99,12 +115,12 @@ class TxnOrCredentialDefinitionSendResultSchema(OpenAPISchema):
     sent = fields.Nested(
         CredentialDefinitionSendResultSchema(),
         required=False,
-        definition="Content sent",
+        metadata={"definition": "Content sent"},
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Credential definition transaction to endorse",
+        metadata={"description": "Credential definition transaction to endorse"},
     )
 
 
@@ -118,7 +134,13 @@ class CredentialDefinitionsCreatedResultSchema(OpenAPISchema):
     """Result schema for cred-defs-created request."""
 
     credential_definition_ids = fields.List(
-        fields.Str(description="Credential definition identifiers", **INDY_CRED_DEF_ID)
+        fields.Str(
+            validate=INDY_CRED_DEF_ID_VALIDATE,
+            metadata={
+                "description": "Credential definition identifiers",
+                "example": INDY_CRED_DEF_ID_EXAMPLE,
+            },
+        )
     )
 
 
@@ -126,9 +148,12 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking cred def id."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
 
 
@@ -136,8 +161,8 @@ class CreateCredDefTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -145,7 +170,8 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -158,8 +184,7 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
 @querystring_schema(CredDefConnIdMatchInfoSchema())
 @response_schema(TxnOrCredentialDefinitionSendResultSchema(), 200, description="")
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
-    """
-    Request handler for sending a credential definition to the ledger.
+    """Request handler for sending a credential definition to the ledger.
 
     Args:
         request: aiohttp request object
@@ -170,6 +195,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     outbound_handler = request["outbound_message_router"]
 
     create_transaction_for_endorser = json.loads(
@@ -185,6 +213,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     support_revocation = bool(body.get("support_revocation"))
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
+
+    # Don't allow revocable cred def to be created without tails server base url
+    if not profile.settings.get("tails_server_base_url") and support_revocation:
+        raise web.HTTPBadRequest(
+            reason="tails_server_base_url not configured. Can't create revocable credential definition."  # noqa: E501
+        )
 
     tag_query = {"schema_id": schema_id}
     async with profile.session() as session:
@@ -204,13 +238,13 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                     )
 
     # check if we need to endorse
-    if is_author_role(context.profile):
+    if is_author_role(profile):
         # authors cannot write to the ledger
         write_ledger = False
         create_transaction_for_endorser = True
         if not connection_id:
             # author has not provided a connection id, so determine which to use
-            connection_id = await get_endorser_connection_id(context.profile)
+            connection_id = await get_endorser_connection_id(profile)
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
 
@@ -231,13 +265,17 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -285,7 +323,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     if not create_transaction_for_endorser:
         # Notify event
         meta_data["processing"]["auto_create_rev_reg"] = True
-        await notify_cred_def_event(context.profile, cred_def_id, meta_data)
+        await notify_cred_def_event(profile, cred_def_id, meta_data)
 
         return web.json_response(
             {
@@ -303,7 +341,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             "endorser.auto_create_rev_reg"
         )
 
-        transaction_mgr = TransactionManager(context.profile)
+        transaction_mgr = TransactionManager(profile)
         try:
             transaction = await transaction_mgr.create_record(
                 messages_attach=cred_def["signed_txn"],
@@ -318,9 +356,8 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             try:
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -342,8 +379,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 @querystring_schema(CredDefQueryStringSchema())
 @response_schema(CredentialDefinitionsCreatedResultSchema(), 200, description="")
 async def credential_definitions_created(request: web.BaseRequest):
-    """
-    Request handler for retrieving credential definitions that current agent created.
+    """Request handler for retrieving credential definitions that current agent created.
 
     Args:
         request: aiohttp request object
@@ -353,6 +389,8 @@ async def credential_definitions_created(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+
+    is_anoncreds_profile_raise_web_exception(context.profile)
 
     session = await context.session()
     storage = session.inject(BaseStorage)
@@ -375,8 +413,7 @@ async def credential_definitions_created(request: web.BaseRequest):
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
-    """
-    Request handler for getting a credential definition from the ledger.
+    """Request handler for getting a credential definition from the ledger.
 
     Args:
         request: aiohttp request object
@@ -386,12 +423,16 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     cred_def_id = request.match_info["cred_def_id"]
 
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
@@ -422,8 +463,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
 async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseRequest):
-    """
-    Request handler for fixing a credential definition wallet non-secret record.
+    """Request handler for fixing a credential definition wallet non-secret record.
 
     Args:
         request: aiohttp request object
@@ -433,14 +473,17 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     cred_def_id = request.match_info["cred_def_id"]
 
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         storage = session.inject(BaseStorage)
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
@@ -531,8 +574,7 @@ async def on_cred_def_event(profile: Profile, event: Event):
 async def add_cred_def_non_secrets_record(
     profile: Profile, schema_id: str, issuer_did: str, credential_definition_id: str
 ):
-    """
-    Write the wallet non-secrets record for cred def (already written to the ledger).
+    """Write the wallet non-secrets record for cred def (already written to the ledger).
 
     Note that the cred def private key signing informtion must already exist in the
     wallet.

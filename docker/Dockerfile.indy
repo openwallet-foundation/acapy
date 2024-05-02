@@ -1,4 +1,4 @@
-ARG python_version=3.9.16
+ARG python_version=3.9.18
 ARG rust_version=1.46
 
 # This image could be replaced with an "indy" image from another repo,
@@ -93,7 +93,7 @@ ENV HOME="/home/$user" \
     PIP_NO_CACHE_DIR=off \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    RUST_LOG=warning \
+    RUST_LOG=warn \
     SHELL=/bin/bash \
     SUMMARY="indy-python base image" \
     DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \
@@ -130,7 +130,6 @@ RUN apt-get update -y && \
     net-tools \
     openssl \
     sqlite3 \
-    vim-tiny \
     zlib1g && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc/*
 
@@ -188,19 +187,17 @@ WORKDIR /home/indy/src
 
 RUN mkdir -p test-reports && chown -R indy:indy test-reports && chmod -R ug+rw test-reports
 
-ADD requirements*.txt ./
+ADD ./README.md pyproject.toml ./poetry.lock ./
+COPY ./aries_cloudagent/ ./aries_cloudagent/
 
 USER root
-RUN pip3 install --no-cache-dir \
-    -r requirements.txt \
-    -r requirements.askar.txt \
-    -r requirements.bbs.txt \
-    -r requirements.dev.txt
+RUN pip install --no-cache-dir poetry
+RUN poetry install --compile -E "askar bbs indy"
 
 ADD --chown=indy:root . .
 USER indy
 
-ENTRYPOINT ["/bin/bash", "-c", "pytest \"$@\"", "--"]
+ENTRYPOINT ["/bin/bash", "-c", "poetry run pytest \"$@\"", "--"]
 
 # ACA-Py Builder
 # Build ACA-Py wheel using setuptools
@@ -210,8 +207,8 @@ WORKDIR /src
 
 ADD . .
 
-RUN pip install setuptools wheel
-RUN python setup.py sdist bdist_wheel
+RUN pip install --no-cache-dir poetry
+RUN poetry build
 
 
 # ACA-Py Indy
@@ -230,7 +227,7 @@ ENV HOME="/home/$user" \
     PIP_NO_CACHE_DIR=off \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    RUST_LOG=warning \
+    RUST_LOG=warn \
     SHELL=/bin/bash \
     SUMMARY="aries-cloudagent image" \
     DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \

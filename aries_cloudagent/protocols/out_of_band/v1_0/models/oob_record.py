@@ -11,15 +11,12 @@ from .....messaging.decorators.service_decorator import (
     ServiceDecorator,
     ServiceDecoratorSchema,
 )
-
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import UUIDFour
-
-from ..messages.invitation import InvitationMessage, InvitationMessageSchema
-
+from .....messaging.valid import UUID4_EXAMPLE
 from .....storage.base import BaseStorage
-from .....storage.record import StorageRecord
 from .....storage.error import StorageNotFoundError
+from .....storage.record import StorageRecord
+from ..messages.invitation import InvitationMessage, InvitationMessageSchema
 
 
 class OobRecord(BaseExchangeRecord):
@@ -59,13 +56,13 @@ class OobRecord(BaseExchangeRecord):
         invi_msg_id: str,
         role: str,
         invitation: Union[InvitationMessage, Mapping[str, Any]],
-        their_service: Optional[ServiceDecorator] = None,
+        their_service: Optional[Union[ServiceDecorator, Mapping[str, Any]]] = None,
         connection_id: Optional[str] = None,
         reuse_msg_id: Optional[str] = None,
         oob_id: Optional[str] = None,
         attach_thread_id: Optional[str] = None,
         our_recipient_key: Optional[str] = None,
-        our_service: Optional[ServiceDecorator] = None,
+        our_service: Optional[Union[ServiceDecorator, Mapping[str, Any]]] = None,
         multi_use: bool = False,
         trace: bool = False,
         **kwargs,
@@ -79,8 +76,8 @@ class OobRecord(BaseExchangeRecord):
         self._invitation = InvitationMessage.serde(invitation)
         self.connection_id = connection_id
         self.reuse_msg_id = reuse_msg_id
-        self.their_service = their_service
-        self.our_service = our_service
+        self._their_service = ServiceDecorator.serde(their_service)
+        self._our_service = ServiceDecorator.serde(our_service)
         self.attach_thread_id = attach_thread_id
         self.our_recipient_key = our_recipient_key
         self.multi_use = multi_use
@@ -92,7 +89,7 @@ class OobRecord(BaseExchangeRecord):
         return self._id
 
     @property
-    def invitation(self) -> InvitationMessage:
+    def invitation(self) -> Optional[InvitationMessage]:
         """Accessor; get deserialized view."""
         return None if self._invitation is None else self._invitation.de
 
@@ -100,6 +97,26 @@ class OobRecord(BaseExchangeRecord):
     def invitation(self, value):
         """Setter; store de/serialized views."""
         self._invitation = InvitationMessage.serde(value)
+
+    @property
+    def our_service(self) -> Optional[ServiceDecorator]:
+        """Accessor; get deserialized view."""
+        return None if self._our_service is None else self._our_service.de
+
+    @our_service.setter
+    def our_service(self, value: Union[ServiceDecorator, Mapping[str, Any]]):
+        """Setter; store de/serialized views."""
+        self._our_service = ServiceDecorator.serde(value)
+
+    @property
+    def their_service(self) -> Optional[ServiceDecorator]:
+        """Accessor; get deserialized view."""
+        return None if self._their_service is None else self._their_service.de
+
+    @their_service.setter
+    def their_service(self, value: Union[ServiceDecorator, Mapping[str, Any]]):
+        """Setter; store de/serialized vies."""
+        self._their_service = ServiceDecorator.serde(value)
 
     @property
     def record_value(self) -> dict:
@@ -112,12 +129,13 @@ class OobRecord(BaseExchangeRecord):
                     "their_service",
                     "connection_id",
                     "role",
-                    "our_service",
+                    "invi_msg_id",
+                    "multi_use",
                 )
             },
             **{
                 prop: getattr(self, f"_{prop}").ser
-                for prop in ("invitation",)
+                for prop in ("invitation", "our_service", "their_service")
                 if getattr(self, prop) is not None
             },
         }
@@ -241,56 +259,69 @@ class OobRecordSchema(BaseExchangeSchema):
 
     oob_id = fields.Str(
         required=True,
-        description="Oob record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Oob record identifier", "example": UUID4_EXAMPLE},
     )
     state = fields.Str(
         required=True,
-        description="Out of band message exchange state",
-        example=OobRecord.STATE_AWAIT_RESPONSE,
         validate=validate.OneOf(
             OobRecord.get_attributes_by_prefix("STATE_", walk_mro=True)
         ),
+        metadata={
+            "description": "Out of band message exchange state",
+            "example": OobRecord.STATE_AWAIT_RESPONSE,
+        },
     )
     invi_msg_id = fields.Str(
         required=True,
-        description="Invitation message identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Invitation message identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     invitation = fields.Nested(
         InvitationMessageSchema(),
         required=True,
-        description="Out of band invitation message",
+        metadata={"description": "Out of band invitation message"},
     )
 
-    their_service = fields.Nested(
-        ServiceDecoratorSchema(),
-        required=False,
-    )
+    their_service = fields.Nested(ServiceDecoratorSchema(), required=False)
 
     connection_id = fields.Str(
-        description="Connection record identifier",
         required=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Connection record identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
     attach_thread_id = fields.Str(
-        description="Connection record identifier",
         required=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Connection record identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
     our_recipient_key = fields.Str(
-        description="Recipient key used for oob invitation",
         required=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Recipient key used for oob invitation",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
     role = fields.Str(
-        description="OOB Role",
         required=False,
-        example=OobRecord.ROLE_RECEIVER,
         validate=validate.OneOf(
             OobRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
         ),
+        metadata={"description": "OOB Role", "example": OobRecord.ROLE_RECEIVER},
+    )
+
+    multi_use = fields.Boolean(
+        required=False,
+        metadata={
+            "description": "Allow for multiple uses of the oob invitation",
+            "example": True,
+        },
     )

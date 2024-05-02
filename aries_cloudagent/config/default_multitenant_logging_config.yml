@@ -1,0 +1,23 @@
+formatters:
+  default:
+    format: '%(asctime)s %(wallet_id)s %(levelname)s %(pathname)s:%(lineno)d %(message)s'
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: default
+    level: DEBUG
+    stream: ext://sys.stderr
+  rotating_file:
+    backupCount: 1
+    class: logging.handlers.TimedRotatingFileMultiProcessHandler
+    filename: test.log
+    formatter: default
+    interval: 7
+    level: DEBUG
+    when: d
+root:
+  handlers:
+  - console
+  - rotating_file
+  level: INFO
+version: 1

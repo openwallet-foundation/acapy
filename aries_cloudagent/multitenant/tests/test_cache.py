@@ -4,11 +4,9 @@ from ..cache import ProfileCache
 
 
 class MockProfile(Profile):
-    def session(self, context=None):
-        ...
+    def session(self, context=None): ...
 
-    def transaction(self, context=None):
-        ...
+    def transaction(self, context=None): ...
 
 
 def test_get_not_in_cache():
@@ -59,7 +57,7 @@ def test_cleanup():
     cache.put("2", MockProfile())
 
     assert len(cache.profiles) == 1
-    assert cache.get("1") == None
+    assert cache.get("1") is None
 
 
 def test_cleanup_lru():

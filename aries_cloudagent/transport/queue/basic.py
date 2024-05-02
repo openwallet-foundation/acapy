@@ -21,8 +21,7 @@ class BasicMessageQueue(BaseMessageQueue):
         return asyncio.Queue()
 
     async def enqueue(self, message):
-        """
-        Enqueue a message.
+        """Enqueue a message.
 
         Args:
             message: The message to add to the end of the queue
@@ -38,8 +37,7 @@ class BasicMessageQueue(BaseMessageQueue):
         await self.queue.put(message)
 
     async def dequeue(self, *, timeout: int = None):
-        """
-        Dequeue a message.
+        """Dequeue a message.
 
         Returns:
             The dequeued message, or None if a timeout occurs

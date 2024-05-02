@@ -1,6 +1,6 @@
 from tempfile import NamedTemporaryFile
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...cache.base import BaseCache
 from ...core.profile import ProfileManager
@@ -11,7 +11,7 @@ from ..default_context import DefaultContextBuilder
 from ..injection_context import InjectionContext
 
 
-class TestDefaultContext(AsyncTestCase):
+class TestDefaultContext(IsolatedAsyncioTestCase):
     async def test_build_context(self):
         """Test context init."""
 

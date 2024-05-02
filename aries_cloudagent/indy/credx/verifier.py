@@ -3,6 +3,8 @@
 import asyncio
 import logging
 
+from typing import Tuple
+
 from indy_credx import CredxError, Presentation
 
 from ...core.profile import Profile
@@ -16,8 +18,7 @@ class IndyCredxVerifier(IndyVerifier):
     """Indy-Credx verifier class."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize an IndyCredxVerifier instance.
+        """Initialize an IndyCredxVerifier instance.
 
         Args:
             profile: an active profile instance
@@ -33,9 +34,8 @@ class IndyCredxVerifier(IndyVerifier):
         credential_definitions,
         rev_reg_defs,
         rev_reg_entries,
-    ) -> (bool, list):
-        """
-        Verify a presentation.
+    ) -> Tuple[bool, list]:
+        """Verify a presentation.
 
         Args:
             pres_req: Presentation request data
@@ -46,6 +46,10 @@ class IndyCredxVerifier(IndyVerifier):
             rev_reg_entries: revocation registry entries
         """
 
+        accept_legacy_revocation = (
+            self.profile.settings.get("revocation.anoncreds_legacy_support", "accept")
+            == "accept"
+        )
         msgs = []
         try:
             msgs += self.non_revoc_intervals(pres_req, pres, credential_definitions)
@@ -58,7 +62,8 @@ class IndyCredxVerifier(IndyVerifier):
             msgs.append(f"{PresVerifyMsg.PRES_VALUE_ERROR.value}::{s}")
             LOGGER.error(
                 f"Presentation on nonce={pres_req['nonce']} "
-                f"cannot be validated: {str(err)}"
+                f"cannot be validated (presentation will be marked as Invalid)"
+                f": {str(err)}"
             )
             return (False, msgs)
 
@@ -72,6 +77,7 @@ class IndyCredxVerifier(IndyVerifier):
                 credential_definitions.values(),
                 rev_reg_defs.values(),
                 rev_reg_entries,
+                accept_legacy_revocation,
             )
         except CredxError as err:
             s = str(err)

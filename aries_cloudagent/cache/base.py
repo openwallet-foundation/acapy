@@ -2,7 +2,7 @@
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Sequence, Text, Union
+from typing import Any, Optional, Sequence, Text, Union
 
 from ..core.error import BaseError
 
@@ -20,8 +20,7 @@ class BaseCache(ABC):
 
     @abstractmethod
     async def get(self, key: Text):
-        """
-        Get an item from the cache.
+        """Get an item from the cache.
 
         Args:
             key: the key to retrieve an item for
@@ -32,9 +31,10 @@ class BaseCache(ABC):
         """
 
     @abstractmethod
-    async def set(self, keys: Union[Text, Sequence[Text]], value: Any, ttl: int = None):
-        """
-        Add an item to the cache with an optional ttl.
+    async def set(
+        self, keys: Union[Text, Sequence[Text]], value: Any, ttl: Optional[int] = None
+    ):
+        """Add an item to the cache with an optional ttl.
 
         Args:
             keys: the key or keys for which to set an item
@@ -45,8 +45,7 @@ class BaseCache(ABC):
 
     @abstractmethod
     async def clear(self, key: Text):
-        """
-        Remove an item from the cache, if present.
+        """Remove an item from the cache, if present.
 
         Args:
             key: the key to remove
@@ -76,8 +75,7 @@ class BaseCache(ABC):
 
 
 class CacheKeyLock:
-    """
-    A lock on a particular cache key.
+    """A lock on a particular cache key.
 
     Used to prevent multiple async threads from generating
     or querying the same semi-expensive data. Not thread safe.
@@ -125,7 +123,7 @@ class CacheKeyLock:
         if result:
             self._future.set_result(fut.result())
 
-    async def set_result(self, value: Any, ttl: int = None):
+    async def set_result(self, value: Any, ttl: Optional[int] = None):
         """Set the result, updating the cache and any waiters."""
         if self.done and value:
             raise CacheError("Result already set")
@@ -157,8 +155,7 @@ class CacheKeyLock:
             self.released = True
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """
-        Async context manager exit.
+        """Async context manager exit.
 
         `None` is returned to any waiters if no value is produced.
         """

@@ -4,7 +4,6 @@ import uuid
 
 from runners.agent_container import AgentContainer, create_agent_with_args_list
 
-
 ######################################################################
 # coroutine utilities
 ######################################################################
@@ -29,8 +28,8 @@ def async_sleep(delay):
 ######################################################################
 # high level aries agent interface
 ######################################################################
-def create_agent_container_with_args(in_args: list):
-    return run_coroutine(create_agent_with_args_list, in_args)
+def create_agent_container_with_args(in_args: list, extra_args: list = None):
+    return run_coroutine(create_agent_with_args_list, in_args, extra_args)
 
 
 def aries_container_initialize(
@@ -101,6 +100,43 @@ def aries_container_create_schema_cred_def(
         schema_attrs,
         version=version,
     )
+
+
+def aries_container_fetch_schemas(
+    the_container: AgentContainer,
+):
+    return run_coroutine(
+        the_container.fetch_schemas,
+    )
+
+
+def aries_container_fetch_cred_defs(
+    the_container: AgentContainer,
+):
+    return run_coroutine(
+        the_container.fetch_cred_defs,
+    )
+
+
+def aries_container_fetch_cred_def(
+    the_container: AgentContainer,
+    cred_def_id: str,
+):
+    return run_coroutine(
+        the_container.fetch_cred_def,
+        cred_def_id,
+    )
+
+
+def aries_container_check_exists_cred_def(
+    the_container: AgentContainer,
+    cred_def_id: str,
+):
+    cred_def = aries_container_fetch_cred_def(the_container, cred_def_id)
+    if cred_def:
+        return True
+    else:
+        return False
 
 
 def aries_container_issue_credential(
@@ -209,6 +245,7 @@ def agent_container_POST(
     data: dict = None,
     text: bool = False,
     params: dict = None,
+    raise_error: bool = True,
 ) -> dict:
     return run_coroutine(
         the_container.admin_POST,
@@ -216,6 +253,7 @@ def agent_container_POST(
         data=data,
         text=text,
         params=params,
+        raise_error=raise_error,
     )
 
 
@@ -244,6 +282,22 @@ def agent_container_PUT(
 ) -> dict:
     return run_coroutine(
         the_container.admin_PUT,
+        path,
+        data=data,
+        text=text,
+        params=params,
+    )
+
+
+def agent_container_DELETE(
+    the_container: AgentContainer,
+    path: str,
+    data: dict = None,
+    text: bool = False,
+    params: dict = None,
+) -> dict:
+    return run_coroutine(
+        the_container.admin_DELETE,
         path,
         data=data,
         text=text,

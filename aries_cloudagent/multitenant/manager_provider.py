@@ -12,8 +12,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class MultitenantManagerProvider(BaseProvider):
-    """
-    Multitenant manager provider.
+    """Multitenant manager provider.
 
     Decides which manager to use based on the settings.
     """

@@ -1,4 +1,5 @@
 """Test mediate request message."""
+
 from unittest import TestCase
 
 from ...message_types import MEDIATE_REQUEST
@@ -12,4 +13,4 @@ class TestMediateRequest(MessageTest, TestCase):
     TYPE = MEDIATE_REQUEST
     CLASS = MediationRequest
     SCHEMA = MediationRequestSchema
-    VALUES = {"mediator_terms": ["test", "terms"], "recipient_terms": ["test", "terms"]}
+    VALUES = {}

@@ -15,6 +15,7 @@ from indy_credx import (
     CredxError,
     RevocationRegistry,
     RevocationRegistryDefinition,
+    RevocationRegistryDefinitionPrivate,
     RevocationRegistryDelta,
     Schema,
 )
@@ -46,8 +47,7 @@ class IndyCredxIssuer(IndyIssuer):
     """Indy-Credx issuer class."""
 
     def __init__(self, profile: AskarProfile):
-        """
-        Initialize an IndyCredxIssuer instance.
+        """Initialize an IndyCredxIssuer instance.
 
         Args:
             profile: The active profile instance
@@ -67,8 +67,7 @@ class IndyCredxIssuer(IndyIssuer):
         schema_version: str,
         attribute_names: Sequence[str],
     ) -> Tuple[str, str]:
-        """
-        Create a new credential schema and store it in the wallet.
+        """Create a new credential schema and store it in the wallet.
 
         Args:
             origin_did: the DID issuing the credential definition
@@ -97,8 +96,7 @@ class IndyCredxIssuer(IndyIssuer):
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
     ) -> bool:
-        """
-        Check whether a given credential definition ID is present in the wallet.
+        """Check whether a given credential definition ID is present in the wallet.
 
         Args:
             credential_definition_id: The credential definition ID to check
@@ -121,8 +119,7 @@ class IndyCredxIssuer(IndyIssuer):
         tag: str = None,
         support_revocation: bool = False,
     ) -> Tuple[str, str]:
-        """
-        Create a new credential definition and store it in the wallet.
+        """Create a new credential definition and store it in the wallet.
 
         Args:
             origin_did: the DID issuing the credential definition
@@ -177,8 +174,7 @@ class IndyCredxIssuer(IndyIssuer):
         return (cred_def_id, cred_def_json)
 
     async def create_credential_offer(self, credential_definition_id: str) -> str:
-        """
-        Create a credential offer for the given credential definition id.
+        """Create a credential offer for the given credential definition id.
 
         Args:
             credential_definition_id: The credential definition to create an offer for
@@ -226,10 +222,9 @@ class IndyCredxIssuer(IndyIssuer):
         revoc_reg_id: str = None,
         tails_file_path: str = None,
     ) -> Tuple[str, str]:
-        """
-        Create a credential.
+        """Create a credential.
 
-        Args
+        Args:
             schema: Schema to create credential for
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
@@ -332,7 +327,6 @@ class IndyCredxIssuer(IndyIssuer):
                 rev_reg.raw_value,
                 rev_reg_index,
                 rev_info.get("used_ids") or [],
-                tails_file_path,
             )
             credential_revocation_id = str(rev_reg_index)
         else:
@@ -362,14 +356,15 @@ class IndyCredxIssuer(IndyIssuer):
 
     async def revoke_credentials(
         self,
+        cred_def_id: str,
         revoc_reg_id: str,
         tails_file_path: str,
         cred_revoc_ids: Sequence[str],
     ) -> Tuple[str, Sequence[str]]:
-        """
-        Revoke a set of credentials in a revocation registry.
+        """Revoke a set of credentials in a revocation registry.
 
         Args:
+            cred_def_id: ID of the credential definition
             revoc_reg_id: ID of the revocation registry
             tails_file_path: path to the local tails file
             cred_revoc_ids: sequences of credential indexes in the revocation registry
@@ -390,15 +385,27 @@ class IndyCredxIssuer(IndyIssuer):
                 raise IndyIssuerError("Repeated conflict attempting to update registry")
             try:
                 async with self._profile.session() as session:
+                    cred_def = await session.handle.fetch(
+                        CATEGORY_CRED_DEF, cred_def_id
+                    )
                     rev_reg_def = await session.handle.fetch(
                         CATEGORY_REV_REG_DEF, revoc_reg_id
+                    )
+                    rev_reg_def_private = await session.handle.fetch(
+                        CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
                     )
                     rev_reg = await session.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
                     rev_reg_info = await session.handle.fetch(
                         CATEGORY_REV_REG_INFO, revoc_reg_id
                     )
+                if not cred_def:
+                    raise IndyIssuerError("Credential definition not found")
                 if not rev_reg_def:
                     raise IndyIssuerError("Revocation registry definition not found")
+                if not rev_reg_def_private:
+                    raise IndyIssuerError(
+                        "Revocation registry definition private key not found"
+                    )
                 if not rev_reg:
                     raise IndyIssuerError("Revocation registry not found")
                 if not rev_reg_info:
@@ -407,11 +414,30 @@ class IndyCredxIssuer(IndyIssuer):
                 raise IndyIssuerError("Error retrieving revocation registry") from err
 
             try:
+                cred_def = CredentialDefinition.load(cred_def.raw_value)
+            except CredxError as err:
+                raise IndyIssuerError("Error loading credential definition") from err
+
+            try:
                 rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def.raw_value)
             except CredxError as err:
                 raise IndyIssuerError(
                     "Error loading revocation registry definition"
                 ) from err
+
+            try:
+                rev_reg_def_private = RevocationRegistryDefinitionPrivate.load(
+                    rev_reg_def_private.raw_value
+                )
+            except CredxError as err:
+                raise IndyIssuerError(
+                    "Error loading revocation registry private key"
+                ) from err
+
+            try:
+                rev_reg = RevocationRegistry.load(rev_reg.raw_value)
+            except CredxError as err:
+                raise IndyIssuerError("Error loading revocation registry") from err
 
             rev_crids = set()
             failed_crids = set()
@@ -430,7 +456,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     failed_crids.add(rev_id)
                 elif rev_id > rev_info["curr_id"]:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s not yet issued",
                         revoc_reg_id,
@@ -438,7 +464,7 @@ class IndyCredxIssuer(IndyIssuer):
                     )
                     failed_crids.add(rev_id)
                 elif rev_id in used_ids:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s already revoked",
                         revoc_reg_id,
@@ -452,18 +478,14 @@ class IndyCredxIssuer(IndyIssuer):
                 break
 
             try:
-                rev_reg = RevocationRegistry.load(rev_reg.raw_value)
-            except CredxError as err:
-                raise IndyIssuerError("Error loading revocation registry") from err
-
-            try:
                 delta = await asyncio.get_event_loop().run_in_executor(
                     None,
                     lambda: rev_reg.update(
+                        cred_def,
                         rev_reg_def,
-                        None,  # issued
-                        list(rev_crids),  # revoked
-                        tails_file_path,
+                        rev_reg_def_private,
+                        issued=None,
+                        revoked=list(rev_crids),  # revoked
                     ),
                 )
             except CredxError as err:
@@ -478,7 +500,7 @@ class IndyCredxIssuer(IndyIssuer):
                         CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                     )
                     if not rev_reg_upd or not rev_reg_info:
-                        LOGGER.warn(
+                        LOGGER.warning(
                             "Revocation registry missing, skipping update: {}",
                             revoc_reg_id,
                         )
@@ -509,8 +531,7 @@ class IndyCredxIssuer(IndyIssuer):
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
     ) -> str:
-        """
-        Merge revocation registry deltas.
+        """Merge revocation registry deltas.
 
         Args:
             fro_delta: original delta in JSON format
@@ -544,8 +565,7 @@ class IndyCredxIssuer(IndyIssuer):
         max_cred_num: int,
         tails_base_path: str,
     ) -> Tuple[str, str, str]:
-        """
-        Create a new revocation registry and store it in the wallet.
+        """Create a new revocation registry and store it in the wallet.
 
         Args:
             origin_did: the DID issuing the revocation registry

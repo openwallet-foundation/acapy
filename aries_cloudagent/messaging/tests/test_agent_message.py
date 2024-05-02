@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from marshmallow import EXCLUDE, fields
 
@@ -20,7 +20,7 @@ class SignedAgentMessage(AgentMessage):
 
         handler_class = None
         schema_class = "SignedAgentMessageSchema"
-        message_type = "signed-agent-message"
+        message_type = "doc/protocol/1.0/signed-agent-message"
 
     def __init__(self, value: str = None, **kwargs):
         super().__init__(**kwargs)
@@ -45,10 +45,10 @@ class BasicAgentMessage(AgentMessage):
         """Meta data"""
 
         schema_class = AgentMessageSchema
-        message_type = "basic-message"
+        message_type = "doc/protocol/1.0/basic-message"
 
 
-class TestAgentMessage(AsyncTestCase):
+class TestAgentMessage(IsolatedAsyncioTestCase):
     """Tests agent message."""
 
     def test_init(self):
@@ -134,7 +134,7 @@ class TestAgentMessage(AsyncTestCase):
         msg.add_trace_decorator()
         tracer = msg._trace
         assert tracer.target == TRACE_LOG_TARGET
-        assert tracer.full_thread == True
+        assert tracer.full_thread is True
 
         trace_report = TraceReport(
             msg_id=msg._id,
@@ -143,7 +143,7 @@ class TestAgentMessage(AsyncTestCase):
             timestamp="123456789.123456",
             str_time="2019-01-01 12:34:56.7",
             handler="function.START",
-            ellapsed_milli=27,
+            elapsed_milli=27,
             outcome="OK! ...",
         )
         msg.add_trace_report(trace_report)
@@ -154,7 +154,7 @@ class TestAgentMessage(AsyncTestCase):
         assert msg_trace_report.msg_id == msg._id
         assert msg_trace_report.thread_id == msg._thread_id
         assert msg_trace_report.handler == trace_report.handler
-        assert msg_trace_report.ellapsed_milli == trace_report.ellapsed_milli
+        assert msg_trace_report.elapsed_milli == trace_report.elapsed_milli
         assert msg_trace_report.traced_type == msg._type
         assert msg_trace_report.outcome == trace_report.outcome
 
@@ -172,7 +172,7 @@ class TestAgentMessage(AsyncTestCase):
             timestamp="123456789.123456",
             str_time="2019-01-01 12:34:56.7",
             handler="function.END",
-            ellapsed_milli=72,
+            elapsed_milli=72,
             outcome="A OK! ...",
         )
         msg2.add_trace_report(trace_report2)
@@ -183,7 +183,7 @@ class TestAgentMessage(AsyncTestCase):
         assert msg_trace_report.msg_id == msg2._id
         assert msg_trace_report.thread_id == msg2._thread_id
         assert msg_trace_report.handler == trace_report2.handler
-        assert msg_trace_report.ellapsed_milli == trace_report2.ellapsed_milli
+        assert msg_trace_report.elapsed_milli == trace_report2.elapsed_milli
         assert msg_trace_report.traced_type == msg2._type
         assert msg_trace_report.outcome == trace_report2.outcome
 
@@ -194,7 +194,7 @@ class TestAgentMessage(AsyncTestCase):
         assert msg._trace
 
 
-class TestAgentMessageSchema(AsyncTestCase):
+class TestAgentMessageSchema(IsolatedAsyncioTestCase):
     """Tests agent message schema."""
 
     def test_init_x(self):
@@ -210,12 +210,12 @@ class TestAgentMessageSchema(AsyncTestCase):
     def test_extract_decorators_x(self):
         for serial in [
             {
-                "@type": "signed-agent-message",
+                "@type": "doc/proto/1.0/signed-agent-message",
                 "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
                 "value": "Test value",
             },
             {
-                "@type": "signed-agent-message",
+                "@type": "doc/proto/1.0/signed-agent-message",
                 "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
                 "value": "Test value",
                 "value~sig": {
@@ -231,7 +231,7 @@ class TestAgentMessageSchema(AsyncTestCase):
                 },
             },
             {
-                "@type": "signed-agent-message",
+                "@type": "doc/proto/1.0/signed-agent-message",
                 "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
                 "superfluous~sig": {
                     "@type": DIDCommPrefix.qualify_current(
@@ -251,7 +251,7 @@ class TestAgentMessageSchema(AsyncTestCase):
 
     def test_serde(self):
         serial = {
-            "@type": "signed-agent-message",
+            "@type": "doc/proto/1.0/signed-agent-message",
             "@id": "030ac9e6-0d60-49d3-a8c6-e7ce0be8df5a",
             "value~sig": {
                 "@type": DIDCommPrefix.qualify_current(

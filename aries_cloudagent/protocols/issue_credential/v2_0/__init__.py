@@ -10,9 +10,9 @@ from .models.cred_ex_record import V20CredExRecord
 def problem_report_for_record(
     record: Union[ConnRecord, V20CredExRecord],
     desc_en: str,
+    thread_id: str = None,
 ) -> V20CredProblemReport:
-    """
-    Create problem report for record.
+    """Create problem report for record.
 
     Args:
         record: connection or exchange record
@@ -25,10 +25,11 @@ def problem_report_for_record(
             "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
         },
     )
-    if record:
+    thid = thread_id
+    if record and not thread_id:
         thid = getattr(record, "thread_id", None)
-        if thid:
-            result.assign_thread_id(thid)
+    if thid:
+        result.assign_thread_id(thid)
 
     return result
 
@@ -40,8 +41,7 @@ async def report_problem(
     record: Union[ConnRecord, V20CredExRecord],
     outbound_handler: Coroutine,
 ):
-    """
-    Send problem report response and raise corresponding HTTP error.
+    """Send problem report response and raise corresponding HTTP error.
 
     Args:
         err: error for internal diagnostics

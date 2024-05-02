@@ -14,8 +14,7 @@ class PerformHandler(BaseHandler):
     """Message handler class for action menu perform requests."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for action menu perform requests.
+        """Message handler logic for action menu perform requests.
 
         Args:
             context: request context

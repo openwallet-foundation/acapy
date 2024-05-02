@@ -1,7 +1,7 @@
 import json
 import requests
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
@@ -9,7 +9,6 @@ from ...protocols.issue_credential.v1_0.models.credential_exchange import (
 )
 from ...transport.inbound.message import InboundMessage
 from ...transport.outbound.message import OutboundMessage
-from ...messaging.agent_message import AgentMessage
 
 from ...messaging.decorators.trace_decorator import TraceDecorator, TRACE_MESSAGE_TARGET
 from ...protocols.trustping.v1_0.messages.ping import Ping
@@ -17,16 +16,14 @@ from ...protocols.trustping.v1_0.messages.ping import Ping
 from .. import tracing as test_module
 
 
-class TestTracing(AsyncTestCase):
+class TestTracing(IsolatedAsyncioTestCase):
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
 
     def test_get_timer(self):
         assert test_module.get_timer() > 0.0
 
     def test_tracing_enabled(self):
-        invi = InvitationMessage(
-            comment="no comment", label="cable guy", services=[TestTracing.test_did]
-        )
+        invi = InvitationMessage(label="cable guy", services=[TestTracing.test_did])
         assert not test_module.tracing_enabled({}, invi)
         invi._trace = TraceDecorator(target="message")
         assert test_module.tracing_enabled({}, invi)
@@ -72,9 +69,7 @@ class TestTracing(AsyncTestCase):
         assert test_module.tracing_enabled({}, outbound_message)
 
     def test_decode_inbound_message(self):
-        invi = InvitationMessage(
-            comment="no comment", label="cable guy", services=[TestTracing.test_did]
-        )
+        invi = InvitationMessage(label="cable guy", services=[TestTracing.test_did])
         message = OutboundMessage(payload=invi)
         assert invi == test_module.decode_inbound_message(message)
 
@@ -190,7 +185,7 @@ class TestTracing(AsyncTestCase):
         trace = message._trace
         assert trace is not None
         assert trace.target == TRACE_MESSAGE_TARGET
-        assert trace.full_thread == True
+        assert trace.full_thread is True
         trace_reports = trace.trace_reports
         assert len(trace_reports) == 1
         trace_report = trace_reports[0]

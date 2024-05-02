@@ -3,14 +3,18 @@
 from typing import Sequence
 from urllib.parse import parse_qs, urljoin, urlparse
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, ValidationError, fields, pre_load, validates_schema
 
+from .....did.did_key import DIDKey
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from .....messaging.valid import (
+    GENERIC_DID_EXAMPLE,
+    GENERIC_DID_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+)
 from .....wallet.util import b64_to_bytes, bytes_to_b64
-
 from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
-
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
@@ -39,8 +43,7 @@ class ConnectionInvitation(AgentMessage):
         image_url: str = None,
         **kwargs,
     ):
-        """
-        Initialize connection invitation object.
+        """Initialize connection invitation object.
 
         Args:
             label: Optional label for connection invitation
@@ -56,11 +59,22 @@ class ConnectionInvitation(AgentMessage):
         self.recipient_keys = list(recipient_keys) if recipient_keys else None
         self.endpoint = endpoint
         self.routing_keys = list(routing_keys) if routing_keys else None
+        self.routing_keys = (
+            [
+                (
+                    DIDKey.from_did(key).public_key_b58
+                    if key.startswith("did:key:")
+                    else key
+                )
+                for key in self.routing_keys
+            ]
+            if self.routing_keys
+            else None
+        )
         self.image_url = image_url
 
     def to_url(self, base_url: str = None) -> str:
-        """
-        Convert an invitation to URL format for sharing.
+        """Convert an invitation to URL format for sharing.
 
         Returns:
             An invite url
@@ -73,8 +87,7 @@ class ConnectionInvitation(AgentMessage):
 
     @classmethod
     def from_url(cls, url: str) -> "ConnectionInvitation":
-        """
-        Parse a URL-encoded invitation into a `ConnectionInvitation` message.
+        """Parse a URL-encoded invitation into a `ConnectionInvitation` message.
 
         Args:
             url: Url to decode
@@ -102,42 +115,79 @@ class ConnectionInvitationSchema(AgentMessageSchema):
 
     label = fields.Str(
         required=False,
-        description="Optional label for connection invitation",
-        example="Bob",
+        metadata={
+            "description": "Optional label for connection invitation",
+            "example": "Bob",
+        },
     )
     did = fields.Str(
-        required=False, description="DID for connection invitation", **INDY_DID
+        required=False,
+        validate=GENERIC_DID_VALIDATE,
+        metadata={
+            "description": "DID for connection invitation",
+            "example": GENERIC_DID_EXAMPLE,
+        },
     )
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Recipient public key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
         data_key="recipientKeys",
         required=False,
-        description="List of recipient keys",
+        metadata={"description": "List of recipient keys"},
     )
     endpoint = fields.Str(
         data_key="serviceEndpoint",
         required=False,
-        description="Service endpoint at which to reach this agent",
-        example="http://192.168.56.101:8020",
+        metadata={
+            "description": "Service endpoint at which to reach this agent",
+            "example": "http://192.168.56.101:8020",
+        },
     )
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+            metadata={
+                "description": "Routing key",
+                "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+            },
+        ),
         data_key="routingKeys",
         required=False,
-        description="List of routing keys",
+        metadata={"description": "List of routing keys"},
     )
     image_url = fields.URL(
         data_key="imageUrl",
         required=False,
         allow_none=True,
-        description="Optional image URL for connection invitation",
-        example="http://192.168.56.101/img/logo.jpg",
+        metadata={
+            "description": "Optional image URL for connection invitation",
+            "example": "http://192.168.56.101/img/logo.jpg",
+        },
     )
+
+    @pre_load
+    def transform_routing_keys(self, data, **kwargs):
+        """Transform routingKeys from did:key refs, if necessary."""
+        routing_keys = data.get("routingKeys")
+        if routing_keys:
+            data["routingKeys"] = [
+                (
+                    DIDKey.from_did(key).public_key_b58
+                    if key.startswith("did:key:")
+                    else key
+                )
+                for key in routing_keys
+            ]
+        return data
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Args:
             data: The data to validate

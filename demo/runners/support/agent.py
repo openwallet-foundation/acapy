@@ -1,24 +1,24 @@
 import asyncio
-import asyncpg
 import base64
 import functools
 import json
 import logging
 import os
-import random
 import subprocess
 import sys
-import yaml
-
+from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer
+from secrets import token_hex
 
+import asyncpg
+import yaml
 from aiohttp import (
-    web,
-    ClientSession,
+    ClientError,
     ClientRequest,
     ClientResponse,
-    ClientError,
+    ClientSession,
     ClientTimeout,
+    web,
 )
 
 from .utils import flatten, log_json, log_msg, log_timer, output_reader
@@ -64,6 +64,10 @@ elif RUN_MODE == "pwd":
     # DEFAULT_INTERNAL_HOST =
     DEFAULT_EXTERNAL_HOST = os.getenv("DOCKERHOST") or "host.docker.internal"
     DEFAULT_PYTHON_PATH = "."
+
+WALLET_TYPE_INDY = "indy"
+WALLET_TYPE_ASKAR = "askar"
+WALLET_TYPE_ANONCREDS = "askar-anoncreds"
 
 CRED_FORMAT_INDY = "indy"
 CRED_FORMAT_JSON_LD = "json-ld"
@@ -137,6 +141,12 @@ class DemoAgent:
         arg_file: str = None,
         endorser_role: str = None,
         extra_args=None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
+        reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
         **params,
     ):
         self.ident = ident
@@ -168,6 +178,12 @@ class DemoAgent:
         self.mediator_request_id = None
         self.aip = aip
         self.arg_file = arg_file
+        self.log_file = log_file
+        self.log_config = log_config
+        self.log_level = log_level
+        self.reuse_connections = reuse_connections
+        self.multi_use_invitations = multi_use_invitations
+        self.public_did_connections = public_did_connections
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -185,17 +201,14 @@ class DemoAgent:
         self.params = params
         self.proc = None
         self.client_session: ClientSession = ClientSession()
+        self.thread_pool_executor = ThreadPoolExecutor(20)
 
         if self.endorser_role and self.endorser_role == "author":
             seed = None
         elif self.endorser_role and not seed:
             seed = "random"
-        rand_name = str(random.randint(100_000, 999_999))
-        self.seed = (
-            ("my_seed_000000000000000000000000" + rand_name)[-32:]
-            if seed == "random"
-            else seed
-        )
+        rand_name = token_hex(4)
+        self.seed = token_hex(16) if seed == "random" else seed
         self.storage_type = params.get("storage_type")
         self.wallet_type = params.get("wallet_type") or "askar"
         self.wallet_name = (
@@ -249,6 +262,81 @@ class DemoAgent:
         return did
 
     async def register_schema_and_creddef(
+        self,
+        schema_name,
+        version,
+        schema_attrs,
+        support_revocation: bool = False,
+        revocation_registry_size: int = None,
+        tag=None,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            return await self.register_schema_and_creddef_indy(
+                schema_name,
+                version,
+                schema_attrs,
+                support_revocation=support_revocation,
+                revocation_registry_size=revocation_registry_size,
+                tag=tag,
+            )
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            return await self.register_schema_and_creddef_anoncreds(
+                schema_name,
+                version,
+                schema_attrs,
+                support_revocation=support_revocation,
+                revocation_registry_size=revocation_registry_size,
+                tag=tag,
+            )
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def fetch_schemas(
+        self,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            schemas_saved = await self.admin_GET("/schemas/created")
+            return schemas_saved
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            schemas_saved = await self.admin_GET("/anoncreds/schemas")
+            return schemas_saved
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def fetch_cred_defs(
+        self,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            cred_defs_saved = await self.admin_GET("/credential-definitions/created")
+            return cred_defs_saved
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            cred_defs_saved = await self.admin_GET("/anoncreds/credential-definitions")
+            return cred_defs_saved
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def fetch_cred_def(
+        self,
+        cred_def_id: str,
+        wallet_type=WALLET_TYPE_INDY,
+    ):
+        if wallet_type in [WALLET_TYPE_INDY, WALLET_TYPE_ASKAR]:
+            cred_def_saved = await self.admin_GET(
+                "/credential-definitions/" + cred_def_id
+            )
+            return cred_def_saved
+        elif wallet_type == WALLET_TYPE_ANONCREDS:
+            cred_def_saved = await self.admin_GET(
+                "/anoncreds/credential-definition/" + cred_def_id
+            )
+            return cred_def_saved
+        else:
+            raise Exception("Invalid wallet_type: " + str(wallet_type))
+
+    async def register_schema_and_creddef_indy(
         self,
         schema_name,
         version,
@@ -325,6 +413,93 @@ class DemoAgent:
         log_msg("Cred def ID:", credential_definition_id)
         return schema_id, credential_definition_id
 
+    async def register_schema_and_creddef_anoncreds(
+        self,
+        schema_name,
+        version,
+        schema_attrs,
+        support_revocation: bool = False,
+        revocation_registry_size: int = None,
+        tag=None,
+    ):
+        # Create a schema
+        schema_body = {
+            "schema": {
+                "attrNames": schema_attrs,
+                "issuerId": self.did,
+                "name": schema_name,
+                "version": version,
+            },
+            "options": {},
+        }
+        schema_response = await self.admin_POST("/anoncreds/schema", schema_body)
+        log_json(json.dumps(schema_response), label="Schema:")
+        await asyncio.sleep(2.0)
+        if "schema_id" in schema_response["schema_state"]:
+            # schema is created directly
+            schema_id = schema_response["schema_state"]["schema_id"]
+        else:
+            # need to wait for the endorser process
+            schema_response = {"schema_ids": []}
+            attempts = 3
+            while 0 < attempts and 0 == len(schema_response["schema_ids"]):
+                schema_response = await self.admin_GET("/anoncreds/schemas")
+                if 0 == len(schema_response["schema_ids"]):
+                    await asyncio.sleep(1.0)
+                    attempts = attempts - 1
+            schema_id = schema_response["schema_ids"][0]
+        log_msg("Schema ID:", schema_id)
+
+        # Create a cred def for the schema
+        cred_def_tag = (
+            tag if tag else (self.ident + "." + schema_name).replace(" ", "_")
+        )
+        max_cred_num = revocation_registry_size if revocation_registry_size else 0
+        credential_definition_body = {
+            "credential_definition": {
+                "tag": cred_def_tag,
+                "schemaId": schema_id,
+                "issuerId": self.did,
+            },
+            "options": {
+                "support_revocation": support_revocation,
+                "max_cred_num": max_cred_num,
+            },
+        }
+        credential_definition_response = await self.admin_POST(
+            "/anoncreds/credential-definition", credential_definition_body
+        )
+        log_json(json.dumps(credential_definition_response), label="Cred Def:")
+        await asyncio.sleep(2.0)
+        if (
+            "credential_definition_id"
+            in credential_definition_response["credential_definition_state"]
+        ):
+            # cred def is created directly
+            credential_definition_id = credential_definition_response[
+                "credential_definition_state"
+            ]["credential_definition_id"]
+        else:
+            # need to wait for the endorser process
+            credential_definition_response = {"credential_definition_ids": []}
+            attempts = 3
+            while 0 < attempts and 0 == len(
+                credential_definition_response["credential_definition_ids"]
+            ):
+                credential_definition_response = await self.admin_GET(
+                    "/anoncreds/credential-definitions"
+                )
+                if 0 == len(
+                    credential_definition_response["credential_definition_ids"]
+                ):
+                    await asyncio.sleep(1.0)
+                    attempts = attempts - 1
+            credential_definition_id = credential_definition_response[
+                "credential_definition_ids"
+            ][0]
+        log_msg("Cred def ID:", credential_definition_id)
+        return schema_id, credential_definition_id
+
     def get_agent_args(self):
         result = [
             ("--endpoint", self.endpoint),
@@ -341,7 +516,26 @@ class DemoAgent:
             "--preserve-exchange-records",
             "--auto-provision",
             "--public-invites",
+            # ("--log-level", "debug"),
         ]
+        if self.log_file or self.log_file == "":
+            result.extend(
+                [
+                    ("--log-file", self.log_file),
+                ]
+            )
+        if self.log_config:
+            result.extend(
+                [
+                    ("--log-config", self.log_config),
+                ]
+            )
+        if self.log_level:
+            result.extend(
+                [
+                    ("--log-level", self.log_level),
+                ]
+            )
         if self.aip == 20:
             result.append("--emit-new-didcomm-prefix")
         if self.multitenant:
@@ -389,6 +583,8 @@ class DemoAgent:
         if self.revocation:
             # turn on notifications if revocation is enabled
             result.append("--notify-revocation")
+        # enable extended webhooks
+        result.append("--debug-webhooks")
         # always enable notification webhooks
         result.append("--monitor-revocation-notification")
 
@@ -480,7 +676,9 @@ class DemoAgent:
         role: str = "TRUST_ANCHOR",
         cred_type: str = CRED_FORMAT_INDY,
     ):
-        if cred_type == CRED_FORMAT_INDY:
+        if cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             # if registering a did for issuing indy credentials, publish the did on the ledger
             self.log(f"Registering {self.ident} ...")
             if not ledger_url:
@@ -662,7 +860,18 @@ class DemoAgent:
             color = self.color or "fg:ansiblue"
         else:
             color = None
-        log_msg(*output, color=color, prefix=self.prefix_str, end=end, **kwargs)
+        try:
+            log_msg(*output, color=color, prefix=self.prefix_str, end=end, **kwargs)
+        except AssertionError as e:
+            if self.trace_enabled and self.trace_target == "log":
+                # when tracing to a log file,
+                # we hit an issue with the underlying prompt_toolkit.
+                # it attempts to output what is written by the log and can't find the
+                # correct terminal and throws an error. The trace log record does show
+                # in the terminal, so let's just ignore this error.
+                pass
+            else:
+                raise e
 
     def log(self, *msg, **kwargs):
         self.handle_output(*msg, **kwargs)
@@ -683,13 +892,13 @@ class DemoAgent:
             close_fds=True,
         )
         loop.run_in_executor(
-            None,
+            self.thread_pool_executor,
             output_reader,
             proc.stdout,
             functools.partial(self.handle_output, source="stdout"),
         )
         loop.run_in_executor(
-            None,
+            self.thread_pool_executor,
             output_reader,
             proc.stderr,
             functools.partial(self.handle_output, source="stderr"),
@@ -714,7 +923,9 @@ class DemoAgent:
 
         # start agent sub-process
         loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(None, self._process, agent_args, my_env, loop)
+        future = loop.run_in_executor(
+            self.thread_pool_executor, self._process, agent_args, my_env, loop
+        )
         self.proc = await asyncio.wait_for(future, 20, loop=loop)
         if wait:
             await asyncio.sleep(1.0)
@@ -741,7 +952,7 @@ class DemoAgent:
         # now shut down the agent
         loop = asyncio.get_event_loop()
         if self.proc:
-            future = loop.run_in_executor(None, self._terminate)
+            future = loop.run_in_executor(self.thread_pool_executor, self._terminate)
             result = await asyncio.wait_for(future, 10, loop=loop)
 
     async def listen_webhooks(self, webhook_port):
@@ -835,14 +1046,18 @@ class DemoAgent:
         )
 
     async def handle_endorse_transaction(self, message):
-        self.log(f"Received endorse transaction ...\n", source="stderr")
+        self.log("Received endorse transaction ...\n", source="stderr")
 
     async def handle_revocation_registry(self, message):
         reg_id = message.get("revoc_reg_id", "(undetermined)")
         self.log(f"Revocation registry: {reg_id} state: {message['state']}")
 
     async def handle_mediation(self, message):
-        self.log(f"Received mediation message ...\n")
+        self.log("Received mediation message ...\n")
+
+    async def handle_keylist(self, message):
+        self.log("Received handle_keylist message ...\n")
+        self.log(json.dumps(message))
 
     async def taa_accept(self):
         taa_info = await self.admin_GET("/ledger/taa")
@@ -953,7 +1168,7 @@ class DemoAgent:
             raise
 
     async def admin_POST(
-        self, path, data=None, text=False, params=None, headers=None
+        self, path, data=None, text=False, params=None, headers=None, raise_error=True
     ) -> ClientResponse:
         try:
             EVENT_LOGGER.debug(
@@ -978,6 +1193,8 @@ class DemoAgent:
             return response
         except ClientError as e:
             self.log(f"Error during POST {path}: {str(e)}")
+            if not raise_error:
+                return None
             raise
 
     async def admin_PATCH(
@@ -1012,6 +1229,34 @@ class DemoAgent:
             )
         except ClientError as e:
             self.log(f"Error during PUT {path}: {str(e)}")
+            raise
+
+    async def admin_DELETE(
+        self, path, data=None, text=False, params=None, headers=None
+    ) -> ClientResponse:
+        try:
+            EVENT_LOGGER.debug(
+                "Controller DELETE %s request to Agent%s",
+                path,
+                (" with data: \n{}".format(repr_json(data)) if data else ""),
+            )
+            if self.multitenant:
+                if not headers:
+                    headers = {}
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
+            response = await self.admin_request(
+                "DELETE", path, data, text, params, headers=headers
+            )
+            EVENT_LOGGER.debug(
+                "Response from DELETE %s received: \n%s",
+                path,
+                repr_json(response),
+            )
+            return response
+        except ClientError as e:
+            self.log(f"Error during DELETE {path}: {str(e)}")
             raise
 
     async def admin_GET_FILE(self, path, params=None, headers=None) -> bytes:
@@ -1204,30 +1449,72 @@ class DemoAgent:
         use_did_exchange: bool,
         auto_accept: bool = True,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
+        emit_did_peer_2: bool = False,
+        emit_did_peer_4: bool = False,
     ):
         self.connection_id = None
+        if emit_did_peer_2:
+            use_did_method = "did:peer:2"
+        elif emit_did_peer_4:
+            use_did_method = "did:peer:4"
+        else:
+            use_did_method = None
+
+        create_unique_did = (
+            use_did_method is not None
+            and (not reuse_connections)
+            and (not public_did_connections)
+        )
         if use_did_exchange:
             # TODO can mediation be used with DID exchange connections?
             invi_params = {
                 "auto_accept": json.dumps(auto_accept),
+                "multi_use": json.dumps(multi_use_invitations),
+                "create_unique_did": json.dumps(create_unique_did),
             }
             payload = {
-                "handshake_protocols": ["rfc23"],
-                "use_public_did": reuse_connections,
+                "handshake_protocols": ["didexchange/1.1"],
+                "use_public_did": public_did_connections,
             }
+            if self.mediation:
+                payload["mediation_id"] = self.mediator_request_id
+            if use_did_method:
+                payload["use_did_method"] = use_did_method
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
                 payload,
                 params=invi_params,
             )
         else:
-            if self.mediation:
+            if reuse_connections:
+                # use oob for connection reuse
+                invi_params = {
+                    "auto_accept": json.dumps(auto_accept),
+                    "create_unique_did": json.dumps(create_unique_did),
+                }
+                payload = {
+                    "handshake_protocols": ["https://didcomm.org/connections/1.0"],
+                    "use_public_did": public_did_connections,
+                }
+                if self.mediation:
+                    payload["mediation_id"] = self.mediator_request_id
+                if use_did_method:
+                    payload["use_did_method"] = use_did_method
+                invi_rec = await self.admin_POST(
+                    "/out-of-band/create-invitation",
+                    payload,
+                    params=invi_params,
+                )
+            elif self.mediation:
                 invi_params = {
                     "auto_accept": json.dumps(auto_accept),
                 }
+                payload = {"mediation_id": self.mediator_request_id}
                 invi_rec = await self.admin_POST(
                     "/connections/create-invitation",
-                    {"mediation_id": self.mediator_request_id},
+                    payload,
                     params=invi_params,
                 )
             else:
@@ -1240,9 +1527,11 @@ class DemoAgent:
             params = {"alias": "endorser"}
         else:
             params = {}
+        if self.mediation:
+            params["mediation_id"] = self.mediator_request_id
         if "/out-of-band/" in invite.get("@type", ""):
-            # always reuse connections if possible
-            params["use_existing_connection"] = "true"
+            # reuse connections if requested and possible
+            params["use_existing_connection"] = json.dumps(self.reuse_connections)
             connection = await self.admin_POST(
                 "/out-of-band/receive-invitation",
                 invite,
@@ -1337,12 +1626,12 @@ async def connect_wallet_to_mediator(agent, mediator_agent):
     log_msg("Connected agent to mediator:", agent.ident, mediator_agent.ident)
 
     # setup mediation on our connection
-    log_msg("Request mediation ...")
+    log_msg(f"Request mediation on connection {agent.mediator_connection_id} ...")
     mediation_request = await agent.admin_POST(
         "/mediation/request/" + agent.mediator_connection_id, {}
     )
     agent.mediator_request_id = mediation_request["mediation_id"]
-    log_msg("Mediation request id:", agent.mediator_request_id)
+    log_msg(f"Mediation request id: {agent.mediator_request_id}")
 
     count = 3
     while 0 < count:

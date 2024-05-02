@@ -59,6 +59,27 @@ def stub_indy() -> Stub:
     return Stub(mock.patch.dict(sys.modules, modules))
 
 
+def stub_anoncreds() -> Stub:
+    # detect anoncreds library
+    try:
+        from anoncreds import generate_nonce
+
+        _ = generate_nonce()
+        return Stub(None)
+    except ImportError:
+        print("Skipping Anoncreds-specific tests: anoncreds module not installed.")
+    except OSError:
+        print(
+            "Skipping Anoncreds-specific tests: anoncreds shared library"
+            "could not be loaded."
+        )
+
+    modules = {}
+    package_name = "anoncreds"
+    modules[package_name] = mock.MagicMock()
+    return Stub(mock.patch.dict(sys.modules, modules))
+
+
 def stub_askar() -> Stub:
     # detect aries-askar library
     try:
@@ -177,6 +198,7 @@ def pytest_sessionstart(session):
 
     STUBS.update(
         {
+            "anoncreds": stub_anoncreds(),
             "askar": stub_askar(),
             "indy": stub_indy(),
             "indy_credx": stub_indy_credx(),
@@ -198,6 +220,9 @@ def pytest_sessionfinish(session):
 
 def pytest_runtest_setup(item: pytest.Item):
     global STUBS
+
+    if tuple(item.iter_markers(name="anoncreds")) and not STUBS["anoncreds"].found:
+        pytest.skip("test requires Anoncreds support")
 
     if tuple(item.iter_markers(name="askar")) and not STUBS["askar"].found:
         pytest.skip("test requires Askar support")

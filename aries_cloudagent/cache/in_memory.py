@@ -26,8 +26,7 @@ class InMemoryCache(BaseCache):
                 del self._cache[key]
 
     async def get(self, key: Text):
-        """
-        Get an item from the cache.
+        """Get an item from the cache.
 
         Args:
             key: the key to retrieve an item for
@@ -40,8 +39,7 @@ class InMemoryCache(BaseCache):
         return self._cache.get(key)["value"] if self._cache.get(key) else None
 
     async def set(self, keys: Union[Text, Sequence[Text]], value: Any, ttl: int = None):
-        """
-        Add an item to the cache with an optional ttl.
+        """Add an item to the cache with an optional ttl.
 
         Overwrites existing cache entries.
 
@@ -57,8 +55,7 @@ class InMemoryCache(BaseCache):
             self._cache[key] = {"expires": expires_ts, "value": value}
 
     async def clear(self, key: Text):
-        """
-        Remove an item from the cache, if present.
+        """Remove an item from the cache, if present.
 
         Args:
             key: the key to remove

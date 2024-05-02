@@ -3,13 +3,11 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import UUIDFour
-
-from ..message_types import TRANSACTION_RESEND, PROTOCOL_PACKAGE
+from .....messaging.valid import UUID4_EXAMPLE
+from ..message_types import PROTOCOL_PACKAGE, TRANSACTION_RESEND
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".transaction_resend_handler.TransactionResendHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.transaction_resend_handler.TransactionResendHandler"
 )
 
 
@@ -30,8 +28,7 @@ class TransactionResend(AgentMessage):
         thread_id: str = None,
         **kwargs,
     ):
-        """
-        Initialize a transaction resend object.
+        """Initialize a transaction resend object.
 
         Args:
             state: State of the transaction record
@@ -54,7 +51,9 @@ class TransactionResendSchema(AgentMessageSchema):
 
     state = fields.Str(
         required=False,
-        description="The State of the transaction Record",
-        example="resend",
+        metadata={
+            "description": "The State of the transaction Record",
+            "example": "resend",
+        },
     )
-    thread_id = fields.Str(required=False, example=UUIDFour.EXAMPLE)
+    thread_id = fields.Str(required=False, metadata={"example": UUID4_EXAMPLE})

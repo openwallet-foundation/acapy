@@ -5,19 +5,15 @@ from .....messaging.base_handler import (
     BaseResponder,
     RequestContext,
 )
-
 from ....out_of_band.v1_0.messages.invitation import InvitationMessage
-from ....problem_report.v1_0.message import ProblemReport
-
-from ..messages.problem_report_reason import ProblemReportReason
+from ..messages.problem_report import DIDXProblemReport, ProblemReportReason
 
 
 class InvitationHandler(BaseHandler):
     """Handler class for connection invitation message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle connection invitation under RFC 23 (DID exchange).
+        """Handle connection invitation under RFC 23 (DID exchange).
 
         Args:
             context: Request context
@@ -27,7 +23,7 @@ class InvitationHandler(BaseHandler):
         self._logger.debug(f"InvitationHandler called with context {context}")
         assert isinstance(context.message, InvitationMessage)
 
-        report = ProblemReport(
+        report = DIDXProblemReport(
             description={
                 "code": ProblemReportReason.INVITATION_NOT_ACCEPTED.value,
                 "en": (
@@ -36,6 +32,6 @@ class InvitationHandler(BaseHandler):
                 ),
             }
         )
-
+        report.assign_thread_from(context.message)
         # client likely needs to be using direct responses to receive the problem report
         await responder.send_reply(report)

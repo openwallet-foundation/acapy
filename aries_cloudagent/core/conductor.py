@@ -1,5 +1,4 @@
-"""
-The Conductor.
+"""The Conductor.
 
 The conductor is responsible for coordinating messages that are received
 over the network, communicating with the ledger, passing messages to handlers,
@@ -11,11 +10,18 @@ wallet.
 import hashlib
 import json
 import logging
+from typing import Optional
 
+from packaging import version as package_version
 from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
+from ..commands.upgrade import (
+    add_version_record,
+    get_upgrade_version_list,
+    upgrade,
+)
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.ledger import (
@@ -28,7 +34,7 @@ from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
-
+from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
@@ -56,6 +62,8 @@ from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
+from ..storage.record import StorageRecord
+from ..storage.type import RECORD_TYPE_ACAPY_STORAGE_TYPE
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -69,23 +77,25 @@ from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ..wallet.did_info import DIDInfo
 from .dispatcher import Dispatcher
+from .error import StartupError
 from .oob_processor import OobMessageProcessor
 from .util import SHUTDOWN_EVENT_TOPIC, STARTUP_EVENT_TOPIC
 
 LOGGER = logging.getLogger(__name__)
+# Refer ACA-Py issue #2197
+# When the from version is not found
+DEFAULT_ACAPY_VERSION = "v0.7.5"
 
 
 class Conductor:
-    """
-    Conductor class.
+    """Conductor class.
 
     Class responsible for initializing concrete implementations
-    of our require interfaces and routing inbound and outbound message data.
+    of our required interfaces and routing inbound and outbound message data.
     """
 
     def __init__(self, context_builder: ContextBuilder) -> None:
-        """
-        Initialize an instance of Conductor.
+        """Initialize an instance of Conductor.
 
         Args:
             inbound_transports: Configuration for inbound transports
@@ -135,11 +145,7 @@ class Conductor:
                 MultiIndyLedgerManagerProvider(self.root_profile),
             )
             if not (context.settings.get("ledger.genesis_transactions")):
-                ledger = (
-                    await context.injector.inject(
-                        BaseMultipleLedgerManager
-                    ).get_write_ledger()
-                )[1]
+                ledger = context.injector.inject(BaseLedger)
                 if (
                     self.root_profile.BACKEND_NAME == "askar"
                     and ledger.BACKEND_NAME == "indy-vdr"
@@ -148,6 +154,17 @@ class Conductor:
                         IndyVerifier,
                         ClassProvider(
                             "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                elif (
+                    self.root_profile.BACKEND_NAME == "askar-anoncreds"
+                    and ledger.BACKEND_NAME == "indy-vdr"
+                ):
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.anoncreds.credx.verifier.IndyCredxVerifier",
                             self.root_profile,
                         ),
                     )
@@ -270,6 +287,7 @@ class Conductor:
         """Start the agent."""
 
         context = self.root_profile.context
+        await self.check_for_valid_wallet_type(self.root_profile)
 
         # Start up transports
         try:
@@ -309,28 +327,61 @@ class Conductor:
             self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
+        LoggingConfigurator.print_notices(context.settings)
 
         # record ACA-Py version in Wallet, if needed
+        from_version_storage = None
+        from_version = None
+        agent_version = f"v{__version__}"
         async with self.root_profile.session() as session:
             storage: BaseStorage = session.context.inject(BaseStorage)
-            agent_version = f"v{__version__}"
             try:
                 record = await storage.find_record(
                     type_filter=RECORD_TYPE_ACAPY_VERSION,
                     tag_query={},
                 )
-                if record.value != agent_version:
-                    LOGGER.exception(
-                        (
-                            f"Wallet storage version {record.value} "
-                            "does not match this ACA-Py agent "
-                            f"version {agent_version}. Run aca-py "
-                            "upgrade command to fix this."
-                        )
-                    )
-                    raise
+                from_version_storage = record.value
+                LOGGER.info(
+                    "Existing acapy_version storage record found, "
+                    f"version set to {from_version_storage}"
+                )
             except StorageNotFoundError:
-                pass
+                LOGGER.warning("Wallet version storage record not found.")
+        from_version_config = self.root_profile.settings.get("upgrade.from_version")
+        force_upgrade_flag = (
+            self.root_profile.settings.get("upgrade.force_upgrade") or False
+        )
+
+        if force_upgrade_flag and from_version_config:
+            if from_version_storage:
+                if package_version.parse(from_version_storage) > package_version.parse(
+                    from_version_config
+                ):
+                    from_version = from_version_config
+                else:
+                    from_version = from_version_storage
+            else:
+                from_version = from_version_config
+        else:
+            from_version = from_version_storage or from_version_config
+        if not from_version:
+            LOGGER.warning(
+                (
+                    "No upgrade from version was found from wallet or via"
+                    " --from-version startup argument. Defaulting to "
+                    f"{DEFAULT_ACAPY_VERSION}."
+                )
+            )
+            from_version = DEFAULT_ACAPY_VERSION
+            self.root_profile.settings.set_value("upgrade.from_version", from_version)
+        config_available_list = get_upgrade_version_list(
+            config_path=self.root_profile.settings.get("upgrade.config_path"),
+            from_version=from_version,
+        )
+        if len(config_available_list) >= 1:
+            await upgrade(profile=self.root_profile)
+        elif not (from_version_storage and from_version_storage == agent_version):
+            await add_version_record(profile=self.root_profile, version=agent_version)
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
@@ -471,12 +522,12 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Error accepting mediation invitation")
 
-        # notify protcols of startup status
+        # notify protocols of startup status
         await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
 
     async def stop(self, timeout=1.0):
         """Stop the agent."""
-        # notify protcols that we are shutting down
+        # notify protocols that we are shutting down
         if self.root_profile:
             await self.root_profile.notify(SHUTDOWN_EVENT_TOPIC, {})
 
@@ -507,8 +558,7 @@ class Conductor:
         message: InboundMessage,
         can_respond: bool = False,
     ):
-        """
-        Route inbound messages.
+        """Route inbound messages.
 
         Args:
             context: The context associated with the inbound message
@@ -587,8 +637,7 @@ class Conductor:
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
     ) -> OutboundSendStatus:
-        """
-        Route an outbound message.
+        """Route an outbound message.
 
         Args:
             profile: The active profile for the request
@@ -607,8 +656,7 @@ class Conductor:
         outbound: OutboundMessage,
         inbound: InboundMessage = None,
     ) -> OutboundSendStatus:
-        """
-        Route an outbound message.
+        """Route an outbound message.
 
         Args:
             profile: The active profile for the request
@@ -639,10 +687,9 @@ class Conductor:
         self,
         profile: Profile,
         outbound: OutboundMessage,
-        inbound: InboundMessage = None,
+        inbound: Optional[InboundMessage] = None,
     ) -> OutboundSendStatus:
-        """
-        Queue an outbound message for transport.
+        """Queue an outbound message for transport.
 
         Args:
             profile: The active profile
@@ -662,7 +709,7 @@ class Conductor:
                 )
             except ConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
-                return
+                return OutboundSendStatus.UNDELIVERABLE
             except (LedgerConfigError, LedgerTransactionError) as e:
                 LOGGER.error("Shutdown on ledger error %s", str(e))
                 if self.admin_server:
@@ -710,8 +757,7 @@ class Conductor:
         max_attempts: int = None,
         metadata: dict = None,
     ):
-        """
-        Route a webhook through the outbound transport manager.
+        """Route a webhook through the outbound transport manager.
 
         Args:
             topic: The webhook topic
@@ -728,3 +774,52 @@ class Conductor:
             LOGGER.warning(
                 "Cannot queue message webhook for delivery, no supported transport"
             )
+
+    async def check_for_valid_wallet_type(self, profile):
+        """Check wallet type and set it if not set. Raise an error if wallet type config doesn't match existing storage type."""  # noqa: E501
+        async with profile.session() as session:
+            storage_type_from_config = profile.settings.get("wallet.type")
+            storage = session.inject(BaseStorage)
+            try:
+                storage_type_record = await storage.find_record(
+                    type_filter=RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
+                )
+                storage_type_from_storage = storage_type_record.value
+            except StorageNotFoundError:
+                storage_type_record = None
+
+            if not storage_type_record:
+                LOGGER.warning("Wallet type record not found.")
+                try:
+                    acapy_version = await storage.find_record(
+                        type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
+                    )
+                except StorageNotFoundError:
+                    acapy_version = None
+                if acapy_version:
+                    storage_type_from_storage = "askar"
+                    LOGGER.info(
+                        f"Existing agent found. Setting wallet type to {storage_type_from_storage}."  # noqa: E501
+                    )
+                    await storage.add_record(
+                        StorageRecord(
+                            RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                            storage_type_from_storage,
+                        )
+                    )
+                else:
+                    storage_type_from_storage = storage_type_from_config
+                    LOGGER.info(
+                        f"New agent. Setting wallet type to {storage_type_from_config}."
+                    )
+                    await storage.add_record(
+                        StorageRecord(
+                            RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                            storage_type_from_config,
+                        )
+                    )
+
+            if storage_type_from_storage != storage_type_from_config:
+                raise StartupError(
+                    f"Wallet type config [{storage_type_from_config}] doesn't match with the wallet type in storage [{storage_type_record.value}]"  # noqa: E501
+                )

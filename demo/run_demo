@@ -4,8 +4,16 @@ shopt -s nocasematch
 
 cd $(dirname $0)
 
-AGENT="$1"
-shift
+RESOLUTION="$1"
+# Check if RESOLUTION is not provided or not a valid option
+if [ -z "$RESOLUTION" ] || [ "$RESOLUTION" != "build" -a "$RESOLUTION" != "run" ]; then
+  echo "Resolution not specified or invalid."
+  AGENT="$1"  # If RESOLUTION is not provided or invalid, assume argument is AGENT
+else
+  shift  # Shift only if RESOLUTION is provided and valid
+  AGENT="$1"
+fi
+shift  # Shift again to remove AGENT from the arguments
 ARGS=""
 
 TRACE_ENABLED=""
@@ -21,10 +29,24 @@ if [ -z "$DOCKER_NET" ]; then
 fi
 DOCKER_VOL=""
 
+# Set default platform to linux/amd64 when running on Arm based MAC since there are no arm based images available currently.
+# Must also use the Rosetta 2 software, which can be installed by running `softwareupdate --install-rosetta` from the Mac command line
+if [[ $OSTYPE == 'darwin'* ]]; then
+  architecture=$(uname -m)
+  if [[ "${architecture}" == 'arm'* ]] || [[ "${architecture}" == 'aarch'* ]]; then
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64
+  fi
+fi
+
 j=1
 for i in "$@"
 do
   ((j++))
+  # Demo agent with --multitenant requires the ../log dir to exist and write access to it
+  if [ ! -d "../log" ]; then
+    mkdir ../log && chmod -R uga+rws ../log
+    DOCKER_VOL="${DOCKER_VOL} -v /$(pwd)/../log:/home/aries/log"
+  fi
   if [ ! -z "$SKIP" ]; then
     SKIP=""
     continue
@@ -77,15 +99,11 @@ do
       continue
     ;;
   --timing)
-    if [ ! -d "../logs" ]; then
-      mkdir ../logs && chmod -R uga+rws ../logs
-    fi
-    if [ "$(ls -ld ../logs | grep dr..r..rwx)" == "" ]; then
-      echo "Error: To use the --timing parameter, the directory '../logs' must exist and all users must be able to write to it."
-      echo "For example, to create the directory and then set the permissions use: 'mkdir ../logs; chmod uga+rws ../logs'"
+    if [ "$(ls -ld ../log | grep dr..r..rwx)" == "" ]; then
+      echo "Error: To use the --timing parameter, the directory '../log' must exist and all users must be able to write to it."
+      echo "For example, to create the directory and then set the permissions use: 'mkdir ../log; chmod uga+rws ../log'"
       exit 1
     fi
-    DOCKER_VOL="${DOCKER_VOL} -v /$(pwd)/../logs:/home/indy/logs"
     continue
   ;;
   --bg)
@@ -106,8 +124,9 @@ do
     cat <<EOF
 
 Usage:
-   ./demo_run <agent> [OPTIONS]
+   ./demo_run <resolution> <agent> [OPTIONS]
 
+   - <resolution> is one of the docker option to build or run.
    - <agent> is one of alice, faber, acme, performance.
    - Options:
       --events - display on the terminal the webhook events from the ACA-Py agent.
@@ -126,6 +145,19 @@ EOF
   esac
   ARGS="${ARGS:+$ARGS }$i"
 done
+
+if [ -z "$RESOLUTION" ]; then
+  echo "Resolution not specified."
+elif [ "$RESOLUTION" = "build" ]; then
+  DOCKER_RESOLUTION="build"
+  echo "Agent will be build."
+elif [ "$RESOLUTION" = "run" ]; then
+  DOCKER_RESOLUTION="run"
+  echo "Agent will be run."
+else
+  echo "You can utilize the 'build' option to build the agent or the 'run' option to run the agent."
+fi
+
 
 if [ "$AGENT" = "faber" ]; then
   AGENT_MODULE="faber"
@@ -147,9 +179,25 @@ else
   echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'."
   exit 1
 fi
+# allow override for agent ports
+if [ ! -z "$AGENT_PORT_OVERRIDE" ]; then
+  AGENT_PORT=$AGENT_PORT_OVERRIDE
+  AGENT_PORT_END=$(expr $AGENT_PORT_OVERRIDE + 9)
+  AGENT_PORT_RANGE="$AGENT_PORT-$AGENT_PORT_END"
+fi
 
-echo "Preparing agent image..."
-docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
+# 1. Build the agent image
+if [ -z "$DOCKER_RESOLUTION" ] || [ "$DOCKER_RESOLUTION" = "build" ]; then
+  echo "Preparing agent image..."
+  docker build -t acapy-base -f ../docker/Dockerfile .. || exit 1
+  docker build -t faber-alice-demo -f ../docker/Dockerfile.demo --build-arg from_image=acapy-base .. || exit 1
+fi
+
+if [ "$DOCKER_RESOLUTION" = "build" ]; then
+  exit 1
+else
+  echo "You can utilize the 'build' option to build the agent or the 'run' option to run the agent."
+fi
 
 if [ ! -z "$DOCKERHOST" ]; then
   # provided via APPLICATION_URL environment variable
@@ -238,6 +286,9 @@ fi
 if ! [ -z "$ACAPY_ARG_FILE" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e ACAPY_ARG_FILE=${ACAPY_ARG_FILE}"
 fi
+if ! [ -z "$DEMO_EXTRA_AGENT_ARGS" ]; then
+  DOCKER_ENV="${DOCKER_ENV} -e DEMO_EXTRA_AGENT_ARGS=${DEMO_EXTRA_AGENT_ARGS}"
+fi
 
 if ! [ -z "${ENABLE_PYDEVD_PYCHARM}" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e ENABLE_PYDEVD_PYCHARM=${ENABLE_PYDEVD_PYCHARM} -e PYDEVD_PYCHARM_CONTROLLER_PORT=${PYDEVD_PYCHARM_CONTROLLER_PORT} -e PYDEVD_PYCHARM_AGENT_PORT=${PYDEVD_PYCHARM_AGENT_PORT}"
@@ -252,8 +303,13 @@ fi
 DOCKER=${DOCKER:-docker}
 
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
-  --network=${DOCKER_NET} \
-  -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
-  ${DOCKER_VOL} \
-  $DOCKER_ENV \
-  faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $ARGS
+    --network=${DOCKER_NET} \
+    -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
+    ${DOCKER_VOL} \
+    $(if [ "$DOCKER_RESOLUTION" = "run" ]; then
+      echo "-v $(pwd)/../aries_cloudagent:/home/aries/aries_cloudagent \
+      -v $(pwd)/../scripts:/home/aries/scripts \
+      -v $(pwd)/../demo:/home/aries/demo"
+    fi) \
+    $DOCKER_ENV \
+    faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $ARGS

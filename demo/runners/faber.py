@@ -1,10 +1,10 @@
 import asyncio
+import datetime
 import json
 import logging
 import os
 import sys
 import time
-import datetime
 
 from aiohttp import ClientError
 from qrcode import QRCode
@@ -12,9 +12,9 @@ from qrcode import QRCode
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from runners.agent_container import (  # noqa:E402
+    AriesAgent,
     arg_parser,
     create_agent_with_args,
-    AriesAgent,
 )
 from runners.support.agent import (  # noqa:E402
     CRED_FORMAT_INDY,
@@ -28,10 +28,11 @@ from runners.support.utils import (  # noqa:E402
     prompt_loop,
 )
 
-
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
+
+DEMO_EXTRA_AGENT_ARGS = os.getenv("DEMO_EXTRA_AGENT_ARGS")
 
 logging.basicConfig(level=logging.WARNING)
 LOGGER = logging.getLogger(__name__)
@@ -46,6 +47,10 @@ class FaberAgent(AriesAgent):
         no_auto: bool = False,
         endorser_role: str = None,
         revocation: bool = False,
+        anoncreds_legacy_revocation: str = None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -56,6 +61,10 @@ class FaberAgent(AriesAgent):
             no_auto=no_auto,
             endorser_role=endorser_role,
             revocation=revocation,
+            anoncreds_legacy_revocation=anoncreds_legacy_revocation,
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
             **kwargs,
         )
         self.connection_id = None
@@ -373,7 +382,15 @@ class FaberAgent(AriesAgent):
 
 
 async def main(args):
-    faber_agent = await create_agent_with_args(args, ident="faber")
+    extra_args = None
+    if DEMO_EXTRA_AGENT_ARGS:
+        extra_args = json.loads(DEMO_EXTRA_AGENT_ARGS)
+        print("Got extra args:", extra_args)
+    faber_agent = await create_agent_with_args(
+        args,
+        ident="faber",
+        extra_args=extra_args,
+    )
 
     try:
         log_status(
@@ -400,6 +417,14 @@ async def main(args):
             seed=faber_agent.seed,
             aip=faber_agent.aip,
             endorser_role=faber_agent.endorser_role,
+            anoncreds_legacy_revocation=faber_agent.anoncreds_legacy_revocation,
+            log_file=faber_agent.log_file,
+            log_config=faber_agent.log_config,
+            log_level=faber_agent.log_level,
+            reuse_connections=faber_agent.reuse_connections,
+            multi_use_invitations=faber_agent.multi_use_invitations,
+            public_did_connections=faber_agent.public_did_connections,
+            extra_args=extra_args,
         )
 
         faber_schema_name = "degree schema"
@@ -416,9 +441,11 @@ async def main(args):
                 the_agent=agent,
                 schema_name=faber_schema_name,
                 schema_attrs=faber_schema_attrs,
-                create_endorser_agent=(faber_agent.endorser_role == "author")
-                if faber_agent.endorser_role
-                else False,
+                create_endorser_agent=(
+                    (faber_agent.endorser_role == "author")
+                    if faber_agent.endorser_role
+                    else False
+                ),
             )
         elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
             faber_agent.public_did = True
@@ -428,7 +455,11 @@ async def main(args):
 
         # generate an invitation for Alice
         await faber_agent.generate_invitation(
-            display_qr=True, reuse_connections=faber_agent.reuse_connections, wait=True
+            display_qr=True,
+            reuse_connections=faber_agent.reuse_connections,
+            multi_use_invitations=faber_agent.multi_use_invitations,
+            public_did_connections=faber_agent.public_did_connections,
+            wait=True,
         )
 
         exchange_tracing = False
@@ -440,14 +471,19 @@ async def main(args):
             "    (4) Create New Invitation\n"
         )
         if faber_agent.revocation:
-            options += "    (5) Revoke Credential\n" "    (6) Publish Revocations\n"
+            options += (
+                "    (5) Revoke Credential\n"
+                "    (6) Publish Revocations\n"
+                "    (7) Rotate Revocation Registry\n"
+                "    (8) List Revocation Registries\n"
+            )
         if faber_agent.endorser_role and faber_agent.endorser_role == "author":
             options += "    (D) Set Endorser's DID\n"
         if faber_agent.multitenant:
             options += "    (W) Create and/or Enable Wallet\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
         options += "    (X) Exit?\n[1/2/3/4/{}{}T/X] ".format(
-            "5/6/" if faber_agent.revocation else "",
+            "5/6/7/8/" if faber_agent.revocation else "",
             "W/" if faber_agent.multitenant else "",
         )
         async for option in prompt_loop(options):
@@ -691,6 +727,8 @@ async def main(args):
                 await faber_agent.generate_invitation(
                     display_qr=True,
                     reuse_connections=faber_agent.reuse_connections,
+                    multi_use_invitations=faber_agent.multi_use_invitations,
+                    public_did_connections=faber_agent.public_did_connections,
                     wait=True,
                 )
 
@@ -700,9 +738,20 @@ async def main(args):
                 publish = (
                     await prompt("Publish now? [Y/N]: ", default="N")
                 ).strip() in "yY"
+
+                # Anoncreds has different endpoints for revocation
+                is_anoncreds = False
+                if faber_agent.agent.__dict__["wallet_type"] == "askar-anoncreds":
+                    is_anoncreds = True
+
                 try:
+                    endpoint = (
+                        "/anoncreds/revocation/revoke"
+                        if is_anoncreds
+                        else "/revocation/revoke"
+                    )
                     await faber_agent.agent.admin_POST(
-                        "/revocation/revoke",
+                        endpoint,
                         {
                             "rev_reg_id": rev_reg_id,
                             "cred_rev_id": cred_rev_id,
@@ -718,14 +767,80 @@ async def main(args):
 
             elif option == "6" and faber_agent.revocation:
                 try:
-                    resp = await faber_agent.agent.admin_POST(
-                        "/revocation/publish-revocations", {}
+                    endpoint = (
+                        "/anoncreds/revocation/publish-revocations"
+                        if is_anoncreds
+                        else "/revocation/publish-revocations"
                     )
+                    resp = await faber_agent.agent.admin_POST(endpoint, {})
                     faber_agent.agent.log(
                         "Published revocations for {} revocation registr{} {}".format(
                             len(resp["rrid2crid"]),
                             "y" if len(resp["rrid2crid"]) == 1 else "ies",
-                            json.dumps([k for k in resp["rrid2crid"]], indent=4),
+                            json.dumps(list(resp["rrid2crid"]), indent=4),
+                        )
+                    )
+                except ClientError:
+                    pass
+            elif option == "7" and faber_agent.revocation:
+                try:
+                    endpoint = (
+                        f"/anoncreds/revocation/active-registry/{faber_agent.cred_def_id}/rotate"
+                        if is_anoncreds
+                        else f"/revocation/active-registry/{faber_agent.cred_def_id}/rotate"
+                    )
+                    resp = await faber_agent.agent.admin_POST(
+                        endpoint,
+                        {},
+                    )
+                    faber_agent.agent.log(
+                        "Rotated registries for {}. Decommissioned Registries: {}".format(
+                            faber_agent.cred_def_id,
+                            json.dumps(list(resp["rev_reg_ids"]), indent=4),
+                        )
+                    )
+                except ClientError:
+                    pass
+            elif option == "8" and faber_agent.revocation:
+                if is_anoncreds:
+                    endpoint = "/anoncreds/revocation/registries"
+                    states = [
+                        "finished",
+                        "failed",
+                        "action",
+                        "wait",
+                        "decommissioned",
+                        "full",
+                    ]
+                    default_state = "finished"
+                else:
+                    endpoint = "/revocation/registries/created"
+                    states = [
+                        "init",
+                        "generated",
+                        "posted",
+                        "active",
+                        "full",
+                        "decommissioned",
+                    ]
+                    default_state = "active"
+                state = (
+                    await prompt(
+                        f"Filter by state: {states}: ",
+                        default=default_state,
+                    )
+                ).strip()
+                if state not in states:
+                    state = "active"
+                try:
+                    resp = await faber_agent.agent.admin_GET(
+                        endpoint,
+                        params={"state": state},
+                    )
+                    faber_agent.agent.log(
+                        "Registries (state = '{}'): {}".format(
+                            state,
+                            json.dumps(list(resp["rev_reg_ids"]), indent=4),
                         )
                     )
                 except ClientError:

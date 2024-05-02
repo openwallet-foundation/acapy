@@ -1,0 +1,49 @@
+name: publish-docs 
+
+on:
+  push:
+    # Publish `main` as latest, and when pushes are done to branches with "v-doc" prefix
+    branches:
+      - main
+      - docs-v*
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch all commits/branches
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - uses: actions/cache@v4
+        with:
+          key: ${{ github.ref }}
+          path: .cache
+      - name: Install Python dependencies
+        run: pip install -r ./mkdocs-requirements.txt
+      - name: Configure git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Deploy docs
+        run: |
+          # Strip git ref prefix from version
+          echo "${{ github.ref }}"
+          # Extract the version and if it is in `docs-v` form, strip that off the version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,' -e 's/^docs-v//')
+          # Run a script to prepare all the files that have to be moved/updated to publish cleanly
+          ./scripts/prepmkdocs.sh
+          # Populate overrides for the current version, and then remove to not apply if VERSION is main branch
+          OVERRIDE=overrides/main.html
+          echo -e "{% extends \"base.html\" %}\n\n{% block outdated %}\n  You are viewing the documentation for ACA-Py Release $VERSION.\n{% endblock %}" >$OVERRIDE
+          # If building from main, use latest as ALIAS and remove the override
+          [ "$VERSION" == "main" ] && ALIAS=latest && rm $OVERRIDE
+          echo $VERSION $ALIAS
+          mike deploy --push --update-aliases $VERSION $ALIAS
+          mike set-default latest

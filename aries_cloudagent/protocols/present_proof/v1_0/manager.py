@@ -36,8 +36,7 @@ class PresentationManager:
     """Class for managing presentations."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a PresentationManager.
+        """Initialize a PresentationManager.
 
         Args:
             profile: The profile instance for this presentation manager
@@ -50,9 +49,9 @@ class PresentationManager:
         connection_id: str,
         presentation_proposal_message: PresentationProposal,
         auto_present: bool = None,
+        auto_remove: bool = None,
     ):
-        """
-        Create a presentation exchange record for input presentation proposal.
+        """Create a presentation exchange record for input presentation proposal.
 
         Args:
             connection_id: connection identifier
@@ -60,11 +59,14 @@ class PresentationManager:
                 to exchange record
             auto_present: whether to present proof upon receiving proof request
                 (default to configuration setting)
+            auto_remove: whether to remove this presentation exchange upon completion
 
         Returns:
             Presentation exchange record, created
 
         """
+        if auto_remove is None:
+            auto_remove = not self._profile.settings.get("preserve_exchange_records")
         presentation_exchange_record = V10PresentationExchange(
             connection_id=connection_id,
             thread_id=presentation_proposal_message._thread_id,
@@ -74,6 +76,7 @@ class PresentationManager:
             presentation_proposal_dict=presentation_proposal_message,
             auto_present=auto_present,
             trace=(presentation_proposal_message._trace is not None),
+            auto_remove=auto_remove,
         )
         async with self._profile.session() as session:
             await presentation_exchange_record.save(
@@ -85,8 +88,7 @@ class PresentationManager:
     async def receive_proposal(
         self, message: PresentationProposal, connection_record: ConnRecord
     ):
-        """
-        Receive a presentation proposal from message in context on manager creation.
+        """Receive a presentation proposal from message in context on manager creation.
 
         Returns:
             Presentation exchange record, created
@@ -100,6 +102,7 @@ class PresentationManager:
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
             presentation_proposal_dict=message,
             trace=(message._trace is not None),
+            auto_remove=not self._profile.settings.get("preserve_exchange_records"),
         )
         async with self._profile.session() as session:
             await presentation_exchange_record.save(
@@ -116,8 +119,7 @@ class PresentationManager:
         nonce: str = None,
         comment: str = None,
     ):
-        """
-        Create a presentation request bound to a proposal.
+        """Create a presentation request bound to a proposal.
 
         Args:
             presentation_exchange_record: Presentation exchange record for which
@@ -170,19 +172,22 @@ class PresentationManager:
         connection_id: str,
         presentation_request_message: PresentationRequest,
         auto_verify: bool = None,
+        auto_remove: bool = None,
     ):
-        """
-        Create a presentation exchange record for input presentation request.
+        """Create a presentation exchange record for input presentation request.
 
         Args:
             connection_id: connection identifier
             presentation_request_message: presentation request to use in creating
                 exchange record, extracting indy proof request and thread id
-
+            auto_verify: whether to auto-verify presentation exchange
+            auto_remove: whether to remove this presentation exchange upon completion
         Returns:
             Presentation exchange record, updated
 
         """
+        if auto_remove is None:
+            auto_remove = not self._profile.settings.get("preserve_exchange_records")
         presentation_exchange_record = V10PresentationExchange(
             connection_id=connection_id,
             thread_id=presentation_request_message._thread_id,
@@ -193,6 +198,7 @@ class PresentationManager:
             presentation_request_dict=presentation_request_message,
             auto_verify=auto_verify,
             trace=(presentation_request_message._trace is not None),
+            auto_remove=auto_remove,
         )
         async with self._profile.session() as session:
             await presentation_exchange_record.save(
@@ -204,8 +210,7 @@ class PresentationManager:
     async def receive_request(
         self, presentation_exchange_record: V10PresentationExchange
     ):
-        """
-        Receive a presentation request.
+        """Receive a presentation request.
 
         Args:
             presentation_exchange_record: presentation exchange record with
@@ -231,8 +236,7 @@ class PresentationManager:
         requested_credentials: dict,
         comment: str = None,
     ):
-        """
-        Create a presentation.
+        """Create a presentation.
 
         Args:
             presentation_exchange_record: Record to update
@@ -307,8 +311,7 @@ class PresentationManager:
         connection_record: Optional[ConnRecord],
         oob_record: Optional[OobRecord],
     ):
-        """
-        Receive a presentation, from message in context on manager creation.
+        """Receive a presentation, from message in context on manager creation.
 
         Returns:
             presentation exchange record, retrieved and updated
@@ -317,17 +320,18 @@ class PresentationManager:
         presentation = message.indy_proof()
 
         thread_id = message._thread_id
+
         # Normally we only set the connection_id to None if an oob record is present
         # But present proof supports the old-style AIP-1 connectionless exchange that
         # bypasses the oob record. So we can't verify if an oob record is associated with
         # the exchange because it is possible that there is None
-        connection_id = (
-            None
-            if oob_record
-            else connection_record.connection_id
-            if connection_record
-            else None
-        )
+        #
+        # A connectionless proof doesn't have a connection_id, so default to None
+        # even if there is no oob record.
+        if connection_record and connection_record.connection_id and not oob_record:
+            connection_id = connection_record.connection_id
+        else:
+            connection_id = None
 
         async with self._profile.session() as session:
             # Find by thread_id and role. Verify connection id later
@@ -397,8 +401,7 @@ class PresentationManager:
         presentation_exchange_record: V10PresentationExchange,
         responder: Optional[BaseResponder] = None,
     ):
-        """
-        Verify a presentation.
+        """Verify a presentation.
 
         Args:
             presentation_exchange_record: presentation exchange record
@@ -446,8 +449,7 @@ class PresentationManager:
         presentation_exchange_record: V10PresentationExchange,
         responder: Optional[BaseResponder] = None,
     ):
-        """
-        Send acknowledgement of presentation receipt.
+        """Send acknowledgement of presentation receipt.
 
         Args:
             presentation_exchange_record: presentation exchange record with thread id
@@ -491,6 +493,11 @@ class PresentationManager:
                 # connection_id can be none in case of connectionless
                 connection_id=presentation_exchange_record.connection_id,
             )
+
+            # all done: delete
+            if presentation_exchange_record.auto_remove:
+                async with self._profile.session() as session:
+                    await presentation_exchange_record.delete_record(session)
         else:
             LOGGER.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
@@ -500,8 +507,7 @@ class PresentationManager:
     async def receive_presentation_ack(
         self, message: PresentationAck, connection_record: Optional[ConnRecord]
     ):
-        """
-        Receive a presentation ack, from message in context on manager creation.
+        """Receive a presentation ack, from message in context on manager creation.
 
         Returns:
             presentation exchange record, retrieved and updated
@@ -510,16 +516,16 @@ class PresentationManager:
         connection_id = connection_record.connection_id if connection_record else None
 
         async with self._profile.session() as session:
-            (
-                presentation_exchange_record
-            ) = await V10PresentationExchange.retrieve_by_tag_filter(
-                session,
-                {"thread_id": message._thread_id},
-                {
-                    # connection_id can be null in connectionless
-                    "connection_id": connection_id,
-                    "role": V10PresentationExchange.ROLE_PROVER,
-                },
+            (presentation_exchange_record) = (
+                await V10PresentationExchange.retrieve_by_tag_filter(
+                    session,
+                    {"thread_id": message._thread_id},
+                    {
+                        # connection_id can be null in connectionless
+                        "connection_id": connection_id,
+                        "role": V10PresentationExchange.ROLE_PROVER,
+                    },
+                )
             )
             presentation_exchange_record.verified = message._verification_result
             presentation_exchange_record.state = (
@@ -530,13 +536,17 @@ class PresentationManager:
                 session, reason="receive presentation ack"
             )
 
+            # all done: delete
+            if presentation_exchange_record.auto_remove:
+                async with self._profile.session() as session:
+                    await presentation_exchange_record.delete_record(session)
+
         return presentation_exchange_record
 
     async def receive_problem_report(
         self, message: PresentationProblemReport, connection_id: str
     ):
-        """
-        Receive problem report.
+        """Receive problem report.
 
         Returns:
             presentation exchange record, retrieved and updated

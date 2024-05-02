@@ -1,8 +1,5 @@
-import json
-
-import pytest
-
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import mock
+from unittest import IsolatedAsyncioTestCase
 from copy import deepcopy
 from pathlib import Path
 from shutil import rmtree
@@ -44,7 +41,7 @@ REV_REG_DEF = {
 }
 
 
-class TestRevocationRegistry(AsyncTestCase):
+class TestRevocationRegistry(IsolatedAsyncioTestCase):
     def tearDown(self):
         rmtree(TAILS_DIR, ignore_errors=True)
 
@@ -87,7 +84,7 @@ class TestRevocationRegistry(AsyncTestCase):
         rev_reg_loc = RevocationRegistry.from_definition(REV_REG_DEF, public_def=False)
         assert rev_reg_loc.get_receiving_tails_local_path() == TAILS_LOCAL
 
-        with async_mock.patch.object(Path, "is_file", autospec=True) as mock_is_file:
+        with mock.patch.object(Path, "is_file", autospec=True) as mock_is_file:
             mock_is_file.return_value = True
 
             assert await rev_reg_loc.get_or_fetch_local_tails_path() == TAILS_LOCAL
@@ -105,14 +102,12 @@ class TestRevocationRegistry(AsyncTestCase):
         rr_def_public["value"]["tailsLocation"] = "http://sample.ca:8088/path"
         rev_reg = RevocationRegistry.from_definition(rr_def_public, public_def=True)
 
-        more_magic = async_mock.MagicMock()
-        with async_mock.patch.object(
-            test_module, "Session", autospec=True
-        ) as mock_session:
-            mock_session.return_value.__enter__ = async_mock.MagicMock(
+        more_magic = mock.MagicMock()
+        with mock.patch.object(test_module, "Session", autospec=True) as mock_session:
+            mock_session.return_value.__enter__ = mock.MagicMock(
                 return_value=more_magic
             )
-            more_magic.get = async_mock.MagicMock(
+            more_magic.get = mock.MagicMock(
                 side_effect=test_module.RequestException("Not this time")
             )
 
@@ -122,18 +117,14 @@ class TestRevocationRegistry(AsyncTestCase):
 
             rmtree(TAILS_DIR, ignore_errors=True)
 
-        more_magic = async_mock.MagicMock()
-        with async_mock.patch.object(
-            test_module, "Session", autospec=True
-        ) as mock_session:
-            mock_session.return_value.__enter__ = async_mock.MagicMock(
+        more_magic = mock.MagicMock()
+        with mock.patch.object(test_module, "Session", autospec=True) as mock_session:
+            mock_session.return_value.__enter__ = mock.MagicMock(
                 return_value=more_magic
             )
-            more_magic.get = async_mock.MagicMock(
-                return_value=async_mock.MagicMock(
-                    iter_content=async_mock.MagicMock(
-                        side_effect=[(b"abcd1234",), (b"",)]
-                    )
+            more_magic.get = mock.MagicMock(
+                return_value=mock.MagicMock(
+                    iter_content=mock.MagicMock(side_effect=[(b"abcd1234",), (b"",)])
                 )
             )
 
@@ -145,28 +136,26 @@ class TestRevocationRegistry(AsyncTestCase):
 
             rmtree(TAILS_DIR, ignore_errors=True)
 
-        more_magic = async_mock.MagicMock()
-        with async_mock.patch.object(
+        more_magic = mock.MagicMock()
+        with mock.patch.object(
             test_module, "Session", autospec=True
-        ) as mock_session, async_mock.patch.object(
-            base58, "b58encode", async_mock.MagicMock()
-        ) as mock_b58enc, async_mock.patch.object(
+        ) as mock_session, mock.patch.object(
+            base58, "b58encode", mock.MagicMock()
+        ) as mock_b58enc, mock.patch.object(
             Path, "is_file", autospec=True
         ) as mock_is_file:
-            mock_session.return_value.__enter__ = async_mock.MagicMock(
+            mock_session.return_value.__enter__ = mock.MagicMock(
                 return_value=more_magic
             )
-            more_magic.get = async_mock.MagicMock(
-                return_value=async_mock.MagicMock(
-                    iter_content=async_mock.MagicMock(
-                        side_effect=[(b"abcd1234",), (b"",)]
-                    )
+            more_magic.get = mock.MagicMock(
+                return_value=mock.MagicMock(
+                    iter_content=mock.MagicMock(side_effect=[(b"abcd1234",), (b"",)])
                 )
             )
             mock_is_file.return_value = False
 
-            mock_b58enc.return_value = async_mock.MagicMock(
-                decode=async_mock.MagicMock(return_value=TAILS_HASH)
+            mock_b58enc.return_value = mock.MagicMock(
+                decode=mock.MagicMock(return_value=TAILS_HASH)
             )
             await rev_reg.get_or_fetch_local_tails_path()
 

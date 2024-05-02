@@ -3,7 +3,6 @@
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 from ....coordinate_mediation.v1_0.manager import MediationManager
-from ....problem_report.v1_0.message import ProblemReport
 from ..manager import DIDXManager, DIDXManagerError
 from ..messages.request import DIDXRequest
 
@@ -12,8 +11,7 @@ class DIDXRequestHandler(BaseHandler):
     """Handler class for connection request message under RFC 23 (DID exchange)."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Handle connection request under RFC 23 (DID exchange).
+        """Handle connection request under RFC 23 (DID exchange).
 
         Args:
             context: Request context
@@ -44,7 +42,6 @@ class DIDXRequestHandler(BaseHandler):
                     else context.message_receipt.recipient_verkey
                 ),
             )
-
             # Auto respond
             if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
                 response = await mgr.create_response(
@@ -61,20 +58,11 @@ class DIDXRequestHandler(BaseHandler):
                 self._logger.debug("DID exchange request will await acceptance")
 
         except DIDXManagerError as e:
-            self._logger.exception("Error receiving RFC 23 connection request")
-            if e.error_code:
-                targets = None
-                if context.message.did_doc_attach:
-                    try:
-                        targets = mgr.diddoc_connection_targets(
-                            context.message.did_doc_attach,
-                            context.message_receipt.recipient_verkey,
-                        )
-                    except DIDXManagerError:
-                        self._logger.exception(
-                            "Error parsing DIDDoc for problem report"
-                        )
+            report, targets = await mgr.manager_error_to_problem_report(
+                e, context.message, context.message_receipt
+            )
+            if report and targets:
                 await responder.send_reply(
-                    ProblemReport(description={"en": e.message, "code": e.error_code}),
+                    message=report,
                     target_list=targets,
                 )

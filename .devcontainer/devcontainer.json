@@ -1,0 +1,66 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+    "name": "aries_cloudagent",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "..",
+        "args": {
+          "VARIANT": "3.9-bullseye",
+          "POETRY_VERSION": "1.7.1"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+              "ms-python.python",
+              "ms-python.black-formatter",
+              "charliermarsh.ruff"
+            ],
+            "settings": {
+                "python.testing.pytestArgs": [
+                    "aries_cloudagent",
+                    "--no-cov"
+                ],
+                "python.testing.autoTestDiscoverOnSaveEnabled": true,
+                "python.testing.unittestEnabled": false,
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestPath": "pytest",
+                "editor.formatOnSave": false, // enable per language
+                "[python]": {
+                    "editor.formatOnSave": true,
+                    "editor.codeActionsOnSave": {
+                        "source.fixAll": true,
+                        "source.organizeImports": true
+                      },
+                    "editor.defaultFormatter": "ms-python.black-formatter",
+                    "ruff.organizeImports": false
+                  },
+                "black-formatter.importStrategy": "useBundled",
+                "black-formatter.showNotifications": "always",
+                "ruff.codeAction.fixViolation": {
+                    "enable": true
+                },
+                "ruff.fixAll": true,
+                "ruff.format.args": ["--config=./pyproject.toml"],
+                "ruff.lint.args": ["--config=./pyproject.toml"]
+            }
+        }
+    },
+
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    },
+    
+    // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+    "remoteUser": "vscode",
+    
+    "remoteEnv": {
+        "RUST_LOG":"aries-askar::log::target=error"
+        //"PATH": "${containerEnv:PATH}:${workspaceRoot}/.venv/bin"
+    },
+    
+    "mounts": [],
+    "postCreateCommand": "bash ./.devcontainer/post-install.sh"
+    
+}

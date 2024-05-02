@@ -7,10 +7,13 @@ from marshmallow import fields
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
-    INDY_REV_REG_ID,
-    UUIDFour,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_CRED_REV_ID_EXAMPLE,
+    INDY_CRED_REV_ID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    UUID4_EXAMPLE,
 )
 
 
@@ -136,35 +139,49 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
 
     record_id = fields.Str(
         required=False,
-        description="Issuer credential revocation record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Issuer credential revocation record identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Issue credential revocation record state",
-        example=IssuerCredRevRecord.STATE_ISSUED,
+        metadata={
+            "description": "Issue credential revocation record state",
+            "example": IssuerCredRevRecord.STATE_ISSUED,
+        },
     )
     cred_ex_id = fields.Str(
         required=False,
-        description="Credential exchange record identifier at credential issue",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential exchange record identifier at credential issue",
+            "example": UUID4_EXAMPLE,
+        },
     )
     rev_reg_id = fields.Str(
         required=False,
-        description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
     cred_def_id = fields.Str(
         required=False,
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     cred_rev_id = fields.Str(
         required=False,
-        description="Credential revocation identifier",
-        **INDY_CRED_REV_ID,
+        validate=INDY_CRED_REV_ID_VALIDATE,
+        metadata={
+            "description": "Credential revocation identifier",
+            "example": INDY_CRED_REV_ID_EXAMPLE,
+        },
     )
     cred_ex_version = fields.Str(
-        required=False,
-        description="Credential exchange version",
+        required=False, metadata={"description": "Credential exchange version"}
     )

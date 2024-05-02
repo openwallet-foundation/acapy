@@ -1,0 +1,32 @@
+# Alice agent configuration
+
+auto-provision: true
+label: alice
+
+inbound-transport:
+   - [http, 0.0.0.0, 9010]
+
+outbound-transport: http
+
+wallet-type: askar
+wallet-storage-type: default
+wallet-name: alice-wallet
+wallet-key: alice-wallet-key
+
+admin-insecure-mode: true
+
+admin: [0.0.0.0, 9011]
+
+endpoint: http://localhost:9010
+
+genesis-url: http://localhost:9000/genesis
+
+# Connections
+debug-connections: true
+auto-accept-invites: true
+auto-accept-requests: true
+auto-ping-connection: true
+
+log-level: info
+
+tails-server-base-url: http://localhost:6543 

@@ -18,10 +18,10 @@ jobs:
     name: Test Python ${{ inputs.python-version }} on Indy ${{ inputs.indy-version }}
     runs-on: ${{ inputs.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Cache image layers
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache-test
           key: ${{ runner.os }}-buildx-test-${{ github.sha }}
@@ -29,10 +29,10 @@ jobs:
             ${{ runner.os }}-buildx-test-
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Build test image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           load: true
           context: .

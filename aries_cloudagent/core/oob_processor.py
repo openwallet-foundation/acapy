@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional
 
 from ..messaging.agent_message import AgentMessage
 from ..connections.models.conn_record import ConnRecord
@@ -57,15 +57,23 @@ class OobMessageProcessor:
                     {"role": OobRecord.ROLE_SENDER},
                 )
 
-            # If the oob record is not multi use and it doesn't contain any attachments
-            # We can now safely remove the oob record
-            if not oob_record.multi_use and not oob_record.invitation.requests_attach:
-                oob_record.state = OobRecord.STATE_DONE
-                await oob_record.emit_event(session)
-                await oob_record.delete_record(session)
-        except Exception:
+                # emit the "done" event for OOB invitations
+                if not oob_record.invitation.requests_attach:
+                    oob_record.state = OobRecord.STATE_DONE
+                    await oob_record.emit_event(session)
+
+                # If the oob record is not multi use and it doesn't contain any
+                # attachments, we can now safely remove the oob record
+                if (
+                    not oob_record.multi_use
+                    and not oob_record.invitation.requests_attach
+                ):
+                    await oob_record.delete_record(session)
+        except StorageNotFoundError:
             # It is fine if no oob record is found, Only retrieved for cleanup
             pass
+        except Exception:
+            LOGGER.warning("Error cleaning up oob record", exc_info=True)
 
     async def find_oob_target_for_outbound_message(
         self, profile: Profile, outbound_message: OutboundMessage
@@ -83,16 +91,18 @@ class OobMessageProcessor:
                     oob_record.their_service,
                 )
 
-                their_service = ServiceDecorator.deserialize(oob_record.their_service)
+                their_service = oob_record.their_service
+                if not their_service:
+                    raise OobMessageProcessorError("Could not determine their service")
 
                 # Attach ~service decorator so other message can respond
                 message = json.loads(outbound_message.payload)
-                if not message.get("~service"):
+                if not message.get("~service") and oob_record.our_service:
                     LOGGER.debug(
                         "Setting our service on the message ~service %s",
                         oob_record.our_service,
                     )
-                    message["~service"] = oob_record.our_service
+                    message["~service"] = oob_record.our_service.serialize()
 
                 message["~thread"] = {
                     **message.get("~thread", {}),
@@ -118,7 +128,6 @@ class OobMessageProcessor:
         """Find oob record for inbound message."""
         message_type = context.message._type
         oob_record = None
-
         async with context.profile.session() as session:
             # First try to find the oob record based on the associated pthid
             if context.message_receipt.parent_thread_id:
@@ -249,24 +258,15 @@ class OobMessageProcessor:
             )
             return None
 
-        their_service = (
-            cast(
-                ServiceDecorator,
-                ServiceDecorator.deserialize(oob_record.their_service),
-            )
-            if oob_record.their_service
-            else None
-        )
-
         # Verify the sender key is present in their service in our record
         # If we don't have the sender verkey stored yet we can allow any key
-        if their_service and (
+        if oob_record.their_service and (
             (
                 context.message_receipt.recipient_verkey
                 and (
                     not context.message_receipt.sender_verkey
                     or context.message_receipt.sender_verkey
-                    not in their_service.recipient_keys
+                    not in oob_record.their_service.recipient_keys
                 )
             )
         ):
@@ -350,7 +350,7 @@ class OobMessageProcessor:
                     LOGGER.debug(
                         "Storing their service in oob record %s", their_service
                     )
-                    oob_record.their_service = their_service.serialize()
+                    oob_record.their_service = their_service
 
                 await oob_record.save(session)
 

@@ -1,5 +1,4 @@
-"""
-Utilities for dif presentation exchange attachment.
+"""Utilities for dif presentation exchange attachment.
 
 General Flow:
 create_vp ->
@@ -8,6 +7,7 @@ apply_requirement [filter credentials] ->
 merge [return applicable credential list and descriptor_map for presentation_submission]
 returns VerifiablePresentation
 """
+
 import pytz
 import re
 import logging
@@ -24,10 +24,10 @@ from uuid import uuid4
 
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....did.did_key import DIDKey
 from ....storage.vc_holder.vc_record import VCRecord
 from ....vc.ld_proofs import (
     Ed25519Signature2018,
+    Ed25519Signature2020,
     BbsBlsSignature2020,
     BbsBlsSignatureProof2020,
     WalletKeyPair,
@@ -39,6 +39,9 @@ from ....vc.ld_proofs.constants import (
 )
 from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
 from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.default_verification_key_strategy import (
+    BaseVerificationKeyStrategy,
+)
 from ....wallet.error import WalletError, WalletNotFoundError
 from ....wallet.key_type import BLS12381G2, ED25519
 
@@ -74,6 +77,7 @@ class DIFPresExchHandler:
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
         Ed25519Signature2018: ED25519,
+        Ed25519Signature2020: ED25519,
     }
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
@@ -112,12 +116,21 @@ class DIFPresExchHandler:
     async def _get_issue_suite(
         self,
         *,
-        wallet: BaseWallet,
         issuer_id: str,
     ):
         """Get signature suite for signing presentation."""
         did_info = await self._did_info_for_did(issuer_id)
-        verification_method = self._get_verification_method(issuer_id)
+        verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
+        verification_method = (
+            await verkey_id_strategy.get_verification_method_id_for_did(
+                issuer_id, self.profile, proof_purpose="assertionMethod"
+            )
+        )
+
+        if verification_method is None:
+            raise DIFPresExchError(
+                f"Unable to get retrieve verification method for did {issuer_id}"
+            )
 
         # Get signature class based on proof type
         SignatureClass = self.PROOF_TYPE_SIGNATURE_SUITE_MAPPING[self.proof_type]
@@ -126,17 +139,13 @@ class DIFPresExchHandler:
         return SignatureClass(
             verification_method=verification_method,
             key_pair=WalletKeyPair(
-                wallet=wallet,
+                profile=self.profile,
                 key_type=self.ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
                 public_key_base58=did_info.verkey if did_info else None,
             ),
         )
 
-    async def _get_derive_suite(
-        self,
-        *,
-        wallet: BaseWallet,
-    ):
+    async def _get_derive_suite(self):
         """Get signature suite for deriving credentials."""
         # Get signature class based on proof type
         SignatureClass = self.DERIVED_PROOF_TYPE_SIGNATURE_SUITE_MAPPING[
@@ -146,22 +155,10 @@ class DIFPresExchHandler:
         # Generically create signature class
         return SignatureClass(
             key_pair=WalletKeyPair(
-                wallet=wallet,
+                profile=self.profile,
                 key_type=self.DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
             ),
         )
-
-    def _get_verification_method(self, did: str):
-        """Get the verification method for a did."""
-        if did.startswith("did:key:"):
-            return DIDKey.from_did(did).key_id
-        elif did.startswith("did:sov:"):
-            # key-1 is what uniresolver uses for key id
-            return did + "#key-1"
-        else:
-            raise DIFPresExchError(
-                f"Unable to get retrieve verification method for did {did}"
-            )
 
     async def _did_info_for_did(self, did: str) -> DIDInfo:
         """Get the did info for specified did.
@@ -222,8 +219,7 @@ class DIFPresExchHandler:
     async def to_requirement(
         self, sr: SubmissionRequirements, descriptors: Sequence[InputDescriptors]
     ) -> Requirement:
-        """
-        Return Requirement.
+        """Return Requirement.
 
         Args:
             sr: submission_requirement
@@ -277,8 +273,7 @@ class DIFPresExchHandler:
         srs: Sequence[SubmissionRequirements] = None,
         descriptors: Sequence[InputDescriptors] = None,
     ) -> Requirement:
-        """
-        Return Requirement.
+        """Return Requirement.
 
         Creates and return Requirement with nesting if required
         using to_requirement()
@@ -316,8 +311,7 @@ class DIFPresExchHandler:
         return requirement
 
     def is_len_applicable(self, req: Requirement, val: int) -> bool:
-        """
-        Check and validate requirement minimum, maximum and count.
+        """Check and validate requirement minimum, maximum and count.
 
         Args:
             req: Requirement
@@ -338,8 +332,7 @@ class DIFPresExchHandler:
         return True
 
     def contains(self, data: Sequence[str], e: str) -> bool:
-        """
-        Check for e in data.
+        """Check for e in data.
 
         Returns True if e exists in data else return False
 
@@ -361,8 +354,7 @@ class DIFPresExchHandler:
         constraints: Constraints,
         credentials: Sequence[VCRecord],
     ) -> Sequence[VCRecord]:
-        """
-        Return list of applicable VCRecords after applying filtering.
+        """Return list of applicable VCRecords after applying filtering.
 
         Args:
             constraints: Constraints
@@ -410,18 +402,14 @@ class DIFPresExchHandler:
                 new_credential_dict = self.reveal_doc(
                     credential_dict=credential_dict, constraints=constraints
                 )
-                async with self.profile.session() as session:
-                    wallet = session.inject(BaseWallet)
-                    derive_suite = await self._get_derive_suite(
-                        wallet=wallet,
-                    )
-                    signed_new_credential_dict = await derive_credential(
-                        credential=credential_dict,
-                        reveal_document=new_credential_dict,
-                        suite=derive_suite,
-                        document_loader=document_loader,
-                    )
-                    credential = self.create_vcrecord(signed_new_credential_dict)
+                derive_suite = await self._get_derive_suite()
+                signed_new_credential_dict = await derive_credential(
+                    credential=credential_dict,
+                    reveal_document=new_credential_dict,
+                    suite=derive_suite,
+                    document_loader=document_loader,
+                )
+                credential = self.create_vcrecord(signed_new_credential_dict)
             result.append(credential)
         return result
 
@@ -455,11 +443,11 @@ class DIFPresExchHandler:
         """Return VCRecord from a credential dict."""
         proofs = cred_dict.get("proof") or []
         proof_types = None
-        if type(proofs) is dict:
+        if isinstance(proofs, dict):
             proofs = [proofs]
         if proofs:
             proof_types = [proof.get("type") for proof in proofs]
-        contexts = [ctx for ctx in cred_dict.get("@context") if type(ctx) is str]
+        contexts = [ctx for ctx in cred_dict.get("@context") if isinstance(ctx, str)]
         if "@graph" in cred_dict:
             for enclosed_data in cred_dict.get("@graph"):
                 if (
@@ -474,14 +462,14 @@ class DIFPresExchHandler:
             given_id = str(uuid4())
         # issuer
         issuer = cred_dict.get("issuer")
-        if type(issuer) is dict:
+        if isinstance(issuer, dict):
             issuer = issuer.get("id")
 
         # subjects
         subject_ids = None
         subjects = cred_dict.get("credentialSubject")
         if subjects:
-            if type(subjects) is dict:
+            if isinstance(subjects, dict):
                 subjects = [subjects]
             subject_ids = [
                 subject.get("id") for subject in subjects if ("id" in subject)
@@ -491,10 +479,11 @@ class DIFPresExchHandler:
 
         # Schemas
         schemas = cred_dict.get("credentialSchema", [])
-        if type(schemas) is dict:
+        if isinstance(schemas, dict):
             schemas = [schemas]
         schema_ids = [schema.get("id") for schema in schemas]
-        expanded = jsonld.expand(cred_dict)
+        document_loader = self.profile.inject(DocumentLoader)
+        expanded = jsonld.expand(cred_dict, options={"documentLoader": document_loader})
         types = JsonLdProcessor.get_values(
             expanded[0],
             "@type",
@@ -557,8 +546,7 @@ class DIFPresExchHandler:
     def new_credential_builder(
         self, new_credential: dict, unflatten_dict: dict
     ) -> dict:
-        """
-        Update and return the new_credential.
+        """Update and return the new_credential.
 
         Args:
             new_credential: credential dict to be updated and returned
@@ -571,8 +559,7 @@ class DIFPresExchHandler:
         return new_credential
 
     async def filter_by_field(self, field: DIFField, credential: VCRecord) -> bool:
-        """
-        Apply filter on VCRecord.
+        """Apply filter on VCRecord.
 
         Checks if a credential is applicable
 
@@ -635,8 +622,7 @@ class DIFPresExchHandler:
             return dateutil_parser(datetime_str).replace(tzinfo=utc)
 
     def validate_patch(self, to_check: any, _filter: Filter) -> bool:
-        """
-        Apply filter on match_value.
+        """Apply filter on match_value.
 
         Utility function used in applying filtering to a cred
         by triggering checks according to filter specification
@@ -683,8 +669,7 @@ class DIFPresExchHandler:
         return return_val
 
     def check_filter_only_type_enforced(self, _filter: Filter) -> bool:
-        """
-        Check if only type is specified in filter.
+        """Check if only type is specified in filter.
 
         Args:
             _filter: Filter
@@ -708,8 +693,7 @@ class DIFPresExchHandler:
             return False
 
     def process_numeric_val(self, val: any, _filter: Filter) -> bool:
-        """
-        Trigger Filter checks.
+        """Trigger Filter checks.
 
         Trigger appropriate check for a number type filter,
         according to _filter spec.
@@ -737,8 +721,7 @@ class DIFPresExchHandler:
             return False
 
     def process_string_val(self, val: any, _filter: Filter) -> bool:
-        """
-        Trigger Filter checks.
+        """Trigger Filter checks.
 
         Trigger appropriate check for a string type filter,
         according to _filter spec.
@@ -770,8 +753,7 @@ class DIFPresExchHandler:
             return False
 
     def exclusive_minimum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Exclusiveminimum check.
+        """Exclusiveminimum check.
 
         Returns True if value greater than filter specified check
 
@@ -801,8 +783,7 @@ class DIFPresExchHandler:
             return False
 
     def exclusive_maximum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Exclusivemaximum check.
+        """Exclusivemaximum check.
 
         Returns True if value less than filter specified check
 
@@ -832,8 +813,7 @@ class DIFPresExchHandler:
             return False
 
     def maximum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Maximum check.
+        """Maximum check.
 
         Returns True if value less than equal to filter specified check
 
@@ -863,8 +843,7 @@ class DIFPresExchHandler:
             return False
 
     def minimum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Minimum check.
+        """Minimum check.
 
         Returns True if value greater than equal to filter specified check
 
@@ -894,8 +873,7 @@ class DIFPresExchHandler:
             return False
 
     def length_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Length check.
+        """Length check.
 
         Returns True if length value string meets the minLength and maxLength specs
 
@@ -919,8 +897,7 @@ class DIFPresExchHandler:
         return False
 
     def pattern_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Pattern check.
+        """Pattern check.
 
         Returns True if value string matches the specified pattern
 
@@ -936,8 +913,7 @@ class DIFPresExchHandler:
         return False
 
     def const_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Const check.
+        """Const check.
 
         Returns True if value is equal to filter specified check
 
@@ -953,8 +929,7 @@ class DIFPresExchHandler:
         return False
 
     def enum_check(self, val: any, _filter: Filter) -> bool:
-        """
-        Enum check.
+        """Enum check.
 
         Returns True if value is contained to filter specified list
 
@@ -970,8 +945,7 @@ class DIFPresExchHandler:
         return False
 
     def subject_is_issuer(self, credential: VCRecord) -> bool:
-        """
-        subject_is_issuer check.
+        """subject_is_issuer check.
 
         Returns True if cred issuer_id is in subject_ids
 
@@ -1016,8 +990,7 @@ class DIFPresExchHandler:
         credentials: Sequence[VCRecord],
         schemas: SchemasInputDescriptorFilter,
     ) -> Sequence[VCRecord]:
-        """
-        Filter by schema.
+        """Filter by schema.
 
         Returns list of credentials where credentialSchema.id or types matched
         with input_descriptors.schema.uri
@@ -1040,8 +1013,7 @@ class DIFPresExchHandler:
         return result
 
     def credential_match_schema(self, credential: VCRecord, schema_id: str) -> bool:
-        """
-        Credential matching by schema.
+        """Credential matching by schema.
 
         Used by filter_schema to check if credential.schema_ids or credential.types
         matched with schema_id
@@ -1074,8 +1046,7 @@ class DIFPresExchHandler:
         credentials: Sequence[VCRecord],
         records_filter: dict = None,
     ) -> dict:
-        """
-        Apply Requirement.
+        """Apply Requirement.
 
         Args:
             req: Requirement
@@ -1122,30 +1093,33 @@ class DIFPresExchHandler:
         nested_result = []
         cred_uid_descriptors = {}
         # recursion logic for nested requirements
-        for requirement in req.nested_req:
-            # recursive call
-            result = await self.apply_requirements(
-                requirement, credentials, records_filter
-            )
-            if result == {}:
-                continue
-            # cred_uid_descriptors maps applicable credentials
-            # to their respective descriptor.
-            # Structure: {cred.given_id: {
-            #           desc_id_1: {}
-            #      },
-            #      ......
-            # }
-            #  This will be used to construct exclude dict.
-            for descriptor_id in result.keys():
-                credential_list = result.get(descriptor_id)
-                for credential in credential_list:
-                    cred_id = credential.given_id or credential.record_id
-                    if cred_id:
-                        cred_uid_descriptors.setdefault(cred_id, {})[descriptor_id] = {}
+        if req.nested_req:
+            for requirement in req.nested_req:
+                # recursive call
+                result = await self.apply_requirements(
+                    requirement, credentials, records_filter
+                )
+                if result == {}:
+                    continue
+                # cred_uid_descriptors maps applicable credentials
+                # to their respective descriptor.
+                # Structure: {cred.given_id: {
+                #           desc_id_1: {}
+                #      },
+                #      ......
+                # }
+                #  This will be used to construct exclude dict.
+                for descriptor_id in result.keys():
+                    credential_list = result.get(descriptor_id)
+                    for credential in credential_list:
+                        cred_id = credential.given_id or credential.record_id
+                        if cred_id:
+                            cred_uid_descriptors.setdefault(cred_id, {})[
+                                descriptor_id
+                            ] = {}
 
-            if len(result.keys()) != 0:
-                nested_result.append(result)
+                if len(result.keys()) != 0:
+                    nested_result.append(result)
 
         exclude = {}
         for uid in cred_uid_descriptors.keys():
@@ -1162,8 +1136,7 @@ class DIFPresExchHandler:
         )
 
     def is_numeric(self, val: any):
-        """
-        Check if val is an int or float.
+        """Check if val is an int or float.
 
         Args:
             val: to check
@@ -1184,14 +1157,13 @@ class DIFPresExchHandler:
                 except ValueError:
                     pass
         raise DIFPresExchError(
-            "Invalid type provided for comparision/numeric operation."
+            "Invalid type provided for comparison/numeric operation."
         )
 
     async def merge_nested_results(
         self, nested_result: Sequence[dict], exclude: dict
     ) -> dict:
-        """
-        Merge nested results with merged credentials.
+        """Merge nested results with merged credentials.
 
         Args:
             nested_result: Sequence of dict containing input_descriptor.id as keys
@@ -1231,8 +1203,7 @@ class DIFPresExchHandler:
         domain: str = None,
         records_filter: dict = None,
     ) -> Union[Sequence[dict], dict]:
-        """
-        Create VerifiablePresentation.
+        """Create VerifiablePresentation.
 
         Args:
             credentials: Sequence of VCRecords
@@ -1321,25 +1292,22 @@ class DIFPresExchHandler:
             vp["presentation_submission"] = submission_property.serialize()
             if self.proof_type is BbsBlsSignature2020.signature_type:
                 vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                issue_suite = await self._get_issue_suite(
-                    wallet=wallet,
-                    issuer_id=issuer_id,
-                )
-                signed_vp = await sign_presentation(
-                    presentation=vp,
-                    suite=issue_suite,
-                    challenge=challenge,
-                    document_loader=document_loader,
-                )
+            issue_suite = await self._get_issue_suite(
+                issuer_id=issuer_id,
+            )
+            signed_vp = await sign_presentation(
+                presentation=vp,
+                suite=issue_suite,
+                challenge=challenge,
+                document_loader=document_loader,
+            )
             result_vp.append(signed_vp)
         if len(result_vp) == 1:
             return result_vp[0]
         return result_vp
 
     def check_if_cred_id_derived(self, id: str) -> bool:
-        """Check if credential or credentialSubjet id is derived."""
+        """Check if credential or credentialSubject id is derived."""
         if id.startswith("urn:bnid:_:c14n"):
             return True
         return False
@@ -1348,11 +1316,10 @@ class DIFPresExchHandler:
         self,
         dict_descriptor_creds: dict,
     ) -> Tuple[Sequence[VCRecord], Sequence[InputDescriptorMapping]]:
-        """
-        Return applicable credentials and descriptor_map for attachment.
+        """Return applicable credentials and descriptor_map for attachment.
 
         Used for generating the presentation_submission property with the
-        descriptor_map, mantaining the order in which applicable credential
+        descriptor_map, maintaining the order in which applicable credential
         list is returned.
 
         Args:
@@ -1365,7 +1332,7 @@ class DIFPresExchHandler:
         dict_of_descriptors = {}
         result = []
         descriptors = []
-        sorted_desc_keys = sorted(list(dict_descriptor_creds.keys()))
+        sorted_desc_keys = sorted(dict_descriptor_creds.keys())
         for desc_id in sorted_desc_keys:
             credentials = dict_descriptor_creds.get(desc_id)
             for cred in credentials:
@@ -1390,8 +1357,7 @@ class DIFPresExchHandler:
         pd: PresentationDefinition,
         pres: Union[Sequence[dict], dict],
     ):
-        """
-        Verify credentials received in presentation.
+        """Verify credentials received in presentation.
 
         Args:
             pres: received VerifiablePresentation
@@ -1415,17 +1381,19 @@ class DIFPresExchHandler:
     async def __verify_desc_map_list(
         self, descriptor_map_list, pres, input_descriptors
     ):
-        inp_desc_id_contraint_map = {}
+        inp_desc_id_constraint_map = {}
         inp_desc_id_schema_one_of_filter = set()
         inp_desc_id_schemas_map = {}
         for input_descriptor in input_descriptors:
-            inp_desc_id_contraint_map[input_descriptor.id] = input_descriptor.constraint
+            inp_desc_id_constraint_map[input_descriptor.id] = (
+                input_descriptor.constraint
+            )
             inp_desc_id_schemas_map[input_descriptor.id] = input_descriptor.schemas
             if input_descriptor.schemas.oneof_filter:
                 inp_desc_id_schema_one_of_filter.add(input_descriptor.id)
         for desc_map_item in descriptor_map_list:
             desc_map_item_id = desc_map_item.get("id")
-            constraint = inp_desc_id_contraint_map.get(desc_map_item_id)
+            constraint = inp_desc_id_constraint_map.get(desc_map_item_id)
             schema_filter = inp_desc_id_schemas_map.get(desc_map_item_id)
             desc_map_item_path = desc_map_item.get("path")
             jsonpath = parse(desc_map_item_path)
@@ -1435,12 +1403,15 @@ class DIFPresExchHandler:
                     f"{desc_map_item_path} path in descriptor_map not applicable"
                 )
             for match_item in match:
-                if not await self.apply_constraint_received_cred(
-                    constraint, match_item.value
-                ):
+                try:
+                    await self.apply_constraint_received_cred(
+                        constraint, match_item.value
+                    )
+                except BaseError as err:
                     raise DIFPresExchError(
                         f"Constraint specified for {desc_map_item_id} does not "
                         f"apply to the enclosed credential in {desc_map_item_path}"
+                        f" Reason: {err.message}"
                     )
                 if (
                     not len(
@@ -1472,8 +1443,9 @@ class DIFPresExchHandler:
 
     async def apply_constraint_received_cred(
         self, constraint: Constraints, cred_dict: dict
-    ) -> bool:
+    ) -> None:
         """Evaluate constraint from the request against received credential."""
+        """If successful, returns None, else raises an error with reason for failure"""
         fields = constraint._fields
         field_paths = []
         credential = self.create_vcrecord(cred_dict)
@@ -1482,7 +1454,10 @@ class DIFPresExchHandler:
             if is_limit_disclosure:
                 field = await self.get_updated_field(field, cred_dict)
             if not await self.filter_by_field(field, credential):
-                return False
+                raise DIFPresExchError(
+                    "Credential is not applicable for field "
+                    f"{field.id} with paths {field.paths}"
+                )
             field_paths = field_paths + (
                 await self.restrict_field_paths_one_of_filter(
                     field_paths=field.paths, cred_dict=cred_dict
@@ -1490,7 +1465,7 @@ class DIFPresExchHandler:
             )
         # Selective Disclosure check
         if is_limit_disclosure:
-            field_paths = set([path.replace("$.", "") for path in field_paths])
+            field_paths = {path.replace("$.", "") for path in field_paths}
             mandatory_paths = {
                 "@context",
                 "type",
@@ -1518,31 +1493,39 @@ class DIFPresExchHandler:
 
             for attrs in cred_dict.keys():
                 if attrs not in field_paths:
-                    return False
+                    raise DIFPresExchError(
+                        "No field in constraints for "
+                        f"{'at least one of ' if isinstance(attrs, list) else ''}{attrs}"
+                    )
             for nested_attr_key in nested_field_paths:
                 nested_attr_values = nested_field_paths[nested_attr_key]
                 extracted = self.nested_get(cred_dict, nested_attr_key)
-                if isinstance(extracted, dict):
-                    if not self.check_attr_in_extracted_dict(
-                        extracted, nested_attr_values
-                    ):
-                        return False
-                elif isinstance(extracted, list):
-                    for extracted_dict in extracted:
-                        if not self.check_attr_in_extracted_dict(
-                            extracted_dict, nested_attr_values
-                        ):
-                            return False
-        return True
+                try:
+                    if isinstance(extracted, dict):
+                        self.check_attr_in_extracted_dict(extracted, nested_attr_values)
+                    elif isinstance(extracted, list):
+                        for extracted_dict in extracted:
+                            self.check_attr_in_extracted_dict(
+                                extracted_dict, nested_attr_values
+                            )
+                except BaseError as err:
+                    raise DIFPresExchError(
+                        f"{err.message} under parent path '$.{nested_attr_key}'"
+                    )
+        return None
 
     def check_attr_in_extracted_dict(
         self, extracted_dict: dict, nested_attr_values: dict
-    ) -> bool:
+    ) -> None:
         """Check if keys of extracted_dict exists in nested_attr_values."""
+        """If successful, returns None, else raises an error with reason for failure"""
         for attrs in extracted_dict.keys():
             if attrs not in nested_attr_values:
-                return False
-        return True
+                raise DIFPresExchError(
+                    "No field in constraints for "
+                    f"{'at least one of ' if isinstance(attrs, list) else ''}{attrs}"
+                )
+        return None
 
     def get_dict_keys_from_path(self, derived_cred_dict: dict, path: str) -> List:
         """Return additional_attrs to build nested_field_paths."""

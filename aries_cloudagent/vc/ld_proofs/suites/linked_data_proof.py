@@ -1,8 +1,7 @@
 """Abstract base class for linked data proofs."""
 
-
 from abc import ABC
-from typing import List, Union
+from typing import ClassVar, List, Optional, Union
 
 from pyld import jsonld
 from typing_extensions import TypedDict
@@ -25,15 +24,15 @@ class DeriveProofResult(TypedDict):
 class LinkedDataProof(ABC):
     """Base Linked data proof."""
 
+    signature_type: ClassVar[str]
+
     def __init__(
         self,
         *,
-        signature_type: str,
-        proof: dict = None,
-        supported_derive_proof_types: Union[List[str], None] = None,
+        proof: Optional[dict] = None,
+        supported_derive_proof_types: Optional[List[str]] = None,
     ):
         """Initialize new LinkedDataProof instance."""
-        self.signature_type = signature_type
         self.proof = proof
         self.supported_derive_proof_types = supported_derive_proof_types
 
@@ -90,7 +89,7 @@ class LinkedDataProof(ABC):
         document: dict,
         reveal_document: dict,
         document_loader: DocumentLoaderMethod,
-        nonce: bytes = None,
+        nonce: Optional[bytes] = None,
     ) -> DeriveProofResult:
         """Derive proof for document, returning derived document and proof.
 

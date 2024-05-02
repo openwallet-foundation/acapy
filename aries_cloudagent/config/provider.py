@@ -1,14 +1,12 @@
 """Service provider implementations."""
 
 import hashlib
-
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 from weakref import ReferenceType
 
 from ..utils.classloader import DeferLoad
 from ..utils.stats import Collector
-
-from .base import BaseProvider, BaseSettings, BaseInjector, InjectionError
+from .base import BaseInjector, BaseProvider, BaseSettings, InjectionError
 
 
 class InstanceProvider(BaseProvider):
@@ -44,7 +42,7 @@ class ClassProvider(BaseProvider):
         self,
         instance_cls: Union[str, type],
         *ctor_args,
-        init_method: str = None,
+        init_method: Optional[str] = None,
         **ctor_kwargs
     ):
         """Initialize the class provider."""
@@ -93,8 +91,7 @@ class CachedProvider(BaseProvider):
         self._unique_settings_keys = unique_settings_keys
 
     def provide(self, config: BaseSettings, injector: BaseInjector):
-        """
-        Provide the object instance given a config and injector.
+        """Provide the object instance given a config and injector.
 
         Instances are cached keyed on a SHA256 digest of the relevant subset
         of settings.

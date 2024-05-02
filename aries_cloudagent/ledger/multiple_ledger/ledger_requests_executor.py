@@ -1,4 +1,5 @@
 """Ledger Request Executor."""
+
 from typing import Optional, Tuple
 
 from ...config.base import InjectionError
@@ -61,3 +62,8 @@ class IndyLedgerRequestsExecutor:
             except (MultipleLedgerManagerError, InjectionError):
                 pass
         return (None, self.profile.inject_or(BaseLedger))
+
+    async def get_ledger_inst(self, ledger_id: str) -> Optional[BaseLedger]:
+        """Return ledger instance from ledger_id set in config."""
+        multiledger_mgr = self.profile.inject(BaseMultipleLedgerManager)
+        return await multiledger_mgr.get_ledger_inst_by_id(ledger_id=ledger_id)

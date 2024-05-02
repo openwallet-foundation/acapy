@@ -1,16 +1,15 @@
-"""
-A message decorator for threads.
+"""A message decorator for threads.
 
 A thread decorator identifies a message that may require additional
 context from previous messages.
 """
 
-from typing import Mapping
+from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import UUIDFour
+from ..valid import UUID4_EXAMPLE
 
 
 class ThreadDecorator(BaseModel):
@@ -24,13 +23,12 @@ class ThreadDecorator(BaseModel):
     def __init__(
         self,
         *,
-        thid: str = None,
-        pthid: str = None,
-        sender_order: int = None,
-        received_orders: Mapping = None,
+        thid: Optional[str] = None,
+        pthid: Optional[str] = None,
+        sender_order: Optional[int] = None,
+        received_orders: Optional[Mapping] = None,
     ):
-        """
-        Initialize a ThreadDecorator instance.
+        """Initialize a ThreadDecorator instance.
 
         Args:
             thid: The ID of the message that serves as the
@@ -55,8 +53,7 @@ class ThreadDecorator(BaseModel):
 
     @property
     def thid(self):
-        """
-        Accessor for thread identifier.
+        """Accessor for thread identifier.
 
         Returns:
             This thread's `thid`
@@ -66,8 +63,7 @@ class ThreadDecorator(BaseModel):
 
     @property
     def pthid(self):
-        """
-        Accessor for parent thread identifier.
+        """Accessor for parent thread identifier.
 
         Returns:
             This thread's `pthid`
@@ -77,8 +73,7 @@ class ThreadDecorator(BaseModel):
 
     @pthid.setter
     def pthid(self, val: str):
-        """
-        Setter for parent thread identifier.
+        """Setter for parent thread identifier.
 
         Args:
             val: The new pthid
@@ -87,8 +82,7 @@ class ThreadDecorator(BaseModel):
 
     @property
     def received_orders(self) -> dict:
-        """
-        Get received orders.
+        """Get received orders.
 
         Returns:
             The highest sender_order value that the sender has seen from other
@@ -99,8 +93,7 @@ class ThreadDecorator(BaseModel):
 
     @property
     def sender_order(self) -> int:
-        """
-        Get sender order.
+        """Get sender order.
 
         Returns:
             A number that tells where this message fits in the sequence of all
@@ -122,32 +115,39 @@ class ThreadDecoratorSchema(BaseModelSchema):
     thid = fields.Str(
         required=False,
         allow_none=True,
-        description="Thread identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     pthid = fields.Str(
         required=False,
         allow_none=True,
-        description="Parent thread identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={
+            "description": "Parent thread identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     sender_order = fields.Int(
         required=False,
         allow_none=True,
-        description="Ordinal of message among all from current sender in thread",
-        example=11,
-        strict=True,
+        metadata={
+            "description": "Ordinal of message among all from current sender in thread",
+            "example": 11,
+            "strict": True,
+        },
     )
     received_orders = fields.Dict(
-        keys=fields.Str(description="Sender key"),
+        keys=fields.Str(metadata={"description": "Sender key"}),
         values=fields.Int(
-            description="Highest sender_order value for sender",
-            example=3,
-            strict=True,
+            metadata={
+                "description": "Highest sender_order value for sender",
+                "example": 3,
+                "strict": True,
+            }
         ),
         required=False,
         allow_none=True,
-        description=(
-            "Highest sender_order value that sender has seen from others on thread"
-        ),
+        metadata={
+            "description": (
+                "Highest sender_order value that sender has seen from others on thread"
+            )
+        },
     )

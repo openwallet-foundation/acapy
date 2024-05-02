@@ -1,11 +1,11 @@
 """Represents the attached message to be included in the transaction record."""
 
+from typing import Optional
+
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ..message_types import ATTACHED_MESSAGE
-
 
 SCHEMA_TYPE = "101"
 PROTOCOL_VERSION = "2"
@@ -26,15 +26,14 @@ class MessagesAttach(AgentMessage):
         author_did: str = None,
         author_verkey: str = None,
         endorser_did: str = None,
-        transaction_message: dict = {},
+        transaction_message: Optional[dict] = None,
         transaction_type: str = None,
         mechanism: str = None,
         taaDigest: str = None,
         time: int = None,
         **kwargs
     ):
-        """
-        Initialize the attached message object.
+        """Initialize the attached message object.
 
         Args:
             author_did: The public did of the author who creates the transaction
@@ -48,6 +47,7 @@ class MessagesAttach(AgentMessage):
 
         super().__init__(**kwargs)
 
+        transaction_message = transaction_message or {}
         self.mime_type = "application/json"
 
         self.data = {
@@ -79,31 +79,37 @@ class MessagesAttachSchema(AgentMessageSchema):
         model_class = MessagesAttach
         unknown = EXCLUDE
 
-    mime_type = fields.Str(required=True, example="application/json")
+    mime_type = fields.Str(required=True, metadata={"example": "application/json"})
     data = fields.Dict(
         required=True,
-        example={
-            "json": {
-                "endorser": "V4SGRU86Z58d6TV7PBUe6f",
-                "identifier": "LjgpST2rjsoxYegQDRm7EL",
-                "operation": {
-                    "data": {
-                        "attr_names": ["first_name", "last_name"],
-                        "name": "test_schema",
-                        "version": "2.1",
+        metadata={
+            "example": {
+                "json": {
+                    "endorser": "V4SGRU86Z58d6TV7PBUe6f",
+                    "identifier": "LjgpST2rjsoxYegQDRm7EL",
+                    "operation": {
+                        "data": {
+                            "attr_names": ["first_name", "last_name"],
+                            "name": "test_schema",
+                            "version": "2.1",
+                        },
+                        "type": "101",
                     },
-                    "type": "101",
-                },
-                "protocolVersion": 2,
-                "reqId": 1597766666168851000,
-                "signatures": {
-                    "LjgpST2rjs": "4uq1mUATWKZArwyuPgjUEw5UBysWNbkf2SN6SqVwbfSqCfnbm1Vnfw"
-                },
-                "taaAcceptance": {
-                    "mechanism": "manual",
-                    "taaDigest": "f50feca7bd4202c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62",
-                    "time": 1597708800,
-                },
+                    "protocolVersion": 2,
+                    "reqId": 1597766666168851000,
+                    "signatures": {
+                        "LjgpST2rjs": (
+                            "4uq1mUATWKZArwyuPgjUEw5UBysWNbkf2SN6SqVwbfSqCfnbm1Vnfw"
+                        )
+                    },
+                    "taaAcceptance": {
+                        "mechanism": "manual",
+                        "taaDigest": (
+                            "f50feca7bd4202c2ab977006761d36bd6f23e4c6a7e0fc2feb9f62"
+                        ),
+                        "time": 1597708800,
+                    },
+                }
             }
         },
     )

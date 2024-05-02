@@ -13,8 +13,7 @@ class BasicMessageHandler(BaseHandler):
     """Message handler class for basic messages."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for basic messages.
+        """Message handler logic for basic messages.
 
         Args:
             context: request context

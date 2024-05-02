@@ -1,7 +1,7 @@
 """Ed25519Signature2018 suite."""
 
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 from ..crypto import _KeyPair as KeyPair
 
@@ -17,9 +17,9 @@ class Ed25519Signature2018(JwsLinkedDataSignature):
         self,
         *,
         key_pair: KeyPair,
-        proof: dict = None,
-        verification_method: str = None,
-        date: Union[datetime, str] = None,
+        proof: Optional[dict] = None,
+        verification_method: Optional[str] = None,
+        date: Union[datetime, str, None] = None,
     ):
         """Create new Ed25519Signature2018 instance.
 
@@ -32,7 +32,6 @@ class Ed25519Signature2018(JwsLinkedDataSignature):
             date (datetime, optional): Signing date to use.
         """
         super().__init__(
-            signature_type=Ed25519Signature2018.signature_type,
             algorithm="EdDSA",
             required_key_type="Ed25519VerificationKey2018",
             key_pair=key_pair,

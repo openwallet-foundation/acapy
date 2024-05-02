@@ -1,5 +1,6 @@
 import pytest
-from asynctest import mock as async_mock
+
+from aries_cloudagent.tests import mock
 
 from ......connections.models import connection_target
 from ......connections.models.diddoc import (
@@ -10,11 +11,8 @@ from ......connections.models.diddoc import (
 )
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-
 from ......protocols.trustping.v1_0.messages.ping import Ping
-
 from ......transport.inbound.receipt import MessageReceipt
-
 from ...handlers import connection_response_handler as handler
 from ...manager import ConnectionManagerError
 from ...messages.connection_response import ConnectionResponse
@@ -67,9 +65,9 @@ def did_doc():
 
 class TestResponseHandler:
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_called(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
         request_context.message = ConnectionResponse()
         handler_inst = handler.ConnectionResponseHandler()
         responder = MockResponder()
@@ -80,10 +78,10 @@ class TestResponseHandler:
         assert not responder.messages
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(handler, "ConnectionManager")
     async def test_called_auto_ping(self, mock_conn_mgr, request_context):
         request_context.update_settings({"auto_ping_connection": True})
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
         request_context.message = ConnectionResponse()
         handler_inst = handler.ConnectionResponseHandler()
         responder = MockResponder()
@@ -97,11 +95,25 @@ class TestResponseHandler:
         assert isinstance(result, Ping)
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
-    async def test_problem_report(self, mock_conn_mgr, request_context):
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
+    @mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(connection_target, "ConnectionTarget")
+    async def test_problem_report(
+        self, mock_conn_target, mock_conn_mgr, request_context
+    ):
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
-            error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED
+            error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value,
+        )
+        mock_conn_mgr.return_value.manager_error_to_problem_report = mock.MagicMock(
+            return_value=(
+                ConnectionProblemReport(
+                    description={
+                        "en": "test error",
+                        "code": ProblemReportReason.RESPONSE_NOT_ACCEPTED.value,
+                    }
+                ),
+                [mock_conn_target],
+            )
         )
         request_context.message = ConnectionResponse()
         handler_inst = handler.ConnectionResponseHandler()
@@ -112,50 +124,37 @@ class TestResponseHandler:
         result, target = messages[0]
         assert (
             isinstance(result, ConnectionProblemReport)
-            and result.problem_code == ProblemReportReason.RESPONSE_NOT_ACCEPTED
-        )
-        assert target == {"target_list": None}
-
-    @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
-    @async_mock.patch.object(connection_target, "ConnectionTarget")
-    async def test_problem_report_did_doc(
-        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
-    ):
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
-        mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
-            error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
-        )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
-            return_value=[mock_conn_target]
-        )
-        request_context.message = ConnectionResponse(
-            connection=ConnectionDetail(did=TEST_DID, did_doc=did_doc)
-        )
-        handler_inst = handler.ConnectionResponseHandler()
-        responder = MockResponder()
-        await handler_inst.handle(request_context, responder)
-        messages = responder.messages
-        assert len(messages) == 1
-        result, target = messages[0]
-        assert (
-            isinstance(result, ConnectionProblemReport)
-            and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
+            )
         )
         assert target == {"target_list": [mock_conn_target]}
 
     @pytest.mark.asyncio
-    @async_mock.patch.object(handler, "ConnectionManager")
-    @async_mock.patch.object(connection_target, "ConnectionTarget")
-    async def test_problem_report_did_doc_no_conn_target(
+    @mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(connection_target, "ConnectionTarget")
+    async def test_problem_report_did_doc(
         self, mock_conn_target, mock_conn_mgr, request_context, did_doc
     ):
-        mock_conn_mgr.return_value.accept_response = async_mock.CoroutineMock()
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
         mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
-            error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED
+            error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value,
         )
-        mock_conn_mgr.return_value.diddoc_connection_targets = async_mock.MagicMock(
-            side_effect=ConnectionManagerError("no target")
+        mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
+            return_value=[mock_conn_target]
+        )
+        mock_conn_mgr.return_value.manager_error_to_problem_report = mock.MagicMock(
+            return_value=(
+                ConnectionProblemReport(
+                    description={
+                        "en": "test error",
+                        "code": ProblemReportReason.RESPONSE_NOT_ACCEPTED.value,
+                    }
+                ),
+                [mock_conn_target],
+            )
         )
         request_context.message = ConnectionResponse(
             connection=ConnectionDetail(did=TEST_DID, did_doc=did_doc)
@@ -168,6 +167,43 @@ class TestResponseHandler:
         result, target = messages[0]
         assert (
             isinstance(result, ConnectionProblemReport)
-            and result.problem_code == ProblemReportReason.REQUEST_NOT_ACCEPTED
+            and result.description
+            and (
+                result.description["code"]
+                == ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
+            )
         )
-        assert target == {"target_list": None}
+        assert target == {"target_list": [mock_conn_target]}
+
+    @pytest.mark.asyncio
+    @mock.patch.object(handler, "ConnectionManager")
+    @mock.patch.object(connection_target, "ConnectionTarget")
+    async def test_problem_report_did_doc_no_conn_target(
+        self, mock_conn_target, mock_conn_mgr, request_context, did_doc
+    ):
+        mock_conn_mgr.return_value.accept_response = mock.CoroutineMock()
+        mock_conn_mgr.return_value.accept_response.side_effect = ConnectionManagerError(
+            error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value,
+        )
+        mock_conn_mgr.return_value.diddoc_connection_targets = mock.MagicMock(
+            side_effect=ConnectionManagerError("no target")
+        )
+        mock_conn_mgr.return_value.manager_error_to_problem_report = mock.MagicMock(
+            return_value=(
+                ConnectionProblemReport(
+                    description={
+                        "en": "test error",
+                        "code": ProblemReportReason.RESPONSE_NOT_ACCEPTED.value,
+                    }
+                ),
+                None,
+            )
+        )
+        request_context.message = ConnectionResponse(
+            connection=ConnectionDetail(did=TEST_DID, did_doc=did_doc)
+        )
+        handler_inst = handler.ConnectionResponseHandler()
+        responder = MockResponder()
+        await handler_inst.handle(request_context, responder)
+        messages = responder.messages
+        assert len(messages) == 0  # need a connection target to send message

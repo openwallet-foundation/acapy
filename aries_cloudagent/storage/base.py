@@ -27,8 +27,7 @@ class BaseStorage(ABC):
 
     @abstractmethod
     async def add_record(self, record: StorageRecord):
-        """
-        Add a new record to the store.
+        """Add a new record to the store.
 
         Args:
             record: `StorageRecord` to be stored
@@ -39,8 +38,7 @@ class BaseStorage(ABC):
     async def get_record(
         self, record_type: str, record_id: str, options: Mapping = None
     ) -> StorageRecord:
-        """
-        Fetch a record from the store by type and ID.
+        """Fetch a record from the store by type and ID.
 
         Args:
             record_type: The record type
@@ -54,8 +52,7 @@ class BaseStorage(ABC):
 
     @abstractmethod
     async def update_record(self, record: StorageRecord, value: str, tags: Mapping):
-        """
-        Update an existing stored record's value and tags.
+        """Update an existing stored record's value and tags.
 
         Args:
             record: `StorageRecord` to update
@@ -66,8 +63,7 @@ class BaseStorage(ABC):
 
     @abstractmethod
     async def delete_record(self, record: StorageRecord):
-        """
-        Delete an existing record.
+        """Delete an existing record.
 
         Args:
             record: `StorageRecord` to delete
@@ -77,8 +73,7 @@ class BaseStorage(ABC):
     async def find_record(
         self, type_filter: str, tag_query: Mapping = None, options: Mapping = None
     ) -> StorageRecord:
-        """
-        Find a record using a unique tag filter.
+        """Find a record using a unique tag filter.
 
         Args:
             type_filter: Filter string
@@ -123,8 +118,7 @@ class BaseStorageSearch(ABC):
         page_size: int = None,
         options: Mapping = None,
     ) -> "BaseStorageSearchSession":
-        """
-        Create a new record query.
+        """Create a new record query.
 
         Args:
             type_filter: Filter string
@@ -147,8 +141,7 @@ class BaseStorageSearchSession(ABC):
 
     @abstractmethod
     async def fetch(self, max_count: int = None) -> Sequence[StorageRecord]:
-        """
-        Fetch the next list of results from the store.
+        """Fetch the next list of results from the store.
 
         Args:
             max_count: Max number of records to return. If not provided,

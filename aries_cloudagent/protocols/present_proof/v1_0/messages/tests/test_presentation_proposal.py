@@ -4,7 +4,6 @@ from ......indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,
-    PRESENTATION_PREVIEW,
 )
 
 from .....didcomm_prefix import DIDCommPrefix

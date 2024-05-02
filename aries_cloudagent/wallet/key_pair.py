@@ -1,13 +1,13 @@
 """Key pair storage manager."""
 
 import json
-from typing import List, Mapping, Optional, Sequence
 import uuid
+from typing import List, Mapping, Optional, Sequence
 
 from ..storage.base import BaseStorage
 from ..storage.record import StorageRecord
-from .util import bytes_to_b58
 from .key_type import KeyType
+from .util import bytes_to_b58
 
 KEY_PAIR_STORAGE_TYPE = "key_pair"
 
@@ -28,8 +28,8 @@ class KeyPairStorageManager:
         public_key: bytes,
         secret_key: bytes,
         key_type: KeyType,
-        metadata: dict = {},
-        tags: dict = {},
+        metadata: Optional[dict] = None,
+        tags: Optional[dict] = None,
     ):
         """Store signing key pair in storage.
 
@@ -40,6 +40,8 @@ class KeyPairStorageManager:
             metadata (dict, optional): The metadata
             tags (dict, optional): The tags.
         """
+        metadata = metadata or {}
+        tags = tags or {}
         verkey = bytes_to_b58(public_key)
         data = {
             "verkey": verkey,
@@ -67,7 +69,7 @@ class KeyPairStorageManager:
             StorageDuplicateError: If more than one key pair is found for this verkey
             StorageNotFoundError: If no key pair is found for this verkey
 
-        Returns
+        Returns:
             dict: The key pair data
 
         """
@@ -88,8 +90,7 @@ class KeyPairStorageManager:
         return [json.loads(record.value) for record in records]
 
     async def delete_key_pair(self, verkey: str):
-        """
-        Remove a previously-stored key pair record.
+        """Remove a previously-stored key pair record.
 
         Raises:
             StorageNotFoundError: If the record is not found
@@ -101,8 +102,7 @@ class KeyPairStorageManager:
         await self._store.delete_record(record)
 
     async def update_key_pair_metadata(self, verkey: str, metadata: dict):
-        """
-        Update the metadata of a key pair record by verkey.
+        """Update the metadata of a key pair record by verkey.
 
         Raises:
             StorageNotFoundError: If the record is not found.

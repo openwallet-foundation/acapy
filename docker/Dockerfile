@@ -1,12 +1,12 @@
-ARG python_version=3.9.16
+ARG python_version=3.9.18
 FROM python:${python_version}-slim-bullseye AS build
 
 WORKDIR /src
 
 ADD . .
 
-RUN pip install setuptools wheel
-RUN python setup.py sdist bdist_wheel
+RUN pip install --no-cache-dir poetry
+RUN poetry build
 
 FROM python:${python_version}-slim-bullseye AS main
 
@@ -22,7 +22,7 @@ ENV HOME="/home/$user" \
     PIP_NO_CACHE_DIR=off \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    RUST_LOG=warning \
+    RUST_LOG=warn \
     SHELL=/bin/bash \
     SUMMARY="aries-cloudagent image" \
     DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \
@@ -59,7 +59,6 @@ RUN apt-get update -y && \
     net-tools \
     openssl \
     sqlite3 \
-    vim-tiny \
     zlib1g && \
     rm -rf /var/lib/apt/lists/* /usr/share/doc/*
 
@@ -78,12 +77,17 @@ RUN usermod -a -G 0 $user
 RUN mkdir -p \
     $HOME/.aries_cloudagent \
     $HOME/.cache/pip/http \
+    $HOME/.indy_client \
     $HOME/ledger/sandbox/data \
     $HOME/log
 
-# The root group needs access the directories under $HOME/.aries_cloudagent for the container to function in OpenShift.
-RUN chown -R $user:root $HOME/.aries_cloudagent && \
-    chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache
+# The root group needs access the directories under $HOME/.indy_client and $HOME/.aries_cloudagent for the container to function in OpenShift.
+RUN chown -R $user:root $HOME/.indy_client $HOME/.aries_cloudagent && \
+    chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache $HOME/.indy_client
+
+# Create /home/indy and symlink .indy_client folder for backwards compatibility with artifacts created on older indy-based images.
+RUN mkdir -p /home/indy
+RUN ln -s /home/aries/.indy_client /home/indy/.indy_client
 
 # Install ACA-py from the wheel as $user,
 # and ensure the permissions on the python 'site-packages' and $HOME/.local folders are set correctly.

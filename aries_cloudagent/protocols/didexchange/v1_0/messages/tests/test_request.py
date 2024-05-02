@@ -1,6 +1,6 @@
 from unittest import mock
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......core.in_memory import InMemoryProfile
@@ -18,6 +18,8 @@ class TestConfig:
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_label = "Label"
     test_endpoint = "http://localhost"
+    goal_code = "pytest"
+    goal = "pass pytest"
 
     def make_did_doc(self):
         doc = DIDDoc(did=self.test_did)
@@ -47,8 +49,8 @@ class TestConfig:
         return doc
 
 
-class TestDIDXRequest(AsyncTestCase, TestConfig):
-    async def setUp(self):
+class TestDIDXRequest(IsolatedAsyncioTestCase, TestConfig):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet
@@ -64,12 +66,16 @@ class TestDIDXRequest(AsyncTestCase, TestConfig):
             label=TestConfig.test_label,
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
+            goal_code=TestConfig.goal_code,
+            goal=TestConfig.goal,
         )
 
     def test_init(self):
         """Test initialization."""
         assert self.request.label == TestConfig.test_label
         assert self.request.did == TestConfig.test_did
+        assert self.request.goal_code == TestConfig.goal_code
+        assert self.request.goal == TestConfig.goal
 
     def test_type(self):
         """Test type."""
@@ -103,11 +109,24 @@ class TestDIDXRequest(AsyncTestCase, TestConfig):
 
         assert request_dict is mock_request_schema_dump.return_value
 
+    def test_method_other_than_indy(self):
+        """Test method other than indy."""
+        request = DIDXRequest(
+            label=TestConfig.test_label,
+            did="did:web:example.com:alice",
+            did_doc_attach=None,
+            goal_code=TestConfig.goal_code,
+            goal=TestConfig.goal,
+        )
+        request_dict = request.serialize()
+        new_request = DIDXRequest.deserialize(request_dict)
+        assert request.serialize() == new_request.serialize()
 
-class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
+
+class TestDIDXRequestSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test request schema."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet
@@ -123,6 +142,8 @@ class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
             label=TestConfig.test_label,
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
+            goal_code="pytest",
+            goal="pass pytest",
         )
 
     async def test_make_model(self):

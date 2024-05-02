@@ -3,13 +3,11 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import UUIDFour
-
+from .....messaging.valid import UUID4_EXAMPLE
 from ..message_types import CANCEL_TRANSACTION, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".transaction_cancel_handler.TransactionCancelHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.transaction_cancel_handler.TransactionCancelHandler"
 )
 
 
@@ -30,8 +28,7 @@ class CancelTransaction(AgentMessage):
         thread_id: str = None,
         **kwargs,
     ):
-        """
-        Initialize a cancel transaction object.
+        """Initialize a cancel transaction object.
 
         Args:
             state: State of the transaction record
@@ -54,7 +51,9 @@ class CancelTransactionSchema(AgentMessageSchema):
 
     state = fields.Str(
         required=False,
-        description="The State of the transaction Record",
-        example="cancelled",
+        metadata={
+            "description": "The State of the transaction Record",
+            "example": "cancelled",
+        },
     )
-    thread_id = fields.Str(required=False, example=UUIDFour.EXAMPLE)
+    thread_id = fields.Str(required=False, metadata={"example": UUID4_EXAMPLE})

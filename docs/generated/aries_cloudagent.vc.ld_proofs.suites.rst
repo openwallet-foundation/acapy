@@ -41,6 +41,14 @@ aries\_cloudagent.vc.ld\_proofs.suites.ed25519\_signature\_2018 module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.vc.ld\_proofs.suites.ed25519\_signature\_2020 module
+----------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.ld_proofs.suites.ed25519_signature_2020
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.vc.ld\_proofs.suites.jws\_linked\_data\_signature module
 --------------------------------------------------------------------------
 

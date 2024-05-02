@@ -58,6 +58,7 @@ test-reports/
 
 # Django stuff:
 *.log
+*.lock
 local_settings.py
 db.sqlite3
 
@@ -154,6 +155,7 @@ Temporary Items
 ###
 
 .idea/*
+**/.idea/*
 
 ###
 ### Windows
@@ -189,3 +191,6 @@ _build/
 
 # Open API build
 open-api/.build
+
+# devcontainer
+.pytest.ini

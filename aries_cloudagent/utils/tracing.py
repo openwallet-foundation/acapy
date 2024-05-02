@@ -1,41 +1,42 @@
 """Event tracing."""
 
+import datetime
 import json
 import logging
 import time
-import datetime
+
 import requests
 
 from marshmallow import fields
 
-from ..transport.inbound.message import InboundMessage
-from ..transport.outbound.message import OutboundMessage
 from ..messaging.agent_message import AgentMessage
 from ..messaging.decorators.trace_decorator import (
-    TraceReport,
-    TRACE_MESSAGE_TARGET,
     TRACE_LOG_TARGET,
+    TRACE_MESSAGE_TARGET,
+    TraceReport,
 )
 from ..messaging.models.base_record import BaseExchangeRecord
 from ..messaging.models.openapi import OpenAPISchema
-
+from ..transport.inbound.message import InboundMessage
+from ..transport.outbound.message import OutboundMessage
 
 LOGGER = logging.getLogger(__name__)
 DT_FMT = "%Y-%m-%d %H:%M:%S.%f%z"
 
 
 class AdminAPIMessageTracingSchema(OpenAPISchema):
-    """
-    Request/result schema including agent message tracing.
+    """Request/result schema including agent message tracing.
 
     This is to be used as a superclass for aca-py admin input/output
     messages that need to support tracing.
     """
 
     trace = fields.Boolean(
-        description="Record trace information, based on agent configuration",
         required=False,
-        default=False,
+        dump_default=False,
+        metadata={
+            "description": "Record trace information, based on agent configuration"
+        },
     )
 
 
@@ -46,7 +47,7 @@ def get_timer() -> float:
 
 def tracing_enabled(context, message) -> bool:
     """Determine whether to log trace messages or not."""
-    # check if tracing is explicitely on
+    # check if tracing is explicitly on
     if context.get("trace.enabled"):
         return True
 
@@ -117,8 +118,7 @@ def trace_event(
     force_trace: bool = False,
     raise_errors: bool = False,
 ) -> float:
-    """
-    Log a trace event to a configured target.
+    """Log a trace event to a configured target.
 
     Args:
         context: The application context, attributes of interest are:
@@ -196,7 +196,7 @@ def trace_event(
             "timestamp": ep_time,
             "str_time": str_time,
             "handler": str(handler),
-            "ellapsed_milli": int(1000 * (ret - perf_counter)) if perf_counter else 0,
+            "elapsed_milli": int(1000 * (ret - perf_counter)) if perf_counter else 0,
             "outcome": str(outcome),
         }
         event_str = json.dumps(event)
@@ -214,7 +214,7 @@ def trace_event(
                     timestamp=event["timestamp"],
                     str_time=event["str_time"],
                     handler=event["handler"],
-                    ellapsed_milli=event["ellapsed_milli"],
+                    elapsed_milli=event["elapsed_milli"],
                     outcome=event["outcome"],
                 )
                 message.add_trace_report(trace_report)

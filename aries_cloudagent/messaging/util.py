@@ -1,20 +1,19 @@
 """Utils for messages."""
 
-
 import logging
 import re
 
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from math import floor
-from typing import Any, Union
+from typing import Any, Dict, List, Union
 
 
 LOGGER = logging.getLogger(__name__)
 I32_BOUND = 2**31
 
 
-def datetime_to_str(dt: Union[str, datetime]) -> str:
+def datetime_to_str(dt: Union[str, datetime, None]) -> Union[str, None]:
     """Convert a datetime object to an indy-standard datetime string.
 
     Args:
@@ -95,7 +94,7 @@ def epoch_to_str(epoch: int) -> str:
 
 def datetime_now() -> datetime:
     """Timestamp in UTC."""
-    return datetime.utcnow().replace(tzinfo=timezone.utc)
+    return datetime.now(tz=timezone.utc)
 
 
 def time_now() -> str:
@@ -104,8 +103,7 @@ def time_now() -> str:
 
 
 def encode(orig: Any) -> str:
-    """
-    Encode a credential value as an int.
+    """Encode a credential value as an int.
 
     Encode credential attribute value, purely stringifying any int32
     and leaving numeric int32 strings alone, but mapping any other
@@ -137,8 +135,7 @@ def encode(orig: Any) -> str:
 
 
 def canon(raw_attr_name: str) -> str:
-    """
-    Canonicalize input attribute name for indy proofs and credential offers.
+    """Canonicalize input attribute name for indy proofs and credential offers.
 
     Args:
         raw_attr_name: raw attribute name
@@ -150,3 +147,17 @@ def canon(raw_attr_name: str) -> str:
     if raw_attr_name:  # do not dereference None, and "" is already canonical
         return raw_attr_name.replace(" ", "").lower()
     return raw_attr_name
+
+
+def get_proto_default_version(
+    versions: List[Dict[str, Any]], major_version: int = 1
+) -> str:
+    """Return default protocol version from version definition list."""
+
+    for version in versions:
+        if major_version == version["major_version"]:
+            default_major_version = version["major_version"]
+            default_minor_version = version["current_minor_version"]
+            return f"{default_major_version}.{default_minor_version}"
+
+    return "1.0"

@@ -1,13 +1,26 @@
 """Proof verification and validation result classes."""
 
-from typing import List
+from typing import Any, List, Optional
+
+from marshmallow import fields
+
+from ...messaging.models.base import BaseModel, BaseModelSchema
 
 
-class PurposeResult:
+class PurposeResult(BaseModel):
     """Proof purpose result class."""
 
+    class Meta:
+        """PurposeResult metadata."""
+
+        schema_class = "PurposeResultSchema"
+
     def __init__(
-        self, *, valid: bool, error: Exception = None, controller: dict = None
+        self,
+        *,
+        valid: bool,
+        error: Optional[str] = None,
+        controller: Optional[Any] = None,
     ) -> None:
         """Create new PurposeResult instance."""
         self.valid = valid
@@ -15,8 +28,7 @@ class PurposeResult:
         self.controller = controller
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -36,16 +48,34 @@ class PurposeResult:
         return False
 
 
-class ProofResult:
+class PurposeResultSchema(BaseModelSchema):
+    """Proof purpose result schema."""
+
+    class Meta:
+        """PurposeResultSchema metadata."""
+
+        model_class = PurposeResult
+
+    valid = fields.Boolean()
+    error = fields.Str()
+    controller = fields.Dict()
+
+
+class ProofResult(BaseModel):
     """Proof result class."""
+
+    class Meta:
+        """ProofResult metadata."""
+
+        schema_class = "ProofResultSchema"
 
     def __init__(
         self,
         *,
         verified: bool,
-        proof: dict = None,
-        error: Exception = None,
-        purpose_result: PurposeResult = None,
+        proof: Optional[dict] = None,
+        error: Optional[str] = None,
+        purpose_result: Optional[PurposeResult] = None,
     ) -> None:
         """Create new ProofResult instance."""
         self.verified = verified
@@ -54,8 +84,7 @@ class ProofResult:
         self.purpose_result = purpose_result
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -76,16 +105,35 @@ class ProofResult:
         return False
 
 
-class DocumentVerificationResult:
+class ProofResultSchema(BaseModelSchema):
+    """Proof result schema."""
+
+    class Meta:
+        """ProofResultSchema metadata."""
+
+        model_class = ProofResult
+
+    verified = fields.Boolean()
+    proof = fields.Dict()
+    error = fields.Str()
+    purpose_result = fields.Nested(PurposeResultSchema)
+
+
+class DocumentVerificationResult(BaseModel):
     """Domain verification result class."""
+
+    class Meta:
+        """DocumentVerificationResult metadata."""
+
+        schema_class = "DocumentVerificationResultSchema"
 
     def __init__(
         self,
         *,
         verified: bool,
-        document: dict = None,
-        results: List[ProofResult] = None,
-        errors: List[Exception] = None,
+        document: Optional[dict] = None,
+        results: Optional[List[ProofResult]] = None,
+        errors: Optional[List[str]] = None,
     ) -> None:
         """Create new DocumentVerificationResult instance."""
         self.verified = verified
@@ -94,8 +142,7 @@ class DocumentVerificationResult:
         self.errors = errors
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -144,3 +191,17 @@ class DocumentVerificationResult:
                 )
             )
         return False
+
+
+class DocumentVerificationResultSchema(BaseModelSchema):
+    """Document verification result schema."""
+
+    class Meta:
+        """DocumentVerificationResultSchema metadata."""
+
+        model_class = DocumentVerificationResult
+
+    verified = fields.Boolean(required=True)
+    document = fields.Dict(required=False)
+    results = fields.Nested(ProofResultSchema, many=True)
+    errors = fields.List(fields.Str(), required=False)

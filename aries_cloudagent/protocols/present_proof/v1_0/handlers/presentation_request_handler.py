@@ -23,8 +23,7 @@ class PresentationRequestHandler(BaseHandler):
     """Message handler class for Aries#0037 v1.0 presentation requests."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for Aries#0037 v1.0 presentation requests.
+        """Message handler logic for Aries#0037 v1.0 presentation requests.
 
         Args:
             context: request context
@@ -70,15 +69,15 @@ class PresentationRequestHandler(BaseHandler):
         # or create it (verifier sent request first)
         try:
             async with profile.session() as session:
-                (
-                    presentation_exchange_record
-                ) = await V10PresentationExchange.retrieve_by_tag_filter(
-                    session,
-                    {"thread_id": context.message._thread_id},
-                    {
-                        "role": V10PresentationExchange.ROLE_PROVER,
-                        "connection_id": connection_id,
-                    },
+                (presentation_exchange_record) = (
+                    await V10PresentationExchange.retrieve_by_tag_filter(
+                        session,
+                        {"thread_id": context.message._thread_id},
+                        {
+                            "role": V10PresentationExchange.ROLE_PROVER,
+                            "connection_id": connection_id,
+                        },
+                    )
                 )  # holder initiated via proposal
                 presentation_exchange_record.presentation_request = indy_proof_request
                 presentation_exchange_record.presentation_request_dict = (
@@ -96,6 +95,7 @@ class PresentationRequestHandler(BaseHandler):
                     "debug.auto_respond_presentation_request"
                 ),
                 trace=(context.message._trace is not None),
+                auto_remove=not profile.settings.get("preserve_exchange_records"),
             )
 
         presentation_exchange_record = await presentation_manager.receive_request(

@@ -1,5 +1,6 @@
 """Presentation request message handler."""
 
+from .....anoncreds.holder import AnonCredsHolderError
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....ledger.error import LedgerError
@@ -23,8 +24,7 @@ class V20PresRequestHandler(BaseHandler):
     """Message handler class for v2.0 presentation requests."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for v2.0 presentation requests.
+        """Message handler logic for v2.0 presentation requests.
 
         Args:
             context: request context
@@ -89,6 +89,7 @@ class V20PresRequestHandler(BaseHandler):
                     "debug.auto_respond_presentation_request"
                 ),
                 trace=(context.message._trace is not None),
+                auto_remove=not profile.settings.get("preserve_exchange_records"),
             )
 
         pres_ex_record = await pres_manager.receive_pres_request(
@@ -116,6 +117,7 @@ class V20PresRequestHandler(BaseHandler):
                 await responder.send_reply(pres_message)
             except (
                 BaseModelError,
+                AnonCredsHolderError,
                 IndyHolderError,
                 LedgerError,
                 StorageError,

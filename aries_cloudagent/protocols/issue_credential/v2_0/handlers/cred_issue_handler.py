@@ -1,6 +1,7 @@
 """Credential issue message handler."""
 
 from .....core.oob_processor import OobMessageProcessor
+from .....anoncreds.holder import AnonCredsHolderError
 from .....indy.holder import IndyHolderError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -19,8 +20,7 @@ class V20CredIssueHandler(BaseHandler):
     """Message handler class for credential offers."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for credential offers.
+        """Message handler logic for credential offers.
 
         Args:
             context: request context
@@ -53,9 +53,11 @@ class V20CredIssueHandler(BaseHandler):
         cred_manager = V20CredManager(context.profile)
         cred_ex_record = await cred_manager.receive_credential(
             context.message,
-            context.connection_record.connection_id
-            if context.connection_record
-            else None,
+            (
+                context.connection_record.connection_id
+                if context.connection_record
+                else None
+            ),
         )  # mgr only finds, saves record: on exception, saving null state is hopeless
 
         r_time = trace_event(
@@ -71,6 +73,7 @@ class V20CredIssueHandler(BaseHandler):
                 cred_ex_record = await cred_manager.store_credential(cred_ex_record)
             except (
                 BaseModelError,
+                AnonCredsHolderError,
                 IndyHolderError,
                 StorageError,
                 V20CredManagerError,

@@ -1,9 +1,9 @@
 """Manager for multitenancy."""
 
-from abc import ABC, abstractmethod
-from datetime import datetime
 import logging
-from typing import Iterable, List, Optional, cast
+from abc import ABC, abstractmethod
+from datetime import datetime, timezone
+from typing import Iterable, List, Optional, Tuple, cast
 
 import jwt
 
@@ -60,8 +60,7 @@ class BaseMultitenantManager(ABC):
     async def _wallet_name_exists(
         self, session: ProfileSession, wallet_name: str
     ) -> bool:
-        """
-        Check whether wallet with specified wallet name already exists.
+        """Check whether wallet with specified wallet name already exists.
 
         Besides checking for wallet records, it will also check if the base wallet
 
@@ -127,7 +126,7 @@ class BaseMultitenantManager(ABC):
         self,
         base_context: InjectionContext,
         wallet_record: WalletRecord,
-        extra_settings: dict = {},
+        extra_settings: Optional[dict] = None,
         *,
         provision=False,
     ) -> Profile:
@@ -182,6 +181,7 @@ class BaseMultitenantManager(ABC):
             )
 
             await wallet_record.save(session)
+
         try:
             # provision wallet
             profile = await self.get_wallet_profile(
@@ -199,11 +199,12 @@ class BaseMultitenantManager(ABC):
                 public_did_info = await wallet.get_public_did()
 
             if public_did_info:
-                await profile.inject(RouteManager).route_public_did(
+                await profile.inject(RouteManager).route_verkey(
                     profile, public_did_info.verkey
                 )
         except Exception:
-            await wallet_record.delete_record(session)
+            async with self._profile.session() as session:
+                await wallet_record.delete_record(session)
             raise
 
         return wallet_record
@@ -298,7 +299,7 @@ class BaseMultitenantManager(ABC):
             str: JWT auth token
 
         """
-        iat = int(round(datetime.utcnow().timestamp()))
+        iat = int(round(datetime.now(tz=timezone.utc).timestamp()))
 
         jwt_payload = {"wallet_id": wallet_record.wallet_id, "iat": iat}
         jwt_secret = self._profile.settings.get("multitenant.jwt_secret")
@@ -317,6 +318,28 @@ class BaseMultitenantManager(ABC):
             await wallet_record.save(session)
 
         return token
+
+    def get_wallet_details_from_token(self, token: str) -> Tuple[str, str]:
+        """Get the wallet_id and wallet_key from provided token."""
+        jwt_secret = self._profile.context.settings.get("multitenant.jwt_secret")
+        token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"], leeway=1)
+        wallet_id = token_body.get("wallet_id")
+        wallet_key = token_body.get("wallet_key")
+        return wallet_id, wallet_key
+
+    async def get_wallet_and_profile(
+        self, context: InjectionContext, wallet_id: str, wallet_key: str
+    ) -> Tuple[WalletRecord, Profile]:
+        """Get the wallet_record and profile associated with wallet id and key."""
+        extra_settings = {}
+        async with self._profile.session() as session:
+            wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
+        if wallet.requires_external_key:
+            if not wallet_key:
+                raise WalletKeyMissingError()
+            extra_settings["wallet.key"] = wallet_key
+        profile = await self.get_wallet_profile(context, wallet, extra_settings)
+        return (wallet, profile)
 
     async def get_profile_for_token(
         self, context: InjectionContext, token: str
@@ -338,7 +361,7 @@ class BaseMultitenantManager(ABC):
         jwt_secret = self._profile.context.settings.get("multitenant.jwt_secret")
         extra_settings = {}
 
-        token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"])
+        token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"], leeway=1)
 
         wallet_id = token_body.get("wallet_id")
         wallet_key = token_body.get("wallet_key")

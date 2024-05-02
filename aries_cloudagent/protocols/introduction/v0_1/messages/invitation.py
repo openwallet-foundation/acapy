@@ -3,14 +3,11 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
 from ....connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
     ConnectionInvitationSchema,
 )
-
 from ..message_types import INVITATION, PROTOCOL_PACKAGE
-
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.invitation_handler.InvitationHandler"
 
@@ -28,8 +25,7 @@ class Invitation(AgentMessage):
     def __init__(
         self, *, invitation: ConnectionInvitation = None, message: str = None, **kwargs
     ):
-        """
-        Initialize invitation object.
+        """Initialize invitation object.
 
         Args:
             invitation: The connection invitation
@@ -52,7 +48,9 @@ class InvitationSchema(AgentMessageSchema):
     invitation = fields.Nested(ConnectionInvitationSchema(), required=True)
     message = fields.Str(
         required=False,
-        description="Comments on the introduction",
-        example="Hello Bob, it's Charlie as Alice mentioned",
         allow_none=True,
+        metadata={
+            "description": "Comments on the introduction",
+            "example": "Hello Bob, it's Charlie as Alice mentioned",
+        },
     )

@@ -14,6 +14,7 @@ Subpackages
 
    aries_cloudagent.vc.ld_proofs.crypto
    aries_cloudagent.vc.ld_proofs.purposes
+   aries_cloudagent.vc.ld_proofs.resources
    aries_cloudagent.vc.ld_proofs.suites
 
 Submodules
@@ -31,6 +32,14 @@ aries\_cloudagent.vc.ld\_proofs.constants module
 ------------------------------------------------
 
 .. automodule:: aries_cloudagent.vc.ld_proofs.constants
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.vc.ld\_proofs.document\_downloader module
+-----------------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.ld_proofs.document_downloader
    :members:
    :undoc-members:
    :show-inheritance:

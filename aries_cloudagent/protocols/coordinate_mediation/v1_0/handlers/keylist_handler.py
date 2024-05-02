@@ -1,4 +1,5 @@
 """Handler for keylist message."""
+
 import logging
 
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -32,11 +33,11 @@ class KeylistHandler(BaseHandler):
                     session, context.connection_record.connection_id
                 )
         except StorageNotFoundError as err:
-            LOG.warning(
+            self._logger.warning(
                 "Received keylist from connection that is not acting as mediator: %s",
                 err,
             )
             return
 
         # TODO verify our keylist matches?
-        LOG.info("Keylist received: %s", context.message)
+        self._logger.info("Keylist received: %s", context.message)

@@ -32,7 +32,7 @@ exec aca-py start \
     --auto-ping-connection \
     --monitor-ping \
     --public-invites \
-    --wallet-type "indy" \
+    --wallet-type "askar" \
     --wallet-name "test_author" \
     --wallet-key "secret_key" \
     --wallet-storage-type "postgres_storage" \

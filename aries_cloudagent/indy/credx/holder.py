@@ -5,16 +5,15 @@ import json
 import logging
 import re
 import uuid
-
-from typing import Dict, Sequence, Tuple, Union
+from typing import Dict, Optional, Sequence, Tuple, Union
 
 from aries_askar import AskarError, AskarErrorCode
 from indy_credx import (
-    CredxError,
     Credential,
     CredentialRequest,
     CredentialRevocationState,
-    MasterSecret,
+    CredxError,
+    LinkSecret,
     Presentation,
     PresentCredentials,
 )
@@ -22,13 +21,12 @@ from indy_credx import (
 from ...askar.profile import AskarProfile
 from ...ledger.base import BaseLedger
 from ...wallet.error import WalletNotFoundError
-
 from ..holder import IndyHolder, IndyHolderError
 
 LOGGER = logging.getLogger(__name__)
 
 CATEGORY_CREDENTIAL = "credential"
-CATEGORY_MASTER_SECRET = "master_secret"
+CATEGORY_LINK_SECRET = "master_secret"
 
 
 def _make_cred_info(cred_id, cred: Credential):
@@ -51,11 +49,10 @@ def _normalize_attr_name(name: str) -> str:
 class IndyCredxHolder(IndyHolder):
     """Indy-credx holder class."""
 
-    MASTER_SECRET_ID = "default"
+    LINK_SECRET_ID = "default"
 
     def __init__(self, profile: AskarProfile):
-        """
-        Initialize an IndyCredxHolder instance.
+        """Initialize an IndyCredxHolder instance.
 
         Args:
             profile: The active profile instance
@@ -68,37 +65,37 @@ class IndyCredxHolder(IndyHolder):
         """Accessor for the profile instance."""
         return self._profile
 
-    async def get_master_secret(self) -> MasterSecret:
-        """Get or create the default master secret."""
+    async def get_link_secret(self) -> LinkSecret:
+        """Get or create the default link secret."""
 
         while True:
             async with self._profile.session() as session:
                 try:
                     record = await session.handle.fetch(
-                        CATEGORY_MASTER_SECRET, IndyCredxHolder.MASTER_SECRET_ID
+                        CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
                     )
                 except AskarError as err:
-                    raise IndyHolderError("Error fetching master secret") from err
+                    raise IndyHolderError("Error fetching link secret") from err
                 if record:
                     try:
-                        secret = MasterSecret.load(record.raw_value)
+                        secret = LinkSecret.load(record.raw_value)
                     except CredxError as err:
-                        raise IndyHolderError("Error loading master secret") from err
+                        raise IndyHolderError("Error loading link secret") from err
                     break
                 else:
                     try:
-                        secret = MasterSecret.create()
+                        secret = LinkSecret.create()
                     except CredxError as err:
-                        raise IndyHolderError("Error creating master secret") from err
+                        raise IndyHolderError("Error creating link secret") from err
                     try:
                         await session.handle.insert(
-                            CATEGORY_MASTER_SECRET,
-                            IndyCredxHolder.MASTER_SECRET_ID,
+                            CATEGORY_LINK_SECRET,
+                            IndyCredxHolder.LINK_SECRET_ID,
                             secret.to_json_buffer(),
                         )
                     except AskarError as err:
                         if err.code != AskarErrorCode.DUPLICATE:
-                            raise IndyHolderError("Error saving master secret") from err
+                            raise IndyHolderError("Error saving link secret") from err
                         # else: lost race to create record, retry
                     else:
                         break
@@ -107,8 +104,7 @@ class IndyCredxHolder(IndyHolder):
     async def create_credential_request(
         self, credential_offer: dict, credential_definition: dict, holder_did: str
     ) -> Tuple[str, str]:
-        """
-        Create a credential request for the given credential offer.
+        """Create a credential request for the given credential offer.
 
         Args:
             credential_offer: The credential offer to create request for
@@ -120,7 +116,7 @@ class IndyCredxHolder(IndyHolder):
 
         """
         try:
-            secret = await self.get_master_secret()
+            secret = await self.get_link_secret()
             (
                 cred_req,
                 cred_req_metadata,
@@ -130,7 +126,7 @@ class IndyCredxHolder(IndyHolder):
                 holder_did,
                 credential_definition,
                 secret,
-                IndyCredxHolder.MASTER_SECRET_ID,
+                IndyCredxHolder.LINK_SECRET_ID,
                 credential_offer,
             )
         except CredxError as err:
@@ -158,8 +154,7 @@ class IndyCredxHolder(IndyHolder):
         credential_id: str = None,
         rev_reg_def: dict = None,
     ) -> str:
-        """
-        Store a credential in the wallet.
+        """Store a credential in the wallet.
 
         Args:
             credential_definition: Credential definition for this credential
@@ -176,7 +171,7 @@ class IndyCredxHolder(IndyHolder):
 
         """
         try:
-            secret = await self.get_master_secret()
+            secret = await self.get_link_secret()
             cred = Credential.load(credential_data)
             cred_recvd = await asyncio.get_event_loop().run_in_executor(
                 None,
@@ -242,8 +237,7 @@ class IndyCredxHolder(IndyHolder):
         return credential_id
 
     async def get_credentials(self, start: int, count: int, wql: dict):
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             start: Starting index
@@ -278,10 +272,9 @@ class IndyCredxHolder(IndyHolder):
         referents: Sequence[str],
         start: int,
         count: int,
-        extra_query: dict = {},
+        extra_query: Optional[dict] = None,
     ):
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             presentation_request: Valid presentation request from issuer
@@ -291,7 +284,7 @@ class IndyCredxHolder(IndyHolder):
             extra_query: wql query dict
 
         """
-
+        extra_query = extra_query or {}
         if not referents:
             referents = (
                 *presentation_request["requested_attributes"],
@@ -320,7 +313,7 @@ class IndyCredxHolder(IndyHolder):
             else:
                 raise IndyHolderError(f"Unknown presentation request referent: {reft}")
 
-            tag_filter = {"$exist": list(f"attr::{name}::value" for name in names)}
+            tag_filter = {"$exist": [f"attr::{name}::value" for name in names]}
             if restr:
                 # FIXME check if restr is a list or dict? validate WQL format
                 tag_filter = {"$and": [tag_filter] + restr}
@@ -353,8 +346,7 @@ class IndyCredxHolder(IndyHolder):
         return list(creds.values())
 
     async def get_credential(self, credential_id: str) -> str:
-        """
-        Get a credential stored in the wallet.
+        """Get a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to retrieve
@@ -384,8 +376,7 @@ class IndyCredxHolder(IndyHolder):
     async def credential_revoked(
         self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
     ) -> bool:
-        """
-        Check ledger for revocation status of credential by cred id.
+        """Check ledger for revocation status of credential by cred id.
 
         Args:
             credential_id: Credential id to check
@@ -406,8 +397,7 @@ class IndyCredxHolder(IndyHolder):
             return False
 
     async def delete_credential(self, credential_id: str):
-        """
-        Remove a credential stored in the wallet.
+        """Remove a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to remove
@@ -428,8 +418,7 @@ class IndyCredxHolder(IndyHolder):
     async def get_mime_type(
         self, credential_id: str, attr: str = None
     ) -> Union[dict, str]:
-        """
-        Get MIME type per attribute (or for all attributes).
+        """Get MIME type per attribute (or for all attributes).
 
         Args:
             credential_id: credential id
@@ -459,8 +448,7 @@ class IndyCredxHolder(IndyHolder):
         credential_definitions: dict,
         rev_states: dict = None,
     ) -> str:
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             presentation_request: Valid indy format presentation request
@@ -523,7 +511,7 @@ class IndyCredxHolder(IndyHolder):
             )
 
         try:
-            secret = await self.get_master_secret()
+            secret = await self.get_link_secret()
             presentation = await asyncio.get_event_loop().run_in_executor(
                 None,
                 Presentation.create,
@@ -547,8 +535,7 @@ class IndyCredxHolder(IndyHolder):
         timestamp: int,
         tails_file_path: str,
     ) -> str:
-        """
-        Create current revocation state for a received credential.
+        """Create current revocation state for a received credential.
 
         Args:
             cred_rev_id: credential revocation id in revocation registry

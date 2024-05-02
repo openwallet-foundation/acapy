@@ -6,25 +6,26 @@ import os
 import random
 import sys
 import time
+from typing import List
+
 import yaml
-
-from qrcode import QRCode
-
 from aiohttp import ClientError
+from qrcode import QRCode
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from runners.support.agent import (  # noqa:E402
-    DemoAgent,
-    default_genesis_txns,
-    start_mediator_agent,
-    connect_wallet_to_mediator,
-    start_endorser_agent,
-    connect_wallet_to_endorser,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
     DID_METHOD_KEY,
     KEY_TYPE_BLS,
+    WALLET_TYPE_INDY,
+    DemoAgent,
+    connect_wallet_to_endorser,
+    connect_wallet_to_mediator,
+    default_genesis_txns,
+    start_endorser_agent,
+    start_mediator_agent,
 )
 from runners.support.utils import (  # noqa:E402
     check_requires,
@@ -33,7 +34,6 @@ from runners.support.utils import (  # noqa:E402
     log_status,
     log_timer,
 )
-
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
@@ -55,8 +55,29 @@ class AriesAgent(DemoAgent):
         aip: int = 20,
         endorser_role: str = None,
         revocation: bool = False,
+        anoncreds_legacy_revocation: str = None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
+        reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
+        extra_args: List[str] = [],
         **kwargs,
     ):
+        extra_args = extra_args or []
+        if not no_auto:
+            extra_args.extend(
+                (
+                    "--auto-accept-invites",
+                    "--auto-accept-requests",
+                    "--auto-store-credential",
+                )
+            )
+        if anoncreds_legacy_revocation:
+            extra_args.append(
+                f"--anoncreds-legacy-revocation={anoncreds_legacy_revocation}"
+            )
         super().__init__(
             ident,
             http_port,
@@ -66,15 +87,13 @@ class AriesAgent(DemoAgent):
             aip=aip,
             endorser_role=endorser_role,
             revocation=revocation,
-            extra_args=(
-                []
-                if no_auto
-                else [
-                    "--auto-accept-invites",
-                    "--auto-accept-requests",
-                    "--auto-store-credential",
-                ]
-            ),
+            extra_args=extra_args,
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
+            reuse_connections=reuse_connections,
+            multi_use_invitations=multi_use_invitations,
+            public_did_connections=public_did_connections,
             **kwargs,
         )
         self.connection_id = None
@@ -93,19 +112,20 @@ class AriesAgent(DemoAgent):
         return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_oob_invitation(self, message):
-        print("handle_oob_invitation()")
         pass
 
     async def handle_out_of_band(self, message):
-        print("handle_out_of_band()")
         pass
 
     async def handle_connection_reuse(self, message):
         # we are reusing an existing connection, set our status to the existing connection
-        if not self._connection_ready.done():
-            self.connection_id = message["connection_id"]
-            self.log("Connected")
-            self._connection_ready.set_result(True)
+        if self._connection_ready is not None:
+            if not self._connection_ready.done():
+                self.connection_id = message["connection_id"]
+                self.log("Connected")
+                self._connection_ready.set_result(True)
+        else:
+            self.log("Connected on existing connection")
 
     async def handle_connection_reuse_accepted(self, message):
         # we are reusing an existing connection, set our status to the existing connection
@@ -129,9 +149,16 @@ class AriesAgent(DemoAgent):
         if (not self.connection_id) and message["rfc23_state"] == "invitation-received":
             self.connection_id = conn_id
 
-        if conn_id == self.connection_id:
+        if (
+            conn_id == self.connection_id
+            or self.reuse_connections
+            or self.multi_use_invitations
+        ):
             # inviter or invitee:
-            if message["rfc23_state"] in ["completed", "response-sent"]:
+            if message["state"] == "deleted":
+                # connection reuse - invitation is getting deleted - ignore
+                pass
+            elif message["rfc23_state"] in ["completed", "response-sent"]:
                 if not self._connection_ready.done():
                     self.log("Connected")
                     self._connection_ready.set_result(True)
@@ -246,7 +273,14 @@ class AriesAgent(DemoAgent):
 
         elif state == "offer-received":
             log_status("#15 After receiving credential offer, send credential request")
-            if message["by_format"]["cred_offer"].get("indy"):
+            if not message.get("by_format"):
+                # this should not happen, something hinky when running in IDE...
+                # this will work if using indy payloads
+                self.log(f"No 'by_format' in message: {message}")
+                await self.admin_POST(
+                    f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
+                )
+            elif message["by_format"]["cred_offer"].get("indy"):
                 await self.admin_POST(
                     f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
                 )
@@ -389,154 +423,163 @@ class AriesAgent(DemoAgent):
         pres_ex_id = message["pres_ex_id"]
         self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
-        if state == "request-received":
+        if state in ["request-received"]:
             # prover role
             log_status(
                 "#24 Query for credentials in the wallet that satisfy the proof request"
             )
-            pres_request_indy = message["by_format"].get("pres_request", {}).get("indy")
-            pres_request_dif = message["by_format"].get("pres_request", {}).get("dif")
-            request = {}
+            if not message.get("by_format"):
+                # this should not happen, something hinky when running in IDE...
+                self.log(f"No 'by_format' in message: {message}")
+            else:
+                pres_request_indy = (
+                    message["by_format"].get("pres_request", {}).get("indy")
+                )
+                pres_request_dif = (
+                    message["by_format"].get("pres_request", {}).get("dif")
+                )
+                request = {}
 
-            if not pres_request_dif and not pres_request_indy:
-                raise Exception("Invalid presentation request received")
+                if not pres_request_dif and not pres_request_indy:
+                    raise Exception("Invalid presentation request received")
 
-            if pres_request_indy:
-                # include self-attested attributes (not included in credentials)
-                creds_by_reft = {}
-                revealed = {}
-                self_attested = {}
-                predicates = {}
+                if pres_request_indy:
+                    # include self-attested attributes (not included in credentials)
+                    creds_by_reft = {}
+                    revealed = {}
+                    self_attested = {}
+                    predicates = {}
 
-                try:
-                    # select credentials to provide for the proof
-                    creds = await self.admin_GET(
-                        f"/present-proof-2.0/records/{pres_ex_id}/credentials"
-                    )
-                    if creds:
-                        # select only indy credentials
-                        creds = [x for x in creds if "cred_info" in x]
-                        if "timestamp" in creds[0]["cred_info"]["attrs"]:
-                            sorted_creds = sorted(
+                    try:
+                        # select credentials to provide for the proof
+                        creds = await self.admin_GET(
+                            f"/present-proof-2.0/records/{pres_ex_id}/credentials"
+                        )
+                        if creds:
+                            # select only indy credentials
+                            creds = [x for x in creds if "cred_info" in x]
+                            if "timestamp" in creds[0]["cred_info"]["attrs"]:
+                                sorted_creds = sorted(
+                                    creds,
+                                    key=lambda c: int(
+                                        c["cred_info"]["attrs"]["timestamp"]
+                                    ),
+                                    reverse=True,
+                                )
+                            else:
+                                sorted_creds = creds
+                            for row in sorted_creds:
+                                for referent in row["presentation_referents"]:
+                                    if referent not in creds_by_reft:
+                                        creds_by_reft[referent] = row
+
+                        # submit the proof wit one unrevealed revealed attribute
+                        revealed_flag = False
+                        for referent in pres_request_indy["requested_attributes"]:
+                            if referent in creds_by_reft:
+                                revealed[referent] = {
+                                    "cred_id": creds_by_reft[referent]["cred_info"][
+                                        "referent"
+                                    ],
+                                    "revealed": revealed_flag,
+                                }
+                                revealed_flag = True
+                            else:
+                                self_attested[referent] = "my self-attested value"
+
+                        for referent in pres_request_indy["requested_predicates"]:
+                            if referent in creds_by_reft:
+                                predicates[referent] = {
+                                    "cred_id": creds_by_reft[referent]["cred_info"][
+                                        "referent"
+                                    ]
+                                }
+
+                        log_status("#25 Generate the indy proof")
+                        indy_request = {
+                            "indy": {
+                                "requested_predicates": predicates,
+                                "requested_attributes": revealed,
+                                "self_attested_attributes": self_attested,
+                            }
+                        }
+                        request.update(indy_request)
+                    except ClientError:
+                        pass
+
+                if pres_request_dif:
+                    try:
+                        # select credentials to provide for the proof
+                        creds = await self.admin_GET(
+                            f"/present-proof-2.0/records/{pres_ex_id}/credentials"
+                        )
+                        if creds and 0 < len(creds):
+                            # select only dif credentials
+                            creds = [x for x in creds if "issuanceDate" in x]
+                            creds = sorted(
                                 creds,
-                                key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
+                                key=lambda c: c["issuanceDate"],
                                 reverse=True,
                             )
+                            records = creds
                         else:
-                            sorted_creds = creds
-                        for row in sorted_creds:
-                            for referent in row["presentation_referents"]:
-                                if referent not in creds_by_reft:
-                                    creds_by_reft[referent] = row
+                            records = []
 
-                    # submit the proof wit one unrevealed revealed attribute
-                    revealed_flag = False
-                    for referent in pres_request_indy["requested_attributes"]:
-                        if referent in creds_by_reft:
-                            revealed[referent] = {
-                                "cred_id": creds_by_reft[referent]["cred_info"][
-                                    "referent"
-                                ],
-                                "revealed": revealed_flag,
-                            }
-                            revealed_flag = True
-                        else:
-                            self_attested[referent] = "my self-attested value"
-
-                    for referent in pres_request_indy["requested_predicates"]:
-                        if referent in creds_by_reft:
-                            predicates[referent] = {
-                                "cred_id": creds_by_reft[referent]["cred_info"][
-                                    "referent"
-                                ]
-                            }
-
-                    log_status("#25 Generate the indy proof")
-                    indy_request = {
-                        "indy": {
-                            "requested_predicates": predicates,
-                            "requested_attributes": revealed,
-                            "self_attested_attributes": self_attested,
+                        log_status("#25 Generate the dif proof")
+                        dif_request = {
+                            "dif": {},
                         }
-                    }
-                    request.update(indy_request)
-                except ClientError:
-                    pass
+                        # specify the record id for each input_descriptor id:
+                        dif_request["dif"]["record_ids"] = {}
+                        for input_descriptor in pres_request_dif[
+                            "presentation_definition"
+                        ]["input_descriptors"]:
+                            input_descriptor_schema_uri = []
+                            for element in input_descriptor["schema"]:
+                                input_descriptor_schema_uri.append(element["uri"])
 
-            if pres_request_dif:
-                try:
-                    # select credentials to provide for the proof
-                    creds = await self.admin_GET(
-                        f"/present-proof-2.0/records/{pres_ex_id}/credentials"
-                    )
-                    if creds and 0 < len(creds):
-                        # select only dif credentials
-                        creds = [x for x in creds if "issuanceDate" in x]
-                        creds = sorted(
-                            creds,
-                            key=lambda c: c["issuanceDate"],
-                            reverse=True,
-                        )
-                        records = creds
-                    else:
-                        records = []
+                            for record in records:
+                                if self.check_input_descriptor_record_id(
+                                    input_descriptor_schema_uri, record
+                                ):
+                                    record_id = record["record_id"]
+                                    dif_request["dif"]["record_ids"][
+                                        input_descriptor["id"]
+                                    ] = [
+                                        record_id,
+                                    ]
+                                    break
+                        log_msg("presenting ld-presentation:", dif_request)
+                        request.update(dif_request)
 
-                    log_status("#25 Generate the dif proof")
-                    dif_request = {
-                        "dif": {},
-                    }
-                    # specify the record id for each input_descriptor id:
-                    dif_request["dif"]["record_ids"] = {}
-                    for input_descriptor in pres_request_dif["presentation_definition"][
-                        "input_descriptors"
-                    ]:
-                        input_descriptor_schema_uri = []
-                        for element in input_descriptor["schema"]:
-                            input_descriptor_schema_uri.append(element["uri"])
+                        # NOTE that the holder/prover can also/or specify constraints by including the whole proof request
+                        # and constraining the presented credentials by adding filters, for example:
+                        #
+                        # request = {
+                        #     "dif": pres_request_dif,
+                        # }
+                        # request["dif"]["presentation_definition"]["input_descriptors"]["constraints"]["fields"].append(
+                        #      {
+                        #          "path": [
+                        #              "$.id"
+                        #          ],
+                        #          "purpose": "Specify the id of the credential to present",
+                        #          "filter": {
+                        #              "const": "https://credential.example.com/residents/1234567890"
+                        #          }
+                        #      }
+                        # )
+                        #
+                        # (NOTE the above assumes the credential contains an "id", which is an optional field)
 
-                        for record in records:
-                            if self.check_input_descriptor_record_id(
-                                input_descriptor_schema_uri, record
-                            ):
-                                record_id = record["record_id"]
-                                dif_request["dif"]["record_ids"][
-                                    input_descriptor["id"]
-                                ] = [
-                                    record_id,
-                                ]
-                                break
-                    log_msg("presenting ld-presentation:", dif_request)
-                    request.update(dif_request)
+                    except ClientError:
+                        pass
 
-                    # NOTE that the holder/prover can also/or specify constraints by including the whole proof request
-                    # and constraining the presented credentials by adding filters, for example:
-                    #
-                    # request = {
-                    #     "dif": pres_request_dif,
-                    # }
-                    # request["dif"]["presentation_definition"]["input_descriptors"]["constraints"]["fields"].append(
-                    #      {
-                    #          "path": [
-                    #              "$.id"
-                    #          ],
-                    #          "purpose": "Specify the id of the credential to present",
-                    #          "filter": {
-                    #              "const": "https://credential.example.com/residents/1234567890"
-                    #          }
-                    #      }
-                    # )
-                    #
-                    # (NOTE the above assumes the credential contains an "id", which is an optional field)
-
-                except ClientError:
-                    pass
-
-            log_status("#26 Send the proof to X: " + json.dumps(request))
-            await self.admin_POST(
-                f"/present-proof-2.0/records/{pres_ex_id}/send-presentation",
-                request,
-            )
-
+                log_status("#26 Send the proof to X: " + json.dumps(request))
+                await self.admin_POST(
+                    f"/present-proof-2.0/records/{pres_ex_id}/send-presentation",
+                    request,
+                )
         elif state == "presentation-received":
             # verifier role
             log_status("#27 Process the proof provided by X")
@@ -566,6 +609,10 @@ class AriesAgent(DemoAgent):
         auto_accept: bool = True,
         display_qr: bool = False,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
+        emit_did_peer_2: bool = False,
+        emit_did_peer_4: bool = False,
         wait: bool = False,
     ):
         self._connection_ready = asyncio.Future()
@@ -578,6 +625,10 @@ class AriesAgent(DemoAgent):
                 use_did_exchange,
                 auto_accept=auto_accept,
                 reuse_connections=reuse_connections,
+                multi_use_invitations=multi_use_invitations,
+                public_did_connections=public_did_connections,
+                emit_did_peer_2=emit_did_peer_2,
+                emit_did_peer_4=emit_did_peer_4,
             )
 
         if display_qr:
@@ -609,7 +660,12 @@ class AriesAgent(DemoAgent):
             await self.detect_connection()
 
     async def create_schema_and_cred_def(
-        self, schema_name, schema_attrs, revocation, version=None
+        self,
+        schema_name,
+        schema_attrs,
+        revocation,
+        version=None,
+        wallet_type=WALLET_TYPE_INDY,
     ):
         with log_timer("Publish schema/cred def duration:"):
             log_status("#3/4 Create a new schema/cred def on the ledger")
@@ -631,6 +687,7 @@ class AriesAgent(DemoAgent):
                 schema_attrs,
                 support_revocation=revocation,
                 revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
+                wallet_type=wallet_type,
             )
             return cred_def_id
 
@@ -671,7 +728,16 @@ class AgentContainer:
         arg_file: str = None,
         endorser_role: str = None,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
+        emit_did_peer_2: bool = False,
+        emit_did_peer_4: bool = False,
         taa_accept: bool = False,
+        anoncreds_legacy_revocation: str = None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
+        extra_args: List[str] = None,
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -694,6 +760,10 @@ class AgentContainer:
         self.arg_file = arg_file
         self.endorser_agent = None
         self.endorser_role = endorser_role
+        self.anoncreds_legacy_revocation = anoncreds_legacy_revocation
+        self.log_file = log_file
+        self.log_config = log_config
+        self.log_level = log_level
         if endorser_role:
             # endorsers and authors need public DIDs (assume cred_type is Indy)
             if endorser_role == "author" or endorser_role == "endorser":
@@ -701,12 +771,17 @@ class AgentContainer:
                 self.cred_type = CRED_FORMAT_INDY
 
         self.reuse_connections = reuse_connections
+        self.multi_use_invitations = multi_use_invitations
+        self.public_did_connections = public_did_connections
+        self.emit_did_peer_2 = emit_did_peer_2
+        self.emit_did_peer_4 = emit_did_peer_4
         self.exchange_tracing = False
 
         # local agent(s)
         self.agent = None
         self.mediator_agent = None
         self.taa_accept = taa_accept
+        self.extra_args = extra_args
 
     async def initialize(
         self,
@@ -740,6 +815,10 @@ class AgentContainer:
                 aip=self.aip,
                 arg_file=self.arg_file,
                 endorser_role=self.endorser_role,
+                log_file=self.log_file,
+                log_config=self.log_config,
+                log_level=self.log_level,
+                extra_args=self.extra_args,
             )
         else:
             self.agent = the_agent
@@ -749,7 +828,7 @@ class AgentContainer:
         # create public DID ... UNLESS we are an author ...
         if (not self.endorser_role) or (self.endorser_role == "endorser"):
             if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
-                await self.agent.register_did(cred_type=CRED_FORMAT_INDY)
+                await self.agent.register_did(cred_type=self.cred_type)
                 log_msg("Created public DID")
 
         # if we are endorsing, create the endorser agent first, then we can use the
@@ -854,10 +933,16 @@ class AgentContainer:
     ):
         if not self.public_did:
             raise Exception("Can't create a schema/cred def without a public DID :-(")
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             # need to redister schema and cred def on the ledger
             self.cred_def_id = await self.agent.create_schema_and_cred_def(
-                schema_name, schema_attrs, self.revocation, version=version
+                schema_name,
+                schema_attrs,
+                self.revocation,
+                version=version,
+                wallet_type=self.agent.wallet_type,
             )
             return self.cred_def_id
         elif self.cred_type == CRED_FORMAT_JSON_LD:
@@ -867,6 +952,28 @@ class AgentContainer:
         else:
             raise Exception("Invalid credential type:" + self.cred_type)
 
+    async def fetch_schemas(
+        self,
+    ):
+        return await self.agent.fetch_schemas(
+            wallet_type=self.agent.wallet_type,
+        )
+
+    async def fetch_cred_defs(
+        self,
+    ):
+        return await self.agent.fetch_cred_defs(
+            wallet_type=self.agent.wallet_type,
+        )
+
+    async def fetch_cred_def(
+        self,
+        cred_def_id: str,
+    ):
+        return await self.agent.fetch_cred_def(
+            cred_def_id, wallet_type=self.agent.wallet_type
+        )
+
     async def issue_credential(
         self,
         cred_def_id: str,
@@ -874,7 +981,9 @@ class AgentContainer:
     ):
         log_status("#13 Issue credential offer to X")
 
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             cred_preview = {
                 "@type": CRED_PREVIEW_TYPE,
                 "attributes": cred_attrs,
@@ -934,14 +1043,18 @@ class AgentContainer:
     async def request_proof(self, proof_request, explicit_revoc_required: bool = False):
         log_status("#20 Request proof of degree from alice")
 
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             indy_proof_request = {
-                "name": proof_request["name"]
-                if "name" in proof_request
-                else "Proof of stuff",
-                "version": proof_request["version"]
-                if "version" in proof_request
-                else "1.0",
+                "name": (
+                    proof_request["name"]
+                    if "name" in proof_request
+                    else "Proof of stuff"
+                ),
+                "version": (
+                    proof_request["version"] if "version" in proof_request else "1.0"
+                ),
                 "requested_attributes": proof_request["requested_attributes"],
                 "requested_predicates": proof_request["requested_predicates"],
             }
@@ -1015,7 +1128,9 @@ class AgentContainer:
 
         # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
-        if self.cred_type == CRED_FORMAT_INDY:
+        if self.cred_type in [
+            CRED_FORMAT_INDY,
+        ]:
             # return verified status
             return self.agent.last_proof_received["verified"]
 
@@ -1053,6 +1168,8 @@ class AgentContainer:
         auto_accept: bool = True,
         display_qr: bool = False,
         reuse_connections: bool = False,
+        multi_use_invitations: bool = False,
+        public_did_connections: bool = False,
         wait: bool = False,
     ):
         return await self.agent.generate_invitation(
@@ -1060,6 +1177,10 @@ class AgentContainer:
             auto_accept=auto_accept,
             display_qr=display_qr,
             reuse_connections=reuse_connections,
+            multi_use_invitations=multi_use_invitations,
+            public_did_connections=public_did_connections,
+            emit_did_peer_2=self.emit_did_peer_2,
+            emit_did_peer_4=self.emit_did_peer_4,
             wait=wait,
         )
 
@@ -1079,8 +1200,7 @@ class AgentContainer:
         )
 
     async def admin_GET(self, path, text=False, params=None) -> dict:
-        """
-        Execute an admin GET request in the context of the current wallet.
+        """Execute an admin GET request in the context of the current wallet.
 
         path = /path/of/request
         text = True if the expected response is text, False if json data
@@ -1088,20 +1208,22 @@ class AgentContainer:
         """
         return await self.agent.admin_GET(path, text=text, params=params)
 
-    async def admin_POST(self, path, data=None, text=False, params=None) -> dict:
-        """
-        Execute an admin POST request in the context of the current wallet.
+    async def admin_POST(
+        self, path, data=None, text=False, params=None, raise_error=True
+    ) -> dict:
+        """Execute an admin POST request in the context of the current wallet.
 
         path = /path/of/request
         data = payload to post with the request
         text = True if the expected response is text, False if json data
         params = any additional parameters to pass with the request
         """
-        return await self.agent.admin_POST(path, data=data, text=text, params=params)
+        return await self.agent.admin_POST(
+            path, data=data, text=text, params=params, raise_error=raise_error
+        )
 
     async def admin_PATCH(self, path, data=None, text=False, params=None) -> dict:
-        """
-        Execute an admin PATCH request in the context of the current wallet.
+        """Execute an admin PATCH request in the context of the current wallet.
 
         path = /path/of/request
         data = payload to post with the request
@@ -1111,8 +1233,7 @@ class AgentContainer:
         return await self.agent.admin_PATCH(path, data=data, text=text, params=params)
 
     async def admin_PUT(self, path, data=None, text=False, params=None) -> dict:
-        """
-        Execute an admin PUT request in the context of the current wallet.
+        """Execute an admin PUT request in the context of the current wallet.
 
         path = /path/of/request
         data = payload to post with the request
@@ -1121,9 +1242,17 @@ class AgentContainer:
         """
         return await self.agent.admin_PUT(path, data=data, text=text, params=params)
 
-    async def agency_admin_GET(self, path, text=False, params=None) -> dict:
+    async def admin_DELETE(self, path, data=None, text=False, params=None) -> dict:
+        """Execute an admin DELETE request in the context of the current wallet.
+        path = /path/of/request
+        data = payload to post with the request
+        text = True if the expected response is text, False if json data
+        params = any additional parameters to pass with the request.
         """
-        Execute an agency GET request in the context of the base wallet (multitenant only).
+        return await self.agent.admin_DELETE(path, data=data, text=text, params=params)
+
+    async def agency_admin_GET(self, path, text=False, params=None) -> dict:
+        """Execute an agency GET request in the context of the base wallet (multitenant only).
 
         path = /path/of/request
         text = True if the expected response is text, False if json data
@@ -1132,8 +1261,7 @@ class AgentContainer:
         return await self.agent.agency_admin_GET(path, text=text, params=params)
 
     async def agency_admin_POST(self, path, data=None, text=False, params=None) -> dict:
-        """
-        Execute an agency POST request in the context of the base wallet (multitenant only).
+        """Execute an agency POST request in the context of the base wallet (multitenant only).
 
         path = /path/of/request
         data = payload to post with the request
@@ -1146,8 +1274,7 @@ class AgentContainer:
 
 
 def arg_parser(ident: str = None, port: int = 8020):
-    """
-    Standard command-line arguements.
+    """Standard command-line arguments.
 
     "ident", if specified, refers to one of the standard demo personas - alice, faber, acme or performance.
     """
@@ -1187,6 +1314,12 @@ def arg_parser(ident: str = None, port: int = 8020):
         )
     parser.add_argument(
         "--revocation", action="store_true", help="Enable credential revocation"
+    )
+    parser.add_argument(
+        "--anoncreds-legacy-revocation",
+        type=str,
+        choices=("accept", "reject"),
+        help="Set behaviour for legacy non-revocation proof",
     )
     parser.add_argument(
         "--tails-server-base-url",
@@ -1241,18 +1374,34 @@ def arg_parser(ident: str = None, port: int = 8020):
             "Specify the role ('author' or 'endorser') which this agent will "
             "participate. Authors will request transaction endorement from an "
             "Endorser. Endorsers will endorse transactions from Authors, and "
-            "may write their own  transactions to the ledger. If no role "
+            "may write their own transactions to the ledger. If no role "
             "(or 'none') is specified then the endorsement protocol will not "
-            " be used and this agent will write transactions to the ledger "
+            "be used and this agent will write transactions to the ledger "
             "directly."
+        ),
+    )
+    parser.add_argument(
+        "--reuse-connections",
+        action="store_true",
+        help=(
+            "Reuse connections by generating a reusable invitation. "
+            "Only applicable for AIP 2.0 (OOB) connections."
         ),
     )
     if (not ident) or (ident != "alice"):
         parser.add_argument(
-            "--reuse-connections",
+            "--public-did-connections",
             action="store_true",
             help=(
-                "Reuse connections by using Faber public key in the invite. "
+                "Use Faber public key in the invite. "
+                "Only applicable for AIP 2.0 (OOB) connections."
+            ),
+        )
+        parser.add_argument(
+            "--multi-use-invitations",
+            action="store_true",
+            help=(
+                "Create multi-use invitations. "
                 "Only applicable for AIP 2.0 (OOB) connections."
             ),
         )
@@ -1267,17 +1416,51 @@ def arg_parser(ident: str = None, port: int = 8020):
         action="store_true",
         help="Accept the ledger's TAA, if required",
     )
+    parser.add_argument(
+        "--log-file",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="<log-file>",
+        help="Output destination for the root logger.",
+    )
+    parser.add_argument(
+        "--log-config",
+        type=str,
+        metavar="<log-config>",
+        help="File path for logging configuration.",
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        metavar="<log-level>",
+        default=None,
+        help=(
+            "Specifies a custom logging level as one of: "
+            "('debug', 'info', 'warning', 'error', 'critical')"
+        ),
+    )
+    parser.add_argument(
+        "--emit-did-peer-2",
+        action="store_true",
+        help="Emit did:peer:2 DID in DID exchange",
+    )
+    parser.add_argument(
+        "--emit-did-peer-4",
+        action="store_true",
+        help="Emit did:peer:4 DID in DID exchange",
+    )
     return parser
 
 
-async def create_agent_with_args_list(in_args: list):
+async def create_agent_with_args_list(in_args: list, extra_args: list = None):
     parser = arg_parser()
     args = parser.parse_args(in_args)
 
-    return await create_agent_with_args(args)
+    return await create_agent_with_args(args, extra_args=extra_args)
 
 
-async def create_agent_with_args(args, ident: str = None):
+async def create_agent_with_args(args, ident: str = None, extra_args: list = None):
     if ("did_exchange" in args and args.did_exchange) and args.mediation:
         raise Exception(
             "DID-Exchange connection protocol is not (yet) compatible with mediation"
@@ -1297,7 +1480,12 @@ async def create_agent_with_args(args, ident: str = None):
     if arg_file:
         with open(arg_file) as f:
             arg_file_dict = yaml.safe_load(f)
-
+    if args.log_file or args.log_file == "":
+        log_file = args.log_file
+    else:
+        log_file = os.getenv("ACAPY_LOG_FILE")
+    log_config = args.log_config or os.getenv("ACAPY_LOG_CONFIG")
+    log_level = args.log_level
     # if we don't have a tails server url then guess it
     if ("revocation" in args and args.revocation) and not tails_server_base_url:
         # assume we're running in docker
@@ -1332,10 +1520,14 @@ async def create_agent_with_args(args, ident: str = None):
     else:
         aip = 20
 
-    if "cred_type" in args and args.cred_type != CRED_FORMAT_INDY:
+    if "cred_type" in args and args.cred_type not in [
+        CRED_FORMAT_INDY,
+    ]:
         public_did = None
         aip = 20
-    elif "cred_type" in args and args.cred_type == CRED_FORMAT_INDY:
+    elif "cred_type" in args and args.cred_type in [
+        CRED_FORMAT_INDY,
+    ]:
         public_did = True
     else:
         public_did = args.public_did if "public_did" in args else None
@@ -1346,8 +1538,25 @@ async def create_agent_with_args(args, ident: str = None):
     )
 
     reuse_connections = "reuse_connections" in args and args.reuse_connections
-    if reuse_connections and aip != 20:
-        raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
+    # if reuse_connections and aip != 20:
+    #     raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
+    multi_use_invitations = (
+        "multi_use_invitations" in args and args.multi_use_invitations
+    )
+    if multi_use_invitations and aip != 20:
+        raise Exception("Can only specify `--multi-use-invitations` with AIP 2.0")
+    public_did_connections = (
+        "public_did_connections" in args and args.public_did_connections
+    )
+    if public_did_connections and aip != 20:
+        raise Exception("Can only specify `--public-did-connections` with AIP 2.0")
+
+    anoncreds_legacy_revocation = None
+    if "anoncreds_legacy_revocation" in args and args.anoncreds_legacy_revocation:
+        anoncreds_legacy_revocation = args.anoncreds_legacy_revocation
+
+    emit_did_peer_2 = "emit_did_peer_2" in args and args.emit_did_peer_2
+    emit_did_peer_4 = "emit_did_peer_4" in args and args.emit_did_peer_4
 
     agent = AgentContainer(
         genesis_txns=genesis,
@@ -1369,7 +1578,16 @@ async def create_agent_with_args(args, ident: str = None):
         aip=aip,
         endorser_role=args.endorser_role,
         reuse_connections=reuse_connections,
+        multi_use_invitations=multi_use_invitations,
+        public_did_connections=public_did_connections,
+        emit_did_peer_2=emit_did_peer_2,
+        emit_did_peer_4=emit_did_peer_4,
         taa_accept=args.taa_accept,
+        anoncreds_legacy_revocation=anoncreds_legacy_revocation,
+        log_file=log_file,
+        log_config=log_config,
+        log_level=log_level,
+        extra_args=extra_args,
     )
 
     return agent
@@ -1444,7 +1662,7 @@ async def test_main(
 
         # alice accept invitation
         invite_details = invite["invitation"]
-        connection = await alice_container.input_invitation(invite_details)
+        await alice_container.input_invitation(invite_details)
 
         # wait for faber connection to activate
         await faber_container.detect_connection()

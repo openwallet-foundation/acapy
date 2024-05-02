@@ -1,4 +1,5 @@
-from unittest import TestCase, mock
+from unittest import TestCase
+from unittest import mock
 
 from ...core.error import BaseError
 

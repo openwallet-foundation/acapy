@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ....core.in_memory import InMemoryProfile
 from ....protocols.connections.v1_0.messages.connection_invitation import (
@@ -13,7 +13,7 @@ from ..conn_record import ConnRecord
 from ..diddoc.diddoc import DIDDoc
 
 
-class TestConnRecord(AsyncTestCase):
+class TestConnRecord(IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = InMemoryProfile.test_session()
 
@@ -34,23 +34,6 @@ class TestConnRecord(AsyncTestCase):
         assert self.test_conn_record.their_role == ConnRecord.Role.REQUESTER.rfc160
         assert self.test_conn_record.state == ConnRecord.State.COMPLETED.rfc160
         assert self.test_conn_record.rfc23_state == ConnRecord.State.COMPLETED.rfc23
-
-    def test_get_protocol(self):
-        assert ConnRecord.Protocol.get("test") is None
-        assert (
-            ConnRecord.Protocol.get("didexchange/1.0") is ConnRecord.Protocol.RFC_0023
-        )
-        assert (
-            ConnRecord.Protocol.get(ConnRecord.Protocol.RFC_0023)
-            is ConnRecord.Protocol.RFC_0023
-        )
-        assert (
-            ConnRecord.Protocol.get("connections/1.0") is ConnRecord.Protocol.RFC_0160
-        )
-        assert (
-            ConnRecord.Protocol.get(ConnRecord.Protocol.RFC_0160)
-            is ConnRecord.Protocol.RFC_0160
-        )
 
     async def test_get_enums(self):
         assert ConnRecord.Role.get("Larry") is None
@@ -255,7 +238,7 @@ class TestConnRecord(AsyncTestCase):
         connection_id = await record.save(self.session)
         fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
 
-        assert fetched.is_ready == True
+        assert fetched.is_ready is True
 
     async def test_response_is_ready(self):
         record = ConnRecord(my_did=self.test_did, state=ConnRecord.State.RESPONSE)

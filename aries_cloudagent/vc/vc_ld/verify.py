@@ -111,7 +111,6 @@ async def _verify_presentation(
     )
 
     credential_results = None
-    verified = True
 
     credentials = JsonLdProcessor.get_values(presentation, "verifiableCredential")
     credential_results = await asyncio.gather(
@@ -120,7 +119,7 @@ async def _verify_presentation(
                 credential=credential,
                 suites=suites,
                 document_loader=document_loader,
-                # FIXME: we don't want to interhit the authentication purpose
+                # FIXME: we don't want to inherit the authentication purpose
                 # from the presentation. However we do want to have subject
                 # authentication I guess
                 # purpose=purpose,
@@ -129,7 +128,8 @@ async def _verify_presentation(
         ]
     )
 
-    verified = all([result.verified for result in credential_results])
+    credentials_verified = all(result.verified for result in credential_results)
+    verified = credentials_verified and presentation_result.verified
 
     return PresentationVerificationResult(
         verified=verified,

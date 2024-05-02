@@ -38,8 +38,7 @@ class V20CredFormatHandler(ABC):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile instance.
+        """Accessor for the current profile instance.
 
         Returns:
             The profile instance for this credential format
@@ -102,6 +101,12 @@ class V20CredFormatHandler(ABC):
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
     ) -> None:
         """Receive format specific credential request message."""
+
+    def can_receive_request_without_offer(
+        self,
+    ) -> bool:
+        """Can this handler receive credential request without an offer?"""
+        return False
 
     @abstractmethod
     async def issue_credential(

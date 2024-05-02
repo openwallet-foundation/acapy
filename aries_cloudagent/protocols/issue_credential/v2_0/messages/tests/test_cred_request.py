@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
@@ -11,7 +11,7 @@ from ..cred_format import V20CredFormat
 from ..cred_request import V20CredRequest
 
 
-class TestV20CredRequest(AsyncTestCase):
+class TestV20CredRequest(IsolatedAsyncioTestCase):
     """Credential request tests"""
 
     indy_cred_req = {
@@ -137,7 +137,7 @@ class TestV20CredRequest(AsyncTestCase):
         V20CredRequest.deserialize(obj)
 
 
-class TestV20CredRequestSchema(AsyncTestCase):
+class TestV20CredRequestSchema(IsolatedAsyncioTestCase):
     """Test credential request schema"""
 
     async def test_make_model(self):

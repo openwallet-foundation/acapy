@@ -1,6 +1,7 @@
 """Admin routes for presentations."""
 
 import json
+from typing import Mapping, Sequence, Tuple
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -10,11 +11,12 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from marshmallow import fields, validate, validates_schema, ValidationError
-from typing import Mapping, Sequence, Tuple
+
+from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
+from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.cred_precis import IndyCredPrecisSchema
 from ....indy.models.proof import IndyPresSpecSchema
@@ -25,27 +27,29 @@ from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    INDY_EXTRA_WQL,
-    NUM_STR_NATURAL,
-    NUM_STR_WHOLE,
-    UUIDFour,
-    UUID4,
+    INDY_EXTRA_WQL_EXAMPLE,
+    INDY_EXTRA_WQL_VALIDATE,
+    NUM_STR_NATURAL_EXAMPLE,
+    NUM_STR_NATURAL_VALIDATE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
 )
-from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.base import BaseStorage
+from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
-from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
-from ....vc.ld_proofs import BbsBlsSignature2020, Ed25519Signature2018
-from ....wallet.error import WalletNotFoundError
-
-from ..dif.pres_exch import InputDescriptors, ClaimFormat, SchemaInputDescriptor
-from ..dif.pres_proposal_schema import DIFProofProposalSchema
-from ..dif.pres_request_schema import (
-    DIFProofRequestSchema,
-    DIFPresSpecSchema,
+from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
+from ....vc.ld_proofs import (
+    BbsBlsSignature2020,
+    Ed25519Signature2018,
+    Ed25519Signature2020,
 )
-
+from ....wallet.error import WalletNotFoundError
+from ..dif.pres_exch import ClaimFormat, InputDescriptors, SchemaInputDescriptor
+from ..dif.pres_proposal_schema import DIFProofProposalSchema
+from ..dif.pres_request_schema import DIFPresSpecSchema, DIFProofRequestSchema
 from . import problem_report_for_record, report_problem
 from .formats.handler import V20PresFormatHandlerError
 from .manager import V20PresManager
@@ -69,18 +73,15 @@ class V20PresentProofModuleResponseSchema(OpenAPISchema):
 class V20PresExRecordListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for presentation exchange list query."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier",
+    connection_id = fields.Str(
         required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
-    thread_id = fields.UUID(
-        description="Thread identifier",
+    thread_id = fields.Str(
         required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     role = fields.Str(
-        description="Role assigned in presentation exchange",
         required=False,
         validate=validate.OneOf(
             [
@@ -89,9 +90,9 @@ class V20PresExRecordListQueryStringSchema(OpenAPISchema):
                 if m.startswith("ROLE_")
             ]
         ),
+        metadata={"description": "Role assigned in presentation exchange"},
     )
     state = fields.Str(
-        description="Presentation exchange state",
         required=False,
         validate=validate.OneOf(
             [
@@ -100,6 +101,7 @@ class V20PresExRecordListQueryStringSchema(OpenAPISchema):
                 if m.startswith("STATE_")
             ]
         ),
+        metadata={"description": "Presentation exchange state"},
     )
 
 
@@ -108,7 +110,7 @@ class V20PresExRecordListSchema(OpenAPISchema):
 
     results = fields.List(
         fields.Nested(V20PresExRecordSchema()),
-        description="Presentation exchange records",
+        metadata={"description": "Presentation exchange records"},
     )
 
 
@@ -118,18 +120,17 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
     indy = fields.Nested(
         IndyProofRequestSchema,
         required=False,
-        description="Presentation proposal for indy",
+        metadata={"description": "Presentation proposal for indy"},
     )
     dif = fields.Nested(
         DIFProofProposalSchema,
         required=False,
-        description="Presentation proposal for DIF",
+        metadata={"description": "Presentation proposal for DIF"},
     )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields: data must have at least one format.
+        """Validate schema fields: data must have at least one format.
 
         Args:
             data: The data to validate
@@ -147,28 +148,44 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
 class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    connection_id = fields.Str(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     presentation_proposal = fields.Nested(
-        V20PresProposalByFormatSchema(),
-        required=True,
+        V20PresProposalByFormatSchema(), required=True
     )
     auto_present = fields.Boolean(
-        description=(
-            "Whether to respond automatically to presentation requests, building "
-            "and presenting requested proof"
-        ),
         required=False,
-        default=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to respond automatically to presentation requests, building"
+                " and presenting requested proof"
+            )
+        },
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
     trace = fields.Bool(
-        description="Whether to trace event (default false)",
         required=False,
-        example=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
     )
 
 
@@ -178,18 +195,17 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
     indy = fields.Nested(
         IndyProofRequestSchema,
         required=False,
-        description="Presentation request for indy",
+        metadata={"description": "Presentation request for indy"},
     )
     dif = fields.Nested(
         DIFProofRequestSchema,
         required=False,
-        description="Presentation request for DIF",
+        metadata={"description": "Presentation request for DIF"},
     )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields: data must have at least one format.
+        """Validate schema fields: data must have at least one format.
 
         Args:
             data: The data to validate
@@ -210,22 +226,37 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     presentation_request = fields.Nested(V20PresRequestByFormatSchema(), required=True)
     comment = fields.Str(required=False, allow_none=True)
     auto_verify = fields.Bool(
-        description="Verifier choice to auto-verify proof presentation",
         required=False,
-        example=False,
+        metadata={
+            "description": "Verifier choice to auto-verify proof presentation",
+            "example": False,
+        },
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
     trace = fields.Bool(
-        description="Whether to trace event (default false)",
         required=False,
-        example=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
     )
 
 
 class V20PresSendRequestRequestSchema(V20PresCreateRequestRequestSchema):
     """Request schema for sending a proof request on a connection."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    connection_id = fields.Str(
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -233,14 +264,28 @@ class V20PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a proof request bound to a proposal."""
 
     auto_verify = fields.Bool(
-        description="Verifier choice to auto-verify proof presentation",
         required=False,
-        example=False,
+        metadata={
+            "description": "Verifier choice to auto-verify proof presentation",
+            "example": False,
+        },
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
     trace = fields.Bool(
-        description="Whether to trace event (default false)",
         required=False,
-        example=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
     )
 
 
@@ -250,21 +295,32 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
     indy = fields.Nested(
         IndyPresSpecSchema,
         required=False,
-        description="Presentation specification for indy",
+        metadata={"description": "Presentation specification for indy"},
     )
     dif = fields.Nested(
         DIFPresSpecSchema,
         required=False,
-        description=(
-            "Optional Presentation specification for DIF, "
-            "overrides the PresentionExchange record's PresRequest"
-        ),
+        metadata={
+            "description": (
+                "Optional Presentation specification for DIF, overrides the"
+                " PresentationExchange record's PresRequest"
+            )
+        },
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the presentation exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields: specify exactly one format.
+        """Validate schema fields: specify exactly one format.
 
         Args:
             data: The data to validate
@@ -284,25 +340,36 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credentials fetch request query string."""
 
     referent = fields.Str(
-        description="Proof request referents of interest, comma-separated",
         required=False,
-        example="1_name_uuid,2_score_uuid",
+        metadata={
+            "description": "Proof request referents of interest, comma-separated",
+            "example": "1_name_uuid,2_score_uuid",
+        },
     )
     start = fields.Str(
-        description="Start index",
         required=False,
-        strict=True,
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Start index",
+            "strict": True,
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
     )
     count = fields.Str(
-        description="Maximum number to retrieve",
         required=False,
-        **NUM_STR_NATURAL,
+        validate=NUM_STR_NATURAL_VALIDATE,
+        metadata={
+            "description": "Maximum number to retrieve",
+            "example": NUM_STR_NATURAL_EXAMPLE,
+        },
     )
     extra_query = fields.Str(
-        description="(JSON) object mapping referents to extra WQL queries",
         required=False,
-        **INDY_EXTRA_WQL,
+        validate=INDY_EXTRA_WQL_VALIDATE,
+        metadata={
+            "description": "(JSON) object mapping referents to extra WQL queries",
+            "example": INDY_EXTRA_WQL_EXAMPLE,
+        },
     )
 
 
@@ -316,7 +383,12 @@ class V20PresExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters for request taking presentation exchange id."""
 
     pres_ex_id = fields.Str(
-        description="Presentation exchange identifier", required=True, **UUID4
+        required=True,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Presentation exchange identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
 
@@ -354,8 +426,7 @@ def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
 @querystring_schema(V20PresExRecordListQueryStringSchema)
 @response_schema(V20PresExRecordListSchema(), 200, description="")
 async def present_proof_list(request: web.BaseRequest):
-    """
-    Request handler for searching presentation exchange records.
+    """Request handler for searching presentation exchange records.
 
     Args:
         request: aiohttp request object
@@ -397,8 +468,7 @@ async def present_proof_list(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_retrieve(request: web.BaseRequest):
-    """
-    Request handler for fetching a single presentation exchange record.
+    """Request handler for fetching a single presentation exchange record.
 
     Args:
         request: aiohttp request object
@@ -444,8 +514,7 @@ async def present_proof_retrieve(request: web.BaseRequest):
 @querystring_schema(V20CredentialsFetchQueryStringSchema())
 @response_schema(IndyCredPrecisSchema(many=True), 200, description="")
 async def present_proof_credentials_list(request: web.BaseRequest):
-    """
-    Request handler for searching applicable credential records.
+    """Request handler for searching applicable credential records.
 
     Args:
         request: aiohttp request object
@@ -479,7 +548,11 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    indy_holder = profile.inject(IndyHolder)
+    wallet_type = profile.settings.get_value("wallet.type")
+    if wallet_type == "askar-anoncreds":
+        indy_holder = AnonCredsHolder(profile)
+    else:
+        indy_holder = profile.inject(IndyHolder)
     indy_credentials = []
     # INDY
     try:
@@ -496,7 +569,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                     extra_query,
                 )
             )
-    except IndyHolderError as err:
+    except (IndyHolderError, AnonCredsHolderError) as err:
         if pres_ex_record:
             async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
@@ -581,11 +654,16 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                     Ed25519Signature2018.signature_type
                                     not in proof_types
                                 )
+                                and (
+                                    Ed25519Signature2020.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise web.HTTPBadRequest(
                                     reason=(
                                         "Only BbsBlsSignature2020 and/or "
-                                        "Ed25519Signature2018 signature types "
+                                        "Ed25519Signature2018 and/or "
+                                        "Ed25519Signature2020 signature types "
                                         "are supported"
                                     )
                                 )
@@ -599,12 +677,16 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                     Ed25519Signature2018.signature_type
                                     not in proof_types
                                 )
+                                and (
+                                    Ed25519Signature2020.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise web.HTTPBadRequest(
                                     reason=(
-                                        "Only BbsBlsSignature2020 and "
-                                        "Ed25519Signature2018 signature types "
-                                        "are supported"
+                                        "Only BbsBlsSignature2020, Ed25519Signature2018"
+                                        " and Ed25519Signature2020 signature types are"
+                                        " supported"
                                     )
                                 )
                             else:
@@ -619,6 +701,14 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                         break
                                     elif (
                                         proof_format
+                                        == Ed25519Signature2020.signature_type
+                                    ):
+                                        proof_type = [
+                                            Ed25519Signature2020.signature_type
+                                        ]
+                                        break
+                                    elif (
+                                        proof_format
                                         == BbsBlsSignature2020.signature_type
                                     ):
                                         proof_type = [
@@ -629,8 +719,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                         raise web.HTTPBadRequest(
                             reason=(
                                 "Currently, only ldp_vp with "
-                                "BbsBlsSignature2020 and Ed25519Signature2018"
-                                " signature types are supported"
+                                "BbsBlsSignature2020, Ed25519Signature2018 and "
+                                "Ed25519Signature2020 signature types are supported"
                             )
                         )
                 if one_of_uri_groups:
@@ -713,8 +803,7 @@ async def retrieve_uri_list_from_schema_filter(
 @request_schema(V20PresProposalRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_send_proposal(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation proposal.
+    """Request handler for sending a presentation proposal.
 
     Args:
         request: aiohttp request object
@@ -758,6 +847,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     auto_present = body.get(
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
+    auto_remove = body.get("auto_remove")
 
     pres_manager = V20PresManager(profile)
     pres_ex_record = None
@@ -766,6 +856,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
             connection_id=connection_id,
             pres_proposal_message=pres_proposal_message,
             auto_present=auto_present,
+            auto_remove=auto_remove,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -794,8 +885,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
 @request_schema(V20PresCreateRequestRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_create_request(request: web.BaseRequest):
-    """
-    Request handler for creating a free presentation request.
+    """Request handler for creating a free presentation request.
 
     The presentation request will not be bound to any proposal
     or existing connection.
@@ -828,6 +918,7 @@ async def present_proof_create_request(request: web.BaseRequest):
     auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
+    auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
         context.settings,
@@ -841,6 +932,7 @@ async def present_proof_create_request(request: web.BaseRequest):
             connection_id=None,
             pres_request_message=pres_request_message,
             auto_verify=auto_verify,
+            auto_remove=auto_remove,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -869,8 +961,7 @@ async def present_proof_create_request(request: web.BaseRequest):
 @request_schema(V20PresSendRequestRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_send_free_request(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation request free from any proposal.
+    """Request handler for sending a presentation request free from any proposal.
 
     Args:
         request: aiohttp request object
@@ -909,6 +1000,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
     auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
+    auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
         context.settings,
@@ -922,6 +1014,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
             connection_id=connection_id,
             pres_request_message=pres_request_message,
             auto_verify=auto_verify,
+            auto_remove=auto_remove,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -951,8 +1044,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
 @request_schema(V20PresentationSendRequestToProposalSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_send_bound_request(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation request bound to a proposal.
+    """Request handler for sending a presentation request bound to a proposal.
 
     Args:
         request: aiohttp request object
@@ -999,6 +1091,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
     pres_ex_record.auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
+    pres_ex_record.auto_remove = body.get("auto_remove")
     pres_manager = V20PresManager(profile)
     try:
         (
@@ -1041,8 +1134,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
 @request_schema(V20PresSpecByFormatRequestSchema())
 @response_schema(V20PresExRecordSchema(), description="")
 async def present_proof_send_presentation(request: web.BaseRequest):
-    """
-    Request handler for sending a presentation.
+    """Request handler for sending a presentation.
 
     Args:
         request: aiohttp request object
@@ -1085,6 +1177,12 @@ async def present_proof_send_presentation(request: web.BaseRequest):
             )
         )
 
+    auto_remove = body.get("auto_remove")
+    if auto_remove is None:
+        auto_remove = not profile.settings.get("preserve_exchange_records")
+
+    pres_ex_record.auto_remove = auto_remove
+
     # Fetch connection if exchange has record
     conn_record = None
     if pres_ex_record.connection_id:
@@ -1112,6 +1210,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     except (
         BaseModelError,
         IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         V20PresFormatHandlerError,
         StorageError,
@@ -1148,8 +1247,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresExRecordSchema(), description="")
 async def present_proof_verify_presentation(request: web.BaseRequest):
-    """
-    Request handler for verifying a presentation request.
+    """Request handler for verifying a presentation request.
 
     Args:
         request: aiohttp request object
@@ -1217,8 +1315,7 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
 @request_schema(V20PresProblemReportRequestSchema())
 @response_schema(V20PresentProofModuleResponseSchema(), 200, description="")
 async def present_proof_problem_report(request: web.BaseRequest):
-    """
-    Request handler for sending problem report.
+    """Request handler for sending problem report.
 
     Args:
         request: aiohttp request object
@@ -1256,8 +1353,7 @@ async def present_proof_problem_report(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresentProofModuleResponseSchema(), description="")
 async def present_proof_remove(request: web.BaseRequest):
-    """
-    Request handler for removing a presentation exchange record.
+    """Request handler for removing a presentation exchange record.
 
     Args:
         request: aiohttp request object

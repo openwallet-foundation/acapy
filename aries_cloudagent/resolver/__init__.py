@@ -4,7 +4,6 @@ import logging
 
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
-
 from ..resolver.did_resolver import DIDResolver
 
 LOGGER = logging.getLogger(__name__)
@@ -17,11 +16,23 @@ async def setup(context: InjectionContext):
         LOGGER.warning("No DID Resolver instance found in context")
         return
 
+    legacy_resolver = ClassProvider(
+        "aries_cloudagent.resolver.default.legacy_peer.LegacyPeerDIDResolver"
+    ).provide(context.settings, context.injector)
+    await legacy_resolver.setup(context)
+    registry.register_resolver(legacy_resolver)
+
     key_resolver = ClassProvider(
         "aries_cloudagent.resolver.default.key.KeyDIDResolver"
     ).provide(context.settings, context.injector)
     await key_resolver.setup(context)
     registry.register_resolver(key_resolver)
+
+    jwk_resolver = ClassProvider(
+        "aries_cloudagent.resolver.default.jwk.JwkDIDResolver"
+    ).provide(context.settings, context.injector)
+    await jwk_resolver.setup(context)
+    registry.register_resolver(jwk_resolver)
 
     if not context.settings.get("ledger.disabled"):
         indy_resolver = ClassProvider(
@@ -44,3 +55,27 @@ async def setup(context: InjectionContext):
         ).provide(context.settings, context.injector)
         await universal_resolver.setup(context)
         registry.register_resolver(universal_resolver)
+
+    peer_did_1_resolver = ClassProvider(
+        "aries_cloudagent.resolver.default.peer1.PeerDID1Resolver"
+    ).provide(context.settings, context.injector)
+    await peer_did_1_resolver.setup(context)
+    registry.register_resolver(peer_did_1_resolver)
+
+    peer_did_2_resolver = ClassProvider(
+        "aries_cloudagent.resolver.default.peer2.PeerDID2Resolver"
+    ).provide(context.settings, context.injector)
+    await peer_did_2_resolver.setup(context)
+    registry.register_resolver(peer_did_2_resolver)
+
+    peer_did_3_resolver = ClassProvider(
+        "aries_cloudagent.resolver.default.peer3.PeerDID3Resolver"
+    ).provide(context.settings, context.injector)
+    await peer_did_3_resolver.setup(context)
+    registry.register_resolver(peer_did_3_resolver)
+
+    peer_did_4_resolver = ClassProvider(
+        "aries_cloudagent.resolver.default.peer4.PeerDID4Resolver"
+    ).provide(context.settings, context.injector)
+    await peer_did_4_resolver.setup(context)
+    registry.register_resolver(peer_did_4_resolver)

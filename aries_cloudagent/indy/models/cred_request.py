@@ -5,7 +5,13 @@ from typing import Mapping
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INDY_CRED_DEF_ID, INDY_DID, NUM_STR_WHOLE
+from ...messaging.valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    UUID4_EXAMPLE,
+    NUM_STR_WHOLE_EXAMPLE,
+    NUM_STR_WHOLE_VALIDATE,
+)
 
 
 class IndyCredRequest(BaseModel):
@@ -45,24 +51,31 @@ class IndyCredRequestSchema(BaseModelSchema):
 
     prover_did = fields.Str(
         required=True,
-        description="Prover DID",
-        **INDY_DID,
+        metadata={
+            "description": "Prover DID/Random String/UUID",
+            "example": UUID4_EXAMPLE,
+        },
     )
     cred_def_id = fields.Str(
         required=True,
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     blinded_ms = fields.Dict(
-        required=True,
-        description="Blinded master secret",
+        required=True, metadata={"description": "Blinded master secret"}
     )
     blinded_ms_correctness_proof = fields.Dict(
         required=True,
-        description="Blinded master secret correctness proof",
+        metadata={"description": "Blinded master secret correctness proof"},
     )
     nonce = fields.Str(
         required=True,
-        description="Nonce in credential request",
-        **NUM_STR_WHOLE,
+        validate=NUM_STR_WHOLE_VALIDATE,
+        metadata={
+            "description": "Nonce in credential request",
+            "example": NUM_STR_WHOLE_EXAMPLE,
+        },
     )

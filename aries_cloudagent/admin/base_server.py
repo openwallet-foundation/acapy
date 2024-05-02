@@ -1,6 +1,5 @@
 """Abstract admin server interface."""
 
-
 from abc import ABC, abstractmethod
 
 
@@ -9,8 +8,7 @@ class BaseAdminServer(ABC):
 
     @abstractmethod
     async def start(self) -> None:
-        """
-        Start the webserver.
+        """Start the webserver.
 
         Raises:
             AdminSetupError: If there was an error starting the webserver

@@ -1,5 +1,4 @@
-"""
-DID Document Public Key classes.
+"""DID Document Public Key classes.
 
 Copyright 2017-2019 Government of Canada
 Public Services and Procurement Canada - buyandsell.gc.ca
@@ -16,7 +15,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
 
 from collections import namedtuple
 from enum import Enum
@@ -46,8 +44,7 @@ class PublicKeyType(Enum):
 
     @staticmethod
     def get(val: str) -> "PublicKeyType":
-        """
-        Find enum instance corresponding to input value (RsaVerificationKey2018 etc).
+        """Find enum instance corresponding to input value (RsaVerificationKey2018 etc).
 
         Args:
             val: input value marking public key type
@@ -80,8 +77,7 @@ class PublicKeyType(Enum):
         return self.value.specifier
 
     def specification(self, val: str) -> str:
-        """
-        Return specifier and input value for use in public key specification.
+        """Return specifier and input value for use in public key specification.
 
         Args:
             val: value of public key
@@ -94,8 +90,7 @@ class PublicKeyType(Enum):
 
 
 class PublicKey:
-    """
-    Public key specification to embed in DID document.
+    """Public key specification to embed in DID document.
 
     Retains DIDs as raw values (orientated toward indy-facing operations),
     everything else as URIs (oriented toward W3C-facing operations).
@@ -110,8 +105,7 @@ class PublicKey:
         controller: str = None,
         authn: bool = False,
     ) -> None:
-        """
-        Retain key specification particulars.
+        """Retain key specification particulars.
 
         Args:
             did: DID of DID document embedding public key

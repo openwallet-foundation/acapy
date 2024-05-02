@@ -19,8 +19,7 @@ SerDe = namedtuple("SerDe", "ser de")
 
 
 def resolve_class(the_cls, relative_cls: Optional[type] = None) -> type:
-    """
-    Resolve a class.
+    """Resolve a class.
 
     Args:
         the_cls: The class to resolve
@@ -47,8 +46,7 @@ def resolve_class(the_cls, relative_cls: Optional[type] = None) -> type:
 
 
 def resolve_meta_property(obj, prop_name: str, defval=None):
-    """
-    Resolve a meta property.
+    """Resolve a meta property.
 
     Args:
         prop_name: The property to resolve
@@ -90,8 +88,7 @@ class BaseModel(ABC):
         schema_class = None
 
     def __init__(self):
-        """
-        Initialize BaseModel.
+        """Initialize BaseModel.
 
         Raises:
             TypeError: If schema_class is not set on Meta
@@ -106,8 +103,7 @@ class BaseModel(ABC):
 
     @classmethod
     def _get_schema_class(cls) -> Type["BaseModelSchema"]:
-        """
-        Get the schema class.
+        """Get the schema class.
 
         Returns:
             The resolved schema class
@@ -123,8 +119,7 @@ class BaseModel(ABC):
 
     @property
     def Schema(self) -> Type["BaseModelSchema"]:
-        """
-        Accessor for the model's schema class.
+        """Accessor for the model's schema class.
 
         Returns:
             The schema class
@@ -137,11 +132,16 @@ class BaseModel(ABC):
     def deserialize(
         cls: Type[ModelType],
         obj,
+    ) -> ModelType: ...
+
+    @overload
+    @classmethod
+    def deserialize(
+        cls: Type[ModelType],
+        obj,
         *,
         unknown: Optional[str] = None,
-    ) -> ModelType:
-        """Convert from JSON representation to a model instance."""
-        ...
+    ) -> ModelType: ...
 
     @overload
     @classmethod
@@ -151,9 +151,7 @@ class BaseModel(ABC):
         *,
         none2none: Literal[False],
         unknown: Optional[str] = None,
-    ) -> ModelType:
-        """Convert from JSON representation to a model instance."""
-        ...
+    ) -> ModelType: ...
 
     @overload
     @classmethod
@@ -163,9 +161,7 @@ class BaseModel(ABC):
         *,
         none2none: Literal[True],
         unknown: Optional[str] = None,
-    ) -> Optional[ModelType]:
-        """Convert from JSON representation to a model instance."""
-        ...
+    ) -> Optional[ModelType]: ...
 
     @classmethod
     def deserialize(
@@ -175,8 +171,7 @@ class BaseModel(ABC):
         unknown: Optional[str] = None,
         none2none: bool = False,
     ) -> Optional[ModelType]:
-        """
-        Convert from JSON representation to a model instance.
+        """Convert from JSON representation to a model instance.
 
         Args:
             obj: The dict to load into a model instance
@@ -210,18 +205,14 @@ class BaseModel(ABC):
         *,
         as_string: Literal[True],
         unknown: Optional[str] = None,
-    ) -> str:
-        """Create a JSON-compatible dict representation of the model instance."""
-        ...
+    ) -> str: ...
 
     @overload
     def serialize(
         self,
         *,
         unknown: Optional[str] = None,
-    ) -> dict:
-        """Create a JSON-compatible dict representation of the model instance."""
-        ...
+    ) -> dict: ...
 
     def serialize(
         self,
@@ -229,8 +220,7 @@ class BaseModel(ABC):
         as_string: bool = False,
         unknown: Optional[str] = None,
     ) -> Union[str, dict]:
-        """
-        Create a JSON-compatible dict representation of the model instance.
+        """Create a JSON-compatible dict representation of the model instance.
 
         Args:
             as_string: Return a string of JSON instead of a dict
@@ -256,7 +246,7 @@ class BaseModel(ABC):
             ) from err
 
     @classmethod
-    def serde(cls, obj: Union["BaseModel", Mapping]) -> Optional[SerDe]:
+    def serde(cls, obj: Union["BaseModel", Mapping, None]) -> Optional[SerDe]:
         """Return serialized, deserialized representations of input object."""
         if obj is None:
             return None
@@ -280,8 +270,7 @@ class BaseModel(ABC):
         json_repr: Union[str, bytes],
         unknown: Optional[str] = None,
     ):
-        """
-        Parse a JSON string into a model instance.
+        """Parse a JSON string into a model instance.
 
         Args:
             json_repr: JSON string
@@ -298,8 +287,7 @@ class BaseModel(ABC):
         return cls.deserialize(parsed, unknown=unknown)
 
     def to_json(self, unknown: str = None) -> str:
-        """
-        Create a JSON representation of the model instance.
+        """Create a JSON representation of the model instance.
 
         Returns:
             A JSON representation of this message
@@ -308,8 +296,7 @@ class BaseModel(ABC):
         return json.dumps(self.serialize(unknown=unknown))
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -335,8 +322,7 @@ class BaseModelSchema(Schema):
         ordered = True
 
     def __init__(self, *args, **kwargs):
-        """
-        Initialize BaseModelSchema.
+        """Initialize BaseModelSchema.
 
         Raises:
             TypeError: If model_class is not set on Meta
@@ -352,8 +338,7 @@ class BaseModelSchema(Schema):
 
     @classmethod
     def _get_model_class(cls):
-        """
-        Get the model class.
+        """Get the model class.
 
         Returns:
             The model class
@@ -363,8 +348,7 @@ class BaseModelSchema(Schema):
 
     @property
     def Model(self) -> type:
-        """
-        Accessor for the schema's model class.
+        """Accessor for the schema's model class.
 
         Returns:
             The model class
@@ -374,8 +358,7 @@ class BaseModelSchema(Schema):
 
     @pre_load
     def skip_dump_only(self, data, **kwargs):
-        """
-        Skip fields that are only expected during serialization.
+        """Skip fields that are only expected during serialization.
 
         Args:
             data: The incoming data to clean
@@ -399,8 +382,7 @@ class BaseModelSchema(Schema):
 
     @post_load
     def make_model(self, data: dict, **kwargs):
-        """
-        Return model instance after loading.
+        """Return model instance after loading.
 
         Returns:
             A model instance
@@ -417,8 +399,7 @@ class BaseModelSchema(Schema):
 
     @post_dump
     def remove_skipped_values(self, data, **kwargs):
-        """
-        Remove values that are are marked to skip.
+        """Remove values that are are marked to skip.
 
         Returns:
             Returns this modified data

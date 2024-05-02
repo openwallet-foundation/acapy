@@ -21,6 +21,7 @@ class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     ISSUANCE_ABANDONED = "issuance-abandoned"
+    RECORD_NOT_FOUND = "record-not-found"
 
 
 class V20CredProblemReport(ProblemReport):
@@ -49,8 +50,7 @@ class V20CredProblemReportSchema(ProblemReportSchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
+        """Validate schema fields.
 
         Args:
             data: The data to validate

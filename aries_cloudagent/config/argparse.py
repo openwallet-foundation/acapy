@@ -2,7 +2,6 @@
 
 import abc
 import json
-
 from functools import reduce
 from itertools import chain
 from os import environ
@@ -10,15 +9,12 @@ from typing import Type
 
 import deepmerge
 import yaml
-
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
 from ..utils.tracing import trace_event
-
 from .error import ArgsParseError
-from .util import BoundedInt, ByteSize
-
 from .plugin_settings import PLUGIN_CONFIG_KEY
+from .util import BoundedInt, ByteSize
 
 CAT_PROVISION = "general"
 CAT_START = "start"
@@ -74,8 +70,7 @@ def create_argument_parser(*, prog: str = None):
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
-    """
-    Log a set of argument groups into a parser.
+    """Log a set of argument groups into a parser.
 
     Returns:
         A callable to convert loaded arguments into a settings dictionary
@@ -592,7 +587,7 @@ class GeneralGroup(ArgumentGroup):
             help=(
                 "Specifies the type of storage provider to use for the internal "
                 "storage engine. This storage interface is used to store internal "
-                "state  Supported internal storage types are 'basic' (memory) "
+                "state. Supported internal storage types are 'basic' (memory) "
                 "and 'indy'.  The default (if not specified) is 'indy' if the "
                 "wallet type is set to 'indy', otherwise 'basic'."
             ),
@@ -622,12 +617,6 @@ class GeneralGroup(ArgumentGroup):
             metavar="<profile_endpoint>",
             env_var="ACAPY_PROFILE_ENDPOINT",
             help="Specifies the profile endpoint for the (public) DID.",
-        )
-        parser.add_argument(
-            "--read-only-ledger",
-            action="store_true",
-            env_var="ACAPY_READ_ONLY_LEDGER",
-            help="Sets ledger to read-only to prevent updates. Default: false.",
         )
         parser.add_argument(
             "--universal-resolver",
@@ -696,9 +685,6 @@ class GeneralGroup(ArgumentGroup):
         if args.profile_endpoint:
             settings["profile_endpoint"] = args.profile_endpoint
 
-        if args.read_only_ledger:
-            settings["read_only_ledger"] = True
-
         if args.universal_resolver_regex and not args.universal_resolver:
             raise ArgsParseError(
                 "--universal-resolver-regex cannot be used without --universal-resolver"
@@ -765,6 +751,17 @@ class RevocationGroup(ArgumentGroup):
                 "revocation received."
             ),
         )
+        parser.add_argument(
+            "--anoncreds-legacy-revocation",
+            type=str,
+            default="accept",
+            choices=("accept", "reject"),
+            env_var="ACAPY_ANONCREDS_LEGACY_REVOCATION",
+            help=(
+                "Specify the handling of older proofs of non-revocation "
+                "for anoncreds credentials. Values are 'accept' or 'reject'."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract revocation settings."""
@@ -777,9 +774,13 @@ class RevocationGroup(ArgumentGroup):
         if args.notify_revocation:
             settings["revocation.notify"] = args.notify_revocation
         if args.monitor_revocation_notification:
-            settings[
-                "revocation.monitor_notification"
-            ] = args.monitor_revocation_notification
+            settings["revocation.monitor_notification"] = (
+                args.monitor_revocation_notification
+            )
+        if args.anoncreds_legacy_revocation:
+            settings["revocation.anoncreds_legacy_support"] = (
+                args.anoncreds_legacy_revocation
+            )
         return settings
 
 
@@ -846,6 +847,12 @@ class LedgerGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--read-only-ledger",
+            action="store_true",
+            env_var="ACAPY_READ_ONLY_LEDGER",
+            help="Sets ledger to read-only to prevent updates. Default: false.",
+        )
+        parser.add_argument(
             "--ledger-keepalive",
             default=5,
             type=BoundedInt(min=5),
@@ -901,6 +908,10 @@ class LedgerGroup(ArgumentGroup):
             single_configured = False
             multi_configured = False
             update_pool_name = False
+            write_ledger_specified = False
+
+            if args.read_only_ledger:
+                settings["read_only_ledger"] = True
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
                 single_configured = True
@@ -915,27 +926,24 @@ class LedgerGroup(ArgumentGroup):
                     txn_config_list = yaml.safe_load(stream)
                     ledger_config_list = []
                     for txn_config in txn_config_list:
-                        ledger_config_list.append(txn_config)
                         if "is_write" in txn_config and txn_config["is_write"]:
-                            if "genesis_url" in txn_config:
-                                settings["ledger.genesis_url"] = txn_config[
-                                    "genesis_url"
-                                ]
-                            elif "genesis_file" in txn_config:
-                                settings["ledger.genesis_file"] = txn_config[
-                                    "genesis_file"
-                                ]
-                            elif "genesis_transactions" in txn_config:
-                                settings["ledger.genesis_transactions"] = txn_config[
-                                    "genesis_transactions"
-                                ]
-                            else:
-                                raise ArgsParseError(
-                                    "No genesis information provided for write ledger"
-                                )
-                            if "id" in txn_config:
-                                settings["ledger.pool_name"] = txn_config["id"]
-                                update_pool_name = True
+                            write_ledger_specified = True
+                        if (
+                            "genesis_url" not in txn_config
+                            and "genesis_file" not in txn_config
+                            and "genesis_transactions" not in txn_config
+                        ):
+                            raise ArgsParseError(
+                                "No genesis information provided for write ledger"
+                            )
+                        if "id" in txn_config and "pool_name" not in txn_config:
+                            txn_config["pool_name"] = txn_config["id"]
+                        update_pool_name = True
+                        ledger_config_list.append(txn_config)
+                    if not write_ledger_specified and not args.read_only_ledger:
+                        raise ArgsParseError(
+                            "No write ledger genesis provided in multi-ledger config"
+                        )
                     settings["ledger.ledger_config_list"] = ledger_config_list
                     multi_configured = True
             if not (single_configured or multi_configured):
@@ -980,13 +988,15 @@ class LoggingGroup(ArgumentGroup):
         parser.add_argument(
             "--log-file",
             dest="log_file",
-            type=str,
             metavar="<log-file>",
+            nargs="?",
+            const="",
             default=None,
             env_var="ACAPY_LOG_FILE",
             help=(
-                "Overrides the output destination for the root logger (as defined "
-                "by the log config file) to the named <log-file>."
+                "--log-file enables writing of logs to file, if a value is "
+                "provided then it uses that as log file location, otherwise "
+                "the default location in log config file is used."
             ),
         )
         parser.add_argument(
@@ -1007,7 +1017,7 @@ class LoggingGroup(ArgumentGroup):
         settings = {}
         if args.log_config:
             settings["log.config"] = args.log_config
-        if args.log_file:
+        if args.log_file or args.log_file == "":
             settings["log.file"] = args.log_file
         if args.log_level:
             settings["log.level"] = args.log_level
@@ -1122,7 +1132,8 @@ class ProtocolGroup(ArgumentGroup):
             "--preserve-exchange-records",
             action="store_true",
             env_var="ACAPY_PRESERVE_EXCHANGE_RECORDS",
-            help="Keep credential exchange records after exchange has completed.",
+            help="Keep credential and presentation exchange records after "
+            "exchange has completed.",
         )
         parser.add_argument(
             "--emit-new-didcomm-prefix",
@@ -1131,7 +1142,8 @@ class ProtocolGroup(ArgumentGroup):
             help=(
                 "Emit protocol messages with new DIDComm prefix; i.e., "
                 "'https://didcomm.org/' instead of (default) prefix "
-                "'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'."
+                "'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/'. "
+                "Forced to `true` as the old prefix must never be used."
             ),
         )
         parser.add_argument(
@@ -1141,7 +1153,8 @@ class ProtocolGroup(ArgumentGroup):
             help=(
                 "Send packed agent messages with the DIDComm MIME type "
                 "as of RFC 0044; i.e., 'application/didcomm-envelope-enc' "
-                "instead of 'application/ssi-agent-wire'."
+                "instead of 'application/ssi-agent-wire'. "
+                "Forced to `true` as the old MIME type must never be used."
             ),
         )
         parser.add_argument(
@@ -1212,13 +1225,14 @@ class ProtocolGroup(ArgumentGroup):
                 raise ArgsParseError("Error writing trace event " + str(e))
         if args.preserve_exchange_records:
             settings["preserve_exchange_records"] = True
-        if args.emit_new_didcomm_prefix:
-            settings["emit_new_didcomm_prefix"] = True
-        if args.emit_new_didcomm_mime_type:
-            settings["emit_new_didcomm_mime_type"] = True
+        # NOT setting the following two parameters `True` is no longer supported
+        # Even if the args are not set, the config setting is True.
+        settings["emit_new_didcomm_prefix"] = True
+        settings["emit_new_didcomm_mime_type"] = True
         if args.exch_use_unencrypted_tags:
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
+
         return settings
 
 
@@ -1392,8 +1406,7 @@ class TransportGroup(ArgumentGroup):
 
 @group(CAT_START, CAT_PROVISION)
 class MediationInviteGroup(ArgumentGroup):
-    """
-    Mediation invitation settings.
+    """Mediation invitation settings.
 
     These can be provided at provision- and start-time.
     """
@@ -1561,8 +1574,9 @@ class WalletGroup(ArgumentGroup):
             env_var="ACAPY_WALLET_TYPE",
             help=(
                 "Specifies the type of Indy wallet provider to use. "
-                "Supported internal storage types are 'basic' (memory) and 'indy'. "
-                "The default (if not specified) is 'basic'."
+                "Supported internal storage types are 'basic' (memory), 'askar' "
+                "and 'askar-anoncreds'."
+                "The default (if not specified) is 'basic'. 'indy' is deprecated."
             ),
         )
         parser.add_argument(
@@ -1572,7 +1586,7 @@ class WalletGroup(ArgumentGroup):
             default="default",
             env_var="ACAPY_WALLET_STORAGE_TYPE",
             help=(
-                "Specifies the type of Indy wallet backend to use. "
+                "Specifies the type of wallet backend to use. "
                 "Supported internal storage types are 'basic' (memory), "
                 "'default' (sqlite), and 'postgres_storage'.  The default, "
                 "if not specified, is 'default'."
@@ -1668,13 +1682,13 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.replace_public_did"] = True
         if args.recreate_wallet:
             settings["wallet.recreate"] = True
-        # check required settings for 'indy' wallets
-        if settings["wallet.type"] == "indy":
+        # check required settings for persistent wallets
+        if settings["wallet.type"] in ["indy", "askar", "askar-anoncreds"]:
             # requires name, key
             if not args.wallet_name or not args.wallet_key:
                 raise ArgsParseError(
                     "Parameters --wallet-name and --wallet-key must be provided "
-                    "for indy wallets"
+                    "for persistent wallets"
                 )
             # postgres storage requires additional configuration
             if (
@@ -1786,9 +1800,9 @@ class MultitenantGroup(ArgumentGroup):
                         )
 
                     if multitenancy_config.get("key_derivation_method"):
-                        settings[
-                            "multitenant.key_derivation_method"
-                        ] = multitenancy_config.get("key_derivation_method")
+                        settings["multitenant.key_derivation_method"] = (
+                            multitenancy_config.get("key_derivation_method")
+                        )
 
                 else:
                     for value_str in args.multitenancy_config:
@@ -1820,9 +1834,9 @@ class EndorsementGroup(ArgumentGroup):
                 "Specify the role ('author' or 'endorser') which this agent will "
                 "participate. Authors will request transaction endorement from an "
                 "Endorser. Endorsers will endorse transactions from Authors, and "
-                "may write their own  transactions to the ledger. If no role "
+                "may write their own transactions to the ledger. If no role "
                 "(or 'none') is specified then the endorsement protocol will not "
-                " be used and this agent will write transactions to the ledger "
+                "be used and this agent will write transactions to the ledger "
                 "directly."
             ),
         )
@@ -1853,7 +1867,7 @@ class EndorsementGroup(ArgumentGroup):
             metavar="<endorser-endorse-with-did>",
             env_var="ACAPY_ENDORSER_ENDORSE_WITH_DID",
             help=(
-                "For transaction Endorsers, specify the  DID to use to endorse "
+                "For transaction Endorsers, specify the DID to use to endorse "
                 "transactions.  The default (if not specified) is to use the "
                 "Endorser's Public DID."
             ),
@@ -1936,9 +1950,9 @@ class EndorsementGroup(ArgumentGroup):
 
         if args.endorser_endorse_with_did:
             if settings["endorser.endorser"]:
-                settings[
-                    "endorser.endorser_endorse_with_did"
-                ] = args.endorser_endorse_with_did
+                settings["endorser.endorser_endorse_with_did"] = (
+                    args.endorser_endorse_with_did
+                )
             else:
                 raise ArgsParseError(
                     "Parameter --endorser-endorse-with-did should only be set for "
@@ -2021,7 +2035,7 @@ class EndorsementGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_UPGRADE)
+@group(CAT_START, CAT_UPGRADE)
 class UpgradeGroup(ArgumentGroup):
     """ACA-Py Upgrade process settings."""
 
@@ -2053,6 +2067,51 @@ class UpgradeGroup(ArgumentGroup):
             ),
         )
 
+        parser.add_argument(
+            "--force-upgrade",
+            action="store_true",
+            env_var="ACAPY_UPGRADE_FORCE_UPGRADE",
+            help=(
+                "Forces the '—from-version' argument to override the version "
+                "retrieved from secure storage when calculating upgrades to "
+                "be run."
+            ),
+        )
+
+        parser.add_argument(
+            "--named-tag",
+            action="append",
+            env_var="ACAPY_UPGRADE_NAMED_TAGS",
+            help=("Runs upgrade steps associated with tags provided in the config"),
+        )
+
+        parser.add_argument(
+            "--upgrade-all-subwallets",
+            action="store_true",
+            env_var="ACAPY_UPGRADE_ALL_SUBWALLETS",
+            help="Apply upgrade to all subwallets and the base wallet",
+        )
+
+        parser.add_argument(
+            "--upgrade-subwallet",
+            action="append",
+            env_var="ACAPY_UPGRADE_SUBWALLETS",
+            help=(
+                "Apply upgrade to specified subwallets (identified by wallet id)"
+                " and the base wallet"
+            ),
+        )
+
+        parser.add_argument(
+            "--upgrade-page-size",
+            type=str,
+            env_var="ACAPY_UPGRADE_PAGE_SIZE",
+            help=(
+                "Specify page/batch size to process BaseRecords, "
+                "this provides a way to prevent out-of-memory issues."
+            ),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
@@ -2060,4 +2119,21 @@ class UpgradeGroup(ArgumentGroup):
             settings["upgrade.config_path"] = args.upgrade_config_path
         if args.from_version:
             settings["upgrade.from_version"] = args.from_version
+        if args.force_upgrade:
+            settings["upgrade.force_upgrade"] = args.force_upgrade
+        if args.named_tag:
+            settings["upgrade.named_tags"] = (
+                list(args.named_tag) if args.named_tag else []
+            )
+        if args.upgrade_all_subwallets:
+            settings["upgrade.upgrade_all_subwallets"] = args.upgrade_all_subwallets
+        if args.upgrade_subwallet:
+            settings["upgrade.upgrade_subwallets"] = (
+                list(args.upgrade_subwallet) if args.upgrade_subwallet else []
+            )
+        if args.upgrade_page_size:
+            try:
+                settings["upgrade.page_size"] = int(args.upgrade_page_size)
+            except ValueError:
+                raise ArgsParseError("Parameter --upgrade-page-size must be an integer")
         return settings

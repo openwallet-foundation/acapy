@@ -3,7 +3,6 @@
 from marshmallow import EXCLUDE, fields, validate
 
 from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
-
 from ..message_types import PRESENTATION_ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
@@ -22,8 +21,7 @@ class PresentationAck(V10Ack):
         schema_class = "PresentationAckSchema"
 
     def __init__(self, status: str = None, verification_result: str = None, **kwargs):
-        """
-        Initialize an explicit ack message instance.
+        """Initialize an explicit ack message instance.
 
         Args:
             status: Status (default OK)
@@ -44,7 +42,9 @@ class PresentationAckSchema(V10AckSchema):
 
     verification_result = fields.Str(
         required=False,
-        description="Whether presentation is verified: true or false",
-        example="true",
         validate=validate.OneOf(["true", "false"]),
+        metadata={
+            "description": "Whether presentation is verified: true or false",
+            "example": "true",
+        },
     )

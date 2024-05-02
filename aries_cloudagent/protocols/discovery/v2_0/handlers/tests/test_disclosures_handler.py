@@ -1,6 +1,6 @@
 import pytest
 
-from asynctest import mock as async_mock
+from aries_cloudagent.tests import mock
 
 from aries_cloudagent.storage.error import StorageNotFoundError
 
@@ -16,15 +16,15 @@ from ...messages.disclosures import Disclosures
 from ...messages.queries import Queries, QueryItem
 from ...models.discovery_record import V20DiscoveryExchangeRecord
 
-TEST_MESSAGE_FAMILY = "TEST_FAMILY"
-TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
+TEST_MESSAGE_FAMILY = "doc/proto/1.0"
+TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/message"
 
 
 @pytest.fixture()
-def request_context() -> RequestContext:
+def request_context():
     ctx = RequestContext.test_context()
     ctx.connection_ready = True
-    ctx.connection_record = async_mock.MagicMock(connection_id="test123")
+    ctx.connection_record = mock.MagicMock(connection_id="test123")
     yield ctx
 
 
@@ -61,10 +61,10 @@ class TestDisclosuresHandler:
 
         handler = DisclosuresHandler()
         mock_responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(return_value=discovery_record),
+            mock.CoroutineMock(return_value=discovery_record),
         ) as mock_get_rec_thread_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
@@ -101,14 +101,14 @@ class TestDisclosuresHandler:
 
         handler = DisclosuresHandler()
         mock_responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
-        ) as mock_get_rec_thread_id, async_mock.patch.object(
+            mock.CoroutineMock(side_effect=StorageNotFoundError),
+        ) as mock_get_rec_thread_id, mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_connection_id",
-            async_mock.CoroutineMock(return_value=discovery_record),
+            mock.CoroutineMock(return_value=discovery_record),
         ) as mock_get_rec_conn_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
@@ -139,14 +139,14 @@ class TestDisclosuresHandler:
 
         handler = DisclosuresHandler()
         mock_responder = MockResponder()
-        with async_mock.patch.object(
+        with mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_id",
-            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
-        ) as mock_get_rec_thread_id, async_mock.patch.object(
+            mock.CoroutineMock(side_effect=StorageNotFoundError),
+        ) as mock_get_rec_thread_id, mock.patch.object(
             V20DiscoveryExchangeRecord,
             "retrieve_by_connection_id",
-            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
+            mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as mock_get_rec_conn_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages

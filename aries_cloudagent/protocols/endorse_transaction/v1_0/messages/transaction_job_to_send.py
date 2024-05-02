@@ -3,8 +3,7 @@
 from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-
-from ..message_types import TRANSACTION_JOB_TO_SEND, PROTOCOL_PACKAGE
+from ..message_types import PROTOCOL_PACKAGE, TRANSACTION_JOB_TO_SEND
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
@@ -28,8 +27,7 @@ class TransactionJobToSend(AgentMessage):
         job: str = None,
         **kwargs,
     ):
-        """
-        Initialize transaction job to send.
+        """Initialize transaction job to send.
 
         Args:
             job: The job that needs to be send
@@ -51,6 +49,8 @@ class TransactionJobToSendSchema(AgentMessageSchema):
 
     job = fields.Str(
         required=True,
-        description="Transaction job that is sent to the other agent",
-        example="TRANSACTION_AUTHOR",
+        metadata={
+            "description": "Transaction job that is sent to the other agent",
+            "example": "TRANSACTION_AUTHOR",
+        },
     )

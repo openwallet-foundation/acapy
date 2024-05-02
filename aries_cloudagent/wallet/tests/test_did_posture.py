@@ -1,9 +1,9 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ..did_posture import DIDPosture
 
 
-class TestDIDPosture(AsyncTestCase):
+class TestDIDPosture(IsolatedAsyncioTestCase):
     async def test_did_posture(self):
         assert DIDPosture.PUBLIC is DIDPosture.get("PUBLIC")
         assert DIDPosture.POSTED is DIDPosture.get("POSTED")
@@ -19,7 +19,7 @@ class TestDIDPosture(AsyncTestCase):
         )
         assert DIDPosture.WALLET_ONLY is DIDPosture.get({})
 
-        postures = [posture for posture in DIDPosture]
+        postures = list(DIDPosture)
         postures.sort(key=lambda p: p.ordinal)
         assert postures == [
             DIDPosture.PUBLIC,

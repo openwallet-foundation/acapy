@@ -1,0 +1,27 @@
+{
+    "presentation_proposal": {
+       "requested_attributes": {
+          "cred_def_restriction": {
+             "name": "name",
+             "restrictions": [
+                {
+                   "cred_def_id": "change-me"
+                }
+             ]
+          }
+       },
+       "requested_predicates": {
+          "cred_def_predicate": {
+             "name": "age",
+             "p_type": ">",
+             "p_value": 40,
+             "restrictions": [
+                {
+                    "cred_def_id": "change-me"
+                }
+             ]
+          }
+       },
+       "version": "0.1.0"
+    }
+ }

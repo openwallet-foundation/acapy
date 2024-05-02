@@ -5,7 +5,7 @@ import json
 import logging
 import time
 
-from typing import Callable, Type, Union
+from typing import Callable, Type
 from urllib.parse import urlparse
 
 from ...connections.models.connection_target import ConnectionTarget
@@ -22,44 +22,12 @@ from .base import (
     BaseOutboundTransport,
     OutboundDeliveryError,
     OutboundTransportRegistrationError,
+    QueuedOutboundMessage,
 )
 from .message import OutboundMessage
 
 LOGGER = logging.getLogger(__name__)
 MODULE_BASE_PATH = "aries_cloudagent.transport.outbound"
-
-
-class QueuedOutboundMessage:
-    """Class representing an outbound message pending delivery."""
-
-    STATE_NEW = "new"
-    STATE_PENDING = "pending"
-    STATE_ENCODE = "encode"
-    STATE_DELIVER = "deliver"
-    STATE_RETRY = "retry"
-    STATE_DONE = "done"
-
-    def __init__(
-        self,
-        profile: Profile,
-        message: OutboundMessage,
-        target: ConnectionTarget,
-        transport_id: str,
-    ):
-        """Initialize the queued outbound message."""
-        self.profile = profile
-        self.endpoint = target and target.endpoint
-        self.error: Exception = None
-        self.message = message
-        self.payload: Union[str, bytes] = None
-        self.retries = None
-        self.retry_at: float = None
-        self.state = self.STATE_NEW
-        self.target = target
-        self.task: asyncio.Task = None
-        self.transport_id: str = transport_id
-        self.metadata: dict = None
-        self.api_key: str = None
 
 
 class OutboundTransportManager:
@@ -68,8 +36,7 @@ class OutboundTransportManager:
     MAX_RETRY_COUNT = 4
 
     def __init__(self, profile: Profile, handle_not_delivered: Callable = None):
-        """
-        Initialize a `OutboundTransportManager` instance.
+        """Initialize a `OutboundTransportManager` instance.
 
         Args:
             root_profile: The application root profile
@@ -101,8 +68,7 @@ class OutboundTransportManager:
             self.register(outbound_transport)
 
     def register(self, module_name: str) -> str:
-        """
-        Register a new outbound transport by module path.
+        """Register a new outbound transport by module path.
 
         Args:
             module_name: Module name to register
@@ -136,8 +102,7 @@ class OutboundTransportManager:
     def register_class(
         self, transport_class: Type[BaseOutboundTransport], transport_id: str = None
     ) -> str:
-        """
-        Register a new outbound transport class.
+        """Register a new outbound transport class.
 
         Args:
             transport_class: Transport class to register
@@ -253,8 +218,7 @@ class OutboundTransportManager:
         return self.running_transports[transport_id]
 
     async def enqueue_message(self, profile: Profile, outbound: OutboundMessage):
-        """
-        Add an outbound message to the queue.
+        """Add an outbound message to the queue.
 
         Args:
             profile: The active profile for the request
@@ -280,7 +244,7 @@ class OutboundTransportManager:
                 profile, outbound, target
             )
             await transport.handle_message(
-                profile, encoded_outbound_message.payload, target.endpoint
+                profile, encoded_outbound_message, target.endpoint
             )
         else:
             queued = QueuedOutboundMessage(profile, outbound, target, transport_id)
@@ -291,8 +255,7 @@ class OutboundTransportManager:
     async def encode_outbound_message(
         self, profile: Profile, outbound: OutboundMessage, target: ConnectionTarget
     ):
-        """
-        Encode outbound message for the target.
+        """Encode outbound message for the target.
 
         Args:
             profile: The active profile for the request
@@ -317,8 +280,7 @@ class OutboundTransportManager:
         max_attempts: int = None,
         metadata: dict = None,
     ):
-        """
-        Add a webhook to the queue.
+        """Add a webhook to the queue.
 
         Args:
             topic: The webhook topic
@@ -347,8 +309,7 @@ class OutboundTransportManager:
         self.process_queued()
 
     def process_queued(self) -> asyncio.Task:
-        """
-        Start the process to deliver queued messages if necessary.
+        """Start the process to deliver queued messages if necessary.
 
         Returns: the current queue processing task or None
 

@@ -3,22 +3,19 @@
 import json
 import logging
 import re
-
 from collections import OrderedDict
-from typing import Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
 from ...indy.sdk.wallet_setup import IndyOpenWallet
 from ...ledger.base import BaseLedger
-from ...storage.indy import IndySdkStorage
 from ...storage.error import StorageError, StorageNotFoundError
+from ...storage.indy import IndySdkStorage
 from ...storage.record import StorageRecord
 from ...wallet.error import WalletNotFoundError
-
 from ..holder import IndyHolder, IndyHolderError
-
 from .error import IndyErrorHandler
 from .util import create_tails_reader
 
@@ -29,8 +26,7 @@ class IndySdkHolder(IndyHolder):
     """Indy-SDK holder implementation."""
 
     def __init__(self, wallet: IndyOpenWallet):
-        """
-        Initialize an IndyHolder instance.
+        """Initialize an IndyHolder instance.
 
         Args:
             wallet: IndyOpenWallet instance
@@ -41,8 +37,7 @@ class IndySdkHolder(IndyHolder):
     async def create_credential_request(
         self, credential_offer: dict, credential_definition: dict, holder_did: str
     ) -> Tuple[str, str]:
-        """
-        Create a credential request for the given credential offer.
+        """Create a credential request for the given credential offer.
 
         Args:
             credential_offer: The credential offer to create request for
@@ -86,8 +81,7 @@ class IndySdkHolder(IndyHolder):
         credential_id: str = None,
         rev_reg_def: dict = None,
     ) -> str:
-        """
-        Store a credential in the wallet.
+        """Store a credential in the wallet.
 
         Args:
             credential_definition: Credential definition for this credential
@@ -134,8 +128,7 @@ class IndySdkHolder(IndyHolder):
         return credential_id
 
     async def get_credentials(self, start: int, count: int, wql: dict):
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             start: Starting index
@@ -189,10 +182,9 @@ class IndySdkHolder(IndyHolder):
         referents: Sequence[str],
         start: int,
         count: int,
-        extra_query: dict = {},
+        extra_query: Optional[dict] = None,
     ):
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             presentation_request: Valid presentation request from issuer
@@ -267,24 +259,20 @@ class IndySdkHolder(IndyHolder):
             cred["presentation_referents"] = list(cred["presentation_referents"])
 
         creds_ordered = tuple(
-            [
-                cred
-                for cred in sorted(
-                    creds_dict.values(),
-                    key=lambda c: (
-                        c["cred_info"]["rev_reg_id"] or "",  # irrevocable 1st
-                        c["cred_info"][
-                            "referent"
-                        ],  # should be descending by timestamp if we had it
-                    ),
-                )
-            ]
+            sorted(
+                creds_dict.values(),
+                key=lambda c: (
+                    c["cred_info"]["rev_reg_id"] or "",  # irrevocable 1st
+                    c["cred_info"][
+                        "referent"
+                    ],  # should be descending by timestamp if we had it
+                ),
+            )
         )[:count]
         return creds_ordered
 
     async def get_credential(self, credential_id: str) -> str:
-        """
-        Get a credential stored in the wallet.
+        """Get a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to retrieve
@@ -313,8 +301,7 @@ class IndySdkHolder(IndyHolder):
     async def credential_revoked(
         self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
     ) -> bool:
-        """
-        Check ledger for revocation status of credential by cred id.
+        """Check ledger for revocation status of credential by cred id.
 
         Args:
             credential_id: Credential id to check
@@ -336,8 +323,7 @@ class IndySdkHolder(IndyHolder):
             return False
 
     async def delete_credential(self, credential_id: str):
-        """
-        Remove a credential stored in the wallet.
+        """Remove a credential stored in the wallet.
 
         Args:
             credential_id: Credential id to remove
@@ -372,8 +358,7 @@ class IndySdkHolder(IndyHolder):
     async def get_mime_type(
         self, credential_id: str, attr: str = None
     ) -> Union[dict, str]:
-        """
-        Get MIME type per attribute (or for all attributes).
+        """Get MIME type per attribute (or for all attributes).
 
         Args:
             credential_id: credential id
@@ -401,8 +386,7 @@ class IndySdkHolder(IndyHolder):
         credential_definitions: dict,
         rev_states: dict = None,
     ) -> str:
-        """
-        Get credentials stored in the wallet.
+        """Get credentials stored in the wallet.
 
         Args:
             presentation_request: Valid indy format presentation request
@@ -456,8 +440,7 @@ class IndySdkHolder(IndyHolder):
         timestamp: int,
         tails_file_path: str,
     ) -> str:
-        """
-        Create current revocation state for a received credential.
+        """Create current revocation state for a received credential.
 
         Args:
             cred_rev_id: credential revocation id in revocation registry

@@ -9,7 +9,6 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_ISSUE, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
@@ -35,8 +34,7 @@ class CredentialIssue(AgentMessage):
         credentials_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential issue object.
+        """Initialize credential issue object.
 
         Args:
             comment: optional comment
@@ -48,8 +46,7 @@ class CredentialIssue(AgentMessage):
         self.credentials_attach = list(credentials_attach) if credentials_attach else []
 
     def indy_credential(self, index: int = 0):
-        """
-        Retrieve and decode indy credential from attachment.
+        """Retrieve and decode indy credential from attachment.
 
         Args:
             index: ordinal in attachment list to decode and return
@@ -76,7 +73,9 @@ class CredentialIssueSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     credentials_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="credentials~attach"

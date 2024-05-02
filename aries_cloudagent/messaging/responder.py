@@ -1,31 +1,34 @@
-"""
-A message responder.
+"""A message responder.
 
 The responder is provided to message handlers to enable them to send a new message
 in response to the message being handled.
 """
+
 import asyncio
 import json
-
 from abc import ABC, abstractmethod
-from typing import Sequence, Union, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple, Union
 
 from ..cache.base import BaseCache
-from ..connections.models.connection_target import ConnectionTarget
 from ..connections.models.conn_record import ConnRecord
+from ..connections.models.connection_target import ConnectionTarget
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..transport.outbound.message import OutboundMessage
-
-from .base_message import BaseMessage
 from ..transport.outbound.status import OutboundSendStatus
+from .base_message import BaseMessage
 
 SKIP_ACTIVE_CONN_CHECK_MSG_TYPES = [
+    "didexchange/1.1/request",
+    "didexchange/1.1/response",
+    "didexchange/1.1/problem_report",
     "didexchange/1.0/request",
     "didexchange/1.0/response",
+    "didexchange/1.0/problem_report",
     "connections/1.0/invitation",
     "connections/1.0/request",
     "connections/1.0/response",
+    "connections/1.0/problem_report",
 ]
 
 
@@ -112,8 +115,7 @@ class BaseResponder(ABC):
         target: ConnectionTarget = None,
         target_list: Sequence[ConnectionTarget] = None,
     ) -> OutboundSendStatus:
-        """
-        Send a reply to an incoming message.
+        """Send a reply to an incoming message.
 
         Args:
             message: the `BaseMessage`, or pre-packed str or bytes to reply with
@@ -185,8 +187,7 @@ class BaseResponder(ABC):
     async def send_outbound(
         self, message: OutboundMessage, **kwargs
     ) -> OutboundSendStatus:
-        """
-        Send an outbound message.
+        """Send an outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
@@ -194,8 +195,7 @@ class BaseResponder(ABC):
 
     @abstractmethod
     async def send_webhook(self, topic: str, payload: dict):
-        """
-        Dispatch a webhook. DEPRECATED: use the event bus instead.
+        """Dispatch a webhook. DEPRECATED: use the event bus instead.
 
         Args:
             topic: the webhook topic identifier
@@ -208,7 +208,9 @@ class MockResponder(BaseResponder):
 
     def __init__(self):
         """Initialize the mock responder."""
-        self.messages = []
+        self.messages: List[
+            Tuple[Union[BaseMessage, str, bytes, OutboundMessage], Optional[dict]]
+        ] = []
 
     async def send(
         self, message: Union[BaseMessage, str, bytes], **kwargs

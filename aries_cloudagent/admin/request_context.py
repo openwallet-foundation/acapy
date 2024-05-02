@@ -1,5 +1,4 @@
-"""
-Admin request context class.
+"""Admin request context class.
 
 A request context provided by the admin server to admin route handlers.
 """
@@ -23,11 +22,15 @@ class AdminRequestContext:
         profile: Profile,
         *,
         context: InjectionContext = None,
-        settings: Mapping[str, object] = None
+        settings: Mapping[str, object] = None,
+        root_profile: Profile = None,
+        metadata: dict = None
     ):
         """Initialize an instance of AdminRequestContext."""
         self._context = (context or profile.context).start_scope("admin", settings)
         self._profile = profile
+        self._root_profile = root_profile
+        self._metadata = metadata
 
     @property
     def injector(self) -> Injector:
@@ -40,6 +43,16 @@ class AdminRequestContext:
         return self._profile
 
     @property
+    def root_profile(self) -> Optional[Profile]:
+        """Accessor for the associated root_profile instance."""
+        return self._root_profile
+
+    @property
+    def metadata(self) -> dict:
+        """Accessor for the associated metadata."""
+        return self._metadata
+
+    @property
     def settings(self) -> Settings:
         """Accessor for the context settings."""
         return self._context.settings
@@ -49,8 +62,7 @@ class AdminRequestContext:
         return self.profile.session(self._context)
 
     def transaction(self) -> ProfileSession:
-        """
-        Start a new interactive session with commit and rollback support.
+        """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.
@@ -62,8 +74,7 @@ class AdminRequestContext:
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
     ) -> InjectType:
-        """
-        Get the provided instance of a given class identifier.
+        """Get the provided instance of a given class identifier.
 
         Args:
             cls: The base class to retrieve an instance of
@@ -81,8 +92,7 @@ class AdminRequestContext:
         settings: Mapping[str, object] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
-        """
-        Get the provided instance of a given class identifier or default if not found.
+        """Get the provided instance of a given class identifier or default if not found.
 
         Args:
             base_cls: The base class to retrieve an instance of
@@ -105,9 +115,7 @@ class AdminRequestContext:
     ) -> "AdminRequestContext":
         """Quickly set up a new admin request context for tests."""
         ctx = AdminRequestContext(profile or IN_MEM.resolved.test_profile())
-        setattr(
-            ctx, "session_inject", dict() if session_inject is None else session_inject
-        )
+        setattr(ctx, "session_inject", {} if session_inject is None else session_inject)
         setattr(ctx, "session", ctx._test_session)
         return ctx
 
@@ -137,8 +145,7 @@ class AdminRequestContext:
         return session
 
     def __repr__(self) -> str:
-        """
-        Provide a human readable representation of this object.
+        """Provide a human readable representation of this object.
 
         Returns:
             A human readable representation of this object

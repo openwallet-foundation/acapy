@@ -4,7 +4,7 @@ from abc import abstractmethod, ABCMeta
 from datetime import datetime, timezone
 from hashlib import sha256
 from pytz import utc
-from typing import Union
+from typing import Optional, Union
 
 from ..constants import SECURITY_CONTEXT_URL
 from ..document_loader import DocumentLoaderMethod
@@ -21,9 +21,8 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
     def __init__(
         self,
         *,
-        signature_type: str,
-        proof: dict = None,
-        verification_method: str = None,
+        proof: Optional[dict] = None,
+        verification_method: Optional[str] = None,
         date: Union[datetime, None] = None,
     ):
         """Create new LinkedDataSignature instance.
@@ -39,7 +38,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             date (datetime, optional): Signing date to use. Defaults to now
 
         """
-        super().__init__(signature_type=signature_type, proof=proof)
+        super().__init__(proof=proof)
         self.verification_method = verification_method
         self.date = date
 
@@ -101,7 +100,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             date = self.date or datetime.now(timezone.utc)
             if not date.tzinfo:
                 date = utc.localize(date)
-            proof["created"] = date.isoformat()
+            proof["created"] = date.isoformat(timespec="seconds")
 
         # Allow purpose to update the proof; the `proof` is in the
         # SECURITY_CONTEXT_URL `@context` -- therefore the `purpose` must

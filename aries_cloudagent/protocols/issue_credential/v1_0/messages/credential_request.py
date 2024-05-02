@@ -9,12 +9,10 @@ from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-
 from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers."
-    "credential_request_handler.CredentialRequestHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_request_handler.CredentialRequestHandler"
 )
 
 
@@ -36,8 +34,7 @@ class CredentialRequest(AgentMessage):
         requests_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential request object.
+        """Initialize credential request object.
 
         Args:
             requests_attach: requests attachments
@@ -49,8 +46,7 @@ class CredentialRequest(AgentMessage):
         self.requests_attach = list(requests_attach) if requests_attach else []
 
     def indy_cred_req(self, index: int = 0):
-        """
-        Retrieve and decode indy credential request from attachment.
+        """Retrieve and decode indy credential request from attachment.
 
         Args:
             index: ordinal in attachment list to decode and return
@@ -77,7 +73,9 @@ class CredentialRequestSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     requests_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="requests~attach"

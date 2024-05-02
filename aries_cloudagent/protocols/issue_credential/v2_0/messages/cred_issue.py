@@ -2,17 +2,15 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
+from marshmallow import EXCLUDE, ValidationError, fields, validates_schema
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
     AttachDecorator,
     AttachDecoratorSchema,
 )
-from .....messaging.valid import UUIDFour
-
+from .....messaging.valid import UUID4_EXAMPLE
 from ..message_types import CRED_20_ISSUE, PROTOCOL_PACKAGE
-
 from .cred_format import V20CredFormat, V20CredFormatSchema
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.cred_issue_handler.V20CredIssueHandler"
@@ -38,8 +36,7 @@ class V20CredIssue(AgentMessage):
         credentials_attach: Sequence[AttachDecorator] = None,
         **kwargs,
     ):
-        """
-        Initialize credential issue object.
+        """Initialize credential issue object.
 
         Args:
             comment: optional comment
@@ -55,8 +52,7 @@ class V20CredIssue(AgentMessage):
         self.credentials_attach = list(credentials_attach) if credentials_attach else []
 
     def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
-        """
-        Return attached credential.
+        """Return attached credential.
 
         Args:
             fmt: format of attachment in list to decode and return
@@ -90,26 +86,32 @@ class V20CredIssueSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     replacement_id = fields.Str(
-        description="Issuer-unique identifier to coordinate credential replacement",
         required=False,
         allow_none=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": (
+                "Issuer-unique identifier to coordinate credential replacement"
+            ),
+            "example": UUID4_EXAMPLE,
+        },
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     formats = fields.Nested(
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable attachment formats",
+        metadata={"description": "Acceptable attachment formats"},
     )
     credentials_attach = fields.Nested(
         AttachDecoratorSchema,
         many=True,
         required=True,
         data_key="credentials~attach",
-        description="Credential attachments",
+        metadata={"description": "Credential attachments"},
     )
 
     @validates_schema

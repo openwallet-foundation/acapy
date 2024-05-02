@@ -26,8 +26,7 @@ class AskarStorage(BaseStorage):
     """Aries-Askar Non-Secrets interface."""
 
     def __init__(self, session: AskarProfileSession):
-        """
-        Initialize an `AskarStorage` instance.
+        """Initialize an `AskarStorage` instance.
 
         Args:
             session: The Askar profile session to use
@@ -40,8 +39,7 @@ class AskarStorage(BaseStorage):
         return self._session
 
     async def add_record(self, record: StorageRecord):
-        """
-        Add a new record to the store.
+        """Add a new record to the store.
 
         Args:
             record: `StorageRecord` to be stored
@@ -62,8 +60,7 @@ class AskarStorage(BaseStorage):
     async def get_record(
         self, record_type: str, record_id: str, options: Mapping = None
     ) -> StorageRecord:
-        """
-        Fetch a record from the store by type and ID.
+        """Fetch a record from the store by type and ID.
 
         Args:
             record_type: The record type
@@ -101,8 +98,7 @@ class AskarStorage(BaseStorage):
         )
 
     async def update_record(self, record: StorageRecord, value: str, tags: Mapping):
-        """
-        Update an existing stored record's value.
+        """Update an existing stored record's value.
 
         Args:
             record: `StorageRecord` to update
@@ -123,8 +119,7 @@ class AskarStorage(BaseStorage):
             raise StorageError("Error when updating storage record value") from err
 
     async def delete_record(self, record: StorageRecord):
-        """
-        Delete a record.
+        """Delete a record.
 
         Args:
             record: `StorageRecord` to delete
@@ -148,8 +143,7 @@ class AskarStorage(BaseStorage):
     async def find_record(
         self, type_filter: str, tag_query: Mapping, options: Mapping = None
     ) -> StorageRecord:
-        """
-        Find a record using a unique tag filter.
+        """Find a record using a unique tag filter.
 
         Args:
             type_filter: Filter string
@@ -210,8 +204,7 @@ class AskarStorageSearch(BaseStorageSearch):
     """Active instance of an Askar storage search query."""
 
     def __init__(self, profile: AskarProfile):
-        """
-        Initialize an `AskarStorageSearch` instance.
+        """Initialize an `AskarStorageSearch` instance.
 
         Args:
             profile: The Askar profile instance to use
@@ -225,8 +218,7 @@ class AskarStorageSearch(BaseStorageSearch):
         page_size: int = None,
         options: Mapping = None,
     ) -> "AskarStorageSearchSession":
-        """
-        Search stored records.
+        """Search stored records.
 
         Args:
             type_filter: Filter string
@@ -254,8 +246,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
         page_size: int = None,
         options: Mapping = None,
     ):
-        """
-        Initialize a `AskarStorageSearchSession` instance.
+        """Initialize a `AskarStorageSearchSession` instance.
 
         Args:
             profile: Askar profile instance to search
@@ -273,8 +264,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
 
     @property
     def opened(self) -> bool:
-        """
-        Accessor for open state.
+        """Accessor for open state.
 
         Returns:
             True if opened, else False
@@ -284,8 +274,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
 
     @property
     def handle(self):
-        """
-        Accessor for search handle.
+        """Accessor for search handle.
 
         Returns:
             The handle
@@ -319,8 +308,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
         )
 
     async def fetch(self, max_count: int = None) -> Sequence[StorageRecord]:
-        """
-        Fetch the next list of results from the store.
+        """Fetch the next list of results from the store.
 
         Args:
             max_count: Max number of records to return

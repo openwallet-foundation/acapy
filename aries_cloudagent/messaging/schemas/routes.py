@@ -1,9 +1,8 @@
 """Credential schema admin routes."""
 
 import json
-from time import time
-
 from asyncio import shield
+from time import time
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -13,11 +12,11 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields
 from marshmallow.validate import Regexp
 
 from ...admin.request_context import AdminRequestContext
+from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
 from ...indy.issuer import IndyIssuer, IndyIssuerError
@@ -37,48 +36,46 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 from ...protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
 from ...storage.base import BaseStorage, StorageRecord
-from ...storage.error import StorageError
-
+from ...storage.error import StorageError, StorageNotFoundError
+from ...utils.profiles import is_anoncreds_profile_raise_web_exception
+from ..models.base import BaseModelError
 from ..models.openapi import OpenAPISchema
-from ..valid import B58, INDY_SCHEMA_ID, INDY_VERSION
-
+from ..valid import (
+    B58,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
+    UUID4_EXAMPLE,
+)
 from .util import (
-    SchemaQueryStringSchema,
+    EVENT_LISTENER_PATTERN,
     SCHEMA_SENT_RECORD_TYPE,
     SCHEMA_TAGS,
-    EVENT_LISTENER_PATTERN,
+    SchemaQueryStringSchema,
     notify_schema_event,
 )
-
-
-from ..valid import UUIDFour
-from ...connections.models.conn_record import ConnRecord
-from ...storage.error import StorageNotFoundError
-from ..models.base import BaseModelError
 
 
 class SchemaSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
     schema_name = fields.Str(
-        required=True,
-        description="Schema name",
-        example="prefs",
+        required=True, metadata={"description": "Schema name", "example": "prefs"}
     )
     schema_version = fields.Str(
-        required=True, description="Schema version", **INDY_VERSION
+        required=True,
+        validate=INDY_VERSION_VALIDATE,
+        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
     )
     attributes = fields.List(
-        fields.Str(
-            description="attribute name",
-            example="score",
-        ),
+        fields.Str(metadata={"description": "attribute name", "example": "score"}),
         required=True,
-        description="List of schema attributes",
+        metadata={"description": "List of schema attributes"},
     )
 
 
@@ -86,11 +83,15 @@ class SchemaSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     schema_id = fields.Str(
-        description="Schema identifier", required=True, **INDY_SCHEMA_ID
+        required=True,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
     schema = fields.Nested(
-        SchemaSchema(),
-        description="Schema definition",
+        SchemaSchema(), metadata={"description": "Schema definition"}
     )
 
 
@@ -100,12 +101,12 @@ class TxnOrSchemaSendResultSchema(OpenAPISchema):
     sent = fields.Nested(
         SchemaSendResultSchema(),
         required=False,
-        description="Content sent",
+        metadata={"description": "Content sent"},
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Schema transaction to endorse",
+        metadata={"description": "Schema transaction to endorse"},
     )
 
 
@@ -119,7 +120,13 @@ class SchemasCreatedResultSchema(OpenAPISchema):
     """Result schema for a schemas-created request."""
 
     schema_ids = fields.List(
-        fields.Str(description="Schema identifiers", **INDY_SCHEMA_ID)
+        fields.Str(
+            validate=INDY_SCHEMA_ID_VALIDATE,
+            metadata={
+                "description": "Schema identifiers",
+                "example": INDY_SCHEMA_ID_EXAMPLE,
+            },
+        )
     )
 
 
@@ -127,10 +134,12 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""
 
     schema_id = fields.Str(
-        description="Schema identifier",
         required=True,
-        validate=Regexp(rf"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
-        example=INDY_SCHEMA_ID["example"],
+        validate=Regexp(f"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
 
 
@@ -138,8 +147,8 @@ class CreateSchemaTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -147,7 +156,8 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -157,8 +167,7 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
 @querystring_schema(SchemaConnIdMatchInfoSchema())
 @response_schema(TxnOrSchemaSendResultSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
-    """
-    Request handler for creating a schema.
+    """Request handler for creating a schema.
 
     Args:
         request: aiohttp request object
@@ -169,6 +178,9 @@ async def schemas_send_schema(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     outbound_handler = request["outbound_message_router"]
 
     create_transaction_for_endorser = json.loads(
@@ -224,13 +236,17 @@ async def schemas_send_schema(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -302,9 +318,8 @@ async def schemas_send_schema(request: web.BaseRequest):
             try:
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -326,8 +341,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 @querystring_schema(SchemaQueryStringSchema())
 @response_schema(SchemasCreatedResultSchema(), 200, description="")
 async def schemas_created(request: web.BaseRequest):
-    """
-    Request handler for retrieving schemas that current agent created.
+    """Request handler for retrieving schemas that current agent created.
 
     Args:
         request: aiohttp request object
@@ -337,6 +351,8 @@ async def schemas_created(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+
+    is_anoncreds_profile_raise_web_exception(context.profile)
 
     session = await context.session()
     storage = session.inject(BaseStorage)
@@ -354,8 +370,7 @@ async def schemas_created(request: web.BaseRequest):
 @match_info_schema(SchemaIdMatchInfoSchema())
 @response_schema(SchemaGetResultSchema(), 200, description="")
 async def schemas_get_schema(request: web.BaseRequest):
-    """
-    Request handler for sending a credential offer.
+    """Request handler for sending a credential offer.
 
     Args:
         request: aiohttp request object
@@ -365,12 +380,16 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     schema_id = request.match_info["schema_id"]
 
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
@@ -386,6 +405,8 @@ async def schemas_get_schema(request: web.BaseRequest):
     async with ledger:
         try:
             schema = await ledger.get_schema(schema_id)
+            if not schema:
+                raise web.HTTPNotFound(reason=f"Schema not found: {schema_id}")
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -399,8 +420,7 @@ async def schemas_get_schema(request: web.BaseRequest):
 @match_info_schema(SchemaIdMatchInfoSchema())
 @response_schema(SchemaGetResultSchema(), 200, description="")
 async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
-    """
-    Request handler for fixing a schema's wallet non-secrets records.
+    """Request handler for fixing a schema's wallet non-secrets records.
 
     Args:
         request: aiohttp request object
@@ -410,8 +430,9 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     schema_id = request.match_info["schema_id"]
 
@@ -419,7 +440,7 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
         storage = session.inject(BaseStorage)
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
@@ -468,8 +489,7 @@ async def on_schema_event(profile: Profile, event: Event):
 
 
 async def add_schema_non_secrets_record(profile: Profile, schema_id: str):
-    """
-    Write the wallet non-secrets record for a schema (already written to the ledger).
+    """Write the wallet non-secrets record for a schema (already written to the ledger).
 
     Args:
         profile: the current profile (used to determine storage)

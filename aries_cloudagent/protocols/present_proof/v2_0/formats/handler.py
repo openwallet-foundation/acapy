@@ -1,4 +1,5 @@
 """present-proof-v2 format handler - supports DIF and INDY."""
+
 from abc import ABC, abstractclassmethod, abstractmethod
 import logging
 
@@ -33,8 +34,7 @@ class V20PresFormatHandler(ABC):
 
     @property
     def profile(self) -> Profile:
-        """
-        Accessor for the current profile instance.
+        """Accessor for the current profile instance.
 
         Returns:
             The profile instance for this presentation exchange format

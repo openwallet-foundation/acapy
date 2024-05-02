@@ -1,0 +1,144 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run/Debug Faber",
+            "type": "python",
+            "request": "launch",
+            "module": "aries_cloudagent",
+            "justMyCode": true,
+            "args": [
+                "start",
+                "--arg-file=${workspaceRoot}/.vscode/faber.yml"
+            ]
+        },
+        {
+            "name": "Run/Debug Alice",
+            "type": "python",
+            "request": "launch",
+            "module": "aries_cloudagent",
+            "justMyCode": true,
+            "args": [
+                "start",
+                "--arg-file=${workspaceRoot}/.vscode/alice.yml"
+            ]
+        },
+        {
+            "name": "Run/Debug Endorser",
+            "type": "python",
+            "request": "launch",
+            "module": "aries_cloudagent",
+            "justMyCode": true,
+            "args": [
+                "start",
+                "--arg-file=${workspaceRoot}/.vscode/endorser.yml"
+            ]
+        },
+        {
+            "name": "Run/Debug Author",
+            "type": "python",
+            "request": "launch",
+            "module": "aries_cloudagent",
+            "justMyCode": true,
+            "args": [
+                "start",
+                "--arg-file=${workspaceRoot}/.vscode/author.yml"
+            ]
+        },
+        {
+            "name": "Run/Debug Multitenant Admin",
+            "type": "python",
+            "request": "launch",
+            "module": "aries_cloudagent",
+            "justMyCode": true,
+            "args": [
+                "start",
+                "--arg-file=${workspaceRoot}/.vscode/multitenant-admin.yml"
+            ]
+        },
+        {
+            "name": "ruff - aries_cloudagent",
+            "type": "python",
+            "request": "launch",
+            "module": "ruff",
+            "console": "integratedTerminal",
+            "sudo": true,
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "args": ["check", "."]
+        },
+        {
+            "name": "ruff fix - aries_cloudagent",
+            "type": "python",
+            "request": "launch",
+            "module": "ruff",
+            "console": "integratedTerminal",
+            "sudo": true,
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "args": ["check", ".", "--fix"]
+        },
+        {
+            "name": "ruff - current file",
+            "type": "python",
+            "request": "launch",
+            "module": "ruff",
+            "console": "integratedTerminal",
+            "sudo": true,
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "args": ["check", ".", "${file}"]
+        },
+        {
+            "name": "black (check) - aries_cloudagent",
+            "type": "python",
+            "request": "launch",
+            "module": "black",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "args": [
+                ".",
+                "--check"
+            ]
+        },
+        {
+            "name": "black (check) - current file",
+            "type": "python",
+            "request": "launch",
+            "module": "black",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "${file}",
+                "--check"
+            ]
+        },
+        {
+            "name": "black (format) - aries_cloudagent",
+            "type": "python",
+            "request": "launch",
+            "module": "black",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/aries_cloudagent",
+            "args": [
+                "."
+            ]
+        },
+        {
+            "name": "black (format) - current file",
+            "type": "python",
+            "request": "launch",
+            "module": "black",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "${file}"
+            ]
+        }
+    ]
+}

@@ -14,8 +14,7 @@ class CredentialAckHandler(BaseHandler):
     """Message handler class for credential acks."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for credential acks.
+        """Message handler logic for credential acks.
 
         Args:
             context: request context
@@ -48,9 +47,11 @@ class CredentialAckHandler(BaseHandler):
         credential_manager = CredentialManager(context.profile)
         await credential_manager.receive_credential_ack(
             context.message,
-            context.connection_record.connection_id
-            if context.connection_record
-            else None,
+            (
+                context.connection_record.connection_id
+                if context.connection_record
+                else None
+            ),
         )
 
         trace_event(

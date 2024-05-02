@@ -3,7 +3,7 @@
 import json
 import logging
 
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import indy.anoncreds
 import indy.did
@@ -136,10 +136,12 @@ class IndySdkWallet(BaseWallet):
         return verkey
 
     async def create_signing_key(
-        self, key_type: KeyType, seed: str = None, metadata: dict = None
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> KeyInfo:
-        """
-        Create a new public/private signing keypair.
+        """Create a new public/private signing keypair.
 
         Args:
             seed: Seed for key
@@ -152,6 +154,28 @@ class IndySdkWallet(BaseWallet):
             WalletDuplicateError: If the resulting verkey already exists in the wallet
             WalletError: If there is a libindy error
 
+        """
+        return await self.create_key(key_type, seed, metadata)
+
+    async def create_key(
+        self,
+        key_type: KeyType,
+        seed: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> KeyInfo:
+        """Create a new public/private keypair.
+
+        Args:
+            key_type: Key type to create
+            seed: Seed for key
+            metadata: Optional metadata to store with the keypair
+
+        Returns:
+            A `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateError: If the resulting verkey already exists in the wallet
+            WalletError: If there is another backend error
         """
 
         # must save metadata to allow identity check
@@ -205,8 +229,7 @@ class IndySdkWallet(BaseWallet):
             raise WalletDuplicateError(f"Multiple keys exist for verkey: {verkey}")
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:
-        """
-        Fetch info for a signing keypair.
+        """Fetch info for a signing keypair.
 
         Args:
             verkey: The verification key of the keypair
@@ -233,8 +256,7 @@ class IndySdkWallet(BaseWallet):
             return await self.__get_keypair_signing_key(verkey)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
-        """
-        Replace the metadata associated with a signing keypair.
+        """Replace the metadata associated with a signing keypair.
 
         Args:
             verkey: The verification key of the keypair
@@ -262,8 +284,7 @@ class IndySdkWallet(BaseWallet):
             )
 
     async def rotate_did_keypair_start(self, did: str, next_seed: str = None) -> str:
-        """
-        Begin key rotation for DID that wallet owns: generate new keypair.
+        """Begin key rotation for DID that wallet owns: generate new keypair.
 
         Args:
             did: signing DID
@@ -302,8 +323,7 @@ class IndySdkWallet(BaseWallet):
         return verkey
 
     async def rotate_did_keypair_apply(self, did: str) -> DIDInfo:
-        """
-        Apply temporary keypair as main for DID that wallet owns.
+        """Apply temporary keypair as main for DID that wallet owns.
 
         Args:
             did: signing DID
@@ -420,12 +440,11 @@ class IndySdkWallet(BaseWallet):
         self,
         method: DIDMethod,
         key_type: KeyType,
-        seed: str = None,
-        did: str = None,
-        metadata: dict = None,
+        seed: Optional[str] = None,
+        did: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> DIDInfo:
-        """
-        Create and store a new local DID.
+        """Create and store a new local DID.
 
         Args:
             method: The method to use for the DID
@@ -464,9 +483,22 @@ class IndySdkWallet(BaseWallet):
                 method, key_type, metadata, seed
             )
 
-    async def get_local_dids(self) -> Sequence[DIDInfo]:
+    async def store_did(self, did_info: DIDInfo) -> DIDInfo:
+        """Store a DID in the wallet.
+
+        This enables components external to the wallet to define how a DID
+        is created and then store it in the wallet for later use.
+
+        Args:
+            did_info: The DID to store
+
+        Returns:
+            The stored `DIDInfo`
         """
-        Get list of defined local DIDs.
+        raise WalletError("This operation is not supported by Indy-SDK wallets")
+
+    async def get_local_dids(self) -> Sequence[DIDInfo]:
+        """Get list of defined local DIDs.
 
         Returns:
             A list of locally stored DIDs as `DIDInfo` instances
@@ -540,8 +572,7 @@ class IndySdkWallet(BaseWallet):
         return self.__did_info_from_key_pair_info(key_pair)
 
     async def get_local_did(self, did: str) -> DIDInfo:
-        """
-        Find info for a local DID.
+        """Find info for a local DID.
 
         Args:
             did: The DID for which to get info
@@ -570,8 +601,7 @@ class IndySdkWallet(BaseWallet):
             return await self.__get_keypair_local_did(method, key_type, did)
 
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
-        """
-        Resolve a local DID from a verkey.
+        """Resolve a local DID from a verkey.
 
         Args:
             verkey: The verkey for which to get the local DID
@@ -591,8 +621,7 @@ class IndySdkWallet(BaseWallet):
         raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
-        """
-        Replace metadata for a local DID.
+        """Replace metadata for a local DID.
 
         Args:
             did: The DID for which to replace metadata
@@ -621,8 +650,7 @@ class IndySdkWallet(BaseWallet):
             )
 
     async def get_public_did(self) -> DIDInfo:
-        """
-        Retrieve the public DID.
+        """Retrieve the public DID.
 
         Returns:
             The currently public `DIDInfo`, if any
@@ -673,8 +701,7 @@ class IndySdkWallet(BaseWallet):
         return public_info
 
     async def set_public_did(self, did: Union[str, DIDInfo]) -> DIDInfo:
-        """
-        Assign the public DID.
+        """Assign the public DID.
 
         Returns:
             The updated `DIDInfo`
@@ -717,8 +744,7 @@ class IndySdkWallet(BaseWallet):
         endorser_did: str = None,
         routing_keys: List[str] = None,
     ):
-        """
-        Update the endpoint for a DID in the wallet, send to ledger if public or posted.
+        """Update the endpoint for a DID in the wallet, send to ledger if posted.
 
         Args:
             did: DID for which to set endpoint
@@ -763,8 +789,7 @@ class IndySdkWallet(BaseWallet):
         await self.replace_local_did_metadata(did, metadata)
 
     async def sign_message(self, message: bytes, from_verkey: str) -> bytes:
-        """
-        Sign a message using the private key associated with a given verkey.
+        """Sign a message using the private key associated with a given verkey.
 
         Args:
             message: Message bytes to sign
@@ -816,8 +841,7 @@ class IndySdkWallet(BaseWallet):
         from_verkey: str,
         key_type: KeyType,
     ) -> bool:
-        """
-        Verify a signature against the public key of the signer.
+        """Verify a signature against the public key of the signer.
 
         Args:
             message: Message to verify
@@ -867,8 +891,7 @@ class IndySdkWallet(BaseWallet):
     async def pack_message(
         self, message: str, to_verkeys: Sequence[str], from_verkey: str = None
     ) -> bytes:
-        """
-        Pack a message for one or more recipients.
+        """Pack a message for one or more recipients.
 
         Args:
             message: The message to pack
@@ -897,8 +920,7 @@ class IndySdkWallet(BaseWallet):
         return result
 
     async def unpack_message(self, enc_message: bytes) -> Tuple[str, str, str]:
-        """
-        Unpack a message.
+        """Unpack a message.
 
         Args:
             enc_message: The packed message bytes

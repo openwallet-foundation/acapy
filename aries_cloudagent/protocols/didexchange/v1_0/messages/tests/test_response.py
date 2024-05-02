@@ -1,6 +1,6 @@
 from unittest import mock
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......core.in_memory import InMemoryProfile
@@ -46,8 +46,8 @@ class TestConfig:
         return doc
 
 
-class TestDIDXResponse(AsyncTestCase, TestConfig):
-    async def setUp(self):
+class TestDIDXResponse(IsolatedAsyncioTestCase, TestConfig):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet
@@ -59,10 +59,13 @@ class TestDIDXResponse(AsyncTestCase, TestConfig):
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
+        did_rotate_attach = AttachDecorator.data_base64_string(self.test_verkey)
+        await did_rotate_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.response = DIDXResponse(
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
+            did_rotate_attach=did_rotate_attach,
         )
 
     def test_init(self):
@@ -101,10 +104,10 @@ class TestDIDXResponse(AsyncTestCase, TestConfig):
         assert response_dict is mock_response_schema_dump.return_value
 
 
-class TestDIDXResponseSchema(AsyncTestCase, TestConfig):
+class TestDIDXResponseSchema(IsolatedAsyncioTestCase, TestConfig):
     """Test response schema."""
 
-    async def setUp(self):
+    async def asyncSetUp(self):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet
@@ -116,13 +119,17 @@ class TestDIDXResponseSchema(AsyncTestCase, TestConfig):
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
+        did_rotate_attach = AttachDecorator.data_base64_string(self.test_verkey)
+        await did_rotate_attach.data.sign(self.did_info.verkey, self.wallet)
 
         self.response = DIDXResponse(
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
+            did_rotate_attach=did_rotate_attach,
         )
 
     async def test_make_model(self):
         data = self.response.serialize()
         model_instance = DIDXResponse.deserialize(data)
         assert isinstance(model_instance, DIDXResponse)
+        assert model_instance.did_rotate_attach

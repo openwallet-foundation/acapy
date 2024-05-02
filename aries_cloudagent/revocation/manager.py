@@ -2,25 +2,26 @@
 
 import json
 import logging
-from typing import Mapping, Sequence, Text
+from typing import Mapping, Optional, Sequence, Text, Tuple
 
-from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
-    RevNotificationRecord,
-)
+from ..connections.models.conn_record import ConnRecord
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer
-from ..storage.error import StorageNotFoundError
-from .indy import IndyRevocation
-from .models.issuer_cred_rev_record import IssuerCredRevRecord
-from .models.issuer_rev_reg_record import IssuerRevRegRecord
-from .util import notify_pending_cleared_event, notify_revocation_published_event
 from ..protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
 from ..protocols.issue_credential.v2_0.models.cred_ex_record import (
     V20CredExRecord,
 )
+from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
+    RevNotificationRecord,
+)
+from ..storage.error import StorageNotFoundError
+from .indy import IndyRevocation
+from .models.issuer_cred_rev_record import IssuerCredRevRecord
+from .models.issuer_rev_reg_record import IssuerRevRegRecord
+from .util import notify_pending_cleared_event, notify_revocation_published_event
 
 
 class RevocationManagerError(BaseError):
@@ -31,8 +32,7 @@ class RevocationManager:
     """Class for managing revocation operations."""
 
     def __init__(self, profile: Profile):
-        """
-        Initialize a RevocationManager.
+        """Initialize a RevocationManager.
 
         Args:
             context: The context for this revocation manager
@@ -48,10 +48,11 @@ class RevocationManager:
         notify_version: str = None,
         thread_id: str = None,
         connection_id: str = None,
+        endorser_conn_id: str = None,
         comment: str = None,
+        write_ledger: bool = True,
     ):
-        """
-        Revoke a credential by its credential exchange identifier at issue.
+        """Revoke a credential by its credential exchange identifier at issue.
 
         Optionally, publish the corresponding revocation registry delta to the ledger.
 
@@ -81,7 +82,9 @@ class RevocationManager:
             notify_version=notify_version,
             thread_id=thread_id,
             connection_id=connection_id,
+            endorser_conn_id=endorser_conn_id,
             comment=comment,
+            write_ledger=write_ledger,
         )
 
     async def revoke_credential(
@@ -93,10 +96,11 @@ class RevocationManager:
         notify_version: str = None,
         thread_id: str = None,
         connection_id: str = None,
+        endorser_conn_id: str = None,
         comment: str = None,
-    ):
-        """
-        Revoke a credential.
+        write_ledger: bool = True,
+    ) -> Optional[dict]:
+        """Revoke a credential.
 
         Optionally, publish the corresponding revocation registry delta to the ledger.
 
@@ -135,7 +139,10 @@ class RevocationManager:
             # pick up pending revocations on input revocation registry
             crids = (issuer_rr_rec.pending_pub or []) + [cred_rev_id]
             (delta_json, _) = await issuer.revoke_credentials(
-                issuer_rr_rec.revoc_reg_id, issuer_rr_rec.tails_local_path, crids
+                issuer_rr_rec.cred_def_id,
+                issuer_rr_rec.revoc_reg_id,
+                issuer_rr_rec.tails_local_path,
+                crids,
             )
             async with self._profile.transaction() as txn:
                 issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
@@ -147,24 +154,46 @@ class RevocationManager:
                 await txn.commit()
             await self.set_cred_revoked_state(rev_reg_id, crids)
             if delta_json:
-                await issuer_rr_upd.send_entry(self._profile)
-            await notify_revocation_published_event(
-                self._profile, rev_reg_id, [cred_rev_id]
-            )
-
+                if write_ledger:
+                    rev_entry_resp = await issuer_rr_upd.send_entry(self._profile)
+                    await notify_revocation_published_event(
+                        self._profile, rev_reg_id, [cred_rev_id]
+                    )
+                    return rev_entry_resp
+                else:
+                    async with self._profile.session() as session:
+                        try:
+                            connection_record = await ConnRecord.retrieve_by_id(
+                                session, endorser_conn_id
+                            )
+                        except StorageNotFoundError:
+                            raise RevocationManagerError(
+                                "No endorser connection record found "
+                                f"for id: {endorser_conn_id}"
+                            )
+                        endorser_info = await connection_record.metadata_get(
+                            session, "endorser_info"
+                        )
+                    endorser_did = endorser_info["endorser_did"]
+                    rev_entry_resp = await issuer_rr_upd.send_entry(
+                        self._profile,
+                        write_ledger=write_ledger,
+                        endorser_did=endorser_did,
+                    )
+                    return rev_entry_resp
         else:
             async with self._profile.transaction() as txn:
                 await issuer_rr_rec.mark_pending(txn, cred_rev_id)
                 await txn.commit()
+            return None
 
     async def update_rev_reg_revoked_state(
         self,
         apply_ledger_update: bool,
         rev_reg_record: IssuerRevRegRecord,
         genesis_transactions: dict,
-    ) -> (dict, dict, dict):
-        """
-        Request handler to fix ledger entry of credentials revoked against registry.
+    ) -> Tuple[dict, dict, dict]:
+        """Request handler to fix ledger entry of credentials revoked against registry.
 
         Args:
             rev_reg_id: revocation registry id
@@ -183,9 +212,10 @@ class RevocationManager:
     async def publish_pending_revocations(
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,
-    ) -> Mapping[Text, Sequence[Text]]:
-        """
-        Publish pending revocations to the ledger.
+        write_ledger: bool = True,
+        connection_id: str = None,
+    ) -> Tuple[Optional[dict], Mapping[Text, Sequence[Text]]]:
+        """Publish pending revocations to the ledger.
 
         Args:
             rrid2crid: Mapping from revocation registry identifiers to all credential
@@ -204,12 +234,13 @@ class RevocationManager:
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
                     - no pending revocations from any other revocation registries.
+            connection_id: connection identifier for endorser connection to use
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
         result = {}
         issuer = self._profile.inject(IndyIssuer)
-
+        rev_entry_resp = None
         async with self._profile.session() as session:
             issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)
 
@@ -225,7 +256,9 @@ class RevocationManager:
             if limit_crids:
                 crids = crids.intersection(limit_crids)
             if crids:
+                crids = list(crids)
                 (delta_json, failed_crids) = await issuer.revoke_credentials(
+                    issuer_rr_rec.cred_def_id,
                     issuer_rr_rec.revoc_reg_id,
                     issuer_rr_rec.tails_local_path,
                     crids,
@@ -240,20 +273,40 @@ class RevocationManager:
                     await txn.commit()
                 await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
                 if delta_json:
-                    await issuer_rr_upd.send_entry(self._profile)
+                    if connection_id:
+                        async with self._profile.session() as session:
+                            try:
+                                connection_record = await ConnRecord.retrieve_by_id(
+                                    session, connection_id
+                                )
+                            except StorageNotFoundError:
+                                raise RevocationManagerError(
+                                    "No endorser connection record found "
+                                    f"for id: {connection_id}"
+                                )
+                            endorser_info = await connection_record.metadata_get(
+                                session, "endorser_info"
+                            )
+                        endorser_did = endorser_info["endorser_did"]
+                        rev_entry_resp = await issuer_rr_upd.send_entry(
+                            self._profile,
+                            write_ledger=write_ledger,
+                            endorser_did=endorser_did,
+                        )
+                    else:
+                        rev_entry_resp = await issuer_rr_upd.send_entry(self._profile)
+                        await notify_revocation_published_event(
+                            self._profile, issuer_rr_rec.revoc_reg_id, crids
+                        )
                 published = sorted(crid for crid in crids if crid not in failed_crids)
                 result[issuer_rr_rec.revoc_reg_id] = published
-                await notify_revocation_published_event(
-                    self._profile, issuer_rr_rec.revoc_reg_id, crids
-                )
 
-        return result
+        return rev_entry_resp, result
 
     async def clear_pending_revocations(
         self, purge: Mapping[Text, Sequence[Text]] = None
     ) -> Mapping[Text, Sequence[Text]]:
-        """
-        Clear pending revocation publications.
+        """Clear pending revocation publications.
 
         Args:
             purge: Mapping from revocation registry identifiers to all credential
@@ -300,8 +353,7 @@ class RevocationManager:
     async def set_cred_revoked_state(
         self, rev_reg_id: str, cred_rev_ids: Sequence[str]
     ) -> None:
-        """
-        Update credentials state to credential_revoked.
+        """Update credentials state to credential_revoked.
 
         Args:
             rev_reg_id: revocation registry ID

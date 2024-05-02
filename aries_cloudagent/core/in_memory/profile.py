@@ -4,13 +4,14 @@ from collections import OrderedDict
 from typing import Any, Mapping, Type
 from weakref import ref
 
+from aries_askar import Session
+
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
-from ...storage.base import BaseStorage
+from ...storage.base import BaseStorage, BaseStorageSearch
 from ...storage.vc_holder.base import VCHolder
 from ...utils.classloader import DeferLoad
 from ...wallet.base import BaseWallet
-
 from ..profile import Profile, ProfileManager, ProfileSession
 
 STORAGE_CLASS = DeferLoad("aries_cloudagent.storage.in_memory.InMemoryStorage")
@@ -18,8 +19,7 @@ WALLET_CLASS = DeferLoad("aries_cloudagent.wallet.in_memory.InMemoryWallet")
 
 
 class InMemoryProfile(Profile):
-    """
-    Provide access to in-memory profile management.
+    """Provide access to in-memory profile management.
 
     Used primarily for testing.
     """
@@ -27,19 +27,32 @@ class InMemoryProfile(Profile):
     BACKEND_NAME = "in_memory"
     TEST_PROFILE_NAME = "test-profile"
 
-    def __init__(self, *, context: InjectionContext = None, name: str = None):
+    def __init__(
+        self,
+        *,
+        context: InjectionContext = None,
+        name: str = None,
+        profile_class: Any = None
+    ):
         """Create a new InMemoryProfile instance."""
-        global STORAGE_CLASS, WALLET_CLASS
         super().__init__(context=context, name=name, created=True)
         self.keys = {}
         self.local_dids = {}
         self.pair_dids = {}
         self.records = OrderedDict()
         self.bind_providers()
+        self.profile_class = profile_class if profile_class else InMemoryProfile
+
+    @property
+    def __class__(self):
+        """Return the given profile class."""
+        return self.profile_class
 
     def bind_providers(self):
         """Initialize the profile-level instance providers."""
         injector = self._context.injector
+
+        injector.bind_instance(BaseStorageSearch, STORAGE_CLASS(self))
 
         injector.bind_provider(
             VCHolder,
@@ -54,8 +67,7 @@ class InMemoryProfile(Profile):
         return InMemoryProfileSession(self, context=context)
 
     def transaction(self, context: InjectionContext = None) -> "ProfileSession":
-        """
-        Start a new interactive session with commit and rollback support.
+        """Start a new interactive session with commit and rollback support.
 
         If the current backend does not support transactions, then commit
         and rollback operations of the session will not have any effect.
@@ -64,12 +76,16 @@ class InMemoryProfile(Profile):
 
     @classmethod
     def test_profile(
-        cls, settings: Mapping[str, Any] = None, bind: Mapping[Type, Any] = None
+        cls,
+        settings: Mapping[str, Any] = None,
+        bind: Mapping[Type, Any] = None,
+        profile_class: Any = None,
     ) -> "InMemoryProfile":
         """Used in tests to create a standard InMemoryProfile."""
         profile = InMemoryProfile(
             context=InjectionContext(enforce_typing=False, settings=settings),
             name=InMemoryProfile.TEST_PROFILE_NAME,
+            profile_class=profile_class,
         )
         if bind:
             for k, v in bind.items():
@@ -113,11 +129,19 @@ class InMemoryProfileSession(ProfileSession):
         """Create the session or transaction connection, if needed."""
         await super()._setup()
         self._init_context()
+        self._handle: Session = None
 
     def _init_context(self):
         """Initialize the session context."""
-        self._context.injector.bind_instance(BaseStorage, STORAGE_CLASS(self.profile))
+        self._context.injector.bind_instance(
+            BaseStorage, self.profile.inject(BaseStorageSearch)
+        )
         self._context.injector.bind_instance(BaseWallet, WALLET_CLASS(self.profile))
+
+    @property
+    def handle(self) -> Session:
+        """Accessor for the Session instance."""
+        return self._handle
 
     @property
     def storage(self) -> BaseStorage:

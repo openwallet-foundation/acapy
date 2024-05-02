@@ -1,7 +1,6 @@
 """Handle connection information interface with non-secrets storage."""
 
 import json
-
 from enum import Enum
 from typing import Any, Optional, Union
 
@@ -9,8 +8,14 @@ from marshmallow import fields, validate
 
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
-
+from ...messaging.valid import (
+    GENERIC_DID_EXAMPLE,
+    GENERIC_DID_VALIDATE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_VALIDATE,
+    UUID4_EXAMPLE,
+)
+from ...protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ...protocols.connections.v1_0.message_types import (
     CONNECTION_INVITATION,
     CONNECTION_REQUEST,
@@ -19,16 +24,18 @@ from ...protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 from ...protocols.connections.v1_0.messages.connection_request import ConnectionRequest
-from ...protocols.connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from ...protocols.didcomm_prefix import DIDCommPrefix
+from ...protocols.didexchange.v1_0.message_types import (
+    ARIES_PROTOCOL as DIDEX_1_1,
+    DIDEX_1_0,
+)
 from ...protocols.didexchange.v1_0.messages.request import DIDXRequest
-from ...protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from ...protocols.out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitation,
 )
 from ...storage.base import BaseStorage
-from ...storage.record import StorageRecord
 from ...storage.error import StorageNotFoundError
+from ...storage.record import StorageRecord
 
 
 class ConnRecord(BaseRecord):
@@ -37,29 +44,9 @@ class ConnRecord(BaseRecord):
     class Meta:
         """ConnRecord metadata."""
 
-        schema_class = "ConnRecordSchema"
+        schema_class = "MaybeStoredConnRecordSchema"
 
-    class Protocol(Enum):
-        """Supported Protocols for Connection."""
-
-        RFC_0160 = CONN_PROTO
-        RFC_0023 = DIDX_PROTO
-
-        @classmethod
-        def get(cls, label: Union[str, "ConnRecord.Protocol"]):
-            """Get aries protocol enum for label."""
-            if isinstance(label, str):
-                for proto in ConnRecord.Protocol:
-                    if label in proto.value:
-                        return proto
-            elif isinstance(label, ConnRecord.Protocol):
-                return label
-            return None
-
-        @property
-        def aries_protocol(self):
-            """Return used connection protocol."""
-            return self.value
+    SUPPORTED_PROTOCOLS = (CONN_PROTO, DIDEX_1_0, DIDEX_1_1)
 
     class Role(Enum):
         """RFC 160 (inviter, invitee) = RFC 23 (responder, requester)."""
@@ -101,8 +88,7 @@ class ConnRecord(BaseRecord):
             return self is ConnRecord.Role.get(other)
 
     class State(Enum):
-        """
-        Collator for equivalent states between RFC 160 and RFC 23.
+        """Collator for equivalent states between RFC 160 and RFC 23.
 
         On the connection record, the state has to serve for both RFCs.
         Hence, internally, RFC23 requester/responder states collate to
@@ -187,36 +173,34 @@ class ConnRecord(BaseRecord):
     INVITATION_MODE_MULTI = "multi"
     INVITATION_MODE_STATIC = "static"
 
-    ROUTING_STATE_NONE = "none"
-    ROUTING_STATE_REQUEST = "request"
-    ROUTING_STATE_ACTIVE = "active"
-    ROUTING_STATE_ERROR = "error"
-
     ACCEPT_MANUAL = "manual"
     ACCEPT_AUTO = "auto"
 
     def __init__(
         self,
         *,
-        connection_id: str = None,
-        my_did: str = None,
-        their_did: str = None,
-        their_label: str = None,
-        their_role: Union[str, "ConnRecord.Role"] = None,
-        invitation_key: str = None,
-        invitation_msg_id: str = None,
-        request_id: str = None,
-        state: Union[str, "ConnRecord.State"] = None,
-        inbound_connection_id: str = None,
-        error_msg: str = None,
-        routing_state: str = None,
-        accept: str = None,
-        invitation_mode: str = None,
-        alias: str = None,
-        their_public_did: str = None,
-        rfc23_state: str = None,  # from state: formalism for base_record.from_storage()
-        initiator: str = None,  # for backward compatibility with old ConnectionRecord
-        connection_protocol: Union[str, "ConnRecord.Protocol"] = None,
+        connection_id: Optional[str] = None,
+        my_did: Optional[str] = None,
+        their_did: Optional[str] = None,
+        their_label: Optional[str] = None,
+        their_role: Union[str, "ConnRecord.Role", None] = None,
+        invitation_key: Optional[str] = None,
+        invitation_msg_id: Optional[str] = None,
+        request_id: Optional[str] = None,
+        state: Union[str, "ConnRecord.State", None] = None,
+        inbound_connection_id: Optional[str] = None,
+        error_msg: Optional[str] = None,
+        accept: Optional[str] = None,
+        invitation_mode: Optional[str] = None,
+        alias: Optional[str] = None,
+        their_public_did: Optional[str] = None,
+        connection_protocol: Optional[str] = None,
+        # from state: formalism for base_record.from_storage()
+        rfc23_state: Optional[str] = None,
+        # for backward compat with old records
+        routing_state: Optional[str] = None,
+        # for backward compatibility with old ConnectionRecord
+        initiator: Optional[str] = None,
         **kwargs,
     ):
         """Initialize a new ConnRecord."""
@@ -231,26 +215,21 @@ class ConnRecord(BaseRecord):
         self.their_role = (
             ConnRecord.Role.get(their_role).rfc160
             if isinstance(their_role, str)
-            else None
-            if their_role is None
-            else their_role.rfc160
+            else None if their_role is None else their_role.rfc160
         )
         self.invitation_key = invitation_key
         self.invitation_msg_id = invitation_msg_id
         self.request_id = request_id
         self.error_msg = error_msg
         self.inbound_connection_id = inbound_connection_id
-        self.routing_state = routing_state or self.ROUTING_STATE_NONE
         self.accept = accept or self.ACCEPT_MANUAL
         self.invitation_mode = invitation_mode or self.INVITATION_MODE_ONCE
         self.alias = alias
         self.their_public_did = their_public_did
         self.connection_protocol = (
-            ConnRecord.Protocol.get(connection_protocol).aries_protocol
-            if isinstance(connection_protocol, str)
+            connection_protocol
+            if connection_protocol in self.SUPPORTED_PROTOCOLS
             else None
-            if connection_protocol is None
-            else connection_protocol.aries_protocol
         )
 
     @property
@@ -271,7 +250,6 @@ class ConnRecord(BaseRecord):
             for prop in (
                 "their_role",
                 "inbound_connection_id",
-                "routing_state",
                 "accept",
                 "invitation_mode",
                 "invitation_msg_id",
@@ -288,9 +266,9 @@ class ConnRecord(BaseRecord):
     async def retrieve_by_did(
         cls,
         session: ProfileSession,
-        their_did: str = None,
-        my_did: str = None,
-        their_role: str = None,
+        their_did: Optional[str] = None,
+        my_did: Optional[str] = None,
+        their_role: Optional[str] = None,
     ) -> "ConnRecord":
         """Retrieve a connection record by target DID.
 
@@ -321,7 +299,7 @@ class ConnRecord(BaseRecord):
         Args:
             session: The active profile session
             invitation_key: The key on the originating invitation
-            initiator: Filter by the initiator value
+            their_role: Filter by their role
         """
         tag_filter = {
             "invitation_key": invitation_key,
@@ -344,7 +322,7 @@ class ConnRecord(BaseRecord):
         Args:
             session: The active profile session
             invitation_msg_id: Invitation message identifier
-            initiator: Filter by the initiator value
+            their_role: Filter by their role
         """
         tag_filter = {"invitation_msg_id": invitation_msg_id}
         post_filter = {
@@ -361,11 +339,11 @@ class ConnRecord(BaseRecord):
     async def find_existing_connection(
         cls, session: ProfileSession, their_public_did: str
     ) -> Optional["ConnRecord"]:
-        """Retrieve existing active connection records (public did).
+        """Retrieve existing active connection records (public did or did:peer).
 
         Args:
             session: The active profile session
-            their_public_did: Inviter public DID
+            their_public_did: Inviter public DID (or did:peer)
         """
         tag_filter = {"their_public_did": their_public_did}
         conn_records = await cls.query(
@@ -521,13 +499,30 @@ class ConnRecord(BaseRecord):
         """
         await super().delete_record(session)
 
+        storage = session.inject(BaseStorage)
         # Delete metadata
         if self.connection_id:
-            storage = session.inject(BaseStorage)
             await storage.delete_all_records(
                 self.RECORD_TYPE_METADATA,
                 {"connection_id": self.connection_id},
             )
+
+        # Delete attached messages
+        await storage.delete_all_records(
+            self.RECORD_TYPE_REQUEST,
+            {"connection_id": self.connection_id},
+        )
+        await storage.delete_all_records(
+            self.RECORD_TYPE_INVITATION,
+            {"connection_id": self.connection_id},
+        )
+
+    async def abandon(self, session: ProfileSession, *, reason: Optional[str] = None):
+        """Set state to abandoned."""
+        reason = reason or "Connection abandoned"
+        self.state = ConnRecord.State.ABANDONED.rfc160
+        self.error_msg = reason
+        await self.save(session, reason=reason)
 
     async def metadata_get(
         self, session: ProfileSession, key: str, default: Any = None
@@ -621,8 +616,134 @@ class ConnRecord(BaseRecord):
         return super().__eq__(other)
 
 
-class ConnRecordSchema(BaseRecordSchema):
+class MaybeStoredConnRecordSchema(BaseRecordSchema):
     """Schema to allow serialization/deserialization of connection records."""
+
+    class Meta:
+        """MaybeStoredConnRecordSchema metadata."""
+
+        model_class = ConnRecord
+
+    connection_id = fields.Str(
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
+    )
+    my_did = fields.Str(
+        required=False,
+        validate=GENERIC_DID_VALIDATE,
+        metadata={
+            "description": "Our DID for connection",
+            "example": GENERIC_DID_EXAMPLE,
+        },
+    )
+    their_did = fields.Str(
+        required=False,
+        validate=GENERIC_DID_VALIDATE,
+        metadata={
+            "description": "Their DID for connection",
+            "example": GENERIC_DID_EXAMPLE,
+        },
+    )
+    their_label = fields.Str(
+        required=False,
+        metadata={"description": "Their label for connection", "example": "Bob"},
+    )
+    their_role = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            [label for role in ConnRecord.Role for label in role.value]
+        ),
+        metadata={
+            "description": "Their role in the connection protocol",
+            "example": ConnRecord.Role.REQUESTER.rfc23,
+        },
+    )
+    connection_protocol = fields.Str(
+        required=False,
+        validate=validate.OneOf(ConnRecord.SUPPORTED_PROTOCOLS),
+        metadata={
+            "description": "Connection protocol used",
+            "example": "connections/1.0",
+        },
+    )
+    rfc23_state = fields.Str(
+        dump_only=True,
+        metadata={"description": "State per RFC 23", "example": "invitation-sent"},
+    )
+    inbound_connection_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Inbound routing connection id to use",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+    invitation_key = fields.Str(
+        required=False,
+        validate=INDY_RAW_PUBLIC_KEY_VALIDATE,
+        metadata={
+            "description": "Public key for connection",
+            "example": INDY_RAW_PUBLIC_KEY_EXAMPLE,
+        },
+    )
+    invitation_msg_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "ID of out-of-band invitation message",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+    request_id = fields.Str(
+        required=False,
+        metadata={
+            "description": "Connection request identifier",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+    accept = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            ConnRecord.get_attributes_by_prefix("ACCEPT_", walk_mro=False)
+        ),
+        metadata={
+            "description": "Connection acceptance: manual or auto",
+            "example": ConnRecord.ACCEPT_AUTO,
+        },
+    )
+    error_msg = fields.Str(
+        required=False,
+        metadata={
+            "description": "Error message",
+            "example": "No DIDDoc provided; cannot connect to public DID",
+        },
+    )
+    invitation_mode = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            ConnRecord.get_attributes_by_prefix("INVITATION_MODE_", walk_mro=False)
+        ),
+        metadata={
+            "description": "Invitation mode",
+            "example": ConnRecord.INVITATION_MODE_ONCE,
+        },
+    )
+    alias = fields.Str(
+        required=False,
+        metadata={
+            "description": "Optional alias to apply to connection for later use",
+            "example": "Bob, providing quotes",
+        },
+    )
+    their_public_did = fields.Str(
+        required=False,
+        metadata={
+            "description": "Other agent's public DID for connection",
+            "example": "2cpBmR3FqGKWi5EyUbpRY8",
+        },
+    )
+
+
+class ConnRecordSchema(MaybeStoredConnRecordSchema):
+    """Schema representing stored ConnRecords."""
 
     class Meta:
         """ConnRecordSchema metadata."""
@@ -630,90 +751,6 @@ class ConnRecordSchema(BaseRecordSchema):
         model_class = ConnRecord
 
     connection_id = fields.Str(
-        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
-    )
-    my_did = fields.Str(
-        required=False, description="Our DID for connection", **INDY_DID
-    )
-    their_did = fields.Str(
-        required=False, description="Their DID for connection", **INDY_DID
-    )
-    their_label = fields.Str(
-        required=False, description="Their label for connection", example="Bob"
-    )
-    their_role = fields.Str(
-        required=False,
-        description="Their role in the connection protocol",
-        validate=validate.OneOf(
-            [label for role in ConnRecord.Role for label in role.value]
-        ),
-        example=ConnRecord.Role.REQUESTER.rfc23,
-    )
-    connection_protocol = fields.Str(
-        required=False,
-        description="Connection protocol used",
-        validate=validate.OneOf([proto.value for proto in ConnRecord.Protocol]),
-        example=ConnRecord.Protocol.RFC_0160.aries_protocol,
-    )
-    rfc23_state = fields.Str(
-        dump_only=True,
-        description="State per RFC 23",
-        example="invitation-sent",
-    )
-    inbound_connection_id = fields.Str(
-        required=False,
-        description="Inbound routing connection id to use",
-        example=UUIDFour.EXAMPLE,
-    )
-    invitation_key = fields.Str(
-        required=False, description="Public key for connection", **INDY_RAW_PUBLIC_KEY
-    )
-    invitation_msg_id = fields.Str(
-        required=False,
-        description="ID of out-of-band invitation message",
-        example=UUIDFour.EXAMPLE,
-    )
-    request_id = fields.Str(
-        required=False,
-        description="Connection request identifier",
-        example=UUIDFour.EXAMPLE,
-    )
-    routing_state = fields.Str(
-        required=False,
-        description="Routing state of connection",
-        validate=validate.OneOf(
-            ConnRecord.get_attributes_by_prefix("ROUTING_STATE_", walk_mro=False)
-        ),
-        example=ConnRecord.ROUTING_STATE_ACTIVE,
-    )
-    accept = fields.Str(
-        required=False,
-        description="Connection acceptance: manual or auto",
-        example=ConnRecord.ACCEPT_AUTO,
-        validate=validate.OneOf(
-            ConnRecord.get_attributes_by_prefix("ACCEPT_", walk_mro=False)
-        ),
-    )
-    error_msg = fields.Str(
-        required=False,
-        description="Error message",
-        example="No DIDDoc provided; cannot connect to public DID",
-    )
-    invitation_mode = fields.Str(
-        required=False,
-        description="Invitation mode",
-        example=ConnRecord.INVITATION_MODE_ONCE,
-        validate=validate.OneOf(
-            ConnRecord.get_attributes_by_prefix("INVITATION_MODE_", walk_mro=False)
-        ),
-    )
-    alias = fields.Str(
-        required=False,
-        description="Optional alias to apply to connection for later use",
-        example="Bob, providing quotes",
-    )
-    their_public_did = fields.Str(
-        required=False,
-        description="Other agent's public DID for connection",
-        example="2cpBmR3FqGKWi5EyUbpRY8",
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )

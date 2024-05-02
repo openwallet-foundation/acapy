@@ -1,0 +1,33 @@
+version: '3'
+#***************************************************************
+# playground test agents                                       *
+#***************************************************************
+
+networks:
+  app-network:
+    name: ${APP_NETWORK_NAME:-playgroundnet}
+    driver: bridge
+    external: true
+
+services:
+
+  tests:
+      container_name: juggernaut
+      build:
+        context: .
+        dockerfile: Dockerfile.test.runner
+      environment:
+        - WAIT_BEFORE_HOSTS=3
+        - WAIT_HOSTS=faber-agent:9011, alice-agent:9012, acme-agent:9013, multi-agent:9014
+        - WAIT_HOSTS_TIMEOUT=60
+        - WAIT_SLEEP_INTERVAL=1
+        - WAIT_HOST_CONNECT_TIMEOUT=30
+        # API ADMIN 
+        - FABER=http://faber-agent:9011
+        - ALICE=http://alice-agent:9012
+        - ACME=http://acme-agent:9013
+        - MULTI=http://multi-agent:9014
+        # ADDITIONAL TEST env vars
+        - MEDIATOR_INVITATION_URL=${MEDIATOR_INVITATION_URL}
+      networks:
+        - app-network

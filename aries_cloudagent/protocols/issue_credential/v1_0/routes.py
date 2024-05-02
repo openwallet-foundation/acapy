@@ -1,5 +1,7 @@
 """Credential exchange admin routes."""
 
+from json.decoder import JSONDecodeError
+
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -8,11 +10,8 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-from json.decoder import JSONDecodeError
 from marshmallow import fields, validate
 
-from ...out_of_band.v1_0.models.oob_record import OobRecord
-from ....wallet.util import default_did_from_verkey
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
@@ -23,16 +22,21 @@ from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
-    UUIDFour,
-    UUID4,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_DID_EXAMPLE,
+    INDY_DID_VALIDATE,
+    INDY_SCHEMA_ID_EXAMPLE,
+    INDY_SCHEMA_ID_VALIDATE,
+    INDY_VERSION_EXAMPLE,
+    INDY_VERSION_VALIDATE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
-from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
-
+from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
+from ....wallet.util import default_did_from_verkey
+from ...out_of_band.v1_0.models.oob_record import OobRecord
 from . import problem_report_for_record, report_problem
 from .manager import CredentialManager, CredentialManagerError
 from .message_types import SPEC_URI
@@ -55,18 +59,15 @@ class IssueCredentialModuleResponseSchema(OpenAPISchema):
 class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange list query."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier",
+    connection_id = fields.Str(
         required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
-    thread_id = fields.UUID(
-        description="Thread identifier",
+    thread_id = fields.Str(
         required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     role = fields.Str(
-        description="Role assigned in credential exchange",
         required=False,
         validate=validate.OneOf(
             [
@@ -75,9 +76,9 @@ class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
                 if m.startswith("ROLE_")
             ]
         ),
+        metadata={"description": "Role assigned in credential exchange"},
     )
     state = fields.Str(
-        description="Credential exchange state",
         required=False,
         validate=validate.OneOf(
             [
@@ -86,6 +87,7 @@ class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
                 if m.startswith("STATE_")
             ]
         ),
+        metadata={"description": "Credential exchange state"},
     )
 
 
@@ -94,7 +96,7 @@ class V10CredentialExchangeListResultSchema(OpenAPISchema):
 
     results = fields.List(
         fields.Nested(V10CredentialExchangeSchema),
-        description="Aries#0036 v1.0 credential exchange records",
+        metadata={"description": "Aries#0036 v1.0 credential exchange records"},
     )
 
 
@@ -108,34 +110,53 @@ class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
     """Base class for request schema for sending credential proposal admin message."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     schema_id = fields.Str(
-        description="Schema identifier", required=False, **INDY_SCHEMA_ID
+        required=False,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID", required=False, **INDY_DID
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Schema issuer DID", "example": INDY_DID_EXAMPLE},
     )
     schema_name = fields.Str(
-        description="Schema name", required=False, example="preferences"
+        required=False,
+        metadata={"description": "Schema name", "example": "preferences"},
     )
     schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
+        required=False,
+        validate=INDY_VERSION_VALIDATE,
+        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
     )
     issuer_did = fields.Str(
-        description="Credential issuer DID", required=False, **INDY_DID
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Credential issuer DID", "example": INDY_DID_EXAMPLE},
     )
     auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     credential_proposal = fields.Nested(CredentialPreviewSchema, required=True)
 
@@ -143,40 +164,58 @@ class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
 class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
     """Base class for request schema for sending credential proposal admin message."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier",
+    connection_id = fields.Str(
         required=True,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     schema_id = fields.Str(
-        description="Schema identifier", required=False, **INDY_SCHEMA_ID
+        required=False,
+        validate=INDY_SCHEMA_ID_VALIDATE,
+        metadata={
+            "description": "Schema identifier",
+            "example": INDY_SCHEMA_ID_EXAMPLE,
+        },
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID", required=False, **INDY_DID
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Schema issuer DID", "example": INDY_DID_EXAMPLE},
     )
     schema_name = fields.Str(
-        description="Schema name", required=False, example="preferences"
+        required=False,
+        metadata={"description": "Schema name", "example": "preferences"},
     )
     schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
+        required=False,
+        validate=INDY_VERSION_VALIDATE,
+        metadata={"description": "Schema version", "example": INDY_VERSION_EXAMPLE},
     )
     issuer_did = fields.Str(
-        description="Credential issuer DID", required=False, **INDY_DID
+        required=False,
+        validate=INDY_DID_VALIDATE,
+        metadata={"description": "Credential issuer DID", "example": INDY_DID_EXAMPLE},
     )
     auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
 
 
@@ -198,40 +237,48 @@ class V10CredentialBoundOfferRequestSchema(OpenAPISchema):
     counter_proposal = fields.Nested(
         CredentialProposalSchema,
         required=False,
-        description="Optional counter-proposal",
+        metadata={"description": "Optional counter-proposal"},
     )
 
 
 class V10CredentialFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending free credential offer admin message."""
 
-    connection_id = fields.UUID(
-        description="Connection identifier",
+    connection_id = fields.Str(
         required=True,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     auto_issue = fields.Bool(
-        description=(
-            "Whether to respond automatically to credential requests, creating "
-            "and issuing requested credentials"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Whether to respond automatically to credential requests, creating and"
+                " issuing requested credentials"
+            )
+        },
     )
     auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
         required=False,
-        default=True,
+        dump_default=True,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
@@ -240,27 +287,36 @@ class V10CredentialConnFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for creating connection free credential offer."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     auto_issue = fields.Bool(
-        description=(
-            "Whether to respond automatically to credential requests, creating "
-            "and issuing requested credentials"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Whether to respond automatically to credential requests, creating and"
+                " issuing requested credentials"
+            )
+        },
     )
     auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
         required=False,
-        default=True,
+        dump_default=True,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
 
@@ -269,7 +325,9 @@ class V10CredentialIssueRequestSchema(OpenAPISchema):
     """Request schema for sending credential issue admin message."""
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
 
 
@@ -283,7 +341,8 @@ class CredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
     credential_id = fields.Str(
-        description="Credential identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Credential identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -291,19 +350,39 @@ class CredExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential exchange id."""
 
     cred_ex_id = fields.Str(
-        description="Credential exchange identifier", required=True, **UUID4
+        required=True,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+
+
+class V10CredentialExchangeAutoRemoveRequestSchema(OpenAPISchema):
+    """Request Schema for overriding default preserve exchange records setting."""
+
+    auto_remove = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
 
 
 @docs(
     tags=["issue-credential v1.0"],
     summary="Fetch all credential exchange records",
+    deprecated=True,
 )
 @querystring_schema(V10CredentialExchangeListQueryStringSchema)
 @response_schema(V10CredentialExchangeListResultSchema(), 200, description="")
 async def credential_exchange_list(request: web.BaseRequest):
-    """
-    Request handler for searching credential exchange records.
+    """Request handler for searching credential exchange records.
 
     Args:
         request: aiohttp request object
@@ -339,12 +418,12 @@ async def credential_exchange_list(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Fetch a single credential exchange record",
+    deprecated=True,
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_retrieve(request: web.BaseRequest):
-    """
-    Request handler for fetching single credential exchange record.
+    """Request handler for fetching single credential exchange record.
 
     Args:
         request: aiohttp request object
@@ -386,12 +465,12 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
         "Create a credential record without "
         "sending (generally for use with Out-Of-Band)"
     ),
+    deprecated=True,
 )
 @request_schema(V10CredentialCreateSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_create(request: web.BaseRequest):
-    """
-    Request handler for creating a credential from attr values.
+    """Request handler for creating a credential from attr values.
 
     The internal credential record will be created without the credential
     being sent to any connection. This can be used in conjunction with
@@ -407,14 +486,16 @@ async def credential_exchange_create(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-
+    profile = context.profile
     body = await request.json()
 
     comment = body.get("comment")
     preview_spec = body.get("credential_proposal")
     if not preview_spec:
         raise web.HTTPBadRequest(reason="credential_proposal must be provided")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     trace_msg = body.get("trace")
 
     try:
@@ -463,12 +544,12 @@ async def credential_exchange_create(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Send holder a credential, automating entire flow",
+    deprecated=True,
 )
 @request_schema(V10CredentialProposalRequestMandSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send(request: web.BaseRequest):
-    """
-    Request handler for sending credential from issuer to holder from attr values.
+    """Request handler for sending credential from issuer to holder from attr values.
 
     If both issuer and holder are configured for automatic responses, the operation
     ultimately results in credential issue; otherwise, the result waits on the first
@@ -494,7 +575,9 @@ async def credential_exchange_send(request: web.BaseRequest):
     preview_spec = body.get("credential_proposal")
     if not preview_spec:
         raise web.HTTPBadRequest(reason="credential_proposal must be provided")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     trace_msg = body.get("trace")
 
     connection_record = None
@@ -563,12 +646,12 @@ async def credential_exchange_send(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Send issuer a credential proposal",
+    deprecated=True,
 )
 @request_schema(V10CredentialProposalRequestOptSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_proposal(request: web.BaseRequest):
-    """
-    Request handler for sending credential proposal.
+    """Request handler for sending credential proposal.
 
     Args:
         request: aiohttp request object
@@ -588,7 +671,9 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     connection_id = body.get("connection_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_proposal")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     trace_msg = body.get("trace")
 
     connection_record = None
@@ -617,13 +702,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
-        await report_problem(
-            err,
-            ProblemReportReason.ISSUANCE_ABANDONED.value,
-            web.HTTPBadRequest,
-            cred_ex_record or connection_record,
-            outbound_handler,
-        )
+        # other party cannot yet receive a problem report about our failed protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     await outbound_handler(
         credential_proposal,
@@ -689,12 +769,12 @@ async def _create_free_offer(
 @docs(
     tags=["issue-credential v1.0"],
     summary="Create a credential offer, independent of any proposal or connection",
+    deprecated=True,
 )
 @request_schema(V10CredentialConnFreeOfferRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_create_free_offer(request: web.BaseRequest):
-    """
-    Request handler for creating free credential offer.
+    """Request handler for creating free credential offer.
 
     Unlike with `send-offer`, this credential exchange is not tied to a specific
     connection. It must be dispatched out-of-band by the controller.
@@ -719,11 +799,13 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     if not preview_spec:
-        raise web.HTTPBadRequest(reason=("Missing credential_preview"))
+        raise web.HTTPBadRequest(reason="Missing credential_preview")
 
     trace_msg = body.get("trace")
     cred_ex_record = None
@@ -761,12 +843,12 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Send holder a credential offer, independent of any proposal",
+    deprecated=True,
 )
 @request_schema(V10CredentialFreeOfferRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_free_offer(request: web.BaseRequest):
-    """
-    Request handler for sending free credential offer.
+    """Request handler for sending free credential offer.
 
     An issuer initiates a such a credential offer, free from any
     holder-initiated corresponding credential proposal with preview.
@@ -794,11 +876,13 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", not profile.settings.get("preserve_exchange_records")
+    )
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     if not preview_spec:
-        raise web.HTTPBadRequest(reason=("Missing credential_preview"))
+        raise web.HTTPBadRequest(reason="Missing credential_preview")
     trace_msg = body.get("trace")
 
     cred_ex_record = None
@@ -830,13 +914,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         if cred_ex_record:
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
-        await report_problem(
-            err,
-            ProblemReportReason.ISSUANCE_ABANDONED.value,
-            web.HTTPBadRequest,
-            cred_ex_record or connection_record,
-            outbound_handler,
-        )
+        # other party cannot yet receive a problem report about our failed protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     await outbound_handler(credential_offer_message, connection_id=connection_id)
 
@@ -853,13 +932,13 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Send holder a credential offer in reference to a proposal with preview",
+    deprecated=True,
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialBoundOfferRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_bound_offer(request: web.BaseRequest):
-    """
-    Request handler for sending bound credential offer.
+    """Request handler for sending bound credential offer.
 
     A holder initiates this sequence with a credential proposal; this message
     responds with an offer bound to the proposal.
@@ -953,12 +1032,13 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Send issuer a credential request",
+    deprecated=True,
 )
 @match_info_schema(CredExIdMatchInfoSchema())
+@request_schema(V10CredentialExchangeAutoRemoveRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_request(request: web.BaseRequest):
-    """
-    Request handler for sending credential request.
+    """Request handler for sending credential request.
 
     Args:
         request: aiohttp request object
@@ -974,6 +1054,14 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
+
+    try:
+        body = await request.json() or {}
+        auto_remove = body.get(
+            "auto_remove", not profile.settings.get("preserve_exchange_records")
+        )
+    except JSONDecodeError:
+        auto_remove = not profile.settings.get("preserve_exchange_records")
 
     cred_ex_record = None
     connection_record = None
@@ -1012,6 +1100,9 @@ async def credential_exchange_send_request(request: web.BaseRequest):
             )
             # Transform recipient key into did
             holder_did = default_did_from_verkey(oob_record.our_recipient_key)
+
+    # assign the auto_remove flag from above...
+    cred_ex_record.auto_remove = auto_remove
 
     try:
         credential_manager = CredentialManager(profile)
@@ -1057,13 +1148,13 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Send holder a credential",
+    deprecated=True,
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialIssueRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_issue(request: web.BaseRequest):
-    """
-    Request handler for sending credential.
+    """Request handler for sending credential.
 
     Args:
         request: aiohttp request object
@@ -1153,13 +1244,13 @@ async def credential_exchange_issue(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Store a received credential",
+    deprecated=True,
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialStoreRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_store(request: web.BaseRequest):
-    """
-    Request handler for storing credential.
+    """Request handler for storing credential.
 
     Args:
         request: aiohttp request object
@@ -1258,13 +1349,13 @@ async def credential_exchange_store(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Send a problem report for credential exchange",
+    deprecated=True,
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialProblemReportRequestSchema())
 @response_schema(IssueCredentialModuleResponseSchema(), 200, description="")
 async def credential_exchange_problem_report(request: web.BaseRequest):
-    """
-    Request handler for sending problem report.
+    """Request handler for sending problem report.
 
     Args:
         request: aiohttp request object
@@ -1305,12 +1396,12 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 @docs(
     tags=["issue-credential v1.0"],
     summary="Remove an existing credential exchange record",
+    deprecated=True,
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(IssueCredentialModuleResponseSchema(), 200, description="")
 async def credential_exchange_remove(request: web.BaseRequest):
-    """
-    Request handler for removing a credential exchange record.
+    """Request handler for removing a credential exchange record.
 
     Args:
         request: aiohttp request object

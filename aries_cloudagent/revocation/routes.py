@@ -3,9 +3,9 @@
 import json
 import logging
 import os
+import re
 import shutil
 from asyncio import shield
-import re
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -24,20 +24,25 @@ from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuerError
 from ..ledger.base import BaseLedger
-from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..ledger.error import LedgerError
+from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
-    INDY_REV_REG_ID,
-    INDY_REV_REG_SIZE,
-    UUID4,
-    WHOLE_NUM,
-    UUIDFour,
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_CRED_DEF_ID_VALIDATE,
+    INDY_CRED_REV_ID_EXAMPLE,
+    INDY_CRED_REV_ID_VALIDATE,
+    INDY_REV_REG_ID_EXAMPLE,
+    INDY_REV_REG_ID_VALIDATE,
+    INDY_REV_REG_SIZE_EXAMPLE,
+    INDY_REV_REG_SIZE_VALIDATE,
+    UUID4_EXAMPLE,
+    UUID4_VALIDATE,
+    WHOLE_NUM_EXAMPLE,
+    WHOLE_NUM_VALIDATE,
 )
 from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
@@ -47,12 +52,12 @@ from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 from ..protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
 from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
-
+from ..utils.profiles import is_anoncreds_profile_raise_web_exception
 from .error import RevocationError, RevocationNotSupportedError
 from .indy import IndyRevocation
 from .manager import RevocationManager, RevocationManagerError
@@ -62,13 +67,12 @@ from .models.issuer_cred_rev_record import (
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .util import (
-    REVOCATION_EVENT_PREFIX,
-    REVOCATION_REG_INIT_EVENT,
-    REVOCATION_REG_ENDORSED_EVENT,
     REVOCATION_ENTRY_EVENT,
+    REVOCATION_EVENT_PREFIX,
+    REVOCATION_REG_ENDORSED_EVENT,
+    REVOCATION_REG_INIT_EVENT,
     notify_revocation_entry_event,
 )
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -81,13 +85,20 @@ class RevRegCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     credential_definition_id = fields.Str(
-        description="Credential definition identifier", **INDY_CRED_DEF_ID
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     max_cred_num = fields.Int(
         required=False,
-        description="Revocation registry size",
-        strict=True,
-        **INDY_REV_REG_SIZE,
+        validate=INDY_REV_REG_SIZE_VALIDATE,
+        metadata={
+            "description": "Revocation registry size",
+            "strict": True,
+            "example": INDY_REV_REG_SIZE_EXAMPLE,
+        },
     )
 
 
@@ -101,14 +112,14 @@ class TxnOrRevRegResultSchema(OpenAPISchema):
     """Result schema for credential definition send request."""
 
     sent = fields.Nested(
-        RevRegResultSchema(),
-        required=False,
-        definition="Content sent",
+        RevRegResultSchema(), required=False, metadata={"definition": "Content sent"}
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Revocation registry definition transaction to endorse",
+        metadata={
+            "description": "Revocation registry definition transaction to endorse"
+        },
     )
 
 
@@ -132,19 +143,28 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
             )
 
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
         required=False,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
     cred_rev_id = fields.Str(
-        description="Credential revocation identifier",
         required=False,
-        **INDY_CRED_REV_ID,
+        validate=INDY_CRED_REV_ID_VALIDATE,
+        metadata={
+            "description": "Credential revocation identifier",
+            "example": INDY_CRED_REV_ID_EXAMPLE,
+        },
     )
     cred_ex_id = fields.Str(
-        description="Credential exchange identifier",
         required=False,
-        **UUID4,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
 
 
@@ -162,14 +182,20 @@ class RevRegId(OpenAPISchema):
             raise ValidationError("Request must have either rev_reg_id or cred_def_id")
 
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
         required=False,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
 
 
@@ -195,39 +221,52 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
             )
 
     publish = fields.Boolean(
-        description=(
-            "(True) publish revocation to ledger immediately, or "
-            "(default, False) mark it pending"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "(True) publish revocation to ledger immediately, or (default, False)"
+                " mark it pending"
+            )
+        },
     )
     notify = fields.Boolean(
-        description="Send a notification to the credential recipient",
         required=False,
+        metadata={"description": "Send a notification to the credential recipient"},
     )
     notify_version = fields.String(
-        description="Specify which version of the revocation notification should be sent",
         validate=validate.OneOf(["v1_0", "v2_0"]),
         required=False,
+        metadata={
+            "description": (
+                "Specify which version of the revocation notification should be sent"
+            )
+        },
     )
     connection_id = fields.Str(
-        description=(
-            "Connection ID to which the revocation notification will be sent; "
-            "required if notify is true"
-        ),
         required=False,
-        **UUID4,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": (
+                "Connection ID to which the revocation notification will be sent;"
+                " required if notify is true"
+            ),
+            "example": UUID4_EXAMPLE,
+        },
     )
     thread_id = fields.Str(
-        description=(
-            "Thread ID of the credential exchange message thread resulting in "
-            "the credential now being revoked; required if notify is true"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Thread ID of the credential exchange message thread resulting in the"
+                " credential now being revoked; required if notify is true"
+            )
+        },
     )
     comment = fields.Str(
-        description="Optional comment to include in revocation notification",
         required=False,
+        metadata={
+            "description": "Optional comment to include in revocation notification"
+        },
     )
 
 
@@ -236,13 +275,17 @@ class PublishRevocationsSchema(OpenAPISchema):
 
     rrid2crid = fields.Dict(
         required=False,
-        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
+        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
+                validate=INDY_CRED_REV_ID_VALIDATE,
+                metadata={
+                    "description": "Credential revocation identifier",
+                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                },
             )
         ),
-        description="Credential revocation ids by revocation registry id",
+        metadata={"description": "Credential revocation ids by revocation registry id"},
     )
 
 
@@ -252,12 +295,14 @@ class TxnOrPublishRevocationsResultSchema(OpenAPISchema):
     sent = fields.Nested(
         PublishRevocationsSchema(),
         required=False,
-        definition="Content sent",
+        metadata={"definition": "Content sent"},
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Revocation registry revocations transaction to endorse",
+        metadata={
+            "description": "Revocation registry revocations transaction to endorse"
+        },
     )
 
 
@@ -266,16 +311,22 @@ class ClearPendingRevocationsRequestSchema(OpenAPISchema):
 
     purge = fields.Dict(
         required=False,
-        keys=fields.Str(example=INDY_REV_REG_ID["example"]),  # marshmallow 3.0 ignores
+        keys=fields.Str(metadata={"example": INDY_REV_REG_ID_EXAMPLE}),
         values=fields.List(
             fields.Str(
-                description="Credential revocation identifier", **INDY_CRED_REV_ID
+                validate=INDY_CRED_REV_ID_VALIDATE,
+                metadata={
+                    "description": "Credential revocation identifier",
+                    "example": INDY_CRED_REV_ID_EXAMPLE,
+                },
             )
         ),
-        description=(
-            "Credential revocation ids by revocation registry id: omit for all, "
-            "specify null or empty list for all pending per revocation registry"
-        ),
+        metadata={
+            "description": (
+                "Credential revocation ids by revocation registry id: omit for all,"
+                " specify null or empty list for all pending per revocation registry"
+            )
+        },
     )
 
 
@@ -295,7 +346,7 @@ class CredRevIndyRecordsResultSchema(OpenAPISchema):
     """Result schema for revoc reg delta."""
 
     rev_reg_delta = fields.Dict(
-        description="Indy revocation registry delta",
+        metadata={"description": "Indy revocation registry delta"}
     )
 
 
@@ -303,9 +354,12 @@ class RevRegIssuedResultSchema(OpenAPISchema):
     """Result schema for revocation registry credentials issued request."""
 
     result = fields.Int(
-        description="Number of credentials issued against revocation registry",
-        strict=True,
-        **WHOLE_NUM,
+        validate=WHOLE_NUM_VALIDATE,
+        metadata={
+            "description": "Number of credentials issued against revocation registry",
+            "strict": True,
+            "example": WHOLE_NUM_EXAMPLE,
+        },
     )
 
 
@@ -313,8 +367,8 @@ class RevRegUpdateRequestMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking rev reg id."""
 
     apply_ledger_update = fields.Bool(
-        description="Apply updated accumulator transaction to ledger",
         required=True,
+        metadata={"description": "Apply updated accumulator transaction to ledger"},
     )
 
 
@@ -322,13 +376,13 @@ class RevRegWalletUpdatedResultSchema(OpenAPISchema):
     """Number of wallet revocation entries status updated."""
 
     rev_reg_delta = fields.Dict(
-        description="Indy revocation registry delta",
+        metadata={"description": "Indy revocation registry delta"}
     )
     accum_calculated = fields.Dict(
-        description="Calculated accumulator for phantom revocations",
+        metadata={"description": "Calculated accumulator for phantom revocations"}
     )
     accum_fixed = fields.Dict(
-        description="Applied ledger transaction to fix revocations",
+        metadata={"description": "Applied ledger transaction to fix revocations"}
     )
 
 
@@ -336,7 +390,13 @@ class RevRegsCreatedSchema(OpenAPISchema):
     """Result schema for request for revocation registries created."""
 
     rev_reg_ids = fields.List(
-        fields.Str(description="Revocation registry identifiers", **INDY_REV_REG_ID)
+        fields.Str(
+            validate=INDY_REV_REG_ID_VALIDATE,
+            metadata={
+                "description": "Revocation registry identifiers",
+                "example": INDY_REV_REG_ID_EXAMPLE,
+            },
+        )
     )
 
 
@@ -344,12 +404,14 @@ class RevRegUpdateTailsFileUriSchema(OpenAPISchema):
     """Request schema for updating tails file URI."""
 
     tails_public_uri = fields.Url(
-        description="Public URI to the tails file",
-        example=(
-            "http://192.168.56.133:6543/revocation/registry/"
-            f"{INDY_REV_REG_ID['example']}/tails-file"
-        ),
         required=True,
+        metadata={
+            "description": "Public URI to the tails file",
+            "example": (
+                "http://192.168.56.133:6543/revocation/registry/"
+                f"{INDY_REV_REG_ID_EXAMPLE}/tails-file"
+            ),
+        },
     )
 
 
@@ -357,12 +419,14 @@ class RevRegsCreatedQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for rev regs created request."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
     state = fields.Str(
-        description="Revocation registry state",
         required=False,
         validate=validate.OneOf(
             [
@@ -371,6 +435,7 @@ class RevRegsCreatedQueryStringSchema(OpenAPISchema):
                 if m.startswith("STATE_")
             ]
         ),
+        metadata={"description": "Revocation registry state"},
     )
 
 
@@ -378,15 +443,15 @@ class SetRevRegStateQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for request to set rev reg state."""
 
     state = fields.Str(
-        description="Revocation registry state to set",
         required=True,
         validate=validate.OneOf(
             [
                 getattr(IssuerRevRegRecord, m)
                 for m in vars(IssuerRevRegRecord)
-                if m.startswith("STATE_")
+                if m.startswith("STATE_") and m != "STATE_DECOMMISSIONED"
             ]
         ),
+        metadata={"description": "Revocation registry state to set"},
     )
 
 
@@ -394,9 +459,12 @@ class RevRegIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking rev reg id."""
 
     rev_reg_id = fields.Str(
-        description="Revocation Registry identifier",
         required=True,
-        **INDY_REV_REG_ID,
+        validate=INDY_REV_REG_ID_VALIDATE,
+        metadata={
+            "description": "Revocation Registry identifier",
+            "example": INDY_REV_REG_ID_EXAMPLE,
+        },
     )
 
 
@@ -404,9 +472,12 @@ class RevocationCredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking cred def id."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=INDY_CRED_DEF_ID_VALIDATE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": INDY_CRED_DEF_ID_EXAMPLE,
+        },
     )
 
 
@@ -414,8 +485,8 @@ class CreateRevRegTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -423,7 +494,8 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
 
 
@@ -432,10 +504,11 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
     summary="Revoke an issued credential",
 )
 @request_schema(RevokeRequestSchema())
+@querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
+@querystring_schema(RevRegConnIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def revoke(request: web.BaseRequest):
-    """
-    Request handler for storing a credential revocation.
+    """Request handler for storing a credential revocation.
 
     Args:
         request: aiohttp request object
@@ -445,30 +518,64 @@ async def revoke(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     body = await request.json()
     cred_ex_id = body.get("cred_ex_id")
     body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
-    notify = body.get("notify")
+    notify = body.get("notify", False)
     connection_id = body.get("connection_id")
     body["notify_version"] = body.get("notify_version", "v1_0")
     notify_version = body["notify_version"]
+    create_transaction_for_endorser = json.loads(
+        request.query.get("create_transaction_for_endorser", "false")
+    )
+    endorser_conn_id = request.query.get("conn_id")
+    rev_manager = RevocationManager(profile)
+    outbound_handler = request["outbound_message_router"]
+    write_ledger = not create_transaction_for_endorser
 
+    if is_author_role(profile):
+        write_ledger = False
+        create_transaction_for_endorser = True
+        if not endorser_conn_id:
+            endorser_conn_id = await get_endorser_connection_id(profile)
+            if not endorser_conn_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
     if notify and not connection_id:
         raise web.HTTPBadRequest(reason="connection_id must be set when notify is true")
     if notify and not notify_version:
         raise web.HTTPBadRequest(
             reason="Request must specify notify_version if notify is true"
         )
-
-    rev_manager = RevocationManager(context.profile)
     try:
         if cred_ex_id:
-            # rev_reg_id and cred_rev_id should not be present so we can
-            # safely splat the body
-            await rev_manager.revoke_credential_by_cred_ex_id(**body)
+            rev_entry_resp = await rev_manager.revoke_credential_by_cred_ex_id(
+                cred_ex_id=cred_ex_id,
+                publish=body.get("publish", False),
+                notify=notify,
+                notify_version=notify_version,
+                thread_id=body.get("thread_id"),
+                connection_id=connection_id,
+                endorser_conn_id=endorser_conn_id,
+                comment=body.get("comment"),
+                write_ledger=write_ledger,
+            )
         else:
-            # no cred_ex_id so we can safely splat the body
-            await rev_manager.revoke_credential(**body)
+            rev_entry_resp = await rev_manager.revoke_credential(
+                rev_reg_id=body.get("rev_reg_id"),
+                cred_rev_id=body.get("cred_rev_id"),
+                publish=body.get("publish", False),
+                notify=notify,
+                notify_version=notify_version,
+                thread_id=body.get("thread_id"),
+                connection_id=connection_id,
+                endorser_conn_id=endorser_conn_id,
+                comment=body.get("comment"),
+                write_ledger=write_ledger,
+            )
     except (
         RevocationManagerError,
         RevocationError,
@@ -478,15 +585,40 @@ async def revoke(request: web.BaseRequest):
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    if create_transaction_for_endorser and rev_entry_resp:
+        transaction_mgr = TransactionManager(profile)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=rev_entry_resp["result"], connection_id=endorser_conn_id
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if context.settings.get_value("endorser.auto_request"):
+            try:
+                (
+                    transaction,
+                    transaction_request,
+                ) = await transaction_mgr.create_request(
+                    transaction=transaction,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+            await outbound_handler(transaction_request, connection_id=endorser_conn_id)
+
+        return web.json_response({"txn": transaction.serialize()})
     return web.json_response({})
 
 
 @docs(tags=["revocation"], summary="Publish pending revocations to ledger")
 @request_schema(PublishRevocationsSchema())
+@querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
+@querystring_schema(RevRegConnIdMatchInfoSchema())
 @response_schema(TxnOrPublishRevocationsResultSchema(), 200, description="")
 async def publish_revocations(request: web.BaseRequest):
-    """
-    Request handler for publishing pending revocations to the ledger.
+    """Request handler for publishing pending revocations to the ledger.
 
     Args:
         request: aiohttp request object
@@ -496,27 +628,67 @@ async def publish_revocations(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     body = await request.json()
     rrid2crid = body.get("rrid2crid")
+    create_transaction_for_endorser = json.loads(
+        request.query.get("create_transaction_for_endorser", "false")
+    )
+    write_ledger = not create_transaction_for_endorser
+    endorser_conn_id = request.query.get("conn_id")
+    rev_manager = RevocationManager(profile)
+    outbound_handler = request["outbound_message_router"]
 
-    rev_manager = RevocationManager(context.profile)
-
+    if is_author_role(profile):
+        write_ledger = False
+        create_transaction_for_endorser = True
+        endorser_conn_id = await get_endorser_connection_id(profile)
+        if not endorser_conn_id:
+            raise web.HTTPBadRequest(reason="No endorser connection found")
     try:
-        rev_reg_resp = await rev_manager.publish_pending_revocations(
-            rrid2crid,
+        rev_reg_resp, result = await rev_manager.publish_pending_revocations(
+            rrid2crid=rrid2crid,
+            write_ledger=write_ledger,
+            connection_id=endorser_conn_id,
         )
     except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"rrid2crid": rev_reg_resp})
+    if create_transaction_for_endorser and rev_reg_resp:
+        transaction_mgr = TransactionManager(profile)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=rev_reg_resp["result"], connection_id=endorser_conn_id
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if context.settings.get_value("endorser.auto_request"):
+            try:
+                (
+                    transaction,
+                    transaction_request,
+                ) = await transaction_mgr.create_request(
+                    transaction=transaction,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+            await outbound_handler(transaction_request, connection_id=endorser_conn_id)
+
+        return web.json_response({"txn": transaction.serialize()})
+    return web.json_response({"rrid2crid": result})
 
 
 @docs(tags=["revocation"], summary="Clear pending revocations")
 @request_schema(ClearPendingRevocationsRequestSchema())
 @response_schema(PublishRevocationsSchema(), 200, description="")
 async def clear_pending_revocations(request: web.BaseRequest):
-    """
-    Request handler for clearing pending revocations.
+    """Request handler for clearing pending revocations.
 
     Args:
         request: aiohttp request object
@@ -526,10 +698,14 @@ async def clear_pending_revocations(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     body = await request.json()
     purge = body.get("purge")
 
-    rev_manager = RevocationManager(context.profile)
+    rev_manager = RevocationManager(profile)
 
     try:
         results = await rev_manager.clear_pending_revocations(purge)
@@ -538,12 +714,43 @@ async def clear_pending_revocations(request: web.BaseRequest):
     return web.json_response({"rrid2crid": results})
 
 
+@docs(tags=["revocation"], summary="Rotate revocation registry")
+@match_info_schema(RevocationCredDefIdMatchInfoSchema())
+@response_schema(RevRegsCreatedSchema(), 200, description="")
+async def rotate_rev_reg(request: web.BaseRequest):
+    """Request handler to rotate the active revocation registries for cred. def.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        list or revocation registry ids that were rotated out
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
+    cred_def_id = request.match_info["cred_def_id"]
+
+    try:
+        revoc = IndyRevocation(profile)
+        recs = await revoc.decommission_registry(cred_def_id)
+        del revoc
+    except RevocationNotSupportedError as e:
+        raise web.HTTPBadRequest(reason=e.message) from e
+
+    return web.json_response(
+        {"rev_reg_ids": [rec.revoc_reg_id for rec in recs if rec.revoc_reg_id]}
+    )
+
+
 @docs(tags=["revocation"], summary="Creates a new revocation registry")
 @request_schema(RevRegCreateRequestSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def create_rev_reg(request: web.BaseRequest):
-    """
-    Request handler to create a new revocation registry.
+    """Request handler to create a new revocation registry.
 
     Args:
         request: aiohttp request object
@@ -554,6 +761,9 @@ async def create_rev_reg(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     body = await request.json()
 
     credential_definition_id = body.get("credential_definition_id")
@@ -593,8 +803,7 @@ async def create_rev_reg(request: web.BaseRequest):
 @querystring_schema(RevRegsCreatedQueryStringSchema())
 @response_schema(RevRegsCreatedSchema(), 200, description="")
 async def rev_regs_created(request: web.BaseRequest):
-    """
-    Request handler to get revocation registries that current agent created.
+    """Request handler to get revocation registries that current agent created.
 
     Args:
         request: aiohttp request object
@@ -605,9 +814,9 @@ async def rev_regs_created(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
-    search_tags = [
-        tag for tag in vars(RevRegsCreatedQueryStringSchema)["_declared_fields"]
-    ]
+    is_anoncreds_profile_raise_web_exception(context.profile)
+
+    search_tags = list(vars(RevRegsCreatedQueryStringSchema)["_declared_fields"])
     tag_filter = {
         tag: request.query[tag] for tag in search_tags if tag in request.query
     }
@@ -634,8 +843,7 @@ async def rev_regs_created(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def get_rev_reg(request: web.BaseRequest):
-    """
-    Request handler to get a revocation registry by rev reg id.
+    """Request handler to get a revocation registry by rev reg id.
 
     Args:
         request: aiohttp request object
@@ -645,11 +853,14 @@ async def get_rev_reg(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = IndyRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -664,8 +875,7 @@ async def get_rev_reg(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegIssuedResultSchema(), 200, description="")
 async def get_rev_reg_issued_count(request: web.BaseRequest):
-    """
-    Request handler to get number of credentials issued against revocation registry.
+    """Request handler to get number of credentials issued against revocation registry.
 
     Args:
         request: aiohttp request object
@@ -675,10 +885,13 @@ async def get_rev_reg_issued_count(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         try:
             await IssuerRevRegRecord.retrieve_by_revoc_reg_id(session, rev_reg_id)
         except StorageNotFoundError as err:
@@ -697,8 +910,7 @@ async def get_rev_reg_issued_count(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(CredRevRecordDetailsResultSchema(), 200, description="")
 async def get_rev_reg_issued(request: web.BaseRequest):
-    """
-    Request handler to get credentials issued against revocation registry.
+    """Request handler to get credentials issued against revocation registry.
 
     Args:
         request: aiohttp request object
@@ -708,11 +920,14 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
     recs = []
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         try:
             await IssuerRevRegRecord.retrieve_by_revoc_reg_id(session, rev_reg_id)
         except StorageNotFoundError as err:
@@ -732,21 +947,23 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(CredRevIndyRecordsResultSchema(), 200, description="")
 async def get_rev_reg_indy_recs(request: web.BaseRequest):
-    """
-    Request handler to get details of revoked credentials from ledger.
+    """Request handler to get details of revoked credentials from ledger.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        Detailes of revoked credentials from ledger
+        Details of revoked credentials from ledger
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    revoc = IndyRevocation(context.profile)
+    revoc = IndyRevocation(profile)
     rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
 
     return web.json_response(
@@ -764,8 +981,7 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
 @querystring_schema(RevRegUpdateRequestMatchInfoSchema())
 @response_schema(RevRegWalletUpdatedResultSchema(), 200, description="")
 async def update_rev_reg_revoked_state(request: web.BaseRequest):
-    """
-    Request handler to fix ledger entry of credentials revoked against registry.
+    """Request handler to fix ledger entry of credentials revoked against registry.
 
     Args:
         request: aiohttp request object
@@ -775,6 +991,9 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
@@ -784,7 +1003,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 
     rev_reg_record = None
     genesis_transactions = None
-    async with context.profile.session() as session:
+    async with profile.session() as session:
         try:
             rev_reg_record = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
                 session, rev_reg_id
@@ -795,9 +1014,11 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
         genesis_transactions = context.settings.get("ledger.genesis_transactions")
         if not genesis_transactions:
             ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
-            write_ledgers = await ledger_manager.get_write_ledger()
-            LOGGER.debug(f"write_ledgers = {write_ledgers}")
-            pool = write_ledgers[1].pool
+            write_ledger = context.injector.inject(BaseLedger)
+            available_write_ledgers = await ledger_manager.get_write_ledgers()
+            LOGGER.debug(f"available write_ledgers = {available_write_ledgers}")
+            LOGGER.debug(f"write_ledger = {write_ledger}")
+            pool = write_ledger.pool
             LOGGER.debug(f"write_ledger pool = {pool}")
 
             genesis_transactions = pool.genesis_txns
@@ -815,7 +1036,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
                     reason += ": missing wallet-type?"
                 raise web.HTTPInternalServerError(reason=reason)
 
-    rev_manager = RevocationManager(context.profile)
+    rev_manager = RevocationManager(profile)
     try:
         (
             rev_reg_delta,
@@ -851,8 +1072,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 @querystring_schema(CredRevRecordQueryStringSchema())
 @response_schema(CredRevRecordResultSchema(), 200, description="")
 async def get_cred_rev_record(request: web.BaseRequest):
-    """
-    Request handler to get credential revocation record.
+    """Request handler to get credential revocation record.
 
     Args:
         request: aiohttp request object
@@ -862,13 +1082,16 @@ async def get_cred_rev_record(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.query.get("rev_reg_id")
     cred_rev_id = request.query.get("cred_rev_id")  # numeric string
     cred_ex_id = request.query.get("cred_ex_id")
 
     try:
-        async with context.profile.session() as session:
+        async with profile.session() as session:
             if rev_reg_id and cred_rev_id:
                 rec = await IssuerCredRevRecord.retrieve_by_ids(
                     session, rev_reg_id, cred_rev_id
@@ -890,8 +1113,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
 @match_info_schema(RevocationCredDefIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def get_active_rev_reg(request: web.BaseRequest):
-    """
-    Request handler to get current active revocation registry by cred def id.
+    """Request handler to get current active revocation registry by cred def id.
 
     Args:
         request: aiohttp request object
@@ -901,11 +1123,14 @@ async def get_active_rev_reg(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     cred_def_id = request.match_info["cred_def_id"]
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = IndyRevocation(profile)
         rev_reg = await revoc.get_active_issuer_rev_reg_record(cred_def_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -921,8 +1146,7 @@ async def get_active_rev_reg(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema, description="tails file")
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
-    """
-    Request handler to download tails file for revocation registry.
+    """Request handler to download tails file for revocation registry.
 
     Args:
         request: aiohttp request object
@@ -932,11 +1156,14 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = IndyRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -951,18 +1178,20 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def upload_tails_file(request: web.BaseRequest):
-    """
-    Request handler to upload local tails file for revocation registry.
+    """Request handler to upload local tails file for revocation registry.
 
     Args:
         request: aiohttp request object
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
 
     rev_reg_id = request.match_info["rev_reg_id"]
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = IndyRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -971,7 +1200,7 @@ async def upload_tails_file(request: web.BaseRequest):
         raise web.HTTPNotFound(reason=f"No local tails file for rev reg {rev_reg_id}")
 
     try:
-        await rev_reg.upload_tails_file(context.profile)
+        await rev_reg.upload_tails_file(profile)
     except RevocationError as e:
         raise web.HTTPInternalServerError(reason=str(e))
 
@@ -987,8 +1216,7 @@ async def upload_tails_file(request: web.BaseRequest):
 @querystring_schema(RevRegConnIdMatchInfoSchema())
 @response_schema(TxnOrRevRegResultSchema(), 200, description="")
 async def send_rev_reg_def(request: web.BaseRequest):
-    """
-    Request handler to send revocation registry definition by rev reg id to ledger.
+    """Request handler to send revocation registry definition by rev reg id to ledger.
 
     Args:
         request: aiohttp request object
@@ -999,6 +1227,9 @@ async def send_rev_reg_def(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     outbound_handler = request["outbound_message_router"]
     rev_reg_id = request.match_info["rev_reg_id"]
     create_transaction_for_endorser = json.loads(
@@ -1036,13 +1267,17 @@ async def send_rev_reg_def(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -1062,7 +1297,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not create_transaction_for_endorser:
-        return web.json_response({"result": rev_reg.serialize()})
+        return web.json_response({"sent": rev_reg.serialize()})
 
     else:
         transaction_mgr = TransactionManager(profile)
@@ -1081,9 +1316,8 @@ async def send_rev_reg_def(request: web.BaseRequest):
                     transaction_request,
                 ) = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -1102,8 +1336,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
 @querystring_schema(RevRegConnIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def send_rev_reg_entry(request: web.BaseRequest):
-    """
-    Request handler to send rev reg entry by registry id to ledger.
+    """Request handler to send rev reg entry by registry id to ledger.
 
     Args:
         request: aiohttp request object
@@ -1114,6 +1347,9 @@ async def send_rev_reg_entry(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     outbound_handler = request["outbound_message_router"]
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
@@ -1150,13 +1386,17 @@ async def send_rev_reg_entry(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -1196,9 +1436,8 @@ async def send_rev_reg_entry(request: web.BaseRequest):
                     transaction_request,
                 ) = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -1216,8 +1455,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
 @request_schema(RevRegUpdateTailsFileUriSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def update_rev_reg(request: web.BaseRequest):
-    """
-    Request handler to update a rev reg's public tails URI by registry id.
+    """Request handler to update a rev reg's public tails URI by registry id.
 
     Args:
         request: aiohttp request object
@@ -1228,6 +1466,9 @@ async def update_rev_reg(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     body = await request.json()
     tails_public_uri = body.get("tails_public_uri")
 
@@ -1251,8 +1492,7 @@ async def update_rev_reg(request: web.BaseRequest):
 @querystring_schema(SetRevRegStateQueryStringSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def set_rev_reg_state(request: web.BaseRequest):
-    """
-    Request handler to set a revocation registry state manually.
+    """Request handler to set a revocation registry state manually.
 
     Args:
         request: aiohttp request object
@@ -1263,6 +1503,9 @@ async def set_rev_reg_state(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     rev_reg_id = request.match_info["rev_reg_id"]
     state = request.query.get("state")
 
@@ -1353,9 +1596,8 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
                         revo_transaction_request,
                     ) = await transaction_manager.create_request(
                         transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
+                        # TODO see if we need to parametrize these params
                         # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
                     )
                 except (StorageError, TransactionManagerError) as err:
                     raise TransactionManagerError(reason=err.roll_up) from err
@@ -1435,9 +1677,8 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
                     revo_transaction_request,
                 ) = await transaction_manager.create_request(
                     transaction=revo_transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
                 raise RevocationError(err.roll_up) from err
@@ -1495,7 +1736,7 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
 
 
 class TailsDeleteResponseSchema(OpenAPISchema):
-    """Return schema for tails failes deletion."""
+    """Return schema for tails deletion."""
 
     message = fields.Str()
 
@@ -1506,9 +1747,13 @@ class TailsDeleteResponseSchema(OpenAPISchema):
 async def delete_tails(request: web.BaseRequest) -> json:
     """Delete Tails Files."""
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    is_anoncreds_profile_raise_web_exception(profile)
+
     rev_reg_id = request.query.get("rev_reg_id")
     cred_def_id = request.query.get("cred_def_id")
-    revoc = IndyRevocation(context.profile)
+    revoc = IndyRevocation(profile)
     session = revoc._profile.session()
     if rev_reg_id:
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
@@ -1569,6 +1814,10 @@ async def register(app: web.Application):
                 "/revocation/active-registry/{cred_def_id}",
                 get_active_rev_reg,
                 allow_head=False,
+            ),
+            web.post(
+                "/revocation/active-registry/{cred_def_id}/rotate",
+                rotate_rev_reg,
             ),
             web.get(
                 "/revocation/registry/{rev_reg_id}/issued",

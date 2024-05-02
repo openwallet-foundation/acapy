@@ -1,9 +1,5 @@
 from unittest import TestCase
 
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
-
-import pytest
 
 from ..non_rev_interval import IndyNonRevocationInterval
 

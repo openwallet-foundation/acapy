@@ -1,5 +1,9 @@
 include aries_cloudagent/config/default_logging_config.ini
-include requirements.txt
-include requirements.dev.txt
-include requirements.indy.txt
+include aries_cloudagent/commands/default_version_upgrade_config.yml
+include aries_cloudagent/vc/ld_proofs/resources/credentials_context.jsonld
+include aries_cloudagent/vc/ld_proofs/resources/did_documents_context.jsonld
+include aries_cloudagent/vc/ld_proofs/resources/status_list_context.jsonld
+include aries_cloudagent/vc/ld_proofs/resources/security-v1-context.jsonld
+include aries_cloudagent/vc/ld_proofs/resources/security-v2-context.jsonld
+include aries_cloudagent/vc/ld_proofs/resources/ed25519-2020-context.jsonld
 include README.md

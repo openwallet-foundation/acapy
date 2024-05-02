@@ -1,4 +1,5 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from aries_cloudagent.tests import mock
+from unittest import IsolatedAsyncioTestCase
 
 from ......core.in_memory import InMemoryProfile
 from ......storage.error import StorageDuplicateError, StorageNotFoundError
@@ -11,7 +12,7 @@ from ...messages.disclose import Disclose
 from ..discovery_record import V10DiscoveryExchangeRecord
 
 
-class TestV10DiscoveryExchangeRecord(AsyncTestCase):
+class TestV10DiscoveryExchangeRecord(IsolatedAsyncioTestCase):
     """Test de/serialization."""
 
     async def test_record(self):
@@ -89,10 +90,10 @@ class TestV10DiscoveryExchangeRecord(AsyncTestCase):
 
     async def test_exists_for_connection_id_not_found(self):
         session = InMemoryProfile.test_session()
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_by_tag_filter:
             mock_retrieve_by_tag_filter.side_effect = StorageNotFoundError
             check = await V10DiscoveryExchangeRecord.exists_for_connection_id(
@@ -102,10 +103,10 @@ class TestV10DiscoveryExchangeRecord(AsyncTestCase):
 
     async def test_exists_for_connection_id_duplicate(self):
         session = InMemoryProfile.test_session()
-        with async_mock.patch.object(
+        with mock.patch.object(
             V10DiscoveryExchangeRecord,
             "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
+            mock.CoroutineMock(),
         ) as mock_retrieve_by_tag_filter:
             mock_retrieve_by_tag_filter.side_effect = StorageDuplicateError
             check = await V10DiscoveryExchangeRecord.exists_for_connection_id(

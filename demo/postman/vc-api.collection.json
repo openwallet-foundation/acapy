@@ -1,0 +1,373 @@
+{
+	"info": {
+		"_postman_id": "f6a6fe37-a18c-47ef-a235-424d30ab043d",
+		"name": "vc-api",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "31640062"
+	},
+	"item": [
+		{
+			"name": "Create DID Ed25519Signature2020",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const { result } = pm.response.json();\r",
+							"pm.globals.set(\"did\", result.did);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"method\": \"key\",\r\n  \"options\": {\r\n    \"key_type\": \"ed25519\"\r\n  }\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{ADMIN_ENDPOINT}}/wallet/did/create",
+					"host": [
+						"{{ADMIN_ENDPOINT}}"
+					],
+					"path": [
+						"wallet",
+						"did",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create DID BbsBlsSignature2020",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const { result } = pm.response.json();\r",
+							"pm.globals.set(\"did\", result.did);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"method\": \"key\",\r\n  \"options\": {\r\n    \"key_type\": \"bls12381g2\"\r\n  }\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{ADMIN_ENDPOINT}}/wallet/did/create",
+					"host": [
+						"{{ADMIN_ENDPOINT}}"
+					],
+					"path": [
+						"wallet",
+						"did",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Issue Credential",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const {verifiableCredential} = pm.response.json();\r",
+							"pm.collectionVariables.set(\"verifiableCredential\", JSON.stringify(verifiableCredential));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"credential\": {\r\n    \"@context\": [\r\n      \"https://www.w3.org/2018/credentials/v1\"\r\n    ],\r\n    \"credentialSubject\": {\r\n      \"id\": \"did:example:ebfeb1f712ebc6f1c276e12ec21\"\r\n    },\r\n    \"id\": \"urn:uuid:{{$randomUUID}}\",\r\n    \"issuanceDate\": \"2010-01-01T19:23:24Z\",\r\n    \"issuer\": \"{{did}}\",\r\n    \"type\": [\r\n      \"VerifiableCredential\"\r\n    ]\r\n  },\r\n  \"options\": {}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{ADMIN_ENDPOINT}}/vc/credentials/issue",
+					"host": [
+						"{{ADMIN_ENDPOINT}}"
+					],
+					"path": [
+						"vc",
+						"credentials",
+						"issue"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify Credential",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"options\": {},\r\n  \"verifiableCredential\": {{verifiableCredential}}\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{ADMIN_ENDPOINT}}/vc/credentials/verify",
+					"host": [
+						"{{ADMIN_ENDPOINT}}"
+					],
+					"path": [
+						"vc",
+						"credentials",
+						"verify"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Store Credential",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const {credentialId} = pm.response.json();\r",
+							"pm.collectionVariables.set(\"credentialId\", credentialId);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"options\": {},\r\n  \"verifiableCredential\": {{verifiableCredential}}\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{ADMIN_ENDPOINT}}/vc/credentials/store",
+					"host": [
+						"{{ADMIN_ENDPOINT}}"
+					],
+					"path": [
+						"vc",
+						"credentials",
+						"store"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List Credentials",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{ADMIN_ENDPOINT}}/vc/credentials",
+					"host": [
+						"{{ADMIN_ENDPOINT}}"
+					],
+					"path": [
+						"vc",
+						"credentials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch Credential",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{ADMIN_ENDPOINT}}/vc/credentials/{{credentialId}}",
+					"host": [
+						"{{ADMIN_ENDPOINT}}"
+					],
+					"path": [
+						"vc",
+						"credentials",
+						"{{credentialId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Prove presentation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const {verifiablePresentation} = pm.response.json();\r",
+							"pm.collectionVariables.set(\"verifiablePresentation\", JSON.stringify(verifiablePresentation));\r",
+							"pm.collectionVariables.set(\"challenge\", verifiablePresentation.proof.challenge);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"presentation\": {\r\n        \"@context\": [\r\n            \"https://www.w3.org/2018/credentials/v1\"\r\n        ],\r\n        \"type\": [\r\n            \"VerifiablePresentation\"\r\n        ],\r\n        \"holder\": \"{{did}}\",\r\n        \"verifiableCredential\": [{{verifiableCredential}}]\r\n    },\r\n    \"options\": {\r\n        \"domain\": \"https://example.com\",\r\n        \"challenge\": \"{{$randomUUID}}\"\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{ADMIN_ENDPOINT}}/vc/presentations/prove",
+					"host": [
+						"{{ADMIN_ENDPOINT}}"
+					],
+					"path": [
+						"vc",
+						"presentations",
+						"prove"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verify Presentation",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"options\": {\r\n        \"domain\": \"example.com\",\r\n        \"challenge\": \"{{challenge}}\"\r\n        },\r\n  \"verifiablePresentation\": {{verifiablePresentation}}\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{ADMIN_ENDPOINT}}/vc/presentations/verify",
+					"host": [
+						"{{ADMIN_ENDPOINT}}"
+					],
+					"path": [
+						"vc",
+						"presentations",
+						"verify"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "verifiableCredential",
+			"value": ""
+		},
+		{
+			"key": "credential_id",
+			"value": ""
+		},
+		{
+			"key": "verifiablePresentation",
+			"value": ""
+		},
+		{
+			"key": "challenge",
+			"value": ""
+		},
+		{
+			"key": "credentialId",
+			"value": ""
+		}
+	]
+}

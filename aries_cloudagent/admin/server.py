@@ -1,14 +1,16 @@
 """Admin server classes."""
 
 import asyncio
-from hmac import compare_digest
 import logging
 import re
-from typing import Callable, Coroutine, Optional, Pattern, Sequence, cast
 import uuid
 import warnings
 import weakref
+from hmac import compare_digest
+from typing import Callable, Coroutine, Optional, Pattern, Sequence, cast
 
+import aiohttp_cors
+import jwt
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -16,17 +18,18 @@ from aiohttp_apispec import (
     setup_aiohttp_apispec,
     validation_middleware,
 )
-import aiohttp_cors
-import jwt
+
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
+from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
+from ..messaging.valid import UUIDFour
 from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
@@ -35,7 +38,6 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
-from ..messaging.valid import UUIDFour
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -61,23 +63,28 @@ class AdminModulesSchema(OpenAPISchema):
     """Schema for the modules endpoint."""
 
     result = fields.List(
-        fields.Str(description="admin module"), description="List of admin modules"
+        fields.Str(metadata={"description": "admin module"}),
+        metadata={"description": "List of admin modules"},
     )
 
 
 class AdminConfigSchema(OpenAPISchema):
     """Schema for the config endpoint."""
 
-    config = fields.Dict(description="Configuration settings")
+    config = fields.Dict(
+        required=True, metadata={"description": "Configuration settings"}
+    )
 
 
 class AdminStatusSchema(OpenAPISchema):
     """Schema for the status endpoint."""
 
-    version = fields.Str(description="Version code")
-    label = fields.Str(description="Default label", allow_none=True)
-    timing = fields.Dict(description="Timing results", required=False)
-    conductor = fields.Dict(description="Conductor statistics", required=False)
+    version = fields.Str(metadata={"description": "Version code"})
+    label = fields.Str(allow_none=True, metadata={"description": "Default label"})
+    timing = fields.Dict(required=False, metadata={"description": "Timing results"})
+    conductor = fields.Dict(
+        required=False, metadata={"description": "Conductor statistics"}
+    )
 
 
 class AdminResetSchema(OpenAPISchema):
@@ -87,13 +94,17 @@ class AdminResetSchema(OpenAPISchema):
 class AdminStatusLivelinessSchema(OpenAPISchema):
     """Schema for the liveliness endpoint."""
 
-    alive = fields.Boolean(description="Liveliness status", example=True)
+    alive = fields.Boolean(
+        metadata={"description": "Liveliness status", "example": True}
+    )
 
 
 class AdminStatusReadinessSchema(OpenAPISchema):
     """Schema for the readiness endpoint."""
 
-    ready = fields.Boolean(description="Readiness status", example=True)
+    ready = fields.Boolean(
+        metadata={"description": "Readiness status", "example": True}
+    )
 
 
 class AdminShutdownSchema(OpenAPISchema):
@@ -109,8 +120,7 @@ class AdminResponder(BaseResponder):
         send: Coroutine,
         **kwargs,
     ):
-        """
-        Initialize an instance of `AdminResponder`.
+        """Initialize an instance of `AdminResponder`.
 
         Args:
             send: Function to send outbound message
@@ -127,8 +137,7 @@ class AdminResponder(BaseResponder):
     async def send_outbound(
         self, message: OutboundMessage, **kwargs
     ) -> OutboundSendStatus:
-        """
-        Send outbound message.
+        """Send outbound message.
 
         Args:
             message: The `OutboundMessage` to be sent
@@ -139,8 +148,7 @@ class AdminResponder(BaseResponder):
         return await self._send(profile, message)
 
     async def send_webhook(self, topic: str, payload: dict):
-        """
-        Dispatch a webhook. DEPRECATED: use the event bus instead.
+        """Dispatch a webhook. DEPRECATED: use the event bus instead.
 
         Args:
             topic: the webhook topic identifier
@@ -232,8 +240,7 @@ class AdminServer(BaseAdminServer):
         task_queue: TaskQueue = None,
         conductor_stats: Coroutine = None,
     ):
-        """
-        Initialize an AdminServer instance.
+        """Initialize an AdminServer instance.
 
         Args:
             host: Host to listen on
@@ -269,7 +276,7 @@ class AdminServer(BaseAdminServer):
 
     @property
     def additional_routes_pattern(self) -> Optional[Pattern]:
-        """Pattern for configured addtional routes to permit base wallet to access."""
+        """Pattern for configured additional routes to permit base wallet to access."""
         if self._additional_route_pattern:
             return self._additional_route_pattern
 
@@ -292,7 +299,7 @@ class AdminServer(BaseAdminServer):
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
 
-        middlewares = [ready_middleware, debug_middleware, validation_middleware]
+        middlewares = [ready_middleware, debug_middleware]
 
         # admin-token and admin-token are mutually exclusive and required.
         # This should be enforced during parameter parsing but to be sure,
@@ -384,7 +391,7 @@ class AdminServer(BaseAdminServer):
         async def setup_context(request: web.Request, handler):
             authorization_header = request.headers.get("Authorization")
             profile = self.root_profile
-
+            meta_data = {}
             # Multitenancy context setup
             if self.multitenant_manager and authorization_header:
                 try:
@@ -397,6 +404,18 @@ class AdminServer(BaseAdminServer):
                     profile = await self.multitenant_manager.get_profile_for_token(
                         self.context, token
                     )
+                    (
+                        walletid,
+                        walletkey,
+                    ) = self.multitenant_manager.get_wallet_details_from_token(
+                        token=token
+                    )
+                    wallet_id = profile.settings.get("wallet.id")
+                    context_wallet_id.set(wallet_id)
+                    meta_data = {
+                        "wallet_id": walletid,
+                        "wallet_key": walletkey,
+                    }
                 except MultitenantManagerError as err:
                     raise web.HTTPUnauthorized(reason=err.roll_up)
                 except (jwt.InvalidTokenError, StorageNotFoundError):
@@ -411,7 +430,16 @@ class AdminServer(BaseAdminServer):
 
             # TODO may dynamically adjust the profile used here according to
             # headers or other parameters
-            admin_context = AdminRequestContext(profile)
+            if self.multitenant_manager and authorization_header:
+                admin_context = AdminRequestContext(
+                    profile=profile,
+                    root_profile=self.root_profile,
+                    metadata=meta_data,
+                )
+            else:
+                admin_context = AdminRequestContext(
+                    profile=profile,
+                )
 
             request["context"] = admin_context
             request["outbound_message_router"] = responder.send
@@ -424,6 +452,9 @@ class AdminServer(BaseAdminServer):
             return await handler(request)
 
         middlewares.append(setup_context)
+
+        # Register validation_middleware last avoiding unauthorized validations
+        middlewares.append(validation_middleware)
 
         app = web.Application(
             middlewares=middlewares,
@@ -483,8 +514,7 @@ class AdminServer(BaseAdminServer):
         return app
 
     async def start(self) -> None:
-        """
-        Start the webserver.
+        """Start the webserver.
 
         Raises:
             AdminSetupError: If there was an error starting the webserver
@@ -496,7 +526,7 @@ class AdminServer(BaseAdminServer):
             for k, v in raw.items():
                 if isinstance(v, dict):
                     raw[k] = sort_dict(v)
-            return dict(sorted([item for item in raw.items()], key=lambda x: x[0]))
+            return dict(sorted(raw.items(), key=lambda x: x[0]))
 
         self.app = await self.make_application()
         runner = web.AppRunner(self.app)
@@ -533,7 +563,7 @@ class AdminServer(BaseAdminServer):
                 method_spec["parameters"].sort(
                     key=lambda p: (p["in"], not p["required"], p["name"])
                 )
-        for path in sorted([p for p in swagger_dict["paths"]]):
+        for path in sorted(swagger_dict["paths"]):
             swagger_dict["paths"][path] = swagger_dict["paths"].pop(path)
 
         # order definitions alphabetically by dict key
@@ -577,7 +607,7 @@ class AdminServer(BaseAdminServer):
                 "type": "apiKey",
                 "in": "header",
                 "name": "Authorization",
-                "description": "Bearer token. Be sure to preprend token with 'Bearer '",
+                "description": "Bearer token. Be sure to prepend token with 'Bearer '",
             }
 
             # If multitenancy is enabled we need Authorization header
@@ -595,8 +625,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Fetch the list of loaded plugins")
     @response_schema(AdminModulesSchema(), 200, description="")
     async def plugins_handler(self, request: web.BaseRequest):
-        """
-        Request handler for the loaded plugins list.
+        """Request handler for the loaded plugins list.
 
         Args:
             request: aiohttp request object
@@ -612,8 +641,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Fetch the server configuration")
     @response_schema(AdminConfigSchema(), 200, description="")
     async def config_handler(self, request: web.BaseRequest):
-        """
-        Request handler for the server configuration.
+        """Request handler for the server configuration.
 
         Args:
             request: aiohttp request object
@@ -623,9 +651,11 @@ class AdminServer(BaseAdminServer):
 
         """
         config = {
-            k: self.context.settings[k]
-            if (isinstance(self.context.settings[k], (str, int)))
-            else self.context.settings[k].copy()
+            k: (
+                self.context.settings[k]
+                if (isinstance(self.context.settings[k], (str, int)))
+                else self.context.settings[k].copy()
+            )
             for k in self.context.settings
             if k
             not in [
@@ -649,8 +679,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Fetch the server status")
     @response_schema(AdminStatusSchema(), 200, description="")
     async def status_handler(self, request: web.BaseRequest):
-        """
-        Request handler for the server status information.
+        """Request handler for the server status information.
 
         Args:
             request: aiohttp request object
@@ -671,8 +700,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Reset statistics")
     @response_schema(AdminResetSchema(), 200, description="")
     async def status_reset_handler(self, request: web.BaseRequest):
-        """
-        Request handler for resetting the timing statistics.
+        """Request handler for resetting the timing statistics.
 
         Args:
             request: aiohttp request object
@@ -693,8 +721,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Liveliness check")
     @response_schema(AdminStatusLivelinessSchema(), 200, description="")
     async def liveliness_handler(self, request: web.BaseRequest):
-        """
-        Request handler for liveliness check.
+        """Request handler for liveliness check.
 
         Args:
             request: aiohttp request object
@@ -712,8 +739,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Readiness check")
     @response_schema(AdminStatusReadinessSchema(), 200, description="")
     async def readiness_handler(self, request: web.BaseRequest):
-        """
-        Request handler for liveliness check.
+        """Request handler for liveliness check.
 
         Args:
             request: aiohttp request object
@@ -731,8 +757,7 @@ class AdminServer(BaseAdminServer):
     @docs(tags=["server"], summary="Shut down server")
     @response_schema(AdminShutdownSchema(), description="")
     async def shutdown_handler(self, request: web.BaseRequest):
-        """
-        Request handler for server shutdown.
+        """Request handler for server shutdown.
 
         Args:
             request: aiohttp request object
@@ -806,7 +831,7 @@ class AdminServer(BaseAdminServer):
                             msg_received = None
                             msg_api_key = None
                             try:
-                                # this call can re-raise exeptions from inside the task
+                                # this call can re-raise exceptions from inside the task
                                 msg_received = receive.result()
                                 msg_api_key = msg_received.get("x-api-key")
                             except Exception:

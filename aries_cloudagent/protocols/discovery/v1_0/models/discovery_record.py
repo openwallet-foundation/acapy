@@ -1,17 +1,16 @@
 """."""
-import logging
 
-from typing import Union, Mapping, Any
+import logging
+from typing import Any, Mapping, Optional, Union
+
 from marshmallow import fields
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import UUIDFour
+from .....messaging.valid import UUID4_EXAMPLE
 from .....storage.error import StorageDuplicateError, StorageNotFoundError
-
 from ..messages.disclose import Disclose, DiscloseSchema
 from ..messages.query import Query, QuerySchema
-
 from . import UNENCRYPTED_TAGS
 
 LOGGER = logging.getLogger(__name__)
@@ -30,18 +29,24 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
     RECORD_TOPIC = "discover_feature"
     TAG_NAMES = {"~thread_id" if UNENCRYPTED_TAGS else "thread_id", "connection_id"}
 
+    STATE_QUERY_SENT = "query-sent"
+    STATE_DISCLOSE_RECV = "disclose-received"
+
     def __init__(
         self,
         *,
-        discovery_exchange_id: str = None,
-        connection_id: str = None,
-        thread_id: str = None,
-        query_msg: Union[Mapping, Query] = None,
-        disclose: Union[Mapping, Disclose] = None,
+        state: Optional[str] = None,
+        discovery_exchange_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        query_msg: Union[Mapping, Query, None] = None,
+        disclose: Union[Mapping, Disclose, None] = None,
         **kwargs,
     ):
         """Initialize a new V10DiscoveryExchangeRecord."""
-        super().__init__(discovery_exchange_id, **kwargs)
+        super().__init__(
+            discovery_exchange_id, state or self.STATE_QUERY_SENT, **kwargs
+        )
         self._id = discovery_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id
@@ -80,6 +85,21 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
         """Retrieve a discovery exchange record by connection."""
         tag_filter = {"connection_id": connection_id}
         return await cls.retrieve_by_tag_filter(session, tag_filter)
+
+    @classmethod
+    async def retrieve_if_exists_by_connection_id(
+        cls, session: ProfileSession, connection_id: str
+    ) -> Optional["V10DiscoveryExchangeRecord"]:
+        """Retrieve a discovery exchange record by connection."""
+        tag_filter = {"connection_id": connection_id}
+        result = await cls.query(session, tag_filter)
+        if len(result) > 1:
+            LOGGER.warning(
+                "More than one disclosure record found for connection: %s",
+                connection_id,
+            )
+
+        return result[0] if result else None
 
     @classmethod
     async def exists_for_connection_id(
@@ -133,22 +153,22 @@ class V10DiscoveryRecordSchema(BaseExchangeSchema):
 
     discovery_exchange_id = fields.Str(
         required=False,
-        description="Credential exchange identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUID4_EXAMPLE,
+        },
     )
     connection_id = fields.Str(
-        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUID4_EXAMPLE},
     )
     thread_id = fields.Str(
-        required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUID4_EXAMPLE},
     )
     query_msg = fields.Nested(
-        QuerySchema(),
-        required=False,
-        description="Query message",
+        QuerySchema(), required=False, metadata={"description": "Query message"}
     )
     disclose = fields.Nested(
-        DiscloseSchema(),
-        required=False,
-        description="Disclose message",
+        DiscloseSchema(), required=False, metadata={"description": "Disclose message"}
     )

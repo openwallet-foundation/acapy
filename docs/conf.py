@@ -47,6 +47,19 @@ autodoc_mock_imports = [
     "qrcode",
     "rlp",
     "nest_asyncio",
+    "marshmallow",
+    "typing_extensions",
+    "async_timeout",
+    "portalocker",
+    "pythonjsonlogger",
+    "jwt",
+    "yaml",
+    "pytz",
+    "multiformats",
+    "sd_jwt",
+    "anoncreds",
+    "did_peer_2",
+    "did_peer_4",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",
@@ -59,7 +72,7 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = "Aries Cloud Agent - Python"
-copyright = "2021, Province of British Columbia"
+copyright = "2023, Province of British Columbia"
 author = "Province of British Columbia"
 
 # The short X.Y version
@@ -91,7 +104,7 @@ templates_path = ["_templates"]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = [".rst", ".md"]
+source_suffix = [".rst"]
 # source_suffix = '.rst'
 
 # The master toctree document.
@@ -102,7 +115,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -114,6 +127,8 @@ exclude_patterns = [
     "README.md",
     "GettingStartedAriesDev/*",
     "assets/*",
+    "Poetry.md",
+    "aries_cloudagent/*",
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.

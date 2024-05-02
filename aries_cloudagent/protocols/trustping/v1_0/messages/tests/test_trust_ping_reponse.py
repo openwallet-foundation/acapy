@@ -1,6 +1,7 @@
-from unittest import mock, TestCase
+from unittest import mock
+from unittest import TestCase
 
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
@@ -51,7 +52,7 @@ class TestPingResponse(TestCase):
         assert msg_dict is mock_ping_schema_load.return_value
 
 
-class TestPingResponseSchema(AsyncTestCase):
+class TestPingResponseSchema(IsolatedAsyncioTestCase):
     """Test ping response schema."""
 
     async def test_make_model(self):

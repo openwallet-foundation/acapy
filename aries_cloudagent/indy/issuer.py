@@ -22,8 +22,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
     """Base class for Indy Issuer."""
 
     def __repr__(self) -> str:
-        """
-        Return a human readable representation of this class.
+        """Return a human readable representation of this class.
 
         Returns:
             A human readable string for this class
@@ -45,8 +44,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         schema_version: str,
         attribute_names: Sequence[str],
     ) -> Tuple[str, str]:
-        """
-        Create a new credential schema and store it in the wallet.
+        """Create a new credential schema and store it in the wallet.
 
         Args:
             origin_did: the DID issuing the credential definition
@@ -71,8 +69,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
     ) -> bool:
-        """
-        Check whether a given credential definition ID is present in the wallet.
+        """Check whether a given credential definition ID is present in the wallet.
 
         Args:
             credential_definition_id: The credential definition ID to check
@@ -87,8 +84,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         tag: str = None,
         support_revocation: bool = False,
     ) -> Tuple[str, str]:
-        """
-        Create a new credential definition and store it in the wallet.
+        """Create a new credential definition and store it in the wallet.
 
         Args:
             origin_did: the DID issuing the credential definition
@@ -104,8 +100,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def create_credential_offer(self, credential_definition_id) -> str:
-        """
-        Create a credential offer for the given credential definition id.
+        """Create a credential offer for the given credential definition id.
 
         Args:
             credential_definition_id: The credential definition to create an offer for
@@ -125,10 +120,9 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         revoc_reg_id: str = None,
         tails_file_path: str = None,
     ) -> Tuple[str, str]:
-        """
-        Create a credential.
+        """Create a credential.
 
-        Args
+        Args:
             schema: Schema to create credential for
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
@@ -144,14 +138,15 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def revoke_credentials(
         self,
+        cred_def_id: str,
         revoc_reg_id: str,
         tails_file_path: str,
         cred_rev_ids: Sequence[str],
     ) -> Tuple[str, Sequence[str]]:
-        """
-        Revoke a set of credentials in a revocation registry.
+        """Revoke a set of credentials in a revocation registry.
 
         Args:
+            cred_def_id: ID of the credential definition
             revoc_reg_id: ID of the revocation registry
             tails_file_path: path to the local tails file
             cred_rev_ids: sequences of credential indexes in the revocation registry
@@ -171,8 +166,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         max_cred_num: int,
         tails_base_path: str,
     ) -> Tuple[str, str, str]:
-        """
-        Create a new revocation registry and store it in the wallet.
+        """Create a new revocation registry and store it in the wallet.
 
         Args:
             origin_did: the DID issuing the revocation registry
@@ -191,8 +185,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
     ) -> str:
-        """
-        Merge revocation registry deltas.
+        """Merge revocation registry deltas.
 
         Args:
             fro_delta: original delta in JSON format

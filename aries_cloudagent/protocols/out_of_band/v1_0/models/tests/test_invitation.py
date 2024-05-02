@@ -1,19 +1,17 @@
-import json
-
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from unittest import IsolatedAsyncioTestCase
 
 from .....didcomm_prefix import DIDCommPrefix
 
-from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
 
 from ...messages.invitation import InvitationMessage
 
-from ..invitation import InvitationRecord, InvitationRecordSchema
+from ..invitation import InvitationRecord
 
 TEST_DID = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
 
 
-class TestInvitationRecord(AsyncTestCase):
+class TestInvitationRecord(IsolatedAsyncioTestCase):
     def test_invitation_record(self):
         """Test invitation record."""
         invi_rec = InvitationRecord(invi_msg_id="12345")
@@ -30,13 +28,12 @@ class TestInvitationRecord(AsyncTestCase):
         assert invi_rec != another
 
 
-class TestInvitationRecordSchema(AsyncTestCase):
+class TestInvitationRecordSchema(IsolatedAsyncioTestCase):
     def test_make_record(self):
         """Test making record."""
         invi = InvitationMessage(
-            comment="Hello",
             label="A label",
-            handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
+            handshake_protocols=[DIDCommPrefix.qualify_current(DIDEX_1_1)],
             services=[TEST_DID],
         )
         data = {

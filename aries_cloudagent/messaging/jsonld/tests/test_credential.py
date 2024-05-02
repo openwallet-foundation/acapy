@@ -1,14 +1,11 @@
 """Test json-ld credential."""
 
-import asyncio
 import json
-import pytest
 
-from itertools import cycle
 
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from unittest import mock
+from unittest import IsolatedAsyncioTestCase
 
-from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
 from ....vc.ld_proofs import DocumentLoader
 from ....wallet.base import BaseWallet
@@ -24,7 +21,6 @@ from . import (
     TEST_SEED,
     TEST_SIGN_ERROR_OBJS,
     TEST_SIGN_OBJS,
-    TEST_VALIDATE_ERROR_OBJ2,
     TEST_VERIFY_ERROR,
     TEST_VERIFY_OBJS,
     TEST_VERKEY,
@@ -32,7 +28,7 @@ from . import (
 from .document_loader import custom_document_loader
 
 
-class TestCredential(AsyncTestCase):
+class TestCredential(IsolatedAsyncioTestCase):
     async def test_did_key(self):
         did_key = test_module.did_key(TEST_VERKEY)
         assert did_key.startswith("did:key:z")
@@ -57,8 +53,8 @@ class TestCredential(AsyncTestCase):
             )
 
 
-class TestOps(AsyncTestCase):
-    async def setUp(self):
+class TestOps(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.wallet = InMemoryWallet(InMemoryProfile.test_profile())
         await self.wallet.create_signing_key(ED25519, TEST_SEED)
 
@@ -68,7 +64,7 @@ class TestOps(AsyncTestCase):
         setattr(
             self.profile,
             "session",
-            async_mock.MagicMock(return_value=self.session),
+            mock.MagicMock(return_value=self.session),
         )
 
         self.context.injector.bind_instance(DocumentLoader, custom_document_loader)

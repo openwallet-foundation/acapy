@@ -1,5 +1,4 @@
-"""
-The timing decorator (~timing).
+"""The timing decorator (~timing).
 
 This decorator allows the timing of agent messages to be communicated
 and constrained.
@@ -12,7 +11,7 @@ from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..util import datetime_to_str
-from ..valid import INDY_ISO8601_DATETIME
+from ..valid import INDY_ISO8601_DATETIME_EXAMPLE, INDY_ISO8601_DATETIME_VALIDATE
 
 
 class TimingDecorator(BaseModel):
@@ -33,8 +32,7 @@ class TimingDecorator(BaseModel):
         delay_milli: int = None,
         wait_until_time: Union[str, datetime] = None,
     ):
-        """
-        Initialize a TimingDecorator instance.
+        """Initialize a TimingDecorator instance.
 
         Args:
             in_time: The time the message was received
@@ -63,29 +61,50 @@ class TimingDecoratorSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     in_time = fields.Str(
-        required=False, description="Time of message receipt", **INDY_ISO8601_DATETIME
+        required=False,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time of message receipt",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
     )
     out_time = fields.Str(
-        required=False, description="Time of message dispatch", **INDY_ISO8601_DATETIME
+        required=False,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time of message dispatch",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
     )
     stale_time = fields.Str(
         required=False,
-        description="Time when message should be considered stale",
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time when message should be considered stale",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
     )
     expires_time = fields.Str(
         required=False,
-        description="Time when message should be considered expired",
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Time when message should be considered expired",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
     )
     delay_milli = fields.Int(
         required=False,
-        description="Number of milliseconds to delay processing",
-        example=1000,
-        strict=True,
+        metadata={
+            "description": "Number of milliseconds to delay processing",
+            "example": 1000,
+            "strict": True,
+        },
     )
     wait_until_time = fields.Str(
         required=False,
-        description="Earliest time at which to perform processing",
-        **INDY_ISO8601_DATETIME,
+        validate=INDY_ISO8601_DATETIME_VALIDATE,
+        metadata={
+            "description": "Earliest time at which to perform processing",
+            "example": INDY_ISO8601_DATETIME_EXAMPLE,
+        },
     )

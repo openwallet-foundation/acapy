@@ -32,11 +32,23 @@ class BaseAgent(DemoAgent):
         ident: str,
         port: int,
         prefix: str = None,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
         **kwargs,
     ):
         if prefix is None:
             prefix = ident
-        super().__init__(ident, port, port + 1, prefix=prefix, **kwargs)
+        super().__init__(
+            ident,
+            port,
+            port + 1,
+            prefix=prefix,
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
+            **kwargs,
+        )
         self._connection_id = None
         self._connection_ready = None
         self.credential_state = {}
@@ -123,7 +135,10 @@ class BaseAgent(DemoAgent):
             return pending, total
 
     async def update_creds(self):
-        await self.credential_event.wait()
+        try:
+            await self.credential_event.wait()
+        except asyncio.exceptions.CancelledError:
+            pass
 
     async def check_received_pings(self) -> Tuple[int, int]:
         while True:
@@ -158,8 +173,23 @@ class BaseAgent(DemoAgent):
 
 
 class AliceAgent(BaseAgent):
-    def __init__(self, port: int, **kwargs):
-        super().__init__("Alice", port, seed=None, **kwargs)
+    def __init__(
+        self,
+        port: int,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
+        **kwargs,
+    ):
+        super().__init__(
+            "Alice",
+            port,
+            seed=None,
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
+            **kwargs,
+        )
         self.extra_args = [
             "--auto-accept-invites",
             "--auto-accept-requests",
@@ -195,8 +225,23 @@ class AliceAgent(BaseAgent):
 
 
 class FaberAgent(BaseAgent):
-    def __init__(self, port: int, **kwargs):
-        super().__init__("Faber", port, seed="random", **kwargs)
+    def __init__(
+        self,
+        port: int,
+        log_file: str = None,
+        log_config: str = None,
+        log_level: str = None,
+        **kwargs,
+    ):
+        super().__init__(
+            "Faber",
+            port,
+            seed="random",
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
+            **kwargs,
+        )
         self.extra_args = [
             "--auto-accept-invites",
             "--auto-accept-requests",
@@ -282,6 +327,9 @@ async def main(
     batch_size: int = 30,
     wallet_type: str = None,
     arg_file: str = None,
+    log_file: str = None,
+    log_config: str = None,
+    log_level: str = None,
 ):
     if multi_ledger:
         genesis = None
@@ -310,6 +358,9 @@ async def main(
             mediation=mediation,
             wallet_type=wallet_type,
             arg_file=arg_file,
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
         )
         await alice.listen_webhooks(start_port + 2)
 
@@ -323,6 +374,9 @@ async def main(
             mediation=mediation,
             wallet_type=wallet_type,
             arg_file=arg_file,
+            log_file=log_file,
+            log_config=log_config,
+            log_level=log_level,
         )
         await faber.listen_webhooks(start_port + 5)
         await faber.register_did()
@@ -682,6 +736,30 @@ if __name__ == "__main__":
         metavar="<arg-file>",
         help="Specify a file containing additional aca-py parameters",
     )
+    parser.add_argument(
+        "--log-file",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="<log-file>",
+        help=("Output destination for the root logger."),
+    )
+    parser.add_argument(
+        "--log-config",
+        type=str,
+        metavar="<log-config>",
+        help=("File path for logging configuration."),
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        metavar="<log-level>",
+        default=None,
+        help=(
+            "Specifies a custom logging level as one of: "
+            "('debug', 'info', 'warning', 'error', 'critical')"
+        ),
+    )
     args = parser.parse_args()
 
     if args.did_exchange and args.mediation:
@@ -720,6 +798,9 @@ if __name__ == "__main__":
                 args.batch,
                 args.wallet_type,
                 args.arg_file,
+                args.log_file,
+                args.log_config,
+                args.log_level,
             )
         )
     except KeyboardInterrupt:

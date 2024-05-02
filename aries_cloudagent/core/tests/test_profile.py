@@ -1,4 +1,4 @@
-from asynctest import TestCase as AsyncTestCase
+from unittest import IsolatedAsyncioTestCase
 
 from ...config.base import InjectionError
 from ...config.injection_context import InjectionContext
@@ -20,7 +20,7 @@ class MockProfile(Profile):
         """
 
 
-class TestProfileSession(AsyncTestCase):
+class TestProfileSession(IsolatedAsyncioTestCase):
     async def test_session_active(self):
         profile = MockProfile()
         session = ProfileSession(profile)
@@ -39,7 +39,7 @@ class TestProfileSession(AsyncTestCase):
         await session.__aenter__()
 
         self.assertEqual(session.active, True)
-        session.context.injector.bind_instance(dict, dict())
+        session.context.injector.bind_instance(dict, {})
         assert session.inject_or(dict) is not None
         assert profile.inject_or(dict) is None
 
@@ -55,7 +55,7 @@ class TestProfileSession(AsyncTestCase):
         await session2.rollback()
 
 
-class TestProfileManagerProvider(AsyncTestCase):
+class TestProfileManagerProvider(IsolatedAsyncioTestCase):
     async def test_basic_wallet_type(self):
         context = InjectionContext()
         provider = ProfileManagerProvider()

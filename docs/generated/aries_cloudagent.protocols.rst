@@ -16,6 +16,7 @@ Subpackages
    aries_cloudagent.protocols.basicmessage
    aries_cloudagent.protocols.connections
    aries_cloudagent.protocols.coordinate_mediation
+   aries_cloudagent.protocols.did_rotate
    aries_cloudagent.protocols.didexchange
    aries_cloudagent.protocols.discovery
    aries_cloudagent.protocols.endorse_transaction

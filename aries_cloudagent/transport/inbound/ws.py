@@ -18,8 +18,7 @@ class WsTransport(BaseInboundTransport):
     """Websockets Transport class."""
 
     def __init__(self, host: str, port: int, create_session, **kwargs) -> None:
-        """
-        Initialize an inbound WebSocket transport instance.
+        """Initialize an inbound WebSocket transport instance.
 
         Args:
             host: Host to listen on
@@ -34,8 +33,8 @@ class WsTransport(BaseInboundTransport):
         self.heartbeat_interval: Optional[int] = self.root_profile.settings.get_int(
             "transport.ws.heartbeat_interval"
         )
-        self.timout_interval: Optional[int] = self.root_profile.settings.get_int(
-            "transport.ws.timout_interval"
+        self.timeout_interval: Optional[int] = self.root_profile.settings.get_int(
+            "transport.ws.timeout_interval"
         )
 
         # TODO: set scheme dynamically based on SSL settings (ws/wss)
@@ -52,8 +51,7 @@ class WsTransport(BaseInboundTransport):
         return app
 
     async def start(self) -> None:
-        """
-        Start this transport.
+        """Start this transport.
 
         Raises:
             InboundTransportSetupError: If there was an error starting the webserver
@@ -78,8 +76,7 @@ class WsTransport(BaseInboundTransport):
             self.site = None
 
     async def inbound_message_handler(self, request):
-        """
-        Message handler for inbound messages.
+        """Message handler for inbound messages.
 
         Args:
             request: aiohttp request object
@@ -92,7 +89,7 @@ class WsTransport(BaseInboundTransport):
         ws = web.WebSocketResponse(
             autoping=True,
             heartbeat=self.heartbeat_interval,
-            receive_timeout=self.timout_interval,
+            receive_timeout=self.timeout_interval,
         )
         await ws.prepare(request)
         loop = asyncio.get_event_loop()

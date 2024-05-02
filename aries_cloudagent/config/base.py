@@ -97,6 +97,10 @@ class BaseSettings(Mapping[str, Any]):
     def extend(self, other: Mapping[str, Any]) -> "BaseSettings":
         """Merge another mapping to produce a new settings instance."""
 
+    @abstractmethod
+    def to_dict(self) -> dict:
+        """Return a dict of the settings instance."""
+
     def __repr__(self) -> str:
         """Provide a human readable representation of this object."""
         items = ("{}={}".format(k, self[k]) for k in self)
@@ -116,8 +120,7 @@ class BaseInjector(ABC):
         base_cls: Type[InjectType],
         settings: Optional[Mapping[str, Any]] = None,
     ) -> InjectType:
-        """
-        Get the provided instance of a given class identifier.
+        """Get the provided instance of a given class identifier.
 
         Args:
             cls: The base class to retrieve an instance of
@@ -135,8 +138,7 @@ class BaseInjector(ABC):
         settings: Optional[Mapping[str, Any]] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
-        """
-        Get the provided instance of a given class identifier or default if not found.
+        """Get the provided instance of a given class identifier or default if not found.
 
         Args:
             base_cls: The base class to retrieve an instance of
@@ -156,5 +158,5 @@ class BaseInjector(ABC):
 class BaseProvider(ABC):
     """Base provider class."""
 
-    def provide(self, settings: BaseSettings, injector: BaseInjector):
+    def provide(self, settings: BaseSettings, injector: BaseInjector) -> Any:
         """Provide the object instance given a config and injector."""

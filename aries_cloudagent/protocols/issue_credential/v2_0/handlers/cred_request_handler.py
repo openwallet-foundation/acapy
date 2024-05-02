@@ -1,13 +1,14 @@
 """Credential request message handler."""
 
 from .....core.oob_processor import OobMessageProcessor
+from .....anoncreds.issuer import AnonCredsIssuerError
 from .....indy.issuer import IndyIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-from .....storage.error import StorageError
+from .....storage.error import StorageError, StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
 
 from .. import problem_report_for_record
@@ -20,8 +21,7 @@ class V20CredRequestHandler(BaseHandler):
     """Message handler class for credential requests."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
-        """
-        Message handler logic for credential requests.
+        """Message handler logic for credential requests.
 
         Args:
             context: request context
@@ -55,9 +55,21 @@ class V20CredRequestHandler(BaseHandler):
 
         profile = context.profile
         cred_manager = V20CredManager(profile)
-        cred_ex_record = await cred_manager.receive_request(
-            context.message, context.connection_record, oob_record
-        )  # mgr only finds, saves record: on exception, saving state null is hopeless
+        try:
+            cred_ex_record = await cred_manager.receive_request(
+                context.message, context.connection_record, oob_record
+            )  # mgr only finds, saves record: on exception, saving state null is hopeless
+        except StorageNotFoundError:
+            # issue a problem report...
+            cred_ex_record = None
+            thread_id = context.message._thread_id
+            await responder.send_reply(
+                problem_report_for_record(
+                    None,
+                    ProblemReportReason.RECORD_NOT_FOUND.value,
+                    thread_id=thread_id,
+                )
+            )
 
         r_time = trace_event(
             context.settings,
@@ -80,6 +92,7 @@ class V20CredRequestHandler(BaseHandler):
                 await responder.send_reply(cred_issue_message)
             except (
                 BaseModelError,
+                AnonCredsIssuerError,
                 IndyIssuerError,
                 LedgerError,
                 StorageError,

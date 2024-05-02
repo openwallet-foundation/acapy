@@ -1,16 +1,14 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
+from unittest import IsolatedAsyncioTestCase
+from aries_cloudagent.tests import mock
 
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......storage.base import BaseStorage
 from ......protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 
 from ...messages.invitation import Invitation
-from ...messages.invitation_request import InvitationRequest
 
 from .. import invitation_handler as test_module
 
@@ -22,8 +20,8 @@ TEST_ENDPOINT = "http://localhost"
 TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 
-class TestInvitationHandler(AsyncTestCase):
-    async def setUp(self):
+class TestInvitationHandler(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.context = RequestContext.test_context()
         self.context.connection_ready = True
         self.context.message = Invitation(
@@ -37,26 +35,27 @@ class TestInvitationHandler(AsyncTestCase):
             ),
             message="Hello World",
         )
-        self.context.connection_record = async_mock.MagicMock(connection_id="dummy")
+        self.context.connection_record = mock.MagicMock(connection_id="dummy")
 
     async def test_handle(self):
         handler = test_module.InvitationHandler()
 
-        mock_conn_rec = async_mock.MagicMock(connection_id="dummy")
+        mock_conn_rec = mock.MagicMock(connection_id="dummy")
 
         responder = MockResponder()
-        with async_mock.patch.object(
-            self.context, "inject_or", async_mock.MagicMock()
+        with mock.patch.object(
+            self.context, "inject_or", mock.MagicMock()
         ) as mock_ctx_inject:
-            mock_ctx_inject.return_value = async_mock.MagicMock(
-                return_invitation=async_mock.CoroutineMock()
+            mock_ctx_inject.return_value = mock.MagicMock(
+                return_invitation=mock.CoroutineMock()
             )
 
             await handler.handle(self.context, responder)
 
-            assert mock_ctx_inject.return_value.return_invitation.called_once_with(
+            mock_ctx_inject.return_value.return_invitation.assert_called_once_with(
                 self.context.connection_record.connection_id,
                 self.context.message,
+                mock.ANY,
                 responder.send,
             )
 

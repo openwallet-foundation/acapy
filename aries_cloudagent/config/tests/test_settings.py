@@ -4,7 +4,6 @@ from unittest import TestCase
 
 from aries_cloudagent.config.plugin_settings import PluginSettings
 
-from ..base import SettingsError
 from ..settings import Settings
 from ..plugin_settings import PLUGIN_CONFIG_KEY
 
@@ -39,7 +38,7 @@ class TestSettings(TestCase):
         self.test_instance["BOOL"] = "false"
         assert self.test_instance.get_bool("BOOL") is False
         self.test_instance["INT"] = "5"
-        assert self.test_instance.get_int("INT") is 5
+        assert self.test_instance.get_int("INT") == 5
         assert self.test_instance.get_str("INT") == "5"
         with self.assertRaises(TypeError):
             self.test_instance[None] = 1

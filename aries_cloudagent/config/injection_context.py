@@ -64,7 +64,7 @@ class InjectionContext(BaseInjector):
             self.injector.settings.update(settings)
 
     def start_scope(
-        self, scope_name: str, settings: Mapping[str, object] = None
+        self, scope_name: str, settings: Optional[Mapping[str, object]] = None
     ) -> "InjectionContext":
         """Begin a new named scope.
 
@@ -110,8 +110,7 @@ class InjectionContext(BaseInjector):
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
     ) -> InjectType:
-        """
-        Get the provided instance of a given class identifier.
+        """Get the provided instance of a given class identifier.
 
         Args:
             cls: The base class to retrieve an instance of
@@ -129,8 +128,7 @@ class InjectionContext(BaseInjector):
         settings: Mapping[str, object] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
-        """
-        Get the provided instance of a given class identifier or default if not found.
+        """Get the provided instance of a given class identifier or default if not found.
 
         Args:
             base_cls: The base class to retrieve an instance of
