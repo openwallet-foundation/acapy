@@ -25,13 +25,39 @@ jobs:
       - name: Install the project dependencies
         run: |
           pip install poetry
-          poetry install -E "askar bbs"
+          poetry install --all-extras
       - name: Tests
         run: |
-          poetry run pytest 2>&1 | tee pytest.log
+          poetry run pytest --cov --cov-report lcov --cov-report=term-missing:skip-covered 2>&1 | tee pytest.log
           PYTEST_EXIT_CODE=${PIPESTATUS[0]}
           if grep -Eq "RuntimeWarning: coroutine .* was never awaited" pytest.log; then
             echo "Failure: Detected unawaited coroutine warning in pytest output."
             exit 1
           fi
           exit $PYTEST_EXIT_CODE
+      - name: Coveralls Parrallel
+        uses: coverallsapp/github-action@v2
+        with:
+          parallel: true
+          flag-name: python-${{ inputs.python-version }}
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@v1.1.51
+        with:
+          pytest-coverage-path: pytest.log
+          title: Coverage Report - See coveralls report in PR Tests action for full ui and details
+          badge-title: Unit Test Coverage
+          report-only-changed-files: true
+  code-coverage:
+    name: Generate code coverage report
+    runs-on: ${{ inputs.os }}
+    permissions:
+      pull-requests: write
+    needs: tests
+    if: ${{ always() }}
+    steps:
+      - name: Coveralls Finished
+        id: coveralls-finished
+        uses: coverallsapp/github-action@v2
+        with:
+          parallel-finished: true
+          carryforward: "python-${{ inputs.python-version }}"
