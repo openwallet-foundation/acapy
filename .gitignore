@@ -51,6 +51,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 test-reports/
+coverage.lcov
 
 # Translations
 *.mo
