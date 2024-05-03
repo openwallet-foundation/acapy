@@ -49,6 +49,7 @@ jobs:
           title: Coverage Report - See coveralls report in PR Tests action for full ui and details
           badge-title: Unit Test Coverage
           report-only-changed-files: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
   code-coverage:
     name: Generate code coverage report
     runs-on: ${{ inputs.os }}
