@@ -14,6 +14,8 @@ jobs:
   tests:
     name: Test Python ${{ inputs.python-version }}
     runs-on: ${{ inputs.os }}
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ inputs.python-version }}
