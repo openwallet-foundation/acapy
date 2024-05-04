@@ -6,7 +6,6 @@ from .......messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
     INDY_DID_EXAMPLE,
-    INDY_DID_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
 )
