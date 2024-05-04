@@ -51,7 +51,7 @@ class AnoncredsLinkSecretSchema(BaseModelSchema):
 
     entropy = fields.Str(
         required=True,
-        validate=INDY_DID_VALIDATE,
+        validate=str,
         metadata={"description": "Prover DID", "example": INDY_DID_EXAMPLE},
     )
     cred_def_id = fields.Str(
