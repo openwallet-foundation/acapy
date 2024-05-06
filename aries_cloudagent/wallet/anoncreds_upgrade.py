@@ -34,6 +34,7 @@ from ..anoncreds.revocation import (
     CATEGORY_REV_REG_DEF_PRIVATE,
 )
 from ..core.profile import Profile
+from ..indy.credx.holder import CATEGORY_LINK_SECRET, IndyCredxHolder
 from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     GET_SCHEMA,
@@ -427,6 +428,7 @@ async def upgrade_all_records_with_transaction(
     cred_def_upgrade_objs: list[CredDefUpgradeObj],
     rev_reg_def_upgrade_objs: list[RevRegDefUpgradeObj],
     rev_list_upgrade_objs: list[RevListUpgradeObj],
+    link_secret: Optional[str] = None,
 ) -> None:
     """Upgrade all objects with transaction."""
     for schema_upgrade_obj in schema_upgrade_objs:
@@ -439,6 +441,13 @@ async def upgrade_all_records_with_transaction(
         await upgrade_and_delete_rev_reg_def_records(txn, rev_reg_def_upgrade_obj)
     for rev_list_upgrade_obj in rev_list_upgrade_objs:
         await upgrade_and_delete_rev_entry_records(txn, rev_list_upgrade_obj)
+
+    if link_secret:
+        await txn.handle.replace(
+            CATEGORY_LINK_SECRET,
+            IndyCredxHolder.LINK_SECRET_ID,
+            link_secret,
+        )
 
     await txn.commit()
 
@@ -501,11 +510,13 @@ async def convert_records_to_anoncreds(profile) -> None:
         rev_reg_def_upgrade_objs = []
         rev_list_upgrade_objs = []
 
+        # Schemas
         for askar_schema in askar_schema_records:
             schema_upgrade_objs.append(
                 await get_schema_upgrade_object(profile, askar_schema.id, askar_schema)
             )
 
+        # CredDefs and Revocation Objects
         askar_cred_def_records = await storage.find_all_records(
             CRED_DEF_SENT_RECORD_TYPE, {}
         )
@@ -523,6 +534,12 @@ async def convert_records_to_anoncreds(profile) -> None:
                 ].rev_reg_def.value.max_cred_num
             cred_def_upgrade_objs.append(cred_def_upgrade_obj)
 
+        # Link secret
+        link_secret_records = await storage.find_all_records(CATEGORY_LINK_SECRET)
+        link_secret = None
+        if link_secret_records:
+            link_secret = json.loads(link_secret_records[0].value)["value"]["ms"]
+
         async with profile.transaction() as txn:
             try:
                 await upgrade_all_records_with_transaction(
@@ -531,6 +548,7 @@ async def convert_records_to_anoncreds(profile) -> None:
                     cred_def_upgrade_objs,
                     rev_reg_def_upgrade_objs,
                     rev_list_upgrade_objs,
+                    link_secret,
                 )
             except Exception as e:
                 await txn.rollback()
@@ -562,7 +580,6 @@ async def retry_converting_records(
         else:
             LOGGER.error(
                 f"""Failed to upgrade wallet: {profile.name} after 5 retries. 
-                Your wallet may be in an inconsistent state. 
                 Try fixing any connection issues and re-running the update"""
             )
             await fail_upgrade()
