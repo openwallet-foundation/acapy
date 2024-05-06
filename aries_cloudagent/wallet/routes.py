@@ -1309,7 +1309,12 @@ async def upgrade_anoncreds(request: web.BaseRequest):
         )
         UpgradeInProgressSingleton().set_wallet(profile.name)
 
-    return web.json_response({})
+    return web.json_response(
+        {
+            "success": True,
+            "message": f"Upgrade to anoncreds has been triggered for wallet {profile.name}",  # noqa: E501
+        }
+    )
 
 
 def register_events(event_bus: EventBus):
