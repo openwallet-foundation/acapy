@@ -853,13 +853,13 @@ files = [
 
 [[package]]
 name = "ecdsa"
-version = "0.16.1"
+version = "0.19.0"
 description = "ECDSA cryptographic signature library (pure python)"
 optional = false
-python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.6"
 files = [
-    {file = "ecdsa-0.16.1-py2.py3-none-any.whl", hash = "sha256:881fa5e12bb992972d3d1b3d4dfbe149ab76a89f13da02daa5ea1ec7dea6e747"},
-    {file = "ecdsa-0.16.1.tar.gz", hash = "sha256:cfc046a2ddd425adbd1a78b3c46f0d1325c657811c0f45ecc3a0a6236c1e50ff"},
+    {file = "ecdsa-0.19.0-py2.py3-none-any.whl", hash = "sha256:2cea9b88407fdac7bbeca0833b189e4c9c53f2ef1e1eaa29f6224dbc809b707a"},
+    {file = "ecdsa-0.19.0.tar.gz", hash = "sha256:60eaad1199659900dd0af521ed462b793bbdf867432b3948e87416ae4caf6bf8"},
 ]
 
 [package.dependencies]
@@ -2810,4 +2810,4 @@ indy = ["python3-indy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "6aef813877ebf9ed3259ae2dbe0efbe2a0b7f0192a2f3881f52336c4c05c8c8b"
+content-hash = "04f0ce35bbf5c63de96de234ac4d67dcd58267c04fa7979cf798a165cdc7b839"
