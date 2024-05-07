@@ -315,9 +315,15 @@ class AnonCredsHolder:
                 credential_definition,
                 rev_reg_def,
             )
-            # TODO we want to store the credential in the W3C format in the wallet,
-            # This will require changes to other endpoints that fetch credentials
-            cred_recvd = Credential.from_w3c(cred_w3c)
+            cred_legacy = Credential.from_w3c(cred_w3c)
+            cred_recvd = await asyncio.get_event_loop().run_in_executor(
+                None,
+                cred_legacy.process,
+                credential_request_metadata,
+                secret,
+                credential_definition,
+                rev_reg_def,
+            )
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error processing received credential") from err
 
