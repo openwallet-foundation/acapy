@@ -9,12 +9,12 @@ service attack. [CVE-2024-30251] describes the issue.
 
 [CVE-2024-30251]: https://github.com/advisories/GHSA-5m98-qgg9-wh84
 
-### 0.11.0 Breaking Changes
+### 0.11.1 Breaking Changes
 
 There are no breaking changes in this release. The only changed is the updated
 `aiohttp` dependency.
 
-#### 0.11.0 Categorized List of Pull Requests
+#### 0.11.1 Categorized List of Pull Requests
 
 - Dependency update and release PR
   - 0.11.1 and aiohttp update [\#2936](https://github.com/hyperledger/aries-cloudagent-python/pull/2936) [swcurran](https://github.com/swcurran)
