@@ -538,17 +538,17 @@ async def convert_records_to_anoncreds(profile) -> None:
             cred_def_upgrade_objs.append(cred_def_upgrade_obj)
 
         # Link secret
-        record = None
+        link_secret_record = None
         try:
-            record = await session.handle.fetch(
+            link_secret_record = await session.handle.fetch(
                 CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
             )
         except AskarError:
             pass
 
         link_secret = None
-        if record:
-            link_secret = LinkSecret.load(record.raw_value)
+        if link_secret_record:
+            link_secret = LinkSecret.load(link_secret_record.raw_value)
 
         async with profile.transaction() as txn:
             try:
