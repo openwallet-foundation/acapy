@@ -19,6 +19,7 @@ from runners.agent_container import (  # noqa:E402
 from runners.support.agent import (  # noqa:E402
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
+    CRED_FORMAT_VC_DI,
     SIG_TYPE_BLS,
 )
 from runners.support.utils import (  # noqa:E402
@@ -27,6 +28,7 @@ from runners.support.utils import (  # noqa:E402
     prompt,
     prompt_loop,
 )
+
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
@@ -137,6 +139,32 @@ class FaberAgent(AriesAgent):
                     "auto_remove": False,
                     "credential_preview": cred_preview,
                     "filter": {"indy": {"cred_def_id": cred_def_id}},
+                    "trace": exchange_tracing,
+                }
+                return offer_request
+
+            elif cred_type == CRED_FORMAT_VC_DI:
+                self.cred_attrs[cred_def_id] = {
+                    "name": "Alice Smith",
+                    "date": "2018-05-28",
+                    "degree": "Maths",
+                    "birthdate_dateint": birth_date.strftime(birth_date_format),
+                    "timestamp": str(int(time.time())),
+                }
+
+                cred_preview = {
+                    "@type": CRED_PREVIEW_TYPE,
+                    "attributes": [
+                        {"name": n, "value": v}
+                        for (n, v) in self.cred_attrs[cred_def_id].items()
+                    ],
+                }
+                offer_request = {
+                    "connection_id": self.connection_id,
+                    "comment": f"Offer on cred def id {cred_def_id}",
+                    "auto_remove": False,
+                    "credential_preview": cred_preview,
+                    "filter": {"vc_di": {"cred_def_id": cred_def_id}},
                     "trace": exchange_tracing,
                 }
                 return offer_request
@@ -313,6 +341,72 @@ class FaberAgent(AriesAgent):
                     proof_request_web_request["connection_id"] = self.connection_id
                 return proof_request_web_request
 
+            elif cred_type == CRED_FORMAT_VC_DI:
+                proof_request_web_request = {
+                    "comment": "Test proof request for VC-DI format",
+                    "presentation_request": {
+                        "dif": {
+                            "options": {
+                                "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                                "domain": "4jt78h47fh47",
+                            },
+                            "presentation_definition": {
+                                "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
+                                "submission_requirements": [
+                                    {
+                                        "name": "Degree Verification",
+                                        "rule": "pick",
+                                        "min": 1,
+                                        "from": "A",
+                                    }
+                                ],
+                                "input_descriptors": [
+                                    {
+                                        "id": "degree_input_1",
+                                        "name": "Degree Certificate",
+                                        "group": ["A"],
+                                        "schema": [
+                                            {
+                                                "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+                                            },
+                                            {
+                                                "uri": "https://w3id.org/citizenship#PermanentResidentCard"
+                                            },
+                                        ],
+                                        "constraints": {
+                                            "limit_disclosure": "required",
+                                            "fields": [
+                                                {
+                                                    "path": [
+                                                        "$.credentialSubject.degree.name"
+                                                    ],
+                                                    "purpose": "We need to verify that you have the required degree.",
+                                                    "filter": {"type": "string"},
+                                                },
+                                                {
+                                                    "path": [
+                                                        "$.credentialSubject.birthDate"
+                                                    ],
+                                                    "purpose": "To ensure you meet the age requirement.",
+                                                    "filter": {
+                                                        "type": "string",
+                                                        "pattern": birth_date.strftime(
+                                                            birth_date_format
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    }
+                                ],
+                            },
+                        },
+                    },
+                }
+                if not connectionless:
+                    proof_request_web_request["connection_id"] = self.connection_id
+                return proof_request_web_request
+
             elif cred_type == CRED_FORMAT_JSON_LD:
                 proof_request_web_request = {
                     "comment": "test proof request for json-ld",
@@ -435,7 +529,7 @@ async def main(args):
             "birthdate_dateint",
             "timestamp",
         ]
-        if faber_agent.cred_type == CRED_FORMAT_INDY:
+        if faber_agent.cred_type in [CRED_FORMAT_INDY, CRED_FORMAT_VC_DI]:
             faber_agent.public_did = True
             await faber_agent.initialize(
                 the_agent=agent,
@@ -447,7 +541,9 @@ async def main(args):
                     else False
                 ),
             )
-        elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
+        elif faber_agent.cred_type in [
+            CRED_FORMAT_JSON_LD,
+        ]:
             faber_agent.public_did = True
             await faber_agent.initialize(the_agent=agent)
         else:
@@ -463,8 +559,13 @@ async def main(args):
         )
 
         exchange_tracing = False
-        options = (
-            "    (1) Issue Credential\n"
+        options = "    (1) Issue Credential\n"
+        if faber_agent.cred_type in [
+            CRED_FORMAT_INDY,
+            CRED_FORMAT_VC_DI,
+        ]:
+            options += "    (1a) Set Credential Type (%CRED_TYPE%)\n"
+        options += (
             "    (2) Send Proof Request\n"
             "    (2a) Send *Connectionless* Proof Request (requires a Mobile client)\n"
             "    (3) Send Message\n"
@@ -486,7 +587,9 @@ async def main(args):
             "5/6/7/8/" if faber_agent.revocation else "",
             "W/" if faber_agent.multitenant else "",
         )
-        async for option in prompt_loop(options):
+        async for option in prompt_loop(
+            options.replace("%CRED_TYPE%", faber_agent.cred_type)
+        ):
             if option is not None:
                 option = option.strip()
 
@@ -540,6 +643,21 @@ async def main(args):
                     )
                 )
 
+            elif option == "1a":
+                new_cred_type = await prompt(
+                    "Enter credential type ({}, {}): ".format(
+                        CRED_FORMAT_INDY,
+                        CRED_FORMAT_VC_DI,
+                    )
+                )
+                if new_cred_type in [
+                    CRED_FORMAT_INDY,
+                    CRED_FORMAT_VC_DI,
+                ]:
+                    faber_agent.set_cred_type(new_cred_type)
+                else:
+                    log_msg("Not a valid credential type.")
+
             elif option == "1":
                 log_status("#13 Issue credential offer to X")
 
@@ -565,6 +683,14 @@ async def main(args):
                             faber_agent.aip,
                             faber_agent.cred_type,
                             None,
+                            exchange_tracing,
+                        )
+
+                    elif faber_agent.cred_type == CRED_FORMAT_VC_DI:
+                        offer_request = faber_agent.agent.generate_credential_offer(
+                            faber_agent.aip,
+                            faber_agent.cred_type,
+                            faber_agent.cred_def_id,
                             exchange_tracing,
                         )
 
@@ -608,6 +734,16 @@ async def main(args):
                         )
 
                     elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
+                        proof_request_web_request = (
+                            faber_agent.agent.generate_proof_request_web_request(
+                                faber_agent.aip,
+                                faber_agent.cred_type,
+                                faber_agent.revocation,
+                                exchange_tracing,
+                            )
+                        )
+
+                    elif faber_agent.cred_type == CRED_FORMAT_VC_DI:
                         proof_request_web_request = (
                             faber_agent.agent.generate_proof_request_web_request(
                                 faber_agent.aip,
@@ -675,6 +811,17 @@ async def main(args):
                             )
                         )
                     elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
+                        proof_request_web_request = (
+                            faber_agent.agent.generate_proof_request_web_request(
+                                faber_agent.aip,
+                                faber_agent.cred_type,
+                                faber_agent.revocation,
+                                exchange_tracing,
+                                connectionless=True,
+                            )
+                        )
+
+                    elif faber_agent.cred_type == CRED_FORMAT_VC_DI:
                         proof_request_web_request = (
                             faber_agent.agent.generate_proof_request_web_request(
                                 faber_agent.aip,
