@@ -1,5 +1,24 @@
 # Aries Cloud Agent Python Changelog
 
+## 0.11.1
+
+A patch release to update the `aiohttp` library such that a reported serious
+vulnerability is addressed such that a crafted payload delivered to `aiohttp`
+can put it in an infinite loop, which can be used for a low cost denial of
+service attack. [CVE-2024-30251] describes the issue.
+
+[CVE-2024-30251]: https://github.com/advisories/GHSA-5m98-qgg9-wh84
+
+### 0.11.0 Breaking Changes
+
+There are no breaking changes in this release. The only changed is the updated
+`aiohttp` dependency.
+
+#### 0.11.0 Categorized List of Pull Requests
+
+- Dependency update and release PR
+  - 0.11.1 and aiohttp update [\#2936](https://github.com/hyperledger/aries-cloudagent-python/pull/2936) [swcurran](https://github.com/swcurran)
+
 ## 0.11.0
 
 ### November 24, 2023
