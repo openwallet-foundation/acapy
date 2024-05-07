@@ -12,6 +12,8 @@ from anoncreds import (
     RevocationRegistryDefinitionPrivate,
     Schema,
 )
+from aries_askar import AskarError
+from indy_credx import LinkSecret
 
 from ..anoncreds.issuer import (
     CATEGORY_CRED_DEF,
@@ -33,6 +35,7 @@ from ..anoncreds.revocation import (
     CATEGORY_REV_REG_DEF,
     CATEGORY_REV_REG_DEF_PRIVATE,
 )
+from ..cache.base import BaseCache
 from ..core.profile import Profile
 from ..indy.credx.holder import CATEGORY_LINK_SECRET, IndyCredxHolder
 from ..ledger.multiple_ledger.ledger_requests_executor import (
@@ -428,7 +431,7 @@ async def upgrade_all_records_with_transaction(
     cred_def_upgrade_objs: list[CredDefUpgradeObj],
     rev_reg_def_upgrade_objs: list[RevRegDefUpgradeObj],
     rev_list_upgrade_objs: list[RevListUpgradeObj],
-    link_secret: Optional[str] = None,
+    link_secret: Optional[LinkSecret] = None,
 ) -> None:
     """Upgrade all objects with transaction."""
     for schema_upgrade_obj in schema_upgrade_objs:
@@ -446,7 +449,7 @@ async def upgrade_all_records_with_transaction(
         await txn.handle.replace(
             CATEGORY_LINK_SECRET,
             IndyCredxHolder.LINK_SECRET_ID,
-            link_secret,
+            link_secret.to_dict()["value"]["ms"].encode("ascii"),
         )
 
     await txn.commit()
@@ -535,10 +538,17 @@ async def convert_records_to_anoncreds(profile) -> None:
             cred_def_upgrade_objs.append(cred_def_upgrade_obj)
 
         # Link secret
-        link_secret_records = await storage.find_all_records(CATEGORY_LINK_SECRET)
+        record = None
+        try:
+            record = await session.handle.fetch(
+                CATEGORY_LINK_SECRET, IndyCredxHolder.LINK_SECRET_ID
+            )
+        except AskarError:
+            pass
+
         link_secret = None
-        if link_secret_records:
-            link_secret = json.loads(link_secret_records[0].value)["value"]["ms"]
+        if record:
+            link_secret = LinkSecret.load(record.raw_value)
 
         async with profile.transaction() as txn:
             try:
@@ -654,6 +664,8 @@ async def upgrade_subwallet(profile: Profile) -> None:
     async with profile.session() as session:
         multitenant_mgr = session.inject_or(BaseMultitenantManager)
         wallet_id = profile.settings.get("wallet.id")
+        cache = profile.inject_or(BaseCache)
+        await cache.flush()
         settings = {"wallet.type": STORAGE_TYPE_VALUE_ANONCREDS}
         await multitenant_mgr.update_wallet(wallet_id, settings)
 
