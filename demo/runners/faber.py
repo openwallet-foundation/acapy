@@ -29,7 +29,6 @@ from runners.support.utils import (  # noqa:E402
     prompt_loop,
 )
 
-
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
@@ -582,16 +581,27 @@ async def main(args):
             options += "    (D) Set Endorser's DID\n"
         if faber_agent.multitenant:
             options += "    (W) Create and/or Enable Wallet\n"
+            options += "    (U) Upgrade wallet to anoncreds \n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
         options += "    (X) Exit?\n[1/2/3/4/{}{}T/X] ".format(
             "5/6/7/8/" if faber_agent.revocation else "",
             "W/" if faber_agent.multitenant else "",
         )
+
+        upgraded_to_anoncreds = False
         async for option in prompt_loop(
             options.replace("%CRED_TYPE%", faber_agent.cred_type)
         ):
             if option is not None:
                 option = option.strip()
+
+            # Anoncreds has different endpoints for revocation
+            is_anoncreds = False
+            if (
+                faber_agent.agent.__dict__["wallet_type"] == "askar-anoncreds"
+                or upgraded_to_anoncreds
+            ):
+                is_anoncreds = True
 
             if option is None or option in "xX":
                 break
@@ -886,11 +896,6 @@ async def main(args):
                     await prompt("Publish now? [Y/N]: ", default="N")
                 ).strip() in "yY"
 
-                # Anoncreds has different endpoints for revocation
-                is_anoncreds = False
-                if faber_agent.agent.__dict__["wallet_type"] == "askar-anoncreds":
-                    is_anoncreds = True
-
                 try:
                     endpoint = (
                         "/anoncreds/revocation/revoke"
@@ -992,6 +997,14 @@ async def main(args):
                     )
                 except ClientError:
                     pass
+            elif option in "uU" and faber_agent.multitenant:
+                log_status("Upgrading wallet to anoncreds. Wait a couple seconds...")
+                await faber_agent.agent.admin_POST(
+                    "/anoncreds/wallet/upgrade",
+                    params={"wallet_name": faber_agent.agent.wallet_name},
+                )
+                upgraded_to_anoncreds = True
+                await asyncio.sleep(2.0)
 
         if faber_agent.show_timing:
             timing = await faber_agent.agent.fetch_timing()

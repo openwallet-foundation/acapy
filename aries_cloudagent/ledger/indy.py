@@ -1186,7 +1186,7 @@ class IndySdkLedger(BaseLedger):
             legacy_indy_registry = LegacyIndyRegistry()
 
             resp = await legacy_indy_registry.txn_submit(
-                self.profile,
+                self,
                 rev_reg_def_req,
                 sign=True,
                 sign_did=did_info,
@@ -1255,7 +1255,7 @@ class IndySdkLedger(BaseLedger):
             legacy_indy_registry = LegacyIndyRegistry()
 
             resp = await legacy_indy_registry.txn_submit(
-                self.profile,
+                self,
                 rev_reg_def_entry_req,
                 sign=True,
                 sign_did=did_info,

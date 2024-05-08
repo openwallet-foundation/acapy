@@ -1,5 +1,6 @@
 """Wallet admin routes."""
 
+import asyncio
 import json
 import logging
 from typing import List, Optional, Tuple, Union
@@ -55,15 +56,23 @@ from ..protocols.endorse_transaction.v1_0.util import (
     is_author_role,
 )
 from ..resolver.base import ResolverError
+from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
+from ..storage.record import StorageRecord
+from ..storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ..wallet.jwt import jwt_sign, jwt_verify
 from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
+from .anoncreds_upgrade import (
+    UPGRADING_RECORD_IN_PROGRESS,
+    upgrade_wallet_to_anoncreds_if_requested,
+)
 from .base import BaseWallet
 from .did_info import DIDInfo
 from .did_method import KEY, PEER2, PEER4, SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyTypes
+from .singletons import UpgradeInProgressSingleton
 from .util import EVENT_LISTENER_PATTERN
 
 LOGGER = logging.getLogger(__name__)
@@ -1241,6 +1250,73 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
     return web.json_response({})
 
 
+class UpgradeVerificationSchema(OpenAPISchema):
+    """Parameters and validators for triggering an upgrade to anoncreds."""
+
+    wallet_name = fields.Str(
+        required=True,
+        metadata={
+            "description": "Name of wallet to upgrade to anoncreds",
+            "example": "base-wallet",
+        },
+    )
+
+
+class UpgradeResultSchema(OpenAPISchema):
+    """Result schema for upgrade."""
+
+
+@docs(
+    tags=["anoncreds - wallet upgrade"],
+    summary="""
+        Upgrade the wallet from askar to anoncreds - Be very careful with this! You 
+        cannot go back! See migration guide for more information.
+    """,
+)
+@querystring_schema(UpgradeVerificationSchema())
+@response_schema(UpgradeResultSchema(), description="")
+async def upgrade_anoncreds(request: web.BaseRequest):
+    """Request handler for triggering an upgrade to anoncreds.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        An empty JSON response
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile = context.profile
+
+    if profile.settings.get("wallet.name") != request.query.get("wallet_name"):
+        raise web.HTTPBadRequest(
+            reason="Wallet name parameter does not match the agent which triggered the upgrade"  # noqa: E501
+        )
+
+    if profile.settings.get("wallet.type") == "askar-anoncreds":
+        raise web.HTTPBadRequest(reason="Wallet type is already anoncreds")
+
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        upgrading_record = StorageRecord(
+            RECORD_TYPE_ACAPY_UPGRADING,
+            UPGRADING_RECORD_IN_PROGRESS,
+        )
+        await storage.add_record(upgrading_record)
+        is_subwallet = context.metadata and "wallet_id" in context.metadata
+        asyncio.create_task(
+            upgrade_wallet_to_anoncreds_if_requested(profile, is_subwallet)
+        )
+        UpgradeInProgressSingleton().set_wallet(profile.name)
+
+    return web.json_response(
+        {
+            "success": True,
+            "message": f"Upgrade to anoncreds has been triggered for wallet {profile.name}",  # noqa: E501
+        }
+    )
+
+
 def register_events(event_bus: EventBus):
     """Subscribe to any events we need to support."""
     event_bus.subscribe(EVENT_LISTENER_PATTERN, on_register_nym_event)
@@ -1333,6 +1409,7 @@ async def register(app: web.Application):
                 "/wallet/get-did-endpoint", wallet_get_did_endpoint, allow_head=False
             ),
             web.patch("/wallet/did/local/rotate-keypair", wallet_rotate_did_keypair),
+            web.post("/anoncreds/wallet/upgrade", upgrade_anoncreds),
         ]
     )
 
@@ -1353,6 +1430,16 @@ def post_process_routes(app: web.Application):
                     "https://github.com/hyperledger/indy-sdk/tree/"
                     "master/docs/design/003-wallet-storage"
                 ),
+            },
+        }
+    )
+    app._state["swagger_dict"]["tags"].append(
+        {
+            "name": "anoncreds - wallet upgrade",
+            "description": "Anoncreds wallet upgrade",
+            "externalDocs": {
+                "description": "Specification",
+                "url": "https://hyperledger.github.io/anoncreds-spec",
             },
         }
     )
