@@ -1123,7 +1123,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def txn_submit(
         self,
-        profile: Profile,
+        ledger: BaseLedger,
         ledger_transaction: str,
         sign: bool = None,
         taa_accept: bool = None,
@@ -1131,10 +1131,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         write_ledger: bool = True,
     ) -> str:
         """Submit a transaction to the ledger."""
-        ledger = profile.inject(BaseLedger)
-
-        if not ledger:
-            raise LedgerError("No ledger available")
 
         try:
             async with ledger:

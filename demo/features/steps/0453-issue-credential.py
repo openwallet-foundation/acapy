@@ -51,6 +51,15 @@ def step_impl(context, issuer, schema_name):
     context.cred_def_id = cred_def_id
 
 
+@when('"{issuer}" sets the credential type to {credential_type}')
+def step_impl(context, issuer, credential_type):
+    agent = context.active_agents[issuer]
+
+    agent["agent"].set_cred_type(credential_type)
+
+    assert agent["agent"].cred_type == credential_type
+
+
 @given('"{issuer}" offers a credential with data {credential_data}')
 @when('"{issuer}" offers a credential with data {credential_data}')
 def step_impl(context, issuer, credential_data):

@@ -3,11 +3,7 @@ from typing import Optional
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from anoncreds import (
-    Credential,
-    CredentialDefinition,
-    CredentialOffer,
-)
+from anoncreds import Credential, CredentialDefinition, CredentialOffer, W3cCredential
 from aries_askar import AskarError, AskarErrorCode
 
 from aries_cloudagent.anoncreds.base import (
@@ -745,6 +741,21 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert result is not None
 
     @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(CredentialDefinition, "load", return_value=MockCredDefEntry())
+    @mock.patch.object(CredentialOffer, "create", return_value=MockCredOffer())
+    async def test_create_credential_offer_create_vcdi(
+        self, mock_create, mock_load, mock_session_handle
+    ):
+        mock_session_handle.fetch = mock.CoroutineMock(
+            side_effect=[MockCredDefEntry(), MockKeyProof()]
+        )
+        result = await self.issuer.create_credential_offer("cred-def-id")
+        assert mock_session_handle.fetch.called
+        assert mock_load.called
+        assert mock_create.called
+        assert result is not None
+
+    @mock.patch.object(InMemoryProfileSession, "handle")
     @mock.patch.object(Credential, "create", return_value=MockCredential())
     async def test_create_credential(self, mock_create, mock_session_handle):
         self.profile.inject = mock.Mock(
@@ -754,6 +765,26 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         )
         mock_session_handle.fetch = mock.CoroutineMock(return_value=MockCredDefEntry())
         result = await self.issuer.create_credential(
+            {"schema_id": "schema-id", "cred_def_id": "cred-def-id"},
+            {},
+            {"attr1": "value1", "attr2": "value2"},
+        )
+
+        assert result is not None
+        assert mock_session_handle.fetch.called
+        assert mock_create.called
+
+    @mock.patch.object(InMemoryProfileSession, "handle")
+    @mock.patch.object(W3cCredential, "create", return_value=MockCredential())
+    async def test_create_credential_vcdi(self, mock_create, mock_session_handle):
+        self.profile.inject = mock.Mock(
+            return_value=mock.MagicMock(
+                get_schema=mock.CoroutineMock(return_value=MockSchemaResult()),
+            )
+        )
+
+        mock_session_handle.fetch = mock.CoroutineMock(return_value=MockCredDefEntry())
+        result = await self.issuer.create_credential_w3c(
             {"schema_id": "schema-id", "cred_def_id": "cred-def-id"},
             {},
             {"attr1": "value1", "attr2": "value2"},
