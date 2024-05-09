@@ -102,9 +102,9 @@ indy = [
 aca-py = "aries_cloudagent.__main__:script_main"
 
 [tool.ruff]
-select = ["B006", "C", "D", "E", "F"]
+lint.select = ["B006", "C", "D", "E", "F"]
 
-ignore = [
+lint.ignore = [
     # Google Python Doc Style
     "D203", "D204", "D213", "D215", "D400", "D401", "D404", "D406", "D407",
     "D408", "D409", "D413",
@@ -118,7 +118,7 @@ include = ["aries_cloudagent/**/*.py"]
 
 line-length = 90
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "**/{tests}/*" = ["B006", "D", "E501", "F841"]
 
 [tool.pytest.ini_options]
