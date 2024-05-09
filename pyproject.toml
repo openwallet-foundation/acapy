@@ -62,7 +62,7 @@ ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 python3-indy= { version = "^1.11.1", optional = true }
 
 [tool.poetry.group.dev.dependencies]
-pre-commit="~3.3.3"
+pre-commit = "~3.7.0"
 # Sync with version in .pre-commit-config.yaml
 ruff = "0.4.4"
 # Sync with version in .github/workflows/blackformat.yml
