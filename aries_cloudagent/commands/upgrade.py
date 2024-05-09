@@ -89,15 +89,13 @@ class VersionUpgradeConfig:
                 tagged_config_dict[config_id] = {}
                 if "resave_records" in provided_config:
                     if provided_config.get("resave_records").get("base_record_path"):
-                        recs_list = recs_list + provided_config.get(
-                            "resave_records"
-                        ).get("base_record_path")
-                    if provided_config.get("resave_records").get(
-                        "base_exch_record_path"
-                    ):
-                        recs_list = recs_list + provided_config.get(
-                            "resave_records"
-                        ).get("base_exch_record_path")
+                        recs_list = recs_list + provided_config.get("resave_records").get(
+                            "base_record_path"
+                        )
+                    if provided_config.get("resave_records").get("base_exch_record_path"):
+                        recs_list = recs_list + provided_config.get("resave_records").get(
+                            "base_exch_record_path"
+                        )
                 tagged_config_dict[config_id]["resave_records"] = recs_list
                 config_key_set = set(provided_config.keys())
                 try:

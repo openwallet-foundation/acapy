@@ -253,9 +253,7 @@ class IndyPresExchHandler:
                 if identifier["cred_def_id"] not in cred_defs:
                     cred_defs[
                         identifier["cred_def_id"]
-                    ] = await ledger.get_credential_definition(
-                        identifier["cred_def_id"]
-                    )
+                    ] = await ledger.get_credential_definition(identifier["cred_def_id"])
 
                 if identifier.get("rev_reg_id"):
                     if identifier["rev_reg_id"] not in rev_reg_defs:

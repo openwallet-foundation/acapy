@@ -373,9 +373,7 @@ class ConnRecord(BaseRecord):
         return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     @classmethod
-    async def retrieve_by_alias(
-        cls, session: ProfileSession, alias: str
-    ) -> "ConnRecord":
+    async def retrieve_by_alias(cls, session: ProfileSession, alias: str) -> "ConnRecord":
         """Retrieve a connection record from an alias.
 
         Args:
