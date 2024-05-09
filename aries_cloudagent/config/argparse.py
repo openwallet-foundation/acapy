@@ -647,7 +647,7 @@ class GeneralGroup(ArgumentGroup):
                 nargs="?",
                 metavar="<universal_resolver_token>",
                 env_var="ACAPY_UNIVERSAL_RESOLVER_BEARER_TOKEN",
-                help="Bearer token if universal resolver instance requires authentication.",
+                help="Bearer token if universal resolver instance requires authentication.",  # noqa: E501
             ),
         )
 
