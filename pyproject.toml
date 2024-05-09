@@ -67,7 +67,7 @@ pre-commit="~3.3.3"
 ruff = "0.1.2"
 # Sync with version in .github/workflows/blackformat.yml
 # Sync with version in .pre-commit-config.yaml
-black="24.4.0"
+black = "24.4.2"
 
 sphinx="1.8.4"
 sphinx-rtd-theme=">=0.4.3"
