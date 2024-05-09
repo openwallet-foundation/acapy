@@ -58,7 +58,9 @@ class group:
     def get_registered(cls, category: str = None):
         """Fetch the set of registered classes in a category."""
         return (
-            grp for (cats, grp) in cls._registered if category is None or category in cats
+            grp
+            for (cats, grp) in cls._registered
+            if category is None or category in cats
         )
 
 
@@ -502,7 +504,9 @@ class DiscoverFeaturesGroup(ArgumentGroup):
                 if "protocols" in provided_lists:
                     settings["disclose_protocol_list"] = provided_lists.get("protocols")
                 if "goal-codes" in provided_lists:
-                    settings["disclose_goal_code_list"] = provided_lists.get("goal-codes")
+                    settings["disclose_goal_code_list"] = provided_lists.get(
+                        "goal-codes"
+                    )
         return settings
 
 
@@ -772,13 +776,13 @@ class RevocationGroup(ArgumentGroup):
         if args.notify_revocation:
             settings["revocation.notify"] = args.notify_revocation
         if args.monitor_revocation_notification:
-            settings[
-                "revocation.monitor_notification"
-            ] = args.monitor_revocation_notification
+            settings["revocation.monitor_notification"] = (
+                args.monitor_revocation_notification
+            )
         if args.anoncreds_legacy_revocation:
-            settings[
-                "revocation.anoncreds_legacy_support"
-            ] = args.anoncreds_legacy_revocation
+            settings["revocation.anoncreds_legacy_support"] = (
+                args.anoncreds_legacy_revocation
+            )
         return settings
 
 
@@ -1183,7 +1187,8 @@ class ProtocolGroup(ArgumentGroup):
         if args.requests_through_public_did:
             if not args.public_invites:
                 raise ArgsParseError(
-                    "--public-invites is required to use " "--requests-through-public-did"
+                    "--public-invites is required to use "
+                    "--requests-through-public-did"
                 )
             settings["requests_through_public_did"] = True
         if args.timing:
@@ -1490,7 +1495,9 @@ class MediationGroup(ArgumentGroup):
             settings["mediation.clear"] = True
 
         if args.clear_default_mediator and args.default_mediator_id:
-            raise ArgsParseError("Cannot both set and clear mediation at the same time.")
+            raise ArgsParseError(
+                "Cannot both set and clear mediation at the same time."
+            )
 
         return settings
 
@@ -1795,9 +1802,9 @@ class MultitenantGroup(ArgumentGroup):
                         )
 
                     if multitenancy_config.get("key_derivation_method"):
-                        settings[
-                            "multitenant.key_derivation_method"
-                        ] = multitenancy_config.get("key_derivation_method")
+                        settings["multitenant.key_derivation_method"] = (
+                            multitenancy_config.get("key_derivation_method")
+                        )
 
                 else:
                     for value_str in args.multitenancy_config:
@@ -1945,9 +1952,9 @@ class EndorsementGroup(ArgumentGroup):
 
         if args.endorser_endorse_with_did:
             if settings["endorser.endorser"]:
-                settings[
-                    "endorser.endorser_endorse_with_did"
-                ] = args.endorser_endorse_with_did
+                settings["endorser.endorser_endorse_with_did"] = (
+                    args.endorser_endorse_with_did
+                )
             else:
                 raise ArgsParseError(
                     "Parameter --endorser-endorse-with-did should only be set for "

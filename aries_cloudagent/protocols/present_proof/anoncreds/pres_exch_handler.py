@@ -194,7 +194,9 @@ class AnonCredsPresExchHandler:
                 revocation_states[rev_reg_id] = {}
             rev_reg_def = revocation_registries[rev_reg_id]
             revocation = AnonCredsRevocation(self._profile)
-            tails_local_path = await revocation.get_or_fetch_local_tails_path(rev_reg_def)
+            tails_local_path = await revocation.get_or_fetch_local_tails_path(
+                rev_reg_def
+            )
             try:
                 revocation_states[rev_reg_id][timestamp] = json.loads(
                     await self.holder.create_revocation_state(
@@ -216,13 +218,13 @@ class AnonCredsPresExchHandler:
             if "timestamp" not in precis:
                 continue
             if referent in requested_credentials["requested_attributes"]:
-                requested_credentials["requested_attributes"][referent][
-                    "timestamp"
-                ] = precis["timestamp"]
+                requested_credentials["requested_attributes"][referent]["timestamp"] = (
+                    precis["timestamp"]
+                )
             if referent in requested_credentials["requested_predicates"]:
-                requested_credentials["requested_predicates"][referent][
-                    "timestamp"
-                ] = precis["timestamp"]
+                requested_credentials["requested_predicates"][referent]["timestamp"] = (
+                    precis["timestamp"]
+                )
 
     async def return_presentation(
         self,

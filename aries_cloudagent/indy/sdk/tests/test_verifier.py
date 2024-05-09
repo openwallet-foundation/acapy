@@ -443,7 +443,9 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         assert verified is False
         assert len(msgs) == 2
         assert "TS_OUT_NRI::19_uuid" in msgs
-        assert "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        assert (
+            "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        )
 
     @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr_tamper_encoded(self, mock_verify):
@@ -469,7 +471,9 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
         assert verified is False
         assert len(msgs) == 2
         assert "TS_OUT_NRI::19_uuid" in msgs
-        assert "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        assert (
+            "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        )
 
     @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names(self, mock_verify):
@@ -508,9 +512,9 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
     @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_pred_value(self, mock_verify):
         INDY_PROOF_X = deepcopy(INDY_PROOF_PRED_NAMES)
-        INDY_PROOF_X["proof"]["proofs"][0]["primary_proof"]["ge_proofs"][0]["predicate"][
-            "value"
-        ] = 0
+        INDY_PROOF_X["proof"]["proofs"][0]["primary_proof"]["ge_proofs"][0][
+            "predicate"
+        ]["value"] = 0
         with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
@@ -568,9 +572,9 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
     @mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_attr_groups(self, mock_verify):
         INDY_PROOF_X = deepcopy(INDY_PROOF_PRED_NAMES)
-        INDY_PROOF_X["requested_proof"]["revealed_attr_groups"]["x_uuid"] = INDY_PROOF_X[
-            "requested_proof"
-        ]["revealed_attr_groups"].pop("18_uuid")
+        INDY_PROOF_X["requested_proof"]["revealed_attr_groups"]["x_uuid"] = (
+            INDY_PROOF_X["requested_proof"]["revealed_attr_groups"].pop("18_uuid")
+        )
         with mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:

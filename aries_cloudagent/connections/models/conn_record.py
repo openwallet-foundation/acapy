@@ -215,9 +215,7 @@ class ConnRecord(BaseRecord):
         self.their_role = (
             ConnRecord.Role.get(their_role).rfc160
             if isinstance(their_role, str)
-            else None
-            if their_role is None
-            else their_role.rfc160
+            else None if their_role is None else their_role.rfc160
         )
         self.invitation_key = invitation_key
         self.invitation_msg_id = invitation_msg_id
@@ -373,7 +371,9 @@ class ConnRecord(BaseRecord):
         return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     @classmethod
-    async def retrieve_by_alias(cls, session: ProfileSession, alias: str) -> "ConnRecord":
+    async def retrieve_by_alias(
+        cls, session: ProfileSession, alias: str
+    ) -> "ConnRecord":
         """Retrieve a connection record from an alias.
 
         Args:

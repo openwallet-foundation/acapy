@@ -64,9 +64,7 @@ class Service:
         self._recip_keys = (
             [recip_keys]
             if isinstance(recip_keys, PublicKey)
-            else list(recip_keys)
-            if recip_keys
-            else None
+            else list(recip_keys) if recip_keys else None
         )
         self._routing_keys = routing_keys or []
         self._endpoint = endpoint
