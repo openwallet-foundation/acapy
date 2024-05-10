@@ -4,24 +4,47 @@ import json
 import logging
 from typing import List, Sequence, Tuple, Union
 
-
 from ..core.profile import ProfileSession
 
 from ..protocols.routing.v1_0.messages.forward import Forward
 
 from ..messaging.util import time_now
-from ..utils.task_queue import TaskQueue
+from ..messaging.base_message import DIDCommVersion
 from ..wallet.base import BaseWallet
-from ..wallet.error import WalletError
+from ..wallet.error import WalletError, WalletNotFoundError
 from ..wallet.util import b64_to_str
 
 from .error import WireFormatParseError, WireFormatEncodeError, RecipientKeysError
 from .inbound.receipt import MessageReceipt
+
 from .wire_format import BaseWireFormat
 from didcomm_messaging import DIDCommMessaging
+from didcomm_messaging.crypto.backend.askar import CryptoServiceError
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+def get_version_for_packed_msg(packed_msg: Union[str, bytes]):
+    """Get the version of the packed message."""
+
+    protected_b64 = json.loads(packed_msg).get("protected")
+    if not protected_b64:
+        raise ValueError("Invalid message format")
+
+    protected = json.loads(b64_to_str(protected_b64))
+
+    typ = protected.get("typ")
+    if not typ:
+        raise ValueError("Unexpected protected headers format")
+
+    if "application/didcomm" in typ:
+        return DIDCommVersion.v2
+
+    if "JWM/1.0" in typ:
+        return DIDCommVersion.v1
+
+    raise ValueError("Could not determine DIDComm version of packed message")
 
 
 class PackWireFormat(BaseWireFormat):
@@ -29,8 +52,29 @@ class PackWireFormat(BaseWireFormat):
 
     def __init__(self):
         """Initialize the pack wire format instance."""
-        super().__init__()
-        self.task_queue: TaskQueue = None
+        self.v1pack_format = V1PackWireFormat()
+        self.v2pack_format = V2PackWireFormat()
+
+    def get_for_packed_msg(self, packed_msg: Union[str, bytes]) -> BaseWireFormat:
+        """Retrieve appropriate DIDComm instance for a given packed message."""
+        return {
+            DIDCommVersion.v1: self.v1pack_format,
+            DIDCommVersion.v2: self.v2pack_format,
+        }[get_version_for_packed_msg(packed_msg)]
+
+    async def parse_message(
+        self, session: ProfileSession, message_body: Union[str, bytes]
+    ) -> Tuple[dict, MessageReceipt]:
+        """Pass an incoming message to the appropriately versioned PackWireFormat."""
+
+        # create a flag to enable experimental DCV2 support, check that here
+
+        pack_format = self.get_for_packed_msg(message_body)
+        return await pack_format.parse_message(session, message_body)
+
+
+class V1PackWireFormat(BaseWireFormat):
+    """DIDComm V1 message parser and serializer."""
 
     async def parse_message(
         self,
@@ -55,6 +99,7 @@ class PackWireFormat(BaseWireFormat):
         receipt = MessageReceipt()
         receipt.in_time = time_now()
         receipt.raw_message = message_body
+        receipt.didcomm_version = DIDCommVersion.v1
 
         message_dict = None
         message_json = message_body
@@ -72,10 +117,7 @@ class PackWireFormat(BaseWireFormat):
         # packed messages are detected by the absence of @type
         if "@type" not in message_dict:
             try:
-                unpack = self.unpack(session, message_body, receipt)
-                message_json = await (
-                    self.task_queue and self.task_queue.run(unpack) or unpack
-                )
+                message_json = await self.unpack(session, message_body, receipt)
             except WireFormatParseError:
                 LOGGER.debug("Message unpack failed, falling back to JSON")
             else:
@@ -151,10 +193,9 @@ class PackWireFormat(BaseWireFormat):
         """
 
         if sender_key and recipient_keys:
-            pack = self.pack(
+            message = await self.pack(
                 session, message_json, recipient_keys, routing_keys, sender_key
             )
-            message = await (self.task_queue and self.task_queue.run(pack) or pack)
         else:
             message = message_json
         return message
@@ -226,10 +267,6 @@ class PackWireFormat(BaseWireFormat):
 class V2PackWireFormat(BaseWireFormat):
     """DIDComm V2 message parser and serializer."""
 
-    def __init__(self):
-        """Initialize the v2 pack wire format instance."""
-        super().__init__()
-
     async def parse_message(
         self,
         session: ProfileSession,
@@ -245,38 +282,41 @@ class V2PackWireFormat(BaseWireFormat):
         receipt = MessageReceipt()
         receipt.in_time = time_now()
         receipt.raw_message = message_body
+        receipt.didcomm_version = DIDCommVersion.v2
 
         message_dict = None
         message_json = message_body
 
-        wallet = session.inject_or(BaseWallet)
-        if not wallet:
-            LOGGER.error("NO WALLET")
-            raise
-        didlist = await wallet.get_local_dids()
-
-        did = didlist[0].did
-        LOGGER.debug("DID in V2Pack: %s", did)
-
         if not message_json:
             raise WireFormatParseError("Message body is empty")
 
-        message_json = await messaging.unpack(message_json)
+        try:
+            message_dict = json.loads(message_json)
+        except ValueError:
+            raise WireFormatParseError("Message JSON parsing failed")
+        if not isinstance(message_dict, dict):
+            raise WireFormatParseError("Message JSON result is not an object")
 
-        # try:
-        #     message_dict = json.loads(message_json)
-        # except ValueError:
-        #     raise WireFormatParseError("Message JSON parsing failed")
-        # if not isinstance(message_dict, dict):
-        #     raise WireFormatParseError("Message JSON result is not an object")
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            LOGGER.error("No wallet found")
+            raise WalletNotFoundError()
 
-        # if "type" not in message_dict:
+        # packed messages are detected by the absence of type
+        if "type" not in message_dict:
+            try:
+                message_unpack = await messaging.unpack(message_json)
+            except CryptoServiceError:
+                LOGGER.debug("Message unpack failed, falling back to JSON")
+            else:
+                # Set message_dict to be the dictionary that we unpacked
+                message_dict = message_unpack.message
 
-        #     message_json = await self.messaging.unpack(message_dict)
+        thid = message_dict.get("thid")
+        receipt.thread_id = thid or message_dict.get("id")
 
-        # else:
-        #     receipt.raw_message = message_json
-        #     message_dict = json.loads(message_json)
+        receipt.parent_thread_id = message_dict.get("pthid")
 
-        LOGGER.debug("MESSAGE DICT: %s", message_dict)
-        LOGGER.debug("MESSAGE JSON: %s", message_json)
+        LOGGER.debug("Expanded message: %s", message_dict)
+
+        return message_dict, receipt

@@ -140,9 +140,7 @@ class DefaultContextBuilder(ContextBuilder):
             BaseWireFormat,
             CachedProvider(
                 # StatsProvider(
-                ClassProvider(
-                    "aries_cloudagent.transport.pack_format.V2PackWireFormat"
-                ),
+                ClassProvider("aries_cloudagent.transport.pack_format.PackWireFormat"),
                 #    (
                 #        "encode_message", "parse_message"
                 #    ),

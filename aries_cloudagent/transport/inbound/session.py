@@ -203,6 +203,7 @@ class InboundSession:
     async def parse_inbound(self, payload_enc: Union[str, bytes]) -> InboundMessage:
         """Convert a message payload and to an inbound message."""
         session = await self.profile.session()
+        LOGGER.debug("INBOUND SESSION")
         payload, receipt = await self.wire_format.parse_message(session, payload_enc)
         return InboundMessage(
             payload,

@@ -17,7 +17,7 @@ from ..connections.base_manager import BaseConnectionManager
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
-from ..messaging.base_message import BaseMessage
+from ..messaging.base_message import BaseMessage, DIDCommVersion
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
@@ -108,12 +108,29 @@ class Dispatcher:
             A pending task instance resolving to the handler task
 
         """
+        if inbound_message.receipt.didcomm_version == DIDCommVersion.v1:
+            handle = self.handle_v1_message(profile, inbound_message, send_outbound)
+        else:
+            handle = self.handle_v2_message(profile, inbound_message, send_outbound)
+
         return self.put_task(
-            self.handle_message(profile, inbound_message, send_outbound),
+            handle,
             complete,
         )
 
-    async def handle_message(
+    async def handle_v2_message(
+        self,
+        profile: Profile,
+        inbound_message: InboundMessage,
+        send_outbound: Coroutine,
+    ):
+        """Handle a DIDComm V2 message."""
+
+        # send a DCV2 Problem Report here for testing, and to punt procotol handling down
+        # the road a bit
+        logging.getLogger(__name__).debug("HIT V2 DISPATCHER HANDLER")
+
+    async def handle_v1_message(
         self,
         profile: Profile,
         inbound_message: InboundMessage,
