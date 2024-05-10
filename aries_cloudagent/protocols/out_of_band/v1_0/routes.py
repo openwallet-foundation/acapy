@@ -6,14 +6,15 @@ import logging
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
+    match_info_schema,
     querystring_schema,
     request_schema,
-    match_info_schema,
     response_schema,
 )
 from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -225,6 +226,7 @@ class InvitationRecordMatchInfoSchema(OpenAPISchema):
 @querystring_schema(InvitationCreateQueryStringSchema())
 @request_schema(InvitationCreateRequestSchema())
 @response_schema(InvitationRecordSchema(), description="")
+@tenant_authentication
 async def invitation_create(request: web.BaseRequest):
     """Request handler for creating a new connection invitation.
 
@@ -293,6 +295,7 @@ async def invitation_create(request: web.BaseRequest):
 @querystring_schema(InvitationReceiveQueryStringSchema())
 @request_schema(InvitationMessageSchema())
 @response_schema(OobRecordSchema(), 200, description="")
+@tenant_authentication
 async def invitation_receive(request: web.BaseRequest):
     """Request handler for receiving a new connection invitation.
 
@@ -337,6 +340,7 @@ async def invitation_receive(request: web.BaseRequest):
 @docs(tags=["out-of-band"], summary="Delete records associated with invitation")
 @match_info_schema(InvitationRecordMatchInfoSchema())
 @response_schema(InvitationRecordResponseSchema(), description="")
+@tenant_authentication
 async def invitation_remove(request: web.BaseRequest):
     """Request handler for removing a invitation related conn and oob records.
 

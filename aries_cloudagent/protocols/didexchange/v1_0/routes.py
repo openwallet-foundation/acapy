@@ -12,6 +12,7 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields, validate
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
@@ -238,7 +239,8 @@ class DIDXRejectRequestSchema(OpenAPISchema):
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptInvitationQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
-async def didx_accept_invitation(request: web.Request):
+@tenant_authentication
+async def didx_accept_invitation(request: web.BaseRequest):
     """Request handler for accepting a stored connection invitation.
 
     Args:
@@ -300,6 +302,7 @@ async def didx_accept_invitation(request: web.Request):
 )
 @querystring_schema(DIDXCreateRequestImplicitQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
+@tenant_authentication
 async def didx_create_request_implicit(request: web.BaseRequest):
     """Request handler for creating and sending a request to an implicit invitation.
 
@@ -358,6 +361,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
 @querystring_schema(DIDXReceiveRequestImplicitQueryStringSchema())
 @request_schema(DIDXRequestSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
+@tenant_authentication
 async def didx_receive_request_implicit(request: web.BaseRequest):
     """Request handler for receiving a request against public DID's implicit invitation.
 
@@ -400,6 +404,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptRequestQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
+@tenant_authentication
 async def didx_accept_request(request: web.BaseRequest):
     """Request handler for accepting a stored connection request.
 
@@ -445,6 +450,7 @@ async def didx_accept_request(request: web.BaseRequest):
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @request_schema(DIDXRejectRequestSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
+@tenant_authentication
 async def didx_reject(request: web.BaseRequest):
     """Abandon or reject a DID Exchange."""
     context: AdminRequestContext = request["context"]

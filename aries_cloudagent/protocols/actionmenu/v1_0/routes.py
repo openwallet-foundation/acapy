@@ -4,9 +4,9 @@ import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, request_schema, response_schema
-
 from marshmallow import fields
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
@@ -95,6 +95,7 @@ class ActionMenuFetchResultSchema(OpenAPISchema):
 )
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
+@tenant_authentication
 async def actionmenu_close(request: web.BaseRequest):
     """Request handler for closing the menu associated with a connection.
 
@@ -122,6 +123,7 @@ async def actionmenu_close(request: web.BaseRequest):
 @docs(tags=["action-menu"], summary="Fetch the active menu")
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuFetchResultSchema(), 200, description="")
+@tenant_authentication
 async def actionmenu_fetch(request: web.BaseRequest):
     """Request handler for fetching the previously-received menu for a connection.
 
@@ -141,6 +143,7 @@ async def actionmenu_fetch(request: web.BaseRequest):
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @request_schema(PerformRequestSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
+@tenant_authentication
 async def actionmenu_perform(request: web.BaseRequest):
     """Request handler for performing a menu action.
 
@@ -170,6 +173,7 @@ async def actionmenu_perform(request: web.BaseRequest):
 @docs(tags=["action-menu"], summary="Request the active menu")
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
+@tenant_authentication
 async def actionmenu_request(request: web.BaseRequest):
     """Request handler for requesting a menu from the connection target.
 
@@ -200,6 +204,7 @@ async def actionmenu_request(request: web.BaseRequest):
 @match_info_schema(MenuConnIdMatchInfoSchema())
 @request_schema(SendMenuSchema())
 @response_schema(ActionMenuModulesResultSchema(), 200, description="")
+@tenant_authentication
 async def actionmenu_send(request: web.BaseRequest):
     """Request handler for requesting a menu from the connection target.
 

@@ -1,14 +1,14 @@
-from .....vc.ld_proofs.error import LinkedDataProofException
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from .....admin.request_context import AdminRequestContext
+from aries_cloudagent.tests import mock
 
+from .....admin.request_context import AdminRequestContext
+from .....core.in_memory import InMemoryProfile
+from .....vc.ld_proofs.error import LinkedDataProofException
 from .. import routes as test_module
 from ..formats.indy.handler import IndyCredFormatHandler
 from ..formats.ld_proof.handler import LDProofCredFormatHandler
 from ..messages.cred_format import V20CredFormat
-
 from . import (
     LD_PROOF_VC_DETAIL,
     TEST_DID,
@@ -18,7 +18,12 @@ from . import (
 class TestV20CredRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.session_inject = {}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        self.context = AdminRequestContext.test_context(self.session_inject, profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -28,6 +33,7 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
     async def test_validate_cred_filter_schema(self):

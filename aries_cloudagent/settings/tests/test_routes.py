@@ -3,13 +3,13 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
+
 from aries_cloudagent.tests import mock
 
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
-
 from .. import routes as test_module
 
 
@@ -24,7 +24,11 @@ def mock_response():
 
 @pytest.mark.asyncio
 async def test_get_profile_settings(mock_response):
-    profile = InMemoryProfile.test_profile()
+    profile = InMemoryProfile.test_profile(
+        settings={
+            "admin.admin_api_key": "secret-key",
+        }
+    )
     profile.settings.update(
         {
             "admin.admin_client_max_request_size": 1,
@@ -45,6 +49,7 @@ async def test_get_profile_settings(mock_response):
         query={},
         json=mock.CoroutineMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
+        headers={"x-api-key": "secret-key"},
     )
     await test_module.get_profile_settings(request)
     assert mock_response.call_args[0][0] == {

@@ -11,6 +11,7 @@ from marshmallow import fields, validate
 
 from aries_cloudagent.connections.base_manager import BaseConnectionManager
 
+from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..config.injection_context import InjectionContext
 from ..connections.models.conn_record import ConnRecord
@@ -434,6 +435,7 @@ def format_did_info(info: DIDInfo):
 @docs(tags=["wallet"], summary="List wallet DIDs")
 @querystring_schema(DIDListQueryStringSchema())
 @response_schema(DIDListSchema, 200, description="")
+@tenant_authentication
 async def wallet_did_list(request: web.BaseRequest):
     """Request handler for searching wallet DIDs.
 
@@ -541,6 +543,7 @@ async def wallet_did_list(request: web.BaseRequest):
 @docs(tags=["wallet"], summary="Create a local DID")
 @request_schema(DIDCreateSchema())
 @response_schema(DIDResultSchema, 200, description="")
+@tenant_authentication
 async def wallet_create_did(request: web.BaseRequest):
     """Request handler for creating a new local DID in the wallet.
 
@@ -662,6 +665,7 @@ async def wallet_create_did(request: web.BaseRequest):
 
 @docs(tags=["wallet"], summary="Fetch the current public DID")
 @response_schema(DIDResultSchema, 200, description="")
+@tenant_authentication
 async def wallet_get_public_did(request: web.BaseRequest):
     """Request handler for fetching the current public DID.
 
@@ -692,6 +696,7 @@ async def wallet_get_public_did(request: web.BaseRequest):
 @querystring_schema(AttribConnIdMatchInfoSchema())
 @querystring_schema(MediationIDSchema())
 @response_schema(DIDResultSchema, 200, description="")
+@tenant_authentication
 async def wallet_set_public_did(request: web.BaseRequest):
     """Request handler for setting the current public DID.
 
@@ -937,6 +942,7 @@ async def promote_wallet_public_did(
 @querystring_schema(CreateAttribTxnForEndorserOptionSchema())
 @querystring_schema(AttribConnIdMatchInfoSchema())
 @response_schema(WalletModuleResponseSchema(), description="")
+@tenant_authentication
 async def wallet_set_did_endpoint(request: web.BaseRequest):
     """Request handler for setting an endpoint for a DID.
 
@@ -1055,6 +1061,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
 @docs(tags=["wallet"], summary="Create a EdDSA jws using did keys with a given payload")
 @request_schema(JWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
+@tenant_authentication
 async def wallet_jwt_sign(request: web.BaseRequest):
     """Request handler for jws creation using did.
 
@@ -1091,6 +1098,7 @@ async def wallet_jwt_sign(request: web.BaseRequest):
 )
 @request_schema(SDJWSCreateSchema)
 @response_schema(WalletModuleResponseSchema(), description="")
+@tenant_authentication
 async def wallet_sd_jwt_sign(request: web.BaseRequest):
     """Request handler for sd-jws creation using did.
 
@@ -1127,6 +1135,7 @@ async def wallet_sd_jwt_sign(request: web.BaseRequest):
 @docs(tags=["wallet"], summary="Verify a EdDSA jws using did keys with a given JWS")
 @request_schema(JWSVerifySchema())
 @response_schema(JWSVerifyResponseSchema(), 200, description="")
+@tenant_authentication
 async def wallet_jwt_verify(request: web.BaseRequest):
     """Request handler for jws validation using did.
 
@@ -1160,6 +1169,7 @@ async def wallet_jwt_verify(request: web.BaseRequest):
 )
 @request_schema(SDJWSVerifySchema())
 @response_schema(SDJWSVerifyResponseSchema(), 200, description="")
+@tenant_authentication
 async def wallet_sd_jwt_verify(request: web.BaseRequest):
     """Request handler for sd-jws validation using did.
 
@@ -1182,6 +1192,7 @@ async def wallet_sd_jwt_verify(request: web.BaseRequest):
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
 @querystring_schema(DIDQueryStringSchema())
 @response_schema(DIDEndpointSchema, 200, description="")
+@tenant_authentication
 async def wallet_get_did_endpoint(request: web.BaseRequest):
     """Request handler for getting the current DID endpoint from the wallet.
 
@@ -1215,6 +1226,7 @@ async def wallet_get_did_endpoint(request: web.BaseRequest):
 @docs(tags=["wallet"], summary="Rotate keypair for a DID not posted to the ledger")
 @querystring_schema(DIDQueryStringSchema())
 @response_schema(WalletModuleResponseSchema(), description="")
+@tenant_authentication
 async def wallet_rotate_did_keypair(request: web.BaseRequest):
     """Request handler for rotating local DID keypair.
 
@@ -1275,6 +1287,7 @@ class UpgradeResultSchema(OpenAPISchema):
 )
 @querystring_schema(UpgradeVerificationSchema())
 @response_schema(UpgradeResultSchema(), description="")
+@tenant_authentication
 async def upgrade_anoncreds(request: web.BaseRequest):
     """Request handler for triggering an upgrade to anoncreds.
 

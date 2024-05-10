@@ -640,14 +640,16 @@ class GeneralGroup(ArgumentGroup):
                 "resolver instance."
             ),
         )
-        parser.add_argument(
-            "--universal-resolver-bearer-token",
-            type=str,
-            nargs="?",
-            metavar="<universal_resolver_token>",
-            env_var="ACAPY_UNIVERSAL_RESOLVER_BEARER_TOKEN",
-            help="Bearer token if universal resolver instance requires authentication.",
-        ),
+        (
+            parser.add_argument(
+                "--universal-resolver-bearer-token",
+                type=str,
+                nargs="?",
+                metavar="<universal_resolver_token>",
+                env_var="ACAPY_UNIVERSAL_RESOLVER_BEARER_TOKEN",
+                help="Bearer token if universal resolver instance requires authentication.",  # noqa: E501
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
