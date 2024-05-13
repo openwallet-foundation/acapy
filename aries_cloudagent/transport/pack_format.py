@@ -319,6 +319,9 @@ class V2PackWireFormat(BaseWireFormat):
 
         receipt.parent_thread_id = message_dict.get("pthid")
 
+        # handle transport decorator
+        receipt.direct_response_mode = message_dict.get("return_route")
+
         LOGGER.debug("Expanded message: %s", message_dict)
 
         return message_dict, receipt

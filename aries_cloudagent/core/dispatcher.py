@@ -128,7 +128,29 @@ class Dispatcher:
 
         # send a DCV2 Problem Report here for testing, and to punt procotol handling down
         # the road a bit
-        logging.getLogger(__name__).debug("HIT V2 DISPATCHER HANDLER")
+        logging.getLogger(__name__).debug("HIT V2 DISPATCHER HANDLER S-00001")
+        context = RequestContext(profile)
+        #context.message = message
+        context.message_receipt = inbound_message.receipt
+        responder = DispatcherResponder(
+            context,
+            inbound_message,
+            send_outbound,
+            reply_session_id=inbound_message.session_id,
+            reply_to_verkey=inbound_message.receipt.sender_verkey,
+        )
+
+        context.injector.bind_instance(BaseResponder, responder)
+        #responder.connection_id = connection and connection.connection_id
+        error_result = ProblemReport(
+            description={
+                "en": str("No Handlers Found -- Colton"),
+                "code": "message-parse-failure",
+            }
+        )
+        logging.getLogger(__name__).debug("CONSTRUCTED V2 DISPATCHER RESPONSE")
+        await responder.send_reply(error_result)
+        logging.getLogger(__name__).debug("LEFT V2 DISPATCHER HANDLER")
 
     async def handle_v1_message(
         self,
