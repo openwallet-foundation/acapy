@@ -1,16 +1,23 @@
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
-from .. import routes as test_module
 from .....admin.request_context import AdminRequestContext
+from .....core.in_memory import InMemoryProfile
 from .....storage.error import StorageNotFoundError
 from ....coordinate_mediation.v1_0.route_manager import RouteManager
+from .. import routes as test_module
 
 
 class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.session_inject = {}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        self.context = AdminRequestContext.test_context(self.session_inject, profile)
         self.profile = self.context.profile
         self.request_dict = {
             "context": self.context,
@@ -21,6 +28,7 @@ class TestDIDExchangeConnRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
         self.profile.context.injector.bind_instance(RouteManager, mock.MagicMock())
 

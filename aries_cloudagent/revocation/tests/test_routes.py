@@ -17,7 +17,11 @@ from .. import routes as test_module
 
 class TestRevocationRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
         self.request_dict = {
@@ -29,11 +33,16 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
         self.test_did = "sample-did"
 
-        self.author_profile = InMemoryProfile.test_profile()
+        self.author_profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "author-key",
+            }
+        )
         self.author_profile.settings.set_value("endorser.author", True)
         self.author_context = self.author_profile.context
         setattr(self.author_context, "profile", self.author_profile)
@@ -46,6 +55,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.author_request_dict[k],
+            headers={"x-api-key": "author-key"},
         )
 
     async def test_validate_cred_rev_rec_qs_and_revoke_req(self):
@@ -1054,7 +1064,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
     async def test_wrong_profile_403(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet.type": "askar"},
+            settings={"wallet.type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarAnoncredsProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -1067,6 +1077,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
 
         self.request.json = mock.CoroutineMock(

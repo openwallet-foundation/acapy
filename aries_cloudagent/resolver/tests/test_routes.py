@@ -3,11 +3,11 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from aries_cloudagent.tests import mock
 from pydid import DIDDocument
 
-from ...core.in_memory import InMemoryProfile
+from aries_cloudagent.tests import mock
 
+from ...core.in_memory import InMemoryProfile
 from .. import routes as test_module
 from ..base import (
     DIDMethodNotSupported,
@@ -18,7 +18,6 @@ from ..base import (
     ResolverType,
 )
 from ..did_resolver import DIDResolver
-
 from . import DOC
 
 
@@ -59,7 +58,11 @@ def mock_resolver(resolution_result):
 
 @pytest.mark.asyncio
 async def test_resolver(mock_resolver, mock_response: mock.MagicMock, did_doc):
-    profile = InMemoryProfile.test_profile()
+    profile = InMemoryProfile.test_profile(
+        settings={
+            "admin.admin_api_key": "secret-key",
+        }
+    )
     context = profile.context
     setattr(context, "profile", profile)
     session = await profile.session()
@@ -77,6 +80,7 @@ async def test_resolver(mock_resolver, mock_response: mock.MagicMock, did_doc):
         query={},
         json=mock.CoroutineMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
+        headers={"x-api-key": "secret-key"},
     )
     with mock.patch.object(
         context.profile,
@@ -100,7 +104,11 @@ async def test_resolver(mock_resolver, mock_response: mock.MagicMock, did_doc):
 async def test_resolver_not_found_error(mock_resolver, side_effect, error):
     mock_resolver.resolve_with_metadata = mock.CoroutineMock(side_effect=side_effect())
 
-    profile = InMemoryProfile.test_profile()
+    profile = InMemoryProfile.test_profile(
+        settings={
+            "admin.admin_api_key": "secret-key",
+        }
+    )
     context = profile.context
     setattr(context, "profile", profile)
     session = await profile.session()
@@ -118,6 +126,7 @@ async def test_resolver_not_found_error(mock_resolver, side_effect, error):
         query={},
         json=mock.CoroutineMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
+        headers={"x-api-key": "secret-key"},
     )
     with mock.patch.object(
         context.profile,

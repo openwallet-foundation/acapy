@@ -2,9 +2,9 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, response_schema
-
 from marshmallow import fields
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -66,6 +66,7 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
 )
 @querystring_schema(QueryFeaturesQueryStringSchema())
 @response_schema(V10DiscoveryRecordSchema(), 200, description="")
+@tenant_authentication
 async def query_features(request: web.BaseRequest):
     """Request handler for creating and sending feature query.
 
@@ -96,6 +97,7 @@ async def query_features(request: web.BaseRequest):
 )
 @querystring_schema(QueryDiscoveryExchRecordsSchema())
 @response_schema(V10DiscoveryExchangeListResultSchema(), 200, description="")
+@tenant_authentication
 async def query_records(request: web.BaseRequest):
     """Request handler for looking up V10DiscoveryExchangeRecord.
 

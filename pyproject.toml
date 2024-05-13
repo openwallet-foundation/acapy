@@ -24,7 +24,7 @@ async-timeout="~4.0.2"
 base58="~2.1.0"
 ConfigArgParse="~1.5.3"
 deepmerge="~0.3.0"
-ecdsa="~0.16.1"
+ecdsa="~0.19.0"
 jsonpath-ng="1.6.1"
 Markdown="~3.5.2"
 markupsafe="2.0.1"
@@ -67,7 +67,7 @@ pre-commit="~3.3.3"
 ruff = "0.1.2"
 # Sync with version in .github/workflows/blackformat.yml
 # Sync with version in .pre-commit-config.yaml
-black="24.3.0"
+black="24.4.0"
 
 sphinx="1.8.4"
 sphinx-rtd-theme=">=0.4.3"

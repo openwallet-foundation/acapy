@@ -2,10 +2,10 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, response_schema
+from marshmallow import fields, validate
 from pydid.common import DID_PATTERN
 
-from marshmallow import fields, validate
-
+from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
 from .base import DIDMethodNotSupported, DIDNotFound, ResolutionResult, ResolverError
@@ -49,6 +49,7 @@ class DIDMatchInfoSchema(OpenAPISchema):
 @docs(tags=["resolver"], summary="Retrieve doc for requested did")
 @match_info_schema(DIDMatchInfoSchema())
 @response_schema(ResolutionResultSchema(), 200)
+@tenant_authentication
 async def resolve_did(request: web.Request):
     """Retrieve a did document."""
     context: AdminRequestContext = request["context"]

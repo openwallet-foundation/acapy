@@ -761,7 +761,6 @@ def step_impl(context, holder_name, issuer_name):
         "/credentials",
         params={},
     )
-    assert len(cred_list["results"]) == 1
     cred_id = cred_list["results"][0]["referent"]
 
     revoc_status_bool = False

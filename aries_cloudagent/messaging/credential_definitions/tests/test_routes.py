@@ -23,7 +23,11 @@ CRED_DEF_ID = "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
 class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
         self.session_inject = {}
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
         self.profile_injector = self.profile.context.injector
 
         self.ledger = mock.create_autospec(BaseLedger)
@@ -61,6 +65,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
     async def test_send_credential_definition(self):
@@ -391,7 +396,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
 
     async def test_credential_definition_endpoints_wrong_profile_403(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar"},
+            settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarAnoncredsProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -404,6 +409,7 @@ class TestCredentialDefinitionRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
         self.request.json = mock.CoroutineMock(
             return_value={

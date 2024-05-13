@@ -1,15 +1,13 @@
 import json
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from ...core.in_memory import InMemoryProfile
-from ...ledger.base import BaseLedger
+from aries_cloudagent.tests import mock
 
+from ...core.in_memory import InMemoryProfile
 from ...indy.holder import IndyHolder
+from ...ledger.base import BaseLedger
 from ...storage.vc_holder.base import VCHolder
 from ...storage.vc_holder.vc_record import VCRecord
-
 from .. import routes as test_module
 
 VC_RECORD = VCRecord(
@@ -33,7 +31,11 @@ VC_RECORD = VCRecord(
 
 class TestHolderRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
 
@@ -43,6 +45,7 @@ class TestHolderRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
     async def test_credentials_get(self):

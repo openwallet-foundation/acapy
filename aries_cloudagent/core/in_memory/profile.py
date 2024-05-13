@@ -97,10 +97,17 @@ class InMemoryProfile(Profile):
 
     @classmethod
     def test_session(
-        cls, settings: Mapping[str, Any] = None, bind: Mapping[Type, Any] = None
+        cls,
+        settings: Mapping[str, Any] = None,
+        bind: Mapping[Type, Any] = None,
+        profile_class: Any = None,
     ) -> "InMemoryProfileSession":
         """Used in tests to quickly create InMemoryProfileSession."""
-        session = InMemoryProfileSession(cls.test_profile(), settings=settings)
+        if profile_class is not None:
+            test_profile = cls.test_profile(profile_class=profile_class)
+        else:
+            test_profile = cls.test_profile()
+        session = InMemoryProfileSession(test_profile, settings=settings)
         session._active = True
         session._init_context()
         if bind:
