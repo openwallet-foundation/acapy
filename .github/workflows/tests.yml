@@ -35,8 +35,7 @@ jobs:
             exit 1
           fi
           exit $PYTEST_EXIT_CODE
-  code-coverage:
-    name: Upload coverage reports to Codecov
-    uses: codecov/codecov-action@v4.0.1
-    with:
-      token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
