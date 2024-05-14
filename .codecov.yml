@@ -1,4 +1,7 @@
 comment:
-  layout: "header, diff"
+  layout: " diff, flags, files"
   behavior: default
-  require_changes: no
+  require_changes: false
+  require_base: false
+  require_head: true
+  hide_project_coverage: false
