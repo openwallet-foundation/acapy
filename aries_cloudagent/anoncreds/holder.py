@@ -572,6 +572,7 @@ class AnonCredsHolder:
             cred = creds[cred_id]
             rev_reg_id = cred.rev_reg_id
             timestamp = detail.get("timestamp") if rev_reg_id else None
+            print("Test")
             rev_state = None
             if timestamp:
                 if not rev_states or rev_reg_id not in rev_states:
