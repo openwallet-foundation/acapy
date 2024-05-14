@@ -33,7 +33,7 @@ class RouteManagerError(Exception):
 
 
 class RoutingInfo(NamedTuple):
-    """Routing info tuple contiaing routing keys and endpoint."""
+    """Routing info tuple containing routing keys and endpoint."""
 
     routing_keys: Optional[List[str]]
     endpoint: Optional[str]
@@ -50,7 +50,7 @@ class RouteManager(ABC):
     async def get_or_create_my_did(
         self, profile: Profile, conn_record: ConnRecord
     ) -> DIDInfo:
-        """Create or retrieve DID info for a conneciton."""
+        """Create or retrieve DID info for a connection."""
         if not conn_record.my_did:
             async with profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -227,9 +227,16 @@ class RouteManager(ABC):
 
         raise ValueError("Expected connection to have invitation_key")
 
-    async def route_verkey(self, profile: Profile, verkey: str):
+    async def route_verkey(
+        self,
+        profile: Profile,
+        verkey: str,
+        mediation_record: Optional[MediationRecord] = None,
+    ):
         """Establish routing for a public DID."""
-        return await self._route_for_key(profile, verkey, skip_if_exists=True)
+        return await self._route_for_key(
+            profile, verkey, mediation_record, skip_if_exists=True
+        )
 
     async def route_public_did(self, profile: Profile, verkey: str):
         """Establish routing for a public DID.

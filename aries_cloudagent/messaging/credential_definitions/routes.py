@@ -16,6 +16,7 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
+from ...admin.decorators.auth import tenant_authentication
 from ...admin.request_context import AdminRequestContext
 from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import Event, EventBus
@@ -183,6 +184,7 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
 @querystring_schema(CreateCredDefTxnForEndorserOptionSchema())
 @querystring_schema(CredDefConnIdMatchInfoSchema())
 @response_schema(TxnOrCredentialDefinitionSendResultSchema(), 200, description="")
+@tenant_authentication
 async def credential_definitions_send_credential_definition(request: web.BaseRequest):
     """Request handler for sending a credential definition to the ledger.
 
@@ -356,7 +358,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             try:
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
-                    # TODO see if we need to parameterize these params
+                    # TODO see if we need to parametrize these params
                     # expires_time=expires_time,
                 )
             except (StorageError, TransactionManagerError) as err:
@@ -378,6 +380,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 )
 @querystring_schema(CredDefQueryStringSchema())
 @response_schema(CredentialDefinitionsCreatedResultSchema(), 200, description="")
+@tenant_authentication
 async def credential_definitions_created(request: web.BaseRequest):
     """Request handler for retrieving credential definitions that current agent created.
 
@@ -412,6 +415,7 @@ async def credential_definitions_created(request: web.BaseRequest):
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
+@tenant_authentication
 async def credential_definitions_get_credential_definition(request: web.BaseRequest):
     """Request handler for getting a credential definition from the ledger.
 
@@ -462,6 +466,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 )
 @match_info_schema(CredDefIdMatchInfoSchema())
 @response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
+@tenant_authentication
 async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseRequest):
     """Request handler for fixing a credential definition wallet non-secret record.
 

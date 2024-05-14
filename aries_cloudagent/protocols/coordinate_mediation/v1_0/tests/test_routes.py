@@ -1,18 +1,23 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from .. import routes as test_module
+from aries_cloudagent.tests import mock
+
 from .....admin.request_context import AdminRequestContext
 from .....core.in_memory import InMemoryProfile
 from .....storage.error import StorageError, StorageNotFoundError
+from .....wallet.did_method import DIDMethods
+from .. import routes as test_module
 from ..models.mediation_record import MediationRecord
 from ..route_manager import RouteManager
-from .....wallet.did_method import DIDMethods
 
 
 class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
         self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.context = AdminRequestContext.test_context(profile=self.profile)
         self.outbound_message_router = mock.CoroutineMock()
@@ -28,6 +33,7 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
             query={},
             json=mock.CoroutineMock(return_value={}),
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
         serialized = {
             "mediation_id": "fake_id",

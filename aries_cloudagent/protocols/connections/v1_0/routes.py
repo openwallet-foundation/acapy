@@ -11,9 +11,9 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields, validate, validates_schema
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
@@ -22,13 +22,13 @@ from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
     ENDPOINT_EXAMPLE,
     ENDPOINT_VALIDATE,
+    GENERIC_DID_VALIDATE,
     INDY_DID_EXAMPLE,
     INDY_DID_VALIDATE,
     INDY_RAW_PUBLIC_KEY_EXAMPLE,
     INDY_RAW_PUBLIC_KEY_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    GENERIC_DID_VALIDATE,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
@@ -258,7 +258,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     state = fields.Str(
         required=False,
         validate=validate.OneOf(
-            {label for state in ConnRecord.State for label in state.value}
+            sorted({label for state in ConnRecord.State for label in state.value})
         ),
         metadata={"description": "Connection state"},
     )
@@ -293,7 +293,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     invitation_msg_id = fields.Str(
         required=False,
         metadata={
-            "description": "Identifier of the associated Invitation Mesage",
+            "description": "Identifier of the associated Invitation Message",
             "example": UUID4_EXAMPLE,
         },
     )
@@ -430,6 +430,7 @@ def connection_sort_key(conn):
 )
 @querystring_schema(ConnectionsListQueryStringSchema())
 @response_schema(ConnectionListSchema(), 200, description="")
+@tenant_authentication
 async def connections_list(request: web.BaseRequest):
     """Request handler for searching connection records.
 
@@ -484,6 +485,7 @@ async def connections_list(request: web.BaseRequest):
 @docs(tags=["connection"], summary="Fetch a single connection record")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
+@tenant_authentication
 async def connections_retrieve(request: web.BaseRequest):
     """Request handler for fetching a single connection record.
 
@@ -513,6 +515,7 @@ async def connections_retrieve(request: web.BaseRequest):
 @docs(tags=["connection"], summary="Fetch connection remote endpoint")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(EndpointsResultSchema(), 200, description="")
+@tenant_authentication
 async def connections_endpoints(request: web.BaseRequest):
     """Request handler for fetching connection endpoints.
 
@@ -542,6 +545,7 @@ async def connections_endpoints(request: web.BaseRequest):
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(ConnectionMetadataQuerySchema())
 @response_schema(ConnectionMetadataSchema(), 200, description="")
+@tenant_authentication
 async def connections_metadata(request: web.BaseRequest):
     """Handle fetching metadata associated with a single connection record."""
     context: AdminRequestContext = request["context"]
@@ -568,6 +572,7 @@ async def connections_metadata(request: web.BaseRequest):
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @request_schema(ConnectionMetadataSetRequestSchema())
 @response_schema(ConnectionMetadataSchema(), 200, description="")
+@tenant_authentication
 async def connections_metadata_set(request: web.BaseRequest):
     """Handle fetching metadata associated with a single connection record."""
     context: AdminRequestContext = request["context"]
@@ -597,6 +602,7 @@ async def connections_metadata_set(request: web.BaseRequest):
 @querystring_schema(CreateInvitationQueryStringSchema())
 @request_schema(CreateInvitationRequestSchema())
 @response_schema(InvitationResultSchema(), 200, description="")
+@tenant_authentication
 async def connections_create_invitation(request: web.BaseRequest):
     """Request handler for creating a new connection invitation.
 
@@ -671,6 +677,7 @@ async def connections_create_invitation(request: web.BaseRequest):
 @querystring_schema(ReceiveInvitationQueryStringSchema())
 @request_schema(ReceiveInvitationRequestSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
+@tenant_authentication
 async def connections_receive_invitation(request: web.BaseRequest):
     """Request handler for receiving a new connection invitation.
 
@@ -713,6 +720,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptInvitationQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
+@tenant_authentication
 async def connections_accept_invitation(request: web.BaseRequest):
     """Request handler for accepting a stored connection invitation.
 
@@ -764,6 +772,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptRequestQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
+@tenant_authentication
 async def connections_accept_request(request: web.BaseRequest):
     """Request handler for accepting a stored connection request.
 
@@ -798,6 +807,7 @@ async def connections_accept_request(request: web.BaseRequest):
 @docs(tags=["connection"], summary="Remove an existing connection record")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @response_schema(ConnectionModuleResponseSchema, 200, description="")
+@tenant_authentication
 async def connections_remove(request: web.BaseRequest):
     """Request handler for removing a connection record.
 
@@ -826,6 +836,7 @@ async def connections_remove(request: web.BaseRequest):
 @docs(tags=["connection"], summary="Create a new static connection")
 @request_schema(ConnectionStaticRequestSchema())
 @response_schema(ConnectionStaticResultSchema(), 200, description="")
+@tenant_authentication
 async def connections_create_static(request: web.BaseRequest):
     """Request handler for creating a new static connection.
 

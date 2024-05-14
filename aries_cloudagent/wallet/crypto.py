@@ -384,7 +384,7 @@ def decode_pack_message(
 
     Raises:
         ValueError: If the packed message is invalid
-        ValueError: If the packed message reipients are invalid
+        ValueError: If the packed message recipients are invalid
         ValueError: If the pack algorithm is unsupported
         ValueError: If the sender's public key was not provided
 

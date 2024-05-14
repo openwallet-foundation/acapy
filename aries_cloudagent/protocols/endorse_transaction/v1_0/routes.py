@@ -12,6 +12,7 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields, validate
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.event_bus import Event, EventBus
@@ -124,6 +125,7 @@ class EndorserInfoSchema(OpenAPISchema):
 )
 @querystring_schema(TransactionsListQueryStringSchema())
 @response_schema(TransactionListSchema(), 200)
+@tenant_authentication
 async def transactions_list(request: web.BaseRequest):
     """Request handler for searching transaction records.
 
@@ -153,6 +155,7 @@ async def transactions_list(request: web.BaseRequest):
 @docs(tags=["endorse-transaction"], summary="Fetch a single transaction record")
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
+@tenant_authentication
 async def transactions_retrieve(request: web.BaseRequest):
     """Request handler for fetching a single transaction record.
 
@@ -186,6 +189,7 @@ async def transactions_retrieve(request: web.BaseRequest):
 @querystring_schema(TranIdMatchInfoSchema())
 @request_schema(DateSchema())
 @response_schema(TransactionRecordSchema(), 200)
+@tenant_authentication
 async def transaction_create_request(request: web.BaseRequest):
     """Request handler for creating a new transaction record and request.
 
@@ -276,6 +280,7 @@ async def transaction_create_request(request: web.BaseRequest):
 @querystring_schema(EndorserDIDInfoSchema())
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
+@tenant_authentication
 async def endorse_transaction_response(request: web.BaseRequest):
     """Request handler for creating an endorsed transaction response.
 
@@ -347,6 +352,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
 )
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
+@tenant_authentication
 async def refuse_transaction_response(request: web.BaseRequest):
     """Request handler for creating a refused transaction response.
 
@@ -413,6 +419,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
 )
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
+@tenant_authentication
 async def cancel_transaction(request: web.BaseRequest):
     """Request handler for cancelling a Transaction request.
 
@@ -477,6 +484,7 @@ async def cancel_transaction(request: web.BaseRequest):
 )
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
+@tenant_authentication
 async def transaction_resend(request: web.BaseRequest):
     """Request handler for resending a transaction request.
 
@@ -541,6 +549,7 @@ async def transaction_resend(request: web.BaseRequest):
 @querystring_schema(AssignTransactionJobsSchema())
 @match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(TransactionJobsSchema(), 200)
+@tenant_authentication
 async def set_endorser_role(request: web.BaseRequest):
     """Request handler for assigning transaction jobs.
 
@@ -581,6 +590,7 @@ async def set_endorser_role(request: web.BaseRequest):
 @querystring_schema(EndorserInfoSchema())
 @match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(EndorserInfoSchema(), 200)
+@tenant_authentication
 async def set_endorser_info(request: web.BaseRequest):
     """Request handler for assigning endorser information.
 
@@ -644,6 +654,7 @@ async def set_endorser_info(request: web.BaseRequest):
 )
 @match_info_schema(TranIdMatchInfoSchema())
 @response_schema(TransactionRecordSchema(), 200)
+@tenant_authentication
 async def transaction_write(request: web.BaseRequest):
     """Request handler for writing an endorsed transaction to the ledger.
 

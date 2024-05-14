@@ -56,13 +56,13 @@ class OobRecord(BaseExchangeRecord):
         invi_msg_id: str,
         role: str,
         invitation: Union[InvitationMessage, Mapping[str, Any]],
-        their_service: Optional[ServiceDecorator] = None,
+        their_service: Optional[Union[ServiceDecorator, Mapping[str, Any]]] = None,
         connection_id: Optional[str] = None,
         reuse_msg_id: Optional[str] = None,
         oob_id: Optional[str] = None,
         attach_thread_id: Optional[str] = None,
         our_recipient_key: Optional[str] = None,
-        our_service: Optional[ServiceDecorator] = None,
+        our_service: Optional[Union[ServiceDecorator, Mapping[str, Any]]] = None,
         multi_use: bool = False,
         trace: bool = False,
         **kwargs,
@@ -76,8 +76,8 @@ class OobRecord(BaseExchangeRecord):
         self._invitation = InvitationMessage.serde(invitation)
         self.connection_id = connection_id
         self.reuse_msg_id = reuse_msg_id
-        self.their_service = their_service
-        self.our_service = our_service
+        self._their_service = ServiceDecorator.serde(their_service)
+        self._our_service = ServiceDecorator.serde(our_service)
         self.attach_thread_id = attach_thread_id
         self.our_recipient_key = our_recipient_key
         self.multi_use = multi_use
@@ -89,7 +89,7 @@ class OobRecord(BaseExchangeRecord):
         return self._id
 
     @property
-    def invitation(self) -> InvitationMessage:
+    def invitation(self) -> Optional[InvitationMessage]:
         """Accessor; get deserialized view."""
         return None if self._invitation is None else self._invitation.de
 
@@ -97,6 +97,26 @@ class OobRecord(BaseExchangeRecord):
     def invitation(self, value):
         """Setter; store de/serialized views."""
         self._invitation = InvitationMessage.serde(value)
+
+    @property
+    def our_service(self) -> Optional[ServiceDecorator]:
+        """Accessor; get deserialized view."""
+        return None if self._our_service is None else self._our_service.de
+
+    @our_service.setter
+    def our_service(self, value: Union[ServiceDecorator, Mapping[str, Any]]):
+        """Setter; store de/serialized views."""
+        self._our_service = ServiceDecorator.serde(value)
+
+    @property
+    def their_service(self) -> Optional[ServiceDecorator]:
+        """Accessor; get deserialized view."""
+        return None if self._their_service is None else self._their_service.de
+
+    @their_service.setter
+    def their_service(self, value: Union[ServiceDecorator, Mapping[str, Any]]):
+        """Setter; store de/serialized vies."""
+        self._their_service = ServiceDecorator.serde(value)
 
     @property
     def record_value(self) -> dict:
@@ -109,14 +129,13 @@ class OobRecord(BaseExchangeRecord):
                     "their_service",
                     "connection_id",
                     "role",
-                    "our_service",
                     "invi_msg_id",
                     "multi_use",
                 )
             },
             **{
                 prop: getattr(self, f"_{prop}").ser
-                for prop in ("invitation",)
+                for prop in ("invitation", "our_service", "their_service")
                 if getattr(self, prop) is not None
             },
         }
@@ -302,7 +321,7 @@ class OobRecordSchema(BaseExchangeSchema):
     multi_use = fields.Boolean(
         required=False,
         metadata={
-            "description": "Allow for multiple uses of the oobinvitation",
+            "description": "Allow for multiple uses of the oob invitation",
             "example": True,
         },
     )

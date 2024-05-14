@@ -29,7 +29,6 @@ from runners.support.utils import (  # noqa:E402
     prompt_loop,
 )
 
-
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
@@ -342,129 +341,66 @@ class FaberAgent(AriesAgent):
                 return proof_request_web_request
 
             elif cred_type == CRED_FORMAT_VC_DI:
-                # TODO For now (until the VC_DI proof exchange is implemented) just do a "legacy" proof request when cred type is "vc_di"
-                # proof_request_web_request = {
-                #     "comment": "Test proof request for VC-DI format",
-                #     "presentation_request": {
-                #         "dif": {
-                #             "options": {
-                #                 "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
-                #                 "domain": "4jt78h47fh47",
-                #             },
-                #             "presentation_definition": {
-                #                 "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
-                #                 "submission_requirements": [
-                #                     {
-                #                         "name": "Degree Verification",
-                #                         "rule": "pick",
-                #                         "min": 1,
-                #                         "from": "A",
-                #                     }
-                #                 ],
-                #                 "input_descriptors": [
-                #                     {
-                #                         "id": "degree_input_1",
-                #                         "name": "Degree Certificate",
-                #                         "group": ["A"],
-                #                         "schema": [
-                #                             {
-                #                                 "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
-                #                             },
-                #                             {
-                #                                 "uri": "https://w3id.org/citizenship#PermanentResidentCard"
-                #                             },
-                #                         ],
-                #                         "constraints": {
-                #                             "limit_disclosure": "required",
-                #                             "fields": [
-                #                                 {
-                #                                     "path": [
-                #                                         "$.credentialSubject.degree.name"
-                #                                     ],
-                #                                     "purpose": "We need to verify that you have the required degree.",
-                #                                     "filter": {"type": "string"},
-                #                                 },
-                #                                 {
-                #                                     "path": [
-                #                                         "$.credentialSubject.birthDate"
-                #                                     ],
-                #                                     "purpose": "To ensure you meet the age requirement.",
-                #                                     "filter": {
-                #                                         "type": "string",
-                #                                         "pattern": birth_date.strftime(
-                #                                             birth_date_format
-                #                                         ),
-                #                                     },
-                #                                 },
-                #                             ],
-                #                         },
-                #                     }
-                #                 ],
-                #             },
-                #         },
-                #     },
-                # }
-                # if not connectionless:
-                #     proof_request_web_request["connection_id"] = self.connection_id
-                # return proof_request_web_request
-
-                req_attrs = [
-                    {
-                        "name": "name",
-                        "restrictions": [{"schema_name": "degree schema"}],
-                    },
-                    {
-                        "name": "date",
-                        "restrictions": [{"schema_name": "degree schema"}],
-                    },
-                ]
-                if revocation:
-                    req_attrs.append(
-                        {
-                            "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
-                            "non_revoked": {"to": int(time.time() - 1)},
-                        },
-                    )
-                else:
-                    req_attrs.append(
-                        {
-                            "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
-                        }
-                    )
-                if SELF_ATTESTED:
-                    # test self-attested claims
-                    req_attrs.append(
-                        {"name": "self_attested_thing"},
-                    )
-                req_preds = [
-                    # test zero-knowledge proofs
-                    {
-                        "name": "birthdate_dateint",
-                        "p_type": "<=",
-                        "p_value": int(birth_date.strftime(birth_date_format)),
-                        "restrictions": [{"schema_name": "degree schema"}],
-                    }
-                ]
-                indy_proof_request = {
-                    "name": "Proof of Education",
-                    "version": "1.0",
-                    "requested_attributes": {
-                        f"0_{req_attr['name']}_uuid": req_attr for req_attr in req_attrs
-                    },
-                    "requested_predicates": {
-                        f"0_{req_pred['name']}_GE_uuid": req_pred
-                        for req_pred in req_preds
-                    },
-                }
-
-                if revocation:
-                    indy_proof_request["non_revoked"] = {"to": int(time.time())}
-
                 proof_request_web_request = {
-                    "presentation_request": {"indy": indy_proof_request},
-                    "trace": exchange_tracing,
+                    "comment": "Test proof request for VC-DI format",
+                    "presentation_request": {
+                        "dif": {
+                            "options": {
+                                "challenge": "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                                "domain": "4jt78h47fh47",
+                            },
+                            "presentation_definition": {
+                                "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
+                                "submission_requirements": [
+                                    {
+                                        "name": "Degree Verification",
+                                        "rule": "pick",
+                                        "min": 1,
+                                        "from": "A",
+                                    }
+                                ],
+                                "input_descriptors": [
+                                    {
+                                        "id": "degree_input_1",
+                                        "name": "Degree Certificate",
+                                        "group": ["A"],
+                                        "schema": [
+                                            {
+                                                "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+                                            },
+                                            {
+                                                "uri": "https://w3id.org/citizenship#PermanentResidentCard"
+                                            },
+                                        ],
+                                        "constraints": {
+                                            "limit_disclosure": "required",
+                                            "fields": [
+                                                {
+                                                    "path": [
+                                                        "$.credentialSubject.degree.name"
+                                                    ],
+                                                    "purpose": "We need to verify that you have the required degree.",
+                                                    "filter": {"type": "string"},
+                                                },
+                                                {
+                                                    "path": [
+                                                        "$.credentialSubject.birthDate"
+                                                    ],
+                                                    "purpose": "To ensure you meet the age requirement.",
+                                                    "filter": {
+                                                        "type": "string",
+                                                        "pattern": birth_date.strftime(
+                                                            birth_date_format
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    }
+                                ],
+                            },
+                        },
+                    },
                 }
                 if not connectionless:
                     proof_request_web_request["connection_id"] = self.connection_id
@@ -645,16 +581,27 @@ async def main(args):
             options += "    (D) Set Endorser's DID\n"
         if faber_agent.multitenant:
             options += "    (W) Create and/or Enable Wallet\n"
+            options += "    (U) Upgrade wallet to anoncreds \n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
         options += "    (X) Exit?\n[1/2/3/4/{}{}T/X] ".format(
             "5/6/7/8/" if faber_agent.revocation else "",
             "W/" if faber_agent.multitenant else "",
         )
+
+        upgraded_to_anoncreds = False
         async for option in prompt_loop(
             options.replace("%CRED_TYPE%", faber_agent.cred_type)
         ):
             if option is not None:
                 option = option.strip()
+
+            # Anoncreds has different endpoints for revocation
+            is_anoncreds = False
+            if (
+                faber_agent.agent.__dict__["wallet_type"] == "askar-anoncreds"
+                or upgraded_to_anoncreds
+            ):
+                is_anoncreds = True
 
             if option is None or option in "xX":
                 break
@@ -949,11 +896,6 @@ async def main(args):
                     await prompt("Publish now? [Y/N]: ", default="N")
                 ).strip() in "yY"
 
-                # Anoncreds has different endpoints for revocation
-                is_anoncreds = False
-                if faber_agent.agent.__dict__["wallet_type"] == "askar-anoncreds":
-                    is_anoncreds = True
-
                 try:
                     endpoint = (
                         "/anoncreds/revocation/revoke"
@@ -1055,6 +997,14 @@ async def main(args):
                     )
                 except ClientError:
                     pass
+            elif option in "uU" and faber_agent.multitenant:
+                log_status("Upgrading wallet to anoncreds. Wait a couple seconds...")
+                await faber_agent.agent.admin_POST(
+                    "/anoncreds/wallet/upgrade",
+                    params={"wallet_name": faber_agent.agent.wallet_name},
+                )
+                upgraded_to_anoncreds = True
+                await asyncio.sleep(2.0)
 
         if faber_agent.show_timing:
             timing = await faber_agent.agent.fetch_timing()

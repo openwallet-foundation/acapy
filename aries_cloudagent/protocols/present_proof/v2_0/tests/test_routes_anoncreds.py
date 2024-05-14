@@ -1,22 +1,23 @@
-import pytest
 from copy import deepcopy
-from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
-from marshmallow import ValidationError
 from time import time
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
+
+import pytest
+from marshmallow import ValidationError
+
+from aries_cloudagent.tests import mock
 
 from .....admin.request_context import AdminRequestContext
 from .....anoncreds.holder import AnonCredsHolder
-from .....indy.models.proof_request import IndyProofReqAttrSpecSchema
 from .....anoncreds.verifier import AnonCredsVerifier
+from .....core.in_memory import InMemoryProfile
+from .....indy.models.proof_request import IndyProofReqAttrSpecSchema
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder
 from .....storage.vc_holder.vc_record import VCRecord
-
 from ...dif.pres_exch import SchemaInputDescriptor
-
 from .. import routes as test_module
 from ..messages.pres_format import V20PresFormat
 from ..models.pres_exchange import V20PresExRecord
@@ -127,7 +128,12 @@ DIF_PRES_PROPOSAL = {
 
 class TestPresentProofRoutesAnonCreds(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.context = AdminRequestContext.test_context()
+        profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        self.context = AdminRequestContext.test_context(profile=profile)
         self.context.profile.settings.set_value("wallet.type", "askar-anoncreds")
         self.profile = self.context.profile
         injector = self.profile.context.injector
@@ -183,6 +189,7 @@ class TestPresentProofRoutesAnonCreds(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
     async def test_validate(self):

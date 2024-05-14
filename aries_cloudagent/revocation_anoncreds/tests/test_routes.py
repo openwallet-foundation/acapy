@@ -20,7 +20,10 @@ from .. import routes as test_module
 
 class TestRevocationRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.profile = InMemoryProfile.test_profile(profile_class=AskarAnoncredsProfile)
+        self.profile = InMemoryProfile.test_profile(
+            settings={"admin.admin_api_key": "secret-key"},
+            profile_class=AskarAnoncredsProfile,
+        )
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
         self.request_dict = {
@@ -32,6 +35,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
         self.test_did = "sample-did"
@@ -524,7 +528,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
 
     async def test_wrong_profile_403(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet.type": "askar"},
+            settings={"wallet.type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -537,6 +541,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
 
         self.request.json = mock.CoroutineMock(

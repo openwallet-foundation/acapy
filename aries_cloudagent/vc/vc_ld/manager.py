@@ -251,7 +251,7 @@ class VcLdpManager:
         else:
             raise VcLdpManagerError(
                 f"Unsupported proof purpose: {proof_purpose}. "
-                f"Supported  proof types are: {SUPPORTED_ISSUANCE_PROOF_PURPOSES}"
+                f"Supported proof types are: {SUPPORTED_ISSUANCE_PROOF_PURPOSES}"
             )
 
     async def prepare_credential(

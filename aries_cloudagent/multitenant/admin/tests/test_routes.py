@@ -24,7 +24,7 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             return_value=self.mock_multitenant_mgr
         )
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet.type": "askar"},
+            settings={"wallet.type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -45,13 +45,18 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
     async def test_format_wallet_record_removes_wallet_key(self):
         wallet_record = WalletRecord(
             wallet_id="test",
             key_management_mode=WalletRecord.MODE_MANAGED,
-            settings={"wallet.name": "wallet_name", "wallet.key": "wallet_key"},
+            settings={
+                "wallet.name": "wallet_name",
+                "wallet.key": "wallet_key",
+                "admin.admin_api_key": "secret-key",
+            },
         )
 
         formatted = test_module.format_wallet_record(wallet_record)

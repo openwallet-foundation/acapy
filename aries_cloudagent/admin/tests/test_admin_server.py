@@ -1,22 +1,28 @@
 import gc
 import json
+from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from aries_cloudagent.tests import mock
-from unittest import IsolatedAsyncioTestCase
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
+
+from aries_cloudagent.tests import mock
+from aries_cloudagent.wallet import singletons
 
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event
+from ...core.goal_code_registry import GoalCodeRegistry
 from ...core.in_memory import InMemoryProfile
 from ...core.protocol_registry import ProtocolRegistry
-from ...core.goal_code_registry import GoalCodeRegistry
+from ...storage.base import BaseStorage
+from ...storage.record import StorageRecord
+from ...storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
-
+from ...wallet.anoncreds_upgrade import UPGRADING_RECORD_IN_PROGRESS
 from .. import server as test_module
+from ..request_context import AdminRequestContext
 from ..server import AdminServer, AdminSetupError
 
 
@@ -119,7 +125,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         collector = Collector()
         context.injector.bind_instance(test_module.Collector, collector)
 
-        profile = InMemoryProfile.test_profile()
+        profile = InMemoryProfile.test_profile(settings=settings)
 
         self.port = unused_port()
         return AdminServer(
@@ -189,105 +195,6 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         await DefaultContextBuilder().load_plugins(context)
         server = self.get_admin_server({"admin.admin_insecure_mode": True}, context)
         app = await server.make_application()
-
-    async def test_import_routes_multitenant_middleware(self):
-        # imports all default admin routes
-        context = InjectionContext(
-            settings={"multitenant.base_wallet_routes": ["/test"]}
-        )
-        context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
-        context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
-        context.injector.bind_instance(
-            test_module.BaseMultitenantManager,
-            mock.MagicMock(spec=test_module.BaseMultitenantManager),
-        )
-        await DefaultContextBuilder().load_plugins(context)
-        server = self.get_admin_server(
-            {
-                "admin.admin_insecure_mode": False,
-                "admin.admin_api_key": "test-api-key",
-            },
-            context,
-        )
-
-        # cover multitenancy start code
-        app = await server.make_application()
-        app["swagger_dict"] = {}
-        await server.on_startup(app)
-
-        # multitenant authz
-        [mt_authz_middle] = [
-            m for m in app.middlewares if ".check_multitenant_authorization" in str(m)
-        ]
-
-        mock_request = mock.MagicMock(
-            method="GET",
-            headers={"Authorization": "Bearer ..."},
-            path="/multitenancy/etc",
-            text=mock.CoroutineMock(return_value="abc123"),
-        )
-        with self.assertRaises(test_module.web.HTTPUnauthorized):
-            await mt_authz_middle(mock_request, None)
-
-        mock_request = mock.MagicMock(
-            method="GET",
-            headers={},
-            path="/protected/non-multitenancy/non-server",
-            text=mock.CoroutineMock(return_value="abc123"),
-        )
-        with self.assertRaises(test_module.web.HTTPUnauthorized):
-            await mt_authz_middle(mock_request, None)
-
-        mock_request = mock.MagicMock(
-            method="GET",
-            headers={"Authorization": "Bearer ..."},
-            path="/protected/non-multitenancy/non-server",
-            text=mock.CoroutineMock(return_value="abc123"),
-        )
-        mock_handler = mock.CoroutineMock()
-        await mt_authz_middle(mock_request, mock_handler)
-        mock_handler.assert_called_once_with(mock_request)
-
-        mock_request = mock.MagicMock(
-            method="GET",
-            headers={"Authorization": "Non-bearer ..."},
-            path="/test",
-            text=mock.CoroutineMock(return_value="abc123"),
-        )
-        mock_handler = mock.CoroutineMock()
-        await mt_authz_middle(mock_request, mock_handler)
-        mock_handler.assert_called_once_with(mock_request)
-
-        # multitenant setup context exception paths
-        [setup_ctx_middle] = [m for m in app.middlewares if ".setup_context" in str(m)]
-
-        mock_request = mock.MagicMock(
-            method="GET",
-            headers={"Authorization": "Non-bearer ..."},
-            path="/protected/non-multitenancy/non-server",
-            text=mock.CoroutineMock(return_value="abc123"),
-        )
-        with self.assertRaises(test_module.web.HTTPUnauthorized):
-            await setup_ctx_middle(mock_request, None)
-
-        mock_request = mock.MagicMock(
-            method="GET",
-            headers={"Authorization": "Bearer ..."},
-            path="/protected/non-multitenancy/non-server",
-            text=mock.CoroutineMock(return_value="abc123"),
-        )
-        with mock.patch.object(
-            server.multitenant_manager,
-            "get_profile_for_token",
-            mock.CoroutineMock(),
-        ) as mock_get_profile:
-            mock_get_profile.side_effect = [
-                test_module.MultitenantManagerError("corrupt token"),
-                test_module.StorageNotFoundError("out of memory"),
-            ]
-            for i in range(2):
-                with self.assertRaises(test_module.web.HTTPUnauthorized):
-                    await setup_ctx_middle(mock_request, None)
 
     async def test_register_external_plugin_x(self):
         context = InjectionContext()
@@ -476,6 +383,47 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         ) as response:
             assert response.status == 503
         await server.stop()
+
+    async def test_upgrade_middleware(self):
+        profile = InMemoryProfile.test_profile()
+        self.context = AdminRequestContext.test_context({}, profile)
+        self.request_dict = {
+            "context": self.context,
+        }
+        request = mock.MagicMock(
+            method="GET",
+            path_qs="/schemas/created",
+            match_info={},
+            __getitem__=lambda _, k: self.request_dict[k],
+        )
+        handler = mock.CoroutineMock()
+
+        await test_module.upgrade_middleware(request, handler)
+
+        async with profile.session() as session:
+            storage = session.inject(BaseStorage)
+            upgrading_record = StorageRecord(
+                RECORD_TYPE_ACAPY_UPGRADING,
+                UPGRADING_RECORD_IN_PROGRESS,
+            )
+            # No upgrade in progress
+            await storage.add_record(upgrading_record)
+
+            # Upgrade in progress without cache
+            with self.assertRaises(test_module.web.HTTPServiceUnavailable):
+                await test_module.upgrade_middleware(request, handler)
+
+            # Upgrade in progress with cache
+            singletons.UpgradeInProgressSingleton().set_wallet("test-profile")
+            with self.assertRaises(test_module.web.HTTPServiceUnavailable):
+                await test_module.upgrade_middleware(request, handler)
+
+            singletons.UpgradeInProgressSingleton().remove_wallet("test-profile")
+            await storage.delete_record(upgrading_record)
+
+            # Upgrade in progress with cache
+            singletons.IsAnoncredsSingleton().set_wallet("test-profile")
+            await test_module.upgrade_middleware(request, handler)
 
 
 @pytest.fixture

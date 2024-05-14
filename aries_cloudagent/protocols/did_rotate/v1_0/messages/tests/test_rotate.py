@@ -8,7 +8,6 @@ TEST_DID = "test-did"
 
 
 class TestRotate(TestCase):
-
     def test_init_type(self):
         """Test initializer."""
 

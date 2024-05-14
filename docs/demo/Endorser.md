@@ -25,7 +25,7 @@ Start up Alice as normal:
 
 You can run all of Faber's functions as normal - if you watch the console you will see that all ledger operations go through the endorser workflow.
 
-If you issue more than 5 credentials, you will see Faber creating a new revocation registry (encluding endorser operations).
+If you issue more than 5 credentials, you will see Faber creating a new revocation registry (including endorser operations).
 
 
 ## Run Alice as an Author and Faber as an Endorser
@@ -33,7 +33,7 @@ If you issue more than 5 credentials, you will see Faber creating a new revocati
 This approach sets up the endorser roles to allow manual testing using the agents' swagger pages:
 
 - Faber runs as an Endorser (all of Faber's functions - issue credential, request proof, etc.) run normally, since Faber has ledger write access
-- Alice starts up with a DID aith Author privileges (no ledger write access) and Faber is setup as Alice's Endorser
+- Alice starts up with a DID with Author privileges (no ledger write access) and Faber is setup as Alice's Endorser
 
 Start a VON Network and a Tails server using the instructions above.
 

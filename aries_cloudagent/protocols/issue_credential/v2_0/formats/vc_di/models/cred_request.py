@@ -2,11 +2,10 @@
 
 from typing import Mapping, Union
 from .......messaging.models.base import BaseModel, BaseModelSchema
-from aries_cloudagent.messaging.valid import (
+from .......messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
     INDY_DID_EXAMPLE,
-    INDY_DID_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
 )
@@ -51,7 +50,7 @@ class AnoncredsLinkSecretSchema(BaseModelSchema):
 
     entropy = fields.Str(
         required=True,
-        validate=INDY_DID_VALIDATE,
+        validate=str,
         metadata={"description": "Prover DID", "example": INDY_DID_EXAMPLE},
     )
     cred_def_id = fields.Str(

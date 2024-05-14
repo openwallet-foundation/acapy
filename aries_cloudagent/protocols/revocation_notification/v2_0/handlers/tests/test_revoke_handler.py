@@ -49,7 +49,7 @@ async def test_handle(
     await RevokeHandler().handle(context, responder)
     assert event_bus.events
     [(_, received)] = event_bus.events
-    assert received.topic == RevokeHandler.RECIEVED_TOPIC
+    assert received.topic == RevokeHandler.RECEIVED_TOPIC
     assert "revocation_format" in received.payload
     assert "credential_id" in received.payload
     assert "comment" in received.payload
@@ -68,7 +68,7 @@ async def test_handle_monitor(
     assert "credential_id" in received.payload
     assert "comment" in webhook.payload
 
-    assert received.topic == RevokeHandler.RECIEVED_TOPIC
+    assert received.topic == RevokeHandler.RECEIVED_TOPIC
     assert "revocation_format" in received.payload
     assert "credential_id" in received.payload
     assert "comment" in received.payload

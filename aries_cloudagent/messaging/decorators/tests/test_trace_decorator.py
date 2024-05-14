@@ -15,7 +15,7 @@ class TestTraceDecorator(TestCase):
     timestamp = "123456789.123456"
     str_time = "2018-03-27 18:23:45.123Z"
     handler = "agent name"
-    ellapsed_milli = 27
+    elapsed_milli = 27
     outcome = "OK ..."
 
     def test_init_api(self):
@@ -36,7 +36,7 @@ class TestTraceDecorator(TestCase):
             timestamp=self.timestamp,
             str_time=self.str_time,
             handler=self.handler,
-            ellapsed_milli=self.ellapsed_milli,
+            elapsed_milli=self.elapsed_milli,
             outcome=self.outcome,
         )
 
@@ -57,7 +57,7 @@ class TestTraceDecorator(TestCase):
         assert trace_report.timestamp == self.timestamp
         assert trace_report.str_time == self.str_time
         assert trace_report.handler == self.handler
-        assert trace_report.ellapsed_milli == self.ellapsed_milli
+        assert trace_report.elapsed_milli == self.elapsed_milli
         assert trace_report.outcome == self.outcome
 
     def test_serialize_load(self):
@@ -70,7 +70,7 @@ class TestTraceDecorator(TestCase):
             timestamp=self.timestamp,
             str_time=self.str_time,
             handler=self.handler,
-            ellapsed_milli=self.ellapsed_milli,
+            elapsed_milli=self.elapsed_milli,
             outcome=self.outcome,
         )
 
@@ -96,7 +96,7 @@ class TestTraceDecorator(TestCase):
         assert trace_report.timestamp == x_trace_report.timestamp
         assert trace_report.str_time == x_trace_report.str_time
         assert trace_report.handler == x_trace_report.handler
-        assert trace_report.ellapsed_milli == x_trace_report.ellapsed_milli
+        assert trace_report.elapsed_milli == x_trace_report.elapsed_milli
         assert trace_report.outcome == x_trace_report.outcome
 
     def test_trace_reports(self):
@@ -115,7 +115,7 @@ class TestTraceDecorator(TestCase):
             timestamp=self.timestamp,
             str_time=self.str_time,
             handler=self.handler,
-            ellapsed_milli=self.ellapsed_milli,
+            elapsed_milli=self.elapsed_milli,
             outcome=self.outcome,
         )
         decorator.append_trace_report(x_trace_report)
@@ -130,7 +130,7 @@ class TestTraceDecorator(TestCase):
             timestamp=self.timestamp,
             str_time=self.str_time,
             handler=self.handler,
-            ellapsed_milli=self.ellapsed_milli,
+            elapsed_milli=self.elapsed_milli,
             outcome=self.outcome,
         )
         decorator.append_trace_report(y_trace_report)
@@ -148,7 +148,7 @@ class TestTraceDecorator(TestCase):
             timestamp=self.timestamp,
             str_time=self.str_time,
             handler=self.handler,
-            ellapsed_milli=self.ellapsed_milli,
+            elapsed_milli=self.elapsed_milli,
             outcome=self.outcome,
         )
         decorator.append_trace_report(z_trace_report)

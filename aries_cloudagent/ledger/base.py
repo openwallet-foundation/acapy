@@ -91,7 +91,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Create attr_json string.
 
         Args:
-            all_exist_endpoings: Dictionary of all existing endpoints
+            all_exist_endpoints: Dictionary of all existing endpoints
             endpoint: The endpoint address
             endpoint_type: The type of the endpoint
             routing_keys: List of routing_keys if mediator is present
@@ -643,7 +643,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         try:
             legacy_indy_registry = LegacyIndyRegistry()
             resp = await legacy_indy_registry.txn_submit(
-                self.profile,
+                self,
                 schema_req,
                 sign=True,
                 sign_did=public_info,

@@ -8,7 +8,7 @@ developer @shaangill025.
 ## Running unit tests in ACA-Py
 
 - `./scripts/run_tests`
-- `./scripts/run_tests aries_clouadagent/protocols/out_of_band/v1_0/tests`
+- `./scripts/run_tests aries_cloudagent/protocols/out_of_band/v1_0/tests`
 - `./scripts/run_tests_indy` includes Indy specific tests
 
 ## Pytest

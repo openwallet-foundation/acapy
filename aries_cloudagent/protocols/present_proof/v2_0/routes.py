@@ -11,12 +11,12 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import ValidationError, fields, validate, validates_schema
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
-from ....connections.models.conn_record import ConnRecord
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.cred_precis import IndyCredPrecisSchema
 from ....indy.models.proof import IndyPresSpecSchema
@@ -303,7 +303,7 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
         metadata={
             "description": (
                 "Optional Presentation specification for DIF, overrides the"
-                " PresentionExchange record's PresRequest"
+                " PresentationExchange record's PresRequest"
             )
         },
     )
@@ -425,6 +425,7 @@ def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
 @docs(tags=["present-proof v2.0"], summary="Fetch all present-proof exchange records")
 @querystring_schema(V20PresExRecordListQueryStringSchema)
 @response_schema(V20PresExRecordListSchema(), 200, description="")
+@tenant_authentication
 async def present_proof_list(request: web.BaseRequest):
     """Request handler for searching presentation exchange records.
 
@@ -467,6 +468,7 @@ async def present_proof_list(request: web.BaseRequest):
 )
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
+@tenant_authentication
 async def present_proof_retrieve(request: web.BaseRequest):
     """Request handler for fetching a single presentation exchange record.
 
@@ -513,6 +515,7 @@ async def present_proof_retrieve(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @querystring_schema(V20CredentialsFetchQueryStringSchema())
 @response_schema(IndyCredPrecisSchema(many=True), 200, description="")
+@tenant_authentication
 async def present_proof_credentials_list(request: web.BaseRequest):
     """Request handler for searching applicable credential records.
 
@@ -802,6 +805,7 @@ async def retrieve_uri_list_from_schema_filter(
 @docs(tags=["present-proof v2.0"], summary="Sends a presentation proposal")
 @request_schema(V20PresProposalRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
+@tenant_authentication
 async def present_proof_send_proposal(request: web.BaseRequest):
     """Request handler for sending a presentation proposal.
 
@@ -884,6 +888,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
 )
 @request_schema(V20PresCreateRequestRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
+@tenant_authentication
 async def present_proof_create_request(request: web.BaseRequest):
     """Request handler for creating a free presentation request.
 
@@ -960,6 +965,7 @@ async def present_proof_create_request(request: web.BaseRequest):
 )
 @request_schema(V20PresSendRequestRequestSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
+@tenant_authentication
 async def present_proof_send_free_request(request: web.BaseRequest):
     """Request handler for sending a presentation request free from any proposal.
 
@@ -1043,6 +1049,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @request_schema(V20PresentationSendRequestToProposalSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
+@tenant_authentication
 async def present_proof_send_bound_request(request: web.BaseRequest):
     """Request handler for sending a presentation request bound to a proposal.
 
@@ -1133,6 +1140,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @request_schema(V20PresSpecByFormatRequestSchema())
 @response_schema(V20PresExRecordSchema(), description="")
+@tenant_authentication
 async def present_proof_send_presentation(request: web.BaseRequest):
     """Request handler for sending a presentation.
 
@@ -1246,6 +1254,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
 @docs(tags=["present-proof v2.0"], summary="Verify a received presentation")
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresExRecordSchema(), description="")
+@tenant_authentication
 async def present_proof_verify_presentation(request: web.BaseRequest):
     """Request handler for verifying a presentation request.
 
@@ -1314,6 +1323,7 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @request_schema(V20PresProblemReportRequestSchema())
 @response_schema(V20PresentProofModuleResponseSchema(), 200, description="")
+@tenant_authentication
 async def present_proof_problem_report(request: web.BaseRequest):
     """Request handler for sending problem report.
 
@@ -1352,6 +1362,7 @@ async def present_proof_problem_report(request: web.BaseRequest):
 )
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresentProofModuleResponseSchema(), description="")
+@tenant_authentication
 async def present_proof_remove(request: web.BaseRequest):
     """Request handler for removing a presentation exchange record.
 

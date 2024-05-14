@@ -46,7 +46,7 @@ class IndyPresPredSpec(BaseModel):
         threshold: int,
         **kwargs,
     ):
-        """Initialize  preview object.
+        """Initialize preview object.
 
         Args:
             name: attribute name
