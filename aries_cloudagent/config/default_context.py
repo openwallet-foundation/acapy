@@ -2,15 +2,11 @@
 
 from didcomm_messaging import (
     CryptoService,
-    DIDCommMessaging,
     PackagingService,
     RoutingService,
-    SecretsManager,
 )
 from didcomm_messaging.crypto.backend.askar import AskarCryptoService
-from didcomm_messaging.resolver import DIDResolver as DMPResolver
 
-from aries_cloudagent.didcomm_v2.adapters import ResolverAdapter, SecretsAdapter
 
 from ..anoncreds.registry import AnonCredsRegistry
 from ..cache.base import BaseCache
@@ -19,10 +15,8 @@ from ..core.event_bus import EventBus
 from ..core.goal_code_registry import GoalCodeRegistry
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import (
-    Profile,
     ProfileManager,
     ProfileManagerProvider,
-    ProfileSession,
 )
 from ..core.protocol_registry import ProtocolRegistry
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
@@ -92,32 +86,6 @@ class DefaultContextBuilder(ContextBuilder):
         """Bind various class providers."""
 
         context.injector.bind_provider(ProfileManager, ProfileManagerProvider())
-        context.injector.bind_provider(
-            DMPResolver,
-            ClassProvider(
-                ResolverAdapter,
-                ClassProvider.Inject(Profile),
-                ClassProvider.Inject(DIDResolver),
-            ),
-        )
-        context.injector.bind_provider(
-            SecretsManager,
-            ClassProvider(
-                SecretsAdapter,
-                ClassProvider.Inject(ProfileSession),
-            ),
-        )
-        context.injector.bind_provider(
-            DIDCommMessaging,
-            ClassProvider(
-                DIDCommMessaging,
-                ClassProvider.Inject(CryptoService),
-                ClassProvider.Inject(SecretsManager),
-                ClassProvider.Inject(DMPResolver),
-                ClassProvider.Inject(PackagingService),
-                ClassProvider.Inject(RoutingService),
-            ),
-        )
 
         wallet_type = self.settings.get("wallet.type")
         if wallet_type == "askar-anoncreds":

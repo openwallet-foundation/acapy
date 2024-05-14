@@ -3,31 +3,37 @@
 import asyncio
 import logging
 import time
-
-# import traceback
-
 from typing import Any, Mapping
 from weakref import ref
 
 from aries_askar import AskarError, Session, Store
+from didcomm_messaging import (
+    CryptoService,
+    DIDCommMessaging,
+    PackagingService,
+    RoutingService,
+    SecretsManager,
+)
+from didcomm_messaging.resolver import DIDResolver as DMPResolver
 
 from ..cache.base import BaseCache
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..core.error import ProfileError
 from ..core.profile import Profile, ProfileManager, ProfileSession
+from ..didcomm_v2.adapters import ResolverAdapter, SecretsAdapter
 from ..indy.holder import IndyHolder
 from ..indy.issuer import IndyIssuer
 from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
+from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage, BaseStorageSearch
 from ..storage.vc_holder.base import VCHolder
 from ..utils.multi_ledger import get_write_ledger_config_for_profile
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import validate_seed
-
-from .store import AskarStoreConfig, AskarOpenStore
+from .store import AskarOpenStore, AskarStoreConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -94,6 +100,14 @@ class AskarProfile(Profile):
         """Initialize the profile-level instance providers."""
         injector = self._context.injector
 
+        injector.bind_provider(
+            DMPResolver,
+            ClassProvider(
+                ResolverAdapter,
+                ref(self),
+                ClassProvider.Inject(DIDResolver),
+            ),
+        )
         injector.bind_provider(
             BaseStorageSearch,
             ClassProvider(
@@ -242,7 +256,6 @@ class AskarProfileSession(ProfileSession):
         self._opener = None
 
         injector = self._context.injector
-        injector.bind_instance(ProfileSession, ref(self))
         injector.bind_provider(
             BaseWallet,
             ClassProvider("aries_cloudagent.wallet.askar.AskarWallet", ref(self)),
@@ -250,6 +263,21 @@ class AskarProfileSession(ProfileSession):
         injector.bind_provider(
             BaseStorage,
             ClassProvider("aries_cloudagent.storage.askar.AskarStorage", ref(self)),
+        )
+        injector.bind_provider(
+            SecretsManager,
+            ClassProvider(SecretsAdapter, ref(self)),
+        )
+        injector.bind_provider(
+            DIDCommMessaging,
+            ClassProvider(
+                DIDCommMessaging,
+                ClassProvider.Inject(CryptoService),
+                ClassProvider.Inject(SecretsManager),
+                ClassProvider.Inject(DMPResolver),
+                ClassProvider.Inject(PackagingService),
+                ClassProvider.Inject(RoutingService),
+            ),
         )
 
     async def _teardown(self, commit: bool = None):

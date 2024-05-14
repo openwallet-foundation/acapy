@@ -3,7 +3,6 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Type
-from weakref import ref
 
 from ..config.base import InjectionError
 from ..config.injection_context import InjectionContext
@@ -31,14 +30,9 @@ class Profile(ABC):
         created: bool = False,
     ):
         """Initialize a base profile."""
-        context = context or InjectionContext()
-        scope = "profile"
-        if name:
-            scope += ":" + name
-        self._context = context.start_scope(scope)
+        self._context = context or InjectionContext()
         self._created = created
         self._name = name or Profile.DEFAULT_NAME
-        self._context.injector.bind_instance(Profile, ref(self))
 
     @property
     def backend(self) -> str:
