@@ -28,10 +28,15 @@ jobs:
           poetry install -E "askar bbs"
       - name: Tests
         run: |
-          poetry run pytest 2>&1 | tee pytest.log
+          poetry run pytest --cov 2>&1 | tee pytest.log
           PYTEST_EXIT_CODE=${PIPESTATUS[0]}
           if grep -Eq "RuntimeWarning: coroutine .* was never awaited" pytest.log; then
             echo "Failure: Detected unawaited coroutine warning in pytest output."
             exit 1
           fi
           exit $PYTEST_EXIT_CODE
+  code-coverage:
+    name: Upload coverage reports to Codecov
+    uses: codecov/codecov-action@v4.0.1
+    with:
+      token: ${{ secrets.CODECOV_TOKEN }}
