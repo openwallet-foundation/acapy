@@ -9,6 +9,9 @@ on:
       os:
         required: true
         type: string
+    secrets:
+      CODECOV_TOKEN:
+        required: true
 
 jobs:
   tests:
@@ -28,7 +31,7 @@ jobs:
           poetry install -E "askar bbs"
       - name: Tests
         run: |
-          poetry run pytest --cov 2>&1 | tee pytest.log
+          poetry run pytest --cov=./ --cov-report=xml 2>&1 | tee pytest.log
           PYTEST_EXIT_CODE=${PIPESTATUS[0]}
           if grep -Eq "RuntimeWarning: coroutine .* was never awaited" pytest.log; then
             echo "Failure: Detected unawaited coroutine warning in pytest output."
