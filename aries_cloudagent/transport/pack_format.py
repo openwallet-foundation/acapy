@@ -68,8 +68,13 @@ class PackWireFormat(BaseWireFormat):
         """Pass an incoming message to the appropriately versioned PackWireFormat."""
 
         # create a flag to enable experimental DCV2 support, check that here
+        if session.profile.settings.get("experimental_didcomm_v2"):
+            LOGGER.debug("Checking DIDComm version")
+            pack_format = self.get_for_packed_msg(message_body)
+        else:
+            LOGGER.debug("Defaulting to V1 wire format")
+            pack_format = self.v1pack_format
 
-        pack_format = self.get_for_packed_msg(message_body)
         return await pack_format.parse_message(session, message_body)
 
 
