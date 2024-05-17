@@ -7,11 +7,11 @@ from didcomm_messaging import SecretsManager
 from didcomm_messaging.crypto.backend.askar import AskarSecretKey
 from didcomm_messaging.resolver import DIDResolver as DMPResolver
 
-from aries_cloudagent.askar.profile import AskarProfileSession
-from aries_cloudagent.core.error import BaseError
-
+from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
 from ..resolver.did_resolver import DIDResolver
+from ..askar.profile import AskarProfileSession
+
 
 LOGGER = logging.getLogger(__name__)
 

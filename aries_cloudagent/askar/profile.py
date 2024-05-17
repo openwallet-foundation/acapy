@@ -21,7 +21,6 @@ from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..core.error import ProfileError
 from ..core.profile import Profile, ProfileManager, ProfileSession
-from ..didcomm_v2.adapters import ResolverAdapter, SecretsAdapter
 from ..indy.holder import IndyHolder
 from ..indy.issuer import IndyIssuer
 from ..indy.verifier import IndyVerifier
@@ -103,7 +102,7 @@ class AskarProfile(Profile):
         injector.bind_provider(
             DMPResolver,
             ClassProvider(
-                ResolverAdapter,
+                "aries_cloudagent.didcomm_v2.adapters.ResolverAdapter",
                 ref(self),
                 ClassProvider.Inject(DIDResolver),
             ),
@@ -266,19 +265,22 @@ class AskarProfileSession(ProfileSession):
         )
         injector.bind_provider(
             SecretsManager,
-            ClassProvider(SecretsAdapter, ref(self)),
-        )
-        injector.bind_provider(
-            DIDCommMessaging,
             ClassProvider(
-                DIDCommMessaging,
-                ClassProvider.Inject(CryptoService),
-                ClassProvider.Inject(SecretsManager),
-                ClassProvider.Inject(DMPResolver),
-                ClassProvider.Inject(PackagingService),
-                ClassProvider.Inject(RoutingService),
+                "aries_cloudagent.didcomm_v2.adapters.SecretsAdapter", ref(self)
             ),
         )
+        if self.profile.settings.get("experimental_didcomm_v2"):
+            injector.bind_provider(
+                DIDCommMessaging,
+                ClassProvider(
+                    DIDCommMessaging,
+                    ClassProvider.Inject(CryptoService),
+                    ClassProvider.Inject(SecretsManager),
+                    ClassProvider.Inject(DMPResolver),
+                    ClassProvider.Inject(PackagingService),
+                    ClassProvider.Inject(RoutingService),
+                ),
+            )
 
     async def _teardown(self, commit: bool = None):
         """Dispose of the session or transaction connection."""
