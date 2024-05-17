@@ -23,11 +23,14 @@ from didcomm_messaging.crypto.backend.askar import CryptoServiceError
 
 
 LOGGER = logging.getLogger(__name__)
+DIDCOMM_V1_TYP = "JWM/1.0"
+DIDCOMM_V2_TYP = "application/didcomm"
 
 
 def get_version_for_packed_msg(packed_msg: Union[str, bytes]):
     """Get the version of the packed message."""
 
+    # Raise differnt errors? Not ValueError?
     protected_b64 = json.loads(packed_msg).get("protected")
     if not protected_b64:
         raise ValueError("Invalid message format")
@@ -38,10 +41,11 @@ def get_version_for_packed_msg(packed_msg: Union[str, bytes]):
     if not typ:
         raise ValueError("Unexpected protected headers format")
 
-    if "application/didcomm" in typ:
+    # CONSTify the strings
+    if DIDCOMM_V2_TYP in typ:
         return DIDCommVersion.v2
 
-    if "JWM/1.0" in typ:
+    if DIDCOMM_V1_TYP in typ:
         return DIDCommVersion.v1
 
     raise ValueError("Could not determine DIDComm version of packed message")
@@ -68,7 +72,13 @@ class PackWireFormat(BaseWireFormat):
         """Pass an incoming message to the appropriately versioned PackWireFormat."""
 
         if session.profile.settings.get("experimental_didcomm_v2"):
-            pack_format = self.get_for_packed_msg(message_body)
+            try:
+                pack_format = self.get_for_packed_msg(message_body)
+            except ValueError as err:
+                raise WireFormatParseError(
+                    "Unable to determine appropriate WireFormat version"
+                ) from err
+
         else:
             pack_format = self.v1pack_format
 

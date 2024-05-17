@@ -231,17 +231,18 @@ class BaseConnectionManager:
                     "serviceEndpoint": endpoint,
                 }
             )
-            services.append(
-                {
-                    "id": f"#service-{index}",
-                    "type": "DIDCommMessaging",
-                    "serviceEndpoint": {
-                        "uri": endpoint,
-                        "accept": ["didcomm/v2"],
-                        "routingKeys": routing_keys,
-                    },
-                }
-            )
+            if self._profile.settings.get("experimental_didcomm_v2"):
+                services.append(
+                    {
+                        "id": f"#service-{index}",
+                        "type": "DIDCommMessaging",
+                        "serviceEndpoint": {
+                            "uri": endpoint,
+                            "accept": ["didcomm/v2"],
+                            "routingKeys": routing_keys,
+                        },
+                    }
+                )
 
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)

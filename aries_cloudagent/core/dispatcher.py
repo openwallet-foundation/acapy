@@ -108,10 +108,14 @@ class Dispatcher:
             A pending task instance resolving to the handler task
 
         """
-        if inbound_message.receipt.didcomm_version == DIDCommVersion.v1:
-            handle = self.handle_v1_message(profile, inbound_message, send_outbound)
-        else:
+
+        if (
+            self.profile.settings.get("experimental_didcomm_v2")
+            and inbound_message.receipt.didcomm_version == DIDCommVersion.v2
+        ):
             handle = self.handle_v2_message(profile, inbound_message, send_outbound)
+        else:
+            handle = self.handle_v1_message(profile, inbound_message, send_outbound)
 
         return self.put_task(
             handle,
@@ -130,7 +134,7 @@ class Dispatcher:
         # the road a bit
         logging.getLogger(__name__).debug("HIT V2 DISPATCHER HANDLER S-00001")
         context = RequestContext(profile)
-        #context.message = message
+        # context.message = message
         context.message_receipt = inbound_message.receipt
         responder = DispatcherResponder(
             context,
@@ -141,7 +145,7 @@ class Dispatcher:
         )
 
         context.injector.bind_instance(BaseResponder, responder)
-        #responder.connection_id = connection and connection.connection_id
+        # responder.connection_id = connection and connection.connection_id
         error_result = ProblemReport(
             description={
                 "en": str("No Handlers Found -- Colton"),
