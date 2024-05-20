@@ -231,7 +231,7 @@ class BaseConnectionManager:
                     "serviceEndpoint": endpoint,
                 }
             )
-            if self._profile.settings.get("experimental_didcomm_v2"):
+            if self._profile.settings.get("experiment.didcomm_v2"):
                 services.append(
                     {
                         "id": f"#service-{index}",

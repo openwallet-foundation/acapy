@@ -1243,7 +1243,7 @@ class ProtocolGroup(ArgumentGroup):
             settings["exch_use_unencrypted_tags"] = True
             environ["EXCH_UNENCRYPTED_TAGS"] = "True"
         if args.experimental_didcomm_v2:
-            settings["experimental_didcomm_v2"] = True
+            settings["experiment.didcomm_v2"] = True
 
         return settings
 

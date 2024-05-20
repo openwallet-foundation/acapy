@@ -269,7 +269,7 @@ class AskarProfileSession(ProfileSession):
                 "aries_cloudagent.didcomm_v2.adapters.SecretsAdapter", ref(self)
             ),
         )
-        if self.profile.settings.get("experimental_didcomm_v2"):
+        if self.profile.settings.get("experiment.didcomm_v2"):
             injector.bind_provider(
                 DIDCommMessaging,
                 ClassProvider(

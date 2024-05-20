@@ -71,7 +71,7 @@ class PackWireFormat(BaseWireFormat):
     ) -> Tuple[dict, MessageReceipt]:
         """Pass an incoming message to the appropriately versioned PackWireFormat."""
 
-        if session.profile.settings.get("experimental_didcomm_v2"):
+        if session.profile.settings.get("experiment.didcomm_v2"):
             try:
                 pack_format = self.get_for_packed_msg(message_body)
             except ValueError as err:

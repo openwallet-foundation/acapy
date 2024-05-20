@@ -110,7 +110,7 @@ class Dispatcher:
         """
 
         if (
-            self.profile.settings.get("experimental_didcomm_v2")
+            self.profile.settings.get("experiment.didcomm_v2")
             and inbound_message.receipt.didcomm_version == DIDCommVersion.v2
         ):
             handle = self.handle_v2_message(profile, inbound_message, send_outbound)
