@@ -60,7 +60,10 @@ ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
 # indy
 python3-indy= { version = "^1.11.1", optional = true }
-didcomm-messaging = "^0.1.1a0"
+
+# didcommv2
+didcomm-messaging = {version = "^0.1.1a0", optional = true }
+
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.7.0"
@@ -93,6 +96,10 @@ askar = [
 ]
 bbs = [
     "ursa-bbs-signatures"
+]
+
+didcommv2 = [
+    "didcomm-messaging"
 ]
 
 [tool.poetry.scripts]
