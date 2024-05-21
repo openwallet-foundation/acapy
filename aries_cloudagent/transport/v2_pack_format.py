@@ -75,8 +75,8 @@ class V2PackWireFormat(BaseWireFormat):
                 message_dict = message_unpack.message
 
         if message_unpack.sender_kid:
-            receipt.sender_verkey = message_unpack.sender_kid.split("#")[0]
-            receipt.recipient_verkey = message_unpack.recipient_kid.split("#")[0]
+            receipt.sender_verkey = message_unpack.sender_kid
+            receipt.recipient_verkey = message_unpack.recipient_kid
 
         thid = message_dict.get("thid")
         receipt.thread_id = thid or message_dict.get("id")
@@ -119,8 +119,8 @@ class V2PackWireFormat(BaseWireFormat):
         if sender_key and recipient_keys:
             message = await messaging.pack(
                 message=message_json,
-                to=recipient_keys[0],
-                frm=sender_key,
+                to=recipient_keys[0].split("#")[0],
+                frm=sender_key.split("#")[0],
             )
             message = message.message
         else:
