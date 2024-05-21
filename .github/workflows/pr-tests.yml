@@ -11,6 +11,7 @@ jobs:
   tests:
     name: Tests
     uses: ./.github/workflows/tests.yml
+    secrets: inherit
     with:
       python-version: "3.9"
       os: "ubuntu-latest"
