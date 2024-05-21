@@ -105,9 +105,6 @@ class LinkedDataProofSchema(BaseModelSchema):
 
     domain = fields.Str(
         required=False,
-        # TODO the domain can be more than a Uri, provide a less restrictive validation
-        # https://www.w3.org/TR/vc-data-integrity/#defn-domain
-        validate=Uri(),
         metadata={
             "description": (
                 "A string value specifying the restricted domain of the signature."

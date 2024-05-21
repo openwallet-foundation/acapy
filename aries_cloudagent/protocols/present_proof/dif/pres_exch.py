@@ -824,12 +824,10 @@ class PresentationSubmissionSchema(BaseModelSchema):
 
     id = fields.Str(
         required=False,
-        validate=UUID4_VALIDATE,
         metadata={"description": "ID", "example": UUID4_EXAMPLE},
     )
     definition_id = fields.Str(
         required=False,
-        validate=UUID4_VALIDATE,
         metadata={"description": "DefinitionID", "example": UUID4_EXAMPLE},
     )
     descriptor_maps = fields.List(
