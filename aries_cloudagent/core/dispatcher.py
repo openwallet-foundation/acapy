@@ -132,7 +132,6 @@ class Dispatcher:
 
         # send a DCV2 Problem Report here for testing, and to punt procotol handling down
         # the road a bit
-        logging.getLogger(__name__).debug("HIT V2 DISPATCHER HANDLER S-00001")
         context = RequestContext(profile)
         # context.message = message
         context.message_receipt = inbound_message.receipt
@@ -148,10 +147,12 @@ class Dispatcher:
         # responder.connection_id = connection and connection.connection_id
         error_result = ProblemReport(
             description={
-                "en": str("No Handlers Found -- Colton"),
+                "en": str("No Handlers Found"),
                 "code": "message-parse-failure",
             }
         )
+        if inbound_message.receipt.thread_id:
+            error_result.assign_thread_id(inbound_message.receipt.thread_id)
         logging.getLogger(__name__).debug("CONSTRUCTED V2 DISPATCHER RESPONSE")
         await responder.send_reply(error_result)
         logging.getLogger(__name__).debug("LEFT V2 DISPATCHER HANDLER")

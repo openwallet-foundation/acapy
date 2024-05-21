@@ -84,6 +84,30 @@ class PackWireFormat(BaseWireFormat):
 
         return await pack_format.parse_message(session, message_body)
 
+    async def encode_message(
+        self,
+        session: ProfileSession,
+        message_json: Union[str, bytes],
+        recipient_keys: Sequence[str],
+        routing_keys: Sequence[str],
+        sender_key: str,
+    ) -> Union[str, bytes]:
+        """Pass an incoming message to the appropriately versioned PackWireFormat."""
+
+        if session.profile.settings.get("experiment.didcomm_v2") and recipient_keys[0].startswith("did:peer:"):
+            #pack_format = self.get_for_packed_msg(message_json)
+            pack_format = self.v2pack_format
+        else:
+            pack_format = self.v1pack_format
+
+        return await pack_format.encode_message(
+            session,
+            message_json,
+            recipient_keys,
+            routing_keys,
+            sender_key,
+        )
+
 
 class V1PackWireFormat(BaseWireFormat):
     """DIDComm V1 message parser and serializer."""
@@ -324,6 +348,11 @@ class V2PackWireFormat(BaseWireFormat):
                 # Set message_dict to be the dictionary that we unpacked
                 message_dict = message_unpack.message
 
+        if message_unpack.sender_kid:
+            receipt.sender_verkey = message_unpack.sender_kid.split('#')[0]
+            receipt.recipient_verkey = message_unpack.recipient_kid.split('#')[0]
+            pass
+
         thid = message_dict.get("thid")
         receipt.thread_id = thid or message_dict.get("id")
 
@@ -335,3 +364,40 @@ class V2PackWireFormat(BaseWireFormat):
         LOGGER.debug("Expanded message: %s", message_dict)
 
         return message_dict, receipt
+
+    async def encode_message(
+        self,
+        session: ProfileSession,
+        message_json: Union[str, bytes],
+        recipient_keys: Sequence[str],
+        routing_keys: Sequence[str],
+        sender_key: str,
+    ) -> Union[str, bytes]:
+        """Encode an outgoing message for transport.
+
+        Args:
+            session: The profile session for providing wallet access
+            message_json: The message body to serialize
+            recipient_keys: A sequence of recipient verkeys
+            routing_keys: A sequence of routing verkeys
+            sender_key: The verification key of the sending agent
+
+        Returns:
+            The encoded message
+
+        Raises:
+            MessageEncodeError: If the message could not be encoded
+
+        """
+        messaging = session.inject(DIDCommMessaging)
+
+        if sender_key and recipient_keys:
+            message = await messaging.pack(
+                message=message_json,
+                to=recipient_keys[0],
+                frm=sender_key,
+            )
+            message = message.message
+        else:
+            message = message_json
+        return message
