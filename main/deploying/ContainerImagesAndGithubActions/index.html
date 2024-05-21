@@ -2310,22 +2310,18 @@ Multiple variants are available; see <a href="#tags">Tags</a>.</p>
 <h3 id="tags">Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h3>
 <p>ACA-Py is a foundation for building decentralized identity applications; to this
 end, there are multiple variants of ACA-Py built to suit the needs of a variety
-of environments and workflows. There are currently two main variants:</p>
+of environments and workflows. The following variants exist:</p>
 <ul>
 <li>"Standard" - The default configuration of ACA-Py, including:</li>
 <li>Aries Askar for secure storage</li>
 <li>Indy VDR for Indy ledger communication</li>
 <li>Indy Shared Libraries for AnonCreds</li>
-<li>"Indy" - The legacy configuration of ACA-Py, including:</li>
-<li>Indy SDK Wallet for secure storage</li>
-<li>Indy SDK Ledger for Indy ledger communication</li>
-<li>Indy SDK for AnonCreds</li>
 </ul>
-<p>These two image variants are largely distinguished by providers for Indy Network
-and AnonCreds support. The Standard variant is recommended for new projects.
-Migration from an Indy based image (whether the new Indy image variant or the
-original BC Gov images) to the Standard image is outside of the scope of this
-document.</p>
+<p>In the past, two image variants were published. These two variants are largely
+distinguished by providers for Indy Network and AnonCreds support. The Standard
+variant is recommended for new projects. Migration from an Indy based image
+(whether the new Indy image variant or the original BC Gov images) to the
+Standard image is outside of the scope of this document.</p>
 <p>The ACA-Py images built by this project are tagged to indicate which of the
 above variants it is. Other tags may also be generated for use by developers.</p>
 <p>Below is a table of all generated images and their tags:</p>
@@ -2351,18 +2347,6 @@ above variants it is. Other tags may also be generated for use by developers.</p
 <td>py3.10-0.7.4</td>
 <td>Standard image variant built on Python 3.10 for ACA-Py version X.Y.Z</td>
 </tr>
-<tr>
-<td>py3.9-indy-A.B.C-X.Y.Z</td>
-<td>Indy</td>
-<td>py3.9-indy-1.16.0-0.7.4</td>
-<td>Standard image variant built on Python 3.9 for ACA-Py version X.Y.Z and Indy SDK Version A.B.C</td>
-</tr>
-<tr>
-<td>py3.10-indy-A.B.C-X.Y.Z</td>
-<td>Indy</td>
-<td>py3.10-indy-1.16.0-0.7.4</td>
-<td>Standard image variant built on Python 3.10 for ACA-Py version X.Y.Z and Indy SDK Version A.B.C</td>
-</tr>
 </tbody>
 </table>
 <h3 id="image-comparison">Image Comparison<a class="headerlink" href="#image-comparison" title="Permanent link">&para;</a></h3>
@@ -2376,7 +2360,7 @@ variants and between the BC Gov ACA-Py images.</p>
 <li>Uses container's system python environment rather than <code>pyenv</code></li>
 <li>Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers</li>
 <li>Built from repo contents</li>
-<li>Indy Image</li>
+<li>Indy Image (no longer produced but included here for clarity)</li>
 <li>Based on slim variant of Debian</li>
 <li>Built from multi-stage build step (<code>indy-base</code> in the Dockerfile) which includes Indy dependencies; this could be replaced with an explicit <code>indy-python</code> image from the Indy SDK repo</li>
 <li>Includes <code>libindy</code> but does <strong>NOT</strong> include the Indy CLI</li>
@@ -2399,21 +2383,16 @@ variants and between the BC Gov ACA-Py images.</p>
 <ul>
 <li>Tests (<code>.github/workflows/tests.yml</code>) - A reusable workflow that runs tests
   for the Standard ACA-Py variant for a given python version.</li>
-<li>Tests (Indy) (<code>.github/workflows/tests-indy.yml</code>) - A reusable workflow that
-  runs tests for the Indy ACA-Py variant for a given python and indy version.</li>
 <li>PR Tests (<code>.github/workflows/pr-tests.yml</code>) - Run on pull requests; runs tests
-  for the Standard and Indy ACA-Py variants for a "default" python version.
-  Check this workflow for the current default python and Indy versions in use.</li>
+  for the Standard ACA-Py variant for a "default" python version.
+  Check this workflow for the current default python version in use.</li>
 <li>Nightly Tests (<code>.github/workflows/nightly-tests.yml</code>) - Run nightly; runs
-  tests for the Standard and Indy ACA-Py variants for all currently supported
+  tests for the Standard ACA-Py variant for all currently supported
   python versions. Check this workflow for the set of currently supported
-  versions and Indy version(s) in use.</li>
+  versions in use.</li>
 <li>Publish (<code>.github/workflows/publish.yml</code>) - Run on new release published or
   when manually triggered; builds and pushes the Standard ACA-Py variant to the
   Github Container Registry.</li>
-<li>Publish (Indy) (<code>.github/workflows/publish-indy.yml</code>) - Run on new release
-  published or when manually triggered; builds and pushes the Indy ACA-Py
-  variant to the Github Container Registry.</li>
 <li>Integration Tests (<code>.github/workflows/integrationtests.yml</code>) - Run on pull
   requests (to the hyperledger fork only); runs BDD integration tests.</li>
 <li>Black Format (<code>.github/workflows/blackformat.yml</code>) - Run on pull requests;
