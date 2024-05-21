@@ -1,0 +1,54 @@
+name: Sonar Scan and Coverage
+
+on:
+  workflow_run:
+    workflows: [ PR Tests ]
+    types: 
+      - completed
+
+jobs:
+  SonarCloud:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+      - name: Download PR number artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: Tests
+          run_id: ${{ github.event.workflow_run.id }}
+          name: PR_NUMBER
+      - name: Read PR_NUMBER
+        id: pr_number
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ./PR_NUMBER
+      - name: Download Test Coverage
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: Tests
+          run_id: ${{ github.event.workflow_run.id }}
+          name: TEST_COV
+      - name: Request GitHub API for PR data
+        uses: octokit/request-action@v2.x
+        id: get_pr_data
+        with:
+          route: GET /repos/${{ github.event.repository.full_name }}/pulls/${{ steps.pr_number.outputs.content }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout base branch
+        if: github.event.workflow_run.event == 'pull_request'
+        run: |
+          echo ${{ github.event.repository.clone_url }}
+          git remote add upstream ${{ github.event.repository.clone_url }}
+          git fetch upstream
+          git checkout -B ${{ fromJson(steps.get_pr_data.outputs.data).base.ref }} upstream/${{ fromJson(steps.get_pr_data.outputs.data).base.ref }}
+          echo ${{ github.event.workflow_run.head_branch }}
+          git checkout origin/${{ github.event.workflow_run.head_branch }}
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
