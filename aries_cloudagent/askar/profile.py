@@ -7,14 +7,6 @@ from typing import Any, Mapping
 from weakref import ref
 
 from aries_askar import AskarError, Session, Store
-from didcomm_messaging import (
-    CryptoService,
-    DIDCommMessaging,
-    PackagingService,
-    RoutingService,
-    SecretsManager,
-)
-from didcomm_messaging.resolver import DIDResolver as DMPResolver
 
 from ..cache.base import BaseCache
 from ..config.injection_context import InjectionContext
@@ -263,13 +255,24 @@ class AskarProfileSession(ProfileSession):
             BaseStorage,
             ClassProvider("aries_cloudagent.storage.askar.AskarStorage", ref(self)),
         )
-        injector.bind_provider(
-            SecretsManager,
-            ClassProvider(
-                "aries_cloudagent.didcomm_v2.adapters.SecretsAdapter", ref(self)
-            ),
-        )
+
         if self.profile.settings.get("experiment.didcomm_v2"):
+            from didcomm_messaging import (
+                CryptoService,
+                DIDCommMessaging,
+                PackagingService,
+                RoutingService,
+                SecretsManager,
+            )
+            from didcomm_messaging.resolver import DIDResolver as DMPResolver
+
+            injector.bind_provider(
+                SecretsManager,
+                ClassProvider(
+                    "aries_cloudagent.didcomm_v2.adapters.SecretsAdapter", ref(self)
+                ),
+            )
+
             injector.bind_provider(
                 DIDCommMessaging,
                 ClassProvider(
