@@ -1,13 +1,5 @@
 """Classes for configuring the default injection context."""
 
-from didcomm_messaging import (
-    CryptoService,
-    PackagingService,
-    RoutingService,
-)
-from didcomm_messaging.crypto.backend.askar import AskarCryptoService
-
-
 from ..anoncreds.registry import AnonCredsRegistry
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
@@ -73,9 +65,17 @@ class DefaultContextBuilder(ContextBuilder):
         )
 
         # DIDComm Messaging
-        context.injector.bind_instance(CryptoService, AskarCryptoService())
-        context.injector.bind_instance(PackagingService, PackagingService())
-        context.injector.bind_instance(RoutingService, RoutingService())
+        if context.settings.get("experiment.didcomm_v2"):
+            from didcomm_messaging import (
+                CryptoService,
+                PackagingService,
+                RoutingService,
+            )
+            from didcomm_messaging.crypto.backend.askar import AskarCryptoService
+
+            context.injector.bind_instance(CryptoService, AskarCryptoService())
+            context.injector.bind_instance(PackagingService, PackagingService())
+            context.injector.bind_instance(RoutingService, RoutingService())
 
         await self.bind_providers(context)
         await self.load_plugins(context)

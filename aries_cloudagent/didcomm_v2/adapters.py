@@ -3,9 +3,13 @@
 import logging
 from typing import Optional, cast
 from aries_askar import Key
-from didcomm_messaging import SecretsManager
-from didcomm_messaging.crypto.backend.askar import AskarSecretKey
-from didcomm_messaging.resolver import DIDResolver as DMPResolver
+
+try:
+    from didcomm_messaging import SecretsManager
+    from didcomm_messaging.crypto.backend.askar import AskarSecretKey
+    from didcomm_messaging.resolver import DIDResolver as DMPResolver
+except ImportError as err:
+    raise ImportError("Install the didcommv2 extra to use this module.") from err
 
 from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
