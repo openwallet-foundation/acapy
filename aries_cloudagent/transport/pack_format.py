@@ -25,6 +25,8 @@ from didcomm_messaging.crypto.backend.askar import CryptoServiceError
 LOGGER = logging.getLogger(__name__)
 DIDCOMM_V1_TYP = "JWM/1.0"
 DIDCOMM_V2_TYP = "application/didcomm"
+DIDCOMM_V1_ID = "@id"
+DIDCOMM_V2_ID = "id"
 
 
 def get_version_for_packed_msg(packed_msg: Union[str, bytes]):
@@ -48,6 +50,21 @@ def get_version_for_packed_msg(packed_msg: Union[str, bytes]):
     if DIDCOMM_V1_TYP in typ:
         return DIDCommVersion.v1
 
+    raise ValueError("Could not determine DIDComm version of packed message")
+
+
+def get_version_for_outbound_msg(outbound_msg: Union[str, bytes]):
+    """Get the version of the packed message."""
+
+    msg_json = json.loads(outbound_msg)
+
+    if DIDCOMM_V2_ID in msg_json:
+        return DIDCommVersion.v2
+
+    if DIDCOMM_V1_ID in msg_json:
+        return DIDCommVersion.v1
+
+    # Raise differnt errors? Not ValueError?
     raise ValueError("Could not determine DIDComm version of packed message")
 
 
@@ -84,6 +101,13 @@ class PackWireFormat(BaseWireFormat):
 
         return await pack_format.parse_message(session, message_body)
 
+    def get_for_outbound_msg(self, outbound_msg: Union[str, bytes]) -> BaseWireFormat:
+        """Retrieve appropriate DIDComm instance for a given packed message."""
+        return {
+            DIDCommVersion.v1: self.v1pack_format,
+            DIDCommVersion.v2: self.v2pack_format,
+        }[get_version_for_outbound_msg(outbound_msg)]
+
     async def encode_message(
         self,
         session: ProfileSession,
@@ -94,11 +118,13 @@ class PackWireFormat(BaseWireFormat):
     ) -> Union[str, bytes]:
         """Pass an incoming message to the appropriately versioned PackWireFormat."""
 
-        if session.profile.settings.get("experiment.didcomm_v2") and recipient_keys[
-            0
-        ].startswith("did:peer:"):
-            # pack_format = self.get_for_packed_msg(message_json)
-            pack_format = self.v2pack_format
+        if session.profile.settings.get("experiment.didcomm_v2"):
+            try:
+                pack_format = self.get_for_outbound_msg(message_json)
+            except ValueError as err:
+                raise WireFormatParseError(
+                    "Unable to determine appropriate WireFormat version"
+                ) from err
         else:
             pack_format = self.v1pack_format
 

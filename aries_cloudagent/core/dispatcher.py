@@ -23,6 +23,7 @@ from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
 from ..messaging.responder import BaseResponder, SKIP_ACTIVE_CONN_CHECK_MSG_TYPES
 from ..messaging.util import datetime_now
+from ..messaging.v2_agent_message import V2AgentMessage
 from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
@@ -145,14 +146,18 @@ class Dispatcher:
 
         context.injector.bind_instance(BaseResponder, responder)
         # responder.connection_id = connection and connection.connection_id
-        error_result = ProblemReport(
-            description={
-                "en": str("No Handlers Found"),
-                "code": "message-parse-failure",
+        error_result = V2AgentMessage(
+            message={
+                "type": "https://didcomm.org/report-problem/2.0/problem-report",
+                "body": {
+                    "comment": "No Handlers Found",
+                    "code": "e.p.msg.not-found",
+                },
             }
         )
         if inbound_message.receipt.thread_id:
-            error_result.assign_thread_id(inbound_message.receipt.thread_id)
+            error_result.message["pthid"] = inbound_message.receipt.thread_id
+            #error_result.assign_thread_id(inbound_message.receipt.thread_id)
         logging.getLogger(__name__).debug("CONSTRUCTED V2 DISPATCHER RESPONSE")
         await responder.send_reply(error_result)
         logging.getLogger(__name__).debug("LEFT V2 DISPATCHER HANDLER")
