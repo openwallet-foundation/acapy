@@ -585,6 +585,7 @@ class GeneralGroup(ArgumentGroup):
             metavar="<storage-type>",
             env_var="ACAPY_STORAGE_TYPE",
             help=(
+                "DEPRECATED: This option is ignored. "
                 "Specifies the type of storage provider to use for the internal "
                 "storage engine. This storage interface is used to store internal "
                 "state. Supported internal storage types are 'basic' (memory) "
@@ -1575,10 +1576,10 @@ class WalletGroup(ArgumentGroup):
             default="basic",
             env_var="ACAPY_WALLET_TYPE",
             help=(
-                "Specifies the type of Indy wallet provider to use. "
+                "Specifies the type of wallet provider to use. "
                 "Supported internal storage types are 'basic' (memory), 'askar' "
                 "and 'askar-anoncreds'."
-                "The default (if not specified) is 'basic'. 'indy' is deprecated."
+                "The default (if not specified) is 'basic'."
             ),
         )
         parser.add_argument(
@@ -1602,10 +1603,7 @@ class WalletGroup(ArgumentGroup):
             help=(
                 "Specifies the storage configuration to use for the wallet. "
                 "This is required if you are for using 'postgres_storage' wallet "
-                'storage type. For example, \'{"url":"localhost:5432", '
-                '"wallet_scheme":"MultiWalletSingleTable"}\'. This '
-                "configuration maps to the indy sdk postgres plugin "
-                "(PostgresConfig)."
+                'storage type. For example, \'{"url":"localhost:5432"}\'.'
             ),
         )
         parser.add_argument(
@@ -1629,9 +1627,8 @@ class WalletGroup(ArgumentGroup):
                 "This is required if you are for using 'postgres_storage' wallet "
                 'For example, \'{"account":"postgres","password": '
                 '"mysecretpassword","admin_account":"postgres", '
-                '"admin_password":"mysecretpassword"}\'. This configuration maps '
-                "to the indy sdk postgres plugin (PostgresCredentials). NOTE: "
-                "admin_user must have the CREATEDB role or else initialization "
+                '"admin_password":"mysecretpassword"}\'.'
+                "NOTE: admin_user must have the CREATEDB role or else initialization "
                 "will fail."
             ),
         )
@@ -1685,7 +1682,7 @@ class WalletGroup(ArgumentGroup):
         if args.recreate_wallet:
             settings["wallet.recreate"] = True
         # check required settings for persistent wallets
-        if settings["wallet.type"] in ["indy", "askar", "askar-anoncreds"]:
+        if settings["wallet.type"] in ["askar", "askar-anoncreds"]:
             # requires name, key
             if not args.wallet_name or not args.wallet_key:
                 raise ArgsParseError(
@@ -1700,7 +1697,7 @@ class WalletGroup(ArgumentGroup):
                 if not args.wallet_storage_config or not args.wallet_storage_creds:
                     raise ArgsParseError(
                         "Parameters --wallet-storage-config and --wallet-storage-creds "
-                        "must be provided for indy postgres wallets"
+                        "must be provided for postgres wallets"
                     )
         return settings
 
