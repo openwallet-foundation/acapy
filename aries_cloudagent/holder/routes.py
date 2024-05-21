@@ -10,9 +10,9 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields
 
+from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..indy.holder import IndyHolder, IndyHolderError
 from ..indy.models.cred_precis import IndyCredInfoSchema
@@ -193,6 +193,7 @@ class CredRevokedResultSchema(OpenAPISchema):
 @docs(tags=["credentials"], summary="Fetch credential from wallet by id")
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(IndyCredInfoSchema(), 200, description="")
+@tenant_authentication
 async def credentials_get(request: web.BaseRequest):
     """Request handler for retrieving credential.
 
@@ -220,6 +221,7 @@ async def credentials_get(request: web.BaseRequest):
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @querystring_schema(CredRevokedQueryStringSchema())
 @response_schema(CredRevokedResultSchema(), 200, description="")
+@tenant_authentication
 async def credentials_revoked(request: web.BaseRequest):
     """Request handler for querying revocation status of credential.
 
@@ -263,6 +265,7 @@ async def credentials_revoked(request: web.BaseRequest):
 @docs(tags=["credentials"], summary="Get attribute MIME types from wallet")
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(AttributeMimeTypesResultSchema(), 200, description="")
+@tenant_authentication
 async def credentials_attr_mime_types_get(request: web.BaseRequest):
     """Request handler for getting credential attribute MIME types.
 
@@ -285,6 +288,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
 @docs(tags=["credentials"], summary="Remove credential from wallet by id")
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(HolderModuleResponseSchema(), description="")
+@tenant_authentication
 async def credentials_remove(request: web.BaseRequest):
     """Request handler for searching connection records.
 
@@ -316,6 +320,7 @@ async def credentials_remove(request: web.BaseRequest):
 )
 @querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(CredInfoListSchema(), 200, description="")
+@tenant_authentication
 async def credentials_list(request: web.BaseRequest):
     """Request handler for searching credential records.
 
@@ -354,6 +359,7 @@ async def credentials_list(request: web.BaseRequest):
 )
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(VCRecordSchema(), 200, description="")
+@tenant_authentication
 async def w3c_cred_get(request: web.BaseRequest):
     """Request handler for retrieving W3C credential.
 
@@ -385,6 +391,7 @@ async def w3c_cred_get(request: web.BaseRequest):
 )
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(HolderModuleResponseSchema(), 200, description="")
+@tenant_authentication
 async def w3c_cred_remove(request: web.BaseRequest):
     """Request handler for deleting W3C credential.
 
@@ -422,6 +429,7 @@ async def w3c_cred_remove(request: web.BaseRequest):
 @request_schema(W3CCredentialsListRequestSchema())
 @querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(VCRecordListSchema(), 200, description="")
+@tenant_authentication
 async def w3c_creds_list(request: web.BaseRequest):
     """Request handler for searching W3C credential records.
 

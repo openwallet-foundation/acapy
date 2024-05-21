@@ -9,7 +9,6 @@ from anoncreds import Schema
 from base58 import alphabet
 
 from .....anoncreds.base import (
-    AnonCredsRegistrationError,
     AnonCredsSchemaAlreadyExists,
 )
 from .....anoncreds.models.anoncreds_schema import (
@@ -21,7 +20,7 @@ from .....askar.profile_anon import AskarAnoncredsProfile
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory.profile import InMemoryProfile
 from .....ledger.base import BaseLedger
-from .....ledger.error import LedgerError, LedgerObjectAlreadyExistsError
+from .....ledger.error import LedgerObjectAlreadyExistsError
 from .....messaging.responder import BaseResponder
 from .....protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
@@ -728,27 +727,16 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         assert mock_create_record.called
 
     async def test_txn_submit(self):
-        self.profile.inject = mock.MagicMock(
-            side_effect=[
-                None,
-                mock.CoroutineMock(
-                    txn_submit=mock.CoroutineMock(side_effect=LedgerError("test error"))
-                ),
-                mock.CoroutineMock(
-                    txn_submit=mock.CoroutineMock(return_value="transaction response")
-                ),
-            ]
+        self.profile.context.injector.bind_instance(
+            BaseLedger,
+            mock.MagicMock(
+                txn_submit=mock.CoroutineMock(return_value="transaction_id")
+            ),
         )
-
-        # No ledger
-        with self.assertRaises(LedgerError):
-            await self.registry.txn_submit(self.profile, "test_txn")
-        # Write error
-        with self.assertRaises(AnonCredsRegistrationError):
-            await self.registry.txn_submit(self.profile, "test_txn")
-
-        result = await self.registry.txn_submit(self.profile, "test_txn")
-        assert result == "transaction response"
+        async with self.profile.session() as session:
+            ledger = session.inject(BaseLedger)
+            result = await self.registry.txn_submit(ledger, "test_txn")
+            assert result == "transaction_id"
 
     async def test_register_revocation_list_no_endorsement(self):
         self.profile.context.injector.bind_instance(

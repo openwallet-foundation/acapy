@@ -415,6 +415,9 @@ class TransactionManager:
         if (not endorser) and (
             txn_goal_code != TransactionRecord.WRITE_DID_TRANSACTION
         ):
+            ledger = self.profile.inject(BaseLedger)
+            if not ledger:
+                raise TransactionManagerError("No ledger available")
             if (
                 self._profile.context.settings.get_value("wallet.type")
                 == "askar-anoncreds"
@@ -425,13 +428,9 @@ class TransactionManager:
 
                 legacy_indy_registry = LegacyIndyRegistry()
                 ledger_response_json = await legacy_indy_registry.txn_submit(
-                    self._profile, ledger_transaction, sign=False, taa_accept=False
+                    ledger, ledger_transaction, sign=False, taa_accept=False
                 )
             else:
-                ledger = self.profile.inject(BaseLedger)
-                if not ledger:
-                    raise TransactionManagerError("No ledger available")
-
                 async with ledger:
                     try:
                         ledger_response_json = await shield(

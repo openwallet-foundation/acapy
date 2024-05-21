@@ -17,4 +17,4 @@ jobs:
       - name: Black Code Formatter Check
         # The version of black should be adjusted at the same time dev
         # dependencies are updated.
-        uses: psf/black@24.4.0
+        uses: psf/black@24.4.2

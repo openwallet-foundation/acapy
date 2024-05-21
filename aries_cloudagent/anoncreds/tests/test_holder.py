@@ -18,19 +18,19 @@ from anoncreds import (
 )
 from aries_askar import AskarError, AskarErrorCode
 
-from aries_cloudagent.anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ..holder import AnonCredsHolder, AnonCredsHolderError
 from aries_cloudagent.anoncreds.tests.mock_objects import (
     MOCK_CRED,
     MOCK_CRED_DEF,
     MOCK_PRES,
     MOCK_PRES_REQ,
 )
+from aries_cloudagent.askar.profile import AskarProfile
 from aries_cloudagent.askar.profile_anon import AskarAnoncredsProfile
 from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfile,
     InMemoryProfileSession,
 )
-from aries_cloudagent.indy.sdk.profile import IndySdkProfile
 from aries_cloudagent.tests import mock
 from aries_cloudagent.wallet.error import WalletNotFoundError
 
@@ -56,6 +56,9 @@ class MockCredReceived:
 
     def to_json_buffer(self):
         return b"credential"
+
+    def to_dict(self):
+        return MOCK_CRED
 
 
 class MockCredential:
@@ -199,7 +202,7 @@ class TestAnonCredsHolder(IsolatedAsyncioTestCase):
     async def test_create_credential_request_with_non_anoncreds_profile_throws_x(self):
         self.profile = InMemoryProfile.test_profile(
             settings={"wallet-type": "askar"},
-            profile_class=IndySdkProfile,
+            profile_class=AskarProfile,
         )
         self.holder = test_module.AnonCredsHolder(self.profile)
         with self.assertRaises(ValueError):

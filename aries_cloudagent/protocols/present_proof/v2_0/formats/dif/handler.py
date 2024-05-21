@@ -5,7 +5,6 @@ import logging
 from typing import Mapping, Optional, Sequence, Tuple
 from uuid import uuid4
 
-from marshmallow import RAISE
 
 from ......messaging.base_handler import BaseResponder
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -75,7 +74,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         Schema = mapping[message_type]
 
         # Validate, throw if not valid
-        Schema(unknown=RAISE).load(attachment_data)
+        Schema().load(attachment_data)
 
     def get_format_identifier(self, message_type: str) -> str:
         """Get attachment format identifier for format and message combination.

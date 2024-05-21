@@ -61,6 +61,15 @@ class V20CredFormat(BaseModel):
             ),
         )
 
+        VC_DI = FormatSpec(
+            "didcomm/",
+            V20CredExRecordIndy,
+            DeferLoad(
+                "aries_cloudagent.protocols.issue_credential.v2_0"
+                ".formats.vc_di.handler.VCDICredFormatHandler"
+            ),
+        )
+
         @classmethod
         def get(cls, label: Union[str, "V20CredFormat.Format"]):
             """Get format enum for label."""

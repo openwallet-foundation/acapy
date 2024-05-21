@@ -1,15 +1,12 @@
 import pytest
 
-from unittest import mock
 from unittest import IsolatedAsyncioTestCase
 
 from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
 from ....core.in_memory import InMemoryProfile
-from ....indy.sdk.profile import IndySdkProfile
-from ....indy.sdk.wallet_setup import IndyOpenWallet, IndyWalletConfig
 from ....ledger.base import BaseLedger
-from ....ledger.indy import IndySdkLedgerPool, IndySdkLedger
+from ....ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 
 from ..base_manager import MultipleLedgerManagerError
 from ..manager_provider import MultiIndyLedgerManagerProvider
@@ -66,30 +63,6 @@ class TestMultiIndyLedgerManagerProvider(IsolatedAsyncioTestCase):
         with self.assertRaises(MultipleLedgerManagerError):
             provider.provide(context.settings, context.injector)
 
-    @pytest.mark.indy
-    async def test_provide_indy_manager(self):
-        context = InjectionContext()
-        with mock.patch.object(IndySdkProfile, "_make_finalizer"):
-            profile = IndySdkProfile(
-                IndyOpenWallet(
-                    config=IndyWalletConfig({"name": "test-profile"}),
-                    created=True,
-                    handle=1,
-                    master_secret_id="master-secret",
-                ),
-                context,
-            )
-        context.injector.bind_instance(
-            BaseLedger, IndySdkLedger(IndySdkLedgerPool("name"), profile)
-        )
-        provider = MultiIndyLedgerManagerProvider(profile)
-        context.settings["ledger.ledger_config_list"] = LEDGER_CONFIG
-        context.settings["ledger.genesis_transactions"] = TEST_GENESIS_TXN
-        self.assertEqual(
-            provider.provide(context.settings, context.injector).__class__.__name__,
-            "MultiIndyLedgerManager",
-        )
-
     @pytest.mark.askar
     async def test_provide_askar_manager(self):
         context = InjectionContext()
@@ -104,7 +77,7 @@ class TestMultiIndyLedgerManagerProvider(IsolatedAsyncioTestCase):
             },
         )
         context.injector.bind_instance(
-            BaseLedger, IndySdkLedger(IndySdkLedgerPool("name"), profile)
+            BaseLedger, IndyVdrLedger(IndyVdrLedgerPool("name"), profile)
         )
         provider = MultiIndyLedgerManagerProvider(profile)
         context.settings["ledger.ledger_config_list"] = LEDGER_CONFIG

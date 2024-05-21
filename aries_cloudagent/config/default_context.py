@@ -15,7 +15,6 @@ from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
 from ..resolver.did_resolver import DIDResolver
 from ..tails.base import BaseTailsServer
 from ..transport.wire_format import BaseWireFormat
-from ..utils.dependencies import is_indy_sdk_module_installed
 from ..utils.stats import Collector
 from ..wallet.default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
@@ -69,18 +68,6 @@ class DefaultContextBuilder(ContextBuilder):
 
     async def bind_providers(self, context: InjectionContext):
         """Bind various class providers."""
-
-        # Bind global indy pool provider to be able to share pools between wallets
-        # It is important the ledger pool provider is available in the base context
-        # so it can be shared by all wallet instances. If we set it in the indy sdk
-        # profile provider it could mean other wallets won't have access to the provider
-        if is_indy_sdk_module_installed():
-            from ..ledger.indy import IndySdkLedgerPool, IndySdkLedgerPoolProvider
-
-            context.injector.bind_provider(
-                IndySdkLedgerPool,
-                CachedProvider(IndySdkLedgerPoolProvider(), ("ledger.pool_name",)),
-            )
 
         context.injector.bind_provider(ProfileManager, ProfileManagerProvider())
 

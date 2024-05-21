@@ -619,18 +619,17 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             mock_issuer_rev_reg_records[1].clear_pending.assert_not_called()
 
     async def test_clear_pending(self):
+        REV_REG_ID_2 = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2"
         mock_issuer_rev_reg_records = [
-            mock.MagicMock(
+            test_module.IssuerRevRegRecord(
                 revoc_reg_id=REV_REG_ID,
                 tails_local_path=TAILS_LOCAL,
-                pending_pub=[],
-                clear_pending=mock.CoroutineMock(),
+                pending_pub=["1", "2"],
             ),
-            mock.MagicMock(
-                revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2",
+            test_module.IssuerRevRegRecord(
+                revoc_reg_id=REV_REG_ID_2,
                 tails_local_path=TAILS_LOCAL,
-                pending_pub=[],
-                clear_pending=mock.CoroutineMock(),
+                pending_pub=["9", "99"],
             ),
         ]
         with mock.patch.object(
@@ -639,21 +638,22 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
         ) as record:
             result = await self.manager.clear_pending_revocations()
-            assert result == {}
+            assert result[REV_REG_ID] == []
+            assert result[REV_REG_ID_2] == []
 
     async def test_clear_pending_1_rev_reg_all(self):
+        REV_REG_ID_2 = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2"
+
         mock_issuer_rev_reg_records = [
-            mock.MagicMock(
+            test_module.IssuerRevRegRecord(
                 revoc_reg_id=REV_REG_ID,
                 tails_local_path=TAILS_LOCAL,
                 pending_pub=["1", "2"],
-                clear_pending=mock.CoroutineMock(),
             ),
-            mock.MagicMock(
-                revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2",
+            test_module.IssuerRevRegRecord(
+                revoc_reg_id=REV_REG_ID_2,
                 tails_local_path=TAILS_LOCAL,
                 pending_pub=["9", "99"],
-                clear_pending=mock.CoroutineMock(),
             ),
         ]
         with mock.patch.object(
@@ -661,25 +661,22 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             "query_by_pending",
             mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
         ) as record:
-            result = await self.manager.clear_pending_revocations({REV_REG_ID: None})
-            assert result == {
-                REV_REG_ID: ["1", "2"],
-                f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2": ["9", "99"],
-            }
+            result = await self.manager.clear_pending_revocations({REV_REG_ID: []})
+            assert result[REV_REG_ID] == []
+            assert result.get(REV_REG_ID_2) is None
 
     async def test_clear_pending_1_rev_reg_some(self):
+        REV_REG_ID_2 = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2"
         mock_issuer_rev_reg_records = [
-            mock.MagicMock(
+            test_module.IssuerRevRegRecord(
                 revoc_reg_id=REV_REG_ID,
                 tails_local_path=TAILS_LOCAL,
                 pending_pub=["1", "2"],
-                clear_pending=mock.CoroutineMock(),
             ),
-            mock.MagicMock(
-                revoc_reg_id=f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2",
+            test_module.IssuerRevRegRecord(
+                revoc_reg_id=REV_REG_ID_2,
                 tails_local_path=TAILS_LOCAL,
                 pending_pub=["99"],
-                clear_pending=mock.CoroutineMock(),
             ),
         ]
         with mock.patch.object(
@@ -688,10 +685,34 @@ class TestRevocationManager(IsolatedAsyncioTestCase):
             mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
         ) as record:
             result = await self.manager.clear_pending_revocations({REV_REG_ID: ["9"]})
-            assert result == {
-                REV_REG_ID: ["1", "2"],
-                f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2": ["99"],
-            }
+
+            assert result[REV_REG_ID] == ["1", "2"]
+            assert result.get(REV_REG_ID_2) is None
+
+    async def test_clear_pending_both(self):
+        REV_REG_ID_2 = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:tag2"
+        mock_issuer_rev_reg_records = [
+            test_module.IssuerRevRegRecord(
+                revoc_reg_id=REV_REG_ID,
+                tails_local_path=TAILS_LOCAL,
+                pending_pub=["1", "2"],
+            ),
+            test_module.IssuerRevRegRecord(
+                revoc_reg_id=REV_REG_ID_2,
+                tails_local_path=TAILS_LOCAL,
+                pending_pub=["99"],
+            ),
+        ]
+        with mock.patch.object(
+            test_module.IssuerRevRegRecord,
+            "query_by_pending",
+            mock.CoroutineMock(return_value=mock_issuer_rev_reg_records),
+        ) as record:
+            result = await self.manager.clear_pending_revocations(
+                {REV_REG_ID: ["1"], REV_REG_ID_2: ["99"]}
+            )
+            assert result[REV_REG_ID] == ["2"]
+            assert result[REV_REG_ID_2] == []
 
     async def test_retrieve_records(self):
         session = await self.profile.session()

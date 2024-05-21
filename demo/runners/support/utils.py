@@ -115,7 +115,7 @@ def output_reader(handle, callback, *args, **kwargs):
             break
         try:
             run_in_terminal(functools.partial(callback, line, *args))
-        except AssertionError as e:
+        except AssertionError:
             # see comment in DemoAgent.handle_output
             # trace log and prompt_toolkit do not get along...
             pass
@@ -245,19 +245,7 @@ def progress(*args, **kwargs):
 def check_requires(args):
     wtype = args.wallet_type or "askar"
 
-    if wtype == "indy":
-        try:
-            from indy.libindy import _cdll
-
-            _cdll()
-        except ImportError:
-            print("python3-indy module not installed")
-            sys.exit(1)
-        except OSError:
-            print("libindy shared library could not be loaded")
-            sys.exit(1)
-
-    elif wtype == "askar":
+    if wtype == "askar":
         try:
             from aries_askar.bindings import get_library
 

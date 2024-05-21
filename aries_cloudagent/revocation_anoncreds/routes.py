@@ -15,6 +15,7 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
+from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..anoncreds.base import (
     AnonCredsObjectNotFound,
@@ -459,6 +460,7 @@ class RevokeRequestSchemaAnoncreds(CredRevRecordQueryStringSchema):
 )
 @request_schema(RevokeRequestSchemaAnoncreds())
 @response_schema(RevocationAnoncredsModuleResponseSchema(), description="")
+@tenant_authentication
 async def revoke(request: web.BaseRequest):
     """Request handler for storing a credential revocation.
 
@@ -512,6 +514,7 @@ async def revoke(request: web.BaseRequest):
 @docs(tags=[TAG_TITLE], summary="Publish pending revocations to ledger")
 @request_schema(PublishRevocationsSchemaAnoncreds())
 @response_schema(PublishRevocationsResultSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def publish_revocations(request: web.BaseRequest):
     """Request handler for publishing pending revocations to the ledger.
 
@@ -551,6 +554,7 @@ async def publish_revocations(request: web.BaseRequest):
 )
 @querystring_schema(RevRegsCreatedQueryStringSchema())
 @response_schema(RevRegsCreatedSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def get_rev_regs(request: web.BaseRequest):
     """Request handler to get revocation registries that current agent created.
 
@@ -589,6 +593,7 @@ async def get_rev_regs(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegResultSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def get_rev_reg(request: web.BaseRequest):
     """Request handler to get a revocation registry by rev reg id.
 
@@ -663,6 +668,7 @@ async def _get_issuer_rev_reg_record(
 )
 @match_info_schema(RevocationCredDefIdMatchInfoSchema())
 @response_schema(RevRegResultSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def get_active_rev_reg(request: web.BaseRequest):
     """Request handler to get current active revocation registry by cred def id.
 
@@ -692,6 +698,7 @@ async def get_active_rev_reg(request: web.BaseRequest):
 @docs(tags=[TAG_TITLE], summary="Rotate revocation registry")
 @match_info_schema(RevocationCredDefIdMatchInfoSchema())
 @response_schema(RevRegsCreatedSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def rotate_rev_reg(request: web.BaseRequest):
     """Request handler to rotate the active revocation registries for cred. def.
 
@@ -724,6 +731,7 @@ async def rotate_rev_reg(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegIssuedResultSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def get_rev_reg_issued_count(request: web.BaseRequest):
     """Request handler to get number of credentials issued against revocation registry.
 
@@ -764,6 +772,7 @@ async def get_rev_reg_issued_count(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(CredRevRecordDetailsResultSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def get_rev_reg_issued(request: web.BaseRequest):
     """Request handler to get credentials issued against revocation registry.
 
@@ -805,6 +814,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(CredRevIndyRecordsResultSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def get_rev_reg_indy_recs(request: web.BaseRequest):
     """Request handler to get details of revoked credentials from ledger.
 
@@ -850,6 +860,7 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
 @match_info_schema(RevRegIdMatchInfoSchema())
 @querystring_schema(RevRegUpdateRequestMatchInfoSchema())
 @response_schema(RevRegWalletUpdatedResultSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def update_rev_reg_revoked_state(request: web.BaseRequest):
     """Request handler to fix ledger entry of credentials revoked against registry.
 
@@ -945,6 +956,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 )
 @querystring_schema(CredRevRecordQueryStringSchema())
 @response_schema(CredRevRecordResultSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def get_cred_rev_record(request: web.BaseRequest):
     """Request handler to get credential revocation record.
 
@@ -987,6 +999,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationAnoncredsModuleResponseSchema, description="tails file")
+@tenant_authentication
 async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     """Request handler to download tails file for revocation registry.
 
@@ -1025,6 +1038,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 @match_info_schema(RevRegIdMatchInfoSchema())
 @querystring_schema(SetRevRegStateQueryStringSchema())
 @response_schema(RevRegResultSchemaAnoncreds(), 200, description="")
+@tenant_authentication
 async def set_rev_reg_state(request: web.BaseRequest):
     """Request handler to set a revocation registry state manually.
 

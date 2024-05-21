@@ -10,9 +10,9 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields, validate
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
@@ -289,6 +289,7 @@ class V10PresExIdMatchInfoSchema(OpenAPISchema):
 )
 @querystring_schema(V10PresentationExchangeListQueryStringSchema)
 @response_schema(V10PresentationExchangeListSchema(), 200, description="")
+@tenant_authentication
 async def presentation_exchange_list(request: web.BaseRequest):
     """Request handler for searching presentation exchange records.
 
@@ -330,6 +331,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
 )
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
+@tenant_authentication
 async def presentation_exchange_retrieve(request: web.BaseRequest):
     """Request handler for fetching a single presentation exchange record.
 
@@ -379,6 +381,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @querystring_schema(CredentialsFetchQueryStringSchema())
 @response_schema(IndyCredPrecisSchema(many=True), 200, description="")
+@tenant_authentication
 async def presentation_exchange_credentials_list(request: web.BaseRequest):
     """Request handler for searching applicable credential records.
 
@@ -459,6 +462,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
 )
 @request_schema(V10PresentationProposalRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
+@tenant_authentication
 async def presentation_exchange_send_proposal(request: web.BaseRequest):
     """Request handler for sending a presentation proposal.
 
@@ -543,6 +547,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
 )
 @request_schema(V10PresentationCreateRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
+@tenant_authentication
 async def presentation_exchange_create_request(request: web.BaseRequest):
     """Request handler for creating a free presentation request.
 
@@ -621,6 +626,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
 )
 @request_schema(V10PresentationSendRequestRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
+@tenant_authentication
 async def presentation_exchange_send_free_request(request: web.BaseRequest):
     """Request handler for sending a presentation request free from any proposal.
 
@@ -710,6 +716,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @request_schema(V10PresentationSendRequestToProposalSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
+@tenant_authentication
 async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     """Request handler for sending a presentation request bound to a proposal.
 
@@ -806,6 +813,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @request_schema(V10PresentationSendRequestSchema())
 @response_schema(V10PresentationExchangeSchema(), description="")
+@tenant_authentication
 async def presentation_exchange_send_presentation(request: web.BaseRequest):
     """Request handler for sending a presentation.
 
@@ -923,6 +931,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
 )
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentationExchangeSchema(), description="")
+@tenant_authentication
 async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     """Request handler for verifying a presentation request.
 
@@ -998,6 +1007,7 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @request_schema(V10PresentationProblemReportRequestSchema())
 @response_schema(V10PresentProofModuleResponseSchema(), 200, description="")
+@tenant_authentication
 async def presentation_exchange_problem_report(request: web.BaseRequest):
     """Request handler for sending problem report.
 
@@ -1039,6 +1049,7 @@ async def presentation_exchange_problem_report(request: web.BaseRequest):
 )
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentProofModuleResponseSchema(), description="")
+@tenant_authentication
 async def presentation_exchange_remove(request: web.BaseRequest):
     """Request handler for removing a presentation exchange record.
 

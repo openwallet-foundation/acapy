@@ -54,7 +54,10 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.session_inject = {}
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet.type": "askar-anoncreds"},
+            settings={
+                "wallet.type": "askar-anoncreds",
+                "admin.admin_api_key": "secret-key",
+            },
             profile_class=AskarAnoncredsProfile,
         )
         self.context = AdminRequestContext.test_context(
@@ -69,6 +72,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
 
     @mock.patch.object(
@@ -342,7 +346,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
 
     async def test_schema_endpoints_wrong_profile_403(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar"},
+            settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -355,6 +359,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
 
         # POST schema
@@ -382,7 +387,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
 
     async def test_cred_def_endpoints_wrong_profile_403(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar"},
+            settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -395,6 +400,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
 
         # POST cred def
@@ -425,7 +431,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
 
     async def test_rev_reg_wrong_profile_403(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar"},
+            settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -438,6 +444,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
 
         self.request.json = mock.CoroutineMock(
@@ -458,7 +465,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
 
     async def test_rev_list_wrong_profile_403(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar"},
+            settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -471,6 +478,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
 
         self.request.json = mock.CoroutineMock(
@@ -481,7 +489,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
 
     async def test_uploads_tails_wrong_profile_403(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar"},
+            settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -494,6 +502,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
 
         self.request.match_info = {"rev_reg_id": "rev_reg_id"}
@@ -502,7 +511,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
 
     async def test_active_registry_wrong_profile_403(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"wallet-type": "askar"},
+            settings={"wallet-type": "askar", "admin.admin_api_key": "secret-key"},
             profile_class=AskarProfile,
         )
         self.context = AdminRequestContext.test_context({}, self.profile)
@@ -515,6 +524,7 @@ class TestAnoncredsRoutes(IsolatedAsyncioTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
             context=self.context,
+            headers={"x-api-key": "secret-key"},
         )
 
         self.request.match_info = {"rev_reg_id": "rev_reg_id"}
