@@ -176,17 +176,6 @@ class Conductor:
                             self.root_profile,
                         ),
                     )
-                elif (
-                    self.root_profile.BACKEND_NAME == "indy"
-                    and ledger.BACKEND_NAME == "indy"
-                ):
-                    context.injector.bind_provider(
-                        IndyVerifier,
-                        ClassProvider(
-                            "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                            self.root_profile,
-                        ),
-                    )
                 else:
                     raise MultipleLedgerManagerError(
                         "Multiledger is supported only for Indy SDK or Askar "

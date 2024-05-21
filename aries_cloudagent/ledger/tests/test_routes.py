@@ -16,7 +16,7 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from .. import routes as test_module
-from ..indy import Role
+from ..indy_vdr import Role
 
 
 class TestLedgerRoutes(IsolatedAsyncioTestCase):
