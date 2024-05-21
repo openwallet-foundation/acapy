@@ -94,8 +94,10 @@ class PackWireFormat(BaseWireFormat):
     ) -> Union[str, bytes]:
         """Pass an incoming message to the appropriately versioned PackWireFormat."""
 
-        if session.profile.settings.get("experiment.didcomm_v2") and recipient_keys[0].startswith("did:peer:"):
-            #pack_format = self.get_for_packed_msg(message_json)
+        if session.profile.settings.get("experiment.didcomm_v2") and recipient_keys[
+            0
+        ].startswith("did:peer:"):
+            # pack_format = self.get_for_packed_msg(message_json)
             pack_format = self.v2pack_format
         else:
             pack_format = self.v1pack_format
@@ -349,8 +351,8 @@ class V2PackWireFormat(BaseWireFormat):
                 message_dict = message_unpack.message
 
         if message_unpack.sender_kid:
-            receipt.sender_verkey = message_unpack.sender_kid.split('#')[0]
-            receipt.recipient_verkey = message_unpack.recipient_kid.split('#')[0]
+            receipt.sender_verkey = message_unpack.sender_kid.split("#")[0]
+            receipt.recipient_verkey = message_unpack.recipient_kid.split("#")[0]
             pass
 
         thid = message_dict.get("thid")
