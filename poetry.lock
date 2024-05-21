@@ -844,7 +844,7 @@ base58 = ">=2.1.1"
 name = "didcomm-messaging"
 version = "0.1.1a2"
 description = "DIDComm Messaging implemented with swappable backends."
-optional = false
+optional = true
 python-versions = ">=3.9"
 files = [
     {file = "didcomm_messaging-0.1.1a2-py3-none-any.whl", hash = "sha256:d56acb0bcfaf71985863e862eafe71707816a8a305f4f02d3d5177b30a2467d3"},
@@ -2254,22 +2254,6 @@ files = [
 ]
 
 [[package]]
-name = "python3-indy"
-version = "1.16.0.post286"
-description = "This is the official SDK for Hyperledger Indy (https://www.hyperledger.org/projects), which provides a distributed-ledger-based foundation for self-sovereign identity (https://sovrin.org). The major artifact of the SDK is a c-callable library."
-optional = true
-python-versions = "*"
-files = [
-    {file = "python3-indy-1.16.0-post-286.tar.gz", hash = "sha256:80e6a4241134ea3ef8b2554cffb11e504978f87edb004a1c965ec6eb063449a4"},
-]
-
-[package.dependencies]
-base58 = "*"
-
-[package.extras]
-test = ["base58", "pytest (<3.7)", "pytest-asyncio (==0.10.0)"]
-
-[[package]]
 name = "pytz"
 version = "2021.1"
 description = "World timezone definitions, modern and historical"
@@ -2956,8 +2940,9 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [extras]
 askar = ["anoncreds", "aries-askar", "indy-credx", "indy-vdr"]
 bbs = ["ursa-bbs-signatures"]
+didcommv2 = ["didcomm-messaging"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "1872e9f13a2185db6f41a570161f3b614322341e8b4b6f51193fc8cd4c7eb315"
+content-hash = "286008373364ef69452b6163bb354e546169fdf7091e73d2d9718d3c522bc9c8"
