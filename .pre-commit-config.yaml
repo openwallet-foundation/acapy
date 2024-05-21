@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: v9.5.0
+    rev: v9.16.0
     hooks:
       - id: commitlint
         stages: [commit-msg]
@@ -8,13 +8,13 @@ repos:
         additional_dependencies: ['@commitlint/config-conventional']
   - repo: https://github.com/psf/black
     # Ensure this is synced with pyproject.toml
-    rev: 24.4.0
+    rev: 24.4.2
     hooks:
       - id: black
         stages: [commit]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ensure this is synced with pyproject.toml
-    rev: v0.1.2
+    rev: v0.4.4
     hooks:
       - id: ruff
         stages: [commit]

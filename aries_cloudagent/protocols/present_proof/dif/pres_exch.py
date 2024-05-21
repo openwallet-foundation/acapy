@@ -217,7 +217,7 @@ class SchemasInputDescriptorFilterSchema(BaseModelSchema):
 
     @pre_load
     def extract_info(self, data, **kwargs):
-        """deserialize."""
+        """Deserialize."""
         new_data = {}
         if isinstance(data, dict):
             if "uri_groups" in data:
