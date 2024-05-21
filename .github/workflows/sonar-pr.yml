@@ -1,0 +1,73 @@
+name: Sonar Scan and Coverage
+
+on:
+  workflow_run:
+    workflows: [ PR Tests ]
+    types: 
+      - completed
+
+jobs:
+  SonarCloud:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+      - name: Download PR number artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: Tests
+          run_id: ${{ github.event.workflow_run.id }}
+          name: PR_NUMBER
+      - name: Read PR_NUMBER
+        id: pr_number
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ./PR_NUMBER
+      - name: Download Test Coverage
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: Tests
+          run_id: ${{ github.event.workflow_run.id }}
+          name: TEST_COV
+      - name: Request GitHub API for PR data
+        uses: octokit/request-action@v2.x
+        id: get_pr_data
+        with:
+          route: GET /repos/${{ github.event.repository.full_name }}/pulls/${{ steps.pr_number.outputs.content }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout base branch
+        run: |
+          echo forked repo = ${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}.git
+          echo base repo = ${{ github.event.repository.clone_url }}
+
+          git remote add upstream ${{ fromJson(steps.get_pr_data.outputs.data).head.repo.html_url }}.git
+          git fetch --all
+
+          echo pr number = ${{ fromJson(steps.get_pr_data.outputs.data).number }} 
+          echo forked branch = ${{ fromJson(steps.get_pr_data.outputs.data).head.ref }} 
+          echo base branch = ${{ fromJson(steps.get_pr_data.outputs.data).base.ref }}
+
+          git checkout -B temp-branch-for-scanning upstream/${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}
+      - name: Move Coverage Report And Adjust Source
+        run: |
+          mkdir test-reports
+          mv coverage.xml test-reports
+          # Need to change source in coverage report because it was generated from another context
+          sed -i 's/\/home\/runner\/work\/aries-cloudagent-python\/aries-cloudagent-python\//\/github\/workspace\//g' test-reports/coverage.xml
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with: 
+          args: >
+            -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }} 
+            -Dsonar.pullrequest.key=${{ fromJson(steps.get_pr_data.outputs.data).number }} 
+            -Dsonar.pullrequest.branch=${{ fromJson(steps.get_pr_data.outputs.data).head.ref }} 
+            -Dsonar.pullrequest.base=${{ fromJson(steps.get_pr_data.outputs.data).base.ref }}
+            -Dsonar.coverage.exclusions=**/tests/*,**/demo/*,**/docs/*,**/docker/*,**/scripts/*
+            -Dsonar.python.coverage.reportPaths=test-reports/coverage.xml
+            -Dsonar.sources=./
