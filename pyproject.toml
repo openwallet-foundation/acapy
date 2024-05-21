@@ -58,9 +58,6 @@ anoncreds= { version = "0.2.0", optional = true }
 # bbs
 ursa-bbs-signatures= { version = "~1.0.1", optional = true }
 
-# indy
-python3-indy= { version = "^1.11.1", optional = true }
-
 [tool.poetry.group.dev.dependencies]
 pre-commit = "~3.7.0"
 # Sync with version in .pre-commit-config.yaml
@@ -92,9 +89,6 @@ askar = [
 ]
 bbs = [
     "ursa-bbs-signatures"
-]
-indy = [
-     "python3-indy"
 ]
 
 [tool.poetry.scripts]

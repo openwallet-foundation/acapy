@@ -24,41 +24,6 @@ class Stub:
         self.inner and self.inner.stop()
 
 
-def stub_indy() -> Stub:
-    # detect indy module
-    try:
-        from indy.libindy import _cdll
-
-        _cdll()
-
-        return Stub(None)
-    except ImportError:
-        print("Skipping Indy-specific tests: python3-indy module not installed.")
-    except OSError:
-        print(
-            "Skipping Indy-specific tests: libindy shared library could not be loaded."
-        )
-
-    modules = {}
-    package_name = "indy"
-    modules[package_name] = mock.MagicMock()
-    for mod in [
-        "anoncreds",
-        "blob_storage",
-        "crypto",
-        "did",
-        "error",
-        "pool",
-        "ledger",
-        "non_secrets",
-        "pairwise",
-        "wallet",
-    ]:
-        submod = f"{package_name}.{mod}"
-        modules[submod] = mock.MagicMock()
-    return Stub(mock.patch.dict(sys.modules, modules))
-
-
 def stub_anoncreds() -> Stub:
     # detect anoncreds library
     try:
@@ -200,7 +165,6 @@ def pytest_sessionstart(session):
         {
             "anoncreds": stub_anoncreds(),
             "askar": stub_askar(),
-            "indy": stub_indy(),
             "indy_credx": stub_indy_credx(),
             "indy_vdr": stub_indy_vdr(),
             "ursa_bbs_signatures": stub_ursa_bbs_signatures(),
