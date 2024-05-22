@@ -91,14 +91,18 @@ class AskarProfile(Profile):
         """Initialize the profile-level instance providers."""
         injector = self._context.injector
 
-        injector.bind_provider(
-            DMPResolver,
-            ClassProvider(
-                "aries_cloudagent.didcomm_v2.adapters.ResolverAdapter",
-                ref(self),
-                ClassProvider.Inject(DIDResolver),
-            ),
-        )
+        if self.context.settings.get("experiment.didcomm_v2"):
+            from didcomm_messaging.resolver import DIDResolver as DMPResolver
+
+            injector.bind_provider(
+                DMPResolver,
+                ClassProvider(
+                    "aries_cloudagent.didcomm_v2.adapters.ResolverAdapter",
+                    ref(self),
+                    ClassProvider.Inject(DIDResolver),
+                ),
+            )
+
         injector.bind_provider(
             BaseStorageSearch,
             ClassProvider(
