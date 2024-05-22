@@ -37,8 +37,18 @@ jobs:
             exit 1
           fi
           exit $PYTEST_EXIT_CODE
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Save PR number to file
+        run: echo ${{ github.event.number }} > PR_NUMBER
+      - name: Archive PR number
+        with:  
+          name: PR_NUMBER
+          path: PR_NUMBER
+      - name: Archive Test Results
+        with:  
+          name: TEST_COV
+          path: ./test-reports/coverage.xml
+      # - name: SonarCloud Scan
+      #   uses: SonarSource/sonarcloud-github-action@master
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
