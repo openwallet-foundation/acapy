@@ -2,8 +2,9 @@ name: Sonar Scan and Coverage
 
 on:
   workflow_run:
-    workflows: [Tests]
-    types: [completed]
+    workflows: [ PR Tests ]
+    types: 
+      - completed
 
 jobs:
   SonarCloud:
