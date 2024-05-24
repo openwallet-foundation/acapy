@@ -20,6 +20,7 @@ from anoncreds import (
     RevocationRegistryDefinition,
     RevocationRegistryDefinitionPrivate,
     RevocationStatusList,
+    W3cCredential,
 )
 from aries_askar.error import AskarError
 from requests import RequestException, Session
@@ -41,6 +42,7 @@ from .issuer import (
     CATEGORY_CRED_DEF_PRIVATE,
     STATE_FINISHED,
     AnonCredsIssuer,
+    AnonCredsIssuerError,
 )
 from .models.anoncreds_revocation import (
     RevList,
@@ -720,6 +722,9 @@ class AnonCredsRevocation:
             backoff=-0.5,
             max_attempts=5,  # heuristic: respect HTTP timeout
         )
+        print("#1 tails_server", upload_success)
+        print("#2 tails_server", result)
+
         if not upload_success:
             raise AnonCredsRevocationError(
                 f"Tails file for rev reg for {rev_reg_def.cred_def_id} "
@@ -894,6 +899,207 @@ class AnonCredsRevocation:
         return result
 
     # Credential Operations
+
+    async def _create_credential_w3c(
+        self,
+        credential_definition_id: str,
+        schema_attributes: List[str],
+        credential_offer: dict,
+        credential_request: dict,
+        credential_values: dict,
+        rev_reg_def_id: Optional[str] = None,
+        tails_file_path: Optional[str] = None,
+    ) -> Tuple[str, str]:
+        try:
+            async with self.profile.session() as session:
+                cred_def = await session.handle.fetch(
+                    CATEGORY_CRED_DEF, credential_definition_id
+                )
+                cred_def_private = await session.handle.fetch(
+                    CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
+                )
+        except AskarError as err:
+            raise AnonCredsRevocationError(
+                "Error retrieving credential definition"
+            ) from err
+        if not cred_def or not cred_def_private:
+            raise AnonCredsRevocationError(
+                "Credential definition not found for credential issuance"
+            )
+
+        raw_values = {}
+        for attribute in schema_attributes:
+            # Ensure every attribute present in schema to be set.
+            # Extraneous attribute names are ignored.
+            try:
+                credential_value = credential_values[attribute]
+            except KeyError:
+                raise AnonCredsRevocationError(
+                    "Provided credential values are missing a value "
+                    f"for the schema attribute '{attribute}'"
+                )
+
+            raw_values[attribute] = str(credential_value)
+
+        if rev_reg_def_id and tails_file_path:
+            try:
+                async with self.profile.transaction() as txn:
+                    rev_list = await txn.handle.fetch(CATEGORY_REV_LIST, rev_reg_def_id)
+                    rev_reg_def = await txn.handle.fetch(
+                        CATEGORY_REV_REG_DEF, rev_reg_def_id
+                    )
+                    rev_key = await txn.handle.fetch(
+                        CATEGORY_REV_REG_DEF_PRIVATE, rev_reg_def_id
+                    )
+                    if not rev_list:
+                        raise AnonCredsRevocationError("Revocation registry not found")
+                    if not rev_reg_def:
+                        raise AnonCredsRevocationError(
+                            "Revocation registry definition not found"
+                        )
+                    if not rev_key:
+                        raise AnonCredsRevocationError(
+                            "Revocation registry definition private data not found"
+                        )
+                    rev_info = rev_list.value_json
+                    rev_info_tags = rev_list.tags
+                    rev_reg_index = rev_info["next_index"]
+                    try:
+                        rev_reg_def = RevocationRegistryDefinition.load(
+                            rev_reg_def.raw_value
+                        )
+                        rev_list = RevocationStatusList.load(rev_info["rev_list"])
+                    except AnoncredsError as err:
+                        raise AnonCredsRevocationError(
+                            "Error loading revocation registry definition"
+                        ) from err
+                    if rev_reg_index > rev_reg_def.max_cred_num:
+                        raise AnonCredsRevocationRegistryFullError(
+                            "Revocation registry is full"
+                        )
+                    rev_info["next_index"] = rev_reg_index + 1
+                    await txn.handle.replace(
+                        CATEGORY_REV_LIST,
+                        rev_reg_def_id,
+                        value_json=rev_info,
+                        tags=rev_info_tags,
+                    )
+                    await txn.commit()
+            except AskarError as err:
+                raise AnonCredsRevocationError(
+                    "Error updating revocation registry index"
+                ) from err
+
+            # rev_info["next_index"] is 1 based but getting from
+            # rev_list is zero based...
+            revoc = CredentialRevocationConfig(
+                rev_reg_def,
+                rev_key.raw_value,
+                rev_list,
+                rev_reg_index,
+            )
+            credential_revocation_id = str(rev_reg_index)
+        else:
+            revoc = None
+            credential_revocation_id = None
+            rev_list = None
+
+        try:
+            credential = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: W3cCredential.create(
+                    cred_def=cred_def.raw_value,
+                    cred_def_private=cred_def_private.raw_value,
+                    cred_offer=credential_offer,
+                    cred_request=credential_request,
+                    attr_raw_values=raw_values,
+                    revocation_config=revoc,
+                ),
+            )
+
+        except AnoncredsError as err:
+            raise AnonCredsRevocationError("Error creating credential") from err
+
+        return credential.to_json(), credential_revocation_id
+
+    async def create_credential_w3c(
+        self,
+        credential_offer: dict,
+        credential_request: dict,
+        credential_values: dict,
+        *,
+        retries: int = 5,
+    ) -> Tuple[str, str, str]:
+        """Create a credential.
+
+        Args:
+            credential_offer: Credential Offer to create credential for
+            credential_request: Credential request to create credential for
+            credential_values: Values to go in credential
+            revoc_reg_id: ID of the revocation registry
+            retries: number of times to retry credential creation
+
+        Returns:
+            A tuple of created credential and revocation id
+
+        """
+        issuer = AnonCredsIssuer(self.profile)
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        schema_id = credential_offer["schema_id"]
+        schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
+        cred_def_id = credential_offer["cred_def_id"]
+        schema_attributes = schema_result.schema_value.attr_names
+
+        revocable = await issuer.cred_def_supports_revocation(cred_def_id)
+
+        for attempt in range(max(retries, 1)):
+            if attempt > 0:
+                LOGGER.info(
+                    "Retrying credential creation for revocation registry %s",
+                    cred_def_id,
+                )
+                await asyncio.sleep(2)
+
+            rev_reg_def_result = None
+            if revocable:
+                rev_reg_def_result = await self.get_or_create_active_registry(
+                    cred_def_id
+                )
+                if (
+                    rev_reg_def_result.revocation_registry_definition_state.state
+                    != STATE_FINISHED
+                ):
+                    continue
+                rev_reg_def_id = rev_reg_def_result.rev_reg_def_id
+                tails_file_path = self.get_local_tails_path(
+                    rev_reg_def_result.rev_reg_def
+                )
+            else:
+                rev_reg_def_id = None
+                tails_file_path = None
+
+            try:
+                cred_json, cred_rev_id = await self._create_credential_w3c(
+                    cred_def_id,
+                    schema_attributes,
+                    credential_offer,
+                    credential_request,
+                    credential_values,
+                    rev_reg_def_id,
+                    tails_file_path,
+                )
+            except AnonCredsRevocationRegistryFullError:
+                continue
+
+            if rev_reg_def_result:
+                if (
+                    rev_reg_def_result.rev_reg_def.value.max_cred_num
+                    <= int(cred_rev_id) + 1
+                ):
+                    await self.handle_full_registry(rev_reg_def_id)
+            return cred_json, cred_rev_id, rev_reg_def_id
+
+        raise AnonCredsRevocationError("Failed to create credential after retrying")
 
     async def _create_credential(
         self,

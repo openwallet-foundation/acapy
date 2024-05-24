@@ -460,24 +460,36 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
+            cred_def = await ledger.get_credential_definition(cred_def_id)
+        revocable = cred_def["value"].get("revocation")
+        print("#5 revocable from vc_di: ", revocable)
 
         legacy_offer = await self._prepare_legacy_offer(cred_offer, schema_id)
         legacy_request = await self._prepare_legacy_request(cred_request, cred_def_id)
 
-        issuer = AnonCredsIssuer(self.profile)
-
-        credential = await issuer.create_credential_w3c(
-            legacy_offer, legacy_request, cred_values
-        )
+        cred_rev_id = None
+        rev_reg_def_id = None
+        credential = None
+        if revocable:
+            issuer = AnonCredsRevocation(self.profile)
+            (
+                credential,
+                cred_rev_id,
+                rev_reg_def_id,
+            ) = await issuer.create_credential_w3c(
+                legacy_offer, legacy_request, cred_values
+            )
+        else:
+            issuer = AnonCredsIssuer(self.profile)
+            credential = await issuer.create_credential_w3c(
+                legacy_offer, legacy_request, cred_values
+            )
 
         vcdi_credential = {
             "credential": json.loads(credential),
         }
 
         result = self.get_format_data(CRED_20_ISSUE, vcdi_credential)
-
-        cred_rev_id = None
-        rev_reg_def_id = None
 
         async with self._profile.transaction() as txn:
             detail_record = V20CredExRecordIndy(
