@@ -6,7 +6,7 @@ authors = ["Jason Sherman <tools@usingtechnolo.gy>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pytest = "^7.4.0"
+pytest = "^7.4.4"
 pytest-asyncio = "^0.21.0"
 asynctest = "^0.13.0"
 requests = "^2.31.0"
