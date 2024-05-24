@@ -1,5 +1,3 @@
-import pytest
-
 from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
@@ -18,26 +16,6 @@ class TestProvision(IsolatedAsyncioTestCase):
 
         with self.assertRaises(SystemExit):
             test_module.execute(["bad"])
-
-    @pytest.mark.indy
-    def test_provision_wallet(self):
-        test_seed = "testseed000000000000000000000001"
-        test_module.execute(
-            [
-                "--wallet-type",
-                "indy",
-                "--wallet-name",
-                "test_wallet",
-                "--wallet-key",
-                "key",
-                "--seed",
-                test_seed,
-                "--no-ledger",
-                "--endpoint",
-                "test_endpoint",
-                "--recreate-wallet",
-            ]
-        )
 
     async def test_provision_ledger_configured(self):
         profile = mock.MagicMock(close=mock.CoroutineMock())

@@ -37,7 +37,6 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
     async def test_on_cred_def_support_revocation_registers_revocation_def(
         self, mock_register_revocation_registry_definition
     ):
-
         event = CredDefFinishedEvent(
             CredDefFinishedPayload(
                 schema_id="schema_id",
@@ -60,7 +59,6 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
     async def test_on_cred_def_author_with_auto_create_rev_reg_config_registers_reg_def(
         self, mock_register_revocation_registry_definition
     ):
-
         self.profile.settings["endorser.author"] = True
         self.profile.settings["endorser.auto_create_rev_reg"] = True
         event = CredDefFinishedEvent(
@@ -85,7 +83,6 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
     async def test_on_cred_def_author_with_auto_create_rev_reg_config_and_support_revoc_option_registers_reg_def(
         self, mock_register_revocation_registry_definition
     ):
-
         self.profile.settings["endorser.author"] = True
         self.profile.settings["endorser.auto_create_rev_reg"] = True
         event = CredDefFinishedEvent(
@@ -110,7 +107,6 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
     async def test_on_cred_def_not_author_or_support_rev_option(
         self, mock_register_revocation_registry_definition
     ):
-
         event = CredDefFinishedEvent(
             CredDefFinishedPayload(
                 schema_id="schema_id",

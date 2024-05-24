@@ -1,30 +1,33 @@
 from typing import Tuple
-
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
+from ...connections.models.conn_record import ConnRecord
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...ledger.endpoint_type import EndpointType
-from ...ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
 from ...ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
 )
+from ...ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
-
 from .. import routes as test_module
-from ..indy import Role
-from ...connections.models.conn_record import ConnRecord
+from ..indy_vdr import Role
 
 
 class TestLedgerRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
         self.ledger = mock.create_autospec(BaseLedger)
         self.ledger.pool_name = "pool.0"
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -37,6 +40,7 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
         self.test_did = "did"

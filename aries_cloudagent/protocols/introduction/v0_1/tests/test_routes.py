@@ -1,15 +1,21 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
 
-from .....admin.request_context import AdminRequestContext
+from aries_cloudagent.tests import mock
 
+from .....admin.request_context import AdminRequestContext
+from .....core.in_memory import InMemoryProfile
 from .. import routes as test_module
 
 
 class TestIntroductionRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.session_inject = {}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        self.context = AdminRequestContext.test_context(self.session_inject, profile)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": mock.CoroutineMock(),
@@ -19,6 +25,7 @@ class TestIntroductionRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
     async def test_introduction_start_no_service(self):

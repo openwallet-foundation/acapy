@@ -5,7 +5,6 @@ from copy import deepcopy
 from time import time
 from unittest import TestCase
 
-from unittest import IsolatedAsyncioTestCase
 from aries_cloudagent.tests import mock
 
 from ....core.in_memory import InMemoryProfile
@@ -350,8 +349,7 @@ class TestIndyPresPredSpec(TestCase):
         assert pred_spec_a != pred_spec_b
 
 
-@pytest.mark.indy
-class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
+class TestIndyPresPreviewAsync:
     """Presentation preview tests"""
 
     @pytest.mark.asyncio
@@ -503,7 +501,6 @@ class TestIndyPresPreviewAsync(IsolatedAsyncioTestCase):
         assert not attr_spec.satisfies(pred_spec)
 
 
-@pytest.mark.indy
 class TestIndyPresPreview(TestCase):
     """Presentation preview tests"""
 

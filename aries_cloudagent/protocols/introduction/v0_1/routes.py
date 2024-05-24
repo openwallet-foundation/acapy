@@ -5,9 +5,9 @@ from typing import Optional
 
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, querystring_schema, response_schema
-
 from marshmallow import fields
 
+from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4_EXAMPLE
@@ -53,6 +53,7 @@ class IntroConnIdMatchInfoSchema(OpenAPISchema):
 @match_info_schema(IntroConnIdMatchInfoSchema())
 @querystring_schema(IntroStartQueryStringSchema())
 @response_schema(IntroModuleResponseSchema, description="")
+@tenant_authentication
 async def introduction_start(request: web.BaseRequest):
     """Request handler for starting an introduction.
 

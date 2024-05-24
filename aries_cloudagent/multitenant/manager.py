@@ -3,6 +3,7 @@
 import logging
 from typing import Iterable, Optional
 
+from ..askar.profile_anon import AskarAnoncredsProfile
 from ..config.injection_context import InjectionContext
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
@@ -83,6 +84,13 @@ class MultitenantManager(BaseMultitenantManager):
             # MTODO: add ledger config
             profile, _ = await wallet_config(context, provision=provision)
             self._profiles.put(wallet_id, profile)
+
+        # return anoncreds profile if explicitly set as wallet type
+        if profile.context.settings.get("wallet.type") == "askar-anoncreds":
+            return AskarAnoncredsProfile(
+                profile.opened,
+                profile.context,
+            )
 
         return profile
 

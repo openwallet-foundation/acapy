@@ -695,3 +695,22 @@ def step_impl(context, holder, schema_name, credential_data, issuer):
         + """" has the credential issued
     """
     )
+
+
+@given(
+    '"{holder}" has another issued {schema_name} credential {credential_data} from "{issuer}"'
+)
+def step_impl(context, holder, schema_name, credential_data, issuer):
+    context.execute_steps(
+        # TODO possibly check that the requested schema is "active" (if there are multiple schemas)
+        '''
+        When "'''
+        + issuer
+        + """" offers a credential with data """
+        + credential_data
+        + '''
+        Then "'''
+        + holder
+        + """" has the credential issued
+    """
+    )
