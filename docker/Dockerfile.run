@@ -1,5 +1,5 @@
 ARG python_version=3.9.16
-FROM python:3.9-slim-bullseye
+FROM python:3.12-slim-bullseye
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
