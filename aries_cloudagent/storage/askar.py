@@ -358,8 +358,8 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
             return
         try:
             self._scan = self._profile.store.scan(
-                self.type_filter,
-                self.tag_query,
+                category=self.type_filter,
+                tag_filter=self.tag_query,
                 profile=self._profile.settings.get("wallet.askar_profile"),
             )
         except AskarError as err:
