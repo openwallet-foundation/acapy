@@ -10,10 +10,7 @@ from typing import Callable, Coroutine, Optional, Pattern, Sequence, cast
 import aiohttp_cors
 import jwt
 from aiohttp import web
-from aiohttp_apispec import (
-    setup_aiohttp_apispec,
-    validation_middleware,
-)
+from aiohttp_apispec import setup_aiohttp_apispec, validation_middleware
 from uuid_utils import uuid4
 
 from aries_cloudagent.wallet import singletons

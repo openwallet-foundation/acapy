@@ -1,7 +1,7 @@
 """Issuer revocation registry storage handling."""
 
-import json
 import importlib
+import json
 import logging
 from functools import total_ordering
 from os.path import join
@@ -14,10 +14,7 @@ from marshmallow import fields, validate
 from uuid_utils import uuid4
 
 from ...core.profile import Profile, ProfileSession
-from ...indy.credx.issuer import (
-    CATEGORY_CRED_DEF,
-    CATEGORY_REV_REG_DEF_PRIVATE,
-)
+from ...indy.credx.issuer import CATEGORY_CRED_DEF, CATEGORY_REV_REG_DEF_PRIVATE
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.revocation import (
     IndyRevRegDef,

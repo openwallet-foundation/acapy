@@ -8,10 +8,7 @@ from aiohttp.web import HTTPNotFound
 from aries_cloudagent.tests import mock
 
 from ...admin.request_context import AdminRequestContext
-from ...anoncreds.models.anoncreds_revocation import (
-    RevRegDef,
-    RevRegDefValue,
-)
+from ...anoncreds.models.anoncreds_revocation import RevRegDef, RevRegDefValue
 from ...askar.profile import AskarProfile
 from ...askar.profile_anon import AskarAnoncredsProfile
 from ...core.in_memory import InMemoryProfile

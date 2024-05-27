@@ -43,8 +43,8 @@ from .messages.invitation import HSProto, InvitationMessage
 from .messages.problem_report import OOBProblemReport
 from .messages.reuse import HandshakeReuse
 from .messages.reuse_accept import HandshakeReuseAccept
-from .messages.service import Service as ServiceMessage
 from .messages.service import Service
+from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
 from .models.oob_record import OobRecord
 

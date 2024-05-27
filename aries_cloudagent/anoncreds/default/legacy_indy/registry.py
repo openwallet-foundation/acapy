@@ -32,9 +32,7 @@ from ....protocols.endorse_transaction.v1_0.manager import (
     TransactionManagerError,
 )
 from ....protocols.endorse_transaction.v1_0.util import is_author_role
-from ....revocation_anoncreds.models.issuer_cred_rev_record import (
-    IssuerCredRevRecord,
-)
+from ....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation_anoncreds.recover import generate_ledger_rrrecovery_txn
 from ....storage.error import StorageError
 from ....utils import sentinel

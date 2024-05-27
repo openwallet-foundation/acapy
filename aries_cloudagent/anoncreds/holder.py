@@ -13,8 +13,8 @@ from anoncreds import (
     CredentialRevocationState,
     Presentation,
     PresentCredentials,
-    create_link_secret,
     W3cCredential,
+    create_link_secret,
 )
 from aries_askar import AskarError, AskarErrorCode
 from uuid_utils import uuid4

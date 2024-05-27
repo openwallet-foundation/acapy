@@ -1,9 +1,9 @@
 """Ledger configuration."""
 
-from collections import OrderedDict
 import logging
 import re
 import sys
+from collections import OrderedDict
 from typing import Optional
 
 import markdown
@@ -17,9 +17,8 @@ from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerError
-from ..utils.http import fetch, FetchError
+from ..utils.http import FetchError, fetch
 from ..wallet.base import BaseWallet
-
 from .base import ConfigError
 
 LOGGER = logging.getLogger(__name__)

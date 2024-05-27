@@ -23,10 +23,7 @@ from ....revocation.util import (
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.util import (
-    notify_endorse_did_attrib_event,
-    notify_endorse_did_event,
-)
+from ....wallet.util import notify_endorse_did_attrib_event, notify_endorse_did_event
 from .messages.cancel_transaction import CancelTransaction
 from .messages.endorsed_transaction_response import EndorsedTransactionResponse
 from .messages.refused_transaction_response import RefusedTransactionResponse

@@ -15,13 +15,9 @@ from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
 from .vc_ld.manager import VcLdpManager, VcLdpManagerError
 from .vc_ld.models import web_schemas
-from .vc_ld.models.credential import (
-    VerifiableCredential,
-)
+from .vc_ld.models.credential import VerifiableCredential
 from .vc_ld.models.options import LDProofVCOptions
-from .vc_ld.models.presentation import (
-    VerifiablePresentation,
-)
+from .vc_ld.models.presentation import VerifiablePresentation
 
 
 @docs(tags=["vc-api"], summary="List credentials")
