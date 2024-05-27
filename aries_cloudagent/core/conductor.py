@@ -320,16 +320,22 @@ class Conductor:
         default_label = context.settings.get("default_label")
 
         if context.settings.get("transport.no_transport"):
-            self.inbound_transport_manager.registered_transports = None
-            self.outbound_transport_manager.registered_transports = None
+            LoggingConfigurator.print_banner(
+                default_label,
+                None,
+                None,
+                self.setup_public_did and self.setup_public_did.did,
+                self.admin_server,
+            )
+        else:
+            LoggingConfigurator.print_banner(
+                default_label,
+                self.inbound_transport_manager.registered_transports,
+                self.outbound_transport_manager.registered_transports,
+                self.setup_public_did and self.setup_public_did.did,
+                self.admin_server,
+            )
 
-        LoggingConfigurator.print_banner(
-            default_label,
-            self.inbound_transport_manager.registered_transports,
-            self.outbound_transport_manager.registered_transports,
-            self.setup_public_did and self.setup_public_did.did,
-            self.admin_server,
-        )
         LoggingConfigurator.print_notices(context.settings)
 
         # record ACA-Py version in Wallet, if needed
