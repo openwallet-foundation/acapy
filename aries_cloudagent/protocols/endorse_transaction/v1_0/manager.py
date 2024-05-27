@@ -2,8 +2,9 @@
 
 import json
 import logging
-import uuid
 from asyncio import shield
+
+from uuid_utils import uuid4
 
 from ....anoncreds.issuer import AnonCredsIssuer
 from ....anoncreds.revocation import AnonCredsRevocation
@@ -78,7 +79,7 @@ class TransactionManager:
         """
 
         messages_attach_dict = {
-            "@id": str(uuid.uuid4()),
+            "@id": str(uuid4()),
             "mime-type": "application/json",
             "data": {"json": messages_attach},
         }

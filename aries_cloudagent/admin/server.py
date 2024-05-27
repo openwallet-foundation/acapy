@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import re
-import uuid
 import warnings
 import weakref
 from typing import Callable, Coroutine, Optional, Pattern, Sequence, cast
@@ -15,6 +14,7 @@ from aiohttp_apispec import (
     setup_aiohttp_apispec,
     validation_middleware,
 )
+from uuid_utils import uuid4
 
 from aries_cloudagent.wallet import singletons
 
@@ -548,7 +548,7 @@ class AdminServer(BaseAdminServer):
 
         ws = web.WebSocketResponse()
         await ws.prepare(request)
-        socket_id = str(uuid.uuid4())
+        socket_id = str(uuid4())
         queue = BasicMessageQueue()
         loop = asyncio.get_event_loop()
 

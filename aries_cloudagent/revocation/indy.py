@@ -2,7 +2,8 @@
 
 import logging
 from typing import Optional, Sequence, Tuple
-from uuid import uuid4
+
+from uuid_utils import uuid4
 
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger

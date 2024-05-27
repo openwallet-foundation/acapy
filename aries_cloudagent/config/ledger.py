@@ -5,12 +5,12 @@ import logging
 import re
 import sys
 from typing import Optional
-import uuid
 
 import markdown
 import prompt_toolkit
 from prompt_toolkit.eventloop.defaults import use_asyncio_event_loop
 from prompt_toolkit.formatted_text import HTML
+from uuid_utils import uuid4
 
 from ..config.settings import Settings
 from ..core.profile import Profile
@@ -88,7 +88,7 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings):
         is_write_ledger = (
             False if config.get("is_write") is None else config.get("is_write")
         )
-        ledger_id = config.get("id") or str(uuid.uuid4())
+        ledger_id = config.get("id") or str(uuid4())
         if is_write_ledger:
             write_ledger_set = True
         config_item = {

@@ -20,7 +20,7 @@ from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 from typing import Sequence, Optional, Tuple, Union, Dict, List
 from unflatten import unflatten
-from uuid import uuid4
+from uuid_utils import uuid4
 
 from ....core.error import BaseError
 from ....core.profile import Profile

@@ -1,10 +1,10 @@
 from copy import deepcopy
 from datetime import datetime
 from typing import Sequence
-from uuid import uuid4
 
 from aries_cloudagent.tests import mock
 import pytest
+from uuid_utils import uuid4
 
 from aries_cloudagent.wallet.key_type import BLS12381G2, ED25519
 
