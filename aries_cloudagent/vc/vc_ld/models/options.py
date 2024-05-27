@@ -8,6 +8,7 @@ from aries_cloudagent.messaging.valid import (
     INDY_ISO8601_DATETIME_EXAMPLE,
     INDY_ISO8601_DATETIME_VALIDATE,
     UUID4_EXAMPLE,
+    VERKEY_EXAMPLE,
 )
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
@@ -24,6 +25,7 @@ class LDProofVCOptions(BaseModel):
     def __init__(
         self,
         verification_method: Optional[str] = None,
+        proof_key: Optional[str] = None,
         proof_type: Optional[str] = None,
         proof_purpose: Optional[str] = None,
         created: Optional[str] = None,
@@ -34,6 +36,7 @@ class LDProofVCOptions(BaseModel):
         """Initialize the LDProofVCDetailOptions instance."""
 
         self.verification_method = verification_method
+        self.proof_key = proof_key
         self.proof_type = proof_type
         self.proof_purpose = proof_purpose
         self.created = created
@@ -95,6 +98,17 @@ class LDProofVCOptionsSchema(BaseModelSchema):
                 " verification method in the wallet"
             ),
             "example": "did:example:123456#key-1",
+        },
+    )
+
+    proof_key = fields.Str(
+        data_key="proofKey",
+        required=False,
+        metadata={
+            "description": (
+                "The verkey used for the proof." "Takes precedence over issuer did."
+            ),
+            "example": VERKEY_EXAMPLE,
         },
     )
 

@@ -318,6 +318,26 @@ async def test_issue(
 
 
 @pytest.mark.asyncio(scope="module")
+async def test_issue_verkey(
+    profile: Profile,
+    manager: VcLdpManager,
+    vc: VerifiableCredential,
+    options: LDProofVCOptions,
+):
+    async with profile.session() as session:
+        wallet = session.inject(BaseWallet)
+        did = await wallet.create_local_did(
+            method=KEY,
+            key_type=ED25519,
+        )
+    vc.issuer = did.did
+    options.proof_key = did.verkey
+    options.proof_type = Ed25519Signature2018.signature_type
+    cred = await manager.issue(vc, options)
+    assert cred
+
+
+@pytest.mark.asyncio(scope="module")
 async def test_issue_ed25519_2020(
     profile: Profile,
     manager: VcLdpManager,

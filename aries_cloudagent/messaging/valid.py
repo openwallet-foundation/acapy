@@ -17,6 +17,7 @@ from .util import epoch_to_str
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
 EXAMPLE_TIMESTAMP = 1640995199  # 2021-12-31 23:59:59Z
+VERKEY_EXAMPLE = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 
 
 class StrOrDictField(Field):
