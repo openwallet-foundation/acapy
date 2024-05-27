@@ -324,45 +324,47 @@ class LoggingConfigurator:
             # Title
             banner.title(agent_label or "ACA")
             # Inbound transports
-            banner.subtitle("Inbound Transports")
-            internal_in_transports = [
-                f"{transport.scheme}://{transport.host}:{transport.port}"
-                for transport in inbound_transports.values()
-                if not transport.is_external
-            ]
-            if internal_in_transports:
-                banner.list(internal_in_transports)
-            external_in_transports = [
-                f"{transport.scheme}://{transport.host}:{transport.port}"
-                for transport in inbound_transports.values()
-                if transport.is_external
-            ]
-            if external_in_transports:
-                banner.subtitle("  External Plugin")
-                banner.list(external_in_transports)
+            if inbound_transports:
+                banner.subtitle("Inbound Transports")
+                internal_in_transports = [
+                    f"{transport.scheme}://{transport.host}:{transport.port}"
+                    for transport in inbound_transports.values()
+                    if not transport.is_external
+                ]
+                if internal_in_transports:
+                    banner.list(internal_in_transports)
+                external_in_transports = [
+                    f"{transport.scheme}://{transport.host}:{transport.port}"
+                    for transport in inbound_transports.values()
+                    if transport.is_external
+                ]
+                if external_in_transports:
+                    banner.subtitle("  External Plugin")
+                    banner.list(external_in_transports)
 
             # Outbound transports
-            banner.subtitle("Outbound Transports")
-            internal_schemes = set().union(
-                *(
-                    transport.schemes
-                    for transport in outbound_transports.values()
-                    if not transport.is_external
+            if outbound_transports:
+                banner.subtitle("Outbound Transports")
+                internal_schemes = set().union(
+                    *(
+                        transport.schemes
+                        for transport in outbound_transports.values()
+                        if not transport.is_external
+                    )
                 )
-            )
-            if internal_schemes:
-                banner.list([f"{scheme}" for scheme in sorted(internal_schemes)])
+                if internal_schemes:
+                    banner.list([f"{scheme}" for scheme in sorted(internal_schemes)])
 
-            external_schemes = set().union(
-                *(
-                    transport.schemes
-                    for transport in outbound_transports.values()
-                    if transport.is_external
+                external_schemes = set().union(
+                    *(
+                        transport.schemes
+                        for transport in outbound_transports.values()
+                        if transport.is_external
+                    )
                 )
-            )
-            if external_schemes:
-                banner.subtitle("  External Plugin")
-                banner.list([f"{scheme}" for scheme in sorted(external_schemes)])
+                if external_schemes:
+                    banner.subtitle("  External Plugin")
+                    banner.list([f"{scheme}" for scheme in sorted(external_schemes)])
 
             # DID info
             if public_did:

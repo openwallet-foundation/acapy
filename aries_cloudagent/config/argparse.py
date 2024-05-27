@@ -680,7 +680,9 @@ class GeneralGroup(ArgumentGroup):
         if args.storage_type:
             settings["storage_type"] = args.storage_type
 
-        if args.endpoint:
+        if args.no_transport:
+            pass
+        elif args.endpoint:
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
         else:
@@ -1274,6 +1276,19 @@ class TransportGroup(ArgumentGroup):
     def add_arguments(self, parser: ArgumentParser):
         """Add transport-specific command line arguments to the parser."""
         parser.add_argument(
+            "--no-transport",
+            dest="no_transport",
+            action="store_true",
+            env_var="ACAPY_NO_TRANSPORT",
+            help=(
+                "Specifies that aca-py will run with no transport configured. "
+                "This must be set if running in no-transport mode.  Overrides any "
+                "specified transport or endpoint configurations.  "
+                "Either this parameter or the "
+                "'--endpoint' parameter MUST be specified. Default: false."
+            ),
+        )
+        parser.add_argument(
             "-it",
             "--inbound-transport",
             dest="inbound_transports",
@@ -1381,6 +1396,9 @@ class TransportGroup(ArgumentGroup):
     def get_settings(self, args: Namespace):
         """Extract transport settings."""
         settings = {}
+        if args.no_transport:
+            settings["transport.no_transport"] = args.no_transport
+            return settings
         if args.inbound_transports:
             settings["transport.inbound_configs"] = args.inbound_transports
         else:

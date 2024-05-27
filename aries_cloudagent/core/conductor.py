@@ -191,20 +191,22 @@ class Conductor:
         ):
             LOGGER.warning("No ledger configured")
 
-        # Register all inbound transports
-        self.inbound_transport_manager = InboundTransportManager(
-            self.root_profile, self.inbound_message_router, self.handle_not_returned
-        )
-        await self.inbound_transport_manager.setup()
-        context.injector.bind_instance(
-            InboundTransportManager, self.inbound_transport_manager
-        )
+        if not context.settings.get("transport.no_transport"):
+            # Register all inbound transports if enabled
+            self.inbound_transport_manager = InboundTransportManager(
+                self.root_profile, self.inbound_message_router, self.handle_not_returned
+            )
+            await self.inbound_transport_manager.setup()
+            context.injector.bind_instance(
+                InboundTransportManager, self.inbound_transport_manager
+            )
 
-        # Register all outbound transports
-        self.outbound_transport_manager = OutboundTransportManager(
-            self.root_profile, self.handle_not_delivered
-        )
-        await self.outbound_transport_manager.setup()
+        if not context.settings.get("transport.no_transport"):
+            # Register all outbound transports
+            self.outbound_transport_manager = OutboundTransportManager(
+                self.root_profile, self.handle_not_delivered
+            )
+            await self.outbound_transport_manager.setup()
 
         # Initialize dispatcher
         self.dispatcher = Dispatcher(self.root_profile)
@@ -286,17 +288,18 @@ class Conductor:
         context = self.root_profile.context
         await self.check_for_valid_wallet_type(self.root_profile)
 
-        # Start up transports
-        try:
-            await self.inbound_transport_manager.start()
-        except Exception:
-            LOGGER.exception("Unable to start inbound transports")
-            raise
-        try:
-            await self.outbound_transport_manager.start()
-        except Exception:
-            LOGGER.exception("Unable to start outbound transports")
-            raise
+        if not context.settings.get("transport.no_transport"):
+            # Start up transports if enabled
+            try:
+                await self.inbound_transport_manager.start()
+            except Exception:
+                LOGGER.exception("Unable to start inbound transports")
+                raise
+            try:
+                await self.outbound_transport_manager.start()
+            except Exception:
+                LOGGER.exception("Unable to start outbound transports")
+                raise
 
         # Start up Admin server
         if self.admin_server:
@@ -316,7 +319,10 @@ class Conductor:
         # Get agent label
         default_label = context.settings.get("default_label")
 
-        # Show some details about the configuration to the user
+        if context.settings.get("transport.no_transport"):
+            self.inbound_transport_manager.registered_transports = None
+            self.outbound_transport_manager.registered_transports = None
+
         LoggingConfigurator.print_banner(
             default_label,
             self.inbound_transport_manager.registered_transports,
