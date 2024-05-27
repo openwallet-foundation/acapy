@@ -199,7 +199,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "AnonCredsRevocation", autospec=True
         ) as mock_anon_creds_revoc, mock.patch.object(
-            test_module.uuid, "uuid4", mock.Mock()
+            test_module, "uuid4", mock.Mock()
         ) as mock_uuid, mock.patch.object(
             test_module.web, "json_response", mock.Mock()
         ) as mock_json_response:
@@ -446,7 +446,7 @@ class TestRevocationRoutes(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "AnonCredsRevocation", autospec=True
         ) as mock_anon_creds_revoc, mock.patch.object(
-            test_module.uuid, "uuid4", mock.Mock()
+            test_module, "uuid4", mock.Mock()
         ) as mock_uuid, mock.patch.object(
             test_module.web, "json_response", mock.Mock()
         ) as mock_json_response:
