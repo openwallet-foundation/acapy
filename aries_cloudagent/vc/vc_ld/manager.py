@@ -232,7 +232,8 @@ class VcLdpManager:
             if proof_type not in did_proof_types:
                 raise VcLdpManagerError(
                     f"Unable to issue credential with verkey {verkey} and proof "
-                    f"type {proof_type}. Verkey only supports proof types {did_proof_types}"
+                    f"type {proof_type}. "
+                    f"Verkey only supports proof types {did_proof_types}"
                 )
 
         except WalletNotFoundError:
