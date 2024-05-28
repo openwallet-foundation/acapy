@@ -1,20 +1,21 @@
 name: Run Unit Tests
+description: "Run unit tests for the project"
 
 inputs:
   python-version:
+    description: "Python version"
     required: true
   os:
+    description: "Operating system"
     required: true
   is_pr:
+    description: "Is this a PR?"
     required: false
     default: "true"
 
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v5
       with:
