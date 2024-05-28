@@ -95,16 +95,27 @@ class BaseStorage(ABC):
         type_filter: str,
         tag_query: Mapping = None,
         options: Mapping = None,
-    ):
-        """Retrieve all records matching a particular type filter and tag query."""
+    ) -> Sequence[StorageRecord]:
+        """Retrieve all records matching a particular type filter and tag query.
+
+        Args:
+            type_filter: The type of records to filter by.
+            tag_query: An optional dictionary of tag filter clauses.
+            options: Additional options for the query.
+        """
 
     @abstractmethod
     async def delete_all_records(
         self,
         type_filter: str,
         tag_query: Mapping = None,
-    ):
-        """Remove all records matching a particular type filter and tag query."""
+    ) -> None:
+        """Remove all records matching a particular type filter and tag query.
+
+        Args:
+            type_filter: The type of records to filter by.
+            tag_query: An optional dictionary of tag filter clauses.
+        """
 
 
 class BaseStorageSearch(ABC):
