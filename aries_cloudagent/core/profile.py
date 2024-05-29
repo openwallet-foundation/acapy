@@ -35,10 +35,7 @@ class Profile(ABC):
         self._name = name or Profile.DEFAULT_NAME
 
         context = context or InjectionContext()
-        scope = "profile:" + self._name
-        if sub := context.settings.get("wallet.id"):
-            scope += ":" + sub
-        self._context = context.start_scope(scope)
+        self._context = context.start_scope()
         self._context.injector.bind_instance(Profile, ref(self))
 
     @property
@@ -166,7 +163,7 @@ class ProfileSession(ABC):
         self._active = False
         self._awaited = False
         self._entered = 0
-        self._context = (context or profile.context).start_scope("session", settings)
+        self._context = (context or profile.context).start_scope(settings)
         self._profile = profile
         self._events = []
 
