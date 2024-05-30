@@ -5,7 +5,7 @@ inputs:
   TEST_SCOPE:
     description: "Set of flags that defines the test scope"
     required: false
-    default: "-t @GHA"
+    default: "-t @PR"
   IN_LEDGER_URL:
     description: "URL to the von network ledger browser"
     required: false
@@ -27,7 +27,7 @@ runs:
         PUBLIC_TAILS_URL: ${{ inputs.IN_PUBLIC_TAILS_URL }}
         LOG_LEVEL: warning
         NO_TTY: "1"
-      working-directory: acapy/demo
+      working-directory: ./demo
 branding:
   icon: "mic"
   color: "purple"
