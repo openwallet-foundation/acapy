@@ -7,17 +7,22 @@ on:
 
 jobs:
   tests:
-    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
-    name: Tests
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.9", "3.10"]
-    uses: ./.github/workflows/tests.yml
-    with:
-      python-version: ${{ matrix.python-version }}
-      os: ${{ matrix.os }}
+    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Tests
+        uses: ./.github/actions/run-unit-tests
+        with:
+          python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}
+          is_pr: "false"
 
   setup_and_check_pub:
     name: Setup Publish

@@ -1,0 +1,34 @@
+name: Sonar Scan and Coverage
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sonarcloud:
+    name: SonarCloud
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+            fetch-depth: 0 
+      - name: Tests
+        uses: ./.github/actions/run-unit-tests
+        with:
+            python-version: "3.9"
+            os: "ubuntu-latest"
+            is_pr: "false" 
+      - name: Adjust Test Coverage Source
+        run: |
+            # Need to change source in coverage report because it was generated from another context
+            sed -i 's/\/home\/runner\/work\/aries-cloudagent-python\/aries-cloudagent-python\//\/github\/workspace\//g' test-reports/coverage.xml
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with: 
+            args: >
+                -Dsonar.python.coverage.reportPaths=test-reports/coverage.xml
+                -Dsonar.coverage.exclusions=**/tests/*,**/demo/*,**/docs/*,**/docker/*,**/scripts/*
+                -Dsonar.sources=./
