@@ -187,7 +187,7 @@ class AskarStorage(BaseStorage):
         """
         for_update = bool(options and options.get("forUpdate"))
         results = []
-        async for row in self._session.handle.scan(
+        async for row in self._session.store.scan(
             type_filter, tag_query, limit=limit, offset=offset, for_update=for_update
         ):
             results += (
