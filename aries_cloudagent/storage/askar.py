@@ -185,10 +185,16 @@ class AskarStorage(BaseStorage):
             offset: The offset to start retrieving records from
             options: Additional options for the query
         """
-        for_update = bool(options and options.get("forUpdate"))
         results = []
-        async for row in self._session.store.scan(
-            type_filter, tag_query, limit=limit, offset=offset, for_update=for_update
+
+        profile = self._session.profile
+        opened_store: Store = profile.opened.store
+        async for row in opened_store.scan(
+            category=type_filter,
+            tag_filter=tag_query,
+            limit=limit,
+            offset=offset,
+            profile=profile.settings.get("wallet.askar_profile"),
         ):
             results += (
                 StorageRecord(
