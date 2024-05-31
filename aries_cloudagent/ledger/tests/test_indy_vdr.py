@@ -973,6 +973,56 @@ class TestIndyVdrLedger:
             )
 
     @pytest.mark.asyncio
+    async def test_get_revoc_reg_delta_without_accum_to(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        async with ledger:
+            reg_id = (
+                "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
+            )
+            ledger.pool_handle.submit_request.side_effect = [
+                # First call to get_revoc_reg_delta
+                {
+                    "data": {
+                        "value": {},
+                        "revocRegDefId": reg_id,
+                    },
+                },
+                # Get registry with test_get_revoc_reg_entry
+                {
+                    "data": {
+                        "id": reg_id,
+                        "txnTime": 1234567890,
+                        "value": "...",
+                        "revocRegDefId": reg_id,
+                    },
+                },
+                # Second call to get_revoc_reg_delta
+                {
+                    "data": {
+                        "value": {
+                            "accum_to": {
+                                "value": {"accum": "ACCUM"},
+                                "txnTime": 1234567890,
+                            },
+                            "issued": [1, 2],
+                            "revoked": [3, 4],
+                        },
+                        "revocRegDefId": reg_id,
+                    },
+                },
+            ]
+            result = await ledger.get_revoc_reg_delta(reg_id)
+            assert result == (
+                {
+                    "ver": "1.0",
+                    "value": {"accum": "ACCUM", "issued": [1, 2], "revoked": [3, 4]},
+                },
+                1234567890,
+            )
+
+    @pytest.mark.asyncio
     async def test_send_revoc_reg_def(
         self,
         ledger: IndyVdrLedger,
