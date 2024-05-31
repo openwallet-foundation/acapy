@@ -26,13 +26,13 @@ class RequestContext:
         self,
         profile: Profile,
         *,
-        context: InjectionContext = None,
-        settings: Mapping[str, object] = None
+        context: Optional[InjectionContext] = None,
+        settings: Optional[Mapping[str, object]] = None
     ):
         """Initialize an instance of RequestContext."""
         self._connection_ready = False
         self._connection_record = None
-        self._context = (context or profile.context).start_scope("request", settings)
+        self._context = (context or profile.context).start_scope(settings)
         self._message = None
         self._message_receipt = None
         self._profile = profile

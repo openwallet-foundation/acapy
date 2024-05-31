@@ -2,9 +2,9 @@
 
 import logging
 from typing import Mapping, Sequence
-from uuid import uuid4
 
 from marshmallow import EXCLUDE, fields
+from uuid_utils import uuid4
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import ENDPOINT_EXAMPLE, ENDPOINT_VALIDATE, UUID4_EXAMPLE
