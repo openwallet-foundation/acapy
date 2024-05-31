@@ -3,8 +3,8 @@
 import json
 import logging
 from typing import Mapping, Optional, Sequence, Tuple
-from uuid import uuid4
 
+from uuid_utils import uuid4
 
 from ......messaging.base_handler import BaseResponder
 from ......messaging.decorators.attach_decorator import AttachDecorator

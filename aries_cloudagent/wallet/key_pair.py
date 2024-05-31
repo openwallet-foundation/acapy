@@ -1,8 +1,9 @@
 """Key pair storage manager."""
 
 import json
-import uuid
 from typing import List, Mapping, Optional, Sequence
+
+from uuid_utils import uuid4
 
 from ..storage.base import BaseStorage
 from ..storage.record import StorageRecord
@@ -53,7 +54,7 @@ class KeyPairStorageManager:
             KEY_PAIR_STORAGE_TYPE,
             json.dumps(data),
             {**tags, "verkey": verkey, "key_type": key_type.key_type},
-            uuid.uuid4().hex,
+            uuid4().hex,
         )
 
         await self._store.add_record(record)
