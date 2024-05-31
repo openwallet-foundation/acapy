@@ -3,11 +3,11 @@
 import json
 import logging
 import re
-import uuid
 from asyncio import shield
 from typing import List, Optional, Pattern, Sequence, Tuple
 
 from base58 import alphabet
+from uuid_utils import uuid4
 
 from ....anoncreds.default.legacy_indy.author import get_endorser_info
 from ....cache.base import BaseCache
@@ -32,9 +32,7 @@ from ....protocols.endorse_transaction.v1_0.manager import (
     TransactionManagerError,
 )
 from ....protocols.endorse_transaction.v1_0.util import is_author_role
-from ....revocation_anoncreds.models.issuer_cred_rev_record import (
-    IssuerCredRevRecord,
-)
+from ....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation_anoncreds.recover import generate_ledger_rrrecovery_txn
 from ....storage.error import StorageError
 from ....utils import sentinel
@@ -267,7 +265,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         # Need endorsement, so execute transaction flow
         (schema_id, schema_def) = result
 
-        job_id = uuid.uuid4().hex
+        job_id = uuid4().hex
         meta_data = {"context": {"job_id": job_id, "schema_id": schema_id}}
 
         transaction_manager = TransactionManager(profile)
@@ -445,7 +443,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             )
 
         # Need endorsement, so execute transaction flow
-        job_id = uuid.uuid4().hex
+        job_id = uuid4().hex
 
         meta_data = {
             "context": {
@@ -616,7 +614,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         # Need endorsement, so execute transaction flow
         (rev_reg_def_id, reg_rev_def) = result
 
-        job_id = uuid.uuid4().hex
+        job_id = uuid4().hex
         meta_data = {
             "context": {
                 "job_id": job_id,
@@ -874,7 +872,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         (rev_reg_def_id, requested_txn) = result
 
-        job_id = uuid.uuid4().hex
+        job_id = uuid4().hex
         meta_data = {
             "context": {
                 "job_id": job_id,
@@ -987,7 +985,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         (rev_reg_def_id, requested_txn) = result
 
-        job_id = uuid.uuid4().hex
+        job_id = uuid4().hex
         meta_data = {
             "context": {
                 "job_id": job_id,

@@ -48,6 +48,7 @@ unflatten="~0.1"
 sd-jwt = "^0.10.3"
 did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
+uuid_utils = "^0.7.0"
 
 # askar
 aries-askar= { version = "~0.3.0", optional = true }
