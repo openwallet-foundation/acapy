@@ -8,6 +8,7 @@ from .record import StorageRecord
 
 
 DEFAULT_PAGE_SIZE = 100
+MAXIMUM_PAGE_SIZE = 10000
 
 
 def validate_record(record: StorageRecord, *, delete=False):

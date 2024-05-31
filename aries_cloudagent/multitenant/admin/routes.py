@@ -10,6 +10,8 @@ from aiohttp_apispec import (
 )
 from marshmallow import ValidationError, fields, validate, validates_schema
 
+from aries_cloudagent.storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
+
 from ...admin.decorators.auth import admin_authentication
 from ...admin.request_context import AdminRequestContext
 from ...core.error import BaseError
@@ -359,6 +361,25 @@ class WalletListQueryStringSchema(OpenAPISchema):
     wallet_name = fields.Str(
         metadata={"description": "Wallet name", "example": "MyNewWallet"}
     )
+    limit = fields.Int(
+        required=False,
+        missing=DEFAULT_PAGE_SIZE,
+        validate=lambda x: x > 0 and x <= MAXIMUM_PAGE_SIZE,
+        metadata={"description": "Number of results to return", "example": 50},
+        error_messages={
+            "validator_failed": (
+                "Value must be greater than 0 and "
+                f"less than or equal to {MAXIMUM_PAGE_SIZE}"
+            )
+        },
+    )
+    offset = fields.Int(
+        required=False,
+        missing=0,
+        validate=lambda x: x >= 0,
+        metadata={"description": "Offset for pagination", "example": 0},
+        error_messages={"validator_failed": "Value must be 0 or greater"},
+    )
 
 
 @docs(tags=["multitenancy"], summary="Query subwallets")
@@ -380,9 +401,17 @@ async def wallets_list(request: web.BaseRequest):
     if wallet_name:
         query["wallet_name"] = wallet_name
 
+    limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+    offset = int(request.query.get("offset", 0))
+
     try:
         async with profile.session() as session:
-            records = await WalletRecord.query(session, tag_filter=query)
+            records = await WalletRecord.query(
+                session,
+                tag_filter=query,
+                limit=limit,
+                offset=offset,
+            )
         results = [format_wallet_record(record) for record in records]
         results.sort(key=lambda w: w["created_at"])
     except (StorageError, BaseModelError) as err:
