@@ -11,7 +11,10 @@ class Injector(BaseInjector):
     """Injector implementation with static and dynamic bindings."""
 
     def __init__(
-        self, settings: Mapping[str, object] = None, *, enforce_typing: bool = True
+        self,
+        settings: Optional[Mapping[str, object]] = None,
+        *,
+        enforce_typing: bool = True,
     ):
         """Initialize an `Injector`."""
         self.enforce_typing = enforce_typing
@@ -54,7 +57,7 @@ class Injector(BaseInjector):
     def inject_or(
         self,
         base_cls: Type[InjectType],
-        settings: Mapping[str, object] = None,
+        settings: Optional[Mapping[str, object]] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
         """Get the provided instance of a given class identifier or default if not found.
@@ -92,7 +95,7 @@ class Injector(BaseInjector):
     def inject(
         self,
         base_cls: Type[InjectType],
-        settings: Mapping[str, object] = None,
+        settings: Optional[Mapping[str, object]] = None,
     ) -> InjectType:
         """Get the provided instance of a given class identifier.
 

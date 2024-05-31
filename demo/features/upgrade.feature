@@ -1,6 +1,6 @@
 Feature: ACA-Py Anoncreds Upgrade
 
-   @GHA
+   @PR @Release
    Scenario Outline: Using revocation api, issue, revoke credentials and publish
       Given we have "3" agents
          | name  | role     | capabilities        |

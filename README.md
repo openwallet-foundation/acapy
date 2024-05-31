@@ -1,7 +1,6 @@
 # Hyperledger Aries Cloud Agent - Python  <!-- omit in toc -->
 
 [![pypi releases](https://img.shields.io/pypi/v/aries_cloudagent)](https://pypi.org/project/aries-cloudagent/)
-[![codecov](https://codecov.io/gh/hyperledger/aries-cloudagent-python/branch/main/graph/badge.svg)](https://codecov.io/gh/hyperledger/aries-cloudagent-python)
 
 <!-- ![logo](/doc/assets/aries-cloudagent-python-logo-bw.png) -->
 

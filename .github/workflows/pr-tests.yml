@@ -9,8 +9,13 @@ concurrency:
 
 jobs:
   tests:
-    name: Tests
-    uses: ./.github/workflows/tests.yml
-    with:
-      python-version: "3.9"
-      os: "ubuntu-latest"
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: Tests
+      uses: ./.github/actions/run-unit-tests
+      with:
+        python-version: "3.9"
+        os: "ubuntu-latest"
+        is_pr: "true"

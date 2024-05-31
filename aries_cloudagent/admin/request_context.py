@@ -21,13 +21,13 @@ class AdminRequestContext:
         self,
         profile: Profile,
         *,
-        context: InjectionContext = None,
-        settings: Mapping[str, object] = None,
-        root_profile: Profile = None,
-        metadata: dict = None
+        context: Optional[InjectionContext] = None,
+        settings: Optional[Mapping[str, object]] = None,
+        root_profile: Optional[Profile] = None,
+        metadata: Optional[dict] = None
     ):
         """Initialize an instance of AdminRequestContext."""
-        self._context = (context or profile.context).start_scope("admin", settings)
+        self._context = (context or profile.context).start_scope(settings)
         self._profile = profile
         self._root_profile = root_profile
         self._metadata = metadata
@@ -72,7 +72,7 @@ class AdminRequestContext:
     def inject(
         self,
         base_cls: Type[InjectType],
-        settings: Mapping[str, object] = None,
+        settings: Optional[Mapping[str, object]] = None,
     ) -> InjectType:
         """Get the provided instance of a given class identifier.
 
@@ -89,7 +89,7 @@ class AdminRequestContext:
     def inject_or(
         self,
         base_cls: Type[InjectType],
-        settings: Mapping[str, object] = None,
+        settings: Optional[Mapping[str, object]] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
         """Get the provided instance of a given class identifier or default if not found.
@@ -111,7 +111,7 @@ class AdminRequestContext:
 
     @classmethod
     def test_context(
-        cls, session_inject: dict = None, profile: Profile = None
+        cls, session_inject: Optional[dict] = None, profile: Optional[Profile] = None
     ) -> "AdminRequestContext":
         """Quickly set up a new admin request context for tests."""
         ctx = AdminRequestContext(profile or IN_MEM.resolved.test_profile())
