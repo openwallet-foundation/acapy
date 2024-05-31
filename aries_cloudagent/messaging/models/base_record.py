@@ -12,7 +12,12 @@ from uuid_utils import uuid4
 from ...cache.base import BaseCache
 from ...config.settings import BaseSettings
 from ...core.profile import ProfileSession
-from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
+from ...storage.base import (
+    DEFAULT_PAGE_SIZE,
+    BaseStorage,
+    StorageDuplicateError,
+    StorageNotFoundError,
+)
 from ...storage.record import StorageRecord
 from ..util import datetime_to_str, time_now
 from ..valid import INDY_ISO8601_DATETIME_EXAMPLE, INDY_ISO8601_DATETIME_VALIDATE
@@ -284,6 +289,8 @@ class BaseRecord(BaseModel):
         session: ProfileSession,
         tag_filter: dict = None,
         *,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
         post_filter_positive: dict = None,
         post_filter_negative: dict = None,
         alt: bool = False,
@@ -293,6 +300,8 @@ class BaseRecord(BaseModel):
         Args:
             session: The profile session to use
             tag_filter: An optional dictionary of tag filter clauses
+            limit: The maximum number of records to retrieve
+            offset: The offset to start retrieving records from
             post_filter_positive: Additional value filters to apply matching positively
             post_filter_negative: Additional value filters to apply matching negatively
             alt: set to match any (positive=True) value or miss all (positive=False)
@@ -300,11 +309,24 @@ class BaseRecord(BaseModel):
         """
 
         storage = session.inject(BaseStorage)
-        rows = await storage.find_all_records(
-            cls.RECORD_TYPE,
-            cls.prefix_tag_filter(tag_filter),
-            options={"retrieveTags": False},
-        )
+
+        options = {"retrieveTags": False}
+        tag_query = cls.prefix_tag_filter(tag_filter)
+        if limit is not None or offset is not None:
+            rows = await storage.find_paginated_records(
+                type_filter=cls.RECORD_TYPE,
+                tag_query=tag_query,
+                limit=limit or DEFAULT_PAGE_SIZE,
+                offset=offset or 0,
+                options=options,
+            )
+        else:
+            rows = await storage.find_all_records(
+                type_filter=cls.RECORD_TYPE,
+                tag_query=tag_query,
+                options=options,
+            )
+
         result = []
         for record in rows:
             vals = json.loads(record.value)
