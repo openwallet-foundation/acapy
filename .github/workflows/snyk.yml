@@ -1,10 +1,11 @@
 name: Snyk Container
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches:
+      - main
     paths:
-      - aries_cloudagent
-      - docker
+      - aries_cloudagent/**
+      - docker/**
 
 jobs:
   snyk:
@@ -12,13 +13,15 @@ jobs:
     if: ${{ github.repository_owner == 'hyperledger' }}
     steps:
     - uses: actions/checkout@v4
+
     - name: Build a Docker image
       run: docker build  -t aries-cloudagent -f docker/Dockerfile .
+
     - name: Run Snyk to check Docker image for vulnerabilities
       # Snyk can be used to break the build when it detects vulnerabilities.
       # In this case we want to upload the issues to GitHub Code Scanning
       continue-on-error: true
-      uses: snyk/actions/docker@master
+      uses: snyk/actions/docker@0.4.0
       env:
         # In order to use the Snyk Action you will need to have a Snyk API token.
         # More details in https://github.com/snyk/actions#getting-your-snyk-token
@@ -27,6 +30,14 @@ jobs:
       with:
         image: aries-cloudagent
         args: --file=docker/Dockerfile
+
+      # Replace any "null" security severity values with 0. The null value is used in the case
+      # of license-related findings, which do not do not indicate a security vulnerability.
+      # See https://github.com/github/codeql-action/issues/2187 for more context.
+    - name: Post process snyk sarif file  
+      run: |
+        sed -i 's/"security-severity": "null"/"security-severity": "0"/g' snyk.sarif
+    
     - name: Upload result to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v3
       with:

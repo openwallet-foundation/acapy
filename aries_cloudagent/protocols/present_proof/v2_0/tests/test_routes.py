@@ -1,11 +1,14 @@
 from copy import deepcopy
-from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
-from marshmallow import ValidationError
 from time import time
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
 
+from marshmallow import ValidationError
+
+from aries_cloudagent.tests import mock
+
 from .....admin.request_context import AdminRequestContext
+from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder
 from .....indy.models.proof_request import IndyProofReqAttrSpecSchema
 from .....indy.verifier import IndyVerifier
@@ -13,9 +16,7 @@ from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder
 from .....storage.vc_holder.vc_record import VCRecord
-
 from ...dif.pres_exch import SchemaInputDescriptor
-
 from .. import routes as test_module
 from ..messages.pres_format import V20PresFormat
 from ..models.pres_exchange import V20PresExRecord
@@ -126,7 +127,12 @@ DIF_PRES_PROPOSAL = {
 
 class TestPresentProofRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
-        self.context = AdminRequestContext.test_context()
+        profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        self.context = AdminRequestContext.test_context(profile=profile)
         self.profile = self.context.profile
         injector = self.profile.context.injector
 
@@ -181,6 +187,7 @@ class TestPresentProofRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
     async def test_validate(self):

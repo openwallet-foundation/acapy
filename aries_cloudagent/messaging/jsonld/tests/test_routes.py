@@ -1,15 +1,16 @@
-from copy import deepcopy
 import json
-
-from aiohttp import web
+from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
-from aries_cloudagent.tests import mock
-from pyld import jsonld
-import pytest
 
-from .. import routes as test_module
+import pytest
+from aiohttp import web
+from pyld import jsonld
+
+from aries_cloudagent.tests import mock
+
 from ....admin.request_context import AdminRequestContext
 from ....config.base import InjectionError
+from ....core.in_memory import InMemoryProfile
 from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....vc.ld_proofs.document_loader import DocumentLoader
@@ -17,6 +18,7 @@ from ....wallet.base import BaseWallet
 from ....wallet.did_method import SOV, DIDMethods
 from ....wallet.error import WalletError
 from ....wallet.key_type import ED25519
+from .. import routes as test_module
 from ..error import (
     BadJWSHeaderError,
     DroppedAttributeError,
@@ -84,7 +86,12 @@ def mock_verify_credential():
 
 @pytest.fixture
 def mock_sign_request(mock_sign_credential):
-    context = AdminRequestContext.test_context()
+    profile = InMemoryProfile.test_profile(
+        settings={
+            "admin.admin_api_key": "secret-key",
+        }
+    )
+    context = AdminRequestContext.test_context({}, profile)
     outbound_message_router = mock.CoroutineMock()
     request_dict = {
         "context": context,
@@ -110,6 +117,7 @@ def mock_sign_request(mock_sign_credential):
             },
         ),
         __getitem__=lambda _, k: request_dict[k],
+        headers={"x-api-key": "secret-key"},
     )
     yield request
 
@@ -137,7 +145,14 @@ def request_body():
 @pytest.fixture
 def mock_verify_request(mock_verify_credential, mock_resolver, request_body):
     def _mock_verify_request(request_body=request_body):
-        context = AdminRequestContext.test_context({DIDResolver: mock_resolver})
+        profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        context = AdminRequestContext.test_context(
+            {DIDResolver: mock_resolver}, profile
+        )
         outbound_message_router = mock.CoroutineMock()
         request_dict = {
             "context": context,
@@ -148,6 +163,7 @@ def mock_verify_request(mock_verify_credential, mock_resolver, request_body):
             query={},
             json=mock.CoroutineMock(return_value=request_body),
             __getitem__=lambda _, k: request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
         return request
 
@@ -270,7 +286,12 @@ def test_post_process_routes():
 
 class TestJSONLDRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.context = AdminRequestContext.test_context()
+        self.profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
+        self.context = AdminRequestContext.test_context({}, self.profile)
         self.context.profile.context.injector.bind_instance(
             DocumentLoader, custom_document_loader
         )
@@ -287,6 +308,7 @@ class TestJSONLDRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
     async def test_verify_credential(self):

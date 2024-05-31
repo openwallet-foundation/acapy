@@ -13,6 +13,7 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
+from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..core.event_bus import EventBus
 from ..ledger.error import LedgerError
@@ -145,6 +146,7 @@ class SchemaPostRequestSchema(OpenAPISchema):
 @docs(tags=["anoncreds - schemas"], summary="Create a schema on the connected ledger")
 @request_schema(SchemaPostRequestSchema())
 @response_schema(SchemaResultSchema(), 200, description="")
+@tenant_authentication
 async def schemas_post(request: web.BaseRequest):
     """Request handler for creating a schema.
 
@@ -216,6 +218,7 @@ async def schemas_post(request: web.BaseRequest):
 @docs(tags=["anoncreds - schemas"], summary="Retrieve an individual schemas details")
 @match_info_schema(SchemaIdMatchInfo())
 @response_schema(GetSchemaResultSchema(), 200, description="")
+@tenant_authentication
 async def schema_get(request: web.BaseRequest):
     """Request handler for getting a schema.
 
@@ -245,6 +248,7 @@ async def schema_get(request: web.BaseRequest):
 @docs(tags=["anoncreds - schemas"], summary="Retrieve all schema ids")
 @querystring_schema(SchemasQueryStringSchema())
 @response_schema(GetSchemasResponseSchema(), 200, description="")
+@tenant_authentication
 async def schemas_get(request: web.BaseRequest):
     """Request handler for getting all schemas.
 
@@ -388,6 +392,7 @@ class CredDefsQueryStringSchema(OpenAPISchema):
 )
 @request_schema(CredDefPostRequestSchema())
 @response_schema(CredDefResultSchema(), 200, description="")
+@tenant_authentication
 async def cred_def_post(request: web.BaseRequest):
     """Request handler for creating .
 
@@ -439,6 +444,7 @@ async def cred_def_post(request: web.BaseRequest):
 )
 @match_info_schema(CredIdMatchInfo())
 @response_schema(GetCredDefResultSchema(), 200, description="")
+@tenant_authentication
 async def cred_def_get(request: web.BaseRequest):
     """Request handler for getting credential definition.
 
@@ -486,6 +492,7 @@ class GetCredDefsResponseSchema(OpenAPISchema):
 )
 @querystring_schema(CredDefsQueryStringSchema())
 @response_schema(GetCredDefsResponseSchema(), 200, description="")
+@tenant_authentication
 async def cred_defs_get(request: web.BaseRequest):
     """Request handler for getting all credential definitions.
 
@@ -576,6 +583,7 @@ class RevRegCreateRequestSchemaAnoncreds(OpenAPISchema):
 )
 @request_schema(RevRegCreateRequestSchemaAnoncreds())
 @response_schema(RevRegDefResultSchema(), 200, description="")
+@tenant_authentication
 async def rev_reg_def_post(request: web.BaseRequest):
     """Request handler for creating revocation registry definition."""
     context: AdminRequestContext = request["context"]
@@ -659,6 +667,7 @@ class RevListCreateRequestSchema(OpenAPISchema):
 )
 @request_schema(RevListCreateRequestSchema())
 @response_schema(RevListResultSchema(), 200, description="")
+@tenant_authentication
 async def rev_list_post(request: web.BaseRequest):
     """Request handler for creating registering a revocation list."""
     context: AdminRequestContext = request["context"]
@@ -694,6 +703,7 @@ async def rev_list_post(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
+@tenant_authentication
 async def upload_tails_file(request: web.BaseRequest):
     """Request handler to upload local tails file for revocation registry.
 
@@ -729,6 +739,7 @@ async def upload_tails_file(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
+@tenant_authentication
 async def set_active_registry(request: web.BaseRequest):
     """Request handler to set the active registry.
 

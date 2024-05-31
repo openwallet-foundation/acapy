@@ -25,6 +25,9 @@ from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     SchemaResult,
     SchemaState,
 )
+from aries_cloudagent.askar.profile import (
+    AskarProfile,
+)
 from aries_cloudagent.askar.profile_anon import (
     AskarAnoncredsProfile,
 )
@@ -33,7 +36,6 @@ from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfile,
     InMemoryProfileSession,
 )
-from aries_cloudagent.indy.sdk.profile import IndySdkProfile
 from aries_cloudagent.tests import mock
 
 from .. import issuer as test_module
@@ -135,9 +137,7 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert isinstance(self.issuer.profile, AskarAnoncredsProfile)
 
     async def test_init_wrong_profile_type(self):
-        self.issuer._profile = InMemoryProfile.test_profile(
-            profile_class=IndySdkProfile
-        )
+        self.issuer._profile = InMemoryProfile.test_profile(profile_class=AskarProfile)
         with self.assertRaises(ValueError):
             self.issuer.profile
 

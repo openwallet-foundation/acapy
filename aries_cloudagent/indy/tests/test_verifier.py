@@ -1,5 +1,3 @@
-import pytest
-
 from copy import deepcopy
 from time import time
 
@@ -306,7 +304,6 @@ class MockVerifier(IndyVerifier):
         raise NotImplementedError()
 
 
-@pytest.mark.indy
 class TestIndySdkVerifier(IsolatedAsyncioTestCase):
     def setUp(self):
         self.ledger = mock.MagicMock(

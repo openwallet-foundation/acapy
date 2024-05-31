@@ -331,7 +331,6 @@ class ProfileManagerProvider(BaseProvider):
         "askar": "aries_cloudagent.askar.profile.AskarProfileManager",
         "askar-anoncreds": "aries_cloudagent.askar.profile_anon.AskarAnonProfileManager",
         "in_memory": "aries_cloudagent.core.in_memory.InMemoryProfileManager",
-        "indy": "aries_cloudagent.indy.sdk.profile.IndySdkProfileManager",
     }
 
     def __init__(self):

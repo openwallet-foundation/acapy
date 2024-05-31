@@ -1,7 +1,7 @@
 import asyncio
 import json
-
 from unittest import IsolatedAsyncioTestCase
+
 from aries_cloudagent.tests import mock
 
 from .....connections.models.conn_record import ConnRecord
@@ -23,7 +23,11 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 
 class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.profile = InMemoryProfile.test_profile()
+        self.profile = InMemoryProfile.test_profile(
+            settings={
+                "admin.admin_api_key": "secret-key",
+            }
+        )
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
         self.session = await self.profile.session()
@@ -67,6 +71,7 @@ class TestEndorseTransactionRoutes(IsolatedAsyncioTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+            headers={"x-api-key": "secret-key"},
         )
 
         self.test_did = "sample-did"
