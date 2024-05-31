@@ -3,11 +3,11 @@
 import json
 import logging
 import sys
-import uuid
 from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Type, TypeVar, Union
 
 from marshmallow import fields
+from uuid_utils import uuid4
 
 from ...cache.base import BaseCache
 from ...config.settings import BaseSettings
@@ -355,7 +355,7 @@ class BaseRecord(BaseModel):
                 new_record = False
             else:
                 if not self._id:
-                    self._id = str(uuid.uuid4())
+                    self._id = str(uuid4())
                 self.created_at = self.updated_at
                 await storage.add_record(self.storage_record)
                 new_record = True
