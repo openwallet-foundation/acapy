@@ -1092,6 +1092,29 @@ class IndyVdrLedger(BaseLedger):
             ) from err
 
         response_value = response["data"]["value"]
+        accum_to = response_value.get("accum_to")
+
+        # If accum_to is not present, then the timestamp_to was before the registry
+        # was created. In this case, we need to fetch the registry creation timestamp and
+        # re-calculate the delta.
+        if not accum_to:
+            try:
+                (_, timestamp) = await self.get_revoc_reg_entry(
+                    revoc_reg_id, int(time())
+                )
+                fetch_req = ledger.build_get_revoc_reg_delta_request(
+                    public_info and public_info.did,
+                    revoc_reg_id,
+                    timestamp_from,
+                    timestamp,
+                )
+                response = await self._submit(fetch_req, sign_did=public_info)
+                response_value = response["data"]["value"]
+            except VdrError as err:
+                raise LedgerError(
+                    f"get_revoc_reg_delta failed for revoc_reg_id='{revoc_reg_id}'"
+                ) from err
+
         delta_value = {
             "accum": response_value["accum_to"]["value"]["accum"],
             "issued": response_value.get("issued", []),

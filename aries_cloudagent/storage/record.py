@@ -2,7 +2,8 @@
 
 from collections import namedtuple
 from typing import Optional
-from uuid import uuid4
+
+from uuid_utils import uuid4
 
 
 class StorageRecord(namedtuple("StorageRecord", "type value tags id")):

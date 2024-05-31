@@ -2,7 +2,8 @@
 
 import logging
 from typing import Optional, Sequence, Tuple
-from uuid import uuid4
+
+from uuid_utils import uuid4
 
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
@@ -17,7 +18,6 @@ from ..protocols.endorse_transaction.v1_0.util import (
     is_author_role,
 )
 from ..storage.base import StorageNotFoundError
-
 from .error import (
     RevocationError,
     RevocationInvalidStateValueError,

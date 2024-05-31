@@ -5,10 +5,10 @@ An attach decorator embeds content or specifies appended content.
 
 import copy
 import json
-import uuid
 from typing import Any, Mapping, Sequence, Tuple, Union
 
 from marshmallow import EXCLUDE, fields, pre_load
+from uuid_utils import uuid4
 
 from ...did.did_key import DIDKey
 from ...wallet.base import BaseWallet
@@ -620,7 +620,7 @@ class AttachDecorator(BaseModel):
             byte_count: optional attachment byte count
         """
         return AttachDecorator(
-            ident=ident or str(uuid.uuid4()),
+            ident=ident or str(uuid4()),
             description=description,
             filename=filename,
             mime_type="text/string",
@@ -655,7 +655,7 @@ class AttachDecorator(BaseModel):
 
         """
         return AttachDecorator(
-            ident=ident or str(uuid.uuid4()),
+            ident=ident or str(uuid4()),
             description=description,
             filename=filename,
             mime_type="application/json",
@@ -692,7 +692,7 @@ class AttachDecorator(BaseModel):
 
         """
         return AttachDecorator(
-            ident=ident or str(uuid.uuid4()),
+            ident=ident or str(uuid4()),
             description=description,
             filename=filename,
             mime_type="application/json",
@@ -731,7 +731,7 @@ class AttachDecorator(BaseModel):
 
         """
         return AttachDecorator(
-            ident=ident or str(uuid.uuid4()),
+            ident=ident or str(uuid4()),
             description=description,
             filename=filename,
             mime_type=mime_type or "application/json",
