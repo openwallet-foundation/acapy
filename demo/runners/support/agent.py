@@ -785,7 +785,7 @@ class DemoAgent:
             "wallet_name": target_wallet_name,
             "wallet_type": self.wallet_type,
             "label": target_wallet_name,
-            "wallet_webhook_urls": self.webhook_url,
+            "wallet_webhook_urls": [self.webhook_url],
             "wallet_dispatch_type": "both",
         }
         self.wallet_name = target_wallet_name
