@@ -99,7 +99,7 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
                 "debug.auto_accept_invites": True,
                 "debug.auto_accept_requests": True,
                 "multitenant.enabled": True,
-                "wallet.id": True,
+                "wallet.id": "test-wallet-id",
             },
             bind={
                 BaseResponder: self.responder,

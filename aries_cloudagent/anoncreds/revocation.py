@@ -10,7 +10,6 @@ import time
 from pathlib import Path
 from typing import List, NamedTuple, Optional, Sequence, Tuple
 from urllib.parse import urlparse
-from uuid import uuid4
 
 import base58
 from anoncreds import (
@@ -23,13 +22,11 @@ from anoncreds import (
 )
 from aries_askar.error import AskarError
 from requests import RequestException, Session
+from uuid_utils import uuid4
 
 from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDef
 
-from ..askar.profile_anon import (
-    AskarAnoncredsProfile,
-    AskarAnoncredsProfileSession,
-)
+from ..askar.profile_anon import AskarAnoncredsProfile, AskarAnoncredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession

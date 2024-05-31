@@ -2,7 +2,6 @@
 
 from collections import OrderedDict
 from typing import Mapping, Optional, Text, Union
-import uuid
 
 from marshmallow import (
     EXCLUDE,
@@ -13,6 +12,7 @@ from marshmallow import (
     pre_dump,
     pre_load,
 )
+from uuid_utils import uuid4
 
 from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..wallet.base import BaseWallet
@@ -75,7 +75,7 @@ class AgentMessage(BaseModel, BaseMessage):
             self._message_id = _id
             self._message_new_id = False
         else:
-            self._message_id = str(uuid.uuid4())
+            self._message_id = str(uuid4())
             self._message_new_id = True
         self._message_decorators = (
             _decorators if _decorators is not None else DecoratorSet()
