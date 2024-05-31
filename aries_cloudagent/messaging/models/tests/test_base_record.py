@@ -170,7 +170,9 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
         mock_storage.find_all_records.return_value = [stored]
         result = await BaseRecordImpl.query(session, tag_filter)
         mock_storage.find_all_records.assert_awaited_once_with(
-            BaseRecordImpl.RECORD_TYPE, tag_filter, options={"retrieveTags": False}
+            type_filter=BaseRecordImpl.RECORD_TYPE,
+            tag_query=tag_filter,
+            options={"retrieveTags": False},
         )
         assert result and isinstance(result[0], BaseRecordImpl)
         assert result[0]._id == record_id
@@ -220,8 +222,8 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
             session, tag_filter, post_filter_positive={"a": "one"}
         )
         mock_storage.find_all_records.assert_awaited_once_with(
-            ARecordImpl.RECORD_TYPE,
-            tag_filter,
+            type_filter=ARecordImpl.RECORD_TYPE,
+            tag_query=tag_filter,
             options={"retrieveTags": False},
         )
         assert result and isinstance(result[0], ARecordImpl)
