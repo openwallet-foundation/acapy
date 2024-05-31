@@ -1,0 +1,55 @@
+name: Run Unit Tests
+description: "Run unit tests for the project"
+
+inputs:
+  python-version:
+    description: "Python version"
+    required: true
+  os:
+    description: "Operating system"
+    required: true
+  is_pr:
+    description: "Is this a PR?"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'requirements*.txt'
+    - name: Install the project dependencies
+      shell: bash
+      run: |
+        pip install poetry
+        poetry install --all-extras
+    - name: Tests
+      shell: bash
+      run: |
+        poetry run pytest --cov=aries_cloudagent --cov-report term-missing --cov-report xml --ignore-glob=/tests/* --ignore-glob=demo/* --ignore-glob=docker/* --ignore-glob=docs/* --ignore-glob=scripts/* 2>&1 | tee pytest.log
+        PYTEST_EXIT_CODE=${PIPESTATUS[0]}
+        if grep -Eq "RuntimeWarning: coroutine .* was never awaited" pytest.log; then
+          echo "Failure: Detected unawaited coroutine warning in pytest output."
+          exit 1
+        fi
+        exit $PYTEST_EXIT_CODE
+    - name: Save PR number to file
+      if: inputs.is_pr == 'true' 
+      shell: bash
+      run: echo ${{ github.event.number }} > PR_NUMBER
+    - name: Archive PR number
+      if: inputs.is_pr == 'true' 
+      uses: actions/upload-artifact@v4
+      with:  
+        name: PR_NUMBER
+        path: PR_NUMBER
+    - name: Archive Test Results
+      if: inputs.is_pr == 'true' 
+      uses: actions/upload-artifact@v4
+      with:  
+        name: TEST_COV
+        path: test-reports/coverage.xml

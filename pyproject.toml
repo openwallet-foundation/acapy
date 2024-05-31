@@ -17,9 +17,9 @@ repository = "https://github.com/hyperledger/aries-cloudagent-python"
 [tool.poetry.dependencies]
 python = "^3.9"
 aiohttp="~3.9.4"
-aiohttp-apispec="~2.2.1"
+aiohttp-apispec = { git = "https://github.com/ff137/aiohttp-apispec.git", tag = "v3.0.1" }
 aiohttp-cors="~0.7.0"
-apispec="~3.3.0"
+apispec="^6.6.0"
 async-timeout="~4.0.2"
 base58="~2.1.0"
 ConfigArgParse="~1.5.3"
@@ -132,9 +132,6 @@ markers = [
 ]
 junit_family = "xunit1"
 asyncio_mode = "auto"
-filterwarnings = [
-    'ignore:distutils Version classes are deprecated. Use packaging.version instead.:DeprecationWarning', # Ignore specific DeprecationWarning for old packages using distutils version class
-]
 
 [tool.coverage.run]
 
