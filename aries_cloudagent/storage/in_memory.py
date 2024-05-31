@@ -102,6 +102,29 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
             raise StorageNotFoundError("Record not found: {}".format(record.id))
         del self.profile.records[record.id]
 
+    async def find_paginated_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        limit: int = DEFAULT_PAGE_SIZE,
+        offset: int = 0,
+        options: Mapping = None,
+    ) -> Sequence[StorageRecord]:
+        """Retrieve a page of records matching a particular type filter and tag query.
+
+        Args:
+            type_filter: The type of records to filter by
+            tag_query: An optional dictionary of tag filter clauses
+            limit: The maximum number of records to retrieve
+            offset: The offset to start retrieving records from
+            options: Additional options for the query
+        """
+        results = []
+        for record in self.profile.records.values()[offset : offset + limit]:
+            if record.type == type_filter and tag_query_match(record.tags, tag_query):
+                results.append(record)
+        return results
+
     async def find_all_records(
         self,
         type_filter: str,

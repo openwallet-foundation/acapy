@@ -169,6 +169,38 @@ class AskarStorage(BaseStorage):
             tags=row.tags,
         )
 
+    async def find_paginated_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        limit: int = DEFAULT_PAGE_SIZE,
+        offset: int = 0,
+        options: Mapping = None,
+    ) -> Sequence[StorageRecord]:
+        """Retrieve a page of records matching a particular type filter and tag query.
+
+        Args:
+            type_filter: The type of records to filter by
+            tag_query: An optional dictionary of tag filter clauses
+            limit: The maximum number of records to retrieve
+            offset: The offset to start retrieving records from
+            options: Additional options for the query
+        """
+        for_update = bool(options and options.get("forUpdate"))
+        results = []
+        async for row in self._session.handle.scan(
+            type_filter, tag_query, limit=limit, offset=offset, for_update=for_update
+        ):
+            results += (
+                StorageRecord(
+                    type=row.category,
+                    id=row.name,
+                    value=None if row.value is None else row.value.decode("utf-8"),
+                    tags=row.tags,
+                ),
+            )
+        return results
+
     async def find_all_records(
         self,
         type_filter: str,
