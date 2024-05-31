@@ -3,9 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
 
-from .error import StorageError, StorageDuplicateError, StorageNotFoundError
+from .error import StorageDuplicateError, StorageError, StorageNotFoundError
 from .record import StorageRecord
-
 
 DEFAULT_PAGE_SIZE = 100
 MAXIMUM_PAGE_SIZE = 10000

@@ -5,7 +5,6 @@ from typing import Mapping, Sequence
 from aries_askar import AskarError, AskarErrorCode, Session
 
 from ..askar.profile import AskarProfile, AskarProfileSession
-
 from .base import (
     DEFAULT_PAGE_SIZE,
     BaseStorage,
@@ -14,8 +13,8 @@ from .base import (
     validate_record,
 )
 from .error import (
-    StorageError,
     StorageDuplicateError,
+    StorageError,
     StorageNotFoundError,
     StorageSearchError,
 )

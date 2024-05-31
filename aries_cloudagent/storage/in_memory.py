@@ -3,7 +3,6 @@
 from typing import Mapping, Sequence
 
 from ..core.in_memory import InMemoryProfile
-
 from .base import (
     DEFAULT_PAGE_SIZE,
     BaseStorage,
@@ -11,11 +10,7 @@ from .base import (
     BaseStorageSearchSession,
     validate_record,
 )
-from .error import (
-    StorageDuplicateError,
-    StorageNotFoundError,
-    StorageSearchError,
-)
+from .error import StorageDuplicateError, StorageNotFoundError, StorageSearchError
 from .record import StorageRecord
 
 
