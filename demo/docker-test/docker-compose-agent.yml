@@ -2,8 +2,8 @@ version: "3"
 services:
   vcr-agent:
     build:
-      context: ../../
-      dockerfile: docker/Dockerfile.run
+      context: ../
+      dockerfile: docker-agent/Dockerfile.acapy
     ports:
       - 8010:8010
       - 8001:8001
