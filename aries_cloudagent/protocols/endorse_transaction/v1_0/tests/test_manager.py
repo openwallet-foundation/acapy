@@ -1,7 +1,8 @@
 import asyncio
 import json
-import uuid
 from unittest import IsolatedAsyncioTestCase
+
+from uuid_utils import uuid4
 
 from .....admin.request_context import AdminRequestContext
 from .....anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
@@ -278,7 +279,7 @@ class TestTransactionManager(IsolatedAsyncioTestCase):
             "author_goal_code": TransactionRecord.WRITE_TRANSACTION,
         }
         mock_request.messages_attach = {
-            "@id": str(uuid.uuid4()),
+            "@id": str(uuid4()),
             "mime-type": "application/json",
             "data": {"json": self.test_messages_attach},
         }

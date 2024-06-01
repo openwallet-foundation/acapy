@@ -1,10 +1,9 @@
 """VC-API Routes."""
 
-import uuid
-
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow.exceptions import ValidationError
+from uuid_utils import uuid4
 
 from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
@@ -16,13 +15,9 @@ from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
 from .vc_ld.manager import VcLdpManager, VcLdpManagerError
 from .vc_ld.models import web_schemas
-from .vc_ld.models.credential import (
-    VerifiableCredential,
-)
+from .vc_ld.models.credential import VerifiableCredential
 from .vc_ld.models.options import LDProofVCOptions
-from .vc_ld.models.presentation import (
-    VerifiablePresentation,
-)
+from .vc_ld.models.presentation import VerifiablePresentation
 
 
 @docs(tags=["vc-api"], summary="List credentials")
@@ -151,7 +146,7 @@ async def store_credential_route(request: web.BaseRequest):
 
     try:
         vc = body["verifiableCredential"]
-        cred_id = vc["id"] if "id" in vc else f"urn:uuid:{str(uuid.uuid4())}"
+        cred_id = vc["id"] if "id" in vc else f"urn:uuid:{str(uuid4())}"
         options = {} if "options" not in body else body["options"]
 
         vc = VerifiableCredential.deserialize(vc)
