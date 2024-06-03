@@ -9,7 +9,7 @@ python = "^3.9"
 pytest = "^7.4.0"
 pytest-asyncio = "^0.21.0"
 asynctest = "^0.13.0"
-requests = "^2.31.0"
+requests = "^2.32.3"
 
 [tool.poetry.dev-dependencies]
 
