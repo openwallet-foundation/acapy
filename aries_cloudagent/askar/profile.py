@@ -219,7 +219,7 @@ class AskarProfileSession(ProfileSession):
     @property
     def store(self) -> Store:
         """Accessor for the Store instance."""
-        return self._handle and self._handle.store
+        return self._profile and self._profile.store
 
     @property
     def is_transaction(self) -> bool:

@@ -185,14 +185,12 @@ class AskarStorage(BaseStorage):
         """
         results = []
 
-        profile = self._session.profile
-        opened_store: Store = profile.opened.store
-        async for row in opened_store.scan(
+        async for row in self._session.store.scan(
             category=type_filter,
             tag_filter=tag_query,
             limit=limit,
             offset=offset,
-            profile=profile.settings.get("wallet.askar_profile"),
+            profile=self._session.profile.settings.get("wallet.askar_profile"),
         ):
             results += (
                 StorageRecord(
