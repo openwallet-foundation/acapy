@@ -1,4 +1,4 @@
-asyncpg~=0.26.0
+asyncpg~=0.29.0
 prompt_toolkit~=2.0.9
 web.py~=0.62
 pygments~=2.10
