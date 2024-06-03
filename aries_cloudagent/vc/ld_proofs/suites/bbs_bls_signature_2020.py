@@ -1,17 +1,16 @@
 """BbsBlsSignature2020 class."""
 
-from datetime import datetime, timezone
-from pytz import utc
+from datetime import datetime
 from typing import List, Optional, Union
 
-from ....wallet.util import b64_to_bytes, bytes_to_b64
+from dateutil import tz
 
+from ....wallet.util import b64_to_bytes, bytes_to_b64
 from ..crypto import _KeyPair as KeyPair
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..purposes import _ProofPurpose as ProofPurpose
 from ..validation_result import ProofResult
-
 from .bbs_bls_signature_2020_base import BbsBlsSignature2020Base
 
 
@@ -60,9 +59,9 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         # Set created if not already set
         if not proof.get("created"):
             # Use class date, or now
-            date = self.date or datetime.now(timezone.utc)
+            date = self.date or datetime.now(tz.UTC)
             if not date.tzinfo:
-                date = utc.localize(date)
+                date = date.replace(tzinfo=tz.UTC)
             proof["created"] = date.isoformat(timespec="seconds")
 
         # Allow purpose to update the proof; the `proof` is in the

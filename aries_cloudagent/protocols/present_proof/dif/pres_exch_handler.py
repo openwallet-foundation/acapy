@@ -13,7 +13,7 @@ import re
 from datetime import datetime
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-import pytz
+from dateutil import tz
 from dateutil.parser import ParserError
 from dateutil.parser import parse as dateutil_parser
 from jsonpath_ng import parse
@@ -613,10 +613,11 @@ class DIFPresExchHandler:
         if PYTZ_TIMEZONE_PATTERN.search(datetime_str):
             result = PYTZ_TIMEZONE_PATTERN.search(datetime_str).group(1)
             datetime_str = datetime_str.replace(result, "")
-            return dateutil_parser(datetime_str).replace(tzinfo=pytz.timezone(result))
+            return dateutil_parser(datetime_str).replace(
+                tzinfo=tz.gettz(result)
+            )
         else:
-            utc = pytz.UTC
-            return dateutil_parser(datetime_str).replace(tzinfo=utc)
+            return dateutil_parser(datetime_str).replace(tzinfo=tz.UTC)
 
     def validate_patch(self, to_check: any, _filter: Filter) -> bool:
         """Apply filter on match_value.
