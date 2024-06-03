@@ -3,17 +3,17 @@
 from uuid import uuid4
 
 from .base_message import BaseMessage, DIDCommVersion
-from .models.base import BaseModel
 
 
 class V2AgentMessage(BaseMessage):
     """DIDComm V2 message base class."""
 
     def __init__(self, message, *args, **kwargs):
+        """Initialize a v2 agent message instance."""
         super().__init__(*args, **kwargs)
         self.message = message
         self.msg_format = DIDCommVersion.v2
-        if not "id" in self.message:
+        if "id" not in self.message:
             self.message["id"] = str(uuid4())
 
     @property
@@ -33,12 +33,15 @@ class V2AgentMessage(BaseMessage):
         return self.message.get("thid", self.message.get("id"))
 
     def serialize(self, msg_format: DIDCommVersion = DIDCommVersion.v1) -> dict:
+        """Serialize a message."""
         return self.message
 
-    def deserialize(cls, value: dict, msg_format: DIDCommVersion = DIDCommVersion.v2):
+    def deserialize(self, value: dict, msg_format: DIDCommVersion = DIDCommVersion.v2):
+        """Deserialize a message."""
         self.message = value
         self.msg_format = msg_format
 
     @property
     def Handler(self):
+        """Message handler."""
         return None
