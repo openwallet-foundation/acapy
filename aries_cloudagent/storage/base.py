@@ -96,7 +96,6 @@ class BaseStorage(ABC):
         tag_query: Mapping = None,
         limit: int = DEFAULT_PAGE_SIZE,
         offset: int = 0,
-        options: Mapping = None,
     ) -> Sequence[StorageRecord]:
         """Retrieve a page of records matching a particular type filter and tag query.
 
@@ -105,7 +104,6 @@ class BaseStorage(ABC):
             tag_query: An optional dictionary of tag filter clauses
             limit: The maximum number of records to retrieve
             offset: The offset to start retrieving records from
-            options: Additional options for the query
         """
 
     @abstractmethod

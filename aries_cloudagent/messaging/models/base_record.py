@@ -318,7 +318,6 @@ class BaseRecord(BaseModel):
                 tag_query=tag_query,
                 limit=limit or DEFAULT_PAGE_SIZE,
                 offset=offset or 0,
-                options=options,
             )
         else:
             rows = await storage.find_all_records(
