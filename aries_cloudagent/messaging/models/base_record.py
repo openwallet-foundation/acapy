@@ -233,7 +233,7 @@ class BaseRecord(BaseModel):
 
         storage = session.inject(BaseStorage)
         result = await storage.get_record(
-            cls.RECORD_TYPE, record_id, {"forUpdate": for_update, "retrieveTags": False}
+            cls.RECORD_TYPE, record_id, options={"forUpdate": for_update}
         )
         vals = json.loads(result.value)
         return cls.from_storage(record_id, vals)
@@ -260,7 +260,7 @@ class BaseRecord(BaseModel):
         rows = await storage.find_all_records(
             cls.RECORD_TYPE,
             cls.prefix_tag_filter(tag_filter),
-            options={"forUpdate": for_update, "retrieveTags": False},
+            options={"forUpdate": for_update},
         )
         found = None
         for record in rows:
@@ -310,7 +310,6 @@ class BaseRecord(BaseModel):
 
         storage = session.inject(BaseStorage)
 
-        options = {"retrieveTags": False}
         tag_query = cls.prefix_tag_filter(tag_filter)
         if limit is not None or offset is not None:
             rows = await storage.find_paginated_records(
@@ -323,7 +322,6 @@ class BaseRecord(BaseModel):
             rows = await storage.find_all_records(
                 type_filter=cls.RECORD_TYPE,
                 tag_query=tag_query,
-                options=options,
             )
 
         result = []
