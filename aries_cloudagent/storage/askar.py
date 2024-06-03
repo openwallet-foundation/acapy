@@ -1,6 +1,6 @@
 """Aries-Askar implementation of BaseStorage interface."""
 
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from aries_askar import AskarError, AskarErrorCode, Session
 
@@ -340,11 +340,14 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
             tags=row.tags,
         )
 
-    async def fetch(self, max_count: int = None) -> Sequence[StorageRecord]:
+    async def fetch(
+        self, max_count: Optional[int] = None, offset: Optional[int] = None
+    ) -> Sequence[StorageRecord]:
         """Fetch the next list of results from the store.
 
         Args:
             max_count: Max number of records to return
+            offset: The offset to start retrieving records from
 
         Returns:
             A list of `StorageRecord` instances
@@ -355,11 +358,12 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
         """
         if self._done:
             raise StorageSearchError("Search query is complete")
-        await self._open()
+
+        limit = max_count or self.page_size
+        await self._open(limit=limit, offset=offset)
 
         count = 0
         ret = []
-        limit = max_count or self.page_size
 
         while count < limit:
             try:
@@ -385,7 +389,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
 
         return ret
 
-    async def _open(self):
+    async def _open(self, offset: Optional[int] = None, limit: Optional[int] = None):
         """Start the search query."""
         if self._scan:
             return
@@ -393,6 +397,8 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
             self._scan = self._profile.store.scan(
                 category=self.type_filter,
                 tag_filter=self.tag_query,
+                offset=offset,
+                limit=limit,
                 profile=self._profile.settings.get("wallet.askar_profile"),
             )
         except AskarError as err:
