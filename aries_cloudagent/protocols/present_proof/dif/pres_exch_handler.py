@@ -613,9 +613,7 @@ class DIFPresExchHandler:
         if PYTZ_TIMEZONE_PATTERN.search(datetime_str):
             result = PYTZ_TIMEZONE_PATTERN.search(datetime_str).group(1)
             datetime_str = datetime_str.replace(result, "")
-            return dateutil_parser(datetime_str).replace(
-                tzinfo=tz.gettz(result)
-            )
+            return dateutil_parser(datetime_str).replace(tzinfo=tz.gettz(result))
         else:
             return dateutil_parser(datetime_str).replace(tzinfo=tz.UTC)
 
