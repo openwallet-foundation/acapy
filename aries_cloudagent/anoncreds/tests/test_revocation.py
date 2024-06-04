@@ -11,7 +11,9 @@ from anoncreds import (
     RevocationRegistryDefinitionPrivate,
     RevocationStatusList,
     Schema,
-    W3cCredential,
+    # AnoncredsError,
+    # W3cCredential,
+    # CredentialRevocationConfig,
 )
 from aries_askar import AskarError, AskarErrorCode
 from requests import RequestException, Session
@@ -1025,6 +1027,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 "attr1": "value1",
                 "attr2": "value2",
             },
+            credential_type=Credential,
         )
         assert mock_create.called
 
@@ -1039,6 +1042,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 credential_offer={},
                 credential_request={},
                 credential_values={},
+                credential_type=Credential,
             )
 
         # missing cred def or cred def private
@@ -1050,6 +1054,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 credential_offer={},
                 credential_request={},
                 credential_values={},
+                credential_type=Credential,
             )
         mock_handle.fetch = mock.CoroutineMock(side_effect=[MockEntry(), None])
         with self.assertRaises(test_module.AnonCredsRevocationError):
@@ -1059,6 +1064,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 credential_offer={},
                 credential_request={},
                 credential_values={},
+                credential_type=Credential,
             )
 
     @mock.patch.object(InMemoryProfileSession, "handle")
@@ -1087,6 +1093,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 },
                 rev_reg_def_id="test-rev-reg-def-id",
                 tails_file_path="tails-file-path",
+                credential_type=Credential,
             )
 
         # missing rev list
@@ -1416,7 +1423,8 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
             )
         )
 
-        self.revocation._create_credential_w3c = mock.CoroutineMock(
+        # Test private funtion seperately - very large
+        self.revocation._create_credential = mock.CoroutineMock(
             return_value=({"cred": "cred"}, 98)
         )
 
@@ -1434,76 +1442,29 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         assert isinstance(result, tuple)
         assert mock_supports_revocation.call_count == 1
 
+    @pytest.mark.asyncio
     @mock.patch.object(InMemoryProfileSession, "handle")
-    @mock.patch.object(W3cCredential, "create", return_value=mock.MagicMock())
-    async def test_create_credential_w3c_private_no_rev_reg_or_tails(
-        self, mock_create, mock_handle
-    ):
+    async def test_create_credential_w3c_keyerror(self, mock_handle):
         mock_handle.fetch = mock.CoroutineMock(side_effect=[MockEntry(), MockEntry()])
-        await self.revocation._create_credential_w3c(
-            w3c_credential_definition_id="test-cred-def-id",
-            schema_attributes=["attr1", "attr2"],
-            w3c_credential_offer={
-                "schema_id": "CsQY9MGeD3CQP4EyuVFo5m:2:MYCO Biomarker:0.0.3",
-                "cred_def_id": "CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-                "key_correctness_proof": {},
-                "nonce": "nonce",
-            },
-            w3c_credential_request={},
-            w3c_credential_values={
-                "attr1": "value1",
-                "attr2": "value2",
-            },
-        )
-        assert mock_create.called
-
-        # askar error retrieving cred def
-        mock_handle.fetch = mock.CoroutineMock(
-            side_effect=AskarError(AskarErrorCode.UNEXPECTED, "test")
-        )
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation._create_credential_w3c(
-                w3c_credential_definition_id="test-cred-def-id",
+        with pytest.raises(test_module.AnonCredsRevocationError) as excinfo:
+            await self.revocation._create_credential(
+                credential_definition_id="test-cred-def-id",
                 schema_attributes=["attr1", "attr2"],
-                w3c_credential_offer={},
-                w3c_credential_request={},
-                w3c_credential_values={},
-            )
-
-        # missing cred def or cred def private
-        mock_handle.fetch = mock.CoroutineMock(side_effect=[None, MockEntry()])
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation._create_credential_w3c(
-                w3c_credential_definition_id="test-cred-def-id",
-                schema_attributes=["attr1", "attr2"],
-                w3c_credential_offer={},
-                w3c_credential_request={},
-                w3c_credential_values={},
-            )
-        mock_handle.fetch = mock.CoroutineMock(side_effect=[MockEntry(), None])
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation._create_credential_w3c(
-                w3c_credential_definition_id="test-cred-def-id",
-                schema_attributes=["attr1", "attr2"],
-                w3c_credential_offer={},
-                w3c_credential_request={},
-                w3c_credential_values={},
-            )
-
-        mock_handle.fetch = mock.CoroutineMock(side_effect=[MockEntry(), None])
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation._create_credential_w3c(
-                w3c_credential_definition_id="test-cred-def-id",
-                schema_attributes=["attr1", "attr2"],
-                w3c_credential_offer={
+                credential_offer={
                     "schema_id": "CsQY9MGeD3CQP4EyuVFo5m:2:MYCO Biomarker:0.0.3",
                     "cred_def_id": "CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
                     "key_correctness_proof": {},
                     "nonce": "nonce",
                 },
-                w3c_credential_request={},
-                w3c_credential_values={
-                    "x": "value1",
-                    "y": "value2",
+                credential_request={},
+                credential_values={
+                    "X": "value1",
+                    "Y": "value2",
                 },
+                credential_type=Credential,
             )
+
+        assert str(excinfo.value) == (
+            "Provided credential values are missing a value "
+            "for the schema attribute 'attr1'"
+        )
