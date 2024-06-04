@@ -1,17 +1,16 @@
 """Inbound transport manager."""
 
 import logging
-import uuid
 from collections import OrderedDict
 from typing import Callable, Coroutine
 
-from ...core.profile import Profile
-from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
-from ...utils.task_queue import CompletedTask, TaskQueue
+from uuid_utils import uuid4
 
+from ...core.profile import Profile
+from ...utils.classloader import ClassLoader, ClassNotFoundError, ModuleLoadError
+from ...utils.task_queue import CompletedTask, TaskQueue
 from ..outbound.message import OutboundMessage
 from ..wire_format import BaseWireFormat
-
 from .base import (
     BaseInboundTransport,
     InboundTransportConfiguration,
@@ -164,7 +163,7 @@ class InboundTransportManager:
             client_info=client_info,
             close_handler=self.closed_session,
             inbound_handler=self.receive_inbound,
-            session_id=str(uuid.uuid4()),
+            session_id=str(uuid4()),
             transport_type=transport_type,
             wire_format=wire_format,
         )
