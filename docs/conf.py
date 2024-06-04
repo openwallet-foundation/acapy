@@ -29,7 +29,6 @@ autodoc_mock_imports = [
     "base58",
     "configargparse",
     "dateutil",
-    "dateutil",
     "deepmerge",
     "did_peer_2",
     "did_peer_4",
