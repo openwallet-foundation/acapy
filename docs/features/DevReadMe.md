@@ -8,7 +8,7 @@ Python fits into the Aries project and relates to Indy.
 - [Introduction](#introduction)
 - [Developer Demos](#developer-demos)
 - [Running](#running)
-    - [Configuring ACA-PY: Enviroment Variables](#configuring-aca-py-environment-variables)
+    - [Configuring ACA-PY: Environment Variables](#configuring-aca-py-environment-variables)
     - [Configuring ACA-PY: Command Line Parameters](#configuring-aca-py-command-line-parameters)
     - [Docker](#docker)
     - [Locally Installed](#locally-installed)
@@ -56,7 +56,7 @@ variable:
 2. **Multiple Parameters**: Arguments that take multiple parameters, such as `--admin 0.0.0.0 11000`, should be wrapped
    in an array. For example, `ACAPY_ADMIN="[0.0.0.0, 11000]"`
 3. **Repeat Parameters**: Arguments like `-it <module> <host> <port>`, which can be repeated, must be wrapped inside
-   another array and string escaped. For example, instead of: `-it http 0.0.0.0 11000 -it ws 0.0.0.0 8023`
+   another array and string escaped. For example, instead of: `-it http 0.0.0.0 11000 ws 0.0.0.0 8023`
    use: `ACAPY_INBOUND_TRANSPORT=[[\"http\",\"0.0.0.0\",\"11000\"],[\"ws\",\"0.0.0.0\",\"8023\"]]`
 
 For a comprehensive list of all arguments, argument groups, CLI args, and their environment variable equivalents, please
