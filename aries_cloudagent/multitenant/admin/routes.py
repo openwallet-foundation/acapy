@@ -10,16 +10,16 @@ from aiohttp_apispec import (
 )
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from aries_cloudagent.storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
-
 from ...admin.decorators.auth import admin_authentication
 from ...admin.request_context import AdminRequestContext
 from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.models.paginated_query import PaginatedQuerySchema
 from ...messaging.valid import UUID4_EXAMPLE, JSONWebToken
 from ...multitenant.base import BaseMultitenantManager
+from ...storage.base import DEFAULT_PAGE_SIZE
 from ...storage.error import StorageError, StorageNotFoundError
 from ...utils.endorsement_setup import attempt_auto_author_with_endorser_setup
 from ...utils.profiles import subwallet_type_not_same_as_base_wallet_raise_web_exception
@@ -355,30 +355,11 @@ class WalletListSchema(OpenAPISchema):
     )
 
 
-class WalletListQueryStringSchema(OpenAPISchema):
+class WalletListQueryStringSchema(PaginatedQuerySchema):
     """Parameters and validators for wallet list request query string."""
 
     wallet_name = fields.Str(
         metadata={"description": "Wallet name", "example": "MyNewWallet"}
-    )
-    limit = fields.Int(
-        required=False,
-        missing=DEFAULT_PAGE_SIZE,
-        validate=lambda x: x > 0 and x <= MAXIMUM_PAGE_SIZE,
-        metadata={"description": "Number of results to return", "example": 50},
-        error_messages={
-            "validator_failed": (
-                "Value must be greater than 0 and "
-                f"less than or equal to {MAXIMUM_PAGE_SIZE}"
-            )
-        },
-    )
-    offset = fields.Int(
-        required=False,
-        missing=0,
-        validate=lambda x: x >= 0,
-        metadata={"description": "Offset for pagination", "example": 0},
-        error_messages={"validator_failed": "Value must be 0 or greater"},
     )
 
 
