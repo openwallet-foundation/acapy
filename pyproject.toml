@@ -39,7 +39,6 @@ pyld="^2.0.4"
 pynacl="~1.5.0"
 python-dateutil="~2.8.1"
 python-json-logger="~2.0.7"
-pytz="~2021.1"
 pyyaml="~6.0.1"
 qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
 requests="~2.31.0"

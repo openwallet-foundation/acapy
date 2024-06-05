@@ -1,17 +1,17 @@
 """Linked Data Signature class."""
 
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta, abstractmethod
 from datetime import datetime, timezone
 from hashlib import sha256
-from pytz import utc
 from typing import Optional, Union
+
+from dateutil import tz
 
 from ..constants import SECURITY_CONTEXT_URL
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..purposes import _ProofPurpose as ProofPurpose
 from ..validation_result import ProofResult
-
 from .linked_data_proof import LinkedDataProof
 
 
@@ -99,7 +99,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             # Use class date, or now
             date = self.date or datetime.now(timezone.utc)
             if not date.tzinfo:
-                date = utc.localize(date)
+                date = date.replace(tzinfo=tz.UTC)
             proof["created"] = date.isoformat(timespec="seconds")
 
         # Allow purpose to update the proof; the `proof` is in the
