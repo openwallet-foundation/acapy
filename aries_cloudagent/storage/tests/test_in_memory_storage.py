@@ -9,11 +9,7 @@ from ...storage.error import (
     StorageNotFoundError,
     StorageSearchError,
 )
-from ...storage.in_memory import (
-    InMemoryStorage,
-    tag_value_match,
-    tag_query_match,
-)
+from ...storage.in_memory import InMemoryStorage, tag_query_match, tag_value_match
 from ...storage.record import StorageRecord
 
 
