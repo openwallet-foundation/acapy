@@ -1,21 +1,21 @@
 import json
-
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
 from marshmallow import EXCLUDE, fields
 
+from aries_cloudagent.tests import mock
+
 from ....cache.base import BaseCache
-from ....core.event_bus import EventBus, MockEventBus, Event
+from ....core.event_bus import Event, EventBus, MockEventBus
 from ....core.in_memory import InMemoryProfile
+from ....messaging.models.base import BaseModelError
 from ....storage.base import (
+    DEFAULT_PAGE_SIZE,
     BaseStorage,
     StorageDuplicateError,
     StorageRecord,
 )
-from ....messaging.models.base import BaseModelError
-
 from ...util import time_now
-
 from ..base_record import BaseRecord, BaseRecordSchema
 
 
