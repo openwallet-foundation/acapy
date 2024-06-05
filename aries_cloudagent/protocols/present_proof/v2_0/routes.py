@@ -572,6 +572,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                     extra_query,
                 )
             )
+        indy_credentials = await indy_holder.get_credentials(start, count, {})
+        
     except (IndyHolderError, AnonCredsHolderError) as err:
         if pres_ex_record:
             async with profile.session() as session:
@@ -718,6 +720,13 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                             BbsBlsSignature2020.signature_type
                                         ]
                                         break
+                    elif claim_fmt.di_vc:
+                        # raise web.HTTPBadRequest(
+                        #     reason=(
+                        #         "VC DI Not supported for credential fetch"
+                        #     )
+                        # )
+                        pass
                     else:
                         raise web.HTTPBadRequest(
                             reason=(

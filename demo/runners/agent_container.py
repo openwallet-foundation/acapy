@@ -521,6 +521,7 @@ class AriesAgent(DemoAgent):
                         creds = await self.admin_GET(
                             f"/present-proof-2.0/records/{pres_ex_id}/credentials"
                         )
+
                         if creds and 0 < len(creds):
                             # select only dif credentials
                             creds = [x for x in creds if "issuanceDate" in x]

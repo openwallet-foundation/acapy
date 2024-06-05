@@ -168,7 +168,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             domain = proof_request["options"].get("domain")
         if not challenge:
             challenge = str(uuid4())
-
+        # TODO handle vc_di format in the future
         input_descriptors = pres_definition.input_descriptors
         claim_fmt = pres_definition.fmt
         dif_handler_proof_type = None
