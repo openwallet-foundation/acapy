@@ -82,14 +82,14 @@ class PackWireFormat(BaseWireFormat):
 
     def get_for_packed_msg(self, packed_msg: Union[str, bytes]) -> BaseWireFormat:
         """Retrieve appropriate DIDComm instance for a given packed message."""
-        format = {
+        pack_format = {
             DIDCommVersion.v1: self.v1pack_format,
             DIDCommVersion.v2: self.v2pack_format,
         }[get_version_for_packed_msg(packed_msg)]
         assert (
             format
         ), "self.v2_pack_format will be set when --experimental-didcomm-v2 is set"
-        return format
+        return pack_format
 
     async def parse_message(
         self, session: ProfileSession, message_body: Union[str, bytes]

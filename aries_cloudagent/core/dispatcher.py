@@ -134,7 +134,6 @@ class Dispatcher:
         # send a DCV2 Problem Report here for testing, and to punt procotol handling down
         # the road a bit
         context = RequestContext(profile)
-        # context.message = message
         context.message_receipt = inbound_message.receipt
         responder = DispatcherResponder(
             context,
@@ -145,7 +144,6 @@ class Dispatcher:
         )
 
         context.injector.bind_instance(BaseResponder, responder)
-        # responder.connection_id = connection and connection.connection_id
         error_result = V2AgentMessage(
             message={
                 "type": "https://didcomm.org/report-problem/2.0/problem-report",
