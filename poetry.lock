@@ -2881,4 +2881,4 @@ bbs = ["ursa-bbs-signatures"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "4fa576e802fd9ff68f5a1fce8b9b6b9b5403f92c6134ca4504ebded621a60761"
+content-hash = "01cec6563fa3fbebbc1370af919d06b337088ee21320fb98060db260b6a9c670"
