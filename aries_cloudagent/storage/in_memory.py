@@ -113,9 +113,18 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
             offset: The offset to start retrieving records from
         """
         results = []
-        for record in self.profile.records.values()[offset : offset + limit]:
+        skipped = 0
+        collected = 0
+        for record in self.profile.records.values():
             if record.type == type_filter and tag_query_match(record.tags, tag_query):
-                results.append(record)
+                if skipped < offset:
+                    skipped += 1
+                    continue
+                if collected < limit:
+                    collected += 1
+                    results.append(record)
+                else:
+                    break
         return results
 
     async def find_all_records(
