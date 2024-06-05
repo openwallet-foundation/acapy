@@ -3,18 +3,17 @@
 from datetime import datetime
 from typing import List, Optional, Union
 
-from pytz import utc
-
+from dateutil import tz
 from marshmallow import INCLUDE, ValidationError, fields, post_dump
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
     CREDENTIAL_CONTEXT_EXAMPLE,
     CREDENTIAL_CONTEXT_VALIDATE,
-    CREDENTIAL_SUBJECT_EXAMPLE,
-    CREDENTIAL_SUBJECT_VALIDATE,
     CREDENTIAL_STATUS_EXAMPLE,
     CREDENTIAL_STATUS_VALIDATE,
+    CREDENTIAL_SUBJECT_EXAMPLE,
+    CREDENTIAL_SUBJECT_VALIDATE,
     CREDENTIAL_TYPE_EXAMPLE,
     CREDENTIAL_TYPE_VALIDATE,
     RFC3339_DATETIME_EXAMPLE,
@@ -176,7 +175,7 @@ class VerifiableCredential(BaseModel):
         """Setter for issuance date."""
         if isinstance(date, datetime):
             if not date.tzinfo:
-                date = utc.localize(date)
+                date = date.replace(tzinfo=tz.UTC)
             date = date.isoformat()
 
         self._issuance_date = date
@@ -191,7 +190,7 @@ class VerifiableCredential(BaseModel):
         """Setter for expiration date."""
         if isinstance(date, datetime):
             if not date.tzinfo:
-                date = utc.localize(date)
+                date = date.replace(tzinfo=tz.UTC)
             date = date.isoformat()
 
         self._expiration_date = date
