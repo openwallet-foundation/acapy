@@ -4,7 +4,6 @@ import asyncio
 import json
 import logging
 import re
-import uuid
 from typing import Dict, Optional, Sequence, Tuple, Union
 
 from anoncreds import (
@@ -14,10 +13,11 @@ from anoncreds import (
     CredentialRevocationState,
     Presentation,
     PresentCredentials,
-    create_link_secret,
     W3cCredential,
+    create_link_secret,
 )
 from aries_askar import AskarError, AskarErrorCode
+from uuid_utils import uuid4
 
 from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ..askar.profile_anon import AskarAnoncredsProfile
@@ -238,7 +238,7 @@ class AnonCredsHolder:
                 f"Error parsing credential definition ID: {cred_def_id}"
             )
 
-        credential_id = credential_id or str(uuid.uuid4())
+        credential_id = credential_id or str(uuid4())
         tags = {
             "schema_id": schema_id,
             "schema_issuer_did": schema_id_parts[1],

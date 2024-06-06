@@ -1,63 +1,54 @@
 from copy import deepcopy
 from datetime import datetime
 from typing import Sequence
-from uuid import uuid4
+
+import pytest
+from uuid_utils import uuid4
 
 from aries_cloudagent.tests import mock
-import pytest
-
 from aries_cloudagent.wallet.key_type import BLS12381G2, ED25519
 
 from .....core.in_memory import InMemoryProfile
 from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
-from .....wallet.base import BaseWallet, DIDInfo
-from .....wallet.default_verification_key_strategy import (
-    DefaultVerificationKeyStrategy,
-    BaseVerificationKeyStrategy,
-)
-from .....wallet.did_method import SOV, KEY, DIDMethods
-from .....wallet.error import WalletNotFoundError
-from .....vc.ld_proofs import (
-    BbsBlsSignature2020,
-)
+from .....vc.ld_proofs import BbsBlsSignature2020
+from .....vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .....vc.ld_proofs.document_loader import DocumentLoader
 from .....vc.ld_proofs.error import LinkedDataProofException
-from .....vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
+from .....vc.tests.data import BBS_SIGNED_VC_MATTR
 from .....vc.tests.document_loader import custom_document_loader
-from .....vc.tests.data import (
-    BBS_SIGNED_VC_MATTR,
+from .....wallet.base import BaseWallet, DIDInfo
+from .....wallet.default_verification_key_strategy import (
+    BaseVerificationKeyStrategy,
+    DefaultVerificationKeyStrategy,
 )
-
+from .....wallet.did_method import KEY, SOV, DIDMethods
+from .....wallet.error import WalletNotFoundError
 from .. import pres_exch_handler as test_module
 from ..pres_exch import (
-    PresentationDefinition,
-    Requirement,
-    Filter,
-    SchemaInputDescriptor,
-    SchemasInputDescriptorFilter,
     Constraints,
     DIFField,
+    Filter,
+    PresentationDefinition,
+    Requirement,
+    SchemaInputDescriptor,
+    SchemasInputDescriptorFilter,
 )
-from ..pres_exch_handler import (
-    DIFPresExchHandler,
-    DIFPresExchError,
-)
-
+from ..pres_exch_handler import DIFPresExchError, DIFPresExchHandler
 from .test_data import (
-    get_test_data,
-    edd_jsonld_creds,
-    bbs_bls_number_filter_creds,
-    bbs_signed_cred_no_credsubjectid,
-    bbs_signed_cred_credsubjectid,
-    creds_with_no_id,
-    is_holder_pd,
-    is_holder_pd_multiple_fields_excluded,
-    is_holder_pd_multiple_fields_included,
     EXPANDED_CRED_FHIR_TYPE_1,
     EXPANDED_CRED_FHIR_TYPE_2,
     TEST_CRED_DICT,
     TEST_CRED_WILDCARD,
+    bbs_bls_number_filter_creds,
+    bbs_signed_cred_credsubjectid,
+    bbs_signed_cred_no_credsubjectid,
+    creds_with_no_id,
+    edd_jsonld_creds,
+    get_test_data,
+    is_holder_pd,
+    is_holder_pd_multiple_fields_excluded,
+    is_holder_pd_multiple_fields_included,
 )
 
 

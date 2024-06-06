@@ -2,7 +2,6 @@
 
 import json
 import logging
-import uuid
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -14,6 +13,7 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
+from uuid_utils import uuid4
 
 from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
@@ -636,7 +636,7 @@ async def _get_issuer_rev_reg_record(
 
     # transform
     result = IssuerRevRegRecord(
-        record_id=uuid.uuid4(),
+        record_id=uuid4(),
         state=state,
         cred_def_id=rev_reg_def.cred_def_id,
         error_msg=None,
