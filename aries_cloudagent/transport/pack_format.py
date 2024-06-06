@@ -144,6 +144,40 @@ class PackWireFormat(BaseWireFormat):
             sender_key,
         )
 
+    def get_recipient_keys(self, message_body: Union[str, bytes]) -> List[str]:
+        """Get all recipient keys from a wire message."""
+        return self.v1pack_format.get_recipient_keys(message_body=message_body)
+
+    async def unpack(
+        self,
+        session: ProfileSession,
+        message_body: Union[str, bytes],
+        receipt: MessageReceipt,
+    ):
+        """Look up the wallet instance and perform the message unpack."""
+
+        return await self.v1pack_format.unpack(
+            session=session, message_body=message_body, receipt=receipt
+        )
+
+    async def pack(
+        self,
+        session: ProfileSession,
+        message_json: Union[str, bytes],
+        recipient_keys: Sequence[str],
+        routing_keys: Sequence[str],
+        sender_key: str,
+    ):
+        """Look up the wallet instance and perform the message pack."""
+
+        return await self.v1pack_format.pack(
+            session=session,
+            message_json=message_json,
+            recipient_keys=recipient_keys,
+            routing_keys=routing_keys,
+            sender_key=sender_key,
+        )
+
 
 class V1PackWireFormat(BaseWireFormat):
     """DIDComm V1 message parser and serializer."""
