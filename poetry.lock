@@ -98,13 +98,13 @@ speedups = ["Brotli", "aiodns", "brotlicffi"]
 
 [[package]]
 name = "aiohttp-apispec-acapy"
-version = "3.0.1"
+version = "3.0.2"
 description = "Build and document REST APIs with aiohttp and apispec"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "aiohttp-apispec-acapy-3.0.1.tar.gz", hash = "sha256:d02a32aa6a396540faa1d4fb3876f07e9b43742cc3303264c832fadeba2bf485"},
-    {file = "aiohttp_apispec_acapy-3.0.1-py3-none-any.whl", hash = "sha256:d319b10d730b2521b2bfa4814d4184757e415a5e8508d979146b53fb1bcab8d2"},
+    {file = "aiohttp-apispec-acapy-3.0.2.tar.gz", hash = "sha256:9e6946a48cb70d3f7097f51e2ce7ba8bee32fce9d654454fe300930bfa8ce542"},
+    {file = "aiohttp_apispec_acapy-3.0.2-py3-none-any.whl", hash = "sha256:93ea532afb3876685d185cc1cfe51d6d08e597cf04f79d16898a23ac4842b742"},
 ]
 
 [package.dependencies]
@@ -2881,4 +2881,4 @@ bbs = ["ursa-bbs-signatures"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "01cec6563fa3fbebbc1370af919d06b337088ee21320fb98060db260b6a9c670"
+content-hash = "5ec524034c85a7d2497fb43981a95e7d7e3cc356c2ada95f4e943c98899b07cb"
