@@ -114,7 +114,7 @@ class AskarProfile(Profile):
                 "aries_cloudagent.indy.credx.issuer.IndyCredxIssuer", ref(self)
             ),
         )
-        injector.bind_provider(
+        injector.soft_bind_provider(
             VCHolder,
             ClassProvider(
                 "aries_cloudagent.storage.vc_holder.askar.AskarVCHolder",

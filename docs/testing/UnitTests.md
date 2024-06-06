@@ -251,7 +251,7 @@ async def receive_invitation(
   function.`assert_called_once()`
   
 - pytest.mark setup in `setup.cfg`
-  can be attributed at function or class level. Example, `@pytest.mark.indy`
+  can be attributed at function or class level. Example, `@pytest.mark.askar`
   
 - Code coverage
   ![Code coverage screenshot](https://i.imgur.com/VhNYcje.png)
