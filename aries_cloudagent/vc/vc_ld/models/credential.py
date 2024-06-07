@@ -11,6 +11,8 @@ from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
     CREDENTIAL_CONTEXT_EXAMPLE,
     CREDENTIAL_CONTEXT_VALIDATE,
+    CREDENTIAL_SCHEMA_EXAMPLE,
+    CREDENTIAL_SCHEMA_VALIDATE,
     CREDENTIAL_SUBJECT_EXAMPLE,
     CREDENTIAL_SUBJECT_VALIDATE,
     CREDENTIAL_STATUS_EXAMPLE,
@@ -51,6 +53,7 @@ class VerifiableCredential(BaseModel):
         credential_subject: Optional[Union[dict, List[dict]]] = None,
         credential_status: Optional[Union[dict, List[dict]]] = None,
         proof: Optional[Union[dict, LDProof]] = None,
+        credential_schema: Optional[Union[dict, List[dict]]] = None,
         **kwargs,
     ) -> None:
         """Initialize the VerifiableCredential instance."""
@@ -60,6 +63,7 @@ class VerifiableCredential(BaseModel):
         self._issuer = issuer
         self._credential_subject = credential_subject
         self._credential_status = credential_status
+        self._credential_schema = credential_schema
 
         # TODO: proper date parsing
         self._issuance_date = issuance_date
@@ -236,6 +240,47 @@ class VerifiableCredential(BaseModel):
 
         self._credential_subject = credential_subject
 
+
+    @property
+    def credential_schema(self):
+        """Getter for credential schema."""
+        return self._credential_schema
+    
+    @property
+    def credential_schema_ids(self):
+        """Getter for credential schema ids."""
+        if not self._credential_schema:
+            return []
+        elif isinstance(self._credential_schema, dict):
+            schema_id = self._credential_schema.get("id")
+
+            return [schema_id] if schema_id else []
+        else:
+            return [
+                schema.get("id")
+                for schema in self._credential_schema
+                if schema.get("id")
+            ]
+    
+    @credential_schema.setter
+    def credential_schema(self, credential_schema: Union[dict, List[dict]]):
+        """Setter for credential schema."""
+
+        uri_validator = Uri()
+
+        schemas = (
+            [credential_schema]
+            if isinstance(credential_schema, dict)
+            else credential_schema
+        )
+
+        # loop trough all credential schemas and check for valid id uri
+        for schema in schemas:
+            if schema.get("id"):
+                uri_validator(schema.get("id"))
+
+        self._credential_schema = credential_schema
+
     @property
     def credential_status(self):
         """Getter for credential status."""
@@ -262,6 +307,7 @@ class VerifiableCredential(BaseModel):
                 and self.issuance_date == o.issuance_date
                 and self.expiration_date == o.expiration_date
                 and self.credential_subject == o.credential_subject
+                and self._credential_schema == o._credential_schema
                 and self.credential_status == o.credential_status
                 and self.proof == o.proof
                 and self.extra == o.extra
@@ -356,6 +402,13 @@ class CredentialSchema(BaseModelSchema):
         data_key="credentialStatus",
         validate=CREDENTIAL_STATUS_VALIDATE,
         metadata={"example": CREDENTIAL_STATUS_EXAMPLE},
+    )
+
+    credential_schema = DictOrDictListField(
+        required=False,
+        data_key="credentialSchema",
+        validate=CREDENTIAL_SCHEMA_VALIDATE,
+        metadata={"example": CREDENTIAL_SCHEMA_EXAMPLE},
     )
 
     proof = fields.Nested(

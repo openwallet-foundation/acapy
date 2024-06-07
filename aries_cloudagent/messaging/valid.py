@@ -885,6 +885,23 @@ class IndyOrKeyDID(Regexp):
             error="Value {input} is not in did:key or indy did format",
         )
 
+class CredentialSchema(Validator):
+    """Credential schema."""
+
+    EXAMPLE = {
+        "id": "https://purl.imsglobal.org/spec/ob/v3p0/schema/json/ob_v3p0_endorsementcredential_schema.json",
+        "type": "1EdTechJsonSchemaValidator2019"
+    }
+
+    def __init__(self) -> None:
+        """Initialize the instance."""
+        super().__init__()
+
+    def __call__(self, value):
+        """Validate input value."""
+        # TODO jsonschema
+
+        return value
 
 # Instances for marshmallow schema specification
 INT_EPOCH_VALIDATE = IntEpoch()
@@ -1021,3 +1038,6 @@ PRESENTATION_TYPE_EXAMPLE = PresentationType.EXAMPLE
 
 INDY_OR_KEY_DID_VALIDATE = IndyOrKeyDID()
 INDY_OR_KEY_DID_EXAMPLE = IndyOrKeyDID.EXAMPLE
+
+CREDENTIAL_SCHEMA_VALIDATE = CredentialSchema()
+CREDENTIAL_SCHEMA_EXAMPLE = CredentialStatus.EXAMPLE

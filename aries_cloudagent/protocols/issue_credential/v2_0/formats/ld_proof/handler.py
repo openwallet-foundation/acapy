@@ -404,7 +404,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             expanded_types=types,
             issuer_id=credential.issuer_id,
             subject_ids=credential.credential_subject_ids,
-            schema_ids=[],  # Schemas not supported yet
+            schema_ids=credential.credential_schema_ids,
             proof_types=[credential.proof.type],
             cred_value=credential.serialize(),
             given_id=credential.id,

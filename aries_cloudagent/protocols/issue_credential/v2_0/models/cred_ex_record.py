@@ -70,6 +70,7 @@ class V20CredExRecord(BaseExchangeRecord):
         auto_issue: bool = False,
         auto_remove: bool = True,
         error_msg: str = None,
+        validate_vc_schema: bool = False,
         trace: bool = False,  # backward compat: BaseRecord.from_storage()
         cred_id_stored: str = None,  # backward compat: BaseRecord.from_storage()
         conn_id: str = None,  # backward compat: BaseRecord.from_storage()
@@ -94,6 +95,7 @@ class V20CredExRecord(BaseExchangeRecord):
         self.auto_issue = auto_issue
         self.auto_remove = auto_remove
         self.error_msg = error_msg
+        self.validate_vc_schema = validate_vc_schema
 
     @property
     def cred_ex_id(self) -> str:
@@ -223,6 +225,7 @@ class V20CredExRecord(BaseExchangeRecord):
                     "auto_issue",
                     "auto_remove",
                     "error_msg",
+                    "validate_vc_schema",
                     "trace",
                 )
             },

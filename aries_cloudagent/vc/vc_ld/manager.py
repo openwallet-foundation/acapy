@@ -19,6 +19,7 @@ from ..ld_proofs.constants import (
 )
 from ..ld_proofs.crypto.wallet_key_pair import WalletKeyPair
 from ..ld_proofs.document_loader import DocumentLoader
+from ..ld_proofs.schema_manager import VcSchemaValidator
 from ..ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
 from ..ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
 from ..ld_proofs.purposes.proof_purpose import ProofPurpose
@@ -259,6 +260,7 @@ class VcLdpManager:
         credential: VerifiableCredential,
         options: LDProofVCOptions,
         holder_did: Optional[str] = None,
+        validate_schema: Optional[bool] = False,
     ) -> VerifiableCredential:
         """Prepare a credential for issuance."""
         # Add BBS context if not present yet
@@ -290,6 +292,12 @@ class VcLdpManager:
         if holder_did and holder_did.startswith("did:key") and "id" not in subject:
             subject["id"] = holder_did
 
+        if validate_schema:
+            schemaValidator = VcSchemaValidator()
+            schemaValidator.validate(credential)
+
+                
+        
         return credential
 
     async def prepare_presentation(
@@ -425,7 +433,7 @@ class VcLdpManager:
             expanded_types=types,
             issuer_id=vc.issuer_id,
             subject_ids=vc.credential_subject_ids,
-            schema_ids=[],  # Schemas not supported yet
+            schema_ids=vc.credential_schema_ids,
             proof_types=[vc.proof.type],
             cred_value=vc.serialize(),
             given_id=vc.id,
