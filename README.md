@@ -1,9 +1,13 @@
 # Hyperledger Aries Cloud Agent - Python  <!-- omit in toc -->
 
-[![pypi releases](https://img.shields.io/pypi/v/aries_cloudagent)](https://pypi.org/project/aries-cloudagent/)
-[![codecov](https://codecov.io/gh/hyperledger/aries-cloudagent-python/branch/main/graph/badge.svg)](https://codecov.io/gh/hyperledger/aries-cloudagent-python)
-
-<!-- ![logo](/doc/assets/aries-cloudagent-python-logo-bw.png) -->
+<p float="left">
+  <a href="https://pypi.org/project/aries-cloudagent/"><img src="https://img.shields.io/pypi/v/aries_cloudagent" width="100" height="20" />
+  <img src="https://sonarcloud.io/images/project_badges/sonarcloud-white.svg" width="120" height="20" />
+  <img src="https://sonarcloud.io/api/project_badges/measure?project=hyperledger_aries-cloudagent-python&metric=coverage" width="120"  height="20" />
+  &nbsp;<img src="https://sonarcloud.io/api/project_badges/measure?project=hyperledger_aries-cloudagent-python&metric=security_rating" width="100"  height="20" />
+  &nbsp;<img src="https://sonarcloud.io/api/project_badges/measure?project=hyperledger_aries-cloudagent-python&metric=vulnerabilities" width="120"  height="20" />
+  &nbsp;<img src="https://sonarcloud.io/api/project_badges/measure?project=hyperledger_aries-cloudagent-python&metric=ncloc" width="120"  height="20" />
+</p>
 
 > An easy to use Aries agent for building SSI services using any language that supports sending/receiving HTTP requests.
 
