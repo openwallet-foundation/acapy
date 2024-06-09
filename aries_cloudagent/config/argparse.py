@@ -677,9 +677,6 @@ class GeneralGroup(ArgumentGroup):
                     reduce(lambda v, k: {k: v}, key.split(".")[::-1], value),
                 )
 
-        settings["transport"] = False if args.no_transport else True
-        settings["ledger"] = False if args.no_ledger else True
-
         if args.storage_type:
             settings["storage_type"] = args.storage_type
 
@@ -687,11 +684,8 @@ class GeneralGroup(ArgumentGroup):
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
 
-        elif settings["transport"]:
+        elif not args.no_transport:
             raise ArgsParseError("-e/--endpoint is required")
-
-        else:
-            pass
 
         if args.profile_endpoint:
             settings["profile_endpoint"] = args.profile_endpoint
