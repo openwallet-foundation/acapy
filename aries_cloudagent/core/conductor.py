@@ -627,7 +627,11 @@ class Conductor:
     async def get_stats(self) -> dict:
         """Get the current stats tracked by the conductor."""
         stats = {
-            "in_sessions": len(self.inbound_transport_manager.sessions),
+            "in_sessions": (
+                len(self.inbound_transport_manager.sessions)
+                if self.inbound_transport_manager
+                else 0
+            ),
             "out_encode": 0,
             "out_deliver": 0,
             "task_active": self.dispatcher.task_queue.current_active,
@@ -635,11 +639,12 @@ class Conductor:
             "task_failed": self.dispatcher.task_queue.total_failed,
             "task_pending": self.dispatcher.task_queue.current_pending,
         }
-        for m in self.outbound_transport_manager.outbound_buffer:
-            if m.state == QueuedOutboundMessage.STATE_ENCODE:
-                stats["out_encode"] += 1
-            if m.state == QueuedOutboundMessage.STATE_DELIVER:
-                stats["out_deliver"] += 1
+        if self.outbound_transport_manager:
+            for m in self.outbound_transport_manager.outbound_buffer:
+                if m.state == QueuedOutboundMessage.STATE_ENCODE:
+                    stats["out_encode"] += 1
+                if m.state == QueuedOutboundMessage.STATE_DELIVER:
+                    stats["out_deliver"] += 1
         return stats
 
     async def outbound_message_router(

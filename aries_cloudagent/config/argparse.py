@@ -677,16 +677,22 @@ class GeneralGroup(ArgumentGroup):
                     reduce(lambda v, k: {k: v}, key.split(".")[::-1], value),
                 )
 
+        settings["transport"] = False if args.no_transport else True
+        settings["ledger"] = False if args.no_ledger else True
+
         if args.storage_type:
             settings["storage_type"] = args.storage_type
 
-        if args.no_transport:
-            pass
         elif args.endpoint:
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
-        else:
+
+        elif settings["transport"]:
             raise ArgsParseError("-e/--endpoint is required")
+
+        else:
+            pass
+
         if args.profile_endpoint:
             settings["profile_endpoint"] = args.profile_endpoint
 
@@ -1397,30 +1403,32 @@ class TransportGroup(ArgumentGroup):
         """Extract transport settings."""
         settings = {}
         if args.no_transport:
-            settings["transport.no_transport"] = args.no_transport
-            return settings
-        if args.inbound_transports:
-            settings["transport.inbound_configs"] = args.inbound_transports
+            settings["transport.disabled"] = True
         else:
-            raise ArgsParseError("-it/--inbound-transport is required")
-        if args.outbound_transports:
-            settings["transport.outbound_configs"] = args.outbound_transports
-        else:
-            raise ArgsParseError("-ot/--outbound-transport is required")
-        settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
+            if args.inbound_transports:
+                settings["transport.inbound_configs"] = args.inbound_transports
+            else:
+                raise ArgsParseError("-it/--inbound-transport is required")
+            if args.outbound_transports:
+                settings["transport.outbound_configs"] = args.outbound_transports
+            else:
+                raise ArgsParseError("-ot/--outbound-transport is required")
+            settings["transport.enable_undelivered_queue"] = (
+                args.enable_undelivered_queue
+            )
+            if args.max_message_size:
+                settings["transport.max_message_size"] = args.max_message_size
+            if args.max_outbound_retry:
+                settings["transport.max_outbound_retry"] = args.max_outbound_retry
+            if args.ws_heartbeat_interval:
+                settings["transport.ws.heartbeat_interval"] = args.ws_heartbeat_interval
+            if args.ws_timeout_interval:
+                settings["transport.ws.timeout_interval"] = args.ws_timeout_interval
 
         if args.label:
             settings["default_label"] = args.label
         if args.image_url:
             settings["image_url"] = args.image_url
-        if args.max_message_size:
-            settings["transport.max_message_size"] = args.max_message_size
-        if args.max_outbound_retry:
-            settings["transport.max_outbound_retry"] = args.max_outbound_retry
-        if args.ws_heartbeat_interval:
-            settings["transport.ws.heartbeat_interval"] = args.ws_heartbeat_interval
-        if args.ws_timeout_interval:
-            settings["transport.ws.timeout_interval"] = args.ws_timeout_interval
 
         return settings
 
