@@ -4,7 +4,8 @@ import asyncio
 import logging
 import re
 from typing import List, Mapping, NamedTuple, Optional, Sequence, Text, Union
-import uuid
+
+from uuid_utils import uuid4
 
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.route_manager import (
     RouteManager,
@@ -42,8 +43,8 @@ from .messages.invitation import HSProto, InvitationMessage
 from .messages.problem_report import OOBProblemReport
 from .messages.reuse import HandshakeReuse
 from .messages.reuse_accept import HandshakeReuseAccept
-from .messages.service import Service as ServiceMessage
 from .messages.service import Service
+from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
 from .models.oob_record import OobRecord
 
@@ -145,7 +146,7 @@ class InvitationCreator:
         self.route_manager = route_manager
         self.oob = oob
 
-        self.msg_id = str(uuid.uuid4())
+        self.msg_id = str(uuid4())
         self.attachments = attachments
 
         self.handshake_protocols = [

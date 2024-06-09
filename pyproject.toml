@@ -17,21 +17,21 @@ repository = "https://github.com/hyperledger/aries-cloudagent-python"
 [tool.poetry.dependencies]
 python = "^3.9"
 aiohttp="~3.9.4"
-aiohttp-apispec="~2.2.1"
+aiohttp-apispec-acapy="~3.0.2"
 aiohttp-cors="~0.7.0"
-apispec="~3.3.0"
+apispec="^6.6.0"
 async-timeout="~4.0.2"
 base58="~2.1.0"
 ConfigArgParse="~1.5.3"
 deepmerge="~0.3.0"
 ecdsa="~0.19.0"
 jsonpath-ng="1.6.1"
-Markdown="~3.5.2"
+Markdown="~3.6"
 markupsafe="2.0.1"
 marshmallow="~3.20.1"
-nest_asyncio="~1.5.5"
+nest_asyncio="~1.6.0"
 packaging="~23.1"
-portalocker="~2.7.0"
+portalocker="~2.8.2"
 prompt_toolkit=">=2.0.9,<2.1.0"
 pydid="^0.5.0"
 pyjwt="~2.8.0"
@@ -39,15 +39,15 @@ pyld="^2.0.4"
 pynacl="~1.5.0"
 python-dateutil="~2.8.1"
 python-json-logger="~2.0.7"
-pytz="~2021.1"
 pyyaml="~6.0.1"
 qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
 requests="~2.31.0"
-rlp="4.0.0"
+rlp="4.0.1"
 unflatten="~0.1"
 sd-jwt = "^0.10.3"
 did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
+uuid_utils = "^0.7.0"
 
 # askar
 aries-askar= { version = "~0.3.0", optional = true }
@@ -132,9 +132,6 @@ markers = [
 ]
 junit_family = "xunit1"
 asyncio_mode = "auto"
-filterwarnings = [
-    'ignore:distutils Version classes are deprecated. Use packaging.version instead.:DeprecationWarning', # Ignore specific DeprecationWarning for old packages using distutils version class
-]
 
 [tool.coverage.run]
 

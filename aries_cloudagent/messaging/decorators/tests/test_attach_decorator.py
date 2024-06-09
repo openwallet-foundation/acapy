@@ -1,10 +1,10 @@
 import json
-import uuid
 from copy import deepcopy
 from datetime import datetime, timezone
 from unittest import TestCase
 
 import pytest
+from uuid_utils import uuid4
 
 from aries_cloudagent.wallet.base import BaseWallet
 
@@ -54,7 +54,7 @@ INDY_CRED = {
     "rev_reg": None,
     "witness": None,
 }
-IDENT = str(uuid.uuid4())
+IDENT = str(uuid4())
 DESCRIPTION = 'To one trained by "Bob," Truth can be found in a potato'
 FILENAME = "potato.png"
 MIME_TYPE = "image/png"
