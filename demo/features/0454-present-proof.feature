@@ -303,3 +303,42 @@ Feature: RFC 0454 Aries agent present proof
       Examples:
          | issuer1 | Acme1_capabilities                                      | Bob_cap                       | Schema_name_1     | Credential_data_1 | Proof_request     |
          | Acme1   | --revocation --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+   @T003-RFC0454.5
+   Scenario Outline: Present Proof for a vc_di-issued credential using "legacy" indy proof and the proof validates
+      Given we have "2" agents
+         | name  | role    | capabilities        | extra        |
+         | Acme  | issuer  | <Acme_capabilities> | <Acme_extra> |
+         | Bob   | holder  | <Bob_capabilities>  | <Bob_extra>  |
+      And "Acme" and "Bob" have an existing connection
+      And "Acme" is ready to issue a credential for <Schema_name>
+      When "Acme" offers a credential with data <Credential_data>
+      When "Bob" has the credential issued
+      When "Acme" sets the credential type to <New_Cred_Type>
+      When "Acme" sends a request with explicit revocation status for proof presentation <Proof_request> to "Bob"
+      Then "Acme" has the proof verified
+
+   @WalletType_Askar_AnonCreds @SwitchCredTypeTest
+   Examples:
+       | Acme_capabilities                                                         | Bob_capabilities              | Schema_name       | Credential_data   | Acme_extra | Bob_extra | New_Cred_Type | Proof_request     |
+       | --public-did --wallet-type askar-anoncreds --cred-type vc_di --revocation | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues |            |           | indy          | DL_age_over_19_v2 |
+
+   @T003-RFC0454.6
+   Scenario Outline: Present Proof for a vc_di-issued credential using "legacy" indy proof and credential is revoked and the proof fails
+      Given we have "2" agents
+         | name  | role    | capabilities        | extra        |
+         | Acme  | issuer  | <Acme_capabilities> | <Acme_extra> |
+         | Bob   | holder  | <Bob_capabilities>  | <Bob_extra>  |
+      And "Acme" and "Bob" have an existing connection
+      And "Acme" is ready to issue a credential for <Schema_name>
+      When "Acme" offers a credential with data <Credential_data>
+      When "Bob" has the credential issued
+      When "Acme" sets the credential type to <New_Cred_Type>
+      And "Acme" revokes the credential
+      When "Acme" sends a request for proof presentation <Proof_request> to "Bob"
+      Then "Acme" has the proof verification fail
+
+   @WalletType_Askar_AnonCreds @SwitchCredTypeTest
+   Examples:
+       | Acme_capabilities                                                         | Bob_capabilities              | Schema_name       | Credential_data   | Acme_extra | Bob_extra | New_Cred_Type | Proof_request     |
+       | --public-did --wallet-type askar-anoncreds --cred-type vc_di --revocation | --wallet-type askar-anoncreds | driverslicense_v2 | Data_DL_MaxValues |            |           | indy          | DL_age_over_19_v2 |
