@@ -385,12 +385,16 @@ class AnonCredsHolder:
 
         """
 
+        print(">>> referents 1: ", referents)
         if not referents:
             referents = (
                 *presentation_request["requested_attributes"],
                 *presentation_request["requested_predicates"],
             )
+        print(">>> referents 2: ", referents)
+
         extra_query = extra_query or {}
+        print(">>> extra_query: ", extra_query)
 
         creds = {}
 
@@ -445,6 +449,8 @@ class AnonCredsHolder:
 
         for cred in creds.values():
             cred["presentation_referents"] = list(cred["presentation_referents"])
+
+        print(">>> returned creds:", list(creds.values()))
 
         return list(creds.values())
 

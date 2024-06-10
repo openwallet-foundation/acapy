@@ -572,7 +572,6 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                     extra_query,
                 )
             )
-        indy_credentials = await indy_holder.get_credentials(start, count, {})
         
     except (IndyHolderError, AnonCredsHolderError) as err:
         if pres_ex_record:
