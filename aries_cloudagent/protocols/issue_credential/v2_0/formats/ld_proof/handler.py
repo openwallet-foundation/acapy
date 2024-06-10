@@ -412,6 +412,8 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             cred_tags=None,  # Tags should be derived from credential values
         )
 
+        print(">>> vc_record:", vc_record.serialize())
+
         # Create detail record with cred_id_stored
         detail_record = V20CredExRecordLDProof(
             cred_ex_id=cred_ex_record.cred_ex_id, cred_id_stored=vc_record.record_id

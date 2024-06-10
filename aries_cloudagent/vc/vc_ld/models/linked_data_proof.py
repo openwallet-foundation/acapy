@@ -92,7 +92,7 @@ class LinkedDataProofSchema(BaseModelSchema):
     )
 
     created = fields.Str(
-        required=True,
+        required=False,
         validate=INDY_ISO8601_DATETIME_VALIDATE,
         metadata={
             "description": (
@@ -160,6 +160,9 @@ class LinkedDataProofSchema(BaseModelSchema):
     @post_dump(pass_original=True)
     def add_unknown_properties(self, data: dict, original, **kwargs):
         """Add back unknown properties before outputting."""
+
+        print(">>> data:", data)
+        print(">>> original:", original)
 
         data.update(original.extra)
 

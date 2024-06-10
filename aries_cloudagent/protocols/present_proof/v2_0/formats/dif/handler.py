@@ -294,7 +294,11 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                         if "proof_type" in claim_fmt.di_vc:
                             proof_types = claim_fmt.di_vc.get("proof_type")
 
+                            proof_type = ["DataIntegrityProof"]
+                            dif_handler_proof_type = ("anoncreds-2023")
+
                         # TODO check acceptable proof type(s) ("anoncreds-2023")
+                        print(">>> TODO check acceptable proof type(s) (\"anoncreds-2023\")")
 
                     else:
                         # TODO di_vc allowed ...
@@ -308,6 +312,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     records = []
                     cred_group_record_ids = set()
                     for uri_group in one_of_uri_groups:
+                        print(">>> searching with group:", proof_type, uri_group)
                         search = holder.search_credentials(
                             proof_types=proof_type, pd_uri_list=uri_group
                         )
@@ -321,7 +326,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                         )
                         cred_group_record_ids = cred_group_vcrecord_ids_set
                         records = records + cred_group_vcrecord_list
+                        print(">>> records:", records)
                 else:
+                    print(">>> searching with list:", proof_type, uri_list)
                     search = holder.search_credentials(
                         proof_types=proof_type, pd_uri_list=uri_list
                     )
@@ -329,6 +336,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     # For now, setting to 1000
                     max_results = 1000
                     records = await search.fetch(max_results)
+                    print(">>> records:", records)
+
                 # Avoiding addition of duplicate records
                 (
                     vcrecord_list,
@@ -491,6 +500,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_ex_record.verified = json.dumps(pres_ver_result.verified)
         return pres_ex_record
 
-    async def _convert_pres_def_to_ac_pres_req(self, proof_req_dict": dict) -> dict:
+    async def _convert_pres_def_to_ac_pres_req(self, proof_req_dict: dict) -> dict:
         # TODO
         return []

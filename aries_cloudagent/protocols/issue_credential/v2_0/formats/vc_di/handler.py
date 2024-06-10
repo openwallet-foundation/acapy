@@ -295,9 +295,11 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             credential=credential,
         )
 
-        return self.get_format_data(
+        cred_offer = self.get_format_data(
             CRED_20_OFFER, json.loads(vcdi_cred_abstract.to_json())
         )
+        print(">>> cred_offer:", cred_offer)
+        return cred_offer
 
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
