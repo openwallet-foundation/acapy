@@ -97,25 +97,21 @@ yarl = ">=1.0,<2.0"
 speedups = ["Brotli", "aiodns", "brotlicffi"]
 
 [[package]]
-name = "aiohttp-apispec"
-version = "3.0.1"
+name = "aiohttp-apispec-acapy"
+version = "3.0.2"
 description = "Build and document REST APIs with aiohttp and apispec"
 optional = false
 python-versions = ">=3.9"
-files = []
-develop = false
+files = [
+    {file = "aiohttp-apispec-acapy-3.0.2.tar.gz", hash = "sha256:9e6946a48cb70d3f7097f51e2ce7ba8bee32fce9d654454fe300930bfa8ce542"},
+    {file = "aiohttp_apispec_acapy-3.0.2-py3-none-any.whl", hash = "sha256:93ea532afb3876685d185cc1cfe51d6d08e597cf04f79d16898a23ac4842b742"},
+]
 
 [package.dependencies]
 aiohttp = ">=3.9.4,<4.0"
 apispec = ">=6.6.1,<6.7.0"
 jinja2 = ">=3.1.3,<3.2.0"
 webargs = ">=8.4.0,<8.5.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/ff137/aiohttp-apispec.git"
-reference = "v3.0.1"
-resolved_reference = "a2b67c0d26f6d3bf0234a8cd134f699144239eeb"
 
 [[package]]
 name = "aiohttp-cors"
@@ -2885,4 +2881,4 @@ bbs = ["ursa-bbs-signatures"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "7dbaa13873082c3ccdfdf47d5381b85d30c7c64800884148095e344955f3e27c"
+content-hash = "5ec524034c85a7d2497fb43981a95e7d7e3cc356c2ada95f4e943c98899b07cb"
