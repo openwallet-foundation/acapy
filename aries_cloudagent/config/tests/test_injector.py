@@ -70,6 +70,39 @@ class TestInjector(IsolatedAsyncioTestCase):
         assert mock_provider.settings[self.test_key] == override_settings[self.test_key]
         assert mock_provider.injector is self.test_instance
 
+    def test_inject_soft_provider_bindings(self):
+        """Test injecting providers with soft binding."""
+        provider = MockProvider(self.test_value)
+        override = MockProvider("Override")
+
+        self.test_instance.soft_bind_provider(str, provider)
+        assert self.test_instance.inject(str) == self.test_value
+
+        self.test_instance.clear_binding(str)
+        # Bound by a plugin on startup, for example
+        self.test_instance.bind_provider(str, override)
+
+        # Bound later in Profile.bind_providerse
+        self.test_instance.soft_bind_provider(str, provider)
+
+        # We want the plugin value, not the Profile bound value
+        assert self.test_instance.inject(str) == "Override"
+
+    def test_inject_soft_instance_bindings(self):
+        """Test injecting providers with soft binding."""
+        self.test_instance.soft_bind_instance(str, self.test_value)
+        assert self.test_instance.inject(str) == self.test_value
+
+        self.test_instance.clear_binding(str)
+        # Bound by a plugin on startup, for example
+        self.test_instance.bind_instance(str, "Override")
+
+        # Bound later in Profile.bind_providerse
+        self.test_instance.soft_bind_instance(str, self.test_value)
+
+        # We want the plugin value, not the Profile bound value
+        assert self.test_instance.inject(str) == "Override"
+
     def test_bad_provider(self):
         """Test empty and invalid provider results."""
         self.test_instance.bind_provider(str, MockProvider(None))

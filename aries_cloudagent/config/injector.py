@@ -1,6 +1,6 @@
 """Standard Injector implementation."""
 
-from typing import Mapping, Optional, Type
+from typing import Dict, Mapping, Optional, Type
 
 from .base import BaseProvider, BaseInjector, InjectionError, InjectType
 from .provider import InstanceProvider, CachedProvider
@@ -18,7 +18,7 @@ class Injector(BaseInjector):
     ):
         """Initialize an `Injector`."""
         self.enforce_typing = enforce_typing
-        self._providers = {}
+        self._providers: Dict[Type, BaseProvider] = {}
         self._settings = Settings(settings)
 
     @property
@@ -44,6 +44,24 @@ class Injector(BaseInjector):
         if cache and not isinstance(provider, CachedProvider):
             provider = CachedProvider(provider)
         self._providers[base_cls] = provider
+
+    def soft_bind_instance(self, base_cls: Type[InjectType], instance: InjectType):
+        """Add a static instance as a soft class binding.
+
+        The binding occurs only if a provider for the same type does not already exist.
+        """
+        if not self.get_provider(base_cls):
+            self.bind_instance(base_cls, instance)
+
+    def soft_bind_provider(
+        self, base_cls: Type[InjectType], provider: BaseProvider, *, cache: bool = False
+    ):
+        """Add a dynamic instance resolver as a soft class binding.
+
+        The binding occurs only if a provider for the same type does not already exist.
+        """
+        if not self.get_provider(base_cls):
+            self.bind_provider(base_cls, provider, cache=cache)
 
     def clear_binding(self, base_cls: Type[InjectType]):
         """Remove a previously-added binding."""
