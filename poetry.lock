@@ -856,13 +856,13 @@ files = [
 
 [[package]]
 name = "docutils"
-version = "0.21.2"
+version = "0.17.1"
 description = "Docutils -- Python Documentation Utilities"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
-    {file = "docutils-0.21.2-py3-none-any.whl", hash = "sha256:dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2"},
-    {file = "docutils-0.21.2.tar.gz", hash = "sha256:3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f"},
+    {file = "docutils-0.17.1-py2.py3-none-any.whl", hash = "sha256:cf316c8370a737a022b72b56874f6602acf974a37a9fba42ec2876387549fc61"},
+    {file = "docutils-0.17.1.tar.gz", hash = "sha256:686577d2e4c32380bb50cbb22f575ed742d58168cee37e99117a854bcd88f125"},
 ]
 
 [[package]]
@@ -2459,20 +2459,20 @@ files = [
 
 [[package]]
 name = "sphinx"
-version = "1.8.4"
+version = "1.8.6"
 description = "Python documentation generator"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
-    {file = "Sphinx-1.8.4-py2.py3-none-any.whl", hash = "sha256:b53904fa7cb4b06a39409a492b949193a1b68cc7241a1a8ce9974f86f0d24287"},
-    {file = "Sphinx-1.8.4.tar.gz", hash = "sha256:c1c00fc4f6e8b101a0d037065043460dffc2d507257f2f11acaed71fd2b0c83c"},
+    {file = "Sphinx-1.8.6-py2.py3-none-any.whl", hash = "sha256:5973adbb19a5de30e15ab394ec8bc05700317fa83f122c349dd01804d983720f"},
+    {file = "Sphinx-1.8.6.tar.gz", hash = "sha256:e096b1b369dbb0fcb95a31ba8c9e1ae98c588e601f08eada032248e1696de4b1"},
 ]
 
 [package.dependencies]
 alabaster = ">=0.7,<0.8"
 babel = ">=1.3,<2.0 || >2.0"
 colorama = {version = ">=0.3.5", markers = "sys_platform == \"win32\""}
-docutils = ">=0.11"
+docutils = ">=0.11,<0.18"
 imagesize = "*"
 Jinja2 = ">=2.3"
 packaging = "*"
@@ -2881,4 +2881,4 @@ bbs = ["ursa-bbs-signatures"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "e9fb3b52f29bed217e3c3c92b25982184a82497b132d5bc0e0add96142a90865"
+content-hash = "e23d53b1e134b975a054cd296099b7f00a2c0850941e1ca80fdfb85d60aa1fde"
