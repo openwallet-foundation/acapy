@@ -38,6 +38,7 @@ from ....vc.ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
 )
 from ....vc.vc_ld.prove import create_presentation, derive_credential, sign_presentation
+from ....vc.vc_di.prove import create_signed_anoncreds_presentation
 from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
 from ....wallet.error import WalletError, WalletNotFoundError

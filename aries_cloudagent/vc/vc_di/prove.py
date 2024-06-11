@@ -65,6 +65,8 @@ async def create_signed_anoncreds_presentation(
         "requested_predicates": {},
     }
 
+    # TODO assemble the necessary structures and then call AnoncredsHolder.create_presentation_w3c() (new method)
+
 """
     const credentialsProve: AnonCredsCredentialProve[] = []
     const schemaIds = new Set<string>()
