@@ -16,6 +16,7 @@ from ......vc.ld_proofs import (
     BbsBlsSignature2020,
     Ed25519Signature2018,
     Ed25519Signature2020,
+    LinkedDataProof,
 )
 from ......vc.vc_ld.manager import VcLdpManager
 from ......vc.vc_ld.models.options import LDProofVCOptions
@@ -146,9 +147,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         proof_request = pres_ex_record.pres_request.attachment(
             DIFPresFormatHandler.format
         )
-
-        print(">>> request_data:", request_data)
-        print(">>> proof_request:", proof_request)
 
         pres_definition = None
         limit_record_ids = None
@@ -294,25 +292,24 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                         if "proof_type" in claim_fmt.di_vc:
                             proof_types = claim_fmt.di_vc.get("proof_type")
 
-                            proof_type = ["DataIntegrityProof"]
+                            proof_type = ["DataIntegrityProof"]  # [LinkedDataProof.signature_type]
                             dif_handler_proof_type = ("anoncreds-2023")
 
                         # TODO check acceptable proof type(s) ("anoncreds-2023")
-                        print(">>> TODO check acceptable proof type(s) (\"anoncreds-2023\")")
 
                     else:
                         # TODO di_vc allowed ...
                         raise V20PresFormatHandlerError(
-                            "Currently, only ldp_vp with "
+                            "Currently, only: ldp_vp with "
                             "BbsBlsSignature2020, Ed25519Signature2018 and "
-                            "Ed25519Signature2020 signature types are supported"
+                            "Ed25519Signature2020 signature types; and "
+                            "di_vc with anoncreds-2023 signatures are supported"
                         )
 
                 if one_of_uri_groups:
                     records = []
                     cred_group_record_ids = set()
                     for uri_group in one_of_uri_groups:
-                        print(">>> searching with group:", proof_type, uri_group)
                         search = holder.search_credentials(
                             proof_types=proof_type, pd_uri_list=uri_group
                         )
@@ -326,9 +323,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                         )
                         cred_group_record_ids = cred_group_vcrecord_ids_set
                         records = records + cred_group_vcrecord_list
-                        print(">>> records:", records)
                 else:
-                    print(">>> searching with list:", proof_type, uri_list)
                     search = holder.search_credentials(
                         proof_types=proof_type, pd_uri_list=uri_list
                     )
@@ -336,7 +331,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     # For now, setting to 1000
                     max_results = 1000
                     records = await search.fetch(max_results)
-                    print(">>> records:", records)
 
                 # Avoiding addition of duplicate records
                 (
@@ -345,8 +339,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 ) = await self.process_vcrecords_return_list(records, record_ids)
                 record_ids = vcrecord_ids_set
                 credentials_list = credentials_list + vcrecord_list
-
-                print(">>> credentials:", credentials_list)
 
         except StorageNotFoundError as err:
             raise V20PresFormatHandlerError(err)
@@ -384,6 +376,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 pd=pres_definition,
                 credentials=credentials_list,
                 records_filter=limit_record_ids,
+                is_holder_override=True,
             )
             return self.get_format_data(PRES_20, pres)
         except DIFPresExchError as err:

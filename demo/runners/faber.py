@@ -391,7 +391,7 @@ class FaberAgent(AriesAgent):
                                                     "predicate": "preferred",
                                                     "filter": {
                                                         "type": "number",
-                                                        "minimum": int(birth_date.strftime(birth_date_format)),
+                                                        "maximum": int(birth_date.strftime(birth_date_format)),
                                                     },
                                                 },
                                             ],
