@@ -296,8 +296,6 @@ class VcLdpManager:
             schemaValidator = VcSchemaValidator()
             schemaValidator.validate(credential)
 
-                
-        
         return credential
 
     async def prepare_presentation(

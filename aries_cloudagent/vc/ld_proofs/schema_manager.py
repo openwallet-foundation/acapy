@@ -4,15 +4,16 @@ Caches schemas which have been fetched in memory.
 """
 import json
 import string
-from jsonschema import Draft201909Validator
+from jsonschema import Draft201909Validator, ValidationError
+import jsonschema
 import requests
 from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
+
 
 import logging
 from typing import Dict, List, Optional
 from ...version import __version__
 import urllib.parse as urllib_parse
-
 
 logger = logging.getLogger(__name__)
 
@@ -46,23 +47,49 @@ class VcSchemaValidator:
         for vc_schema in vc_schemas:
             schema_type = vc_schema.get('type')
             schema_id = vc_schema.get('id')
+            
             validator = self.schema_manager.get_validator(schema_type, schema_id)
             vc_json = json.loads(vc.to_json())
-            errors = list(validator.iter_errors(vc_json))
 
+            validation_errors.extend(validator.iter_errors(vc_json))
         
-        if len(errors) > 0:
-            raise VcSchemaValidatorError(self.format_validation_errors(validation_errors))
+        if len(validation_errors) > 0:
+            formatted  = self.format_validation_errors(validation_errors)
+            raise VcSchemaValidatorError(formatted)
 
         return True
     
-    def format_validation_errors(errors:List[str]):
+    def format_validation_errors(self, errors:List[ValidationError]):
         """Formats a list of errors from validating the VC.
 
         :param errors: the errors to format
         """
 
-        return errors.join(', ')
+        by_relevance = sorted(errors, key=jsonschema.exceptions.relevance)
+
+        error_details = []
+
+        def traverse_errors(errors):
+            for error in errors:
+                if error.context is not None:
+                    traverse_errors(error.context)
+
+                details = {
+                    "reason": str(error.message),
+                    "credential_path": str('$.' + '.'.join([str(item) for item in error.relative_path])),
+                    "schema_path": [str(item) for item in error.relative_schema_path]
+                }
+                error_details.append(details)
+
+        traverse_errors(by_relevance)
+
+        prefix = "Credential does not conform to Schema"
+
+        error = {
+            "message": prefix,
+            "details": error_details
+        }
+        return json.dumps(error)
 
 
 
@@ -83,13 +110,18 @@ class VcSchemaManager:
         :param schema_type: the type of 
         :param schema_id: the URL $id of the schema
         
-        :return: TODO
+        :return: validator class object
 
         """
 
         if schema_type == '1EdTechJsonSchemaValidator2019':
             schema = self.load(schema_id, {"TLS_1_3": True})
-            return Draft201909Validator(schema)
+            validator = Draft201909Validator(schema['document'], format_checker=Draft201909Validator.FORMAT_CHECKER,
+
+)
+            validator.check_schema(schema['document'])
+            return validator
+                    
         else:
             raise VcSchemaManagerError(
                 'The schema type provided',
@@ -104,10 +136,10 @@ class VcSchemaManager:
         cached = self.cache.get(url)
 
         if cached is not None:
-            logger.info("Local cache hit for context: %s", url)
+            logger.info("Cache hit for context: %s", url)
             return cached
 
-        logger.debug("Context %s not in static cache, resolving from URL.", url)
+        logger.debug("Schema %s not in static cache, resolving from URL.", url)
         return self._live_load(url, options)
     
     def _live_load(self, url: str, options: Optional[Dict] = None):
