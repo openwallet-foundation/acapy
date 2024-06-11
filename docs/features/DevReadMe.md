@@ -7,6 +7,7 @@ See the [README](../../README.md) for details about this repository and informat
 - [Introduction](#introduction)
 - [Developer Demos](#developer-demos)
 - [Running](#running)
+  - [Configuring ACA-PY: Environment Variables](#configuring-aca-py-environment-variables)
   - [Configuring ACA-PY: Command Line Parameters](#configuring-aca-py-command-line-parameters)
   - [Docker](#docker)
   - [Locally Installed](#locally-installed)
@@ -41,6 +42,26 @@ to learn more.
 To put ACA-Py through its paces at the command line, checkout our [demos](../demo/README.md) page.
 
 ## Running
+
+### Configuring ACA-PY: Environment Variables
+
+All CLI parameters in ACA-PY have equivalent environment variables. To convert a CLI argument to an environment
+variable:
+
+1. **Basic Conversion**: Convert the CLI argument to uppercase and prefix it with `ACAPY_`. For example, `--admin`
+   becomes `ACAPY_ADMIN`.
+
+2. **Multiple Parameters**: Arguments that take multiple parameters, such as `--admin 0.0.0.0 11000`, should be wrapped
+   in an array. For example, `ACAPY_ADMIN="[0.0.0.0, 11000]"`
+3. **Repeat Parameters**: Arguments like `-it <module> <host> <port>`, which can be repeated, must be wrapped inside
+   another array and string escaped. For example, instead of: `-it http 0.0.0.0 11000 ws 0.0.0.0 8023`
+   use: `ACAPY_INBOUND_TRANSPORT=[[\"http\",\"0.0.0.0\",\"11000\"],[\"ws\",\"0.0.0.0\",\"8023\"]]`
+
+For a comprehensive list of all arguments, argument groups, CLI args, and their environment variable equivalents, please
+see
+the [argparse.py](https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/config/argparse.py)
+file.
+
 
 ### Configuring ACA-PY: Command Line Parameters
 
