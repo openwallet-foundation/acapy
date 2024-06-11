@@ -628,6 +628,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#configuring-aca-py-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuring ACA-PY: Environment Variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#configuring-aca-py-command-line-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       Configuring ACA-PY: Command Line Parameters
@@ -2438,6 +2447,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#configuring-aca-py-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuring ACA-PY: Environment Variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#configuring-aca-py-command-line-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       Configuring ACA-PY: Command Line Parameters
@@ -2635,6 +2653,7 @@
 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#developer-demos">Developer Demos</a></li>
 <li><a href="#running">Running</a></li>
+<li><a href="#configuring-aca-py-environment-variables">Configuring ACA-PY: Environment Variables</a></li>
 <li><a href="#configuring-aca-py-command-line-parameters">Configuring ACA-PY: Command Line Parameters</a></li>
 <li><a href="#docker">Docker</a></li>
 <li><a href="#locally-installed">Locally Installed</a></li>
@@ -2664,6 +2683,26 @@ to learn more.</p>
 <h2 id="developer-demos">Developer Demos<a class="headerlink" href="#developer-demos" title="Permanent link">&para;</a></h2>
 <p>To put ACA-Py through its paces at the command line, checkout our <a href="../../demo/">demos</a> page.</p>
 <h2 id="running">Running<a class="headerlink" href="#running" title="Permanent link">&para;</a></h2>
+<h3 id="configuring-aca-py-environment-variables">Configuring ACA-PY: Environment Variables<a class="headerlink" href="#configuring-aca-py-environment-variables" title="Permanent link">&para;</a></h3>
+<p>All CLI parameters in ACA-PY have equivalent environment variables. To convert a CLI argument to an environment
+variable:</p>
+<ol>
+<li>
+<p><strong>Basic Conversion</strong>: Convert the CLI argument to uppercase and prefix it with <code>ACAPY_</code>. For example, <code>--admin</code>
+   becomes <code>ACAPY_ADMIN</code>.</p>
+</li>
+<li>
+<p><strong>Multiple Parameters</strong>: Arguments that take multiple parameters, such as <code>--admin 0.0.0.0 11000</code>, should be wrapped
+   in an array. For example, <code>ACAPY_ADMIN="[0.0.0.0, 11000]"</code></p>
+</li>
+<li><strong>Repeat Parameters</strong>: Arguments like <code>-it &lt;module&gt; &lt;host&gt; &lt;port&gt;</code>, which can be repeated, must be wrapped inside
+   another array and string escaped. For example, instead of: <code>-it http 0.0.0.0 11000 ws 0.0.0.0 8023</code>
+   use: <code>ACAPY_INBOUND_TRANSPORT=[[\"http\",\"0.0.0.0\",\"11000\"],[\"ws\",\"0.0.0.0\",\"8023\"]]</code></li>
+</ol>
+<p>For a comprehensive list of all arguments, argument groups, CLI args, and their environment variable equivalents, please
+see
+the <a href="https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/config/argparse.py">argparse.py</a>
+file.</p>
 <h3 id="configuring-aca-py-command-line-parameters">Configuring ACA-PY: Command Line Parameters<a class="headerlink" href="#configuring-aca-py-command-line-parameters" title="Permanent link">&para;</a></h3>
 <p>ACA-Py agent instances are configured through the use of command line
 parameters, environment variables and/or YAML files. All of the configurations
