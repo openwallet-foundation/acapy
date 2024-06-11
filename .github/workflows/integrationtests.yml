@@ -1,6 +1,8 @@
 name: acapy-integration-tests
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
   pull_request:
     branches:
@@ -18,17 +20,45 @@ jobs:
   test:
     runs-on: ubuntu-latest
     if: (github.event_name == 'pull_request' && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
+    outputs:
+      is_release: ${{ steps.check_if_release.outputs.is_release }}
     steps:
       - name: checkout-acapy
         uses: actions/checkout@v4
         with:
-          path: acapy
-      #- name: run-von-network
-      #  uses: ./acapy/.github/actions/run-von-network
-      #- name: run-indy-tails-server
-      #  uses: ./acapy/.github/actions/run-indy-tails-server
-      - name: run-integration-tests
-        uses: ./acapy/.github/actions/run-integration-tests
-        # to run with a specific set of tests include the following parameter:
-        # with:
-        #   TEST_SCOPE: "-t @T001-RFC0037"
+          fetch-depth: 0
+      - name: Check if PR is a release
+        id: check_if_release
+        continue-on-error: true
+        run: |
+          # Get the diff between the current commit and the last merge commit on the upstream/main branch
+          git remote add upstream https://github.com/hyperledger/aries-cloudagent-python.git
+          git fetch upstream
+          
+          last_merge=$(git rev-list --no-merges -n 1 upstream/main)
+          
+          echo event = ${{ github.event_name }}
+
+          echo last upstream commit = "$last_merge"
+          echo current pr commit = "${{ github.sha }}"
+
+          echo Will exit with code 1 if the pull request is not a release
+
+          changes=$(git diff "${{ github.sha }}" "$last_merge" pyproject.toml)
+
+          # Extract the version of aries-cloudagent from the diff of pyproject.toml
+          version=$(echo "$changes" | grep -A1 'name = "aries_cloudagent"' | head -n 2 | tail -n 1 | awk '{print $3}' | tr -d '"')
+
+          echo "$version"
+          if [ "$version" ]; then
+            echo "This is a release because the aries-cloudagent version in pyproject.toml has changes"
+            echo is_release=true >> $GITHUB_OUTPUT
+          fi
+      - name: run-pr-integration-tests
+        uses: ./.github/actions/run-integration-tests
+        if: (steps.check_if_release.outputs.is_release != 'true' && github.event_name == 'pull_request')
+      - name: run-release-or-cron-integration-tests
+        if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        uses: ./.github/actions/run-integration-tests
+        with:
+          TEST_SCOPE: "-t @Release"

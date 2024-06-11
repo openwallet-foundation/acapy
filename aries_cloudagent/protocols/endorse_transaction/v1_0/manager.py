@@ -2,8 +2,9 @@
 
 import json
 import logging
-import uuid
 from asyncio import shield
+
+from uuid_utils import uuid4
 
 from ....anoncreds.issuer import AnonCredsIssuer
 from ....anoncreds.revocation import AnonCredsRevocation
@@ -22,10 +23,7 @@ from ....revocation.util import (
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.util import (
-    notify_endorse_did_attrib_event,
-    notify_endorse_did_event,
-)
+from ....wallet.util import notify_endorse_did_attrib_event, notify_endorse_did_event
 from .messages.cancel_transaction import CancelTransaction
 from .messages.endorsed_transaction_response import EndorsedTransactionResponse
 from .messages.refused_transaction_response import RefusedTransactionResponse
@@ -78,7 +76,7 @@ class TransactionManager:
         """
 
         messages_attach_dict = {
-            "@id": str(uuid.uuid4()),
+            "@id": str(uuid4()),
             "mime-type": "application/json",
             "data": {"json": messages_attach},
         }

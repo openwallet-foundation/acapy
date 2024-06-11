@@ -8,55 +8,52 @@ merge [return applicable credential list and descriptor_map for presentation_sub
 returns VerifiablePresentation
 """
 
-import pytz
-import re
 import logging
-
+import re
 from datetime import datetime
-from dateutil.parser import parse as dateutil_parser
+from typing import Dict, List, Optional, Sequence, Tuple, Union
+
+from dateutil import tz
 from dateutil.parser import ParserError
+from dateutil.parser import parse as dateutil_parser
 from jsonpath_ng import parse
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
-from typing import Sequence, Optional, Tuple, Union, Dict, List
 from unflatten import unflatten
-from uuid import uuid4
+from uuid_utils import uuid4
 
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....storage.vc_holder.vc_record import VCRecord
 from ....vc.ld_proofs import (
-    Ed25519Signature2018,
-    Ed25519Signature2020,
     BbsBlsSignature2020,
     BbsBlsSignatureProof2020,
-    WalletKeyPair,
     DocumentLoader,
+    Ed25519Signature2018,
+    Ed25519Signature2020,
+    WalletKeyPair,
 )
 from ....vc.ld_proofs.constants import (
-    SECURITY_CONTEXT_BBS_URL,
     EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
+    SECURITY_CONTEXT_BBS_URL,
 )
-from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
+from ....vc.vc_ld.prove import create_presentation, derive_credential, sign_presentation
 from ....wallet.base import BaseWallet, DIDInfo
-from ....wallet.default_verification_key_strategy import (
-    BaseVerificationKeyStrategy,
-)
+from ....wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
 from ....wallet.error import WalletError, WalletNotFoundError
 from ....wallet.key_type import BLS12381G2, ED25519
-
 from .pres_exch import (
-    PresentationDefinition,
-    InputDescriptors,
+    Constraints,
     DIFField,
     Filter,
-    Constraints,
-    SubmissionRequirements,
+    InputDescriptorMapping,
+    InputDescriptors,
+    PresentationDefinition,
+    PresentationSubmission,
     Requirement,
     SchemaInputDescriptor,
     SchemasInputDescriptorFilter,
-    InputDescriptorMapping,
-    PresentationSubmission,
+    SubmissionRequirements,
 )
 
 PRESENTATION_SUBMISSION_JSONLD_CONTEXT = (
@@ -616,10 +613,9 @@ class DIFPresExchHandler:
         if PYTZ_TIMEZONE_PATTERN.search(datetime_str):
             result = PYTZ_TIMEZONE_PATTERN.search(datetime_str).group(1)
             datetime_str = datetime_str.replace(result, "")
-            return dateutil_parser(datetime_str).replace(tzinfo=pytz.timezone(result))
+            return dateutil_parser(datetime_str).replace(tzinfo=tz.gettz(result))
         else:
-            utc = pytz.UTC
-            return dateutil_parser(datetime_str).replace(tzinfo=utc)
+            return dateutil_parser(datetime_str).replace(tzinfo=tz.UTC)
 
     def validate_patch(self, to_check: any, _filter: Filter) -> bool:
         """Apply filter on match_value.
