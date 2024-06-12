@@ -889,7 +889,7 @@ class CredentialSchema(Validator):
     """Credential schema."""
 
     EXAMPLE = {
-        "id": "https://purl.imsglobal.org/spec/ob/v3p0/schema/json/ob_v3p0_endorsementcredential_schema.json",
+        "id": "https://purl.imsglobal.org/spec/ob/v3p0/schema/json-ld/ob_v3p0_anyachievementcredential_schema.json",
         "type": "1EdTechJsonSchemaValidator2019"
     }
 
@@ -899,7 +899,27 @@ class CredentialSchema(Validator):
 
     def __call__(self, value):
         """Validate input value."""
-        # TODO jsonschema
+        schemas = value if isinstance(value, list) else [value]
+
+        for schema in schemas:
+            if "id" not in schema:
+                raise ValidationError(
+                        f'credential schema {schema} must have an id'
+                    ) from None
+            
+            if "type" not in schema:
+                raise ValidationError(
+                        f'credential schema {schema} must have a type'
+                    ) from None
+                
+            if "id" in schema:
+                uri_validator = Uri()
+                try:
+                    uri_validator(schema["id"])
+                except ValidationError:
+                    raise ValidationError(
+                        f'credential schema id {schema["id"]} must be URI'
+                    ) from None
 
         return value
 

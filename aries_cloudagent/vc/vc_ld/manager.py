@@ -2,6 +2,8 @@
 
 from typing import Dict, List, Optional, Type, Union, cast
 
+from aries_cloudagent.vc.ld_proofs.schema_validators.construct_validator import construct_validator
+from aries_cloudagent.vc.ld_proofs.schema_validators.schema_validator_base import VcSchemaValidatorError
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
@@ -19,7 +21,6 @@ from ..ld_proofs.constants import (
 )
 from ..ld_proofs.crypto.wallet_key_pair import WalletKeyPair
 from ..ld_proofs.document_loader import DocumentLoader
-from ..ld_proofs.schema_manager import VcSchemaValidator
 from ..ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
 from ..ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
 from ..ld_proofs.purposes.proof_purpose import ProofPurpose
@@ -260,7 +261,6 @@ class VcLdpManager:
         credential: VerifiableCredential,
         options: LDProofVCOptions,
         holder_did: Optional[str] = None,
-        validate_schema: Optional[bool] = False,
     ) -> VerifiableCredential:
         """Prepare a credential for issuance."""
         # Add BBS context if not present yet
@@ -292,9 +292,21 @@ class VcLdpManager:
         if holder_did and holder_did.startswith("did:key") and "id" not in subject:
             subject["id"] = holder_did
 
-        if validate_schema:
-            schemaValidator = VcSchemaValidator()
-            schemaValidator.validate(credential)
+        
+        credential_schemas = credential.credential_schema
+        if isinstance(credential_schemas, dict):
+            credential_schemas = [credential_schemas]
+        
+        if credential_schemas:
+            validation_errors = []
+            for credential_schema in credential_schemas:
+                try:
+                    validator = construct_validator(credential_schema)
+                    validation_errors.extend(validator.validate(credential))
+                except VcSchemaValidatorError as e:
+                    raise VcLdpManagerError("Failed to validate credentialSchema.") from e
+            if len(validation_errors) > 0:
+                raise VcLdpManagerError(validation_errors) # TODOS
 
         return credential
 

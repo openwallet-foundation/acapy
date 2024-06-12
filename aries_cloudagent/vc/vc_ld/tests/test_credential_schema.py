@@ -5,11 +5,11 @@ from aries_cloudagent.core.in_memory.profile import InMemoryProfile
 from aries_cloudagent.resolver.default.key import KeyDIDResolver
 from aries_cloudagent.resolver.did_resolver import DIDResolver
 from aries_cloudagent.vc.ld_proofs.document_loader import DocumentLoader
-from aries_cloudagent.vc.ld_proofs.schema_manager import VcSchemaValidatorError
+from aries_cloudagent.vc.ld_proofs.schema_validators.error import VcSchemaValidatorError
 from aries_cloudagent.wallet.default_verification_key_strategy import BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy
 import pytest
 from ....wallet.did_method import  DIDMethods
-from ..manager import VcLdpManager
+from ..manager import VcLdpManager, VcLdpManagerError
 from ..models.credential import VerifiableCredential
 from ..models.options import LDProofVCOptions
 from ...tests.data import (
@@ -45,14 +45,14 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
 
     async def test_derive_ld_proofs(self):
         vc = VerifiableCredential.deserialize(TEST_LD_DOCUMENT_CORRECT_SCHEMA)
-        detail = await self.ldp_manager.prepare_credential(vc, self.options, None, True)
+        detail = await self.ldp_manager.prepare_credential(vc, self.options)
         assert detail
 
     async def test_prepare_detail(
         self
     ):
         vc = VerifiableCredential.deserialize(TEST_LD_DOCUMENT_CORRECT_SCHEMA)
-        detail = await self.ldp_manager.prepare_credential(vc, self.options, None, True)
+        detail = await self.ldp_manager.prepare_credential(vc, self.options)
         assert detail
 
     
@@ -60,7 +60,9 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
         self
     ):
         vc = VerifiableCredential.deserialize(TEST_LD_DOCUMENT_INCORRECT_SCHEMA)
-        with pytest.raises(VcSchemaValidatorError) as validator_error:
-            await self.ldp_manager.prepare_credential(vc, self.options, None, True)
+        with pytest.raises(VcLdpManagerError) as ldp_manager_error:
+            with pytest.raises(VcSchemaValidatorError) as validator_error:
+                await self.ldp_manager.prepare_credential(vc, self.options)
     
-        assert '''"reason": "\'2.1\' is not of type \'number\'", "credential_path": "$.credentialSubject.creditsEarned"''' in validator_error.value.args[0]
+            assert '''"reason": "\'2.1\' is not of type \'number\'", "credential_path": "$.credentialSubject.creditsEarned"''' in validator_error.value.args[0]
+        assert ldp_manager_error.value.args[0] == 'Failed to validate credentialSchema.'
