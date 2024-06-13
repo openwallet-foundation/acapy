@@ -5,7 +5,12 @@ import re
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
-from anoncreds import Schema
+from anoncreds import (
+    CredentialDefinition,
+    RevocationRegistryDefinition,
+    RevocationRegistryDefinitionPrivate,
+    Schema,
+)
 from base58 import alphabet
 
 from .....anoncreds.base import (
@@ -46,6 +51,7 @@ from ....models.anoncreds_revocation import (
     RevListResult,
     RevRegDef,
     RevRegDefResult,
+    RevRegDefState,
     RevRegDefValue,
 )
 from .. import registry as test_module
@@ -89,6 +95,50 @@ mock_schema = AnonCredsSchema(
 class MockTxn:
     def to_json(self):
         return json.dumps(self.__dict__)
+
+
+class MockRevRegDefEntry:
+    def __init__(self, name="name"):
+        self.name = name
+
+    tags = {
+        "state": RevRegDefState.STATE_ACTION,
+    }
+    value = "mock_value"
+    value_json = {
+        "value": {
+            "maxCredNum": 100,
+            "publicKeys": {"accumKey": {"z": "1 0BB...386"}},
+            "tailsHash": "string",
+            "tailsLocation": "string",
+        },
+        "credDefId": "CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
+        "issuerId": "CsQY9MGeD3CQP4EyuVFo5m",
+        "revocDefType": "CL_ACCUM",
+        "tag": "string",
+    }
+
+
+class MockCredDefEntry:
+    value_json = {}
+
+
+class MockRevListEntry:
+    tags = {}
+    value = "mock_value"
+    value_json = {
+        "issuerId": "CsQY9MGeD3CQP4EyuVFo5m",
+        "revRegDefId": "4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:4ae1cc6c-f6bd-486c-8057-88f2ce74e960",
+        "revocationList": [0, 1, 0, 0],
+        "currentAccumulator": "21 124C594B6B20E41B681E92B2C43FD165EA9E68BC3C9D63A82C8893124983CAE94 21 124C5341937827427B0A3A32113BD5E64FB7AB39BD3E5ABDD7970874501CA4897 6 5438CB6F442E2F807812FD9DC0C39AFF4A86B1E6766DBB5359E86A4D70401B0F 4 39D1CA5C4716FFC4FE0853C4FF7F081DFD8DF8D2C2CA79705211680AC77BF3A1 6 70504A5493F89C97C225B68310811A41AD9CD889301F238E93C95AD085E84191 4 39582252194D756D5D86D0EED02BF1B95CE12AED2FA5CD3C53260747D891993C",
+        "timestamp": 1669640864487,
+    }
+
+    def to_json(self):
+        return self.value_json
+
+    def to_dict(self):
+        return self.value_json
 
 
 @pytest.mark.anoncreds
@@ -1094,3 +1144,77 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         )
 
         assert isinstance(result, tuple)
+
+    @mock.patch.object(CredentialDefinition, "load")
+    @mock.patch.object(RevocationRegistryDefinition, "load")
+    @mock.patch.object(RevocationRegistryDefinitionPrivate, "load")
+    @mock.patch.object(
+        IssuerCredRevRecord,
+        "query_by_ids",
+        return_value=[
+            IssuerCredRevRecord(
+                state=IssuerCredRevRecord.STATE_REVOKED,
+                cred_ex_id="cred_ex_id",
+                rev_reg_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:4ae1cc6c-f6bd-486c-8057-88f2ce74e960",
+                cred_rev_id="1",
+            ),
+            IssuerCredRevRecord(
+                state=IssuerCredRevRecord.STATE_REVOKED,
+                cred_ex_id="cred_ex_id",
+                rev_reg_id="4xE68b6S5VRFrKMMG1U95M:5:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:4ae1cc6c-f6bd-486c-8057-88f2ce74e960",
+                cred_rev_id="2",
+            ),
+        ],
+    )
+    @mock.patch.object(
+        RevList,
+        "to_native",
+        return_value=mock.MagicMock(
+            update=mock.MagicMock(return_value=MockRevListEntry())
+        ),
+    )
+    @mock.patch.object(InMemoryProfileSession, "handle")
+    async def test_sync_wallet_rev_list_with_issuer_cred_rev_records(
+        self, mock_handle, *_
+    ):
+        async with self.profile.session() as session:
+            # Matching revocations and rev_list
+            mock_handle.fetch = mock.CoroutineMock(
+                side_effect=[
+                    MockRevRegDefEntry(),
+                    MockCredDefEntry(),
+                    mock.CoroutineMock(return_value=None),
+                ]
+            )
+            result = await self.registry._sync_wallet_rev_list_with_issuer_cred_rev_records(
+                session,
+                RevList(
+                    issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
+                    current_accumulator="21 124C594B6B20E41B681E92B2C43FD165EA9E68BC3C9D63A82C8893124983CAE94 21 124C5341937827427B0A3A32113BD5E64FB7AB39BD3E5ABDD7970874501CA4897 6 5438CB6F442E2F807812FD9DC0C39AFF4A86B1E6766DBB5359E86A4D70401B0F 4 39D1CA5C4716FFC4FE0853C4FF7F081DFD8DF8D2C2CA79705211680AC77BF3A1 6 70504A5493F89C97C225B68310811A41AD9CD889301F238E93C95AD085E84191 4 39582252194D756D5D86D0EED02BF1B95CE12AED2FA5CD3C53260747D891993C",
+                    revocation_list=[0, 1, 1, 0],
+                    timestamp=1669640864487,
+                    rev_reg_def_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:4ae1cc6c-f6bd-486c-8057-88f2ce74e960",
+                ),
+            )
+            assert isinstance(result, RevList)
+            # Non-matching revocations and rev_list
+            mock_handle.fetch = mock.CoroutineMock(
+                side_effect=[
+                    MockRevRegDefEntry(),
+                    MockCredDefEntry(),
+                    mock.CoroutineMock(return_value=None),
+                    MockRevListEntry(),
+                ]
+            )
+            mock_handle.replace = mock.CoroutineMock(return_value=None)
+            result = await self.registry._sync_wallet_rev_list_with_issuer_cred_rev_records(
+                session,
+                RevList(
+                    issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
+                    current_accumulator="21 124C594B6B20E41B681E92B2C43FD165EA9E68BC3C9D63A82C8893124983CAE94 21 124C5341937827427B0A3A32113BD5E64FB7AB39BD3E5ABDD7970874501CA4897 6 5438CB6F442E2F807812FD9DC0C39AFF4A86B1E6766DBB5359E86A4D70401B0F 4 39D1CA5C4716FFC4FE0853C4FF7F081DFD8DF8D2C2CA79705211680AC77BF3A1 6 70504A5493F89C97C225B68310811A41AD9CD889301F238E93C95AD085E84191 4 39582252194D756D5D86D0EED02BF1B95CE12AED2FA5CD3C53260747D891993C",
+                    revocation_list=[0, 1, 0, 0],
+                    timestamp=1669640864487,
+                    rev_reg_def_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:4ae1cc6c-f6bd-486c-8057-88f2ce74e960",
+                ),
+            )
+            assert isinstance(result, RevList)
