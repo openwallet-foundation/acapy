@@ -1,5 +1,4 @@
-"""TODO."""
-from abc import ABC
+"""Base class for performing Verifiable Credential validation using credentialSchemas."""
 from typing import Dict, Optional
 from aries_cloudagent.vc.ld_proofs.schema_validators.error import VcSchemaValidatorError
 from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
@@ -10,16 +9,16 @@ from ....version import __version__
 
 
 
-class VcSchemaValidator(ABC):
+class VcSchemaValidator:
     """Base class for a single Verifiable Credential Schema Instance."""
     def __init__(self, *, vc_schema: Dict) -> None:
-        """TODO."""
+        """Initializes the VcSchemaValidator."""
         self._schema_type = self.check_type(vc_schema.get('type'))
         self._schema_id = self.check_id(vc_schema.get('id'))
     
     @property
     def schema_type(self):
-        """TODO."""
+        """Getter for schema type."""
         return self._schema_type
     
     @schema_type.setter
@@ -27,7 +26,7 @@ class VcSchemaValidator(ABC):
         self.schema_type = self.check_type(value)
 
     def check_type(self, type) -> str:
-        """TODO."""
+        """Checks type is valid."""
         if isinstance(type, str) and type is not None:
             return type
         else: 
@@ -37,15 +36,15 @@ class VcSchemaValidator(ABC):
         
     @property
     def schema_id(self):
-        """TODO."""
+        """Getter for schema id."""
         return self._schema_id
     
     @schema_id.setter
     def schema_id(self, value):
         self.schema_id = self.check_id(value)
-
+    
     def check_id(self, id) -> str:
-        """TODO."""
+        """Checks id is valid."""
         if isinstance(id, str) or type is None:
             return id
         else: 
@@ -54,10 +53,11 @@ class VcSchemaValidator(ABC):
                 )
 
     def validate(self, vc: VerifiableCredential):
-        """TODO.
+        """Validate a verifiable credential with its provided credentialSchema.
 
-        :param vc: TODO.
-        :raises VcSchemaValidatorError: TODO.
+        :param vc: The Verifiable Credential to validate.
+        :raises VcSchemaValidatorError: errors for the invalid VC.
+        :returns True if valid.
         """
         raise VcSchemaValidatorError(
             f"{self.schema_type} type is not supported for validating."
@@ -67,8 +67,8 @@ class VcSchemaValidator(ABC):
         """Retrieves a schema JSON document from the given URL.
 
         :param url: the URL of the schema to download
-        :param options: _description_
-        :return: _description_
+        :param options: 
+        :return: the Schema JSON object
         """
         options = options or {}
 

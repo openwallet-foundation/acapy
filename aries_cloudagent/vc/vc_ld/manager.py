@@ -2,8 +2,7 @@
 
 from typing import Dict, List, Optional, Type, Union, cast
 
-from aries_cloudagent.vc.ld_proofs.schema_validators.construct_validator import construct_validator
-from aries_cloudagent.vc.ld_proofs.schema_validators.schema_validator_base import VcSchemaValidatorError
+
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
@@ -30,6 +29,8 @@ from ..ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
 from ..ld_proofs.suites.ed25519_signature_2020 import Ed25519Signature2020
 from ..ld_proofs.suites.linked_data_proof import LinkedDataProof
 from ..ld_proofs.validation_result import DocumentVerificationResult
+from ..ld_proofs.schema_validators.construct_validator import construct_validator
+from ..ld_proofs.schema_validators.schema_validator_base import VcSchemaValidatorError
 from ..vc_ld.models.presentation import VerifiablePresentation
 from ..vc_ld.validation_result import PresentationVerificationResult
 from .external_suite import ExternalSuiteNotFoundError, ExternalSuiteProvider
@@ -298,15 +299,12 @@ class VcLdpManager:
             credential_schemas = [credential_schemas]
         
         if credential_schemas:
-            validation_errors = []
             for credential_schema in credential_schemas:
                 try:
                     validator = construct_validator(credential_schema)
-                    validation_errors.extend(validator.validate(credential))
+                    validator.validate(credential)
                 except VcSchemaValidatorError as e:
-                    raise VcLdpManagerError("Failed to validate credentialSchema.") from e
-            if len(validation_errors) > 0:
-                raise VcLdpManagerError(validation_errors) # TODOS
+                    raise VcLdpManagerError("credentialSchema validation error") from e
 
         return credential
 

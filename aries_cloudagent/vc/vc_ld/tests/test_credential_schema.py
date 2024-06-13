@@ -65,4 +65,4 @@ class TestCredentialSchema(IsolatedAsyncioTestCase):
                 await self.ldp_manager.prepare_credential(vc, self.options)
     
             assert '''"reason": "\'2.1\' is not of type \'number\'", "credential_path": "$.credentialSubject.creditsEarned"''' in validator_error.value.args[0]
-        assert ldp_manager_error.value.args[0] == 'Failed to validate credentialSchema.'
+        assert ldp_manager_error.value.args[0] == 'credentialSchema validation error'

@@ -1,4 +1,4 @@
-
+"""1EdTechJsonSchemaValidator2019 credentialSchema validator."""
 
 from typing import List
 from jsonschema import Draft201909Validator, ValidationError
@@ -10,14 +10,14 @@ from aries_cloudagent.vc.vc_ld.models.credential import VerifiableCredential
 import json
 
 class EdJsonVcSchemaValidator(VcSchemaValidator):
-    """TODO."""
+    """Class implementation for 1EdTechJsonSchemaValidator2019 type."""
     def __init__(self, vc_schema: dict):
-        """TODO."""
+        """Initializes the EdJsonVcSchemaValidator."""
         self._schema_type = self.check_type(vc_schema.get('type'))
         self._schema_id = self.check_id(vc_schema.get('id'))
 
     def check_id(self,id) -> str:
-        """TODO."""
+        """Checks the id follows 1EdTechJsonSchemaValidator2019 type requirements."""
         if isinstance(id, str) or id is None:
             if id.startswith("https"):
                 return id
@@ -34,8 +34,8 @@ class EdJsonVcSchemaValidator(VcSchemaValidator):
         """Validates a given VerifiableCredential against its credentialSchema.
 
         :param vc: the Verifiable Credential to validate
-        :raises VcSchemaValidatorError: errors for invalid Credential
-        :return: a list of validation errors
+        :raises VcSchemaValidatorError: errors for invalid VC.
+        :return: True if valid
         """
 
         validation_errors = []
@@ -45,16 +45,13 @@ class EdJsonVcSchemaValidator(VcSchemaValidator):
 
 
         vc_json = json.loads(vc.to_json())
-
         validation_errors.extend(validator.iter_errors(vc_json))
-    
-            
 
         if len(validation_errors) > 0:
             formatted  = self.format_validation_errors(validation_errors)
             raise VcSchemaValidatorError(formatted)
 
-        return []
+        return True
     
     def format_validation_errors(self, errors:List[ValidationError]):
         """Formats a list of errors from validating the VC.
@@ -79,7 +76,7 @@ class EdJsonVcSchemaValidator(VcSchemaValidator):
                 error_details.append(details)
 
         traverse_errors(by_relevance)
-
+        # TODO: Standardize?
         prefix = "Credential does not conform to Schema"
 
         error = {
