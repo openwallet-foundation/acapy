@@ -222,7 +222,7 @@ class IndyRevocation:
         return rev_reg_delta
 
     async def get_or_create_active_registry(
-        self, cred_def_id: str, max_cred_num: int = None
+        self, cred_def_id: str
     ) -> Optional[Tuple[IssuerRevRegRecord, RevocationRegistry]]:
         """Fetch the active revocation registry.
 
@@ -240,14 +240,35 @@ class IndyRevocation:
             pass
 
         async with self._profile.session() as session:
-            rev_reg_recs = await IssuerRevRegRecord.query_by_cred_def_id(
-                session, cred_def_id, {"$neq": IssuerRevRegRecord.STATE_FULL}
+            rev_reg_records = await IssuerRevRegRecord.query_by_cred_def_id(
+                session, cred_def_id
             )
-            if not rev_reg_recs:
+            full_registries = [
+                rev
+                for rev in rev_reg_records
+                if rev.state == IssuerRevRegRecord.STATE_FULL
+            ]
+
+            # all registries are full, create a new one
+            if len(full_registries) == len(rev_reg_records):
                 await self.init_issuer_registry(
                     cred_def_id,
-                    max_cred_num=max_cred_num,
+                    max_cred_num=rev_reg_records[0].max_cred_num,
                 )
+            # if there is a posted registry, activate oldest
+            else:
+                posted_registries = sorted(
+                    [
+                        rev
+                        for rev in rev_reg_records
+                        if rev.state == IssuerRevRegRecord.STATE_POSTED
+                    ]
+                )
+                if posted_registries:
+                    await self._set_registry_status(
+                        posted_registries[0].revoc_reg_id,
+                        IssuerRevRegRecord.STATE_ACTIVE,
+                    )
         return None
 
     async def get_ledger_registry(self, revoc_reg_id: str) -> RevocationRegistry:
