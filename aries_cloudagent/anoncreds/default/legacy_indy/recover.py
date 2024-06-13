@@ -32,6 +32,22 @@ class RevocRecoveryException(Exception):
     """Raise exception generating the recovery transaction."""
 
 
+async def _check_tails_hash_for_inconsistency(tails_location: str, tails_hash: str):
+    async with aiohttp.ClientSession() as session:
+        LOGGER.debug("Tails URL: %s", tails_location)
+        tails_data_http_response = await session.get(tails_location)
+        tails_data = await tails_data_http_response.read()
+        tails_hash = base58.b58encode(hashlib.sha256(tails_data).digest()).decode(
+            "utf-8"
+        )
+        if tails_hash != tails_hash:
+            raise RevocRecoveryException(
+                f"Tails hash mismatch {tails_hash} {tails_hash}"
+            )
+        else:
+            LOGGER.debug("Checked tails hash: %s", tails_hash)
+
+
 async def fetch_txns(genesis_txns: str, registry_id: str, issuer_id: str) -> tuple[
     dict,
     set[int],
@@ -54,20 +70,9 @@ async def fetch_txns(genesis_txns: str, registry_id: str, issuer_id: str) -> tup
     rev_reg_def_raw["issuerId"] = issuer_id
     revoc_reg_def = RevocationRegistryDefinition.load(rev_reg_def_raw)
 
-    # Check tails hash for inconsistency
-    async with aiohttp.ClientSession() as session:
-        LOGGER.debug("Tails URL: %s", revoc_reg_def.tails_location)
-        tails_data_http_response = await session.get(revoc_reg_def.tails_location)
-        tails_data = await tails_data_http_response.read()
-        tails_hash = base58.b58encode(hashlib.sha256(tails_data).digest()).decode(
-            "utf-8"
-        )
-        if tails_hash != revoc_reg_def.tails_hash:
-            raise RevocRecoveryException(
-                f"Tails hash mismatch {tails_hash} {revoc_reg_def.tails_hash}"
-            )
-        else:
-            LOGGER.debug("Checked tails hash: %s", tails_hash)
+    await _check_tails_hash_for_inconsistency(
+        revoc_reg_def.tails_location, revoc_reg_def.tails_hash
+    )
 
     LOGGER.debug(f"Fetch revocation registry delta {registry_id} from ledger")
     to_timestamp = int(time.time())
@@ -110,7 +115,7 @@ async def generate_ledger_rrrecovery_txn(genesis_txns: str, rev_list: RevList):
     else:
         LOGGER.debug("New revoked indexes: %s", updates)
 
-        # Prepare the transcation to write to the ledger
+        # Prepare the transaction to write to the ledger
         registry = RevocationRegistry.load(registry_from_ledger)
         registry = registry.to_dict()
         registry["ver"] = "1.0"
