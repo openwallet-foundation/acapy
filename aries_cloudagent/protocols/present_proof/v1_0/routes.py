@@ -25,6 +25,7 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.models.paginated_query import PaginatedQuerySchema
 from ....messaging.valid import (
     INDY_EXTRA_WQL_EXAMPLE,
     INDY_EXTRA_WQL_VALIDATE,
@@ -35,6 +36,7 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
+from ....storage.base import DEFAULT_PAGE_SIZE
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....wallet.error import WalletNotFoundError
@@ -54,7 +56,7 @@ class V10PresentProofModuleResponseSchema(OpenAPISchema):
     """Response schema for Present Proof Module."""
 
 
-class V10PresentationExchangeListQueryStringSchema(OpenAPISchema):
+class V10PresentationExchangeListQueryStringSchema(PaginatedQuerySchema):
     """Parameters and validators for presentation exchange list query."""
 
     connection_id = fields.Str(
@@ -310,11 +312,16 @@ async def presentation_exchange_list(request: web.BaseRequest):
         if request.query.get(k, "") != ""
     }
 
+    limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+    offset = int(request.query.get("offset", 0))
+
     try:
         async with context.profile.session() as session:
             records = await V10PresentationExchange.query(
                 session=session,
                 tag_filter=tag_filter,
+                limit=limit,
+                offset=offset,
                 post_filter_positive=post_filter,
             )
         results = [record.serialize() for record in records]

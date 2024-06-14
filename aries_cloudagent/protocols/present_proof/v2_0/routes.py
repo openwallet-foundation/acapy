@@ -26,6 +26,7 @@ from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.models.paginated_query import PaginatedQuerySchema
 from ....messaging.valid import (
     INDY_EXTRA_WQL_EXAMPLE,
     INDY_EXTRA_WQL_VALIDATE,
@@ -36,7 +37,7 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
-from ....storage.base import BaseStorage
+from ....storage.base import DEFAULT_PAGE_SIZE, BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
@@ -70,7 +71,7 @@ class V20PresentProofModuleResponseSchema(OpenAPISchema):
     """Response schema for Present Proof Module."""
 
 
-class V20PresExRecordListQueryStringSchema(OpenAPISchema):
+class V20PresExRecordListQueryStringSchema(PaginatedQuerySchema):
     """Parameters and validators for presentation exchange list query."""
 
     connection_id = fields.Str(
@@ -448,11 +449,16 @@ async def present_proof_list(request: web.BaseRequest):
         if request.query.get(k, "") != ""
     }
 
+    limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+    offset = int(request.query.get("offset", 0))
+
     try:
         async with profile.session() as session:
             records = await V20PresExRecord.query(
                 session=session,
                 tag_filter=tag_filter,
+                limit=limit,
+                offset=offset,
                 post_filter_positive=post_filter,
             )
         results = [record.serialize() for record in records]
