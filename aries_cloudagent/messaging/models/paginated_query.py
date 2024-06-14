@@ -2,9 +2,8 @@
 
 from marshmallow import fields
 
-from aries_cloudagent.storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
-
 from ...messaging.models.openapi import OpenAPISchema
+from ...storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
 
 
 class PaginatedQuerySchema(OpenAPISchema):
