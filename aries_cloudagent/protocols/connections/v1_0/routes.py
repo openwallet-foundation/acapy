@@ -19,6 +19,7 @@ from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.models.paginated_query import PaginatedQuerySchema
 from ....messaging.valid import (
     ENDPOINT_EXAMPLE,
     ENDPOINT_VALIDATE,
@@ -30,6 +31,7 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
+from ....storage.base import DEFAULT_PAGE_SIZE
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 from .manager import ConnectionManager, ConnectionManagerError
@@ -236,7 +238,7 @@ class ConnectionStaticResultSchema(OpenAPISchema):
     record = fields.Nested(ConnRecordSchema(), required=True)
 
 
-class ConnectionsListQueryStringSchema(OpenAPISchema):
+class ConnectionsListQueryStringSchema(PaginatedQuerySchema):
     """Parameters and validators for connections list request query string."""
 
     alias = fields.Str(
@@ -468,11 +470,19 @@ async def connections_list(request: web.BaseRequest):
     if request.query.get("connection_protocol"):
         post_filter["connection_protocol"] = request.query["connection_protocol"]
 
+    limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+    offset = int(request.query.get("offset", 0))
+
     profile = context.profile
     try:
         async with profile.session() as session:
             records = await ConnRecord.query(
-                session, tag_filter, post_filter_positive=post_filter, alt=True
+                session,
+                tag_filter,
+                limit=limit,
+                offset=offset,
+                post_filter_positive=post_filter,
+                alt=True,
             )
         results = [record.serialize() for record in records]
         results.sort(key=connection_sort_key)
