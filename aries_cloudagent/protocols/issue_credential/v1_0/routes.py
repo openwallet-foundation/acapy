@@ -22,6 +22,7 @@ from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.models.paginated_query import PaginatedQuerySchema
 from ....messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
     INDY_CRED_DEF_ID_VALIDATE,
@@ -34,6 +35,7 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
+from ....storage.base import DEFAULT_PAGE_SIZE
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....wallet.util import default_did_from_verkey
@@ -57,7 +59,7 @@ class IssueCredentialModuleResponseSchema(OpenAPISchema):
     """Response schema for Issue Credential Module."""
 
 
-class V10CredentialExchangeListQueryStringSchema(OpenAPISchema):
+class V10CredentialExchangeListQueryStringSchema(PaginatedQuerySchema):
     """Parameters and validators for credential exchange list query."""
 
     connection_id = fields.Str(
@@ -403,11 +405,16 @@ async def credential_exchange_list(request: web.BaseRequest):
         if request.query.get(k, "") != ""
     }
 
+    limit = int(request.query.get("limit", DEFAULT_PAGE_SIZE))
+    offset = int(request.query.get("offset", 0))
+
     try:
         async with context.profile.session() as session:
             records = await V10CredentialExchange.query(
                 session=session,
                 tag_filter=tag_filter,
+                limit=limit,
+                offset=offset,
                 post_filter_positive=post_filter,
             )
         results = [record.serialize() for record in records]
