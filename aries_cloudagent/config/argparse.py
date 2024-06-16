@@ -680,7 +680,7 @@ class GeneralGroup(ArgumentGroup):
         if args.storage_type:
             settings["storage_type"] = args.storage_type
 
-        elif args.endpoint:
+        if args.endpoint:
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
 
