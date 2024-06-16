@@ -402,25 +402,28 @@ class LoggingConfigurator:
                 banner.hr()
                 banner.print(
                     "Receiving a core DIDComm protocol with the "
-                    "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix is deprecated. All parties "
-                    "sending this prefix should be notified that support for receiving such "
-                    "messages will be removed in a future release. "
+                    "`did:sov:BzCbsNYhMrjHiqZDTUASHg;spec` prefix is deprecated. "
+                    "All parties sending this prefix should be notified that support "
+                    "for receiving such messages will be removed in a future release. "
                     "Use https://didcomm.org/ instead."
                 )
                 banner.hr()
                 banner.print(
-                    "Aries RFC 0160: Connection Protocol is deprecated and support will be "
-                    "removed in a future release; use RFC 0023: DID Exchange instead."
+                    "Aries RFC 0160: Connection Protocol is deprecated and "
+                    "support will be removed in a future release; "
+                    "use RFC 0023: DID Exchange instead."
                 )
                 banner.hr()
                 banner.print(
-                    "Aries RFC 0036: Issue Credential 1.0 is deprecated and support will be "
-                    "removed in a future release; use RFC 0453: Issue Credential 2.0 instead."
+                    "Aries RFC 0036: Issue Credential 1.0 is deprecated "
+                    "and support will be removed in a future release; "
+                    "use RFC 0453: Issue Credential 2.0 instead."
                 )
                 banner.hr()
                 banner.print(
-                    "Aries RFC 0037: Present Proof 1.0 is deprecated and support will be "
-                    "removed in a future release; use RFC 0454: Present Proof 2.0 instead."
+                    "Aries RFC 0037: Present Proof 1.0 is deprecated "
+                    "and support will be removed in a future release; "
+                    "use RFC 0454: Present Proof 2.0 instead."
                 )
         print()
 
