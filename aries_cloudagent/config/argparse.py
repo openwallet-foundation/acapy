@@ -684,7 +684,7 @@ class GeneralGroup(ArgumentGroup):
             settings["default_endpoint"] = args.endpoint[0]
             settings["additional_endpoints"] = args.endpoint[1:]
 
-        elif not args.no_transport:
+        elif args.no_transport:
             raise ArgsParseError("-e/--endpoint is required")
 
         if args.profile_endpoint:
