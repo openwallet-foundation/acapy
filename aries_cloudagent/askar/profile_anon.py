@@ -202,6 +202,7 @@ class AskarAnoncredsProfileSession(ProfileSession):
             self._opener = self.profile.store.transaction(profile.profile_id)
         else:
             self._opener = self.profile.store.session(profile.profile_id)
+        self._profile = profile
         self._handle: Session = None
         self._acquire_start: float = None
         self._acquire_end: float = None
@@ -214,7 +215,7 @@ class AskarAnoncredsProfileSession(ProfileSession):
     @property
     def store(self) -> Store:
         """Accessor for the Store instance."""
-        return self._handle and self._handle.store
+        return self._profile and self._profile.store
 
     @property
     def is_transaction(self) -> bool:

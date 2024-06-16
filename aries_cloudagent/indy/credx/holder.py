@@ -250,11 +250,11 @@ class IndyCredxHolder(IndyHolder):
 
         try:
             rows = self._profile.store.scan(
-                CATEGORY_CREDENTIAL,
-                wql,
-                start,
-                count,
-                self._profile.settings.get("wallet.askar_profile"),
+                category=CATEGORY_CREDENTIAL,
+                tag_filter=wql,
+                offset=start,
+                limit=count,
+                profile=self._profile.settings.get("wallet.askar_profile"),
             )
             async for row in rows:
                 cred = Credential.load(row.raw_value)
@@ -321,11 +321,11 @@ class IndyCredxHolder(IndyHolder):
                 tag_filter = {"$and": [tag_filter, extra_query]}
 
             rows = self._profile.store.scan(
-                CATEGORY_CREDENTIAL,
-                tag_filter,
-                start,
-                count,
-                self._profile.settings.get("wallet.askar_profile"),
+                category=CATEGORY_CREDENTIAL,
+                tag_filter=tag_filter,
+                offset=start,
+                limit=count,
+                profile=self._profile.settings.get("wallet.askar_profile"),
             )
             async for row in rows:
                 if row.name in creds:
