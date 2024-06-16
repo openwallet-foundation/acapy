@@ -3,7 +3,6 @@
 from typing import Mapping, Sequence
 
 from ..core.in_memory import InMemoryProfile
-
 from .base import (
     DEFAULT_PAGE_SIZE,
     BaseStorage,
@@ -11,11 +10,7 @@ from .base import (
     BaseStorageSearchSession,
     validate_record,
 )
-from .error import (
-    StorageDuplicateError,
-    StorageNotFoundError,
-    StorageSearchError,
-)
+from .error import StorageDuplicateError, StorageNotFoundError, StorageSearchError
 from .record import StorageRecord
 
 
@@ -101,6 +96,36 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
         if record.id not in self.profile.records:
             raise StorageNotFoundError("Record not found: {}".format(record.id))
         del self.profile.records[record.id]
+
+    async def find_paginated_records(
+        self,
+        type_filter: str,
+        tag_query: Mapping = None,
+        limit: int = DEFAULT_PAGE_SIZE,
+        offset: int = 0,
+    ) -> Sequence[StorageRecord]:
+        """Retrieve a page of records matching a particular type filter and tag query.
+
+        Args:
+            type_filter: The type of records to filter by
+            tag_query: An optional dictionary of tag filter clauses
+            limit: The maximum number of records to retrieve
+            offset: The offset to start retrieving records from
+        """
+        results = []
+        skipped = 0
+        collected = 0
+        for record in self.profile.records.values():
+            if record.type == type_filter and tag_query_match(record.tags, tag_query):
+                if skipped < offset:
+                    skipped += 1
+                    continue
+                if collected < limit:
+                    collected += 1
+                    results.append(record)
+                else:
+                    break
+        return results
 
     async def find_all_records(
         self,

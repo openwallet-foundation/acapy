@@ -8,7 +8,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Sequence, Tuple
+from typing import List, NamedTuple, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 import base58
@@ -19,6 +19,7 @@ from anoncreds import (
     RevocationRegistryDefinition,
     RevocationRegistryDefinitionPrivate,
     RevocationStatusList,
+    W3cCredential,
 )
 from aries_askar.error import AskarError
 from requests import RequestException, Session
@@ -717,6 +718,7 @@ class AnonCredsRevocation:
             backoff=-0.5,
             max_attempts=5,  # heuristic: respect HTTP timeout
         )
+
         if not upload_success:
             raise AnonCredsRevocationError(
                 f"Tails file for rev reg for {rev_reg_def.cred_def_id} "
@@ -892,6 +894,34 @@ class AnonCredsRevocation:
 
     # Credential Operations
 
+    async def create_credential_w3c(
+        self,
+        w3c_credential_offer: dict,
+        w3c_credential_request: dict,
+        w3c_credential_values: dict,
+        *,
+        retries: int = 5,
+    ) -> Tuple[str, str, str]:
+        """Create a w3c_credential.
+
+        Args:
+            w3c_credential_offer: Credential Offer to create w3c_credential for
+            w3c_credential_request: Credential request to create w3c_credential for
+            w3c_credential_values: Values to go in w3c_credential
+            retries: number of times to retry w3c_credential creation
+
+        Returns:
+            A tuple of created w3c_credential and revocation id
+
+        """
+        return await self._create_credential_helper(
+            w3c_credential_offer,
+            w3c_credential_request,
+            w3c_credential_values,
+            W3cCredential,
+            retries=retries,
+        )
+
     async def _create_credential(
         self,
         credential_definition_id: str,
@@ -899,9 +929,26 @@ class AnonCredsRevocation:
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
+        credential_type: Union[Credential, W3cCredential],
         rev_reg_def_id: Optional[str] = None,
         tails_file_path: Optional[str] = None,
     ) -> Tuple[str, str]:
+        """Create a credential.
+
+        Args:
+            credential_definition_id: The credential definition ID
+            schema_attributes: The schema attributes
+            credential_offer: The credential offer
+            credential_request: The credential request
+            credential_values: The credential values
+            credential_type: The credential type
+            rev_reg_def_id: The revocation registry definition ID
+            tails_file_path: The tails file path
+
+        Returns:
+            A tuple of created credential and revocation ID
+
+        """
         try:
             async with self.profile.session() as session:
                 cred_def = await session.handle.fetch(
@@ -1004,14 +1051,13 @@ class AnonCredsRevocation:
         try:
             credential = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: Credential.create(
-                    cred_def.raw_value,
-                    cred_def_private.raw_value,
-                    credential_offer,
-                    credential_request,
-                    raw_values,
-                    None,
-                    revoc,
+                lambda: credential_type.create(
+                    cred_def=cred_def.raw_value,
+                    cred_def_private=cred_def_private.raw_value,
+                    cred_offer=credential_offer,
+                    cred_request=credential_request,
+                    attr_raw_values=raw_values,
+                    revocation_config=revoc,
                 ),
             )
         except AnoncredsError as err:
@@ -1034,6 +1080,36 @@ class AnonCredsRevocation:
             credential_request: Credential request to create credential for
             credential_values: Values to go in credential
             revoc_reg_id: ID of the revocation registry
+            retries: number of times to retry credential creation
+
+        Returns:
+            A tuple of created credential and revocation id
+
+        """
+        return await self._create_credential_helper(
+            credential_offer,
+            credential_request,
+            credential_values,
+            Credential,
+            retries=retries,
+        )
+
+    async def _create_credential_helper(
+        self,
+        credential_offer: dict,
+        credential_request: dict,
+        credential_values: dict,
+        credential_type: Union[Credential, W3cCredential],
+        *,
+        retries: int = 5,
+    ) -> Tuple[str, str, str]:
+        """Create a credential.
+
+        Args:
+            credential_offer: Credential Offer to create credential for
+            credential_request: Credential request to create credential for
+            credential_values: Values to go in credential
+            credential_type: Credential or W3cCredential
             retries: number of times to retry credential creation
 
         Returns:
@@ -1081,6 +1157,7 @@ class AnonCredsRevocation:
                     credential_offer,
                     credential_request,
                     credential_values,
+                    credential_type,
                     rev_reg_def_id,
                     tails_file_path,
                 )

@@ -376,5 +376,9 @@ class TestAskarStorageSearchSession(IsolatedAsyncioTestCase):
             assert storageSearchSession._scan == askar_profile_scan
             askar_profile.settings.get.assert_called_once_with("wallet.askar_profile")
             askar_profile.store.scan.assert_called_once_with(
-                "filter", "tagQuery", profile=profile
+                category="filter",
+                tag_filter="tagQuery",
+                limit=None,
+                offset=None,
+                profile=profile,
             )
