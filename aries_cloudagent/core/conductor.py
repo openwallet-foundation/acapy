@@ -191,7 +191,7 @@ class Conductor:
         ):
             LOGGER.warning("No ledger configured")
 
-        if not context.settings.get("transport.no_transport"):
+        if not context.settings.get("transport.disabled"):
             # Register all inbound transports if enabled
             self.inbound_transport_manager = InboundTransportManager(
                 self.root_profile, self.inbound_message_router, self.handle_not_returned
@@ -201,7 +201,7 @@ class Conductor:
                 InboundTransportManager, self.inbound_transport_manager
             )
 
-        if not context.settings.get("transport.no_transport"):
+        if not context.settings.get("transport.disabled"):
             # Register all outbound transports
             self.outbound_transport_manager = OutboundTransportManager(
                 self.root_profile, self.handle_not_delivered
@@ -288,7 +288,7 @@ class Conductor:
         context = self.root_profile.context
         await self.check_for_valid_wallet_type(self.root_profile)
 
-        if not context.settings.get("transport.no_transport"):
+        if not context.settings.get("transport.disabled"):
             # Start up transports if enabled
             try:
                 await self.inbound_transport_manager.start()
@@ -319,7 +319,7 @@ class Conductor:
         # Get agent label
         default_label = context.settings.get("default_label")
 
-        if context.settings.get("transport.no_transport"):
+        if context.settings.get("transport.disabled"):
             LoggingConfigurator.print_banner(
                 default_label,
                 None,
