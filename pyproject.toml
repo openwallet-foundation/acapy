@@ -22,7 +22,7 @@ aiohttp-cors="~0.7.0"
 apispec="^6.6.0"
 async-timeout="~4.0.2"
 base58="~2.1.0"
-ConfigArgParse="~1.5.3"
+ConfigArgParse="~1.7"
 deepmerge="~0.3.0"
 ecdsa="~0.19.0"
 jsonpath-ng="1.6.1"
@@ -47,7 +47,7 @@ unflatten="~0.1"
 sd-jwt = "^0.10.3"
 did-peer-2 = "^0.1.2"
 did-peer-4 = "^0.1.4"
-uuid_utils = "^0.7.0"
+uuid_utils = "^0.8.0"
 
 # askar
 aries-askar= { version = "~0.3.0", optional = true }
