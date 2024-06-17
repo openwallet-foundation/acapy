@@ -513,6 +513,7 @@ class AnonCredsVerifier:
         schemas = {}
         msgs = []
 
+        # TODO this should use the process_pres_identifiers() method, which will also fetch the revocation info
         for cred_def_id in cred_def_ids:
             anoncreds_registry = self.profile.inject(AnonCredsRegistry)
             # Build schemas for anoncreds
@@ -532,7 +533,7 @@ class AnonCredsVerifier:
             if schema["schema_id"] not in schemas:
                 schemas[schema["schema_id"]] = schema["schema"]
 
-        # TODO
+        # TODO - this should get loaded from process_pres_identifiers() (with schemas and cred defs)
         rev_reg_defs = {}
         rev_lists = {}
 

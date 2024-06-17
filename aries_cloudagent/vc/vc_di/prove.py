@@ -166,7 +166,6 @@ async def create_signed_anoncreds_presentation(
             else:
                 print("... skipping:", path)
 
-    # TODO should have an anoncreds version of this ...
     anoncreds_verifier = AnonCredsVerifier(profile)
     (
         schemas,
@@ -175,6 +174,8 @@ async def create_signed_anoncreds_presentation(
         rev_reg_entries,
     ) = await anoncreds_verifier.process_pres_identifiers(w3c_creds_metadata)
 
+    # TODO possibly refactor this into a couple of methods - one to create the proof request and another to sign it
+    # (the holder flag is a bit of a hack)
     if holder:
         # TODO match up the parameters with what the function is expecting ...
         anoncreds_holder = AnonCredsHolder(profile)
@@ -196,6 +197,7 @@ async def create_signed_anoncreds_presentation(
 
 def _extract_cred_idx(item_path: str) -> int:
     # TODO put in some logic here ...
+    print(">>> TODO need to parse the index from this path:", item_path)
     return 0
 
 def _get_predicate_type_and_value(pred_filter: dict) -> (str, str):

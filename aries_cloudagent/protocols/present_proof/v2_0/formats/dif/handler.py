@@ -497,7 +497,3 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         assert pres_ver_result is not None
         pres_ex_record.verified = json.dumps(pres_ver_result.verified)
         return pres_ex_record
-
-    async def _convert_pres_def_to_ac_pres_req(self, proof_req_dict: dict) -> dict:
-        # TODO
-        return []
