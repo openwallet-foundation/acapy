@@ -1303,7 +1303,7 @@ class DIFPresExchHandler:
                 vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
             if self.proof_type == ("anoncreds-2023"):
                 # TODO create anoncreds proof
-                signed_vp = await create_signed_anoncreds_presentation(
+                (_proof_req, signed_vp, _cred_meta) = await create_signed_anoncreds_presentation(
                     profile=self.profile,
                     pres_definition=pd.serialize(),
                     presentation=vp,

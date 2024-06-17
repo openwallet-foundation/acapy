@@ -4,6 +4,8 @@ import asyncio
 from typing import List
 from pyld.jsonld import JsonLdProcessor
 
+from ...core.profile import Profile
+from ...anoncreds.verifier import AnonCredsVerifier
 from ..ld_proofs import (
     LinkedDataProof,
     CredentialIssuancePurpose,
@@ -16,137 +18,17 @@ from ..ld_proofs import (
 )
 from ..vc_ld.models.credential import VerifiableCredentialSchema
 from ..vc_ld.validation_result import PresentationVerificationResult
+from .prove import create_signed_anoncreds_presentation
 
 
-async def _verify_credential(
+async def verify_signed_anoncredspresentation(
     *,
-    credential: dict,
-    suites: List[LinkedDataProof],
-    document_loader: DocumentLoaderMethod,
-    purpose: ProofPurpose = None,
-) -> DocumentVerificationResult:
-    """Verify credential structure, proof purpose and signature."""
-
-    # Validate credential structure
-    errors = VerifiableCredentialSchema().validate(credential)
-    if len(errors) > 0:
-        raise LinkedDataProofException(
-            f"Unable to verify credential with invalid structure: {errors}"
-        )
-
-    if not purpose:
-        purpose = CredentialIssuancePurpose()
-
-    result = await ld_proofs_verify(
-        document=credential,
-        suites=suites,
-        purpose=purpose,
-        document_loader=document_loader,
-    )
-
-    return result
-
-
-async def verify_credential(
-    *,
-    credential: dict,
-    suites: List[LinkedDataProof],
-    document_loader: DocumentLoaderMethod,
-    purpose: ProofPurpose = None,
-) -> DocumentVerificationResult:
-    """Verify credential structure, proof purpose and signature.
-
-    Args:
-        credential (dict): The credential to verify
-        suites (List[LinkedDataProof]): The signature suites to verify with
-        document_loader (DocumentLoader): Document loader used for resolving of documents
-        purpose (ProofPurpose, optional): Proof purpose to use.
-            Defaults to CredentialIssuancePurpose
-
-    Returns:
-        DocumentVerificationResult: The result of the verification. Verified property
-            indicates whether the verification was successful
-
-    """
-    try:
-        return await _verify_credential(
-            credential=credential,
-            document_loader=document_loader,
-            suites=suites,
-            purpose=purpose,
-        )
-    except Exception as e:
-        return DocumentVerificationResult(
-            verified=False, document=credential, errors=[e]
-        )
-
-
-async def _verify_presentation(
-    *,
+    profile: Profile,
     presentation: dict,
-    suites: List[LinkedDataProof],
-    document_loader: DocumentLoaderMethod,
-    challenge: str = None,
-    domain: str = None,
-    purpose: ProofPurpose = None,
-):
-    """Verify presentation structure, credentials, proof purpose and signature."""
-
-    if not purpose and not challenge:
-        raise LinkedDataProofException(
-            'A "challenge" param is required for AuthenticationProofPurpose.'
-        )
-    elif not purpose:
-        purpose = AuthenticationProofPurpose(challenge=challenge, domain=domain)
-
-    # TODO validate presentation structure here
-    if "proof" not in presentation:
-        raise LinkedDataProofException('presentation must contain "proof"')
-
-    presentation_result = await ld_proofs_verify(
-        document=presentation,
-        suites=suites,
-        purpose=purpose,
-        document_loader=document_loader,
-    )
-
-    credential_results = None
-
-    credentials = JsonLdProcessor.get_values(presentation, "verifiableCredential")
-    credential_results = await asyncio.gather(
-        *[
-            verify_credential(
-                credential=credential,
-                suites=suites,
-                document_loader=document_loader,
-                # FIXME: we don't want to inherit the authentication purpose
-                # from the presentation. However we do want to have subject
-                # authentication I guess
-                # purpose=purpose,
-            )
-            for credential in credentials
-        ]
-    )
-
-    credentials_verified = all(result.verified for result in credential_results)
-    verified = credentials_verified and presentation_result.verified
-
-    return PresentationVerificationResult(
-        verified=verified,
-        presentation_result=presentation_result,
-        credential_results=credential_results,
-        errors=presentation_result.errors,
-    )
-
-
-async def verify_presentation(
-    *,
-    presentation: dict,
-    suites: List[LinkedDataProof],
-    document_loader: DocumentLoaderMethod,
     purpose: ProofPurpose = None,
     challenge: str = None,
     domain: str = None,
+    pres_req: dict = None,
 ) -> PresentationVerificationResult:
     """Verify presentation structure, credentials, proof purpose and signature.
 
@@ -169,23 +51,29 @@ async def verify_presentation(
 
     # TODO: I think we should add some sort of options to authenticate the subject id
     # to the presentation verification method controller
+    anoncreds_verifier = AnonCredsVerifier(profile)
+
+    credentials = presentation["verifiableCredential"]
+    pres_definition = pres_req["presentation_definition"]
+
+    (anoncreds_pres_req, _signed_vp, cred_metadata) = await create_signed_anoncreds_presentation(
+        profile=profile,
+        pres_definition=pres_definition,
+        presentation=presentation,
+        credentials=credentials,
+        challenge=challenge,
+        domain=domain,
+        holder=False,
+    )
 
     try:
-        return await _verify_presentation(
-            presentation=presentation,
-            challenge=challenge,
-            purpose=purpose,
-            suites=suites,
-            domain=domain,
-            document_loader=document_loader,
+        return await anoncreds_verifier.verify_presentation_w3c(
+            anoncreds_pres_req,
+            presentation,
         )
     except Exception as e:
-        return PresentationVerificationResult(verified=False, errors=[e])
+        raise e
+        # return PresentationVerificationResult(verified=False, errors=[e])
 
 
 __all__ = ["verify_presentation", "verify_credential"]
-
-
-async def verify_signed_anoncredspresentation():
-    # TODO
-    pass

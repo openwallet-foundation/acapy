@@ -18,6 +18,7 @@ from ......vc.ld_proofs import (
     Ed25519Signature2020,
     LinkedDataProof,
 )
+from ......vc.vc_di.manager import VcDiManager
 from ......vc.vc_ld.manager import VcLdpManager
 from ......vc.vc_ld.models.options import LDProofVCOptions
 from ......vc.vc_ld.models.presentation import VerifiablePresentation
@@ -464,11 +465,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_request = pres_ex_record.pres_request.attachment(
             DIFPresFormatHandler.format
         )
-        manager = VcLdpManager(self.profile)
 
-        options = LDProofVCOptions.deserialize(pres_request["options"])
-        if not options.challenge:
-            options.challenge = str(uuid4())
+        if dif_proof["proof"]["type"] == "DataIntegrityProof":
+            manager = VcDiManager(self.profile)
+            options = pres_request
+        else:
+            manager = VcLdpManager(self.profile)
+            options = LDProofVCOptions.deserialize(pres_request["options"])
+            if not options.challenge:
+                options.challenge = str(uuid4())
 
         pres_ver_result = None
         if isinstance(dif_proof, Sequence):

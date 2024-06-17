@@ -161,9 +161,6 @@ class LinkedDataProofSchema(BaseModelSchema):
     def add_unknown_properties(self, data: dict, original, **kwargs):
         """Add back unknown properties before outputting."""
 
-        print(">>> data:", data)
-        print(">>> original:", original)
-
         data.update(original.extra)
 
         return data

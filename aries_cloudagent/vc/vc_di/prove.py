@@ -16,8 +16,8 @@ from ..ld_proofs import (
 from ..ld_proofs.constants import CREDENTIALS_CONTEXT_V1_URL
 from ..vc_ld.models.credential import VerifiableCredentialSchema
 from ...anoncreds.holder import AnonCredsHolder
+from ...anoncreds.verifier import AnonCredsVerifier
 from ...core.profile import Profile
-from ...protocols.present_proof.indy.pres_exch_handler import IndyPresExchHandler
 from anoncreds import (
     W3cCredential,
 )
@@ -32,7 +32,8 @@ async def create_signed_anoncreds_presentation(
     purpose: ProofPurpose = None,
     challenge: str = None,
     domain: str = None,
-) -> dict:
+    holder: bool = True,
+) -> (dict, dict, dict):
     """Sign the presentation with the passed signature suite.
 
     Will set a default AuthenticationProofPurpose if no proof purpose is passed.
@@ -53,12 +54,6 @@ async def create_signed_anoncreds_presentation(
         dict: A verifiable presentation object
 
     """
-    print(">>> here with:")
-    print(">>> pres_definition:", pres_definition)
-    print(">>> presentation:", presentation)
-    print(">>> purpose:", purpose)
-    print(">>> challenge:", challenge)
-    print(">>> domain:", domain)
     if not purpose and not challenge:
         raise LinkedDataProofException(
             'A "challenge" param is required when not providing a'
@@ -172,37 +167,32 @@ async def create_signed_anoncreds_presentation(
                 print("... skipping:", path)
 
     # TODO should have an anoncreds version of this ...
-    indy_pres_exch_handler = IndyPresExchHandler(profile)
+    anoncreds_verifier = AnonCredsVerifier(profile)
     (
         schemas,
         cred_defs,
         rev_reg_defs,
         rev_reg_entries,
-    ) = await indy_pres_exch_handler.process_pres_identifiers(w3c_creds_metadata)
+    ) = await anoncreds_verifier.process_pres_identifiers(w3c_creds_metadata)
 
-    # TODO patch for attrs anoncreds is expecting
-    for schema_id in schemas:
-        schemas[schema_id]["issuerId"] = issuer_id
-    for cred_def_id in cred_defs:
-        cred_defs[cred_def_id]["issuerId"] = issuer_id
+    if holder:
+        # TODO match up the parameters with what the function is expecting ...
+        anoncreds_holder = AnonCredsHolder(profile)
+        anoncreds_proof = await anoncreds_holder.create_presentation_w3c(
+            presentation_request=anoncreds_proofrequest,
+            requested_credentials_w3c=w3c_creds,
+            credentials_w3c_metadata=w3c_creds_metadata,
+            schemas=schemas,
+            credential_definitions=cred_defs,
+            rev_states=None,
+        )
 
-    anoncreds_holder = AnonCredsHolder(profile)
+        # TODO any processing to put the returned proof into DIF format
+        anoncreds_proof["presentation_submission"] = presentation["presentation_submission"]
+    else:
+        anoncreds_proof = None
 
-    # TODO match up the parameters with what the function is expecting ...
-    anoncreds_proof = await anoncreds_holder.create_presentation_w3c(
-        presentation_request=anoncreds_proofrequest,
-        requested_credentials_w3c=w3c_creds,
-        credentials_w3c_metadata=w3c_creds_metadata,
-        schemas=schemas,
-        credential_definitions=cred_defs,
-        rev_states=None,
-    )
-
-    # TODO any processing to put the returned proof into DIF format
-    anoncreds_proof["presentation_submission"] = presentation["presentation_submission"]
-    print(">>> anoncreds_proof:", anoncreds_proof)
-
-    return anoncreds_proof
+    return (anoncreds_proofrequest, anoncreds_proof, w3c_creds_metadata)
 
 def _extract_cred_idx(item_path: str) -> int:
     # TODO put in some logic here ...

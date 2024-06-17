@@ -729,11 +729,6 @@ class AnonCredsHolder:
 
         try:
             secret = await self.get_master_secret()
-            print(">>> presentation_request:", presentation_request)
-            print(">>> present_creds:", present_creds)
-            print(">>> secret:", secret)
-            print(">>> schemas:", schemas)
-            print(">>> credential_definitions:", credential_definitions)
             presentation = W3cPresentation.create(
                 presentation_request,
                 present_creds,
