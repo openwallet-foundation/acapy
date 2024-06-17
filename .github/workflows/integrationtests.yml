@@ -18,17 +18,9 @@ defaults:
     shell: bash
 
 jobs:
-  fail_if_pull_request_is_draft:
-    if: github.event.pull_request.draft == true
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Fails in order to indicate that pull request needs to be marked as ready to review.
-      run: | 
-        echo "This pull request is a draft. Please mark it as ready for review to run integration tests."
-        exit 1
   test:
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && github.repository == 'jamshale/aries-cloudagent-python') || (github.event_name != 'pull_request')
+    if: (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.repository == 'jamshale/aries-cloudagent-python') || (github.event_name != 'pull_request')
     outputs:
       is_release: ${{ steps.check_if_release.outputs.is_release }}
     steps:
