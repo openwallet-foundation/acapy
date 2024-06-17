@@ -266,8 +266,8 @@ class IndyRevocation:
                         posted_registries, key=lambda r: r.created_at
                     )
                     await self._set_registry_status(
-                        posted_registries[0].revoc_reg_id,
-                        IssuerRevRegRecord.STATE_ACTIVE,
+                        revoc_reg_id=posted_registries[0].revoc_reg_id,
+                        state=IssuerRevRegRecord.STATE_ACTIVE,
                     )
         return None
 

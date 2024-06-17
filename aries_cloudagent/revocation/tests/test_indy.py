@@ -1,5 +1,6 @@
-from aries_cloudagent.tests import mock
 from unittest import IsolatedAsyncioTestCase
+
+from aries_cloudagent.tests import mock
 
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
@@ -9,7 +10,6 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from ...storage.error import StorageNotFoundError
-
 from ..error import (
     RevocationNotSupportedError,
     RevocationRegistryBadSizeError,
@@ -254,4 +254,73 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
 
         mock_from_def.assert_called_once_with(
             self.ledger.get_revoc_reg_def.return_value, True
+        )
+
+    @mock.patch(
+        "aries_cloudagent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
+        mock.CoroutineMock(
+            return_value=mock.MagicMock(
+                get_registry=mock.MagicMock(
+                    return_value=mock.MagicMock(
+                        get_or_fetch_local_tails_path=mock.CoroutineMock(
+                            return_value="dummy"
+                        )
+                    )
+                )
+            )
+        ),
+    )
+    async def test_get_or_create_active_registry_has_active_registry(self, *_):
+        result = await self.revoc.get_or_create_active_registry("cred_def_id")
+        assert isinstance(result, tuple)
+
+    @mock.patch(
+        "aries_cloudagent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
+        mock.CoroutineMock(side_effect=StorageNotFoundError("No such record")),
+    )
+    @mock.patch(
+        "aries_cloudagent.revocation.indy.IndyRevocation.init_issuer_registry",
+        mock.CoroutineMock(return_value=None),
+    )
+    @mock.patch.object(
+        IssuerRevRegRecord,
+        "query_by_cred_def_id",
+        side_effect=[[], [IssuerRevRegRecord(max_cred_num=3)]],
+    )
+    async def test_get_or_create_active_registry_has_no_active_and_only_full_registies(
+        self, *_
+    ):
+        result = await self.revoc.get_or_create_active_registry("cred_def_id")
+
+        assert not result
+        assert self.revoc.init_issuer_registry.call_args.kwargs["max_cred_num"] == 3
+
+    @mock.patch(
+        "aries_cloudagent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
+        mock.CoroutineMock(side_effect=StorageNotFoundError("No such record")),
+    )
+    @mock.patch(
+        "aries_cloudagent.revocation.indy.IndyRevocation._set_registry_status",
+        mock.CoroutineMock(return_value=None),
+    )
+    @mock.patch.object(
+        IssuerRevRegRecord,
+        "query_by_cred_def_id",
+        side_effect=[
+            [IssuerRevRegRecord(max_cred_num=3)],
+            [
+                IssuerRevRegRecord(
+                    revoc_reg_id="test-rev-reg-id",
+                    state=IssuerRevRegRecord.STATE_POSTED,
+                )
+            ],
+        ],
+    )
+    async def test_get_or_create_active_registry_has_no_active_with_posted(self, *_):
+        result = await self.revoc.get_or_create_active_registry("cred_def_id")
+
+        assert not result
+        assert (
+            self.revoc._set_registry_status.call_args.kwargs["state"]
+            == IssuerRevRegRecord.STATE_ACTIVE
         )
