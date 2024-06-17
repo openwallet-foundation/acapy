@@ -14,8 +14,8 @@ from ..ld_proofs import (
     DocumentVerificationResult,
     LinkedDataProofException,
 )
-from .models.credential import VerifiableCredentialSchema
-from .validation_result import PresentationVerificationResult
+from ..vc_ld.models.credential import VerifiableCredentialSchema
+from ..vc_ld.validation_result import PresentationVerificationResult
 
 
 async def _verify_credential(
@@ -184,3 +184,8 @@ async def verify_presentation(
 
 
 __all__ = ["verify_presentation", "verify_credential"]
+
+
+async def verify_signed_anoncredspresentation():
+    # TODO
+    pass

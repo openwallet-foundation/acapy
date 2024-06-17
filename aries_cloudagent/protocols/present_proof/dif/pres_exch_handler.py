@@ -1273,7 +1273,8 @@ class DIFPresExchHandler:
                     result_vp.append(vp)
                     continue
                 else:
-                    vp = await create_presentation(credentials=filtered_creds_list)
+                    applicable_creds_list = filtered_creds_list
+                    vp = await create_presentation(credentials=applicable_creds_list)
             else:
                 if not self.pres_signing_did:
                     (
@@ -1292,19 +1293,21 @@ class DIFPresExchHandler:
                         result_vp.append(vp)
                         continue
                     else:
-                        vp = await create_presentation(credentials=filtered_creds_list)
+                        applicable_creds_list = filtered_creds_list
+                        vp = await create_presentation(credentials=applicable_creds_list)
                 else:
                     issuer_id = self.pres_signing_did
                     vp = await create_presentation(credentials=applicable_creds_list)
             vp["presentation_submission"] = submission_property.serialize()
-            print(">>> generated VP:", vp)
             if self.proof_type is BbsBlsSignature2020.signature_type:
                 vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
             if self.proof_type == ("anoncreds-2023"):
                 # TODO create anoncreds proof
                 signed_vp = await create_signed_anoncreds_presentation(
+                    profile=self.profile,
                     pres_definition=pd.serialize(),
                     presentation=vp,
+                    credentials=applicable_creds_list,
                     challenge=challenge,
                 )
             else:

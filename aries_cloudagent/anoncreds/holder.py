@@ -17,6 +17,7 @@ from anoncreds import (
     Presentation,
     PresentCredentials,
     W3cCredential,
+    W3cPresentation,
     create_link_secret,
 )
 from aries_askar import AskarError, AskarErrorCode
@@ -348,12 +349,8 @@ class AnonCredsHolder:
         # also store in W3C format
         # create VC record for storage
         cred_w3c_recvd_dict = cred_w3c_recvd.to_dict()
-        print(">>> cred_w3c_recvd_dict:", cred_w3c_recvd_dict)
-
         cred_w3c_recvd_dict["proof"] = cred_w3c_recvd_dict["proof"][0]
-
         cred_w3c_recvd_vc = VerifiableCredential.deserialize(cred_w3c_recvd_dict, unknown=INCLUDE)
-        print(">>> cred_w3c_recvd_vc:", cred_w3c_recvd_vc)
 
         # Saving expanded type as a cred_tag
         document_loader = self.profile.inject(DocumentLoader)
@@ -375,7 +372,6 @@ class AnonCredsHolder:
             record_id=credential_id,
             cred_tags=None,  # Tags should be derived from credential values
         )
-        print(">>> vc_record:", vc_record.serialize())
 
         # save credential in storage
         async with self.profile.session() as session:
@@ -433,20 +429,13 @@ class AnonCredsHolder:
             extra_query: wql query dict
 
         """
-
-        print(">>> referents 1: ", referents)
         if not referents:
             referents = (
                 *presentation_request["requested_attributes"],
                 *presentation_request["requested_predicates"],
             )
-        print(">>> referents 2: ", referents)
-
         extra_query = extra_query or {}
-        print(">>> extra_query: ", extra_query)
-
         creds = {}
-
         for reft in referents:
             names = set()
             if reft in presentation_request["requested_attributes"]:
@@ -498,8 +487,6 @@ class AnonCredsHolder:
 
         for cred in creds.values():
             cred["presentation_referents"] = list(cred["presentation_referents"])
-
-        print(">>> returned creds:", list(creds.values()))
 
         return list(creds.values())
 
@@ -694,6 +681,71 @@ class AnonCredsHolder:
             raise AnonCredsHolderError("Error creating presentation") from err
 
         return presentation.to_json()
+
+    async def create_presentation_w3c(
+        self,
+        presentation_request: dict,
+        requested_credentials_w3c: list,
+        credentials_w3c_metadata: list,
+        schemas: Dict[str, AnonCredsSchema],
+        credential_definitions: Dict[str, CredDef],
+        rev_states: dict = None,
+    ) -> dict:
+        """Get credentials stored in the wallet.
+
+        Args:
+            presentation_request: Valid indy format presentation request
+            requested_credentials: W3C format requested credentials
+            schemas: Indy formatted schemas JSON
+            credential_definitions: Indy formatted credential definitions JSON
+            rev_states: Indy format revocation states JSON
+
+        """
+        # TODO implement this!!!!!  prepare and return an anoncreds proof
+        present_creds = PresentCredentials()
+        for idx, cred in enumerate(requested_credentials_w3c):
+            meta = credentials_w3c_metadata[idx]
+
+            # TODO deal with revocation
+            rev_state = None
+            timestamp = None
+
+            for attr in meta["proof_attrs"]:
+                present_creds.add_attributes(
+                    cred,
+                    attr,
+                    reveal=True,
+                    timestamp=timestamp,
+                    rev_state=rev_state,
+                )
+
+            for pred in meta["proof_preds"]:
+                present_creds.add_predicates(
+                    cred,
+                    pred,
+                    timestamp=timestamp,
+                    rev_state=rev_state,
+                )
+
+        try:
+            secret = await self.get_master_secret()
+            print(">>> presentation_request:", presentation_request)
+            print(">>> present_creds:", present_creds)
+            print(">>> secret:", secret)
+            print(">>> schemas:", schemas)
+            print(">>> credential_definitions:", credential_definitions)
+            presentation = W3cPresentation.create(
+                presentation_request,
+                present_creds,
+                secret,
+                schemas,
+                credential_definitions,
+            )
+        except AnoncredsError as err:
+            raise AnonCredsHolderError("Error creating presentation") from err
+
+        return presentation.to_dict()
+
 
     async def create_revocation_state(
         self,

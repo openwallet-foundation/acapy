@@ -145,7 +145,6 @@ class AskarVCHolder(VCHolder):
         if pd_uri_list:
             query.append(self.build_type_or_schema_query(pd_uri_list))
         query = {"$and": query} if query else None
-        print(">>> query:", query)
         search = AskarStorageSearch(self._profile).search_records(
             VC_CRED_RECORD_TYPE, query
         )

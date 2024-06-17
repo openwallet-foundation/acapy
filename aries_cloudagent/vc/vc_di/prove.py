@@ -1,7 +1,8 @@
 """Verifiable Credential and Presentation proving methods."""
 
 from typing import List
-
+from hashlib import sha256
+import time
 
 from ..ld_proofs import (
     AuthenticationProofPurpose,
@@ -13,13 +14,21 @@ from ..ld_proofs import (
     derive,
 )
 from ..ld_proofs.constants import CREDENTIALS_CONTEXT_V1_URL
-from .models.credential import VerifiableCredentialSchema
+from ..vc_ld.models.credential import VerifiableCredentialSchema
+from ...anoncreds.holder import AnonCredsHolder
+from ...core.profile import Profile
+from ...protocols.present_proof.indy.pres_exch_handler import IndyPresExchHandler
+from anoncreds import (
+    W3cCredential,
+)
 
 
 async def create_signed_anoncreds_presentation(
     *,
+    profile: Profile,
     pres_definition: dict,
     presentation: dict,
+    credentials: list,
     purpose: ProofPurpose = None,
     challenge: str = None,
     domain: str = None,
@@ -44,6 +53,12 @@ async def create_signed_anoncreds_presentation(
         dict: A verifiable presentation object
 
     """
+    print(">>> here with:")
+    print(">>> pres_definition:", pres_definition)
+    print(">>> presentation:", presentation)
+    print(">>> purpose:", purpose)
+    print(">>> challenge:", challenge)
+    print(">>> domain:", domain)
     if not purpose and not challenge:
         raise LinkedDataProofException(
             'A "challenge" param is required when not providing a'
@@ -56,8 +71,22 @@ async def create_signed_anoncreds_presentation(
     pres_submission = presentation["presentation_submission"]
     descriptor_map = pres_submission["descriptor_map"]
 
-    pres_name = pres_definition.get("name") if presentationDefinition.get("name") else 'Proof request'
-    anonCredsProofRequest = {
+    w3c_creds = []
+    w3c_creds_metadata = []
+    for credential in credentials:
+        w3c_cred = W3cCredential.load(credential)
+        w3c_creds.append(w3c_cred)
+        w3c_creds_metadata.append({})
+
+    schema_ids = []
+    cred_def_ids = []
+
+    pres_name = pres_definition.get("name") if pres_definition.get("name") else 'Proof request'
+    hash = sha256(challenge.encode('utf-8')).hexdigest()
+    nonce = str(int(hash, 16))[:20]
+
+    # assemble the necessary structures and then call AnoncredsHolder.create_presentation_w3c() (new method)
+    anoncreds_proofrequest = {
         "version": '1.0',
         "name": pres_name,
         "nonce": nonce,
@@ -65,103 +94,132 @@ async def create_signed_anoncreds_presentation(
         "requested_predicates": {},
     }
 
-    # TODO assemble the necessary structures and then call AnoncredsHolder.create_presentation_w3c() (new method)
+    non_revoked = int(time.time())
+    non_revoked_interval = { "from": non_revoked, "to": non_revoked }
 
-"""
-    const credentialsProve: AnonCredsCredentialProve[] = []
-    const schemaIds = new Set<string>()
-    const credentialDefinitionIds = new Set<string>()
-    const credentialsWithMetadata: CredentialWithRevocationMetadata[] = []
+    for descriptor_map_item in descriptor_map:
+        descriptor = next(item for item in pres_definition['input_descriptors'] if item["id"] == descriptor_map_item['id'])
 
-    const hash = Hasher.hash(TypedArrayEncoder.fromString(challenge), 'sha-256')
-    const nonce = new BigNumber(hash).toString().slice(0, 20)
+        referent = descriptor_map_item['id']
+        attribute_referent = f"{referent}_attribute"
+        predicate_referent_base = f"{referent}_predicate"
+        predicate_referent_index = 0
+        issuer_id = None
 
-    const anonCredsProofRequest: AnonCredsProofRequest = {
-      version: '1.0',
-      name: presentationDefinition.name ?? 'Proof request',
-      nonce,
-      requested_attributes: {},
-      requested_predicates: {},
-    }
+        fields = descriptor["constraints"]["fields"]
+        statuses = descriptor["constraints"]["statuses"]
 
-    const nonRevoked = Math.floor(Date.now() / 1000)
-    const nonRevokedInterval = { from: nonRevoked, to: nonRevoked }
+        # descriptor_map_item['path'] should be something like '$.verifiableCredential[n]', we need to extract 'n'
+        entry_idx = _extract_cred_idx(descriptor_map_item['path'])
+        w3c_cred = w3c_creds[entry_idx]
+        schema_id = w3c_cred.schema_id
+        cred_def_id = w3c_cred.cred_def_id
+        rev_reg_id = w3c_cred.rev_reg_id
+        rev_reg_index = w3c_cred.rev_reg_index
 
-    for (const descriptorMapObject of presentationSubmission.descriptor_map) {
-      const descriptor: InputDescriptorV1 | InputDescriptorV2 | undefined = (
-        presentationDefinition.input_descriptors as InputDescriptorV2[]
-      ).find((descriptor) => descriptor.id === descriptorMapObject.id)
+        requires_revoc_status = "active" in statuses and statuses["active"]["directive"] in ("allowed", "required")
+        # TODO check that a revocation id is supplied if required
+        # if requires_revoc_status and (not rev_reg_id):
+        #     throw some kind of error
 
-      if (!descriptor) {
-        throw new Error(`Descriptor with id ${descriptorMapObject.id} not found in presentation definition`)
-      }
-
-      const referent = descriptorMapObject.id
-      const attributeReferent = `${referent}_attribute`
-      const predicateReferentBase = `${referent}_predicate`
-      let predicateReferentIndex = 0
-
-      const fields = descriptor.constraints?.fields
-      if (!fields) throw new CredoError('Unclear mapping of constraint with no fields.')
-
-      const { entryIndex, schemaId, credentialDefinitionId, revocationRegistryId, credential } =
-        await this.getCredentialMetadataForDescriptor(agentContext, descriptorMapObject, credentials)
-
-      schemaIds.add(schemaId)
-      credentialDefinitionIds.add(credentialDefinitionId)
-
-      const requiresRevocationStatus = this.descriptorRequiresRevocationStatus(descriptor)
-      if (requiresRevocationStatus && !revocationRegistryId) {
-        throw new CredoError('Selected credentials must be revocable but are not')
-      }
-
-      credentialsWithMetadata.push({
-        credential,
-        nonRevoked: requiresRevocationStatus ? nonRevokedInterval : undefined,
-      })
-
-      for (const field of fields) {
-        const propertyName = this.getClaimNameForField(field)
-        if (!propertyName) continue
-
-        if (field.predicate) {
-          if (!field.filter) throw new CredoError('Missing required predicate filter property.')
-          const predicateTypeAndValues = this.getPredicateTypeAndValues(field.filter)
-          for (const { predicateType, predicateValue } of predicateTypeAndValues) {
-            const predicateReferent = `${predicateReferentBase}_${predicateReferentIndex++}`
-            anonCredsProofRequest.requested_predicates[predicateReferent] = {
-              name: propertyName,
-              p_type: predicateType,
-              p_value: predicateValue,
-              restrictions: [{ cred_def_id: credentialDefinitionId }],
-              non_revoked: requiresRevocationStatus ? nonRevokedInterval : undefined,
-            }
-
-            credentialsProve.push({ entryIndex, referent: predicateReferent, isPredicate: true, reveal: true })
-          }
-        } else {
-          if (!anonCredsProofRequest.requested_attributes[attributeReferent]) {
-            anonCredsProofRequest.requested_attributes[attributeReferent] = {
-              names: [propertyName],
-              restrictions: [{ cred_def_id: credentialDefinitionId }],
-              non_revoked: requiresRevocationStatus ? nonRevokedInterval : undefined,
-            }
-          } else {
-            const names = anonCredsProofRequest.requested_attributes[attributeReferent].names ?? []
-            anonCredsProofRequest.requested_attributes[attributeReferent].names = [...names, propertyName]
-          }
-
-          credentialsProve.push({ entryIndex, referent: attributeReferent, isPredicate: false, reveal: true })
+        w3c_creds_metadata[entry_idx] = {
+            "schema_id": schema_id,
+            "cred_def_id": cred_def_id,
+            "revoc_status": non_revoked_interval if requires_revoc_status else None,
+            "proof_attrs": [],
+            "proof_preds": [],
         }
-      }
+
+        for field in fields:
+            path = field["path"][0]
+
+            # check for credential attributes vs other
+            if path.startswith("$.credentialSubject."):
+                property_name = path.replace("$.credentialSubject.", "")
+                if 'predicate' in field:
+                    # get predicate info
+                    pred_filter = field["filter"]
+                    (p_type, p_value) = _get_predicate_type_and_value(pred_filter)
+                    pred_request = {
+                        "name": property_name,
+                        "p_type": p_type,
+                        "p_value": p_value,
+                        "restrictions": [{ "cred_def_id": cred_def_id }],
+                        "non_revoked": non_revoked_interval if requires_revoc_status else None
+                    }
+                    predicate_referent = f"{predicate_referent_base}_{predicate_referent_index}"
+                    predicate_referent_index = predicate_referent_index + 1
+                    anoncreds_proofrequest["requested_predicates"][predicate_referent] = pred_request
+                    w3c_creds_metadata[entry_idx]["proof_preds"].append(predicate_referent)
+                else:
+                    # no predicate, just a revealed attribute
+                    attr_request = {
+                        "names": [property_name],
+                        "restrictions": [{ "cred_def_id": cred_def_id }],
+                        "non_revoked": non_revoked_interval if requires_revoc_status else None
+                    }
+                    # check if we already have this referent ...
+                    if attribute_referent in anoncreds_proofrequest["requested_attributes"]:
+                        anoncreds_proofrequest["requested_attributes"][attribute_referent]["names"].append(property_name)
+                    else:
+                        anoncreds_proofrequest["requested_attributes"][attribute_referent] = attr_request
+                        w3c_creds_metadata[entry_idx]["proof_attrs"].append(attribute_referent)
+            elif path.endswith(".issuer"):
+                # capture issuer - {'path': ['$.issuer'], 'filter': {'type': 'string', 'const': '569XGicsXvYwi512asJkKB'}}
+                # TODO prob not a general case
+                issuer_id = field["filter"]["const"]
+            else:
+                print("... skipping:", path)
+
+    # TODO should have an anoncreds version of this ...
+    indy_pres_exch_handler = IndyPresExchHandler(profile)
+    (
+        schemas,
+        cred_defs,
+        rev_reg_defs,
+        rev_reg_entries,
+    ) = await indy_pres_exch_handler.process_pres_identifiers(w3c_creds_metadata)
+
+    # TODO patch for attrs anoncreds is expecting
+    for schema_id in schemas:
+        schemas[schema_id]["issuerId"] = issuer_id
+    for cred_def_id in cred_defs:
+        cred_defs[cred_def_id]["issuerId"] = issuer_id
+
+    anoncreds_holder = AnonCredsHolder(profile)
+
+    # TODO match up the parameters with what the function is expecting ...
+    anoncreds_proof = await anoncreds_holder.create_presentation_w3c(
+        presentation_request=anoncreds_proofrequest,
+        requested_credentials_w3c=w3c_creds,
+        credentials_w3c_metadata=w3c_creds_metadata,
+        schemas=schemas,
+        credential_definitions=cred_defs,
+        rev_states=None,
+    )
+
+    # TODO any processing to put the returned proof into DIF format
+    anoncreds_proof["presentation_submission"] = presentation["presentation_submission"]
+    print(">>> anoncreds_proof:", anoncreds_proof)
+
+    return anoncreds_proof
+
+def _extract_cred_idx(item_path: str) -> int:
+    # TODO put in some logic here ...
+    return 0
+
+def _get_predicate_type_and_value(pred_filter: dict) -> (str, str):
+    supported_properties = {
+        "exclusiveMinimum": '>',
+        "exclusiveMaximum": '<',
+        "minimum": '>=',
+        "maximum": '<=',
     }
 
-    return { anonCredsProofRequest, credentialsWithMetadata, credentialsProve, schemaIds, credentialDefinitionIds }
-"""
+    # TODO handle multiple predicates?
+    for key in pred_filter.keys():
+        if key in supported_properties:
+            return (supported_properties[key], pred_filter[key])
 
-    return await sign(
-        document=presentation,
-        suite=suite,
-        purpose=purpose,
-        document_loader=document_loader,
-    )
+    # TODO more informative description
+    raise Exception()
