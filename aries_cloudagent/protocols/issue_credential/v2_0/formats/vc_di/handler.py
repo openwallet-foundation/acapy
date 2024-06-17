@@ -7,7 +7,7 @@ import datetime
 import json
 import logging
 from typing import Mapping, Tuple
-
+from anoncreds import W3cCredential
 from ...models.cred_ex_record import V20CredExRecord
 from ...models.detail.indy import (
     V20CredExRecordIndy,
@@ -461,24 +461,35 @@ class VCDICredFormatHandler(V20CredFormatHandler):
 
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
+            cred_def = await ledger.get_credential_definition(cred_def_id)
+        revocable = cred_def["value"].get("revocation")
 
         legacy_offer = await self._prepare_legacy_offer(cred_offer, schema_id)
         legacy_request = await self._prepare_legacy_request(cred_request, cred_def_id)
 
-        issuer = AnonCredsIssuer(self.profile)
-
-        credential = await issuer.create_credential_w3c(
-            legacy_offer, legacy_request, cred_values
-        )
+        cred_rev_id = None
+        rev_reg_def_id = None
+        credential = None
+        if revocable:
+            issuer = AnonCredsRevocation(self.profile)
+            (
+                credential,
+                cred_rev_id,
+                rev_reg_def_id,
+            ) = await issuer.create_credential_w3c(
+                legacy_offer, legacy_request, cred_values
+            )
+        else:
+            issuer = AnonCredsIssuer(self.profile)
+            credential = await issuer.create_credential_w3c(
+                legacy_offer, legacy_request, cred_values
+            )
 
         vcdi_credential = {
             "credential": json.loads(credential),
         }
 
         result = self.get_format_data(CRED_20_ISSUE, vcdi_credential)
-
-        cred_rev_id = None
-        rev_reg_def_id = None
 
         async with self._profile.transaction() as txn:
             detail_record = V20CredExRecordIndy(
@@ -555,10 +566,18 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         cred_def_result = await anoncreds_registry.get_credential_definition(
             self.profile, cred["proof"][0]["verificationMethod"]
         )
-        if cred["proof"][0].get("rev_reg_id"):
+        # TODO: remove loading of W3cCredential and use the credential directly
+        try:
+            cred_w3c = W3cCredential.load(cred)
+            rev_reg_id = cred_w3c.rev_reg_id
+            rev_reg_index = cred_w3c.rev_reg_index
+        except AnonCredsHolderError as e:
+            LOGGER.error(f"Error receiving credential: {e.error_code} - {e.message}")
+            raise e
+        if rev_reg_id:
             rev_reg_def_result = (
                 await anoncreds_registry.get_revocation_registry_definition(
-                    self.profile, cred["proof"][0]["rev_reg_id"]
+                    self.profile, rev_reg_id
                 )
             )
             rev_reg_def = rev_reg_def_result.revocation_registry
@@ -589,8 +608,8 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             )
 
             detail_record.cred_id_stored = cred_id_stored
-            detail_record.rev_reg_id = cred["proof"][0].get("rev_reg_id", None)
-            detail_record.cred_rev_id = cred["proof"][0].get("cred_rev_id", None)
+            detail_record.rev_reg_id = rev_reg_id
+            detail_record.cred_rev_id = rev_reg_index
 
             async with self.profile.session() as session:
                 # Store detail record, emit event

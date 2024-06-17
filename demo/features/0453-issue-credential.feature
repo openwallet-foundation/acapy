@@ -64,9 +64,10 @@ Feature: RFC 0453 Aries agent issue credential
 
     @WalletType_Askar_AnonCreds @SwitchCredTypeTest
     Examples:
-       | Acme_capabilities                          | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra | New_Cred_Type |
-       | --public-did --wallet-type askar-anoncreds | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           | vc_di         |
-       | --public-did --wallet-type askar-anoncreds --cred-type vc_di | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           | indy          |
+       | Acme_capabilities                                                         | Bob_capabilities              | Schema_name    | Credential_data          | Acme_extra | Bob_extra | New_Cred_Type |
+       | --public-did --wallet-type askar-anoncreds                                | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           | vc_di         |
+       | --public-did --wallet-type askar-anoncreds --cred-type vc_di              | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           | indy          |
+       | --public-did --wallet-type askar-anoncreds --cred-type vc_di --revocation | --wallet-type askar-anoncreds | driverslicense | Data_DL_NormalizedValues |            |           | indy          |
 
   @T003-RFC0453
   Scenario Outline: Holder accepts a deleted credential offer
