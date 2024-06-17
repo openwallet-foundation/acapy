@@ -240,31 +240,31 @@ class IndyRevocation:
             pass
 
         async with self._profile.session() as session:
-            rev_reg_records = await IssuerRevRegRecord.query_by_cred_def_id(
-                session, cred_def_id
+            full_registries = await IssuerRevRegRecord.query_by_cred_def_id(
+                session, cred_def_id, None, IssuerRevRegRecord.STATE_FULL, 1
             )
-            full_registries = [
-                rev
-                for rev in rev_reg_records
-                if rev.state == IssuerRevRegRecord.STATE_FULL
-            ]
 
             # all registries are full, create a new one
-            if len(full_registries) == len(rev_reg_records):
+            if not full_registries:
+                # Use any registry to get max cred num
+                any_registry = (
+                    await IssuerRevRegRecord.query_by_cred_def_id(
+                        session, cred_def_id, limit=1
+                    )
+                )[0]
                 await self.init_issuer_registry(
                     cred_def_id,
-                    max_cred_num=rev_reg_records[0].max_cred_num,
+                    max_cred_num=any_registry.max_cred_num,
                 )
             # if there is a posted registry, activate oldest
             else:
-                posted_registries = sorted(
-                    [
-                        rev
-                        for rev in rev_reg_records
-                        if rev.state == IssuerRevRegRecord.STATE_POSTED
-                    ]
+                posted_registries = await IssuerRevRegRecord.query_by_cred_def_id(
+                    session, cred_def_id, IssuerRevRegRecord.STATE_POSTED, None, None
                 )
                 if posted_registries:
+                    posted_registries = sorted(
+                        posted_registries, key=lambda r: r.created_at
+                    )
                     await self._set_registry_status(
                         posted_registries[0].revoc_reg_id,
                         IssuerRevRegRecord.STATE_ACTIVE,
