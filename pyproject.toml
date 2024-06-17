@@ -41,7 +41,7 @@ python-dateutil="~2.8.1"
 python-json-logger="~2.0.7"
 pyyaml="~6.0.1"
 qrcode = {version = ">=6.1,<7.0", extras = ["pil"]}
-requests="~2.31.0"
+requests="~2.32.2"
 rlp="4.0.1"
 unflatten="~0.1"
 sd-jwt = "^0.10.3"
