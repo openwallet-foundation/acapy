@@ -37,6 +37,7 @@ class ClaimFormat(BaseModel):
         ldp: Mapping = None,
         ldp_vc: Mapping = None,
         ldp_vp: Mapping = None,
+        di_vc: Mapping = None,
     ):
         """Initialize format."""
         self.jwt = jwt
@@ -45,6 +46,7 @@ class ClaimFormat(BaseModel):
         self.ldp = ldp
         self.ldp_vc = ldp_vc
         self.ldp_vp = ldp_vp
+        self.di_vc = di_vc
 
 
 class ClaimFormatSchema(BaseModelSchema):
@@ -62,6 +64,7 @@ class ClaimFormatSchema(BaseModelSchema):
     ldp = fields.Dict(required=False)
     ldp_vc = fields.Dict(required=False)
     ldp_vp = fields.Dict(required=False)
+    di_vc = fields.Dict(required=False)
 
 
 class SubmissionRequirements(BaseModel):

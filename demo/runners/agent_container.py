@@ -431,6 +431,8 @@ class AriesAgent(DemoAgent):
         pres_ex_id = message["pres_ex_id"]
         self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
+        print(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
+
         if state in ["request-received"]:
             # prover role
             log_status(
@@ -451,6 +453,8 @@ class AriesAgent(DemoAgent):
                 if not pres_request_dif and not pres_request_indy:
                     raise Exception("Invalid presentation request received")
 
+                # TODO for a DIF presentation need to check if it is asking for an anoncreds proof ...
+
                 if pres_request_indy:
                     # include self-attested attributes (not included in credentials)
                     creds_by_reft = {}
@@ -463,6 +467,7 @@ class AriesAgent(DemoAgent):
                         creds = await self.admin_GET(
                             f"/present-proof-2.0/records/{pres_ex_id}/credentials"
                         )
+                        # print(">>> creds:", creds)
                         if creds:
                             # select only indy credentials
                             creds = [x for x in creds if "cred_info" in x]
@@ -521,6 +526,7 @@ class AriesAgent(DemoAgent):
                         creds = await self.admin_GET(
                             f"/present-proof-2.0/records/{pres_ex_id}/credentials"
                         )
+
                         if creds and 0 < len(creds):
                             # select only dif credentials
                             creds = [x for x in creds if "issuanceDate" in x]

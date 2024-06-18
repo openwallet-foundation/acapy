@@ -6,13 +6,14 @@ from enum import Enum
 from time import time
 from typing import List, Mapping, Tuple
 
-from anoncreds import AnoncredsError, Presentation
+from anoncreds import AnoncredsError, Presentation, W3cPresentation
 
 from ..core.profile import Profile
 from ..indy.models.xform import indy_proof_req2non_revoc_intervals
 from ..messaging.util import canon, encode
 from .models.anoncreds_cred_def import GetCredDefResult
 from .registry import AnonCredsRegistry
+from ..vc.vc_ld.validation_result import PresentationVerificationResult
 
 LOGGER = logging.getLogger(__name__)
 
@@ -496,3 +497,72 @@ class AnonCredsVerifier:
             verified = False
 
         return (verified, msgs)
+
+    async def verify_presentation_w3c(
+        self,
+        pres_req,
+        pres,
+    ) -> PresentationVerificationResult:
+        credentials = pres["verifiableCredential"]
+        cred_def_ids = []
+        for credential in credentials:
+            cred_def_id = credential["proof"]["verificationMethod"]
+            cred_def_ids.append(cred_def_id)
+
+        cred_defs = {}
+        schemas = {}
+        msgs = []
+
+        # TODO this should use the process_pres_identifiers() method, which will also fetch the revocation info
+        for cred_def_id in cred_def_ids:
+            anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+            # Build schemas for anoncreds
+            if cred_def_id not in cred_defs:
+                cred_def = (
+                    await anoncreds_registry.get_credential_definition(
+                        self.profile, cred_def_id
+                    )
+                ).credential_definition.serialize()
+                cred_defs[cred_def_id] = cred_def
+            schema_id = cred_def["schemaId"]
+            schema = (
+                await anoncreds_registry.get_schema(self.profile, schema_id)
+            ).serialize()
+            if schema["schema_id"] not in schemas:
+                schemas[schema["schema_id"]] = schema["schema"]
+
+        # TODO - this should get loaded from process_pres_identifiers() (with schemas and cred defs)
+        rev_reg_defs = {}
+        rev_lists = {}
+
+        try:
+            # TODO not sure why this attr causes an error
+            del pres["presentation_submission"]
+
+            presentation = W3cPresentation.load(pres)
+
+            verified = await asyncio.get_event_loop().run_in_executor(
+                None,
+                presentation.verify,
+                pres_req,
+                schemas,
+                cred_defs,
+                rev_reg_defs,
+                [
+                    rev_list
+                    for timestamp_to_list in rev_lists.values()
+                    for rev_list in timestamp_to_list.values()
+                ],
+            )
+        except AnoncredsError as err:
+            s = str(err)
+            msgs.append(f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{s}")
+            LOGGER.exception(
+                f"Validation of presentation on nonce={pres_req['nonce']} "
+                "failed with error"
+            )
+            verified = False
+
+        result = PresentationVerificationResult(verified=verified, errors=msgs)
+
+        return result
