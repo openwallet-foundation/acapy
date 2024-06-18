@@ -883,6 +883,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
 
     genesis_transactions = None
+    recovery_txn = {}
     try:
         revocation = AnonCredsRevocation(profile)
         rev_reg_def = await revocation.get_created_revocation_registry_definition(
@@ -944,8 +945,8 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     return web.json_response(
         {
             "rev_reg_delta": rev_reg_delta,
-            "accum_calculated": recovery_txn,
-            "accum_fixed": applied_txn,
+            "recovery_txn": recovery_txn,
+            "applied_txn": applied_txn,
         }
     )
 

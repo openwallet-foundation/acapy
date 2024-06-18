@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+    types: [opened, synchronize, reopened, ready_for_review]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,7 +20,7 @@ defaults:
 jobs:
   test:
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && !github.event.pull_request.draft && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
+    if: (github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
     outputs:
       is_release: ${{ steps.check_if_release.outputs.is_release }}
     steps:
