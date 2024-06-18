@@ -577,7 +577,7 @@ class AnonCredsRevocation:
             self.profile, rev_reg_def, prev, curr, revoked, options
         )
 
-        # # TODO Handle `failed` state
+        # TODO Handle `failed` state
         try:
             async with self.profile.session() as session:
                 rev_list_entry_upd = await session.handle.fetch(
@@ -1284,7 +1284,7 @@ class AnonCredsRevocation:
             for rev_id in cred_revoc_ids:
                 if rev_id < 1 or rev_id > max_cred_num:
                     LOGGER.error(
-                        "Skipping requested credential revocation"
+                        "Skipping requested credential revocation "
                         "on rev reg id %s, cred rev id=%s not in range",
                         revoc_reg_id,
                         rev_id,
@@ -1292,7 +1292,7 @@ class AnonCredsRevocation:
                     failed_crids.add(rev_id)
                 elif rev_id >= rev_info["next_index"]:
                     LOGGER.warning(
-                        "Skipping requested credential revocation"
+                        "Skipping requested credential revocation "
                         "on rev reg id %s, cred rev id=%s not yet issued",
                         revoc_reg_id,
                         rev_id,
@@ -1300,7 +1300,7 @@ class AnonCredsRevocation:
                     failed_crids.add(rev_id)
                 elif rev_list.revocation_list[rev_id] == 1:
                     LOGGER.warning(
-                        "Skipping requested credential revocation"
+                        "Skipping requested credential revocation "
                         "on rev reg id %s, cred rev id=%s already revoked",
                         revoc_reg_id,
                         rev_id,
