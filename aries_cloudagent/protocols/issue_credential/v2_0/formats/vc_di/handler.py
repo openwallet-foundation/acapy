@@ -575,14 +575,14 @@ class VCDICredFormatHandler(V20CredFormatHandler):
             LOGGER.error(f"Error receiving credential: {e.error_code} - {e.message}")
             raise e
         # argh even with no revocation id (rev_reg_id = None) the following code gets called and fails
-        # TODO figure this out :-(
-        #if rev_reg_id:
-        #    rev_reg_def_result = (
-        #        await anoncreds_registry.get_revocation_registry_definition(
-        #            self.profile, rev_reg_id
-        #        )
-        #    )
-        #    rev_reg_def = rev_reg_def_result.revocation_registry
+        # TODO figure this out :-( (somehow the value is getting set to String "None")
+        if rev_reg_id and rev_reg_id != "None":
+            rev_reg_def_result = (
+                await anoncreds_registry.get_revocation_registry_definition(
+                    self.profile, rev_reg_id
+                )
+            )
+            rev_reg_def = rev_reg_def_result.revocation_registry
 
         holder = AnonCredsHolder(self.profile)
         cred_offer_message = cred_ex_record.cred_offer
