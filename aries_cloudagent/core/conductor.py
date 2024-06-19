@@ -519,7 +519,12 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Error accepting mediation invitation")
 
-        await self.check_for_wallet_upgrades_in_progress()
+        try:
+            await self.check_for_wallet_upgrades_in_progress()
+        except Exception:
+            LOGGER.exception(
+                "An exception was caught while checking for wallet upgrades in progress"
+            )
 
         # notify protcols of startup status
         await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
