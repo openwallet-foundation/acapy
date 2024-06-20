@@ -12,10 +12,6 @@ from anoncreds import (
     RevocationStatusList,
     Schema,
 )
-
-# AnoncredsError,
-# W3cCredential,
-# CredentialRevocationConfig,
 from aries_askar import AskarError, AskarErrorCode
 from requests import RequestException, Session
 
@@ -35,13 +31,9 @@ from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     GetSchemaResult,
 )
 from aries_cloudagent.anoncreds.registry import AnonCredsRegistry
-from aries_cloudagent.anoncreds.tests.mock_objects import (
-    MOCK_REV_REG_DEF,
-)
+from aries_cloudagent.anoncreds.tests.mock_objects import MOCK_REV_REG_DEF
 from aries_cloudagent.anoncreds.tests.test_issuer import MockCredDefEntry
-from aries_cloudagent.askar.profile_anon import (
-    AskarAnoncredsProfile,
-)
+from aries_cloudagent.askar.profile_anon import AskarAnoncredsProfile
 from aries_cloudagent.core.event_bus import Event, EventBus, MockEventBus
 from aries_cloudagent.core.in_memory.profile import (
     InMemoryProfile,

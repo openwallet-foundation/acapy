@@ -6,11 +6,8 @@ import re
 from asyncio import shield
 from typing import List, Optional, Pattern, Sequence, Tuple
 
-from anoncreds import (
-    CredentialDefinition,
-    RevocationRegistryDefinition,
-    RevocationRegistryDefinitionPrivate,
-)
+from anoncreds import (CredentialDefinition, RevocationRegistryDefinition,
+                       RevocationRegistryDefinitionPrivate)
 from base58 import alphabet
 from uuid_utils import uuid4
 
@@ -20,71 +17,40 @@ from ....config.injection_context import InjectionContext
 from ....core.event_bus import EventBus
 from ....core.profile import Profile, ProfileSession
 from ....ledger.base import BaseLedger
-from ....ledger.error import (
-    LedgerError,
-    LedgerObjectAlreadyExistsError,
-    LedgerTransactionError,
-)
-from ....ledger.merkel_validation.constants import (
-    GET_REVOC_REG_DELTA,
-    GET_REVOC_REG_ENTRY,
-    GET_SCHEMA,
-)
+from ....ledger.error import (LedgerError, LedgerObjectAlreadyExistsError,
+                              LedgerTransactionError)
+from ....ledger.merkel_validation.constants import (GET_REVOC_REG_DELTA,
+                                                    GET_REVOC_REG_ENTRY,
+                                                    GET_SCHEMA)
 from ....ledger.multiple_ledger.ledger_requests_executor import (
-    GET_CRED_DEF,
-    IndyLedgerRequestsExecutor,
-)
+    GET_CRED_DEF, IndyLedgerRequestsExecutor)
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
 from ....protocols.endorse_transaction.v1_0.manager import (
-    TransactionManager,
-    TransactionManagerError,
-)
+    TransactionManager, TransactionManagerError)
 from ....protocols.endorse_transaction.v1_0.util import is_author_role
-from ....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
+from ....revocation_anoncreds.models.issuer_cred_rev_record import \
+    IssuerCredRevRecord
 from ....storage.error import StorageError
 from ....utils import sentinel
 from ....wallet.did_info import DIDInfo
-from ...base import (
-    AnonCredsObjectAlreadyExists,
-    AnonCredsObjectNotFound,
-    AnonCredsRegistrationError,
-    AnonCredsResolutionError,
-    AnonCredsSchemaAlreadyExists,
-    BaseAnonCredsRegistrar,
-    BaseAnonCredsResolver,
-)
+from ...base import (AnonCredsObjectAlreadyExists, AnonCredsObjectNotFound,
+                     AnonCredsRegistrationError, AnonCredsResolutionError,
+                     AnonCredsSchemaAlreadyExists, BaseAnonCredsRegistrar,
+                     BaseAnonCredsResolver)
 from ...events import RevListFinishedEvent
 from ...issuer import CATEGORY_CRED_DEF, AnonCredsIssuer, AnonCredsIssuerError
-from ...models.anoncreds_cred_def import (
-    CredDef,
-    CredDefResult,
-    CredDefState,
-    CredDefValue,
-    GetCredDefResult,
-)
-from ...models.anoncreds_revocation import (
-    GetRevListResult,
-    GetRevRegDefResult,
-    RevList,
-    RevListResult,
-    RevListState,
-    RevRegDef,
-    RevRegDefResult,
-    RevRegDefState,
-    RevRegDefValue,
-)
-from ...models.anoncreds_schema import (
-    AnonCredsSchema,
-    GetSchemaResult,
-    SchemaResult,
-    SchemaState,
-)
-from ...revocation import (
-    CATEGORY_REV_LIST,
-    CATEGORY_REV_REG_DEF,
-    CATEGORY_REV_REG_DEF_PRIVATE,
-)
+from ...models.anoncreds_cred_def import (CredDef, CredDefResult, CredDefState,
+                                          CredDefValue, GetCredDefResult)
+from ...models.anoncreds_revocation import (GetRevListResult,
+                                            GetRevRegDefResult, RevList,
+                                            RevListResult, RevListState,
+                                            RevRegDef, RevRegDefResult,
+                                            RevRegDefState, RevRegDefValue)
+from ...models.anoncreds_schema import (AnonCredsSchema, GetSchemaResult,
+                                        SchemaResult, SchemaState)
+from ...revocation import (CATEGORY_REV_LIST, CATEGORY_REV_REG_DEF,
+                           CATEGORY_REV_REG_DEF_PRIVATE)
 from .recover import generate_ledger_rrrecovery_txn
 
 LOGGER = logging.getLogger(__name__)
@@ -111,7 +77,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Initialize an instance.
 
         Args:
-        TODO: update this docstring - Anoncreds-break.
+            None
 
         """
         B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
@@ -620,8 +586,20 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     write_ledger=write_ledger,
                     endorser_did=endorser_did,
                 )
-        except LedgerError as err:
-            raise AnonCredsRegistrationError(err.roll_up) from err
+        except AnonCredsRegistrationError as err:
+            LOGGER.error(
+                f"Error registering revocation registry definition {rev_reg_def_id}: {err.roll_up}"  # noqa: E501
+            )
+            return RevRegDefResult(
+                job_id=None,
+                revocation_registry_definition_state=RevRegDefState(
+                    state=RevRegDefState.STATE_FAILED,
+                    revocation_registry_definition_id=rev_reg_def_id,
+                    revocation_registry_definition=revocation_registry_definition,
+                ),
+                registration_metadata={},
+                revocation_registry_definition_metadata={},
+            )
 
         # Didn't need endorsement
         if write_ledger:

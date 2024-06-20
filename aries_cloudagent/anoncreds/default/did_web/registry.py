@@ -6,16 +6,14 @@ from typing import Optional, Pattern, Sequence
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
 from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
-from ...models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
-from ...models.anoncreds_revocation import (
-    GetRevListResult,
-    GetRevRegDefResult,
-    RevList,
-    RevListResult,
-    RevRegDef,
-    RevRegDefResult,
-)
-from ...models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from ...models.anoncreds_cred_def import (CredDef, CredDefResult,
+                                          GetCredDefResult)
+from ...models.anoncreds_revocation import (GetRevListResult,
+                                            GetRevRegDefResult, RevList,
+                                            RevListResult, RevRegDef,
+                                            RevRegDefResult)
+from ...models.anoncreds_schema import (AnonCredsSchema, GetSchemaResult,
+                                        SchemaResult)
 
 
 class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
@@ -25,7 +23,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Initialize an instance.
 
         Args:
-        TODO: update this docstring - Anoncreds-break.
+            None
 
         """
         self._supported_identifiers_regex = re.compile(
