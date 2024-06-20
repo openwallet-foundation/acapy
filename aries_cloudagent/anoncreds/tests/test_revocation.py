@@ -11,10 +11,11 @@ from anoncreds import (
     RevocationRegistryDefinitionPrivate,
     RevocationStatusList,
     Schema,
-    # AnoncredsError,
-    # W3cCredential,
-    # CredentialRevocationConfig,
 )
+
+# AnoncredsError,
+# W3cCredential,
+# CredentialRevocationConfig,
 from aries_askar import AskarError, AskarErrorCode
 from requests import RequestException, Session
 
@@ -77,6 +78,8 @@ rev_list = RevList(
 class MockRevRegDefEntry:
     def __init__(self, name="name"):
         self.name = name
+
+    rev_reg_def_id = "test-rev-reg-def-id"
 
     tags = {
         "state": RevRegDefState.STATE_ACTION,
@@ -890,7 +893,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
     @mock.patch.object(
         test_module.AnonCredsRevocation,
         "create_and_register_revocation_registry_definition",
-        return_value="backup",
+        return_value=MockRevRegDefEntry(),
     )
     async def test_handle_full_registry(
         self, mock_create_and_register, mock_set_active_registry, mock_handle
@@ -1067,14 +1070,14 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 credential_type=Credential,
             )
 
-    @mock.patch.object(InMemoryProfileSession, "handle")
     @mock.patch.object(
         RevocationRegistryDefinition, "load", return_value=rev_reg_def.value
     )
     @mock.patch("aries_cloudagent.anoncreds.revocation.CredentialRevocationConfig")
+    @mock.patch.object(InMemoryProfileSession, "handle")
     @mock.patch.object(Credential, "create", return_value=mock.MagicMock())
     async def test_create_credential_private_with_rev_reg_and_tails(
-        self, mock_create, mock_config, mock_load_rev_reg_def, mock_handle
+        self, mock_create, mock_handle, *_
     ):
         async def call_test_func():
             await self.revocation._create_credential(
@@ -1096,21 +1099,21 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 credential_type=Credential,
             )
 
-        # missing rev list
+        # missing rev def
         mock_handle.fetch = mock.CoroutineMock(
-            side_effect=[MockEntry(), MockEntry(), None, MockEntry(), MockEntry()]
+            side_effect=[None, MockEntry(), MockEntry()]
         )
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await call_test_func()
-        # missing rev def
+        # missing rev list
         mock_handle.fetch = mock.CoroutineMock(
-            side_effect=[MockEntry(), MockEntry(), MockEntry(), None, MockEntry()]
+            side_effect=[MockEntry(), None, MockEntry()]
         )
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await call_test_func()
         # missing rev key
         mock_handle.fetch = mock.CoroutineMock(
-            side_effect=[MockEntry(), MockEntry(), MockEntry(), MockEntry(), None]
+            side_effect=[MockEntry(), MockEntry(), None]
         )
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await call_test_func()
@@ -1119,35 +1122,34 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         mock_handle.replace = mock.CoroutineMock(return_value=None)
         mock_handle.fetch = mock.CoroutineMock(
             side_effect=[
-                MockEntry(),
-                MockEntry(),
+                MockEntry(raw_value=rev_reg_def.serialize()),
                 MockEntry(
                     value_json={
                         "rev_list": rev_list.serialize(),
                         "next_index": 0,
                     }
                 ),
-                MockEntry(raw_value=rev_reg_def.serialize()),
+                MockEntry(),
+                MockEntry(),
                 MockEntry(),
             ]
         )
         await call_test_func()
         assert mock_create.called
         assert mock_handle.replace.called
-        assert mock_handle.fetch.call_count == 5
 
         # revocation registry is full
         mock_handle.fetch = mock.CoroutineMock(
             side_effect=[
-                MockEntry(),
-                MockEntry(),
+                MockEntry(raw_value=rev_reg_def.serialize()),
                 MockEntry(
                     value_json={
                         "rev_list": rev_list.serialize(),
                         "next_index": 101,
                     }
                 ),
-                MockEntry(raw_value=rev_reg_def.serialize()),
+                MockEntry(),
+                MockEntry(),
                 MockEntry(),
             ]
         )

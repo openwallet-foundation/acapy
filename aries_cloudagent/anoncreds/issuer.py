@@ -310,7 +310,7 @@ class AnonCredsIssuer:
         if not isinstance(support_revocation, bool):
             raise ValueError("support_revocation must be a boolean")
 
-        max_cred_num = options.get("max_cred_num", DEFAULT_MAX_CRED_NUM)
+        max_cred_num = options.get("revocation_registry_size", DEFAULT_MAX_CRED_NUM)
         if not isinstance(max_cred_num, int):
             raise ValueError("max_cred_num must be an integer")
 
