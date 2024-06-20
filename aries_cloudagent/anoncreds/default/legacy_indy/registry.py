@@ -620,19 +620,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     write_ledger=write_ledger,
                     endorser_did=endorser_did,
                 )
-        except AnonCredsRegistrationError as err:
+        except LedgerError as err:
             LOGGER.error(
                 f"Error registering revocation registry definition {rev_reg_def_id}: {err.roll_up}"  # noqa: E501
-            )
-            return RevRegDefResult(
-                job_id=None,
-                revocation_registry_definition_state=RevRegDefState(
-                    state=RevRegDefState.STATE_FAILED,
-                    revocation_registry_definition_id=rev_reg_def_id,
-                    revocation_registry_definition=revocation_registry_definition,
-                ),
-                registration_metadata={},
-                revocation_registry_definition_metadata={},
             )
 
         # Didn't need endorsement
