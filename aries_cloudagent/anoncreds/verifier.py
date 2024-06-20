@@ -503,6 +503,20 @@ class AnonCredsVerifier:
         pres_req,
         pres,
     ) -> PresentationVerificationResult:
+        """Verify a W3C presentation.
+
+        Args:
+            pres_req: The presentation request data.
+            pres: The presentation data.
+
+        Returns:
+            PresentationVerificationResult: An object containing the verification result,
+            errors, and other details.
+
+        Raises:
+            AnoncredsError: If there is an error during the verification process.
+
+        """
         credentials = pres["verifiableCredential"]
         cred_def_ids = []
         for credential in credentials:
@@ -513,7 +527,8 @@ class AnonCredsVerifier:
         schemas = {}
         msgs = []
 
-        # TODO this should use the process_pres_identifiers() method, which will also fetch the revocation info
+        # TODO this should use the process_pres_identifiers()
+        # method, which will also fetch the revocation info
         for cred_def_id in cred_def_ids:
             anoncreds_registry = self.profile.inject(AnonCredsRegistry)
             # Build schemas for anoncreds
@@ -531,7 +546,8 @@ class AnonCredsVerifier:
             if schema["schema_id"] not in schemas:
                 schemas[schema["schema_id"]] = schema["schema"]
 
-        # TODO - this should get loaded from process_pres_identifiers() (with schemas and cred defs)
+        # TODO - this should get loaded from process_pres_identifiers()
+        # (with schemas and cred defs)
         rev_reg_defs = {}
         rev_lists = {}
 

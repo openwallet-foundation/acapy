@@ -1,14 +1,8 @@
-"""Manager for managing DIF DataIntegrityProof presentations over JSON-LD formatted W3C VCs."""
-
-from typing import Dict, List, Optional, Type, Union, cast
-
-from pyld import jsonld
-from pyld.jsonld import JsonLdProcessor
+"""Manager for managing DIF DI Proof presentations over JSON-LD formatted W3C VCs."""
 
 from ...core.profile import Profile
 from ..vc_ld.models.presentation import VerifiablePresentation
 from ..vc_ld.validation_result import PresentationVerificationResult
-from ..vc_ld.models.options import LDProofVCOptions
 from .verify import verify_signed_anoncredspresentation
 
 
@@ -17,7 +11,7 @@ class VcDiManagerError(Exception):
 
 
 class VcDiManager:
-    """Class for managing DIF DataIntegrityProof presentations over JSON-LD formatted W3C VCs."""
+    """Class for managing DIF DI Proof presentations over JSON-LD formatted W3C VCs."""
 
     def __init__(self, profile: Profile):
         """Initialize the VC DI Proof Manager."""

@@ -574,8 +574,10 @@ class VCDICredFormatHandler(V20CredFormatHandler):
         except AnonCredsHolderError as e:
             LOGGER.error(f"Error receiving credential: {e.error_code} - {e.message}")
             raise e
-        # argh even with no revocation id (rev_reg_id = None) the following code gets called and fails
-        # TODO figure this out :-( (somehow the value is getting set to String "None")
+        # argh even with no revocation id (rev_reg_id = None)
+        # the following code gets called and fails
+        # TODO figure this out :-(
+        # (somehow the value is getting set to String "None")
         if rev_reg_id and rev_reg_id != "None":
             rev_reg_def_result = (
                 await anoncreds_registry.get_revocation_registry_definition(

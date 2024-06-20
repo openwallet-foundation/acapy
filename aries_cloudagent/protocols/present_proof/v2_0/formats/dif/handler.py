@@ -8,7 +8,6 @@ from uuid_utils import uuid4
 
 from ......messaging.base_handler import BaseResponder
 from ......messaging.decorators.attach_decorator import AttachDecorator
-from ......anoncreds.holder import AnonCredsHolder
 from ......storage.error import StorageNotFoundError
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
@@ -16,7 +15,6 @@ from ......vc.ld_proofs import (
     BbsBlsSignature2020,
     Ed25519Signature2018,
     Ed25519Signature2020,
-    LinkedDataProof,
 )
 from ......vc.vc_di.manager import VcDiManager
 from ......vc.vc_ld.manager import VcLdpManager

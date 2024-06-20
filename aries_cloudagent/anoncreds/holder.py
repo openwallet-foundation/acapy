@@ -23,10 +23,6 @@ from anoncreds import (
 from aries_askar import AskarError, AskarErrorCode
 from uuid_utils import uuid4
 
-from ..protocols.issue_credential.v2_0.models.detail.ld_proof import (
-    V20CredExRecordLDProof,
-)
-
 from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ..askar.profile_anon import AskarAnoncredsProfile
 from ..core.error import BaseError

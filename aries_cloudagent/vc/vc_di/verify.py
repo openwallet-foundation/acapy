@@ -1,22 +1,10 @@
 """Verifiable Credential and Presentation verification methods."""
 
-import asyncio
-from typing import List
-from pyld.jsonld import JsonLdProcessor
-
 from ...core.profile import Profile
 from ...anoncreds.verifier import AnonCredsVerifier
 from ..ld_proofs import (
-    LinkedDataProof,
-    CredentialIssuancePurpose,
-    DocumentLoaderMethod,
     ProofPurpose,
-    AuthenticationProofPurpose,
-    verify as ld_proofs_verify,
-    DocumentVerificationResult,
-    LinkedDataProofException,
 )
-from ..vc_ld.models.credential import VerifiableCredentialSchema
 from ..vc_ld.validation_result import PresentationVerificationResult
 from .prove import create_signed_anoncreds_presentation
 
@@ -76,6 +64,3 @@ async def verify_signed_anoncredspresentation(
     except Exception as e:
         raise e
         # return PresentationVerificationResult(verified=False, errors=[e])
-
-
-__all__ = ["verify_presentation", "verify_credential"]

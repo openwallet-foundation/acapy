@@ -1,20 +1,13 @@
 """Verifiable Credential and Presentation proving methods."""
 
-from typing import List
 from hashlib import sha256
 import time
 
 from ..ld_proofs import (
     AuthenticationProofPurpose,
     ProofPurpose,
-    DocumentLoaderMethod,
-    sign,
-    LinkedDataProof,
     LinkedDataProofException,
-    derive,
 )
-from ..ld_proofs.constants import CREDENTIALS_CONTEXT_V1_URL
-from ..vc_ld.models.credential import VerifiableCredentialSchema
 from ...anoncreds.holder import AnonCredsHolder
 from ...anoncreds.verifier import AnonCredsVerifier
 from ...core.profile import Profile
@@ -73,16 +66,14 @@ async def create_signed_anoncreds_presentation(
         w3c_creds.append(w3c_cred)
         w3c_creds_metadata.append({})
 
-    schema_ids = []
-    cred_def_ids = []
-
     pres_name = (
         pres_definition.get("name") if pres_definition.get("name") else "Proof request"
     )
     hash = sha256(challenge.encode("utf-8")).hexdigest()
     nonce = str(int(hash, 16))[:20]
 
-    # assemble the necessary structures and then call AnoncredsHolder.create_presentation_w3c() (new method)
+    # assemble the necessary structures and then call
+    # AnoncredsHolder.create_presentation_w3c() (new method)
     anoncreds_proofrequest = {
         "version": "1.0",
         "name": pres_name,
@@ -105,18 +96,19 @@ async def create_signed_anoncreds_presentation(
         attribute_referent = f"{referent}_attribute"
         predicate_referent_base = f"{referent}_predicate"
         predicate_referent_index = 0
-        issuer_id = None
+        # issuer_id = None
 
         fields = descriptor["constraints"]["fields"]
         statuses = descriptor["constraints"]["statuses"]
 
-        # descriptor_map_item['path'] should be something like '$.verifiableCredential[n]', we need to extract 'n'
+        # descriptor_map_item['path'] should be something
+        # like '$.verifiableCredential[n]', we need to extract 'n'
         entry_idx = _extract_cred_idx(descriptor_map_item["path"])
         w3c_cred = w3c_creds[entry_idx]
         schema_id = w3c_cred.schema_id
         cred_def_id = w3c_cred.cred_def_id
-        rev_reg_id = w3c_cred.rev_reg_id
-        rev_reg_index = w3c_cred.rev_reg_index
+        # rev_reg_id = w3c_cred.rev_reg_id
+        # rev_reg_index = w3c_cred.rev_reg_index
 
         requires_revoc_status = "active" in statuses and statuses["active"][
             "directive"
@@ -187,9 +179,11 @@ async def create_signed_anoncreds_presentation(
                             attribute_referent
                         )
             elif path.endswith(".issuer"):
-                # capture issuer - {'path': ['$.issuer'], 'filter': {'type': 'string', 'const': '569XGicsXvYwi512asJkKB'}}
+                # capture issuer - {'path': ['$.issuer'],
+                # 'filter': {'type': 'string', 'const': '569XGicsXvYwi512asJkKB'}}
                 # TODO prob not a general case
-                issuer_id = field["filter"]["const"]
+                # issuer_id = field["filter"]["const"]
+                pass
             else:
                 print("... skipping:", path)
 
@@ -201,7 +195,8 @@ async def create_signed_anoncreds_presentation(
         rev_reg_entries,
     ) = await anoncreds_verifier.process_pres_identifiers(w3c_creds_metadata)
 
-    # TODO possibly refactor this into a couple of methods - one to create the proof request and another to sign it
+    # TODO possibly refactor this into a couple of methods -
+    # one to create the proof request and another to sign it
     # (the holder flag is a bit of a hack)
     if holder:
         # TODO match up the parameters with what the function is expecting ...
