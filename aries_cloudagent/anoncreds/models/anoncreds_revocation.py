@@ -7,11 +7,13 @@ from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 from typing_extensions import Literal
 
-from aries_cloudagent.messaging.valid import (INDY_CRED_DEF_ID_EXAMPLE,
-                                              INDY_ISO8601_DATETIME_EXAMPLE,
-                                              INDY_OR_KEY_DID_EXAMPLE,
-                                              INDY_RAW_PUBLIC_KEY_EXAMPLE,
-                                              INDY_REV_REG_ID_EXAMPLE)
+from aries_cloudagent.messaging.valid import (
+    INDY_CRED_DEF_ID_EXAMPLE,
+    INDY_ISO8601_DATETIME_EXAMPLE,
+    INDY_OR_KEY_DID_EXAMPLE,
+    INDY_RAW_PUBLIC_KEY_EXAMPLE,
+    INDY_REV_REG_ID_EXAMPLE,
+)
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 

@@ -36,12 +36,12 @@ class CredDefValuePrimary(BaseModel):
         Args:
             n: is a safe RSA-2048 number.
             s: is a randomly selected quadratic residue of n.
-            r: is an object that defines a CL-RSA public key fragment 
+            r: is an object that defines a CL-RSA public key fragment
                 for each attribute in the credential.
-            rctxt: is equal to s^(xrctxt), where xrctxt is a randomly selected integer 
+            rctxt: is equal to s^(xrctxt), where xrctxt is a randomly selected integer
                 between 2 and p'q'-1.
-            z: is equal to s^(xz), where xz is a randomly selected integer between 2 
-                and p'q'-1. This makes up part of the CL-RSA public key, independent of 
+            z: is equal to s^(xz), where xz is a randomly selected integer between 2
+                and p'q'-1. This makes up part of the CL-RSA public key, independent of
                 the message blocks being signed.
         """
         super().__init__(**kwargs)
@@ -102,10 +102,10 @@ class CredDefValueRevocation(BaseModel):
             htilde: is an elliptic curve point selected uniformly at random from G1.
             h_cap: is an elliptic curve point selected uniformly at random from G2.
             u: is an elliptic curve point selected uniformly at random from G2.
-            pk: is the public key in G1 for the issuer with respect to this accumulator, 
-                computed as g^sk (in multiplicative notation), where sk is from 
+            pk: is the public key in G1 for the issuer with respect to this accumulator,
+                computed as g^sk (in multiplicative notation), where sk is from
                 r_key above.
-            y: is the an elliptic curve point in G2. computed as h_cap^x 
+            y: is the an elliptic curve point in G2. computed as h_cap^x
                 (in multiplicative notation), where x is from r_key above
         """
         self.g = g

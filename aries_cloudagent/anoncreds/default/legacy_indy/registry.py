@@ -6,8 +6,11 @@ import re
 from asyncio import shield
 from typing import List, Optional, Pattern, Sequence, Tuple
 
-from anoncreds import (CredentialDefinition, RevocationRegistryDefinition,
-                       RevocationRegistryDefinitionPrivate)
+from anoncreds import (
+    CredentialDefinition,
+    RevocationRegistryDefinition,
+    RevocationRegistryDefinitionPrivate,
+)
 from base58 import alphabet
 from uuid_utils import uuid4
 
@@ -17,40 +20,71 @@ from ....config.injection_context import InjectionContext
 from ....core.event_bus import EventBus
 from ....core.profile import Profile, ProfileSession
 from ....ledger.base import BaseLedger
-from ....ledger.error import (LedgerError, LedgerObjectAlreadyExistsError,
-                              LedgerTransactionError)
-from ....ledger.merkel_validation.constants import (GET_REVOC_REG_DELTA,
-                                                    GET_REVOC_REG_ENTRY,
-                                                    GET_SCHEMA)
+from ....ledger.error import (
+    LedgerError,
+    LedgerObjectAlreadyExistsError,
+    LedgerTransactionError,
+)
+from ....ledger.merkel_validation.constants import (
+    GET_REVOC_REG_DELTA,
+    GET_REVOC_REG_ENTRY,
+    GET_SCHEMA,
+)
 from ....ledger.multiple_ledger.ledger_requests_executor import (
-    GET_CRED_DEF, IndyLedgerRequestsExecutor)
+    GET_CRED_DEF,
+    IndyLedgerRequestsExecutor,
+)
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
 from ....protocols.endorse_transaction.v1_0.manager import (
-    TransactionManager, TransactionManagerError)
+    TransactionManager,
+    TransactionManagerError,
+)
 from ....protocols.endorse_transaction.v1_0.util import is_author_role
-from ....revocation_anoncreds.models.issuer_cred_rev_record import \
-    IssuerCredRevRecord
+from ....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....storage.error import StorageError
 from ....utils import sentinel
 from ....wallet.did_info import DIDInfo
-from ...base import (AnonCredsObjectAlreadyExists, AnonCredsObjectNotFound,
-                     AnonCredsRegistrationError, AnonCredsResolutionError,
-                     AnonCredsSchemaAlreadyExists, BaseAnonCredsRegistrar,
-                     BaseAnonCredsResolver)
+from ...base import (
+    AnonCredsObjectAlreadyExists,
+    AnonCredsObjectNotFound,
+    AnonCredsRegistrationError,
+    AnonCredsResolutionError,
+    AnonCredsSchemaAlreadyExists,
+    BaseAnonCredsRegistrar,
+    BaseAnonCredsResolver,
+)
 from ...events import RevListFinishedEvent
 from ...issuer import CATEGORY_CRED_DEF, AnonCredsIssuer, AnonCredsIssuerError
-from ...models.anoncreds_cred_def import (CredDef, CredDefResult, CredDefState,
-                                          CredDefValue, GetCredDefResult)
-from ...models.anoncreds_revocation import (GetRevListResult,
-                                            GetRevRegDefResult, RevList,
-                                            RevListResult, RevListState,
-                                            RevRegDef, RevRegDefResult,
-                                            RevRegDefState, RevRegDefValue)
-from ...models.anoncreds_schema import (AnonCredsSchema, GetSchemaResult,
-                                        SchemaResult, SchemaState)
-from ...revocation import (CATEGORY_REV_LIST, CATEGORY_REV_REG_DEF,
-                           CATEGORY_REV_REG_DEF_PRIVATE)
+from ...models.anoncreds_cred_def import (
+    CredDef,
+    CredDefResult,
+    CredDefState,
+    CredDefValue,
+    GetCredDefResult,
+)
+from ...models.anoncreds_revocation import (
+    GetRevListResult,
+    GetRevRegDefResult,
+    RevList,
+    RevListResult,
+    RevListState,
+    RevRegDef,
+    RevRegDefResult,
+    RevRegDefState,
+    RevRegDefValue,
+)
+from ...models.anoncreds_schema import (
+    AnonCredsSchema,
+    GetSchemaResult,
+    SchemaResult,
+    SchemaState,
+)
+from ...revocation import (
+    CATEGORY_REV_LIST,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
+)
 from .recover import generate_ledger_rrrecovery_txn
 
 LOGGER = logging.getLogger(__name__)
@@ -1086,7 +1120,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             )
 
         async with profile.session() as session:
-
             LOGGER.debug(f"revocation_list = {rev_list.revocation_list}")
             LOGGER.debug(f"rev_reg_delta = {rev_reg_delta.get('value')}")
 
@@ -1095,7 +1128,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             )
 
             if not _wallet_accumalator_matches_ledger_list(rev_list, rev_reg_delta):
-
                 recovery_txn = await generate_ledger_rrrecovery_txn(
                     genesis_transactions, rev_list
                 )
