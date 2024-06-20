@@ -228,8 +228,6 @@ class AnonCredsRevocation:
                 "Revocation registry definition id or job id not found"
             )
 
-        # TODO Handle `failed` state
-
         rev_reg_def = (
             result.revocation_registry_definition_state.revocation_registry_definition
         )
@@ -582,7 +580,6 @@ class AnonCredsRevocation:
             self.profile, rev_reg_def, prev, curr, revoked, options
         )
 
-        # TODO Handle `failed` state
         try:
             async with self.profile.session() as session:
                 rev_list_entry_upd = await session.handle.fetch(
@@ -1026,21 +1023,21 @@ class AnonCredsRevocation:
 
             _handle_missing_entries(rev_list, rev_reg_def, rev_key)
 
-            rev_info = rev_list.value_json
-            rev_info_tags = rev_list.tags
+            rev_list_value_json = rev_list.value_json
+            rev_list_tags = rev_list.tags
 
-            # If the state is failed then the tails file was never uploaded
+            # If the rev_list state is failed then the tails file was never uploaded,
             # try to upload it now and finish the revocation list
-            if rev_info_tags.get("state") == RevListState.STATE_FAILED:
+            if rev_list_tags.get("state") == RevListState.STATE_FAILED:
                 await self.upload_tails_file(
                     RevRegDef.deserialize(rev_reg_def.value_json)
                 )
-                rev_info_tags["state"] = RevListState.STATE_FINISHED
+                rev_list_tags["state"] = RevListState.STATE_FINISHED
 
-            rev_reg_index = rev_info["next_index"]
+            rev_reg_index = rev_list_value_json["next_index"]
             try:
                 rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def.raw_value)
-                rev_list = RevocationStatusList.load(rev_info["rev_list"])
+                rev_list = RevocationStatusList.load(rev_list_value_json["rev_list"])
             except AnoncredsError as err:
                 raise AnonCredsRevocationError(
                     "Error loading revocation registry"
@@ -1055,13 +1052,13 @@ class AnonCredsRevocation:
                 raise AnonCredsRevocationRegistryFullError(
                     "Revocation registry is full"
                 )
-            rev_info["next_index"] = rev_reg_index + 1
+            rev_list_value_json["next_index"] = rev_reg_index + 1
             async with self.profile.transaction() as txn:
                 await txn.handle.replace(
                     CATEGORY_REV_LIST,
                     rev_reg_def_id,
-                    value_json=rev_info,
-                    tags=rev_info_tags,
+                    value_json=rev_list_value_json,
+                    tags=rev_list_tags,
                 )
                 await txn.commit()
 
@@ -1199,9 +1196,7 @@ class AnonCredsRevocation:
             def _is_full_registry(
                 rev_reg_def_result: RevRegDefResult, cred_rev_id: str
             ) -> bool:
-                # cred rev id is zero based
-                # max cred num is one based
-                # however, if we wait until max cred num is reached, we are too late.
+                # if we wait until max cred num is reached, we are too late.
                 return (
                     rev_reg_def_result.rev_reg_def.value.max_cred_num
                     <= int(cred_rev_id) + 1
