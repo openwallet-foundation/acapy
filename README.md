@@ -28,6 +28,20 @@ To use ACA-Py you create a business logic controller that "talks to" an ACA-Py i
 This [checklist-style overview document](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/features/SupportedRFCs.md) provides a full list of the features in ACA-Py.
 The following is a list of some of the core features needed for a production deployment, with a link to detailed information about the capability.
 
+## Releases
+
+Aca-py community provides periodic releases with new features and improvements. Additionally, certain releases are designated as long-term support (LTS) releases. Important fixes will be backported to the most recent LTS release, and to the prior LTS release during periods of LTS release overlap. For more details see the [LTS strategy]()<Link to be updated>.
+
+Current LTS releases:
+- [0.12.0](https://github.com/hyperledger/aries-cloudagent-python/releases/tag/0.12.0)
+- [0.11.1](https://github.com/hyperledger/aries-cloudagent-python/releases/tag/0.11.1)
+
+Unless specified otherwise, all releases will be upgradable from the prior minor release.
+Additionally, each LTS release is upgradable to the next LTS release.
+
+Aca-py releases and release notes can be found on the [GitHub releases page](https://github.com/hyperledger/aries-cloudagent-python/releases).
+
+
 ### Multi-Tenant
 
 ACA-Py supports "multi-tenant" scenarios. In these scenarios, one (scalable) instance of ACA-Py uses one database instance, and are together capable of managing separate secure storage (for private keys, DIDs, credentials, etc.) for many different actors. This enables (for example) an "issuer-as-a-service", where an enterprise may have many VC issuers, each with different identifiers, using the same instance of ACA-Py to interact with VC holders as required. Likewise, an ACA-Py instance could be a "cloud wallet" for many holders (e.g. people or organizations) that, for whatever reason, cannot use a mobile device for a wallet. Learn more about multi-tenant deployments [here](https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/features/Multitenancy.md).
