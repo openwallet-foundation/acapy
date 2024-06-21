@@ -30,7 +30,7 @@ The following is a list of some of the core features needed for a production dep
 
 ## Releases
 
-Aca-py community provides periodic releases with new features and improvements. Additionally, certain releases are designated as long-term support (LTS) releases. Important fixes will be backported to the most recent LTS release, and to the prior LTS release during periods of LTS release overlap. For more details see the [LTS strategy]()<Link to be updated>.
+Aca-py community provides periodic releases with new features and improvements. Additionally, certain releases are designated as long-term support (LTS) releases. Important fixes will be backported to the most recent LTS release, and to the prior LTS release during periods of LTS release overlap. For more details see the [LTS strategy](./docs/LTS-Strategy.md).
 
 Current LTS releases:
 - [0.12.0](https://github.com/hyperledger/aries-cloudagent-python/releases/tag/0.12.0)
