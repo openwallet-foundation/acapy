@@ -2014,22 +2014,22 @@ typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
 name = "pydevd"
-version = "1.5.1"
+version = "1.9.2"
 description = "PyDev.Debugger (used in PyDev, PyCharm and VSCode Python)"
 optional = false
 python-versions = "*"
 files = [
-    {file = "pydevd-1.5.1-cp27-cp27m-win32.whl", hash = "sha256:9598dae25ea4e63077cf486329fd3822199b24bd39938870085c4b77e02d89ee"},
-    {file = "pydevd-1.5.1-cp27-cp27m-win_amd64.whl", hash = "sha256:98807fecfed90f19bff3abe7341bebbf084970da36161c74409401c2d583e187"},
-    {file = "pydevd-1.5.1-cp34-cp34m-win32.whl", hash = "sha256:aae284bf83110bc7650b84860bdd4997bf731468fa9a87737ba688b3ca49ddf7"},
-    {file = "pydevd-1.5.1-cp34-cp34m-win_amd64.whl", hash = "sha256:f787d4a143a138944e34429d3928d713fe5688d54762d771d0581055a4b4b670"},
-    {file = "pydevd-1.5.1-cp35-cp35m-win32.whl", hash = "sha256:8dfdcc2b811256e10320f4c8daf0181d7f775fce6bca02198b86ff046016e44f"},
-    {file = "pydevd-1.5.1-cp35-cp35m-win_amd64.whl", hash = "sha256:c23b5dd0123d7341412ff3c20a978009bdfa0aa7d42cc6a6be3bdb1efcc2a651"},
-    {file = "pydevd-1.5.1-cp36-cp36m-win32.whl", hash = "sha256:80f142eaedd6e5783e1ee658e4716b75d8eaced1358d5f63272c208a2d8de40a"},
-    {file = "pydevd-1.5.1-cp36-cp36m-win_amd64.whl", hash = "sha256:be03afbc9bfb696dfce6317ad358d3971a3ba2dbd6486fbf1c3f2aaa0b95d13f"},
-    {file = "pydevd-1.5.1-cp37-cp37m-win32.whl", hash = "sha256:eb3db3d4f279cf0447a3c0e617841a4a8d1c65051d049c49c11daa225bad3701"},
-    {file = "pydevd-1.5.1-cp37-cp37m-win_amd64.whl", hash = "sha256:eee943317d92dda45494698af3e9aa8133646a1e19ab6e151cc21e04592ea3a4"},
-    {file = "pydevd-1.5.1.tar.gz", hash = "sha256:4310c0b1ba39b415335e92d2986eff4273904427634d5e5b38e59c63a93bffd7"},
+    {file = "pydevd-1.9.2-cp27-cp27m-win32.whl", hash = "sha256:2290a4d04be29ea5761b87a7c303340608b0f3112d06878c2a92c931169e12d4"},
+    {file = "pydevd-1.9.2-cp27-cp27m-win_amd64.whl", hash = "sha256:9f1e9217e9f8131d96de9356ab45284b62bbf063adbf3f32d246aecd36fdb581"},
+    {file = "pydevd-1.9.2-cp35-cp35m-win32.whl", hash = "sha256:5dba368ce4c424c3396e8981a8475adb9658519a808ccf137abd0fd6521a7a5a"},
+    {file = "pydevd-1.9.2-cp35-cp35m-win_amd64.whl", hash = "sha256:bfeddfc7b31b8db1695e916e4de28870a0e7819b8207197b42da06d1768c75a0"},
+    {file = "pydevd-1.9.2-cp36-cp36m-win32.whl", hash = "sha256:72497ea3c05c0d82664f25984dc5bd390e0f4e70828d2333dc0dbe7c9b683724"},
+    {file = "pydevd-1.9.2-cp36-cp36m-win_amd64.whl", hash = "sha256:bf63ce514e9da235e1cc41c8f99b077dcb7e642d0dd929c0f595244017f8b866"},
+    {file = "pydevd-1.9.2-cp37-cp37m-win32.whl", hash = "sha256:db8a595b5425c3c8d093f271e71f9e4a9251983fdd8bb0aa4ac29d6210a556a9"},
+    {file = "pydevd-1.9.2-cp37-cp37m-win_amd64.whl", hash = "sha256:31c9660c4fa71c09291e6c8b320a1cabe0a3b9f0513fda3ecb46e601d8995820"},
+    {file = "pydevd-1.9.2-cp38-cp38-win32.whl", hash = "sha256:8d363f1d349990085e60c1cc631945b685867f6d17a9bd51f51b548a6a1cdadc"},
+    {file = "pydevd-1.9.2-cp38-cp38-win_amd64.whl", hash = "sha256:ab687226500817ec35938c6eeecdcd4490352e2fa88847f4e48938655a2b2603"},
+    {file = "pydevd-1.9.2.tar.gz", hash = "sha256:61a3300d011cfb9e88f420d24585c64479ce832c0bf23bb979b3e074445dca11"},
 ]
 
 [[package]]
@@ -2883,4 +2883,4 @@ bbs = ["ursa-bbs-signatures"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "4b6f2549e72f9633abd0bdb83f17d839f6fd6d75bf9fc6c60a5581b8886d5712"
+content-hash = "6c0440173eefb9f6b11d4adc021cfd21cf1c6cea2e7425686936d3a84f04f44a"
